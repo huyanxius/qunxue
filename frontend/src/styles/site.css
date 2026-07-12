@@ -1,0 +1,564 @@
+/* 营销首页 —— 黑白撞色 + 朱砂点睛 */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  height: 72px;
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+}
+
+.site-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.site-brand-text b {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.site-brand-text i {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.site-nav {
+  display: flex;
+  gap: var(--s3);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.site-nav a:hover {
+  color: var(--vermilion);
+}
+
+.site-cta {
+  padding: 9px 20px;
+  font-size: 14px;
+}
+
+/* ---- 英雄区 ---- */
+
+.hero {
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--s8);
+  align-items: center;
+  padding-top: var(--s12);
+  padding-bottom: var(--s12);
+}
+
+.hero h1 {
+  font-size: clamp(40px, 5.4vw, 64px);
+  line-height: 1.22;
+  font-weight: 600;
+  margin: var(--s2) 0 var(--s3);
+}
+
+.hero-sub {
+  max-width: 34em;
+  font-size: 17px;
+  color: var(--ink-soft);
+  margin-bottom: var(--s4);
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+.hero-note {
+  margin-top: var(--s2);
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+/* 工作台缩影 */
+.hero-mock {
+  position: relative;
+  min-height: 340px;
+}
+
+.mock-paper {
+  background: var(--paper-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--s3);
+  width: min(100%, 380px);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 2;
+}
+
+.mock-title {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  margin-bottom: var(--s2);
+}
+
+.mock-line mark {
+  background: var(--vermilion-dim);
+  color: inherit;
+  box-shadow: inset 0 -2px 0 var(--vermilion);
+}
+
+.mock-line.dim {
+  color: var(--ink-faint);
+}
+
+.mock-note {
+  position: absolute;
+  right: 0;
+  top: 96px;
+  width: 230px;
+  background: var(--paper);
+  border: 1px solid var(--vermilion);
+  border-radius: var(--radius);
+  padding: var(--s2);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.mock-note-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.mock-note-src {
+  color: var(--ink-faint);
+}
+
+.mock-note-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.mock-note-actions em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.mock-note-actions em.rej {
+  color: var(--vermilion);
+}
+
+.mock-kappa {
+  position: absolute;
+  left: 40px;
+  bottom: -8px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 6px 16px;
+  font-size: 15px;
+  border-radius: 999px;
+}
+
+/* ---- 通用区块节奏 ---- */
+
+.pains,
+.method,
+.team,
+.faq {
+  padding: var(--s12) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.pains h2,
+.method h2,
+.stance h2,
+.concepts-teaser h2,
+.team h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 600;
+  margin: var(--s1) 0 var(--s6);
+}
+
+/* ---- 图片占位(等待真实图片资源,勿用装饰图充数) ---- */
+
+.img-slot {
+  margin-top: var(--s6);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 2;
+  max-width: 560px;
+}
+
+.img-slot-wide {
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+}
+
+.img-slot span {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+/* ---- 痛点 ---- */
+
+.pain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s6);
+}
+
+.pain-no {
+  display: block;
+  font-size: 30px;
+  color: var(--vermilion);
+  margin-bottom: var(--s2);
+}
+
+.pain-grid h3 {
+  font-size: 18px;
+  margin-bottom: var(--s1);
+}
+
+.pain-grid p {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+/* ---- 工作流 ---- */
+
+.steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s6);
+}
+
+.step-no {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--ink-faint);
+  border-bottom: 2px solid var(--vermilion);
+  padding-bottom: 6px;
+  margin-bottom: var(--s2);
+}
+
+.steps h3 {
+  font-size: 19px;
+  margin-bottom: var(--s1);
+  font-family: var(--serif);
+}
+
+.steps p {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+/* ---- 立场 ---- */
+
+.stance {
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--s8) 0;
+  border-radius: 24px;
+  width: min(var(--maxw), calc(100% - 32px));
+  margin: var(--s12) auto;
+}
+
+.stance .kicker {
+  color: #a8a094;
+}
+
+.stance-inner {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: var(--s8);
+}
+
+.stance-lead p:last-child {
+  color: #cfc9bd;
+  margin-top: var(--s2);
+}
+
+.stance-list {
+  list-style: none;
+  display: grid;
+  gap: var(--s3);
+}
+
+.stance-list li {
+  padding-left: var(--s3);
+  border-left: 2px solid var(--vermilion);
+  color: #cfc9bd;
+  font-size: 15px;
+}
+
+.stance-list b {
+  display: block;
+  color: var(--paper);
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+/* ---- 概念查询 ---- */
+
+.concepts-teaser {
+  padding: var(--s12) 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-dim);
+}
+
+.concepts-inner {
+  display: grid;
+  grid-template-columns: 6fr 5fr;
+  gap: var(--s8);
+  align-items: center;
+}
+
+.concepts-copy p {
+  color: var(--ink-soft);
+  max-width: 30em;
+  margin-bottom: var(--s3);
+}
+
+.concepts-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--s3);
+}
+
+.cc-term {
+  font-size: 26px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--s1);
+  margin-bottom: var(--s2);
+}
+
+.cc-axes {
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.cc-axes > div {
+  display: flex;
+  gap: var(--s2);
+}
+
+.cc-axes i {
+  font-style: normal;
+  flex-shrink: 0;
+  width: 3em;
+  color: var(--ink-faint);
+  letter-spacing: 0.5em;
+}
+
+.cc-conflict {
+  color: var(--vermilion);
+}
+
+/* ---- 团队 ---- */
+
+.team-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s6);
+  margin-bottom: var(--s4);
+}
+
+.team-facts b {
+  display: block;
+  font-size: 44px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.team-facts .team-flag {
+  font-size: 30px;
+  padding-top: 10px;
+}
+
+.team-facts span {
+  color: var(--ink-soft);
+  font-size: 14.5px;
+}
+
+.team-note {
+  font-size: 14px;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s2);
+  margin-top: var(--s6);
+  max-width: 44em;
+}
+
+/* ---- FAQ ---- */
+
+.faq-inner {
+  max-width: 760px;
+}
+
+.faq h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  margin-bottom: var(--s4);
+}
+
+.faq details {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq summary {
+  cursor: pointer;
+  padding: var(--s2) 0;
+  font-size: 16.5px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::before {
+  content: '+';
+  color: var(--vermilion);
+  margin-right: 12px;
+  font-family: var(--mono);
+}
+
+.faq details[open] summary::before {
+  content: '−';
+}
+
+.faq details p {
+  padding: 0 0 var(--s2) 26px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  max-width: 40em;
+}
+
+/* ---- 收束 ---- */
+
+.closing {
+  padding: var(--s12) 0;
+  text-align: center;
+}
+
+.closing h2 {
+  font-size: clamp(28px, 3.6vw, 44px);
+  font-weight: 600;
+  margin-bottom: var(--s4);
+}
+
+/* ---- 页脚 ---- */
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: var(--paper-dim);
+  padding: var(--s6) 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: var(--s8);
+}
+
+.footer-brand {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+}
+
+.footer-ethics b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+/* ---- 响应式 ---- */
+
+@media (max-width: 900px) {
+  .site-nav {
+    display: none;
+  }
+
+  .hero-inner,
+  .stance-inner,
+  .concepts-inner,
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: var(--s6);
+  }
+
+  .hero-inner {
+    padding-top: var(--s8);
+    padding-bottom: var(--s8);
+  }
+
+  .pain-grid,
+  .steps,
+  .team-facts {
+    grid-template-columns: 1fr;
+    gap: var(--s4);
+  }
+
+  .hero-mock {
+    min-height: 0;
+    padding-bottom: var(--s3);
+  }
+
+  .mock-note {
+    position: static;
+    width: min(100%, 380px);
+    margin-top: var(--s2);
+  }
+
+  .mock-kappa {
+    position: static;
+    display: inline-block;
+    margin-top: var(--s2);
+  }
+}
