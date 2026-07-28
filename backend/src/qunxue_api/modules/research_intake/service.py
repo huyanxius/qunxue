@@ -20,18 +20,13 @@ class ResearchTaskService:
         self._clock = clock or (lambda: datetime.now(UTC))
 
     def create(self, *, entry_type: EntryType, idempotency_key: str) -> ResearchTask:
-        existing = self._repository.get_by_idempotency_key(idempotency_key)
-        if existing is not None:
-            return existing
-
         task = ResearchTask.create(
             task_id=self._id_factory(),
             entry_type=entry_type,
             idempotency_key=idempotency_key,
             now=self._clock(),
         )
-        self._repository.add(task)
-        return task
+        return self._repository.add_or_get_by_idempotency_key(task)
 
     def get(self, task_id: UUID) -> ResearchTask:
         task = self._repository.get(task_id)

@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -38,6 +40,27 @@ def test_create_is_idempotent(client: TestClient) -> None:
     assert first.status_code == 201
     assert second.status_code == 201
     assert second.json()["task_id"] == first.json()["task_id"]
+
+
+def test_concurrent_create_is_idempotent(client: TestClient) -> None:
+    worker_count = 4
+    barrier = Barrier(worker_count)
+    headers = {"Idempotency-Key": str(uuid4())}
+
+    def create_task() -> tuple[int, str]:
+        barrier.wait()
+        response = client.post(
+            "/api/research-tasks",
+            headers=headers,
+            json={"entry_type": "direct_input"},
+        )
+        return response.status_code, response.json()["task_id"]
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        results = list(executor.map(lambda _index: create_task(), range(worker_count)))
+
+    assert {status_code for status_code, _task_id in results} == {201}
+    assert len({task_id for _status_code, task_id in results}) == 1
 
 
 def test_missing_research_task_returns_stable_error(client: TestClient) -> None:
