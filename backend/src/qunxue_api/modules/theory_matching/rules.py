@@ -1,0 +1,127 @@
+from uuid import UUID
+
+from qunxue_api.modules.theory_matching.public import (
+    TheoryCandidateSnapshot,
+    TheoryDecisionAction,
+    TheoryDecisionSetSnapshot,
+    TheoryJudgementVerdict,
+    TheoryPlanGateViolation,
+)
+
+
+def validate_theory_plan_confirmation(
+    decision_set: TheoryDecisionSetSnapshot,
+    candidates: tuple[TheoryCandidateSnapshot, ...],
+) -> tuple[UUID, ...]:
+    """Return adopted candidates only after the Proposal's human-decision gate passes."""
+
+    violations: list[str] = []
+    candidate_by_id = {candidate.candidate_id: candidate for candidate in candidates}
+    if len(candidate_by_id) != len(candidates):
+        violations.append("candidate IDs must be unique within one match run")
+
+    action_by_candidate: dict[UUID, TheoryDecisionAction] = {}
+    for decision in decision_set.decisions:
+        if decision.candidate_id in action_by_candidate:
+            violations.append(
+                f"candidate {decision.candidate_id} has more than one final decision"
+            )
+        action_by_candidate[decision.candidate_id] = decision.action
+
+    unknown_candidates = set(action_by_candidate) - set(candidate_by_id)
+    if unknown_candidates:
+        violations.append("decisions must belong to candidates in the match run")
+
+    missing_decisions = set(candidate_by_id) - set(action_by_candidate)
+    if missing_decisions:
+        violations.append("every candidate must have a final user decision")
+
+    non_final_actions = {
+        TheoryDecisionAction.REQUEST_MORE_EVIDENCE,
+        TheoryDecisionAction.REVISE_APPLICABILITY,
+    }
+    if any(action in non_final_actions for action in action_by_candidate.values()):
+        violations.append(
+            "evidence requests and applicability revisions must finish before confirmation"
+        )
+
+    adopted = tuple(
+        candidate_id
+        for candidate_id, action in action_by_candidate.items()
+        if action is TheoryDecisionAction.ADOPT
+    )
+    if not adopted:
+        violations.append("at least one candidate must be adopted")
+    for candidate_id in adopted:
+        candidate = candidate_by_id.get(candidate_id)
+        if candidate is None:
+            continue
+        content = candidate.content
+        if (
+            not content.formal_adoption_eligible
+            or content.adoption_blockers
+            or (
+                content.reviewed_profile is not None
+                and not content.reviewed_profile.match_eligible
+            )
+        ):
+            violations.append(
+                "every adopted theory must pass formal-adoption eligibility"
+            )
+        if candidate.judgement.verdict not in {
+            TheoryJudgementVerdict.APPLICABLE,
+            TheoryJudgementVerdict.CONDITIONAL,
+        }:
+            violations.append(
+                "every adopted theory needs an applicable or conditional judgement"
+            )
+
+    assigned = {assignment.candidate_id for assignment in decision_set.use_assignments}
+    missing_assignments = set(adopted) - assigned
+    if missing_assignments:
+        violations.append("every adopted theory must have a role and responsibility")
+
+    if len(adopted) > 1:
+        adopted_set = set(adopted)
+        graph = {candidate_id: set() for candidate_id in adopted}
+        for relation in decision_set.relations:
+            members = adopted_set.intersection(relation.candidate_ids)
+            if len(members) < 2:
+                continue
+            for candidate_id in members:
+                graph[candidate_id].update(members - {candidate_id})
+            if not (
+                relation.relation_kind.strip()
+                and relation.explanation.strip()
+                and relation.premise_compatibility.strip()
+            ):
+                violations.append(
+                    "each multi-theory relation needs a kind, explanation, and "
+                    "premise-compatibility statement"
+                )
+            if not (
+                relation.supporting_evidence
+                and relation.excluding_evidence
+                and relation.distinguishing_evidence
+            ):
+                violations.append(
+                    "each multi-theory relation needs supporting, excluding, and "
+                    "distinguishing evidence requirements"
+                )
+
+        visited: set[UUID] = set()
+        pending = [adopted[0]]
+        while pending:
+            candidate_id = pending.pop()
+            if candidate_id in visited:
+                continue
+            visited.add(candidate_id)
+            pending.extend(graph[candidate_id] - visited)
+        if visited != adopted_set:
+            violations.append(
+                "all adopted theories must be connected by explained relations"
+            )
+
+    if violations:
+        raise TheoryPlanGateViolation(tuple(dict.fromkeys(violations)))
+    return adopted
