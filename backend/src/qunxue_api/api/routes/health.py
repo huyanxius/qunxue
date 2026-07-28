@@ -1,0 +1,23 @@
+from fastapi import APIRouter, Request
+
+from qunxue_api.api.contracts.health import HealthResponse
+from qunxue_api.settings import Settings
+
+router = APIRouter(prefix="/api", tags=["system"])
+
+
+@router.get(
+    "/health",
+    operation_id="get_health",
+    response_model=HealthResponse,
+)
+def get_health(request: Request) -> HealthResponse:
+    settings: Settings = request.app.state.settings
+    request.app.state.database.is_ready()
+    return HealthResponse(
+        status="ok",
+        service=settings.app_name,
+        runtime_mode="inline_demo",
+        persistence="sqlite",
+        contract_version=settings.contract_version,
+    )
