@@ -15,6 +15,42 @@
 
 红线：永不 `git push --force`；永不提交任何密钥（API key、appid）；PR 小而聚焦，不夹带无关改动。
 
+提交格式：`type(scope): 中文说明`。一个提交只承担一个逻辑单元；禁止助手署名、`Co-Authored-By` 或工具名称尾注。
+
+## 工程架构
+
+### 后端
+
+- `modules/research_intake/`：研究任务、入口输入与已确认现象。
+- `modules/knowledge_catalog/`：版本化知识发布、条目、关系与理论身份。
+- `modules/theory_matching/`：证据交接、候选判断与用户理论决定。
+- `modules/research_framework/`：框架草拟、审校、修订与确认。
+- `application/`：只通过模块公共入口编排主链，不承载模块内部规则。
+- `api/`：FastAPI DTO、路由和异常映射。
+- `adapters/`：SQLite 及后续外部服务实现。
+- `bootstrap.py`：唯一依赖装配点。
+
+业务模块不得依赖 FastAPI、Pydantic、SQLAlchemy 或具体模型 SDK。模块间只从包根导入，并传递稳定 ID、版本和不可变快照。
+
+### 前端
+
+- `src/app/`：应用壳与路由。
+- `src/api/generated/`：由 OpenAPI 生成，只生成不手改。
+- `src/modules/socio-match-workspace/`：研究任务创建、恢复与工作区。
+- `src/modules/knowledge-explorer/`：知识浏览、搜索、详情与来源。
+
+产品模块只通过 `index.ts` 暴露能力；业务组件不得裸调用 `fetch`、手写重复 DTO 或直连模型服务。
+
+### 运行与检查
+
+```bash
+make dev-api
+make dev-web
+make check
+```
+
+禁止复制旧 LiveDemo 的代码、资产和依赖。Mock、静态页面、类型契约或构建通过不得描述为真实模型或完整端到端交付。
+
 ## English
 
 Every code submission MUST follow this flow, no skipping:
