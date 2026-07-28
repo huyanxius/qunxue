@@ -4,3 +4,16 @@ node_modules/
 __pycache__/
 .DS_Store
 dist/
+scratch/
+shots/
+*.log
+.venv/
+.cache/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+*.db
+*.db-shm
+*.db-wal
+backend/var/
+frontend/.vite/
