@@ -1,0 +1,16 @@
+:root {
+  --paper: #f1ede2;
+  --ink: #20251f;
+  --ink-soft: #62675f;
+  --rule: #bcb5a7;
+  --accent: #9d4c34;
+  --signal: #4d6756;
+  --danger: #9a3e35;
+  --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
