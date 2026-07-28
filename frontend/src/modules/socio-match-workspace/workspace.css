@@ -1,0 +1,90 @@
+.task-heading {
+  max-width: 900px;
+  padding: clamp(76px, 11vw, 128px) 0 54px;
+}
+
+.task-heading .eyebrow {
+  margin-bottom: 22px;
+  color: var(--accent);
+}
+
+.task-heading .display-title {
+  max-width: 900px;
+  margin-bottom: 32px;
+}
+
+.task-heading > p:last-child {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+
+.task-record,
+.recovery-error {
+  margin-bottom: 42px;
+  padding: 28px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.task-state {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 34px;
+}
+
+.task-state span {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.task-state strong {
+  color: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+.task-record dl {
+  display: grid;
+  grid-template-columns: 2fr 1fr 0.5fr 1.5fr;
+  gap: 24px;
+  margin: 0;
+}
+
+.task-record dl div {
+  min-width: 0;
+}
+
+.task-record dt {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.task-record dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.task-note,
+.loading-line {
+  margin: 34px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.text-link {
+  color: var(--accent);
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .task-record dl {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
