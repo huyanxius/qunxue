@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "check:boundaries": "node scripts/check-module-boundaries.mjs",
+    "check:boundaries": "node --test scripts/check-module-boundaries-tests.mjs && node scripts/check-module-boundaries.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "generate:api": "openapi-ts -i ../backend/openapi.json -o src/api/generated",
