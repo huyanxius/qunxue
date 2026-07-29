@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getResearchTask } from './researchTaskApi'
+import { getResearchTaskViaApi } from './researchTaskApi'
 
 export function useResearchTask(taskId: string) {
   return useQuery({
     queryKey: ['research-task', taskId],
-    queryFn: () => getResearchTask(taskId),
+    queryFn: () => getResearchTaskViaApi(taskId),
     enabled: Boolean(taskId),
   })
 }
