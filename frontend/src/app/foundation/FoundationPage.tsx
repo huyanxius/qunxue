@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
 
-import { createResearchTask } from '../../modules/socio-match-workspace'
+import { startResearchTask } from '../../modules/socio-match-workspace'
 import { copy } from './copy'
 import './foundation.css'
 import { useSystemHealth } from './useSystemHealth'
@@ -10,8 +10,8 @@ export function FoundationPage() {
   const navigate = useNavigate()
   const health = useSystemHealth()
   const createTask = useMutation({
-    mutationFn: () => createResearchTask(crypto.randomUUID()),
-    onSuccess: (task) => navigate(`/research/${task.task_id}`),
+    mutationFn: () => startResearchTask(crypto.randomUUID()),
+    onSuccess: (task) => navigate(`/research/${task.taskId}`),
   })
 
   const connectionLabel = health.isPending
@@ -50,11 +50,11 @@ export function FoundationPage() {
           <dl>
             <div>
               <dt>契约</dt>
-              <dd>{health.data.contract_version}</dd>
+              <dd>{health.data.contractVersion}</dd>
             </div>
             <div>
               <dt>运行</dt>
-              <dd>{health.data.runtime_mode}</dd>
+              <dd>{health.data.runtimeMode}</dd>
             </div>
             <div>
               <dt>保存</dt>

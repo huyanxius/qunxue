@@ -1,21 +1,49 @@
-import { Link, useParams } from 'react-router'
+import type { MouseEvent } from 'react'
 
 import './workspace.css'
 import { useResearchTask } from './useResearchTask'
 
-export function SocioMatchWorkspace() {
-  const { taskId = '' } = useParams()
+export interface SocioMatchWorkspaceProps {
+  readonly taskId: string
+  readonly homeHref: string
+  readonly onNavigateHome: () => void
+}
+
+export function SocioMatchWorkspace({
+  taskId,
+  homeHref,
+  onNavigateHome,
+}: SocioMatchWorkspaceProps) {
   const task = useResearchTask(taskId)
+
+  function navigateHome(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
+    event.preventDefault()
+    onNavigateHome()
+  }
 
   return (
     <main className="page-shell task-page">
       <header className="masthead">
-        <Link className="wordmark" to="/">
+        <a
+          className="wordmark"
+          href={homeHref}
+          onClick={navigateHome}
+        >
           <span className="wordmark-mark" aria-hidden="true">
             群
           </span>
           <span>群学致知</span>
-        </Link>
+        </a>
         <p>RESEARCH / DRAFT</p>
       </header>
 
@@ -43,11 +71,11 @@ export function SocioMatchWorkspace() {
           <dl>
             <div>
               <dt>稳定 ID</dt>
-              <dd>{task.data.task_id}</dd>
+              <dd>{task.data.taskId}</dd>
             </div>
             <div>
               <dt>入口</dt>
-              <dd>{task.data.entry_type}</dd>
+              <dd>{task.data.entryType}</dd>
             </div>
             <div>
               <dt>版本</dt>
@@ -55,16 +83,20 @@ export function SocioMatchWorkspace() {
             </div>
             <div>
               <dt>下一动作</dt>
-              <dd>{task.data.allowed_actions.join(', ')}</dd>
+              <dd>{task.data.allowedActions.join(', ')}</dd>
             </div>
           </dl>
           <p className="task-note">刷新此页，任务仍由后端按 ID 恢复。</p>
         </section>
       ) : null}
 
-      <Link className="text-link" to="/">
+      <a
+        className="text-link"
+        href={homeHref}
+        onClick={navigateHome}
+      >
         ← 返回工程起点
-      </Link>
+      </a>
     </main>
   )
 }
