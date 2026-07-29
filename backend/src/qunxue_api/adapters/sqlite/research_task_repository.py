@@ -6,14 +6,19 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite import ResearchTaskRow
-from qunxue_api.modules.research_intake import EntryType, ResearchTask, ResearchTaskStatus
+from qunxue_api.modules.research_intake import (
+    EntryType,
+    ResearchTask,
+    ResearchTaskRepository,
+    ResearchTaskStatus,
+)
 
 
 def _as_utc(value: datetime) -> datetime:
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
-class SqliteResearchTaskRepository:
+class SqliteResearchTaskRepository(ResearchTaskRepository):
     def __init__(self, session: Session) -> None:
         self._session = session
 

@@ -11,6 +11,7 @@ from qunxue_api.modules.research_intake.domain import (
 from qunxue_api.modules.research_intake.errors import ResearchTaskNotFound
 from qunxue_api.modules.research_intake.ports import (
     PhenomenonCandidateBuilder,
+    ResearchTaskRepository,
 )
 from qunxue_api.modules.research_intake.service import ResearchTaskService
 
@@ -22,6 +23,7 @@ __all__ = [
     "ResearchTask",
     "ResearchTaskAction",
     "ResearchTaskNotFound",
+    "ResearchTaskRepository",
     "ResearchTaskService",
     "ResearchTaskStatus",
 ]

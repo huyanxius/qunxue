@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from qunxue_api.modules.research_intake.domain import (
@@ -20,7 +20,10 @@ class PhenomenonCandidateBuilder(Protocol):
     ) -> PhenomenonCandidateDraft: ...
 
 
+@runtime_checkable
 class ResearchTaskRepository(Protocol):
+    """研究任务持久化端口；adapter 只能通过模块公共入口实现它。"""
+
     def get(self, task_id: UUID) -> ResearchTask | None: ...
 
     def add_or_get_by_idempotency_key(self, task: ResearchTask) -> ResearchTask: ...
