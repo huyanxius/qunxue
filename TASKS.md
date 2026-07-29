@@ -1,14 +1,12 @@
 # TASKS
 
-## 下一步
+任务状态以 [GitHub Issues](https://github.com/huyanxius/qunxue/issues) 为唯一事实来源。未形成 Issue 的想法不视为已开工任务，负责人、依赖、范围和验收标准也不在本文件重复维护。
 
-- 冻结完整领域枚举、状态真值表、模型 Schema 与 Run/Attempt 恢复语义。
-- 将请求幂等迁至 application ledger，并定义同 key 不同 payload 的冲突规则。
-- 实现输入现象到研究框架确认的 Mock 纵向链。
-- 实现知识浏览入口与 SocioMatch 双向互通。
+本轮架构收口任务：
 
-## 已完成
+- [#21 补齐后端依赖方向和公共端口守卫](https://github.com/huyanxius/qunxue/issues/21)
+- [#22 统一运行时与迁移的数据库真值源](https://github.com/huyanxius/qunxue/issues/22)
+- [#23 收紧前端模块公共 API 和依赖守卫](https://github.com/huyanxius/qunxue/issues/23)
+- [#24 让新队员五分钟内独立跑通工程](https://github.com/huyanxius/qunxue/issues/24)
 
-- 建立模块化前后端正式工程骨架。
-- 跑通研究任务创建、持久化和恢复链路。
-- 建立生成契约、模块依赖守卫和统一检查。
+当前已完成和未完成的工程事实见 [`HANDOFF.md`](HANDOFF.md)；产品待决问题见 [`docs/product/OPEN_QUESTIONS.md`](docs/product/OPEN_QUESTIONS.md)。
