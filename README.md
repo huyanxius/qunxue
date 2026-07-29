@@ -37,11 +37,20 @@ React 页面
 - 契约：OpenAPI、Hey API
 - 工具：uv、npm、Ruff、Vitest、Oxlint
 
-## 安装与启动
+## 文档入口
 
-需要 Python 3.12、Node.js 20.19+/22.12+、`uv` 和 `npm`。
+- 第一次参与开发：[`docs/onboarding.md`](docs/onboarding.md)
+- 模块职责与依赖方向：[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- 分支、提交与 PR：[`CONTRIBUTING.md`](CONTRIBUTING.md)
+- 产品事实与竞赛边界：[`docs/product/README.md`](docs/product/README.md)
+
+## 五分钟启动
+
+需要 Python 3.12、Node.js 22.18+、`uv` 和 `npm`。
 
 ```bash
+git clone https://github.com/huyanxius/qunxue.git
+cd qunxue
 make bootstrap
 ```
 
@@ -52,7 +61,9 @@ make dev-api
 make dev-web
 ```
 
-打开 `http://127.0.0.1:5173`。
+打开 `http://localhost:5173`。
+
+默认启动不需要密钥。完整冒烟步骤和环境变量见 [`docs/onboarding.md`](docs/onboarding.md)。
 
 ## 检查
 
@@ -68,7 +79,7 @@ SQLite 仅用于单实例、单 worker、本地非敏感演示。当前同步执
 
 1. main 已开分支保护：所有改动走分支 + PR 合入，不直接推 main。
 2. 每个 PR 对应一个 Issue，改动范围与 Issue 一致，不夹带无关改动；PR 小而频繁，不攒大包。
-3. PR 描述写清两件事：改了什么、为什么这么改。可以让 AI 写代码和提交，但作者本人要能讲清改动——责任在人，不在 AI。合并前至少一位同学 Review。
+3. PR 描述写清改动、原因、验证结果和架构影响。作者本人要能讲清改动，合并前至少一位同学 Review。
 4. 密钥红线：API key、appid 只放本地 `.env` 文件，任何时候不进仓库。
 
 详细流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，首次配置见 [`docs/onboarding.md`](docs/onboarding.md)。
