@@ -1,4 +1,6 @@
-# HANDOFF
+# 工程状态
+
+本文只记录当前工程能力、边界和风险。任务状态、负责人、依赖与验收结果以 [GitHub Issues](https://github.com/huyanxius/qunxue/issues) 为唯一事实来源。
 
 ## 已完成
 

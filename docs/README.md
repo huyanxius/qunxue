@@ -7,6 +7,7 @@
 - [`onboarding.md`](onboarding.md)：新队员安装、启动、冒烟验证和第一次提交。
 - [`ARCHITECTURE.md`](ARCHITECTURE.md)：模块职责、依赖方向、公共入口和改动位置。
 - [`DECISIONS.md`](DECISIONS.md)：工程决策记录。
+- [`engineering/STATUS.md`](engineering/STATUS.md)：当前工程能力、未完成边界与风险。
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md)：Issue、分支、提交、PR 与 Review 流程。
 
 ## 产品文档
