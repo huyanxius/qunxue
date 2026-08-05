@@ -10,12 +10,12 @@ import { SocioMatchWorkspace } from '../modules/socio-match-workspace'
 import { FoundationPage } from './foundation/FoundationPage'
 
 function SocioMatchWorkspaceRoute() {
-  const { taskId = '' } = useParams<{ taskId: string }>()
+  const { task_id = '' } = useParams<{ task_id: string }>()
   const navigate = useNavigate()
 
   return (
     <SocioMatchWorkspace
-      taskId={taskId}
+      taskId={task_id}
       homeHref="/"
       onNavigateHome={() => navigate('/')}
     />
@@ -27,10 +27,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<FoundationPage />} />
-        <Route
-          path="/research/:taskId"
-          element={<SocioMatchWorkspaceRoute />}
-        />
+        <Route path="/research/:task_id" element={<SocioMatchWorkspaceRoute />} />
       </Routes>
     </BrowserRouter>
   )

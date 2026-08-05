@@ -3,68 +3,105 @@ import { ApiRequestError } from '../../api/error'
 import {
   createResearchTask as createResearchTaskRequest,
   getResearchTask as getResearchTaskRequest,
+  type ErrorResponse,
+  type HttpValidationError,
   type ResearchTaskResponse,
 } from '../../api/generated'
 import type {
   ResearchTask,
-  ResearchTaskAction,
-  ResearchTaskEntryType,
-  ResearchTaskStatus,
+  ResearchTaskSource,
+  ResearchTaskSubmission,
 } from './researchTaskModel'
 
-const entryTypes = {
-  direct_input: 'direct_input',
-} satisfies Record<ResearchTaskResponse['entry_type'], ResearchTaskEntryType>
-
-const taskStatuses = {
-  draft: 'draft',
-} satisfies Record<ResearchTaskResponse['status'], ResearchTaskStatus>
-
-const taskActions = {
-  submit_phenomenon: 'submit_phenomenon',
-} satisfies Record<
-  ResearchTaskResponse['allowed_actions'][number],
-  ResearchTaskAction
->
+const taskSources = {
+  user_input: 'user_input',
+} satisfies Record<ResearchTaskResponse['source'], ResearchTaskSource>
 
 function toResearchTask(response: ResearchTaskResponse): ResearchTask {
   return {
     taskId: response.task_id,
-    entryType: entryTypes[response.entry_type],
-    status: taskStatuses[response.status],
-    version: response.version,
-    allowedActions: response.allowed_actions.map(
-      (action) => taskActions[action],
-    ),
+    phenomenon: response.phenomenon,
+    researchIntent: response.research_intent ?? null,
+    context: response.context ?? null,
+    source: taskSources[response.source],
     createdAt: response.created_at,
     updatedAt: response.updated_at,
   }
 }
 
-/** SocioMatch 内部的 HTTP 适配器；公共入口不得直接导出本文件。 */
-export async function createResearchTaskViaApi(
-  idempotencyKey: string,
-): Promise<ResearchTask> {
-  const { data, response } = await createResearchTaskRequest({
-    client: apiClient,
-    body: { entry_type: 'direct_input' },
-    headers: { 'Idempotency-Key': idempotencyKey },
-  })
-  if (!data) {
-    throw new ApiRequestError('研究任务创建失败。', response?.status)
+function isErrorResponse(error: unknown): error is ErrorResponse {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'error' in error &&
+      error.error &&
+      typeof error.error === 'object' &&
+      'message' in error.error,
+  )
+}
+
+function isValidationError(error: unknown): error is HttpValidationError {
+  return Boolean(
+    error && typeof error === 'object' && 'detail' in error,
+  )
+}
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (isErrorResponse(error)) {
+    return error.error.message
   }
-  return toResearchTask(data)
+  if (isValidationError(error) && error.detail && error.detail.length > 0) {
+    return error.detail.map((detail) => detail.msg).join('; ')
+  }
+  return fallback
+}
+
+export async function submitResearchTaskViaApi(
+  input: ResearchTaskSubmission,
+): Promise<ResearchTask> {
+  try {
+    const { data, error, response } = await createResearchTaskRequest({
+      client: apiClient,
+      body: {
+        phenomenon: input.phenomenon,
+        research_intent: input.researchIntent,
+        context: input.context,
+      },
+    })
+    if (!data) {
+      throw new ApiRequestError(
+        extractErrorMessage(error, 'Research task creation failed.'),
+        response?.status,
+      )
+    }
+    return toResearchTask(data)
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw error
+    }
+    throw new ApiRequestError('The service could not save this task. Please retry.')
+  }
 }
 
 export async function getResearchTaskViaApi(
   taskId: string,
 ): Promise<ResearchTask> {
-  const { data, response } = await getResearchTaskRequest({
-    client: apiClient,
-    path: { task_id: taskId },
-  })
-  if (!data) {
-    throw new ApiRequestError('研究任务恢复失败。', response?.status)
+  try {
+    const { data, error, response } = await getResearchTaskRequest({
+      client: apiClient,
+      path: { task_id: taskId },
+    })
+    if (!data) {
+      throw new ApiRequestError(
+        extractErrorMessage(error, 'Research task recovery failed.'),
+        response?.status,
+      )
+    }
+    return toResearchTask(data)
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw error
+    }
+    throw new ApiRequestError('The service could not restore this task. Please retry.')
   }
-  return toResearchTask(data)
 }

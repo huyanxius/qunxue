@@ -135,7 +135,7 @@ def _import_details(
     package_root: Path = PACKAGE_ROOT,
 ) -> tuple[set[str], list[tuple[str, set[str]]], set[str]]:
     source_module, source_is_package = _source_module(path, package_root)
-    tree = ast.parse(path.read_text())
+    tree = ast.parse(path.read_text(encoding="utf-8"))
     imports: set[str] = set()
     from_imports: list[tuple[str, set[str]]] = []
     plain_imports: set[str] = set()
@@ -347,7 +347,7 @@ def test_backend_obeys_registered_architecture() -> None:
 def test_sqlite_repository_implements_the_public_research_intake_port() -> None:
     assert research_intake.ResearchTaskRepository is ResearchTaskRepository
     assert issubclass(SqliteResearchTaskRepository, ResearchTaskRepository)
-    for method_name in ("get", "add_or_get_by_idempotency_key"):
+    for method_name in ("get", "add"):
         assert method_name in SqliteResearchTaskRepository.__dict__
         assert signature(
             SqliteResearchTaskRepository.__dict__[method_name]
@@ -395,11 +395,11 @@ def test_real_source_tree_exercises_negative_guards(tmp_path: Path) -> None:
         assert expected in layout_violations
     for expected in (
         "__init__.py cannot import internal layer qunxue_api.application",
-        "modules/research_intake/domain.py: modules cannot depend on application",
+        "domain.py: modules cannot depend on application",
         "domain cannot depend on ports",
         "domain cannot import its module package root",
         "ports cannot depend on service",
-        "application/use_case.py bypasses a module public package root",
+        "use_case.py bypasses a module public package root",
         "settings.py: settings cannot depend on bootstrap",
     ):
         assert any(

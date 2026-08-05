@@ -3,20 +3,38 @@
     "schemas": {
       "CreateResearchTaskRequest": {
         "properties": {
-          "entry_type": {
-            "$ref": "#/components/schemas/EntryType",
-            "default": "direct_input"
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
           }
         },
+        "required": [
+          "phenomenon"
+        ],
         "title": "CreateResearchTaskRequest",
         "type": "object"
-      },
-      "EntryType": {
-        "enum": [
-          "direct_input"
-        ],
-        "title": "EntryType",
-        "type": "string"
       },
       "ErrorDetail": {
         "properties": {
@@ -108,32 +126,48 @@
         "title": "HealthResponse",
         "type": "object"
       },
-      "ResearchTaskAction": {
+      "PhenomenonSource": {
         "enum": [
-          "submit_phenomenon"
+          "user_input"
         ],
-        "title": "ResearchTaskAction",
+        "title": "PhenomenonSource",
         "type": "string"
       },
       "ResearchTaskResponse": {
         "properties": {
-          "allowed_actions": {
-            "items": {
-              "$ref": "#/components/schemas/ResearchTaskAction"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
           },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
           },
-          "entry_type": {
-            "$ref": "#/components/schemas/EntryType"
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
           },
-          "status": {
-            "$ref": "#/components/schemas/ResearchTaskStatus"
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PhenomenonSource"
           },
           "task_id": {
             "format": "uuid",
@@ -144,30 +178,19 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "type": "integer"
           }
         },
         "required": [
           "task_id",
-          "entry_type",
-          "status",
-          "version",
-          "allowed_actions",
+          "phenomenon",
+          "research_intent",
+          "context",
+          "source",
           "created_at",
           "updated_at"
         ],
         "title": "ResearchTaskResponse",
         "type": "object"
-      },
-      "ResearchTaskStatus": {
-        "enum": [
-          "draft"
-        ],
-        "title": "ResearchTaskStatus",
-        "type": "string"
       },
       "ValidationError": {
         "properties": {
@@ -212,7 +235,7 @@
     }
   },
   "info": {
-    "description": "群学致知前后端架构基线 API。",
+    "description": "SocioMatch API.",
     "title": "群学致知 API",
     "version": "0.1.0"
   },
@@ -242,19 +265,6 @@
     "/api/research-tasks": {
       "post": {
         "operationId": "create_research_task",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": true,
-            "schema": {
-              "maxLength": 128,
-              "minLength": 8,
-              "title": "Idempotency-Key",
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -276,7 +286,7 @@
             },
             "description": "Successful Response"
           },
-          "404": {
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -284,17 +294,17 @@
                 }
               }
             },
-            "description": "Not Found"
+            "description": "Unprocessable Entity"
           },
-          "422": {
+          "500": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Internal Server Error"
           }
         },
         "summary": "Create Research Task",
@@ -348,6 +358,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
           }
         },
         "summary": "Get Research Task",

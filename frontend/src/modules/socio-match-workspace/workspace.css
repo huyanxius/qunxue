@@ -28,26 +28,9 @@
   border-bottom: 1px solid var(--ink);
 }
 
-.task-state {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 34px;
-}
-
-.task-state span {
-  color: var(--ink-soft);
-  font-size: 0.8rem;
-}
-
-.task-state strong {
-  color: var(--signal);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.08em;
-}
-
 .task-record dl {
   display: grid;
-  grid-template-columns: 2fr 1fr 0.5fr 1.5fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin: 0;
 }
@@ -56,8 +39,12 @@
   min-width: 0;
 }
 
+.task-field-wide {
+  grid-column: 1 / -1;
+}
+
 .task-record dt {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   color: var(--ink-soft);
   font-size: 0.72rem;
   letter-spacing: 0.08em;
@@ -66,8 +53,8 @@
 .task-record dd {
   margin: 0;
   overflow-wrap: anywhere;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.82rem;
+  white-space: pre-wrap;
+  line-height: 1.65;
 }
 
 .task-note,
@@ -86,5 +73,9 @@
   .task-record dl {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .task-field-wide {
+    grid-column: auto;
   }
 }

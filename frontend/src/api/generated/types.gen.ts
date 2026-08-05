@@ -8,13 +8,19 @@ export type ClientOptions = {
  * CreateResearchTaskRequest
  */
 export type CreateResearchTaskRequest = {
-    entry_type?: EntryType;
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent?: string | null;
 };
-
-/**
- * EntryType
- */
-export type EntryType = 'direct_input';
 
 /**
  * ErrorDetail
@@ -78,24 +84,31 @@ export type HealthResponse = {
 };
 
 /**
- * ResearchTaskAction
+ * PhenomenonSource
  */
-export type ResearchTaskAction = 'submit_phenomenon';
+export type PhenomenonSource = 'user_input';
 
 /**
  * ResearchTaskResponse
  */
 export type ResearchTaskResponse = {
     /**
-     * Allowed Actions
+     * Context
      */
-    allowed_actions: Array<ResearchTaskAction>;
+    context: string | null;
     /**
      * Created At
      */
     created_at: string;
-    entry_type: EntryType;
-    status: ResearchTaskStatus;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    source: PhenomenonSource;
     /**
      * Task Id
      */
@@ -104,16 +117,7 @@ export type ResearchTaskResponse = {
      * Updated At
      */
     updated_at: string;
-    /**
-     * Version
-     */
-    version: number;
 };
-
-/**
- * ResearchTaskStatus
- */
-export type ResearchTaskStatus = 'draft';
 
 /**
  * ValidationError
@@ -161,12 +165,6 @@ export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
 export type CreateResearchTaskData = {
     body: CreateResearchTaskRequest;
-    headers: {
-        /**
-         * Idempotency-Key
-         */
-        'Idempotency-Key': string;
-    };
     path?: never;
     query?: never;
     url: '/api/research-tasks';
@@ -174,13 +172,13 @@ export type CreateResearchTaskData = {
 
 export type CreateResearchTaskErrors = {
     /**
-     * Not Found
+     * Unprocessable Entity
      */
-    404: ErrorResponse;
+    422: ErrorResponse;
     /**
-     * Validation Error
+     * Internal Server Error
      */
-    422: HttpValidationError;
+    500: ErrorResponse;
 };
 
 export type CreateResearchTaskError = CreateResearchTaskErrors[keyof CreateResearchTaskErrors];
@@ -215,6 +213,10 @@ export type GetResearchTaskErrors = {
      * Validation Error
      */
     422: HttpValidationError;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetResearchTaskError = GetResearchTaskErrors[keyof GetResearchTaskErrors];

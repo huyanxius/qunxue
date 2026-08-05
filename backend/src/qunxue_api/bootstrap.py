@@ -14,6 +14,7 @@ from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.application import ResearchJourney, ResearchJourneyDependencies
 from qunxue_api.modules.research_intake import (
+    ResearchIntakeValidationError,
     ResearchTaskNotFound,
     ResearchTaskService,
 )
@@ -32,7 +33,7 @@ def create_app(
     app = FastAPI(
         title=resolved_settings.app_name,
         version="0.1.0",
-        description="群学致知前后端架构基线 API。",
+        description="SocioMatch API.",
     )
     app.state.settings = resolved_settings
     app.state.database = resolved_database
@@ -65,6 +66,40 @@ def create_app(
         )
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(ResearchIntakeValidationError)
+    async def handle_research_intake_validation_error(
+        _request: Request,
+        error: ResearchIntakeValidationError,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=error.code,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_internal_server_error(
+        _request: Request,
+        _error: Exception,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code="internal_server_error",
+                message="unexpected service failure",
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=body.model_dump(mode="json"),
         )
 
