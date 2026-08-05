@@ -160,32 +160,39 @@ def test_backend_env_file_is_independent_of_working_directory(
 
 
 def test_relative_database_override_is_independent_of_working_directory(
-    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     alembic_config: Config,
 ) -> None:
-    database_path = tmp_path / "relative-override.db"
-    relative_database_path = os.path.relpath(database_path, BACKEND_ROOT)
-    monkeypatch.setenv(
-        "QUNXUE_DATABASE_URL",
-        f"sqlite:///{relative_database_path}",
-    )
-    monkeypatch.chdir(BACKEND_ROOT.parent)
-    settings_from_repository_root = Settings()
-    command.upgrade(alembic_config, "head")
-
-    monkeypatch.chdir(BACKEND_ROOT)
-    settings_from_backend = Settings()
-
-    assert settings_from_repository_root.database_url == settings_from_backend.database_url
-    assert make_url(settings_from_backend.database_url).database == str(database_path)
-
-    database = Database(settings_from_backend.database_url)
+    relative_dir = BACKEND_ROOT / ".tmp-tests"
+    relative_dir.mkdir(exist_ok=True)
+    database_path = relative_dir / "relative-override.db"
     try:
-        assert database_path.is_file()
-        assert "research_tasks" in inspect(database.engine).get_table_names()
+        relative_database_path = os.path.relpath(database_path, BACKEND_ROOT)
+        monkeypatch.setenv(
+            "QUNXUE_DATABASE_URL",
+            f"sqlite:///{relative_database_path}",
+        )
+        monkeypatch.chdir(BACKEND_ROOT.parent)
+        settings_from_repository_root = Settings()
+        command.upgrade(alembic_config, "head")
+
+        monkeypatch.chdir(BACKEND_ROOT)
+        settings_from_backend = Settings()
+
+        assert settings_from_repository_root.database_url == settings_from_backend.database_url
+        assert make_url(settings_from_backend.database_url).database == str(database_path)
+
+        database = Database(settings_from_backend.database_url)
+        try:
+            assert database_path.is_file()
+            assert "research_tasks" in inspect(database.engine).get_table_names()
+        finally:
+            database.engine.dispose()
     finally:
-        database.engine.dispose()
+        if database_path.exists():
+            database_path.unlink()
+        if relative_dir.exists() and not any(relative_dir.iterdir()):
+            relative_dir.rmdir()
 
 
 def test_database_url_override_drives_application_and_alembic(

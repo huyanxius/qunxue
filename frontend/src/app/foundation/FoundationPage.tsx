@@ -1,41 +1,98 @@
+import { useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
 
-import { startResearchTask } from '../../modules/socio-match-workspace'
-import { copy } from './copy'
+import { submitResearchTask } from '../../modules/socio-match-workspace'
 import './foundation.css'
 import { useSystemHealth } from './useSystemHealth'
+
+interface RequestLikeError {
+  readonly message: string
+  readonly status?: number
+}
+
+function isRequestLikeError(error: unknown): error is RequestLikeError {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string',
+  )
+}
+
+function describeSubmitError(error: unknown): string {
+  if (isRequestLikeError(error)) {
+    if (!error.status || error.status >= 500) {
+      return 'The service could not save this task. Please retry.'
+    }
+    return error.message
+  }
+  return 'The service could not save this task. Please retry.'
+}
 
 export function FoundationPage() {
   const navigate = useNavigate()
   const health = useSystemHealth()
+  const [phenomenon, setPhenomenon] = useState('')
+  const [researchIntent, setResearchIntent] = useState('')
+  const [context, setContext] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
+
   const createTask = useMutation({
-    mutationFn: () => startResearchTask(crypto.randomUUID()),
+    mutationFn: () =>
+      submitResearchTask({
+        phenomenon,
+        researchIntent,
+        context,
+      }),
     onSuccess: (task) => navigate(`/research/${task.taskId}`),
+    onError: (error) => setFormError(describeSubmitError(error)),
   })
 
   const connectionLabel = health.isPending
-    ? '正在与应用层握手'
+    ? 'Checking API contract'
     : health.isError
-      ? '接口暂不可用'
-      : '接口已接通'
+      ? 'API currently unavailable'
+      : 'API connected'
+
+  function clearFormError() {
+    if (formError) {
+      setFormError(null)
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (phenomenon.trim() === '') {
+      setFormError('Please describe the phenomenon you want to study.')
+      return
+    }
+    setFormError(null)
+    createTask.mutate()
+  }
 
   return (
     <main className="page-shell">
       <header className="masthead">
-        <Link className="wordmark" to="/" aria-label="群学致知首页">
+        <Link className="wordmark" to="/" aria-label="SocioMatch home">
           <span className="wordmark-mark" aria-hidden="true">
-            群
+            SQ
           </span>
-          <span>群学致知</span>
+          <span>SocioMatch</span>
         </Link>
-        <p>FOUNDATION / 01</p>
+        <p>RESEARCH INTAKE</p>
       </header>
 
       <section className="opening">
-        <p className="eyebrow">{copy.eyebrow}</p>
-        <h1 className="display-title">{copy.title}</h1>
-        <p className="opening-lede">{copy.lede}</p>
+        <div>
+          <p className="eyebrow">Step 1 of the SocioMatch chain</p>
+          <h1 className="display-title">Record the phenomenon before formal matching begins.</h1>
+        </div>
+        <p className="opening-lede">
+          Start from a rough social observation. This step stores the original
+          user wording, creates a recoverable task, and leaves theory matching
+          for later stages.
+        </p>
       </section>
 
       <section className="connection" aria-live="polite">
@@ -49,51 +106,90 @@ export function FoundationPage() {
         {health.data ? (
           <dl>
             <div>
-              <dt>契约</dt>
+              <dt>Contract</dt>
               <dd>{health.data.contractVersion}</dd>
             </div>
             <div>
-              <dt>运行</dt>
+              <dt>Runtime</dt>
               <dd>{health.data.runtimeMode}</dd>
             </div>
             <div>
-              <dt>保存</dt>
+              <dt>Persistence</dt>
               <dd>{health.data.persistence}</dd>
             </div>
           </dl>
         ) : null}
         {health.isError ? (
-          <p className="connection-note">请确认 FastAPI 已在 8000 端口启动。</p>
+          <p className="connection-note">The form still keeps your text if the API request fails.</p>
         ) : null}
       </section>
 
-      <section className="action-line">
+      <section className="action-line action-line-form">
         <div>
-          <p className="section-index">01 / 研究任务</p>
-          <h2>先留下一个可以恢复的起点。</h2>
-          <p>{copy.actionNote}</p>
+          <p className="section-index">01 / Research intake</p>
+          <h2>Describe the social phenomenon in your own words.</h2>
+          <p>
+            The phenomenon field is required. Research intent and context stay
+            optional and are stored without extra judgment at this stage.
+          </p>
         </div>
-        <button
-          type="button"
-          disabled={!health.data || createTask.isPending}
-          onClick={() => createTask.mutate()}
-        >
-          {createTask.isPending ? '正在建立…' : '建立空白研究任务'}
-        </button>
-        {createTask.isError ? (
-          <p className="inline-error">任务没有建立成功，请重试。</p>
-        ) : null}
+        <form className="intake-form" onSubmit={handleSubmit}>
+          <label htmlFor="phenomenon">Phenomenon *</label>
+          <textarea
+            id="phenomenon"
+            name="phenomenon"
+            rows={7}
+            value={phenomenon}
+            onChange={(event) => {
+              clearFormError()
+              setPhenomenon(event.target.value)
+            }}
+          />
+
+          <label htmlFor="research-intent">Research intent</label>
+          <input
+            id="research-intent"
+            name="researchIntent"
+            type="text"
+            value={researchIntent}
+            onChange={(event) => {
+              clearFormError()
+              setResearchIntent(event.target.value)
+            }}
+          />
+
+          <label htmlFor="context">Context</label>
+          <textarea
+            id="context"
+            name="context"
+            rows={4}
+            value={context}
+            onChange={(event) => {
+              clearFormError()
+              setContext(event.target.value)
+            }}
+          />
+
+          <button type="submit" disabled={createTask.isPending}>
+            {createTask.isPending ? 'Saving task...' : 'Create research task'}
+          </button>
+          {formError ? (
+            <p className="inline-error" role="alert">
+              {formError}
+            </p>
+          ) : null}
+        </form>
       </section>
 
       <footer className="architecture-line">
         <span>React</span>
-        <i aria-hidden="true">→</i>
-        <span>业务 SDK</span>
-        <i aria-hidden="true">→</i>
+        <i aria-hidden="true">-&gt;</i>
+        <span>Generated SDK</span>
+        <i aria-hidden="true">-&gt;</i>
         <span>OpenAPI</span>
-        <i aria-hidden="true">→</i>
-        <span>Application</span>
-        <i aria-hidden="true">→</i>
+        <i aria-hidden="true">-&gt;</i>
+        <span>research_intake</span>
+        <i aria-hidden="true">-&gt;</i>
         <span>SQLite</span>
       </footer>
     </main>

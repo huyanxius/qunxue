@@ -9,12 +9,34 @@ export interface SocioMatchWorkspaceProps {
   readonly onNavigateHome: () => void
 }
 
+interface RequestLikeError {
+  readonly message: string
+  readonly status?: number
+}
+
+function isRequestLikeError(error: unknown): error is RequestLikeError {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string',
+  )
+}
+
+function optionalField(value: string | null): string {
+  return value ?? 'Not provided'
+}
+
 export function SocioMatchWorkspace({
   taskId,
   homeHref,
   onNavigateHome,
 }: SocioMatchWorkspaceProps) {
   const task = useResearchTask(taskId)
+  const requestError: RequestLikeError | null = isRequestLikeError(task.error)
+    ? task.error
+    : null
+  const isMissingTask = requestError?.status === 404
 
   function navigateHome(event: MouseEvent<HTMLAnchorElement>) {
     if (
@@ -34,68 +56,79 @@ export function SocioMatchWorkspace({
   return (
     <main className="page-shell task-page">
       <header className="masthead">
-        <a
-          className="wordmark"
-          href={homeHref}
-          onClick={navigateHome}
-        >
+        <a className="wordmark" href={homeHref} onClick={navigateHome}>
           <span className="wordmark-mark" aria-hidden="true">
-            群
+            SQ
           </span>
-          <span>群学致知</span>
+          <span>SocioMatch</span>
         </a>
-        <p>RESEARCH / DRAFT</p>
+        <p>RESEARCH TASK</p>
       </header>
 
       <section className="task-heading">
-        <p className="eyebrow">研究任务已经落盘</p>
-        <h1 className="display-title">起点保留下来了。</h1>
+        <p className="eyebrow">Restorable intake record</p>
+        <h1 className="display-title">Research phenomenon saved</h1>
         <p>
-          当前只确认恢复链路成立。现象输入、候选理论和研究框架将在各自契约冻结后进入。
+          This task keeps the original user-submitted observation intact so the
+          next matching step can only begin from a confirmed phenomenon.
         </p>
       </section>
 
-      {task.isPending ? <p className="loading-line">正在恢复任务…</p> : null}
-      {task.isError ? (
-        <section className="recovery-error">
-          <h2>没有找到这项研究任务。</h2>
-          <p>返回首页重新建立；系统不会根据文本猜测或替换任务 ID。</p>
+      {task.isPending ? <p className="loading-line">Restoring task...</p> : null}
+      {requestError ? (
+        <section className="recovery-error" role="alert">
+          <h2>
+            {isMissingTask
+              ? 'No research task exists for this task_id.'
+              : 'This research task could not be restored right now.'}
+          </h2>
+          <p>
+            {isMissingTask
+              ? requestError.message
+              : 'Please retry in a moment. Your saved task is not replaced by the interface.'}
+          </p>
         </section>
       ) : null}
       {task.data ? (
         <section className="task-record">
-          <div className="task-state">
-            <span>状态</span>
-            <strong>{task.data.status}</strong>
-          </div>
           <dl>
+            <div className="task-field task-field-wide">
+              <dt>Phenomenon</dt>
+              <dd>{task.data.phenomenon}</dd>
+            </div>
             <div>
-              <dt>稳定 ID</dt>
+              <dt>Research intent</dt>
+              <dd>{optionalField(task.data.researchIntent)}</dd>
+            </div>
+            <div>
+              <dt>Context</dt>
+              <dd>{optionalField(task.data.context)}</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd>{task.data.source}</dd>
+            </div>
+            <div>
+              <dt>Task ID</dt>
               <dd>{task.data.taskId}</dd>
             </div>
             <div>
-              <dt>入口</dt>
-              <dd>{task.data.entryType}</dd>
+              <dt>Created at</dt>
+              <dd>{task.data.createdAt}</dd>
             </div>
             <div>
-              <dt>版本</dt>
-              <dd>{task.data.version}</dd>
-            </div>
-            <div>
-              <dt>下一动作</dt>
-              <dd>{task.data.allowedActions.join(', ')}</dd>
+              <dt>Updated at</dt>
+              <dd>{task.data.updatedAt}</dd>
             </div>
           </dl>
-          <p className="task-note">刷新此页，任务仍由后端按 ID 恢复。</p>
+          <p className="task-note">
+            Refreshing this page restores the same task by its task_id in the URL.
+          </p>
         </section>
       ) : null}
 
-      <a
-        className="text-link"
-        href={homeHref}
-        onClick={navigateHome}
-      >
-        ← 返回工程起点
+      <a className="text-link" href={homeHref} onClick={navigateHome}>
+        Back to intake
       </a>
     </main>
   )

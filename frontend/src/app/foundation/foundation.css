@@ -75,7 +75,6 @@
 
 .connection-note,
 .inline-error {
-  grid-column: 2;
   margin: 0;
   color: var(--danger);
   font-size: 0.88rem;
@@ -85,7 +84,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 48px;
-  align-items: end;
+  align-items: start;
   padding: 72px 0 86px;
 }
 
@@ -105,8 +104,40 @@
   line-height: 1.75;
 }
 
-.action-line button {
+.action-line-form {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+}
+
+.intake-form {
+  display: grid;
+  gap: 12px;
+}
+
+.intake-form label {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.intake-form input,
+.intake-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 92%, white);
+  font: inherit;
+  line-height: 1.6;
+}
+
+.intake-form textarea {
+  resize: vertical;
+}
+
+.intake-form button {
   min-width: 196px;
+  margin-top: 10px;
   padding: 14px 18px;
   border: 1px solid var(--ink);
   border-radius: 2px;
@@ -116,12 +147,12 @@
   transition: transform 140ms ease, background 140ms ease;
 }
 
-.action-line button:hover:not(:disabled) {
+.intake-form button:hover:not(:disabled) {
   transform: translateY(-2px);
   background: var(--accent);
 }
 
-.action-line button:disabled {
+.intake-form button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -145,7 +176,8 @@
 @media (max-width: 760px) {
   .opening,
   .connection,
-  .action-line {
+  .action-line,
+  .action-line-form {
     grid-template-columns: 1fr;
   }
 
@@ -168,16 +200,11 @@
     gap: 14px;
   }
 
-  .connection-note,
-  .inline-error {
-    grid-column: 1;
-  }
-
   .action-line {
     gap: 32px;
   }
 
-  .action-line button {
+  .intake-form button {
     width: 100%;
   }
 

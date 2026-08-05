@@ -22,8 +22,8 @@ class PhenomenonCandidateBuilder(Protocol):
 
 @runtime_checkable
 class ResearchTaskRepository(Protocol):
-    """研究任务持久化端口；adapter 只能通过模块公共入口实现它。"""
+    """Persistence port for research intake tasks."""
 
     def get(self, task_id: UUID) -> ResearchTask | None: ...
 
-    def add_or_get_by_idempotency_key(self, task: ResearchTask) -> ResearchTask: ...
+    def add(self, task: ResearchTask) -> ResearchTask: ...

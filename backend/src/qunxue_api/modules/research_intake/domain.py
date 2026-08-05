@@ -4,21 +4,21 @@ from enum import StrEnum
 from uuid import UUID
 
 
-class EntryType(StrEnum):
-    DIRECT_INPUT = "direct_input"
+class PhenomenonSource(StrEnum):
+    USER_INPUT = "user_input"
 
 
-class ResearchTaskStatus(StrEnum):
-    DRAFT = "draft"
-
-
-class ResearchTaskAction(StrEnum):
-    SUBMIT_PHENOMENON = "submit_phenomenon"
+@dataclass(frozen=True, slots=True)
+class PhenomenonQuery:
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    source: PhenomenonSource = PhenomenonSource.USER_INPUT
 
 
 @dataclass(frozen=True, slots=True)
 class ConfirmedPhenomenonSnapshot:
-    """研究入口交给理论匹配的不可变交接物，不暴露入口模块的存储对象。"""
+    """Immutable handoff from intake into theory matching."""
 
     task_id: UUID
     phenomenon_query_id: UUID
@@ -26,11 +26,12 @@ class ConfirmedPhenomenonSnapshot:
     phenomenon: str
     research_intent: str | None
     context: str | None
+    source: PhenomenonSource = PhenomenonSource.USER_INPUT
 
 
 @dataclass(frozen=True, slots=True)
 class PhenomenonCandidateDraft:
-    """通用生成能力只能提出候选，不能产生用户确认状态。"""
+    """Generated capabilities may propose candidates, never user confirmation."""
 
     phenomenon: str
     research_intent: str | None
@@ -41,36 +42,39 @@ class PhenomenonCandidateDraft:
 @dataclass(frozen=True, slots=True)
 class ResearchTask:
     task_id: UUID
-    entry_type: EntryType
-    status: ResearchTaskStatus
-    version: int
-    idempotency_key: str
+    phenomenon_query: PhenomenonQuery
     created_at: datetime
     updated_at: datetime
 
     @property
-    def allowed_actions(self) -> tuple[ResearchTaskAction, ...]:
-        if self.status is ResearchTaskStatus.DRAFT:
-            return (ResearchTaskAction.SUBMIT_PHENOMENON,)
-        return ()
+    def phenomenon(self) -> str:
+        return self.phenomenon_query.phenomenon
+
+    @property
+    def research_intent(self) -> str | None:
+        return self.phenomenon_query.research_intent
+
+    @property
+    def context(self) -> str | None:
+        return self.phenomenon_query.context
+
+    @property
+    def source(self) -> PhenomenonSource:
+        return self.phenomenon_query.source
 
     @classmethod
     def create(
         cls,
         *,
         task_id: UUID,
-        entry_type: EntryType,
-        idempotency_key: str,
+        phenomenon_query: PhenomenonQuery,
         now: datetime,
     ) -> "ResearchTask":
         if now.tzinfo is None:
             now = now.replace(tzinfo=UTC)
         return cls(
             task_id=task_id,
-            entry_type=entry_type,
-            status=ResearchTaskStatus.DRAFT,
-            version=1,
-            idempotency_key=idempotency_key,
+            phenomenon_query=phenomenon_query,
             created_at=now,
             updated_at=now,
         )

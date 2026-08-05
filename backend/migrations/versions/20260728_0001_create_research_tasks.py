@@ -20,14 +20,13 @@ def upgrade() -> None:
     op.create_table(
         "research_tasks",
         sa.Column("task_id", sa.String(length=36), nullable=False),
-        sa.Column("entry_type", sa.String(length=32), nullable=False),
-        sa.Column("status", sa.String(length=32), nullable=False),
-        sa.Column("version", sa.Integer(), nullable=False),
-        sa.Column("idempotency_key", sa.String(length=128), nullable=False),
+        sa.Column("phenomenon", sa.String(), nullable=False),
+        sa.Column("research_intent", sa.String(), nullable=True),
+        sa.Column("context", sa.String(), nullable=True),
+        sa.Column("source", sa.String(length=32), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("task_id"),
-        sa.UniqueConstraint("idempotency_key"),
     )
 
 
