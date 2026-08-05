@@ -30,6 +30,22 @@
   color: var(--accent);
   text-underline-offset: 4px;
 }
+.knowledge-explorer__notice {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.knowledge-explorer__notice strong {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
 .knowledge-explorer__search {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
@@ -146,6 +162,7 @@
   .knowledge-explorer__columns { display: block; }
   .knowledge-explorer__search { grid-template-columns: 1fr auto; }
   .knowledge-explorer__search label { grid-column: 1 / -1; }
+  .knowledge-explorer__notice { align-items: flex-start; flex-direction: column; }
   .knowledge-explorer__detail {
     margin-top: 36px;
     padding: 28px 0 0;

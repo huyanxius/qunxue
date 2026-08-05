@@ -94,5 +94,7 @@ export interface KnowledgeExplorerDataSource {
 export interface KnowledgeExplorerProps {
   dataSource: KnowledgeExplorerDataSource
   initialKnowledgeId?: string
-  returnTo?: string
+  dataNotice?: string
+  homeHref?: string
+  onNavigateHome?: () => void
 }

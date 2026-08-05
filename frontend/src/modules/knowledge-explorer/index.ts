@@ -1,4 +1,5 @@
 export { KnowledgeExplorer } from './KnowledgeExplorer'
+export { demoKnowledgeDataSource } from './demoKnowledgeDataSource'
 export type {
   KnowledgeExplorerDataSource,
   KnowledgeExplorerDetail,

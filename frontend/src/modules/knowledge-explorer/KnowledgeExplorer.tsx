@@ -1,4 +1,10 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import {
+  type FormEvent,
+  type MouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import './KnowledgeExplorer.css'
 import type {
@@ -17,7 +23,9 @@ function errorMessage(error: unknown) {
 export function KnowledgeExplorer({
   dataSource,
   initialKnowledgeId,
-  returnTo,
+  dataNotice,
+  homeHref,
+  onNavigateHome,
 }: KnowledgeExplorerProps) {
   const [query, setQuery] = useState('')
   const [activeQuery, setActiveQuery] = useState('')
@@ -204,8 +212,26 @@ export function KnowledgeExplorer({
             这里只呈现发布数据中的来源、审核状态与显式关系，不从文本相似度推断学术关系。
           </p>
         </div>
-        {returnTo ? <a href={returnTo}>返回研究任务</a> : null}
+        {homeHref ? (
+          <a
+            href={homeHref}
+            onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+              if (!onNavigateHome) return
+              event.preventDefault()
+              onNavigateHome()
+            }}
+          >
+            返回首页
+          </a>
+        ) : null}
       </header>
+
+      {dataNotice ? (
+        <aside className="knowledge-explorer__notice" role="note">
+          <strong>演示数据</strong>
+          <span>{dataNotice}</span>
+        </aside>
+      ) : null}
 
       <form
         className="knowledge-explorer__search"

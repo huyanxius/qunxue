@@ -135,4 +135,40 @@ describe('KnowledgeExplorer', () => {
       })
     })
   })
+
+  it('shows loading and empty-result states', async () => {
+    let resolveRelease: ((value: KnowledgeExplorerRelease) => void) | undefined
+    const source = dataSource({ ...resultPage, entries: [] })
+    source.currentRelease = vi.fn(
+      () =>
+        new Promise<KnowledgeExplorerRelease>((resolve) => {
+          resolveRelease = resolve
+        }),
+    )
+
+    render(<KnowledgeExplorer dataSource={source} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('正在读取当前发布')
+    resolveRelease?.(release)
+
+    expect(
+      await screen.findByText('当前条件下没有可浏览条目。'),
+    ).toBeVisible()
+  })
+
+  it('shows data-source errors without blanking the page', async () => {
+    const source = dataSource()
+    source.currentRelease = vi.fn(async () => {
+      throw new Error('演示数据读取失败')
+    })
+
+    render(<KnowledgeExplorer dataSource={source} />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '演示数据读取失败',
+    )
+    expect(
+      screen.getByRole('heading', { name: '可视化知识库' }),
+    ).toBeVisible()
+  })
 })
