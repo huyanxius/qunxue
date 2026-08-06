@@ -41,5 +41,8 @@ describe('FoundationPage', () => {
     expect(await screen.findByText('接口已接通')).toBeInTheDocument()
     expect(screen.getByText('2026-07-foundation')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '建立空白研究任务' })).toBeEnabled()
+    expect(
+      screen.getByRole('link', { name: '进入可视化知识库' }),
+    ).toHaveAttribute('href', '/knowledge')
   })
 })

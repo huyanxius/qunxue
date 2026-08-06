@@ -74,6 +74,7 @@ export function FoundationPage() {
           <p>{copy.actionNote}</p>
         </div>
         <button
+          className="action-line__control"
           type="button"
           disabled={!health.data || createTask.isPending}
           onClick={() => createTask.mutate()}
@@ -83,6 +84,19 @@ export function FoundationPage() {
         {createTask.isError ? (
           <p className="inline-error">任务没有建立成功，请重试。</p>
         ) : null}
+      </section>
+
+      <section className="action-line action-line--knowledge">
+        <div>
+          <p className="section-index">02 / 知识浏览</p>
+          <h2>查看知识条目如何连接来源、审核与关系。</h2>
+          <p>
+            当前入口使用明确标识的演示数据，用于验证知识浏览的信息结构和交互状态。
+          </p>
+        </div>
+        <Link className="action-line__control" to="/knowledge">
+          进入可视化知识库
+        </Link>
       </section>
 
       <footer className="architecture-line">

@@ -106,7 +106,7 @@ export function KnowledgeEntryDetail({
       </section>
 
       <section>
-        <h3>已审核显式关系</h3>
+        <h3>显式关系</h3>
         {detail.relations.length > 0 ? (
           <ul className="knowledge-explorer__relation-list">
             {detail.relations.map((relation) => (
