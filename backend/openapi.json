@@ -1,6 +1,723 @@
 {
   "components": {
     "schemas": {
+      "AcknowledgePartialMatchRequest": {
+        "properties": {
+          "acknowledged_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Acknowledged Candidate Ids",
+            "type": "array"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "acknowledged_candidate_ids",
+          "failed_candidate_ids",
+          "reason"
+        ],
+        "title": "AcknowledgePartialMatchRequest",
+        "type": "object"
+      },
+      "AuditFindingResponse": {
+        "properties": {
+          "blocking": {
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "finding_id": {
+            "format": "uuid",
+            "title": "Finding Id",
+            "type": "string"
+          },
+          "finding_type": {
+            "$ref": "#/components/schemas/AuditFindingType"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "recommendation": {
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AuditFindingSeverity"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id",
+          "finding_type",
+          "severity",
+          "summary",
+          "reason",
+          "impact",
+          "recommendation",
+          "blocking"
+        ],
+        "title": "AuditFindingResponse",
+        "type": "object"
+      },
+      "AuditFindingSeverity": {
+        "enum": [
+          "info",
+          "warning",
+          "blocking"
+        ],
+        "title": "AuditFindingSeverity",
+        "type": "string"
+      },
+      "AuditFindingType": {
+        "enum": [
+          "concept_alignment",
+          "evidence",
+          "inference",
+          "method",
+          "ethics",
+          "scope"
+        ],
+        "title": "AuditFindingType",
+        "type": "string"
+      },
+      "AuditOverallStatus": {
+        "enum": [
+          "pass",
+          "revise",
+          "insufficient"
+        ],
+        "title": "AuditOverallStatus",
+        "type": "string"
+      },
+      "AuditResolutionAction": {
+        "enum": [
+          "handled",
+          "overridden"
+        ],
+        "title": "AuditResolutionAction",
+        "type": "string"
+      },
+      "AuditResolutionInput": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/AuditResolutionAction"
+          },
+          "finding_id": {
+            "format": "uuid",
+            "title": "Finding Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id",
+          "action",
+          "reason"
+        ],
+        "title": "AuditResolutionInput",
+        "type": "object"
+      },
+      "AuditResolutionSetResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "resolution_set_id": {
+            "format": "uuid",
+            "title": "Resolution Set Id",
+            "type": "string"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/AuditResolutionInput"
+            },
+            "title": "Resolutions",
+            "type": "array"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "unresolved_blocking": {
+            "title": "Unresolved Blocking",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resolution_set_id",
+          "framework_id",
+          "revision_id",
+          "version",
+          "allowed_actions",
+          "knowledge_release_id",
+          "resolutions",
+          "unresolved_blocking"
+        ],
+        "title": "AuditResolutionSetResponse",
+        "type": "object"
+      },
+      "BuiltInCaseContentStatus": {
+        "enum": [
+          "reviewed",
+          "demonstration"
+        ],
+        "title": "BuiltInCaseContentStatus",
+        "type": "string"
+      },
+      "BuiltInCasePageResponse": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/BuiltInCaseResponse"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "cases",
+          "stable_order",
+          "next_cursor"
+        ],
+        "title": "BuiltInCasePageResponse",
+        "type": "object"
+      },
+      "BuiltInCaseResponse": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "content_status": {
+            "$ref": "#/components/schemas/BuiltInCaseContentStatus"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "title",
+          "summary",
+          "phenomenon",
+          "research_intent",
+          "context",
+          "content_status"
+        ],
+        "title": "BuiltInCaseResponse",
+        "type": "object"
+      },
+      "CandidateContentStatus": {
+        "enum": [
+          "reviewed",
+          "model_generated",
+          "external_unreviewed",
+          "user_supplied"
+        ],
+        "title": "CandidateContentStatus",
+        "type": "string"
+      },
+      "CandidateJudgementRunStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "timed_out",
+          "insufficient_sources"
+        ],
+        "title": "CandidateJudgementRunStatus",
+        "type": "string"
+      },
+      "CandidateOrigin": {
+        "enum": [
+          "reviewed_knowledge",
+          "model_exploration",
+          "external_unreviewed",
+          "user_supplied"
+        ],
+        "title": "CandidateOrigin",
+        "type": "string"
+      },
+      "ConceptMappingContract": {
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "empirical_indicators": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Empirical Indicators",
+            "type": "array"
+          },
+          "meaning_in_study": {
+            "title": "Meaning In Study",
+            "type": "string"
+          },
+          "theory_concept": {
+            "title": "Theory Concept",
+            "type": "string"
+          },
+          "unresolved_questions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "theory_concept",
+          "meaning_in_study",
+          "empirical_indicators",
+          "unresolved_questions"
+        ],
+        "title": "ConceptMappingContract",
+        "type": "object"
+      },
+      "ConfirmFrameworkRequest": {
+        "properties": {
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "expected_revision_id": {
+            "format": "uuid",
+            "title": "Expected Revision Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "resolution_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Set Id"
+          }
+        },
+        "required": [
+          "expected_revision_id",
+          "expected_version",
+          "audit_id"
+        ],
+        "title": "ConfirmFrameworkRequest",
+        "type": "object"
+      },
+      "ConfirmPhenomenonCandidateRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ConfirmPhenomenonCandidateRequest",
+        "type": "object"
+      },
+      "ConfirmTheoryPlanRequest": {
+        "properties": {
+          "expected_decision_set_version": {
+            "minimum": 1.0,
+            "title": "Expected Decision Set Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_decision_set_version"
+        ],
+        "title": "ConfirmTheoryPlanRequest",
+        "type": "object"
+      },
+      "ConfirmedFrameworkResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "audit": {
+            "$ref": "#/components/schemas/FrameworkAuditResponse"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/FrameworkDraftContract"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/AuditResolutionInput"
+            },
+            "title": "Resolutions",
+            "type": "array"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "confirmed",
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "framework_id",
+          "task_id",
+          "revision_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "knowledge_release_id",
+          "draft",
+          "audit",
+          "resolutions",
+          "confirmed_at",
+          "contract_version"
+        ],
+        "title": "ConfirmedFrameworkResponse",
+        "type": "object"
+      },
+      "ConfirmedTheoryPlanResponse": {
+        "properties": {
+          "adopted_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Adopted Candidate Ids",
+            "type": "array"
+          },
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryPlanAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "decision_set_id": {
+            "format": "uuid",
+            "title": "Decision Set Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "phenomenon_query_id": {
+            "format": "uuid",
+            "title": "Phenomenon Query Id",
+            "type": "string"
+          },
+          "phenomenon_version": {
+            "title": "Phenomenon Version",
+            "type": "integer"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "theory_plan_id",
+          "task_id",
+          "match_run_id",
+          "decision_set_id",
+          "version",
+          "allowed_actions",
+          "phenomenon_query_id",
+          "phenomenon_version",
+          "knowledge_release_id",
+          "adopted_candidate_ids",
+          "confirmed_at"
+        ],
+        "title": "ConfirmedTheoryPlanResponse",
+        "type": "object"
+      },
+      "CreateFrameworkRequest": {
+        "properties": {
+          "analysis_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Unit"
+          },
+          "confirmed_research_question": {
+            "title": "Confirmed Research Question",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "expected_task_version": {
+            "minimum": 1.0,
+            "title": "Expected Task Version",
+            "type": "integer"
+          },
+          "method_intent": {
+            "$ref": "#/components/schemas/MethodIntentContract"
+          },
+          "original_research_question": {
+            "title": "Original Research Question",
+            "type": "string"
+          },
+          "question_adjustment_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Adjustment Reason"
+          },
+          "research_object": {
+            "title": "Research Object",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "theory_plan_version": {
+            "minimum": 1.0,
+            "title": "Theory Plan Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_task_version",
+          "theory_plan_id",
+          "theory_plan_version",
+          "original_research_question",
+          "confirmed_research_question",
+          "research_object",
+          "method_intent"
+        ],
+        "title": "CreateFrameworkRequest",
+        "type": "object"
+      },
+      "CreateMatchRunRequest": {
+        "properties": {
+          "expected_task_version": {
+            "minimum": 1.0,
+            "title": "Expected Task Version",
+            "type": "integer"
+          },
+          "knowledge_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
+          },
+          "phenomenon_query_id": {
+            "format": "uuid",
+            "title": "Phenomenon Query Id",
+            "type": "string"
+          },
+          "phenomenon_version": {
+            "minimum": 1.0,
+            "title": "Phenomenon Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_task_version",
+          "phenomenon_query_id",
+          "phenomenon_version"
+        ],
+        "title": "CreateMatchRunRequest",
+        "type": "object"
+      },
       "CreateResearchTaskRequest": {
         "properties": {
           "entry_type": {
@@ -11,6 +728,230 @@
         "title": "CreateResearchTaskRequest",
         "type": "object"
       },
+      "CreateTheoryDecisionsRequest": {
+        "properties": {
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionInput"
+            },
+            "minItems": 1,
+            "title": "Decisions",
+            "type": "array"
+          },
+          "expected_match_run_version": {
+            "minimum": 1.0,
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_match_run_version",
+          "completion_basis",
+          "decisions",
+          "use_assignments",
+          "relations"
+        ],
+        "title": "CreateTheoryDecisionsRequest",
+        "type": "object"
+      },
+      "DeidentifiedMaterialInput": {
+        "properties": {
+          "deidentified_text": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Deidentified Text",
+            "type": "string"
+          },
+          "material_ref_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Material Ref Id",
+            "type": "string"
+          },
+          "media_type": {
+            "enum": [
+              "text/plain",
+              "text/markdown"
+            ],
+            "title": "Media Type",
+            "type": "string"
+          },
+          "source_description": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Description"
+          }
+        },
+        "required": [
+          "material_ref_id",
+          "media_type",
+          "deidentified_text"
+        ],
+        "title": "DeidentifiedMaterialInput",
+        "type": "object"
+      },
+      "DeleteResearchTaskResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTaskAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "deleted": {
+            "const": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "version",
+          "allowed_actions",
+          "deleted"
+        ],
+        "title": "DeleteResearchTaskResponse",
+        "type": "object"
+      },
+      "DirectInputRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "phenomenon": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          }
+        },
+        "required": [
+          "phenomenon"
+        ],
+        "title": "DirectInputRequest",
+        "type": "object"
+      },
+      "EntryInputAction": {
+        "enum": [
+          "extract_phenomenon_candidates"
+        ],
+        "title": "EntryInputAction",
+        "type": "string"
+      },
+      "EntryInputResponse": {
+        "properties": {
+          "accepted_at": {
+            "format": "date-time",
+            "title": "Accepted At",
+            "type": "string"
+          },
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/EntryInputAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "entry_type": {
+            "$ref": "#/components/schemas/EntryInputType"
+          },
+          "input_id": {
+            "format": "uuid",
+            "title": "Input Id",
+            "type": "string"
+          },
+          "source_ref_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ref Ids",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "input_id",
+          "task_id",
+          "entry_type",
+          "version",
+          "allowed_actions",
+          "source_ref_ids",
+          "accepted_at"
+        ],
+        "title": "EntryInputResponse",
+        "type": "object"
+      },
+      "EntryInputType": {
+        "enum": [
+          "direct_input",
+          "material_input"
+        ],
+        "title": "EntryInputType",
+        "type": "string"
+      },
       "EntryType": {
         "enum": [
           "direct_input"
@@ -18,31 +959,47 @@
         "title": "EntryType",
         "type": "string"
       },
+      "ErrorCode": {
+        "enum": [
+          "unauthenticated",
+          "session_expired",
+          "not_found",
+          "method_not_allowed",
+          "research_task_not_found",
+          "validation_error",
+          "phenomenon_unconfirmed",
+          "no_adopted_theory",
+          "candidate_ineligible",
+          "external_candidate_adoption_blocked",
+          "model_timeout",
+          "no_reliable_candidate",
+          "insufficient_sources",
+          "stale_framework_revision",
+          "unresolved_blocking_audit",
+          "not_implemented",
+          "internal_server_error"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
       "ErrorDetail": {
         "properties": {
           "code": {
-            "title": "Code",
-            "type": "string"
+            "$ref": "#/components/schemas/ErrorCode"
           },
           "message": {
             "title": "Message",
             "type": "string"
           },
           "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
+            "title": "Trace Id",
+            "type": "string"
           }
         },
         "required": [
           "code",
-          "message"
+          "message",
+          "trace_id"
         ],
         "title": "ErrorDetail",
         "type": "object"
@@ -59,24 +1016,628 @@
         "title": "ErrorResponse",
         "type": "object"
       },
-      "HTTPValidationError": {
+      "EvidenceReferenceResponse": {
         "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
+          "claim": {
+            "title": "Claim",
+            "type": "string"
+          },
+          "evidence_ref_id": {
+            "title": "Evidence Ref Id",
+            "type": "string"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "use_boundary": {
+            "title": "Use Boundary",
+            "type": "string"
+          },
+          "verification_status": {
+            "$ref": "#/components/schemas/SourceVerificationStatus"
           }
         },
-        "title": "HTTPValidationError",
+        "required": [
+          "evidence_ref_id",
+          "claim",
+          "source_id",
+          "verification_status",
+          "use_boundary"
+        ],
+        "title": "EvidenceReferenceResponse",
         "type": "object"
       },
-      "HealthResponse": {
+      "ExtractPhenomenonCandidatesRequest": {
         "properties": {
+          "expected_task_version": {
+            "minimum": 1.0,
+            "title": "Expected Task Version",
+            "type": "integer"
+          },
+          "requested_count": {
+            "default": 4,
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "Requested Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_task_version"
+        ],
+        "title": "ExtractPhenomenonCandidatesRequest",
+        "type": "object"
+      },
+      "FormalFrameworkExportResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
           "contract_version": {
             "title": "Contract Version",
             "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "framework_status": {
+            "const": "confirmed",
+            "title": "Framework Status",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "media_type": {
+            "const": "text/markdown",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "framework_id",
+          "task_id",
+          "revision_id",
+          "version",
+          "allowed_actions",
+          "framework_status",
+          "knowledge_release_id",
+          "filename",
+          "media_type",
+          "markdown",
+          "confirmed_at",
+          "contract_version"
+        ],
+        "title": "FormalFrameworkExportResponse",
+        "type": "object"
+      },
+      "FrameworkAction": {
+        "enum": [
+          "update",
+          "start_review",
+          "submit_audit_resolutions",
+          "confirm",
+          "export"
+        ],
+        "title": "FrameworkAction",
+        "type": "string"
+      },
+      "FrameworkAuditResponse": {
+        "properties": {
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/AuditFindingResponse"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "framework_version": {
+            "title": "Framework Version",
+            "type": "integer"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/AuditOverallStatus"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "unresolved_blocking": {
+            "title": "Unresolved Blocking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "audit_id",
+          "framework_id",
+          "revision_id",
+          "framework_version",
+          "overall_status",
+          "findings",
+          "unresolved_blocking",
+          "contract_version"
+        ],
+        "title": "FrameworkAuditResponse",
+        "type": "object"
+      },
+      "FrameworkDraftContract": {
+        "properties": {
+          "alternative_explanations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alternative Explanations",
+            "type": "array"
+          },
+          "concept_mappings": {
+            "items": {
+              "$ref": "#/components/schemas/ConceptMappingContract"
+            },
+            "title": "Concept Mappings",
+            "type": "array"
+          },
+          "ethical_boundaries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ethical Boundaries",
+            "type": "array"
+          },
+          "evidence_requirements": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkEvidenceRequirementContract"
+            },
+            "title": "Evidence Requirements",
+            "type": "array"
+          },
+          "inference_links": {
+            "items": {
+              "$ref": "#/components/schemas/InferenceLinkContract"
+            },
+            "title": "Inference Links",
+            "type": "array"
+          },
+          "method_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MethodPlanContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Actions",
+            "type": "array"
+          },
+          "scope_and_limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope And Limitations",
+            "type": "array"
+          },
+          "unresolved_items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concept_mappings",
+          "evidence_requirements",
+          "inference_links",
+          "alternative_explanations",
+          "method_plan",
+          "scope_and_limitations",
+          "ethical_boundaries",
+          "unresolved_items",
+          "next_actions"
+        ],
+        "title": "FrameworkDraftContract",
+        "type": "object"
+      },
+      "FrameworkEvidenceRequirementContract": {
+        "properties": {
+          "current_gap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Gap"
+          },
+          "distinguishing_signal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distinguishing Signal"
+          },
+          "excluding_signal": {
+            "title": "Excluding Signal",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "related_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Related Candidate Ids",
+            "type": "array"
+          },
+          "required_material": {
+            "title": "Required Material",
+            "type": "string"
+          },
+          "requirement_id": {
+            "title": "Requirement Id",
+            "type": "string"
+          },
+          "supporting_signal": {
+            "title": "Supporting Signal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requirement_id",
+          "related_candidate_ids",
+          "purpose",
+          "required_material",
+          "supporting_signal",
+          "excluding_signal",
+          "distinguishing_signal",
+          "current_gap"
+        ],
+        "title": "FrameworkEvidenceRequirementContract",
+        "type": "object"
+      },
+      "FrameworkInputResponse": {
+        "properties": {
+          "analysis_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Unit"
+          },
+          "confirmed_research_question": {
+            "title": "Confirmed Research Question",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "method_intent": {
+            "$ref": "#/components/schemas/MethodIntentContract"
+          },
+          "original_research_question": {
+            "title": "Original Research Question",
+            "type": "string"
+          },
+          "question_adjustment_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Adjustment Reason"
+          },
+          "research_object": {
+            "title": "Research Object",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "theory_plan_version": {
+            "title": "Theory Plan Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "theory_plan_id",
+          "theory_plan_version",
+          "original_research_question",
+          "confirmed_research_question",
+          "question_adjustment_reason",
+          "research_object",
+          "analysis_unit",
+          "context",
+          "method_intent"
+        ],
+        "title": "FrameworkInputResponse",
+        "type": "object"
+      },
+      "FrameworkResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/FrameworkDraftContract"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/FrameworkInputResponse"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FrameworkStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "unresolved_blocking_audit": {
+            "title": "Unresolved Blocking Audit",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "framework_id",
+          "task_id",
+          "revision_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "knowledge_release_id",
+          "input",
+          "draft",
+          "unresolved_blocking_audit",
+          "model"
+        ],
+        "title": "FrameworkResponse",
+        "type": "object"
+      },
+      "FrameworkReviewAction": {
+        "enum": [
+          "refresh",
+          "submit_audit_resolutions",
+          "revise_framework",
+          "confirm_framework"
+        ],
+        "title": "FrameworkReviewAction",
+        "type": "string"
+      },
+      "FrameworkReviewResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkReviewAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "audit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FrameworkAuditResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelMetadata"
+          },
+          "review_run_id": {
+            "format": "uuid",
+            "title": "Review Run Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FrameworkReviewRunStatus"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "review_run_id",
+          "framework_id",
+          "revision_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "knowledge_release_id",
+          "audit",
+          "model",
+          "contract_version"
+        ],
+        "title": "FrameworkReviewResponse",
+        "type": "object"
+      },
+      "FrameworkReviewRunStatus": {
+        "enum": [
+          "requested",
+          "succeeded",
+          "failed"
+        ],
+        "title": "FrameworkReviewRunStatus",
+        "type": "string"
+      },
+      "FrameworkStatus": {
+        "enum": [
+          "draft",
+          "under_review",
+          "revision_required",
+          "ready_to_confirm",
+          "confirmed"
+        ],
+        "title": "FrameworkStatus",
+        "type": "string"
+      },
+      "HealthResponse": {
+        "properties": {
+          "capability": {
+            "anyOf": [
+              {
+                "const": "unavailable",
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCapability"
+              }
+            ],
+            "title": "Capability"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
           },
           "persistence": {
             "const": "sqlite",
@@ -103,9 +1664,1152 @@
           "service",
           "runtime_mode",
           "persistence",
-          "contract_version"
+          "contract_version",
+          "capability",
+          "knowledge_release_id"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "InferenceLinkContract": {
+        "properties": {
+          "from_ref": {
+            "title": "From Ref",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "to_ref": {
+            "title": "To Ref",
+            "type": "string"
+          },
+          "unresolved": {
+            "title": "Unresolved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "from_ref",
+          "to_ref",
+          "relation",
+          "rationale",
+          "unresolved"
+        ],
+        "title": "InferenceLinkContract",
+        "type": "object"
+      },
+      "KnowledgeEntryDetailResponse": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "content_version": {
+            "title": "Content Version",
+            "type": "integer"
+          },
+          "dimension": {
+            "title": "Dimension",
+            "type": "string"
+          },
+          "eligibility": {
+            "$ref": "#/components/schemas/KnowledgeUseEligibilityResponse"
+          },
+          "knowledge_id": {
+            "title": "Knowledge Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeRelationResponse"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceRecordResponse"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "theory_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TheoryProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "knowledge_id",
+          "content_version",
+          "title",
+          "category",
+          "dimension",
+          "review_status",
+          "eligibility",
+          "aliases",
+          "content",
+          "sources",
+          "relations",
+          "theory_profile"
+        ],
+        "title": "KnowledgeEntryDetailResponse",
+        "type": "object"
+      },
+      "KnowledgeEntryPageResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeEntrySummaryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "entries",
+          "stable_order",
+          "next_cursor"
+        ],
+        "title": "KnowledgeEntryPageResponse",
+        "type": "object"
+      },
+      "KnowledgeEntrySummaryResponse": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "content_version": {
+            "title": "Content Version",
+            "type": "integer"
+          },
+          "dimension": {
+            "title": "Dimension",
+            "type": "string"
+          },
+          "eligibility": {
+            "$ref": "#/components/schemas/KnowledgeUseEligibilityResponse"
+          },
+          "knowledge_id": {
+            "title": "Knowledge Id",
+            "type": "string"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "knowledge_id",
+          "content_version",
+          "title",
+          "category",
+          "dimension",
+          "review_status",
+          "eligibility"
+        ],
+        "title": "KnowledgeEntrySummaryResponse",
+        "type": "object"
+      },
+      "KnowledgeRelationResponse": {
+        "properties": {
+          "content_version": {
+            "title": "Content Version",
+            "type": "integer"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "evidence_grade": {
+            "title": "Evidence Grade",
+            "type": "string"
+          },
+          "evidence_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Source Ids",
+            "type": "array"
+          },
+          "relation_id": {
+            "title": "Relation Id",
+            "type": "string"
+          },
+          "relation_type": {
+            "title": "Relation Type",
+            "type": "string"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+          },
+          "source_knowledge_id": {
+            "title": "Source Knowledge Id",
+            "type": "string"
+          },
+          "target_knowledge_id": {
+            "title": "Target Knowledge Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "relation_id",
+          "source_knowledge_id",
+          "target_knowledge_id",
+          "relation_type",
+          "direction",
+          "description",
+          "evidence_source_ids",
+          "evidence_grade",
+          "content_version",
+          "review_status"
+        ],
+        "title": "KnowledgeRelationResponse",
+        "type": "object"
+      },
+      "KnowledgeReleaseLevel": {
+        "enum": [
+          "working",
+          "preview",
+          "final"
+        ],
+        "title": "KnowledgeReleaseLevel",
+        "type": "string"
+      },
+      "KnowledgeReleaseResponse": {
+        "properties": {
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/KnowledgeReleaseLevel"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "level",
+          "content_hash"
+        ],
+        "title": "KnowledgeReleaseResponse",
+        "type": "object"
+      },
+      "KnowledgeReviewStatus": {
+        "enum": [
+          "draft",
+          "pending",
+          "reviewed",
+          "retired"
+        ],
+        "title": "KnowledgeReviewStatus",
+        "type": "string"
+      },
+      "KnowledgeUseEligibilityResponse": {
+        "properties": {
+          "browse_eligible": {
+            "title": "Browse Eligible",
+            "type": "boolean"
+          },
+          "match_eligible": {
+            "title": "Match Eligible",
+            "type": "boolean"
+          },
+          "rag_eligible": {
+            "title": "Rag Eligible",
+            "type": "boolean"
+          },
+          "review_record_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Review Record Ids",
+            "type": "array"
+          },
+          "training_candidate_eligible": {
+            "title": "Training Candidate Eligible",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "browse_eligible",
+          "rag_eligible",
+          "training_candidate_eligible",
+          "match_eligible",
+          "review_record_ids"
+        ],
+        "title": "KnowledgeUseEligibilityResponse",
+        "type": "object"
+      },
+      "LoginSessionRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginSessionRequest",
+        "type": "object"
+      },
+      "LogoutSessionResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "version",
+          "allowed_actions"
+        ],
+        "title": "LogoutSessionResponse",
+        "type": "object"
+      },
+      "MarkdownExportResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTaskAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "media_type": {
+            "const": "text/markdown",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "version",
+          "allowed_actions",
+          "filename",
+          "media_type",
+          "markdown",
+          "contract_version"
+        ],
+        "title": "MarkdownExportResponse",
+        "type": "object"
+      },
+      "MatchCandidatePageResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/MatchRunAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryCandidateResponse"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match_run_id",
+          "version",
+          "allowed_actions",
+          "knowledge_release_id",
+          "candidates",
+          "stable_order",
+          "next_cursor"
+        ],
+        "title": "MatchCandidatePageResponse",
+        "type": "object"
+      },
+      "MatchCompletionBasis": {
+        "enum": [
+          "complete",
+          "partial",
+          "partial_with_user_ack"
+        ],
+        "title": "MatchCompletionBasis",
+        "type": "string"
+      },
+      "MatchRunAction": {
+        "enum": [
+          "retry_candidate",
+          "acknowledge_partial_completion",
+          "create_decision",
+          "refresh"
+        ],
+        "title": "MatchRunAction",
+        "type": "string"
+      },
+      "MatchRunResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/MatchRunAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "candidate_page": {
+            "$ref": "#/components/schemas/MatchCandidatePageResponse"
+          },
+          "completed_candidate_count": {
+            "title": "Completed Candidate Count",
+            "type": "integer"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "failed_candidate_count": {
+            "title": "Failed Candidate Count",
+            "type": "integer"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelMetadata"
+          },
+          "partial_completion_acknowledged": {
+            "title": "Partial Completion Acknowledged",
+            "type": "boolean"
+          },
+          "phenomenon_query_id": {
+            "format": "uuid",
+            "title": "Phenomenon Query Id",
+            "type": "string"
+          },
+          "phenomenon_version": {
+            "title": "Phenomenon Version",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MatchRunStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "total_candidate_count": {
+            "title": "Total Candidate Count",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match_run_id",
+          "task_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "completion_basis",
+          "partial_completion_acknowledged",
+          "total_candidate_count",
+          "completed_candidate_count",
+          "failed_candidate_count",
+          "phenomenon_query_id",
+          "phenomenon_version",
+          "knowledge_release_id",
+          "candidate_page",
+          "model"
+        ],
+        "title": "MatchRunResponse",
+        "type": "object"
+      },
+      "MatchRunStatus": {
+        "enum": [
+          "generating",
+          "awaiting_decision",
+          "partial_failure",
+          "no_reliable_candidate",
+          "completed",
+          "failed"
+        ],
+        "title": "MatchRunStatus",
+        "type": "string"
+      },
+      "MaterialInputRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "deidentification_acknowledged": {
+            "const": true,
+            "title": "Deidentification Acknowledged",
+            "type": "boolean"
+          },
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/DeidentifiedMaterialInput"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Materials",
+            "type": "array"
+          },
+          "processing_authority_acknowledged": {
+            "const": true,
+            "title": "Processing Authority Acknowledged",
+            "type": "boolean"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "retention_policy_acknowledged": {
+            "const": "no_raw_material_persistence",
+            "title": "Retention Policy Acknowledged",
+            "type": "string"
+          }
+        },
+        "required": [
+          "materials",
+          "deidentification_acknowledged",
+          "processing_authority_acknowledged",
+          "retention_policy_acknowledged"
+        ],
+        "title": "MaterialInputRequest",
+        "type": "object"
+      },
+      "MethodIntentContract": {
+        "properties": {
+          "constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Constraints",
+            "type": "array"
+          },
+          "method_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Kind"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method_kind",
+          "constraints",
+          "source"
+        ],
+        "title": "MethodIntentContract",
+        "type": "object"
+      },
+      "MethodPlanContract": {
+        "properties": {
+          "analysis_plan": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Analysis Plan",
+            "type": "array"
+          },
+          "integration_points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Integration Points",
+            "type": "array"
+          },
+          "material_plan": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Material Plan",
+            "type": "array"
+          },
+          "method_kind": {
+            "title": "Method Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method_kind",
+          "rationale",
+          "material_plan",
+          "analysis_plan",
+          "integration_points"
+        ],
+        "title": "MethodPlanContract",
+        "type": "object"
+      },
+      "ModelCapability": {
+        "enum": [
+          "mock",
+          "base",
+          "sft"
+        ],
+        "title": "ModelCapability",
+        "type": "string"
+      },
+      "ModelMetadata": {
+        "properties": {
+          "capability": {
+            "$ref": "#/components/schemas/ModelCapability"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "trace": {
+            "$ref": "#/components/schemas/TraceMetadata"
+          }
+        },
+        "required": [
+          "provider",
+          "model_version",
+          "capability",
+          "degraded",
+          "trace"
+        ],
+        "title": "ModelMetadata",
+        "type": "object"
+      },
+      "PhenomenonCandidateAction": {
+        "enum": [
+          "update",
+          "confirm"
+        ],
+        "title": "PhenomenonCandidateAction",
+        "type": "string"
+      },
+      "PhenomenonCandidatePageResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonCandidateAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonCandidateResponse"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelMetadata"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "version",
+          "allowed_actions",
+          "candidates",
+          "stable_order",
+          "next_cursor",
+          "model"
+        ],
+        "title": "PhenomenonCandidatePageResponse",
+        "type": "object"
+      },
+      "PhenomenonCandidateResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonCandidateAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelMetadata"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "source_ref_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ref Ids",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PhenomenonCandidateStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "task_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "phenomenon",
+          "research_intent",
+          "context",
+          "source_ref_ids",
+          "model"
+        ],
+        "title": "PhenomenonCandidateResponse",
+        "type": "object"
+      },
+      "PhenomenonCandidateStatus": {
+        "enum": [
+          "proposed",
+          "edited",
+          "confirmed",
+          "superseded"
+        ],
+        "title": "PhenomenonCandidateStatus",
+        "type": "string"
+      },
+      "PhenomenonSnapshotAction": {
+        "enum": [
+          "start_matching"
+        ],
+        "title": "PhenomenonSnapshotAction",
+        "type": "string"
+      },
+      "PhenomenonSnapshotPageResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonSnapshotAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonSnapshotResponse"
+            },
+            "title": "Snapshots",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "version",
+          "allowed_actions",
+          "snapshots",
+          "next_cursor"
+        ],
+        "title": "PhenomenonSnapshotPageResponse",
+        "type": "object"
+      },
+      "PhenomenonSnapshotResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonSnapshotAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "phenomenon_query_id": {
+            "format": "uuid",
+            "title": "Phenomenon Query Id",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "source_ref_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ref Ids",
+            "type": "array"
+          },
+          "status": {
+            "const": "confirmed",
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phenomenon_query_id",
+          "task_id",
+          "version",
+          "status",
+          "allowed_actions",
+          "phenomenon",
+          "research_intent",
+          "context",
+          "source_ref_ids",
+          "confirmed_at"
+        ],
+        "title": "PhenomenonSnapshotResponse",
+        "type": "object"
+      },
+      "RegisterSessionRequest": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterSessionRequest",
+        "type": "object"
+      },
+      "RelatedTheoryResponse": {
+        "properties": {
+          "relation_explanation": {
+            "title": "Relation Explanation",
+            "type": "string"
+          },
+          "theory_id": {
+            "title": "Theory Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theory_id",
+          "title",
+          "relation_explanation"
+        ],
+        "title": "RelatedTheoryResponse",
         "type": "object"
       },
       "ResearchTaskAction": {
@@ -114,6 +2818,34 @@
         ],
         "title": "ResearchTaskAction",
         "type": "string"
+      },
+      "ResearchTaskPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTaskResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ResearchTaskPageResponse",
+        "type": "object"
       },
       "ResearchTaskResponse": {
         "properties": {
@@ -169,44 +2901,1139 @@
         "title": "ResearchTaskStatus",
         "type": "string"
       },
-      "ValidationError": {
+      "ResearchTraceActor": {
+        "enum": [
+          "user",
+          "system",
+          "model",
+          "mock"
+        ],
+        "title": "ResearchTraceActor",
+        "type": "string"
+      },
+      "ResearchTraceEventResponse": {
         "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
+          "actor": {
+            "$ref": "#/components/schemas/ResearchTraceActor"
           },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
             "type": "string"
           },
-          "type": {
-            "title": "Error Type",
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "object_version": {
+            "title": "Object Version",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "trace_id": {
+            "format": "uuid",
+            "title": "Trace Id",
             "type": "string"
           }
         },
         "required": [
-          "loc",
-          "msg",
-          "type"
+          "event_id",
+          "sequence",
+          "event_type",
+          "actor",
+          "object_version",
+          "occurred_at",
+          "trace_id"
         ],
-        "title": "ValidationError",
+        "title": "ResearchTraceEventResponse",
+        "type": "object"
+      },
+      "ResearchTraceResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTaskAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTraceEventResponse"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "version",
+          "allowed_actions",
+          "events",
+          "next_cursor",
+          "contract_version"
+        ],
+        "title": "ResearchTraceResponse",
+        "type": "object"
+      },
+      "RetryMatchCandidateRequest": {
+        "properties": {
+          "expected_candidate_version": {
+            "minimum": 1.0,
+            "title": "Expected Candidate Version",
+            "type": "integer"
+          },
+          "expected_match_run_version": {
+            "minimum": 1.0,
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_match_run_version",
+          "expected_candidate_version"
+        ],
+        "title": "RetryMatchCandidateRequest",
+        "type": "object"
+      },
+      "SessionAction": {
+        "enum": [
+          "logout"
+        ],
+        "title": "SessionAction",
+        "type": "string"
+      },
+      "SessionResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUserResponse"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "version",
+          "allowed_actions",
+          "user",
+          "expires_at"
+        ],
+        "title": "SessionResponse",
+        "type": "object"
+      },
+      "SessionStatus": {
+        "enum": [
+          "active",
+          "logged_out"
+        ],
+        "title": "SessionStatus",
+        "type": "string"
+      },
+      "SessionUserResponse": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "display_name"
+        ],
+        "title": "SessionUserResponse",
+        "type": "object"
+      },
+      "SourceRecordResponse": {
+        "properties": {
+          "authors_or_institution": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authors Or Institution",
+            "type": "array"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "publication": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "use_boundary": {
+            "title": "Use Boundary",
+            "type": "string"
+          },
+          "verification_status": {
+            "$ref": "#/components/schemas/SourceVerificationStatus"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_type",
+          "title",
+          "authors_or_institution",
+          "year",
+          "publication",
+          "locator",
+          "url",
+          "verification_status",
+          "use_boundary"
+        ],
+        "title": "SourceRecordResponse",
+        "type": "object"
+      },
+      "SourceVerificationStatus": {
+        "enum": [
+          "verified",
+          "system_summary",
+          "pending"
+        ],
+        "title": "SourceVerificationStatus",
+        "type": "string"
+      },
+      "StartFrameworkReviewRequest": {
+        "properties": {
+          "expected_revision_id": {
+            "format": "uuid",
+            "title": "Expected Revision Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision_id",
+          "expected_version"
+        ],
+        "title": "StartFrameworkReviewRequest",
+        "type": "object"
+      },
+      "SubmitAuditResolutionsRequest": {
+        "properties": {
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "expected_revision_id": {
+            "format": "uuid",
+            "title": "Expected Revision Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/AuditResolutionInput"
+            },
+            "minItems": 1,
+            "title": "Resolutions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_revision_id",
+          "expected_version",
+          "audit_id",
+          "resolutions"
+        ],
+        "title": "SubmitAuditResolutionsRequest",
+        "type": "object"
+      },
+      "TheoryCandidateAction": {
+        "enum": [
+          "retry",
+          "create_decision"
+        ],
+        "title": "TheoryCandidateAction",
+        "type": "string"
+      },
+      "TheoryCandidateResponse": {
+        "properties": {
+          "adoption_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Adoption Blockers",
+            "type": "array"
+          },
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryCandidateAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "analysis_levels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Analysis Levels",
+            "type": "array"
+          },
+          "applicability_judgement": {
+            "$ref": "#/components/schemas/TheoryJudgementVerdict"
+          },
+          "applicability_rationale": {
+            "title": "Applicability Rationale",
+            "type": "string"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "competing_theories": {
+            "items": {
+              "$ref": "#/components/schemas/RelatedTheoryResponse"
+            },
+            "title": "Competing Theories",
+            "type": "array"
+          },
+          "complementary_theories": {
+            "items": {
+              "$ref": "#/components/schemas/RelatedTheoryResponse"
+            },
+            "title": "Complementary Theories",
+            "type": "array"
+          },
+          "conflicting_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceReferenceResponse"
+            },
+            "title": "Conflicting Evidence",
+            "type": "array"
+          },
+          "content_status": {
+            "$ref": "#/components/schemas/CandidateContentStatus"
+          },
+          "core_claims": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Core Claims",
+            "type": "array"
+          },
+          "formal_adoption_eligible": {
+            "title": "Formal Adoption Eligible",
+            "type": "boolean"
+          },
+          "judgement_run_status": {
+            "$ref": "#/components/schemas/CandidateJudgementRunStatus"
+          },
+          "knowledge_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Id"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "missing_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Evidence",
+            "type": "array"
+          },
+          "misuse_boundaries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Misuse Boundaries",
+            "type": "array"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelMetadata"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/CandidateOrigin"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "problem_focus": {
+            "title": "Problem Focus",
+            "type": "string"
+          },
+          "requested_material": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Material",
+            "type": "array"
+          },
+          "seed_theory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Id"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ids",
+            "type": "array"
+          },
+          "supporting_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceReferenceResponse"
+            },
+            "title": "Supporting Evidence",
+            "type": "array"
+          },
+          "theory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "version",
+          "allowed_actions",
+          "judgement_run_status",
+          "knowledge_release_id",
+          "knowledge_id",
+          "theory_id",
+          "seed_theory_id",
+          "origin",
+          "content_status",
+          "title",
+          "problem_focus",
+          "core_claims",
+          "analysis_levels",
+          "prerequisites",
+          "applicability_judgement",
+          "applicability_rationale",
+          "supporting_evidence",
+          "conflicting_evidence",
+          "missing_evidence",
+          "requested_material",
+          "limitations",
+          "misuse_boundaries",
+          "competing_theories",
+          "complementary_theories",
+          "source_ids",
+          "formal_adoption_eligible",
+          "adoption_blockers",
+          "model"
+        ],
+        "title": "TheoryCandidateResponse",
+        "type": "object"
+      },
+      "TheoryDecisionAction": {
+        "enum": [
+          "adopt",
+          "exclude",
+          "retain",
+          "request_more_evidence",
+          "revise_applicability"
+        ],
+        "title": "TheoryDecisionAction",
+        "type": "string"
+      },
+      "TheoryDecisionInput": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TheoryDecisionAction"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_version": {
+            "minimum": 1.0,
+            "title": "Candidate Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "related_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Source Ids",
+            "type": "array"
+          },
+          "revised_applicability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Applicability"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "candidate_version",
+          "action",
+          "reason"
+        ],
+        "title": "TheoryDecisionInput",
+        "type": "object"
+      },
+      "TheoryDecisionPageResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionSetAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "decision_sets": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionSetResponse"
+            },
+            "title": "Decision Sets",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match_run_id",
+          "version",
+          "allowed_actions",
+          "knowledge_release_id",
+          "decision_sets",
+          "next_cursor"
+        ],
+        "title": "TheoryDecisionPageResponse",
+        "type": "object"
+      },
+      "TheoryDecisionRecordResponse": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TheoryDecisionAction"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_version": {
+            "title": "Candidate Version",
+            "type": "integer"
+          },
+          "decision_id": {
+            "format": "uuid",
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "related_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Source Ids",
+            "type": "array"
+          },
+          "revised_applicability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Applicability"
+          }
+        },
+        "required": [
+          "decision_id",
+          "candidate_id",
+          "candidate_version",
+          "action",
+          "reason",
+          "related_source_ids",
+          "revised_applicability",
+          "recorded_at"
+        ],
+        "title": "TheoryDecisionRecordResponse",
+        "type": "object"
+      },
+      "TheoryDecisionSetAction": {
+        "enum": [
+          "confirm_theory_plan",
+          "create_framework"
+        ],
+        "title": "TheoryDecisionSetAction",
+        "type": "string"
+      },
+      "TheoryDecisionSetResponse": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionSetAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decision_set_id": {
+            "format": "uuid",
+            "title": "Decision Set Id",
+            "type": "string"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionRecordResponse"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decision_set_id",
+          "match_run_id",
+          "version",
+          "allowed_actions",
+          "knowledge_release_id",
+          "completion_basis",
+          "decisions",
+          "use_assignments",
+          "relations"
+        ],
+        "title": "TheoryDecisionSetResponse",
+        "type": "object"
+      },
+      "TheoryJudgementVerdict": {
+        "enum": [
+          "applicable",
+          "conditional",
+          "insufficient",
+          "not_applicable"
+        ],
+        "title": "TheoryJudgementVerdict",
+        "type": "string"
+      },
+      "TheoryPlanAction": {
+        "enum": [
+          "create_framework"
+        ],
+        "title": "TheoryPlanAction",
+        "type": "string"
+      },
+      "TheoryProfileResponse": {
+        "properties": {
+          "analysis_levels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Analysis Levels",
+            "type": "array"
+          },
+          "applicable_phenomena": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applicable Phenomena",
+            "type": "array"
+          },
+          "competing_or_complementary_theory_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Competing Or Complementary Theory Ids",
+            "type": "array"
+          },
+          "content_version": {
+            "title": "Content Version",
+            "type": "integer"
+          },
+          "core_propositions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Core Propositions",
+            "type": "array"
+          },
+          "exclusion_signals": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Signals",
+            "type": "array"
+          },
+          "match_eligible": {
+            "title": "Match Eligible",
+            "type": "boolean"
+          },
+          "observable_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Observable Evidence",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "related_knowledge_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Knowledge Ids",
+            "type": "array"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ids",
+            "type": "array"
+          },
+          "theory_id": {
+            "title": "Theory Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theory_id",
+          "related_knowledge_ids",
+          "title",
+          "core_propositions",
+          "applicable_phenomena",
+          "analysis_levels",
+          "prerequisites",
+          "exclusion_signals",
+          "observable_evidence",
+          "competing_or_complementary_theory_ids",
+          "source_ids",
+          "content_version",
+          "review_status",
+          "match_eligible"
+        ],
+        "title": "TheoryProfileResponse",
+        "type": "object"
+      },
+      "TheoryRelationInput": {
+        "properties": {
+          "candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 2,
+            "title": "Candidate Ids",
+            "type": "array"
+          },
+          "distinguishing_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Distinguishing Evidence",
+            "type": "array"
+          },
+          "excluding_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluding Evidence",
+            "type": "array"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "premise_compatibility": {
+            "title": "Premise Compatibility",
+            "type": "string"
+          },
+          "relation_kind": {
+            "title": "Relation Kind",
+            "type": "string"
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supporting Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate_ids",
+          "relation_kind",
+          "explanation",
+          "premise_compatibility",
+          "supporting_evidence",
+          "excluding_evidence",
+          "distinguishing_evidence"
+        ],
+        "title": "TheoryRelationInput",
+        "type": "object"
+      },
+      "TheoryUseAssignmentInput": {
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "responsibility": {
+            "title": "Responsibility",
+            "type": "string"
+          },
+          "role_code": {
+            "title": "Role Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "role_code",
+          "responsibility"
+        ],
+        "title": "TheoryUseAssignmentInput",
+        "type": "object"
+      },
+      "TraceMetadata": {
+        "properties": {
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "format": "uuid",
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id",
+          "request_id",
+          "contract_version"
+        ],
+        "title": "TraceMetadata",
+        "type": "object"
+      },
+      "UpdateFrameworkRequest": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/FrameworkDraftContract"
+          },
+          "expected_revision_id": {
+            "format": "uuid",
+            "title": "Expected Revision Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "revision_reason": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Revision Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision_id",
+          "expected_version",
+          "draft",
+          "revision_reason"
+        ],
+        "title": "UpdateFrameworkRequest",
+        "type": "object"
+      },
+      "UpdatePhenomenonCandidateRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "phenomenon": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          }
+        },
+        "required": [
+          "expected_version",
+          "phenomenon"
+        ],
+        "title": "UpdatePhenomenonCandidateRequest",
         "type": "object"
       }
     }
@@ -218,6 +4045,633 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/decision-sets/{decision_set_id}/confirm": {
+      "post": {
+        "operationId": "confirm_theory_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Decision Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmTheoryPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedTheoryPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Confirm Theory Plan",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}": {
+      "get": {
+        "operationId": "get_framework",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Framework",
+        "tags": [
+          "frameworks"
+        ]
+      },
+      "patch": {
+        "operationId": "update_framework",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFrameworkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Update Framework",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/audit-resolutions": {
+      "post": {
+        "operationId": "submit_audit_resolutions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAuditResolutionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditResolutionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Submit Audit Resolutions",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/confirm": {
+      "post": {
+        "operationId": "confirm_framework",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmFrameworkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedFrameworkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Confirm Framework",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/export": {
+      "get": {
+        "operationId": "export_confirmed_framework",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormalFrameworkExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Export Confirmed Framework",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/reviews": {
+      "post": {
+        "operationId": "start_framework_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartFrameworkReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Start Framework Review",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/reviews/{review_run_id}": {
+      "get": {
+        "operationId": "get_framework_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "review_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Framework Review",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "get_health",
@@ -231,6 +4685,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         },
         "summary": "Get Health",
@@ -239,7 +4703,956 @@
         ]
       }
     },
+    "/api/knowledge/cases": {
+      "get": {
+        "operationId": "list_builtin_cases",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuiltInCasePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Builtin Cases",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/entries": {
+      "get": {
+        "operationId": "list_knowledge_entries",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeEntryPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Knowledge Entries",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/entries/{knowledge_id}": {
+      "get": {
+        "operationId": "get_knowledge_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "knowledge_id",
+            "required": true,
+            "schema": {
+              "title": "Knowledge Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeEntryDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Knowledge Entry",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/releases/current": {
+      "get": {
+        "operationId": "get_current_knowledge_release",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeReleaseResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Current Knowledge Release",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}": {
+      "get": {
+        "operationId": "get_match_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Match Run",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/candidates": {
+      "get": {
+        "operationId": "list_match_candidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 4,
+              "maximum": 8,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchCandidatePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Match Candidates",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/candidates/{candidate_id}/retry": {
+      "post": {
+        "operationId": "retry_match_candidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryMatchCandidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryCandidateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Retry Match Candidate",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/decisions": {
+      "get": {
+        "operationId": "list_theory_decisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Theory Decisions",
+        "tags": [
+          "matching"
+        ]
+      },
+      "post": {
+        "operationId": "create_theory_decisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTheoryDecisionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Create Theory Decisions",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/partial-completion-acknowledgements": {
+      "post": {
+        "operationId": "acknowledge_partial_match",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgePartialMatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Acknowledge Partial Match",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
     "/api/research-tasks": {
+      "get": {
+        "operationId": "list_research_tasks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchTaskPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Research Tasks",
+        "tags": [
+          "research-tasks"
+        ]
+      },
       "post": {
         "operationId": "create_research_task",
         "parameters": [
@@ -290,11 +5703,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Unprocessable Entity"
           }
         },
         "summary": "Create Research Task",
@@ -304,6 +5717,78 @@
       }
     },
     "/api/research-tasks/{task_id}": {
+      "delete": {
+        "operationId": "delete_research_task",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResearchTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Delete Research Task",
+        "tags": [
+          "research-tasks"
+        ]
+      },
       "get": {
         "operationId": "get_research_task",
         "parameters": [
@@ -343,16 +5828,1203 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Unprocessable Entity"
           }
         },
         "summary": "Get Research Task",
         "tags": [
           "research-tasks"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/export": {
+      "get": {
+        "operationId": "export_research_trace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkdownExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Export Research Trace",
+        "tags": [
+          "research-tasks"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/frameworks": {
+      "post": {
+        "operationId": "create_framework",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFrameworkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Create Framework",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/inputs/direct": {
+      "post": {
+        "operationId": "submit_direct_input",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectInputRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInputResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Submit Direct Input",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/inputs/material": {
+      "post": {
+        "operationId": "submit_material_input",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialInputRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInputResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Submit Material Input",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/match-runs": {
+      "post": {
+        "operationId": "create_match_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMatchRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Create Match Run",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/phenomenon-candidates": {
+      "post": {
+        "operationId": "extract_phenomenon_candidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractPhenomenonCandidatesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonCandidatePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Extract Phenomenon Candidates",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}": {
+      "get": {
+        "operationId": "get_phenomenon_candidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonCandidateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Phenomenon Candidate",
+        "tags": [
+          "phenomena"
+        ]
+      },
+      "patch": {
+        "operationId": "update_phenomenon_candidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePhenomenonCandidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonCandidateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Update Phenomenon Candidate",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}/confirm": {
+      "post": {
+        "operationId": "confirm_phenomenon_candidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPhenomenonCandidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Confirm Phenomenon Candidate",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/phenomenon-snapshots": {
+      "get": {
+        "operationId": "list_phenomenon_snapshots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonSnapshotPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "List Phenomenon Snapshots",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/trace": {
+      "get": {
+        "operationId": "get_research_trace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchTraceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Research Trace",
+        "tags": [
+          "research-tasks"
+        ]
+      }
+    },
+    "/api/session": {
+      "get": {
+        "operationId": "get_current_session",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Get Current Session",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/session/login": {
+      "post": {
+        "operationId": "login_session",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Login Session",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/session/logout": {
+      "post": {
+        "operationId": "logout_session",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Logout Session",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/session/register": {
+      "post": {
+        "operationId": "register_session",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
+          }
+        },
+        "summary": "Register Session",
+        "tags": [
+          "session"
         ]
       }
     }

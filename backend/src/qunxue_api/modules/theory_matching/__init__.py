@@ -1,11 +1,14 @@
 """Evidence assembly, candidate judgement, and user-owned theory decisions."""
 
 from qunxue_api.modules.theory_matching.public import (
+    CandidateContentStatus,
+    CandidateJudgementRunStatus,
     CandidateOrigin,
     ConfirmedTheoryPlanSnapshot,
     DeferredTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchCompletionBasis,
     MatchRunSnapshot,
     MatchRunStatus,
     TheoryCandidateContentSnapshot,
@@ -31,11 +34,14 @@ from qunxue_api.modules.theory_matching.rules import (
 
 __all__ = [
     "CandidateOrigin",
+    "CandidateContentStatus",
+    "CandidateJudgementRunStatus",
     "ConfirmedTheoryPlanSnapshot",
     "DeferredTheoryPlanSnapshot",
     "EvidenceBundleSnapshot",
     "EvidenceItemSnapshot",
     "MatchRunSnapshot",
+    "MatchCompletionBasis",
     "MatchRunStatus",
     "TheoryCandidateContentSnapshot",
     "TheoryCandidateJudge",

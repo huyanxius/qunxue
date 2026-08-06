@@ -14,10 +14,25 @@ class AuditOverallStatus(StrEnum):
 
 
 class AuditResolutionAction(StrEnum):
-    ACCEPT = "accept"
-    REJECT = "reject"
-    DEFER = "defer"
-    OVERRIDE = "override"
+    HANDLED = "handled"
+    OVERRIDDEN = "overridden"
+    ACCEPT = "handled"
+    OVERRIDE = "overridden"
+
+
+class AuditFindingType(StrEnum):
+    CONCEPT_ALIGNMENT = "concept_alignment"
+    EVIDENCE = "evidence"
+    INFERENCE = "inference"
+    METHOD = "method"
+    ETHICS = "ethics"
+    SCOPE = "scope"
+
+
+class AuditFindingSeverity(StrEnum):
+    INFO = "info"
+    WARNING = "warning"
+    BLOCKING = "blocking"
 
 
 class FrameworkReviewRunStatus(StrEnum):
@@ -98,6 +113,7 @@ class ResearchFrameworkDraft:
     scope_and_limitations: tuple[str, ...]
     unresolved_items: tuple[str, ...]
     next_actions: tuple[str, ...]
+    ethical_boundaries: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,17 +123,20 @@ class FrameworkVersionSnapshot:
     version: int
     input: ResearchFrameworkDraftInput
     draft: ResearchFrameworkDraft
+    revision_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class AuditFindingDraft:
-    """模型输出不分配业务 revision ID；该 ID 由框架模块保存时生成。"""
+    """模型输出不分配 finding ID；该 ID 由框架模块保存时生成。"""
 
     summary: str
     reason: str
     impact: str
     recommendation: str
     blocking: bool
+    finding_type: AuditFindingType = AuditFindingType.SCOPE
+    severity: AuditFindingSeverity = AuditFindingSeverity.WARNING
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,12 +147,14 @@ class FrameworkAuditDraft:
 
 @dataclass(frozen=True, slots=True)
 class AuditFindingSnapshot:
-    revision_id: UUID
+    finding_id: UUID
     summary: str
     reason: str
     impact: str
     recommendation: str
     blocking: bool
+    finding_type: AuditFindingType = AuditFindingType.SCOPE
+    severity: AuditFindingSeverity = AuditFindingSeverity.WARNING
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,11 +176,12 @@ class FrameworkReviewRunSnapshot:
     version: int
     status: FrameworkReviewRunStatus
     audit: FrameworkAuditSnapshot | None
+    revision_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class AuditResolution:
-    revision_id: UUID
+    finding_id: UUID
     action: AuditResolutionAction
     reason: str
 

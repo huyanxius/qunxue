@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Request
 
+from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.health import HealthResponse
 from qunxue_api.settings import Settings
 
-router = APIRouter(prefix="/api", tags=["system"])
+router = APIRouter(
+    prefix="/api",
+    tags=["system"],
+    responses={422: {"model": ErrorResponse}},
+)
 
 
 @router.get(
@@ -20,4 +25,6 @@ def get_health(request: Request) -> HealthResponse:
         runtime_mode="inline_demo",
         persistence="sqlite",
         contract_version=settings.contract_version,
+        capability="unavailable",
+        knowledge_release_id=None,
     )

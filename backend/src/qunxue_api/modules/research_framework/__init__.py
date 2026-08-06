@@ -2,7 +2,9 @@
 
 from qunxue_api.modules.research_framework.public import (
     AuditFindingDraft,
+    AuditFindingSeverity,
     AuditFindingSnapshot,
+    AuditFindingType,
     AuditOverallStatus,
     AuditResolution,
     AuditResolutionAction,
@@ -26,7 +28,9 @@ from qunxue_api.modules.research_framework.public import (
 
 __all__ = [
     "AuditFindingDraft",
+    "AuditFindingSeverity",
     "AuditFindingSnapshot",
+    "AuditFindingType",
     "AuditOverallStatus",
     "AuditResolution",
     "AuditResolutionAction",

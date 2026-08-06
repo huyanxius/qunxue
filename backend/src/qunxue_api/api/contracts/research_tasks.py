@@ -1,4 +1,6 @@
 from datetime import datetime
+from enum import StrEnum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -13,6 +15,13 @@ from qunxue_api.modules.research_intake import (
 
 class CreateResearchTaskRequest(BaseModel):
     entry_type: EntryType = EntryType.DIRECT_INPUT
+
+
+class ResearchTraceActor(StrEnum):
+    USER = "user"
+    SYSTEM = "system"
+    MODEL = "model"
+    MOCK = "mock"
 
 
 class ResearchTaskResponse(BaseModel):
@@ -35,3 +44,44 @@ class ResearchTaskResponse(BaseModel):
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
+
+
+class ResearchTaskPageResponse(BaseModel):
+    items: list[ResearchTaskResponse]
+    next_cursor: str | None
+
+
+class DeleteResearchTaskResponse(BaseModel):
+    task_id: UUID
+    version: int
+    allowed_actions: list[ResearchTaskAction]
+    deleted: Literal[True]
+
+
+class ResearchTraceEventResponse(BaseModel):
+    event_id: UUID
+    sequence: int
+    event_type: str
+    actor: ResearchTraceActor
+    object_version: int
+    occurred_at: datetime
+    trace_id: UUID
+
+
+class ResearchTraceResponse(BaseModel):
+    task_id: UUID
+    version: int
+    allowed_actions: list[ResearchTaskAction]
+    events: list[ResearchTraceEventResponse]
+    next_cursor: str | None
+    contract_version: str
+
+
+class MarkdownExportResponse(BaseModel):
+    task_id: UUID
+    version: int
+    allowed_actions: list[ResearchTaskAction]
+    filename: str
+    media_type: Literal["text/markdown"]
+    markdown: str
+    contract_version: str
