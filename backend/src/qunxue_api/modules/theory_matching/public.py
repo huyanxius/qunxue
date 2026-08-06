@@ -44,6 +44,28 @@ class TheoryJudgementVerdict(StrEnum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class CandidateJudgementRunStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    TIMED_OUT = "timed_out"
+    INSUFFICIENT_SOURCES = "insufficient_sources"
+
+
+class CandidateContentStatus(StrEnum):
+    REVIEWED = "reviewed"
+    MODEL_GENERATED = "model_generated"
+    EXTERNAL_UNREVIEWED = "external_unreviewed"
+    USER_SUPPLIED = "user_supplied"
+
+
+class MatchCompletionBasis(StrEnum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    PARTIAL_WITH_USER_ACK = "partial_with_user_ack"
+
+
 @dataclass(frozen=True, slots=True)
 class EvidenceItemSnapshot:
     """一次匹配运行实际看到的证据；无需再跨模块按 ID 回查正文。"""
@@ -81,6 +103,9 @@ class TheoryCandidateContentSnapshot:
     reviewed_profile: TheoryProfileSnapshot | None
     formal_adoption_eligible: bool
     adoption_blockers: tuple[str, ...]
+    knowledge_id: str | None = None
+    seed_theory_id: str | None = None
+    content_status: CandidateContentStatus = CandidateContentStatus.MODEL_GENERATED
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +141,9 @@ class TheoryCandidateSnapshot:
     trace_id: UUID
     request_id: UUID
     contract_version: str
+    judgement_run_status: CandidateJudgementRunStatus = (
+        CandidateJudgementRunStatus.SUCCEEDED
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,6 +156,10 @@ class MatchRunSnapshot:
     knowledge_release: KnowledgeReleaseRef
     evidence_bundle: EvidenceBundleSnapshot
     candidates: tuple[TheoryCandidateSnapshot, ...]
+    completion_basis: MatchCompletionBasis = MatchCompletionBasis.COMPLETE
+    partial_completion_acknowledged: bool = False
+    stable_candidate_order: tuple[UUID, ...] = ()
+    next_cursor: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

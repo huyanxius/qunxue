@@ -8,6 +8,11 @@ class EntryType(StrEnum):
     DIRECT_INPUT = "direct_input"
 
 
+class EntryInputType(StrEnum):
+    DIRECT_INPUT = "direct_input"
+    MATERIAL_INPUT = "material_input"
+
+
 class ResearchTaskStatus(StrEnum):
     DRAFT = "draft"
 

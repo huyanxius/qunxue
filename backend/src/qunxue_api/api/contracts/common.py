@@ -1,10 +1,53 @@
+from enum import StrEnum
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
+class ErrorCode(StrEnum):
+    UNAUTHENTICATED = "unauthenticated"
+    SESSION_EXPIRED = "session_expired"
+    NOT_FOUND = "not_found"
+    METHOD_NOT_ALLOWED = "method_not_allowed"
+    RESEARCH_TASK_NOT_FOUND = "research_task_not_found"
+    VALIDATION_ERROR = "validation_error"
+    PHENOMENON_UNCONFIRMED = "phenomenon_unconfirmed"
+    NO_ADOPTED_THEORY = "no_adopted_theory"
+    CANDIDATE_INELIGIBLE = "candidate_ineligible"
+    EXTERNAL_CANDIDATE_ADOPTION_BLOCKED = "external_candidate_adoption_blocked"
+    MODEL_TIMEOUT = "model_timeout"
+    NO_RELIABLE_CANDIDATE = "no_reliable_candidate"
+    INSUFFICIENT_SOURCES = "insufficient_sources"
+    STALE_FRAMEWORK_REVISION = "stale_framework_revision"
+    UNRESOLVED_BLOCKING_AUDIT = "unresolved_blocking_audit"
+    NOT_IMPLEMENTED = "not_implemented"
+    INTERNAL_SERVER_ERROR = "internal_server_error"
+
+
+class ModelCapability(StrEnum):
+    MOCK = "mock"
+    BASE = "base"
+    SFT = "sft"
+
+
+class TraceMetadata(BaseModel):
+    trace_id: UUID
+    request_id: UUID
+    contract_version: str
+
+
+class ModelMetadata(BaseModel):
+    provider: str
+    model_version: str
+    capability: ModelCapability
+    degraded: bool
+    trace: TraceMetadata
+
+
 class ErrorDetail(BaseModel):
-    code: str
+    code: ErrorCode
     message: str
-    trace_id: str | None = None
+    trace_id: str
 
 
 class ErrorResponse(BaseModel):
