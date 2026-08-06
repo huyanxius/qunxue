@@ -2,10 +2,13 @@
 
 from qunxue_api.modules.research_intake.domain import (
     ConfirmedPhenomenonSnapshot,
+    EntryType,
     PhenomenonCandidateDraft,
     PhenomenonQuery,
     PhenomenonSource,
     ResearchTask,
+    ResearchTaskAction,
+    ResearchTaskStatus,
 )
 from qunxue_api.modules.research_intake.errors import (
     ResearchIntakeValidationError,
@@ -19,13 +22,16 @@ from qunxue_api.modules.research_intake.service import ResearchTaskService
 
 __all__ = [
     "ConfirmedPhenomenonSnapshot",
+    "EntryType",
     "PhenomenonCandidateBuilder",
     "PhenomenonCandidateDraft",
     "PhenomenonQuery",
     "PhenomenonSource",
     "ResearchIntakeValidationError",
     "ResearchTask",
+    "ResearchTaskAction",
     "ResearchTaskNotFound",
     "ResearchTaskRepository",
     "ResearchTaskService",
+    "ResearchTaskStatus",
 ]

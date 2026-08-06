@@ -23,6 +23,11 @@ export type CreateResearchTaskRequest = {
 };
 
 /**
+ * EntryType
+ */
+export type EntryType = 'direct_input';
+
+/**
  * ErrorDetail
  */
 export type ErrorDetail = {
@@ -89,9 +94,18 @@ export type HealthResponse = {
 export type PhenomenonSource = 'user_input';
 
 /**
+ * ResearchTaskAction
+ */
+export type ResearchTaskAction = 'submit_phenomenon';
+
+/**
  * ResearchTaskResponse
  */
 export type ResearchTaskResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskAction>;
     /**
      * Context
      */
@@ -100,6 +114,7 @@ export type ResearchTaskResponse = {
      * Created At
      */
     created_at: string;
+    entry_type: EntryType;
     /**
      * Phenomenon
      */
@@ -109,6 +124,7 @@ export type ResearchTaskResponse = {
      */
     research_intent: string | null;
     source: PhenomenonSource;
+    status: ResearchTaskStatus;
     /**
      * Task Id
      */
@@ -117,7 +133,16 @@ export type ResearchTaskResponse = {
      * Updated At
      */
     updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
 };
+
+/**
+ * ResearchTaskStatus
+ */
+export type ResearchTaskStatus = 'draft';
 
 /**
  * ValidationError
@@ -165,6 +190,12 @@ export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
 export type CreateResearchTaskData = {
     body: CreateResearchTaskRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/api/research-tasks';

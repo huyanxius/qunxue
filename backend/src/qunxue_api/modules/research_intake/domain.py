@@ -4,6 +4,18 @@ from enum import StrEnum
 from uuid import UUID
 
 
+class EntryType(StrEnum):
+    DIRECT_INPUT = "direct_input"
+
+
+class ResearchTaskStatus(StrEnum):
+    DRAFT = "draft"
+
+
+class ResearchTaskAction(StrEnum):
+    SUBMIT_PHENOMENON = "submit_phenomenon"
+
+
 class PhenomenonSource(StrEnum):
     USER_INPUT = "user_input"
 
@@ -45,6 +57,9 @@ class ResearchTask:
     phenomenon_query: PhenomenonQuery
     created_at: datetime
     updated_at: datetime
+    entry_type: EntryType = EntryType.DIRECT_INPUT
+    status: ResearchTaskStatus = ResearchTaskStatus.DRAFT
+    version: int = 1
 
     @property
     def phenomenon(self) -> str:
@@ -62,6 +77,12 @@ class ResearchTask:
     def source(self) -> PhenomenonSource:
         return self.phenomenon_query.source
 
+    @property
+    def allowed_actions(self) -> tuple[ResearchTaskAction, ...]:
+        if self.status is ResearchTaskStatus.DRAFT:
+            return (ResearchTaskAction.SUBMIT_PHENOMENON,)
+        return ()
+
     @classmethod
     def create(
         cls,
@@ -77,4 +98,7 @@ class ResearchTask:
             phenomenon_query=phenomenon_query,
             created_at=now,
             updated_at=now,
+            entry_type=EntryType.DIRECT_INPUT,
+            status=ResearchTaskStatus.DRAFT,
+            version=1,
         )

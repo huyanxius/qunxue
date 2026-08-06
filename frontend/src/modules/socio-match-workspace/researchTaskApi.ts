@@ -9,17 +9,68 @@ import {
 } from '../../api/generated'
 import type {
   ResearchTask,
+  ResearchTaskAction,
+  ResearchTaskEntryType,
   ResearchTaskSource,
+  ResearchTaskStatus,
   ResearchTaskSubmission,
 } from './researchTaskModel'
+
+const entryTypes = {
+  direct_input: 'direct_input',
+} satisfies Record<ResearchTaskResponse['entry_type'], ResearchTaskEntryType>
+
+const taskStatuses = {
+  draft: 'draft',
+} satisfies Record<ResearchTaskResponse['status'], ResearchTaskStatus>
+
+const taskActions = {
+  submit_phenomenon: 'submit_phenomenon',
+} satisfies Record<
+  ResearchTaskResponse['allowed_actions'][number],
+  ResearchTaskAction
+>
 
 const taskSources = {
   user_input: 'user_input',
 } satisfies Record<ResearchTaskResponse['source'], ResearchTaskSource>
 
+type ResearchTaskResponseCompat = Partial<
+  Pick<
+    ResearchTaskResponse,
+    'entry_type' | 'status' | 'version' | 'allowed_actions'
+  >
+> &
+  ResearchTaskResponse
+
+async function buildIdempotencyKey(
+  input: ResearchTaskSubmission,
+): Promise<string> {
+  const payload = JSON.stringify({
+    phenomenon: input.phenomenon,
+    researchIntent: input.researchIntent ?? null,
+    context: input.context ?? null,
+  })
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(payload),
+  )
+
+  return Array.from(new Uint8Array(digest).slice(0, 16), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
 function toResearchTask(response: ResearchTaskResponse): ResearchTask {
+  const compatResponse = response as ResearchTaskResponseCompat
+  const allowedActionIds = compatResponse.allowed_actions ?? ['submit_phenomenon']
+
   return {
     taskId: response.task_id,
+    entryType: entryTypes[compatResponse.entry_type ?? 'direct_input'],
+    status: taskStatuses[compatResponse.status ?? 'draft'],
+    version: compatResponse.version ?? 1,
+    allowedActions: allowedActionIds.map((action) => taskActions[action]),
     phenomenon: response.phenomenon,
     researchIntent: response.research_intent ?? null,
     context: response.context ?? null,
@@ -56,10 +107,11 @@ function extractErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
-export async function submitResearchTaskViaApi(
+export async function createResearchTaskViaApi(
   input: ResearchTaskSubmission,
 ): Promise<ResearchTask> {
   try {
+    const idempotencyKey = await buildIdempotencyKey(input)
     const { data, error, response } = await createResearchTaskRequest({
       client: apiClient,
       body: {
@@ -67,10 +119,11 @@ export async function submitResearchTaskViaApi(
         research_intent: input.researchIntent,
         context: input.context,
       },
+      headers: { 'Idempotency-Key': idempotencyKey },
     })
     if (!data) {
       throw new ApiRequestError(
-        extractErrorMessage(error, 'Research task creation failed.'),
+        extractErrorMessage(error, '研究任务创建失败。'),
         response?.status,
       )
     }
@@ -79,8 +132,14 @@ export async function submitResearchTaskViaApi(
     if (error instanceof ApiRequestError) {
       throw error
     }
-    throw new ApiRequestError('The service could not save this task. Please retry.')
+    throw new ApiRequestError('服务暂时无法保存该任务，请稍后重试。')
   }
+}
+
+export async function submitResearchTaskViaApi(
+  input: ResearchTaskSubmission,
+): Promise<ResearchTask> {
+  return createResearchTaskViaApi(input)
 }
 
 export async function getResearchTaskViaApi(
@@ -93,7 +152,7 @@ export async function getResearchTaskViaApi(
     })
     if (!data) {
       throw new ApiRequestError(
-        extractErrorMessage(error, 'Research task recovery failed.'),
+        extractErrorMessage(error, '研究任务恢复失败。'),
         response?.status,
       )
     }
@@ -102,6 +161,6 @@ export async function getResearchTaskViaApi(
     if (error instanceof ApiRequestError) {
       throw error
     }
-    throw new ApiRequestError('The service could not restore this task. Please retry.')
+    throw new ApiRequestError('服务暂时无法恢复该任务，请稍后重试。')
   }
 }

@@ -36,6 +36,13 @@
         "title": "CreateResearchTaskRequest",
         "type": "object"
       },
+      "EntryType": {
+        "enum": [
+          "direct_input"
+        ],
+        "title": "EntryType",
+        "type": "string"
+      },
       "ErrorDetail": {
         "properties": {
           "code": {
@@ -133,8 +140,22 @@
         "title": "PhenomenonSource",
         "type": "string"
       },
+      "ResearchTaskAction": {
+        "enum": [
+          "submit_phenomenon"
+        ],
+        "title": "ResearchTaskAction",
+        "type": "string"
+      },
       "ResearchTaskResponse": {
         "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchTaskAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
           "context": {
             "anyOf": [
               {
@@ -150,6 +171,9 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "entry_type": {
+            "$ref": "#/components/schemas/EntryType"
           },
           "phenomenon": {
             "title": "Phenomenon",
@@ -169,6 +193,9 @@
           "source": {
             "$ref": "#/components/schemas/PhenomenonSource"
           },
+          "status": {
+            "$ref": "#/components/schemas/ResearchTaskStatus"
+          },
           "task_id": {
             "format": "uuid",
             "title": "Task Id",
@@ -178,10 +205,18 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
           "task_id",
+          "entry_type",
+          "status",
+          "version",
+          "allowed_actions",
           "phenomenon",
           "research_intent",
           "context",
@@ -191,6 +226,13 @@
         ],
         "title": "ResearchTaskResponse",
         "type": "object"
+      },
+      "ResearchTaskStatus": {
+        "enum": [
+          "draft"
+        ],
+        "title": "ResearchTaskStatus",
+        "type": "string"
       },
       "ValidationError": {
         "properties": {
@@ -265,6 +307,19 @@
     "/api/research-tasks": {
       "post": {
         "operationId": "create_research_task",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {

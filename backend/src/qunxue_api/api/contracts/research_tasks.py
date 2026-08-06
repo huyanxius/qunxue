@@ -3,7 +3,13 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from qunxue_api.modules.research_intake import PhenomenonSource, ResearchTask
+from qunxue_api.modules.research_intake import (
+    EntryType,
+    PhenomenonSource,
+    ResearchTask,
+    ResearchTaskAction,
+    ResearchTaskStatus,
+)
 
 
 class CreateResearchTaskRequest(BaseModel):
@@ -14,6 +20,10 @@ class CreateResearchTaskRequest(BaseModel):
 
 class ResearchTaskResponse(BaseModel):
     task_id: UUID
+    entry_type: EntryType
+    status: ResearchTaskStatus
+    version: int
+    allowed_actions: list[ResearchTaskAction]
     phenomenon: str
     research_intent: str | None
     context: str | None
@@ -25,6 +35,10 @@ class ResearchTaskResponse(BaseModel):
     def from_domain(cls, task: ResearchTask) -> "ResearchTaskResponse":
         return cls(
             task_id=task.task_id,
+            entry_type=task.entry_type,
+            status=task.status,
+            version=task.version,
+            allowed_actions=list(task.allowed_actions),
             phenomenon=task.phenomenon,
             research_intent=task.research_intent,
             context=task.context,
