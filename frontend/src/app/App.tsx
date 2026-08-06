@@ -89,10 +89,14 @@ function loginRedirect(value: string | null) {
   if (!value?.startsWith('/')) return '/'
 
   const origin = 'https://qunxue.local'
-  const target = new URL(value, origin)
-  return target.origin === origin
-    ? `${target.pathname}${target.search}${target.hash}`
-    : '/'
+  try {
+    const target = new URL(value, origin)
+    return target.origin === origin
+      ? `${target.pathname}${target.search}${target.hash}`
+      : '/'
+  } catch {
+    return '/'
+  }
 }
 
 function LoginRoute() {
@@ -124,7 +128,7 @@ function ProtectedRoute({
   }
   if (sessionState.status === 'authenticated') return children
 
-  const redirect = `${location.pathname}${location.search}`
+  const redirect = `${location.pathname}${location.search}${location.hash}`
   return <Navigate replace to={`/login?redirect=${encodeURIComponent(redirect)}`} />
 }
 

@@ -32,7 +32,7 @@ function renderRoute(
 
 function RouteLocation() {
   const location = useLocation()
-  return <div data-testid="route-location">{`${location.pathname}${location.search}`}</div>
+  return <div data-testid="route-location">{`${location.pathname}${location.search}${location.hash}`}</div>
 }
 
 describe('App routes', () => {
@@ -101,6 +101,30 @@ describe('App routes', () => {
     expect(await screen.findByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
       'href',
       '/',
+    )
+  })
+
+  it('rejects a malformed login redirect without crashing the page', async () => {
+    renderRoute('/login?redirect=%2F%2F%5B')
+
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it('preserves a protected route hash through login', async () => {
+    const destination = '/research/task-1/phenomenon?source=home#evidence'
+    renderRoute(destination)
+
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      `/login?redirect=${encodeURIComponent(destination)}`,
+    )
+    expect(screen.getByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      destination,
     )
   })
 
