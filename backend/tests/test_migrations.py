@@ -208,6 +208,34 @@ def test_database_url_override_drives_application_and_alembic(
         database.engine.dispose()
 
 
+def test_research_task_progress_projection_is_persisted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    alembic_config: Config,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'projection.db'}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    command.upgrade(alembic_config, "head")
+
+    database = Database(Settings().database_url)
+    try:
+        column_names = {
+            column["name"] for column in inspect(database.engine).get_columns("research_tasks")
+        }
+        assert {
+            "phenomenon_query_id",
+            "phenomenon_version",
+            "phenomenon_summary",
+            "phenomenon_research_intent",
+            "adopted_theory_count",
+            "current_phenomenon_candidate_id",
+            "current_match_run_id",
+            "current_framework_id",
+        } <= column_names
+    finally:
+        database.engine.dispose()
+
+
 def test_database_url_override_drives_offline_migrations(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
