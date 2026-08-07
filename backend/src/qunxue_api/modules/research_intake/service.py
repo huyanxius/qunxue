@@ -2,9 +2,22 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from qunxue_api.modules.research_intake.domain import EntryType, ResearchTask
+from qunxue_api.modules.research_intake.domain import (
+    ConfirmedPhenomenonSnapshot,
+    DirectPhenomenonInput,
+    EntryType,
+    PhenomenonCandidate,
+    PhenomenonCandidateDraft,
+    PhenomenonEvidenceRefSnapshot,
+    PhenomenonModelSnapshot,
+    PhenomenonProgress,
+    ResearchTask,
+)
 from qunxue_api.modules.research_intake.errors import ResearchTaskNotFound
-from qunxue_api.modules.research_intake.ports import ResearchTaskRepository
+from qunxue_api.modules.research_intake.ports import (
+    PhenomenonRepository,
+    ResearchTaskRepository,
+)
 
 
 class ResearchTaskService:
@@ -49,3 +62,94 @@ class ResearchTaskService:
         if task is None:
             raise ResearchTaskNotFound(str(task_id))
         return task
+
+
+class PhenomenonService:
+    def __init__(
+        self,
+        repository: PhenomenonRepository,
+        *,
+        id_factory: Callable[[], UUID] = uuid4,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self._repository = repository
+        self._id_factory = id_factory
+        self._clock = clock or (lambda: datetime.now(UTC))
+
+    def submit_direct(
+        self,
+        *,
+        task_id: UUID,
+        phenomenon: str,
+        research_intent: str | None,
+        context: str | None,
+    ) -> DirectPhenomenonInput:
+        return self._repository.submit_direct(
+            task_id=task_id,
+            phenomenon=phenomenon.strip(),
+            research_intent=research_intent,
+            context=context,
+            now=self._clock(),
+            input_id=self._id_factory(),
+        )
+
+    def input_for_task(self, task_id: UUID) -> DirectPhenomenonInput | None:
+        return self._repository.input_for_task(task_id)
+
+    def save_candidate(
+        self,
+        *,
+        task_id: UUID,
+        draft: PhenomenonCandidateDraft,
+        evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...],
+        model: PhenomenonModelSnapshot,
+    ) -> PhenomenonCandidate:
+        return self._repository.save_candidate(
+            task_id=task_id,
+            candidate_id=self._id_factory(),
+            draft=draft,
+            evidence_refs=evidence_refs,
+            model=model,
+        )
+
+    def get_candidate(
+        self, task_id: UUID, candidate_id: UUID
+    ) -> PhenomenonCandidate | None:
+        return self._repository.get_candidate(task_id, candidate_id)
+
+    def update_candidate(
+        self,
+        *,
+        task_id: UUID,
+        candidate_id: UUID,
+        expected_version: int,
+        phenomenon: str,
+        research_intent: str | None,
+        context: str | None,
+    ) -> PhenomenonCandidate | None:
+        return self._repository.update_candidate(
+            task_id=task_id,
+            candidate_id=candidate_id,
+            expected_version=expected_version,
+            phenomenon=phenomenon,
+            research_intent=research_intent,
+            context=context,
+        )
+
+    def confirm_candidate(
+        self,
+        *,
+        task_id: UUID,
+        candidate_id: UUID,
+        expected_version: int,
+    ) -> tuple[ConfirmedPhenomenonSnapshot, datetime] | None:
+        return self._repository.confirm_candidate(
+            task_id=task_id,
+            candidate_id=candidate_id,
+            expected_version=expected_version,
+            query_id=self._id_factory(),
+            now=self._clock(),
+        )
+
+    def progress(self, task_id: UUID) -> PhenomenonProgress:
+        return self._repository.progress(task_id)
