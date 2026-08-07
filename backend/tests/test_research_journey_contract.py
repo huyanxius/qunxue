@@ -293,7 +293,7 @@ def test_research_journey_calls_public_protocols_with_complete_snapshots() -> No
     )
 
     first_finding = AuditFindingSnapshot(
-        revision_id=UUID(int=60),
+        finding_id=UUID(int=60),
         summary="证据区分规则仍不清楚",
         reason="支持与排除信号尚未连接到材料",
         impact="无法判断竞争解释",
@@ -318,7 +318,7 @@ def test_research_journey_calls_public_protocols_with_complete_snapshots() -> No
         audit=first_audit,
     )
     resolution = AuditResolution(
-        revision_id=first_finding.revision_id,
+        finding_id=first_finding.finding_id,
         action=AuditResolutionAction.ACCEPT,
         reason="按建议补充区分性证据计划",
     )

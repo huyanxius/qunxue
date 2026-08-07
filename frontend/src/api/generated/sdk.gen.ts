@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, GetHealthData, GetHealthResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskResponses } from './types.gen';
+import type { AcknowledgePartialMatchData, AcknowledgePartialMatchErrors, AcknowledgePartialMatchResponses, ConfirmFrameworkData, ConfirmFrameworkErrors, ConfirmFrameworkResponses, ConfirmPhenomenonCandidateData, ConfirmPhenomenonCandidateErrors, ConfirmPhenomenonCandidateResponses, ConfirmTheoryPlanData, ConfirmTheoryPlanErrors, ConfirmTheoryPlanResponses, CreateFrameworkData, CreateFrameworkErrors, CreateFrameworkResponses, CreateMatchRunData, CreateMatchRunErrors, CreateMatchRunResponses, CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, CreateTheoryDecisionsData, CreateTheoryDecisionsErrors, CreateTheoryDecisionsResponses, DeferTheoryPlanData, DeferTheoryPlanErrors, DeferTheoryPlanResponses, DeleteResearchTaskData, DeleteResearchTaskErrors, DeleteResearchTaskResponses, ExportConfirmedFrameworkData, ExportConfirmedFrameworkErrors, ExportConfirmedFrameworkResponses, ExportResearchTraceData, ExportResearchTraceErrors, ExportResearchTraceResponses, ExtractPhenomenonCandidatesData, ExtractPhenomenonCandidatesErrors, ExtractPhenomenonCandidatesResponses, GetCurrentKnowledgeReleaseData, GetCurrentKnowledgeReleaseErrors, GetCurrentKnowledgeReleaseResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetFrameworkData, GetFrameworkErrors, GetFrameworkResponses, GetFrameworkReviewData, GetFrameworkReviewErrors, GetFrameworkReviewResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetKnowledgeEntryData, GetKnowledgeEntryErrors, GetKnowledgeEntryResponses, GetMatchRunData, GetMatchRunErrors, GetMatchRunResponses, GetPhenomenonCandidateData, GetPhenomenonCandidateErrors, GetPhenomenonCandidateResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskNavigationData, GetResearchTaskNavigationErrors, GetResearchTaskNavigationResponses, GetResearchTaskResponses, GetResearchTraceData, GetResearchTraceErrors, GetResearchTraceResponses, ListBuiltinCasesData, ListBuiltinCasesErrors, ListBuiltinCasesResponses, ListKnowledgeEntriesData, ListKnowledgeEntriesErrors, ListKnowledgeEntriesResponses, ListMatchCandidatesData, ListMatchCandidatesErrors, ListMatchCandidatesResponses, ListPhenomenonSnapshotsData, ListPhenomenonSnapshotsErrors, ListPhenomenonSnapshotsResponses, ListResearchTasksData, ListResearchTasksErrors, ListResearchTasksResponses, ListTheoryDecisionsData, ListTheoryDecisionsErrors, ListTheoryDecisionsResponses, LoginSessionData, LoginSessionErrors, LoginSessionResponses, LogoutSessionData, LogoutSessionErrors, LogoutSessionResponses, RegisterSessionData, RegisterSessionErrors, RegisterSessionResponses, RetryFrameworkReviewData, RetryFrameworkReviewErrors, RetryFrameworkReviewResponses, RetryMatchCandidateData, RetryMatchCandidateErrors, RetryMatchCandidateResponses, StartFrameworkReviewData, StartFrameworkReviewErrors, StartFrameworkReviewResponses, SubmitAuditResolutionsData, SubmitAuditResolutionsErrors, SubmitAuditResolutionsResponses, SubmitDirectInputData, SubmitDirectInputErrors, SubmitDirectInputResponses, SubmitMaterialInputData, SubmitMaterialInputErrors, SubmitMaterialInputResponses, UpdateFrameworkData, UpdateFrameworkErrors, UpdateFrameworkResponses, UpdatePhenomenonCandidateData, UpdatePhenomenonCandidateErrors, UpdatePhenomenonCandidateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,9 +19,184 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * Confirm Theory Plan
+ */
+export const confirmTheoryPlan = <ThrowOnError extends boolean = false>(options: Options<ConfirmTheoryPlanData, ThrowOnError>): RequestResult<ConfirmTheoryPlanResponses, ConfirmTheoryPlanErrors, ThrowOnError> => (options.client ?? client).post<ConfirmTheoryPlanResponses, ConfirmTheoryPlanErrors, ThrowOnError>({
+    url: '/api/decision-sets/{decision_set_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Framework
+ */
+export const getFramework = <ThrowOnError extends boolean = false>(options: Options<GetFrameworkData, ThrowOnError>): RequestResult<GetFrameworkResponses, GetFrameworkErrors, ThrowOnError> => (options.client ?? client).get<GetFrameworkResponses, GetFrameworkErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}', ...options });
+
+/**
+ * Update Framework
+ */
+export const updateFramework = <ThrowOnError extends boolean = false>(options: Options<UpdateFrameworkData, ThrowOnError>): RequestResult<UpdateFrameworkResponses, UpdateFrameworkErrors, ThrowOnError> => (options.client ?? client).patch<UpdateFrameworkResponses, UpdateFrameworkErrors, ThrowOnError>({
+    url: '/api/frameworks/{framework_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Submit Audit Resolutions
+ */
+export const submitAuditResolutions = <ThrowOnError extends boolean = false>(options: Options<SubmitAuditResolutionsData, ThrowOnError>): RequestResult<SubmitAuditResolutionsResponses, SubmitAuditResolutionsErrors, ThrowOnError> => (options.client ?? client).post<SubmitAuditResolutionsResponses, SubmitAuditResolutionsErrors, ThrowOnError>({
+    url: '/api/frameworks/{framework_id}/audit-resolutions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm Framework
+ */
+export const confirmFramework = <ThrowOnError extends boolean = false>(options: Options<ConfirmFrameworkData, ThrowOnError>): RequestResult<ConfirmFrameworkResponses, ConfirmFrameworkErrors, ThrowOnError> => (options.client ?? client).post<ConfirmFrameworkResponses, ConfirmFrameworkErrors, ThrowOnError>({
+    url: '/api/frameworks/{framework_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Export Confirmed Framework
+ */
+export const exportConfirmedFramework = <ThrowOnError extends boolean = false>(options: Options<ExportConfirmedFrameworkData, ThrowOnError>): RequestResult<ExportConfirmedFrameworkResponses, ExportConfirmedFrameworkErrors, ThrowOnError> => (options.client ?? client).get<ExportConfirmedFrameworkResponses, ExportConfirmedFrameworkErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}/export', ...options });
+
+/**
+ * Start Framework Review
+ */
+export const startFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<StartFrameworkReviewData, ThrowOnError>): RequestResult<StartFrameworkReviewResponses, StartFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).post<StartFrameworkReviewResponses, StartFrameworkReviewErrors, ThrowOnError>({
+    url: '/api/frameworks/{framework_id}/reviews',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Framework Review
+ */
+export const getFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<GetFrameworkReviewData, ThrowOnError>): RequestResult<GetFrameworkReviewResponses, GetFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).get<GetFrameworkReviewResponses, GetFrameworkReviewErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}/reviews/{review_run_id}', ...options });
+
+/**
+ * Retry Framework Review
+ */
+export const retryFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<RetryFrameworkReviewData, ThrowOnError>): RequestResult<RetryFrameworkReviewResponses, RetryFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).post<RetryFrameworkReviewResponses, RetryFrameworkReviewErrors, ThrowOnError>({
+    url: '/api/frameworks/{framework_id}/reviews/{review_run_id}/retry',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Get Health
  */
-export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
+export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, GetHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({ url: '/api/health', ...options });
+
+/**
+ * List Builtin Cases
+ */
+export const listBuiltinCases = <ThrowOnError extends boolean = false>(options?: Options<ListBuiltinCasesData, ThrowOnError>): RequestResult<ListBuiltinCasesResponses, ListBuiltinCasesErrors, ThrowOnError> => (options?.client ?? client).get<ListBuiltinCasesResponses, ListBuiltinCasesErrors, ThrowOnError>({ url: '/api/knowledge/cases', ...options });
+
+/**
+ * List Knowledge Entries
+ */
+export const listKnowledgeEntries = <ThrowOnError extends boolean = false>(options?: Options<ListKnowledgeEntriesData, ThrowOnError>): RequestResult<ListKnowledgeEntriesResponses, ListKnowledgeEntriesErrors, ThrowOnError> => (options?.client ?? client).get<ListKnowledgeEntriesResponses, ListKnowledgeEntriesErrors, ThrowOnError>({ url: '/api/knowledge/entries', ...options });
+
+/**
+ * Get Knowledge Entry
+ */
+export const getKnowledgeEntry = <ThrowOnError extends boolean = false>(options: Options<GetKnowledgeEntryData, ThrowOnError>): RequestResult<GetKnowledgeEntryResponses, GetKnowledgeEntryErrors, ThrowOnError> => (options.client ?? client).get<GetKnowledgeEntryResponses, GetKnowledgeEntryErrors, ThrowOnError>({ url: '/api/knowledge/entries/{knowledge_id}', ...options });
+
+/**
+ * Get Current Knowledge Release
+ */
+export const getCurrentKnowledgeRelease = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentKnowledgeReleaseData, ThrowOnError>): RequestResult<GetCurrentKnowledgeReleaseResponses, GetCurrentKnowledgeReleaseErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentKnowledgeReleaseResponses, GetCurrentKnowledgeReleaseErrors, ThrowOnError>({ url: '/api/knowledge/releases/current', ...options });
+
+/**
+ * Get Match Run
+ */
+export const getMatchRun = <ThrowOnError extends boolean = false>(options: Options<GetMatchRunData, ThrowOnError>): RequestResult<GetMatchRunResponses, GetMatchRunErrors, ThrowOnError> => (options.client ?? client).get<GetMatchRunResponses, GetMatchRunErrors, ThrowOnError>({ url: '/api/match-runs/{match_run_id}', ...options });
+
+/**
+ * List Match Candidates
+ */
+export const listMatchCandidates = <ThrowOnError extends boolean = false>(options: Options<ListMatchCandidatesData, ThrowOnError>): RequestResult<ListMatchCandidatesResponses, ListMatchCandidatesErrors, ThrowOnError> => (options.client ?? client).get<ListMatchCandidatesResponses, ListMatchCandidatesErrors, ThrowOnError>({ url: '/api/match-runs/{match_run_id}/candidates', ...options });
+
+/**
+ * Retry Match Candidate
+ */
+export const retryMatchCandidate = <ThrowOnError extends boolean = false>(options: Options<RetryMatchCandidateData, ThrowOnError>): RequestResult<RetryMatchCandidateResponses, RetryMatchCandidateErrors, ThrowOnError> => (options.client ?? client).post<RetryMatchCandidateResponses, RetryMatchCandidateErrors, ThrowOnError>({
+    url: '/api/match-runs/{match_run_id}/candidates/{candidate_id}/retry',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Theory Decisions
+ */
+export const listTheoryDecisions = <ThrowOnError extends boolean = false>(options: Options<ListTheoryDecisionsData, ThrowOnError>): RequestResult<ListTheoryDecisionsResponses, ListTheoryDecisionsErrors, ThrowOnError> => (options.client ?? client).get<ListTheoryDecisionsResponses, ListTheoryDecisionsErrors, ThrowOnError>({ url: '/api/match-runs/{match_run_id}/decisions', ...options });
+
+/**
+ * Create Theory Decisions
+ */
+export const createTheoryDecisions = <ThrowOnError extends boolean = false>(options: Options<CreateTheoryDecisionsData, ThrowOnError>): RequestResult<CreateTheoryDecisionsResponses, CreateTheoryDecisionsErrors, ThrowOnError> => (options.client ?? client).post<CreateTheoryDecisionsResponses, CreateTheoryDecisionsErrors, ThrowOnError>({
+    url: '/api/match-runs/{match_run_id}/decisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Defer Theory Plan
+ */
+export const deferTheoryPlan = <ThrowOnError extends boolean = false>(options: Options<DeferTheoryPlanData, ThrowOnError>): RequestResult<DeferTheoryPlanResponses, DeferTheoryPlanErrors, ThrowOnError> => (options.client ?? client).post<DeferTheoryPlanResponses, DeferTheoryPlanErrors, ThrowOnError>({
+    url: '/api/match-runs/{match_run_id}/defer',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Acknowledge Partial Match
+ */
+export const acknowledgePartialMatch = <ThrowOnError extends boolean = false>(options: Options<AcknowledgePartialMatchData, ThrowOnError>): RequestResult<AcknowledgePartialMatchResponses, AcknowledgePartialMatchErrors, ThrowOnError> => (options.client ?? client).post<AcknowledgePartialMatchResponses, AcknowledgePartialMatchErrors, ThrowOnError>({
+    url: '/api/match-runs/{match_run_id}/partial-completion-acknowledgements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Research Tasks
+ */
+export const listResearchTasks = <ThrowOnError extends boolean = false>(options?: Options<ListResearchTasksData, ThrowOnError>): RequestResult<ListResearchTasksResponses, ListResearchTasksErrors, ThrowOnError> => (options?.client ?? client).get<ListResearchTasksResponses, ListResearchTasksErrors, ThrowOnError>({ url: '/api/research-tasks', ...options });
 
 /**
  * Create Research Task
@@ -36,6 +211,154 @@ export const createResearchTask = <ThrowOnError extends boolean = false>(options
 });
 
 /**
+ * Delete Research Task
+ */
+export const deleteResearchTask = <ThrowOnError extends boolean = false>(options: Options<DeleteResearchTaskData, ThrowOnError>): RequestResult<DeleteResearchTaskResponses, DeleteResearchTaskErrors, ThrowOnError> => (options.client ?? client).delete<DeleteResearchTaskResponses, DeleteResearchTaskErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}', ...options });
+
+/**
  * Get Research Task
  */
 export const getResearchTask = <ThrowOnError extends boolean = false>(options: Options<GetResearchTaskData, ThrowOnError>): RequestResult<GetResearchTaskResponses, GetResearchTaskErrors, ThrowOnError> => (options.client ?? client).get<GetResearchTaskResponses, GetResearchTaskErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}', ...options });
+
+/**
+ * Export Research Trace
+ */
+export const exportResearchTrace = <ThrowOnError extends boolean = false>(options: Options<ExportResearchTraceData, ThrowOnError>): RequestResult<ExportResearchTraceResponses, ExportResearchTraceErrors, ThrowOnError> => (options.client ?? client).get<ExportResearchTraceResponses, ExportResearchTraceErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/export', ...options });
+
+/**
+ * Create Framework
+ */
+export const createFramework = <ThrowOnError extends boolean = false>(options: Options<CreateFrameworkData, ThrowOnError>): RequestResult<CreateFrameworkResponses, CreateFrameworkErrors, ThrowOnError> => (options.client ?? client).post<CreateFrameworkResponses, CreateFrameworkErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/frameworks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Submit Direct Input
+ */
+export const submitDirectInput = <ThrowOnError extends boolean = false>(options: Options<SubmitDirectInputData, ThrowOnError>): RequestResult<SubmitDirectInputResponses, SubmitDirectInputErrors, ThrowOnError> => (options.client ?? client).post<SubmitDirectInputResponses, SubmitDirectInputErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/inputs/direct',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Submit Material Input
+ */
+export const submitMaterialInput = <ThrowOnError extends boolean = false>(options: Options<SubmitMaterialInputData, ThrowOnError>): RequestResult<SubmitMaterialInputResponses, SubmitMaterialInputErrors, ThrowOnError> => (options.client ?? client).post<SubmitMaterialInputResponses, SubmitMaterialInputErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/inputs/material',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create Match Run
+ */
+export const createMatchRun = <ThrowOnError extends boolean = false>(options: Options<CreateMatchRunData, ThrowOnError>): RequestResult<CreateMatchRunResponses, CreateMatchRunErrors, ThrowOnError> => (options.client ?? client).post<CreateMatchRunResponses, CreateMatchRunErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/match-runs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Research Task Navigation
+ */
+export const getResearchTaskNavigation = <ThrowOnError extends boolean = false>(options: Options<GetResearchTaskNavigationData, ThrowOnError>): RequestResult<GetResearchTaskNavigationResponses, GetResearchTaskNavigationErrors, ThrowOnError> => (options.client ?? client).get<GetResearchTaskNavigationResponses, GetResearchTaskNavigationErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/navigation', ...options });
+
+/**
+ * Extract Phenomenon Candidates
+ */
+export const extractPhenomenonCandidates = <ThrowOnError extends boolean = false>(options: Options<ExtractPhenomenonCandidatesData, ThrowOnError>): RequestResult<ExtractPhenomenonCandidatesResponses, ExtractPhenomenonCandidatesErrors, ThrowOnError> => (options.client ?? client).post<ExtractPhenomenonCandidatesResponses, ExtractPhenomenonCandidatesErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Phenomenon Candidate
+ */
+export const getPhenomenonCandidate = <ThrowOnError extends boolean = false>(options: Options<GetPhenomenonCandidateData, ThrowOnError>): RequestResult<GetPhenomenonCandidateResponses, GetPhenomenonCandidateErrors, ThrowOnError> => (options.client ?? client).get<GetPhenomenonCandidateResponses, GetPhenomenonCandidateErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}', ...options });
+
+/**
+ * Update Phenomenon Candidate
+ */
+export const updatePhenomenonCandidate = <ThrowOnError extends boolean = false>(options: Options<UpdatePhenomenonCandidateData, ThrowOnError>): RequestResult<UpdatePhenomenonCandidateResponses, UpdatePhenomenonCandidateErrors, ThrowOnError> => (options.client ?? client).patch<UpdatePhenomenonCandidateResponses, UpdatePhenomenonCandidateErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm Phenomenon Candidate
+ */
+export const confirmPhenomenonCandidate = <ThrowOnError extends boolean = false>(options: Options<ConfirmPhenomenonCandidateData, ThrowOnError>): RequestResult<ConfirmPhenomenonCandidateResponses, ConfirmPhenomenonCandidateErrors, ThrowOnError> => (options.client ?? client).post<ConfirmPhenomenonCandidateResponses, ConfirmPhenomenonCandidateErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Phenomenon Snapshots
+ */
+export const listPhenomenonSnapshots = <ThrowOnError extends boolean = false>(options: Options<ListPhenomenonSnapshotsData, ThrowOnError>): RequestResult<ListPhenomenonSnapshotsResponses, ListPhenomenonSnapshotsErrors, ThrowOnError> => (options.client ?? client).get<ListPhenomenonSnapshotsResponses, ListPhenomenonSnapshotsErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/phenomenon-snapshots', ...options });
+
+/**
+ * Get Research Trace
+ */
+export const getResearchTrace = <ThrowOnError extends boolean = false>(options: Options<GetResearchTraceData, ThrowOnError>): RequestResult<GetResearchTraceResponses, GetResearchTraceErrors, ThrowOnError> => (options.client ?? client).get<GetResearchTraceResponses, GetResearchTraceErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/trace', ...options });
+
+/**
+ * Get Current Session
+ */
+export const getCurrentSession = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentSessionData, ThrowOnError>): RequestResult<GetCurrentSessionResponses, GetCurrentSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentSessionResponses, GetCurrentSessionErrors, ThrowOnError>({ url: '/api/session', ...options });
+
+/**
+ * Login Session
+ */
+export const loginSession = <ThrowOnError extends boolean = false>(options: Options<LoginSessionData, ThrowOnError>): RequestResult<LoginSessionResponses, LoginSessionErrors, ThrowOnError> => (options.client ?? client).post<LoginSessionResponses, LoginSessionErrors, ThrowOnError>({
+    url: '/api/session/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Logout Session
+ */
+export const logoutSession = <ThrowOnError extends boolean = false>(options: Options<LogoutSessionData, ThrowOnError>): RequestResult<LogoutSessionResponses, LogoutSessionErrors, ThrowOnError> => (options.client ?? client).post<LogoutSessionResponses, LogoutSessionErrors, ThrowOnError>({ url: '/api/session/logout', ...options });
+
+/**
+ * Register Session
+ */
+export const registerSession = <ThrowOnError extends boolean = false>(options: Options<RegisterSessionData, ThrowOnError>): RequestResult<RegisterSessionResponses, RegisterSessionErrors, ThrowOnError> => (options.client ?? client).post<RegisterSessionResponses, RegisterSessionErrors, ThrowOnError>({
+    url: '/api/session/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

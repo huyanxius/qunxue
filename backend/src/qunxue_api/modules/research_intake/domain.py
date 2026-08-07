@@ -8,12 +8,36 @@ class EntryType(StrEnum):
     DIRECT_INPUT = "direct_input"
 
 
+class EntryInputType(StrEnum):
+    DIRECT_INPUT = "direct_input"
+    MATERIAL_INPUT = "material_input"
+
+
 class ResearchTaskStatus(StrEnum):
     DRAFT = "draft"
 
 
 class ResearchTaskAction(StrEnum):
     SUBMIT_PHENOMENON = "submit_phenomenon"
+
+
+class PhenomenonEvidenceVerificationStatus(StrEnum):
+    VERIFIED = "verified"
+    USER_ATTESTED = "user_attested"
+    PENDING = "pending"
+
+
+@dataclass(frozen=True, slots=True)
+class PhenomenonEvidenceRefSnapshot:
+    """Displayable evidence retained with a phenomenon, not an orphaned ID."""
+
+    evidence_ref_id: str
+    excerpt: str
+    source_ref_id: str
+    source_description: str | None
+    locator: str | None
+    verification_status: PhenomenonEvidenceVerificationStatus
+    use_boundary: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +50,7 @@ class ConfirmedPhenomenonSnapshot:
     phenomenon: str
     research_intent: str | None
     context: str | None
+    evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +61,7 @@ class PhenomenonCandidateDraft:
     research_intent: str | None
     context: str | None
     source_ref_ids: tuple[str, ...]
+    evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

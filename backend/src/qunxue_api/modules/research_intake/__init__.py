@@ -2,8 +2,11 @@
 
 from qunxue_api.modules.research_intake.domain import (
     ConfirmedPhenomenonSnapshot,
+    EntryInputType,
     EntryType,
     PhenomenonCandidateDraft,
+    PhenomenonEvidenceRefSnapshot,
+    PhenomenonEvidenceVerificationStatus,
     ResearchTask,
     ResearchTaskAction,
     ResearchTaskStatus,
@@ -17,7 +20,10 @@ from qunxue_api.modules.research_intake.service import ResearchTaskService
 
 __all__ = [
     "ConfirmedPhenomenonSnapshot",
+    "EntryInputType",
     "EntryType",
+    "PhenomenonEvidenceRefSnapshot",
+    "PhenomenonEvidenceVerificationStatus",
     "PhenomenonCandidateBuilder",
     "PhenomenonCandidateDraft",
     "ResearchTask",

@@ -5,6 +5,450 @@ export type ClientOptions = {
 };
 
 /**
+ * AcknowledgePartialMatchRequest
+ */
+export type AcknowledgePartialMatchRequest = {
+    /**
+     * Acknowledged Candidate Ids
+     */
+    acknowledged_candidate_ids: Array<string>;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Failed Candidate Ids
+     */
+    failed_candidate_ids: Array<string>;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * AuditFindingResponse
+ */
+export type AuditFindingResponse = {
+    /**
+     * Blocking
+     */
+    blocking: boolean;
+    /**
+     * Finding Id
+     */
+    finding_id: string;
+    finding_type: AuditFindingType;
+    /**
+     * Impact
+     */
+    impact: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Recommendation
+     */
+    recommendation: string;
+    severity: AuditFindingSeverity;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
+ * AuditFindingSeverity
+ */
+export type AuditFindingSeverity = 'info' | 'warning' | 'blocking';
+
+/**
+ * AuditFindingType
+ */
+export type AuditFindingType = 'concept_alignment' | 'evidence' | 'inference' | 'method' | 'ethics' | 'scope';
+
+/**
+ * AuditOverallStatus
+ */
+export type AuditOverallStatus = 'pass' | 'revise' | 'insufficient';
+
+/**
+ * AuditResolutionAction
+ */
+export type AuditResolutionAction = 'handled' | 'overridden';
+
+/**
+ * AuditResolutionInput
+ */
+export type AuditResolutionInput = {
+    action: AuditResolutionAction;
+    /**
+     * Finding Id
+     */
+    finding_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * AuditResolutionSetResponse
+ */
+export type AuditResolutionSetResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<FrameworkAction>;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Resolution Set Id
+     */
+    resolution_set_id: string;
+    /**
+     * Resolutions
+     */
+    resolutions: Array<AuditResolutionInput>;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Unresolved Blocking
+     */
+    unresolved_blocking: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * BuiltInCaseContentStatus
+ */
+export type BuiltInCaseContentStatus = 'reviewed' | 'demonstration';
+
+/**
+ * BuiltInCasePageResponse
+ */
+export type BuiltInCasePageResponse = {
+    /**
+     * Cases
+     */
+    cases: Array<BuiltInCaseResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+};
+
+/**
+ * BuiltInCaseResponse
+ */
+export type BuiltInCaseResponse = {
+    /**
+     * Case Id
+     */
+    case_id: string;
+    content_status: BuiltInCaseContentStatus;
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * CandidateContentStatus
+ */
+export type CandidateContentStatus = 'reviewed' | 'model_generated' | 'external_unreviewed' | 'user_supplied';
+
+/**
+ * CandidateJudgementRunStatus
+ */
+export type CandidateJudgementRunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'timed_out' | 'insufficient_sources';
+
+/**
+ * CandidateOrigin
+ */
+export type CandidateOrigin = 'reviewed_knowledge' | 'model_exploration' | 'external_unreviewed' | 'user_supplied';
+
+/**
+ * ConceptMappingContract
+ */
+export type ConceptMappingContract = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Empirical Indicators
+     */
+    empirical_indicators: Array<string>;
+    /**
+     * Meaning In Study
+     */
+    meaning_in_study: string;
+    /**
+     * Theory Concept
+     */
+    theory_concept: string;
+    /**
+     * Unresolved Questions
+     */
+    unresolved_questions: Array<string>;
+};
+
+/**
+ * ConfirmFrameworkRequest
+ */
+export type ConfirmFrameworkRequest = {
+    /**
+     * Audit Id
+     */
+    audit_id: string;
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Resolution Set Id
+     */
+    resolution_set_id?: string | null;
+};
+
+/**
+ * ConfirmPhenomenonCandidateRequest
+ */
+export type ConfirmPhenomenonCandidateRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
+ * ConfirmTheoryPlanRequest
+ */
+export type ConfirmTheoryPlanRequest = {
+    /**
+     * Expected Decision Set Version
+     */
+    expected_decision_set_version: number;
+};
+
+/**
+ * ConfirmedFrameworkResponse
+ */
+export type ConfirmedFrameworkResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<FrameworkAction>;
+    audit: FrameworkAuditResponse;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    draft: FrameworkDraftContract;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Resolutions
+     */
+    resolutions: Array<AuditResolutionInput>;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Status
+     */
+    status: 'confirmed';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ConfirmedTheoryPlanResponse
+ */
+export type ConfirmedTheoryPlanResponse = {
+    /**
+     * Adopted Candidate Ids
+     */
+    adopted_candidate_ids: Array<string>;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<TheoryPlanAction>;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    confirmed_phenomenon: PhenomenonSnapshotResponse;
+    /**
+     * Decision Set Id
+     */
+    decision_set_id: string;
+    /**
+     * Decisions
+     */
+    decisions: Array<TheoryDecisionRecordResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Phenomenon Version
+     */
+    phenomenon_version: number;
+    /**
+     * Relations
+     */
+    relations: Array<TheoryRelationResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Use Assignments
+     */
+    use_assignments: Array<TheoryUseAssignmentResponse>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * CreateFrameworkRequest
+ */
+export type CreateFrameworkRequest = {
+    /**
+     * Analysis Unit
+     */
+    analysis_unit?: string | null;
+    /**
+     * Confirmed Research Question
+     */
+    confirmed_research_question: string;
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Expected Task Version
+     */
+    expected_task_version: number;
+    method_intent: MethodIntentContract;
+    /**
+     * Original Research Question
+     */
+    original_research_question: string;
+    /**
+     * Question Adjustment Reason
+     */
+    question_adjustment_reason?: string | null;
+    /**
+     * Research Object
+     */
+    research_object: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Theory Plan Version
+     */
+    theory_plan_version: number;
+};
+
+/**
+ * CreateMatchRunRequest
+ */
+export type CreateMatchRunRequest = {
+    /**
+     * Expected Task Version
+     */
+    expected_task_version: number;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id?: string | null;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Phenomenon Version
+     */
+    phenomenon_version: number;
+};
+
+/**
  * CreateResearchTaskRequest
  */
 export type CreateResearchTaskRequest = {
@@ -12,18 +456,194 @@ export type CreateResearchTaskRequest = {
 };
 
 /**
+ * CreateTheoryDecisionsRequest
+ */
+export type CreateTheoryDecisionsRequest = {
+    completion_basis: MatchCompletionBasis;
+    /**
+     * Decisions
+     */
+    decisions: Array<TheoryDecisionInput>;
+    /**
+     * Expected Match Run Version
+     */
+    expected_match_run_version: number;
+    /**
+     * Relations
+     */
+    relations: Array<TheoryRelationInput>;
+    /**
+     * Use Assignments
+     */
+    use_assignments: Array<TheoryUseAssignmentInput>;
+};
+
+/**
+ * DeferTheoryPlanRequest
+ */
+export type DeferTheoryPlanRequest = {
+    /**
+     * Expected Match Run Version
+     */
+    expected_match_run_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DeferredTheoryPlanResponse
+ */
+export type DeferredTheoryPlanResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<MatchRunAction>;
+    /**
+     * Deferred At
+     */
+    deferred_at: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Status
+     */
+    status: 'deferred';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DeidentifiedMaterialInput
+ */
+export type DeidentifiedMaterialInput = {
+    /**
+     * Deidentified Text
+     */
+    deidentified_text: string;
+    /**
+     * Material Ref Id
+     */
+    material_ref_id: string;
+    /**
+     * Media Type
+     */
+    media_type: 'text/plain' | 'text/markdown';
+    /**
+     * Source Description
+     */
+    source_description?: string | null;
+};
+
+/**
+ * DeleteResearchTaskResponse
+ */
+export type DeleteResearchTaskResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskAction>;
+    /**
+     * Deleted
+     */
+    deleted: true;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DirectInputRequest
+ */
+export type DirectInputRequest = {
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent?: string | null;
+};
+
+/**
+ * EntryInputAction
+ */
+export type EntryInputAction = 'extract_phenomenon_candidates';
+
+/**
+ * EntryInputResponse
+ */
+export type EntryInputResponse = {
+    /**
+     * Accepted At
+     */
+    accepted_at: string;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<EntryInputAction>;
+    entry_type: EntryInputType;
+    /**
+     * Input Id
+     */
+    input_id: string;
+    /**
+     * Source Ref Ids
+     */
+    source_ref_ids: Array<string>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EntryInputType
+ */
+export type EntryInputType = 'direct_input' | 'material_input';
+
+/**
  * EntryType
  */
 export type EntryType = 'direct_input';
 
 /**
+ * ErrorCode
+ */
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'not_found' | 'method_not_allowed' | 'research_task_not_found' | 'validation_error' | 'phenomenon_unconfirmed' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+
+/**
  * ErrorDetail
  */
 export type ErrorDetail = {
-    /**
-     * Code
-     */
-    code: string;
+    code: ErrorCode;
     /**
      * Message
      */
@@ -31,7 +651,7 @@ export type ErrorDetail = {
     /**
      * Trace Id
      */
-    trace_id?: string | null;
+    trace_id: string;
 };
 
 /**
@@ -42,23 +662,401 @@ export type ErrorResponse = {
 };
 
 /**
- * HTTPValidationError
+ * EvidenceReferenceResponse
  */
-export type HttpValidationError = {
+export type EvidenceReferenceResponse = {
     /**
-     * Detail
+     * Claim
      */
-    detail?: Array<ValidationError>;
+    claim: string;
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string | null;
+    /**
+     * Locator
+     */
+    locator: string | null;
+    source: SourceRecordResponse | null;
+    /**
+     * Source Id
+     */
+    source_id: string | null;
+    /**
+     * Use Boundary
+     */
+    use_boundary: string;
+    verification_status: SourceVerificationStatus;
 };
+
+/**
+ * ExtractPhenomenonCandidatesRequest
+ */
+export type ExtractPhenomenonCandidatesRequest = {
+    /**
+     * Expected Task Version
+     */
+    expected_task_version: number;
+    /**
+     * Requested Count
+     */
+    requested_count?: number;
+};
+
+/**
+ * FormalFrameworkExportResponse
+ */
+export type FormalFrameworkExportResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<FrameworkAction>;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Framework Status
+     */
+    framework_status: 'confirmed';
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Markdown
+     */
+    markdown: string;
+    /**
+     * Media Type
+     */
+    media_type: 'text/markdown';
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FrameworkAction
+ */
+export type FrameworkAction = 'update' | 'start_review' | 'submit_audit_resolutions' | 'confirm' | 'export';
+
+/**
+ * FrameworkAuditResponse
+ */
+export type FrameworkAuditResponse = {
+    /**
+     * Audit Id
+     */
+    audit_id: string;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    /**
+     * Findings
+     */
+    findings: Array<AuditFindingResponse>;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Framework Version
+     */
+    framework_version: number;
+    overall_status: AuditOverallStatus;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Unresolved Blocking
+     */
+    unresolved_blocking: boolean;
+};
+
+/**
+ * FrameworkDraftContract
+ */
+export type FrameworkDraftContract = {
+    /**
+     * Alternative Explanations
+     */
+    alternative_explanations: Array<string>;
+    /**
+     * Concept Mappings
+     */
+    concept_mappings: Array<ConceptMappingContract>;
+    /**
+     * Ethical Boundaries
+     */
+    ethical_boundaries: Array<string>;
+    /**
+     * Evidence Requirements
+     */
+    evidence_requirements: Array<FrameworkEvidenceRequirementContract>;
+    /**
+     * Inference Links
+     */
+    inference_links: Array<InferenceLinkContract>;
+    method_plan: MethodPlanContract | null;
+    /**
+     * Next Actions
+     */
+    next_actions: Array<string>;
+    /**
+     * Scope And Limitations
+     */
+    scope_and_limitations: Array<string>;
+    /**
+     * Unresolved Items
+     */
+    unresolved_items: Array<string>;
+};
+
+/**
+ * FrameworkEvidenceRequirementContract
+ */
+export type FrameworkEvidenceRequirementContract = {
+    /**
+     * Current Gap
+     */
+    current_gap: string | null;
+    /**
+     * Distinguishing Signal
+     */
+    distinguishing_signal: string | null;
+    /**
+     * Excluding Signal
+     */
+    excluding_signal: string;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Related Candidate Ids
+     */
+    related_candidate_ids: Array<string>;
+    /**
+     * Required Material
+     */
+    required_material: string;
+    /**
+     * Requirement Id
+     */
+    requirement_id: string;
+    /**
+     * Supporting Signal
+     */
+    supporting_signal: string;
+};
+
+/**
+ * FrameworkInputResponse
+ */
+export type FrameworkInputResponse = {
+    /**
+     * Analysis Unit
+     */
+    analysis_unit: string | null;
+    /**
+     * Confirmed Research Question
+     */
+    confirmed_research_question: string;
+    /**
+     * Context
+     */
+    context: string | null;
+    method_intent: MethodIntentContract;
+    /**
+     * Original Research Question
+     */
+    original_research_question: string;
+    /**
+     * Question Adjustment Reason
+     */
+    question_adjustment_reason: string | null;
+    /**
+     * Research Object
+     */
+    research_object: string;
+    theory_plan: ConfirmedTheoryPlanResponse;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Theory Plan Version
+     */
+    theory_plan_version: number;
+};
+
+/**
+ * FrameworkResponse
+ */
+export type FrameworkResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<FrameworkAction>;
+    draft: FrameworkDraftContract;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    input: FrameworkInputResponse;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    model: ModelMetadata | null;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    status: FrameworkStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Unresolved Blocking Audit
+     */
+    unresolved_blocking_audit: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FrameworkReviewAction
+ */
+export type FrameworkReviewAction = 'refresh' | 'retry' | 'submit_audit_resolutions' | 'revise_framework' | 'confirm_framework';
+
+/**
+ * FrameworkReviewFailureCode
+ */
+export type FrameworkReviewFailureCode = 'model_timeout' | 'insufficient_sources' | 'review_failed';
+
+/**
+ * FrameworkReviewFailureResponse
+ */
+export type FrameworkReviewFailureResponse = {
+    code: FrameworkReviewFailureCode;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Requested Source Ids
+     */
+    requested_source_ids: Array<string>;
+    /**
+     * Retryable
+     */
+    retryable: boolean;
+};
+
+/**
+ * FrameworkReviewResponse
+ */
+export type FrameworkReviewResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<FrameworkReviewAction>;
+    /**
+     * Attempt
+     */
+    attempt: number;
+    audit: FrameworkAuditResponse | null;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    failure: FrameworkReviewFailureResponse | null;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    model: ModelMetadata;
+    /**
+     * Retry Of Review Run Id
+     */
+    retry_of_review_run_id: string | null;
+    /**
+     * Review Run Id
+     */
+    review_run_id: string;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    status: FrameworkReviewRunStatus;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FrameworkReviewRunStatus
+ */
+export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | 'failed' | 'timed_out' | 'insufficient_sources';
+
+/**
+ * FrameworkStatus
+ */
+export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
  * HealthResponse
  */
 export type HealthResponse = {
     /**
+     * Capability
+     */
+    capability: 'unavailable' | ModelCapability;
+    /**
      * Contract Version
      */
     contract_version: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
     /**
      * Persistence
      */
@@ -78,9 +1076,881 @@ export type HealthResponse = {
 };
 
 /**
+ * InferenceLinkContract
+ */
+export type InferenceLinkContract = {
+    /**
+     * From Ref
+     */
+    from_ref: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Relation
+     */
+    relation: string;
+    /**
+     * To Ref
+     */
+    to_ref: string;
+    /**
+     * Unresolved
+     */
+    unresolved: boolean;
+};
+
+/**
+ * KnowledgeDirectoryNodeResponse
+ */
+export type KnowledgeDirectoryNodeResponse = {
+    /**
+     * Node Id
+     */
+    node_id: string;
+    node_type: KnowledgeDirectoryNodeType;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeDirectoryNodeType
+ */
+export type KnowledgeDirectoryNodeType = 'category' | 'dimension';
+
+/**
+ * KnowledgeEntryDetailResponse
+ */
+export type KnowledgeEntryDetailResponse = {
+    /**
+     * Aliases
+     */
+    aliases: Array<string>;
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Category Id
+     */
+    category_id: string;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Content Version
+     */
+    content_version: number;
+    /**
+     * Dimension
+     */
+    dimension: string;
+    /**
+     * Dimension Id
+     */
+    dimension_id: string;
+    /**
+     * Directory Path
+     */
+    directory_path: Array<KnowledgeDirectoryNodeResponse>;
+    eligibility: KnowledgeUseEligibilityResponse;
+    /**
+     * Knowledge Id
+     */
+    knowledge_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Relations
+     */
+    relations: Array<KnowledgeRelationResponse>;
+    review_status: KnowledgeReviewStatus;
+    /**
+     * Sources
+     */
+    sources: Array<SourceRecordResponse>;
+    theory_profile: TheoryProfileResponse | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeEntryPageResponse
+ */
+export type KnowledgeEntryPageResponse = {
+    /**
+     * Entries
+     */
+    entries: Array<KnowledgeEntrySummaryResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+};
+
+/**
+ * KnowledgeEntrySummaryResponse
+ */
+export type KnowledgeEntrySummaryResponse = {
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Category Id
+     */
+    category_id: string;
+    /**
+     * Content Version
+     */
+    content_version: number;
+    /**
+     * Dimension
+     */
+    dimension: string;
+    /**
+     * Dimension Id
+     */
+    dimension_id: string;
+    /**
+     * Directory Path
+     */
+    directory_path: Array<KnowledgeDirectoryNodeResponse>;
+    eligibility: KnowledgeUseEligibilityResponse;
+    /**
+     * Knowledge Id
+     */
+    knowledge_id: string;
+    review_status: KnowledgeReviewStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeRelationResponse
+ */
+export type KnowledgeRelationResponse = {
+    /**
+     * Content Version
+     */
+    content_version: number;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Direction
+     */
+    direction: string;
+    /**
+     * Evidence Grade
+     */
+    evidence_grade: string;
+    /**
+     * Evidence Source Ids
+     */
+    evidence_source_ids: Array<string>;
+    /**
+     * Relation Id
+     */
+    relation_id: string;
+    /**
+     * Relation Type
+     */
+    relation_type: string;
+    review_status: KnowledgeReviewStatus;
+    /**
+     * Source Knowledge Id
+     */
+    source_knowledge_id: string;
+    /**
+     * Target Knowledge Id
+     */
+    target_knowledge_id: string;
+};
+
+/**
+ * KnowledgeReleaseLevel
+ */
+export type KnowledgeReleaseLevel = 'working' | 'preview' | 'final';
+
+/**
+ * KnowledgeReleaseResponse
+ */
+export type KnowledgeReleaseResponse = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    level: KnowledgeReleaseLevel;
+};
+
+/**
+ * KnowledgeReviewStatus
+ */
+export type KnowledgeReviewStatus = 'draft' | 'pending' | 'reviewed' | 'retired';
+
+/**
+ * KnowledgeUseEligibilityResponse
+ */
+export type KnowledgeUseEligibilityResponse = {
+    /**
+     * Browse Eligible
+     */
+    browse_eligible: boolean;
+    /**
+     * Match Eligible
+     */
+    match_eligible: boolean;
+    /**
+     * Rag Eligible
+     */
+    rag_eligible: boolean;
+    /**
+     * Review Record Ids
+     */
+    review_record_ids: Array<string>;
+    /**
+     * Training Candidate Eligible
+     */
+    training_candidate_eligible: boolean;
+};
+
+/**
+ * LoginSessionRequest
+ */
+export type LoginSessionRequest = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
+ * LogoutSessionResponse
+ */
+export type LogoutSessionResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<SessionAction>;
+    /**
+     * Session Id
+     */
+    session_id: string;
+    status: SessionStatus;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MarkdownExportResponse
+ */
+export type MarkdownExportResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskAction>;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Markdown
+     */
+    markdown: string;
+    /**
+     * Media Type
+     */
+    media_type: 'text/markdown';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MatchCandidatePageResponse
+ */
+export type MatchCandidatePageResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<MatchRunAction>;
+    /**
+     * Candidates
+     */
+    candidates: Array<TheoryCandidateResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MatchCompletionBasis
+ */
+export type MatchCompletionBasis = 'complete' | 'partial' | 'partial_with_user_ack';
+
+/**
+ * MatchRunAction
+ */
+export type MatchRunAction = 'retry_candidate' | 'acknowledge_partial_completion' | 'create_decision' | 'refresh';
+
+/**
+ * MatchRunResponse
+ */
+export type MatchRunResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<MatchRunAction>;
+    candidate_page: MatchCandidatePageResponse;
+    /**
+     * Completed Candidate Count
+     */
+    completed_candidate_count: number;
+    completion_basis: MatchCompletionBasis;
+    /**
+     * Failed Candidate Count
+     */
+    failed_candidate_count: number;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    model: ModelMetadata;
+    /**
+     * Partial Completion Acknowledged
+     */
+    partial_completion_acknowledged: boolean;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Phenomenon Version
+     */
+    phenomenon_version: number;
+    status: MatchRunStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Total Candidate Count
+     */
+    total_candidate_count: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MatchRunStatus
+ */
+export type MatchRunStatus = 'generating' | 'awaiting_decision' | 'partial_failure' | 'no_reliable_candidate' | 'completed' | 'failed';
+
+/**
+ * MaterialInputRequest
+ */
+export type MaterialInputRequest = {
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Deidentification Acknowledged
+     */
+    deidentification_acknowledged: true;
+    /**
+     * Materials
+     */
+    materials: Array<DeidentifiedMaterialInput>;
+    /**
+     * Processing Authority Acknowledged
+     */
+    processing_authority_acknowledged: true;
+    /**
+     * Research Intent
+     */
+    research_intent?: string | null;
+    /**
+     * Retention Policy Acknowledged
+     */
+    retention_policy_acknowledged: 'no_raw_material_persistence';
+};
+
+/**
+ * MethodIntentContract
+ */
+export type MethodIntentContract = {
+    /**
+     * Constraints
+     */
+    constraints: Array<string>;
+    /**
+     * Method Kind
+     */
+    method_kind: string | null;
+    /**
+     * Source
+     */
+    source: string;
+};
+
+/**
+ * MethodPlanContract
+ */
+export type MethodPlanContract = {
+    /**
+     * Analysis Plan
+     */
+    analysis_plan: Array<string>;
+    /**
+     * Integration Points
+     */
+    integration_points: Array<string>;
+    /**
+     * Material Plan
+     */
+    material_plan: Array<string>;
+    /**
+     * Method Kind
+     */
+    method_kind: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+};
+
+/**
+ * ModelCapability
+ */
+export type ModelCapability = 'mock' | 'base' | 'sft';
+
+/**
+ * ModelMetadata
+ */
+export type ModelMetadata = {
+    capability: ModelCapability;
+    /**
+     * Degraded
+     */
+    degraded: boolean;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
+    /**
+     * Model Version
+     */
+    model_version: string;
+    /**
+     * Provider
+     */
+    provider: string;
+    trace: TraceMetadata;
+};
+
+/**
+ * PhenomenonCandidateAction
+ */
+export type PhenomenonCandidateAction = 'update' | 'confirm';
+
+/**
+ * PhenomenonCandidatePageResponse
+ */
+export type PhenomenonCandidatePageResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<PhenomenonCandidateAction>;
+    /**
+     * Candidates
+     */
+    candidates: Array<PhenomenonCandidateResponse>;
+    model: ModelMetadata;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PhenomenonCandidateResponse
+ */
+export type PhenomenonCandidateResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<PhenomenonCandidateAction>;
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs: Array<PhenomenonEvidenceReferenceResponse>;
+    model: ModelMetadata;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Source Ref Ids
+     */
+    source_ref_ids: Array<string>;
+    status: PhenomenonCandidateStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PhenomenonCandidateStatus
+ */
+export type PhenomenonCandidateStatus = 'proposed' | 'edited' | 'confirmed' | 'superseded';
+
+/**
+ * PhenomenonEvidenceReferenceResponse
+ */
+export type PhenomenonEvidenceReferenceResponse = {
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string;
+    /**
+     * Locator
+     */
+    locator: string | null;
+    /**
+     * Source Description
+     */
+    source_description: string | null;
+    /**
+     * Source Ref Id
+     */
+    source_ref_id: string;
+    /**
+     * Use Boundary
+     */
+    use_boundary: string;
+    verification_status: PhenomenonEvidenceVerificationStatus;
+};
+
+/**
+ * PhenomenonEvidenceVerificationStatus
+ */
+export type PhenomenonEvidenceVerificationStatus = 'verified' | 'user_attested' | 'pending';
+
+/**
+ * PhenomenonSnapshotAction
+ */
+export type PhenomenonSnapshotAction = 'start_matching';
+
+/**
+ * PhenomenonSnapshotPageResponse
+ */
+export type PhenomenonSnapshotPageResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<PhenomenonSnapshotAction>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Snapshots
+     */
+    snapshots: Array<PhenomenonSnapshotResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PhenomenonSnapshotResponse
+ */
+export type PhenomenonSnapshotResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<PhenomenonSnapshotAction>;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs: Array<PhenomenonEvidenceReferenceResponse>;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Source Ref Ids
+     */
+    source_ref_ids: Array<string>;
+    /**
+     * Status
+     */
+    status: 'confirmed';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * RegisterSessionRequest
+ */
+export type RegisterSessionRequest = {
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
+ * RelatedTheoryResponse
+ */
+export type RelatedTheoryResponse = {
+    /**
+     * Relation Explanation
+     */
+    relation_explanation: string;
+    /**
+     * Theory Id
+     */
+    theory_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * ResearchTaskAction
  */
 export type ResearchTaskAction = 'submit_phenomenon';
+
+/**
+ * ResearchTaskLifecycleStatus
+ */
+export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed';
+
+/**
+ * ResearchTaskNavigationAction
+ */
+export type ResearchTaskNavigationAction = 'submit_phenomenon' | 'confirm_phenomenon' | 'start_matching' | 'review_theory_candidates' | 'confirm_theory_plan' | 'create_framework' | 'review_framework' | 'confirm_framework' | 'export';
+
+/**
+ * ResearchTaskNavigationResponse
+ *
+ * Task-scoped aggregate used by `/my` and task-only deep links.
+ */
+export type ResearchTaskNavigationResponse = {
+    /**
+     * Adopted Theory Count
+     */
+    adopted_theory_count: number;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskNavigationAction>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Current Framework Id
+     */
+    current_framework_id: string | null;
+    /**
+     * Current Match Run Id
+     */
+    current_match_run_id: string | null;
+    /**
+     * Current Phenomenon Candidate Id
+     */
+    current_phenomenon_candidate_id: string | null;
+    current_stage: ResearchTaskStage;
+    entry_type: EntryType;
+    phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | null;
+    /**
+     * Seed Theory Id
+     */
+    seed_theory_id: string | null;
+    status: ResearchTaskLifecycleStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ResearchTaskPageResponse
+ */
+export type ResearchTaskPageResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchTaskNavigationResponse>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+};
+
+/**
+ * ResearchTaskPhenomenonSummaryResponse
+ */
+export type ResearchTaskPhenomenonSummaryResponse = {
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
 
 /**
  * ResearchTaskResponse
@@ -111,37 +1981,1135 @@ export type ResearchTaskResponse = {
 };
 
 /**
+ * ResearchTaskStage
+ */
+export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' | 'theory_matching' | 'theory_decision' | 'framework_drafting' | 'framework_review' | 'completed';
+
+/**
  * ResearchTaskStatus
  */
 export type ResearchTaskStatus = 'draft';
 
 /**
- * ValidationError
+ * ResearchTraceActor
  */
-export type ValidationError = {
+export type ResearchTraceActor = 'user' | 'system' | 'model' | 'mock';
+
+/**
+ * ResearchTraceEventResponse
+ */
+export type ResearchTraceEventResponse = {
+    actor: ResearchTraceActor;
+    /**
+     * Event Id
+     */
+    event_id: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Object Version
+     */
+    object_version: number;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Sequence
+     */
+    sequence: number;
+    /**
+     * Trace Id
+     */
+    trace_id: string;
+};
+
+/**
+ * ResearchTraceResponse
+ */
+export type ResearchTraceResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskAction>;
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    /**
+     * Events
+     */
+    events: Array<ResearchTraceEventResponse>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * RetryFrameworkReviewRequest
+ */
+export type RetryFrameworkReviewRequest = {
+    /**
+     * Expected Review Version
+     */
+    expected_review_version: number;
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
+};
+
+/**
+ * RetryMatchCandidateRequest
+ */
+export type RetryMatchCandidateRequest = {
+    /**
+     * Expected Candidate Version
+     */
+    expected_candidate_version: number;
+    /**
+     * Expected Match Run Version
+     */
+    expected_match_run_version: number;
+};
+
+/**
+ * SessionAction
+ */
+export type SessionAction = 'logout';
+
+/**
+ * SessionResponse
+ */
+export type SessionResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<SessionAction>;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Session Id
+     */
+    session_id: string;
+    status: SessionStatus;
+    user: SessionUserResponse;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SessionStatus
+ */
+export type SessionStatus = 'active' | 'logged_out';
+
+/**
+ * SessionUserResponse
+ */
+export type SessionUserResponse = {
+    /**
+     * Display Name
+     */
+    display_name: string | null;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * SourceRecordResponse
+ */
+export type SourceRecordResponse = {
+    /**
+     * Authors Or Institution
+     */
+    authors_or_institution: Array<string>;
+    /**
+     * Locator
+     */
+    locator: string | null;
+    /**
+     * Publication
+     */
+    publication: string | null;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Type
+     */
+    source_type: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Url
+     */
+    url: string | null;
+    /**
+     * Use Boundary
+     */
+    use_boundary: string;
+    verification_status: SourceVerificationStatus;
+    /**
+     * Year
+     */
+    year: number | null;
+};
+
+/**
+ * SourceVerificationStatus
+ */
+export type SourceVerificationStatus = 'verified' | 'system_summary' | 'pending';
+
+/**
+ * StartFrameworkReviewRequest
+ */
+export type StartFrameworkReviewRequest = {
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
+ * SubmitAuditResolutionsRequest
+ */
+export type SubmitAuditResolutionsRequest = {
+    /**
+     * Audit Id
+     */
+    audit_id: string;
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Resolutions
+     */
+    resolutions: Array<AuditResolutionInput>;
+};
+
+/**
+ * TheoryCandidateAction
+ */
+export type TheoryCandidateAction = 'retry' | 'create_decision';
+
+/**
+ * TheoryCandidateResponse
+ */
+export type TheoryCandidateResponse = {
+    /**
+     * Adoption Blockers
+     */
+    adoption_blockers: Array<string>;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<TheoryCandidateAction>;
+    /**
+     * Analysis Levels
+     */
+    analysis_levels: Array<string>;
+    applicability_judgement: TheoryJudgementVerdict;
+    /**
+     * Applicability Rationale
+     */
+    applicability_rationale: string;
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Competing Theories
+     */
+    competing_theories: Array<RelatedTheoryResponse>;
+    /**
+     * Complementary Theories
+     */
+    complementary_theories: Array<RelatedTheoryResponse>;
+    /**
+     * Conflicting Evidence
+     */
+    conflicting_evidence: Array<EvidenceReferenceResponse>;
+    content_status: CandidateContentStatus;
+    /**
+     * Core Claims
+     */
+    core_claims: Array<string>;
+    /**
+     * Formal Adoption Eligible
+     */
+    formal_adoption_eligible: boolean;
+    judgement_run_status: CandidateJudgementRunStatus;
+    /**
+     * Knowledge Id
+     */
+    knowledge_id: string | null;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Limitations
+     */
+    limitations: Array<string>;
+    /**
+     * Missing Evidence
+     */
+    missing_evidence: Array<string>;
+    /**
+     * Misuse Boundaries
+     */
+    misuse_boundaries: Array<string>;
+    model: ModelMetadata;
+    origin: CandidateOrigin;
+    /**
+     * Prerequisites
+     */
+    prerequisites: Array<string>;
+    /**
+     * Problem Focus
+     */
+    problem_focus: string;
+    /**
+     * Requested Material
+     */
+    requested_material: Array<string>;
+    /**
+     * Seed Theory Id
+     */
+    seed_theory_id: string | null;
+    /**
+     * Source Ids
+     */
+    source_ids: Array<string>;
+    /**
+     * Supporting Evidence
+     */
+    supporting_evidence: Array<EvidenceReferenceResponse>;
+    /**
+     * Theory Id
+     */
+    theory_id: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TheoryDecisionAction
+ */
+export type TheoryDecisionAction = 'adopt' | 'exclude' | 'retain' | 'combine' | 'defer' | 'request_more_evidence' | 'revise_applicability';
+
+/**
+ * TheoryDecisionInput
+ */
+export type TheoryDecisionInput = {
+    action: TheoryDecisionAction;
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Candidate Version
+     */
+    candidate_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Related Candidate Ids
+     */
+    related_candidate_ids: Array<string>;
+    /**
+     * Related Source Ids
+     */
+    related_source_ids?: Array<string>;
+    /**
+     * Revised Applicability
+     */
+    revised_applicability?: string | null;
+};
+
+/**
+ * TheoryDecisionPageResponse
+ */
+export type TheoryDecisionPageResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<TheoryDecisionSetAction>;
+    /**
+     * Decision Sets
+     */
+    decision_sets: Array<TheoryDecisionSetResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TheoryDecisionRecordResponse
+ */
+export type TheoryDecisionRecordResponse = {
+    action: TheoryDecisionAction;
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Candidate Version
+     */
+    candidate_version: number;
+    /**
+     * Decision Id
+     */
+    decision_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Related Candidate Ids
+     */
+    related_candidate_ids: Array<string>;
+    /**
+     * Related Source Ids
+     */
+    related_source_ids: Array<string>;
+    /**
+     * Revised Applicability
+     */
+    revised_applicability: string | null;
+};
+
+/**
+ * TheoryDecisionSetAction
+ */
+export type TheoryDecisionSetAction = 'confirm_theory_plan' | 'create_framework';
+
+/**
+ * TheoryDecisionSetResponse
+ */
+export type TheoryDecisionSetResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<TheoryDecisionSetAction>;
+    completion_basis: MatchCompletionBasis;
+    /**
+     * Decision Set Id
+     */
+    decision_set_id: string;
+    /**
+     * Decisions
+     */
+    decisions: Array<TheoryDecisionRecordResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Relations
+     */
+    relations: Array<TheoryRelationResponse>;
+    /**
+     * Use Assignments
+     */
+    use_assignments: Array<TheoryUseAssignmentResponse>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TheoryJudgementVerdict
+ */
+export type TheoryJudgementVerdict = 'applicable' | 'conditional' | 'insufficient' | 'not_applicable';
+
+/**
+ * TheoryPlanAction
+ */
+export type TheoryPlanAction = 'create_framework';
+
+/**
+ * TheoryProfileResponse
+ */
+export type TheoryProfileResponse = {
+    /**
+     * Analysis Levels
+     */
+    analysis_levels: Array<string>;
+    /**
+     * Applicable Phenomena
+     */
+    applicable_phenomena: Array<string>;
+    /**
+     * Competing Or Complementary Theory Ids
+     */
+    competing_or_complementary_theory_ids: Array<string>;
+    /**
+     * Content Version
+     */
+    content_version: number;
+    /**
+     * Core Propositions
+     */
+    core_propositions: Array<string>;
+    /**
+     * Exclusion Signals
+     */
+    exclusion_signals: Array<string>;
+    /**
+     * Match Eligible
+     */
+    match_eligible: boolean;
+    /**
+     * Observable Evidence
+     */
+    observable_evidence: Array<string>;
+    /**
+     * Prerequisites
+     */
+    prerequisites: Array<string>;
+    /**
+     * Related Knowledge Ids
+     */
+    related_knowledge_ids: Array<string>;
+    review_status: KnowledgeReviewStatus;
+    /**
+     * Source Ids
+     */
+    source_ids: Array<string>;
+    /**
+     * Theory Id
+     */
+    theory_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TheoryRelationInput
+ */
+export type TheoryRelationInput = {
+    /**
+     * Candidate Ids
+     */
+    candidate_ids: Array<string>;
+    /**
+     * Distinguishing Evidence
+     */
+    distinguishing_evidence: Array<string>;
+    /**
+     * Excluding Evidence
+     */
+    excluding_evidence: Array<string>;
+    /**
+     * Explanation
+     */
+    explanation: string;
+    /**
+     * Premise Compatibility
+     */
+    premise_compatibility: string;
+    /**
+     * Relation Kind
+     */
+    relation_kind: string;
+    /**
+     * Supporting Evidence
+     */
+    supporting_evidence: Array<string>;
+};
+
+/**
+ * TheoryRelationResponse
+ */
+export type TheoryRelationResponse = {
+    /**
+     * Candidate Ids
+     */
+    candidate_ids: Array<string>;
+    /**
+     * Distinguishing Evidence
+     */
+    distinguishing_evidence: Array<string>;
+    /**
+     * Excluding Evidence
+     */
+    excluding_evidence: Array<string>;
+    /**
+     * Explanation
+     */
+    explanation: string;
+    /**
+     * Premise Compatibility
+     */
+    premise_compatibility: string;
+    /**
+     * Relation Id
+     */
+    relation_id: string;
+    /**
+     * Relation Kind
+     */
+    relation_kind: string;
+    /**
+     * Supporting Evidence
+     */
+    supporting_evidence: Array<string>;
+};
+
+/**
+ * TheoryUseAssignmentInput
+ */
+export type TheoryUseAssignmentInput = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Responsibility
+     */
+    responsibility: string;
+    /**
+     * Role Code
+     */
+    role_code: string;
+};
+
+/**
+ * TheoryUseAssignmentResponse
+ */
+export type TheoryUseAssignmentResponse = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Responsibility
+     */
+    responsibility: string;
+    /**
+     * Role Code
+     */
+    role_code: string;
+};
+
+/**
+ * TraceMetadata
+ */
+export type TraceMetadata = {
+    /**
+     * Contract Version
+     */
+    contract_version: string;
+    /**
+     * Request Id
+     */
+    request_id: string;
+    /**
+     * Trace Id
+     */
+    trace_id: string;
+};
+
+/**
+ * UpdateFrameworkRequest
+ */
+export type UpdateFrameworkRequest = {
+    draft: FrameworkDraftContract;
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Revision Reason
+     */
+    revision_reason: string;
+};
+
+/**
+ * UpdatePhenomenonCandidateRequest
+ */
+export type UpdatePhenomenonCandidateRequest = {
     /**
      * Context
      */
-    ctx?: {
-        [key: string]: unknown;
-    };
+    context?: string | null;
     /**
-     * Input
+     * Expected Version
      */
-    input?: unknown;
+    expected_version: number;
     /**
-     * Location
+     * Phenomenon
      */
-    loc: Array<string | number>;
+    phenomenon: string;
     /**
-     * Message
+     * Research Intent
      */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
+    research_intent?: string | null;
 };
+
+export type ConfirmTheoryPlanData = {
+    body: ConfirmTheoryPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Decision Set Id
+         */
+        decision_set_id: string;
+    };
+    query?: never;
+    url: '/api/decision-sets/{decision_set_id}/confirm';
+};
+
+export type ConfirmTheoryPlanErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ConfirmTheoryPlanError = ConfirmTheoryPlanErrors[keyof ConfirmTheoryPlanErrors];
+
+export type ConfirmTheoryPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmedTheoryPlanResponse;
+};
+
+export type ConfirmTheoryPlanResponse = ConfirmTheoryPlanResponses[keyof ConfirmTheoryPlanResponses];
+
+export type GetFrameworkData = {
+    body?: never;
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}';
+};
+
+export type GetFrameworkErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetFrameworkError = GetFrameworkErrors[keyof GetFrameworkErrors];
+
+export type GetFrameworkResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkResponse;
+};
+
+export type GetFrameworkResponse = GetFrameworkResponses[keyof GetFrameworkResponses];
+
+export type UpdateFrameworkData = {
+    body: UpdateFrameworkRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}';
+};
+
+export type UpdateFrameworkErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type UpdateFrameworkError = UpdateFrameworkErrors[keyof UpdateFrameworkErrors];
+
+export type UpdateFrameworkResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkResponse;
+};
+
+export type UpdateFrameworkResponse = UpdateFrameworkResponses[keyof UpdateFrameworkResponses];
+
+export type SubmitAuditResolutionsData = {
+    body: SubmitAuditResolutionsRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/audit-resolutions';
+};
+
+export type SubmitAuditResolutionsErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type SubmitAuditResolutionsError = SubmitAuditResolutionsErrors[keyof SubmitAuditResolutionsErrors];
+
+export type SubmitAuditResolutionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditResolutionSetResponse;
+};
+
+export type SubmitAuditResolutionsResponse = SubmitAuditResolutionsResponses[keyof SubmitAuditResolutionsResponses];
+
+export type ConfirmFrameworkData = {
+    body: ConfirmFrameworkRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/confirm';
+};
+
+export type ConfirmFrameworkErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ConfirmFrameworkError = ConfirmFrameworkErrors[keyof ConfirmFrameworkErrors];
+
+export type ConfirmFrameworkResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmedFrameworkResponse;
+};
+
+export type ConfirmFrameworkResponse = ConfirmFrameworkResponses[keyof ConfirmFrameworkResponses];
+
+export type ExportConfirmedFrameworkData = {
+    body?: never;
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/export';
+};
+
+export type ExportConfirmedFrameworkErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ExportConfirmedFrameworkError = ExportConfirmedFrameworkErrors[keyof ExportConfirmedFrameworkErrors];
+
+export type ExportConfirmedFrameworkResponses = {
+    /**
+     * Successful Response
+     */
+    200: FormalFrameworkExportResponse;
+};
+
+export type ExportConfirmedFrameworkResponse = ExportConfirmedFrameworkResponses[keyof ExportConfirmedFrameworkResponses];
+
+export type StartFrameworkReviewData = {
+    body: StartFrameworkReviewRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/reviews';
+};
+
+export type StartFrameworkReviewErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type StartFrameworkReviewError = StartFrameworkReviewErrors[keyof StartFrameworkReviewErrors];
+
+export type StartFrameworkReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkReviewResponse;
+};
+
+export type StartFrameworkReviewResponse = StartFrameworkReviewResponses[keyof StartFrameworkReviewResponses];
+
+export type GetFrameworkReviewData = {
+    body?: never;
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+        /**
+         * Review Run Id
+         */
+        review_run_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/reviews/{review_run_id}';
+};
+
+export type GetFrameworkReviewErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetFrameworkReviewError = GetFrameworkReviewErrors[keyof GetFrameworkReviewErrors];
+
+export type GetFrameworkReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkReviewResponse;
+};
+
+export type GetFrameworkReviewResponse = GetFrameworkReviewResponses[keyof GetFrameworkReviewResponses];
+
+export type RetryFrameworkReviewData = {
+    body: RetryFrameworkReviewRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+        /**
+         * Review Run Id
+         */
+        review_run_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/reviews/{review_run_id}/retry';
+};
+
+export type RetryFrameworkReviewErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type RetryFrameworkReviewError = RetryFrameworkReviewErrors[keyof RetryFrameworkReviewErrors];
+
+export type RetryFrameworkReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkReviewResponse;
+};
+
+export type RetryFrameworkReviewResponse = RetryFrameworkReviewResponses[keyof RetryFrameworkReviewResponses];
 
 export type GetHealthData = {
     body?: never;
@@ -149,6 +3117,15 @@ export type GetHealthData = {
     query?: never;
     url: '/api/health';
 };
+
+export type GetHealthErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
 
 export type GetHealthResponses = {
     /**
@@ -158,6 +3135,552 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListBuiltinCasesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/knowledge/cases';
+};
+
+export type ListBuiltinCasesErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListBuiltinCasesError = ListBuiltinCasesErrors[keyof ListBuiltinCasesErrors];
+
+export type ListBuiltinCasesResponses = {
+    /**
+     * Successful Response
+     */
+    200: BuiltInCasePageResponse;
+};
+
+export type ListBuiltinCasesResponse = ListBuiltinCasesResponses[keyof ListBuiltinCasesResponses];
+
+export type ListKnowledgeEntriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+        /**
+         * Query
+         */
+        query?: string | null;
+        /**
+         * Category
+         */
+        category?: string | null;
+        /**
+         * Category Id
+         */
+        category_id?: string | null;
+        /**
+         * Dimension Id
+         */
+        dimension_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/knowledge/entries';
+};
+
+export type ListKnowledgeEntriesErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListKnowledgeEntriesError = ListKnowledgeEntriesErrors[keyof ListKnowledgeEntriesErrors];
+
+export type ListKnowledgeEntriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeEntryPageResponse;
+};
+
+export type ListKnowledgeEntriesResponse = ListKnowledgeEntriesResponses[keyof ListKnowledgeEntriesResponses];
+
+export type GetKnowledgeEntryData = {
+    body?: never;
+    path: {
+        /**
+         * Knowledge Id
+         */
+        knowledge_id: string;
+    };
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+    };
+    url: '/api/knowledge/entries/{knowledge_id}';
+};
+
+export type GetKnowledgeEntryErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetKnowledgeEntryError = GetKnowledgeEntryErrors[keyof GetKnowledgeEntryErrors];
+
+export type GetKnowledgeEntryResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeEntryDetailResponse;
+};
+
+export type GetKnowledgeEntryResponse = GetKnowledgeEntryResponses[keyof GetKnowledgeEntryResponses];
+
+export type GetCurrentKnowledgeReleaseData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/knowledge/releases/current';
+};
+
+export type GetCurrentKnowledgeReleaseErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetCurrentKnowledgeReleaseError = GetCurrentKnowledgeReleaseErrors[keyof GetCurrentKnowledgeReleaseErrors];
+
+export type GetCurrentKnowledgeReleaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeReleaseResponse;
+};
+
+export type GetCurrentKnowledgeReleaseResponse = GetCurrentKnowledgeReleaseResponses[keyof GetCurrentKnowledgeReleaseResponses];
+
+export type GetMatchRunData = {
+    body?: never;
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}';
+};
+
+export type GetMatchRunErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetMatchRunError = GetMatchRunErrors[keyof GetMatchRunErrors];
+
+export type GetMatchRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: MatchRunResponse;
+};
+
+export type GetMatchRunResponse = GetMatchRunResponses[keyof GetMatchRunResponses];
+
+export type ListMatchCandidatesData = {
+    body?: never;
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/match-runs/{match_run_id}/candidates';
+};
+
+export type ListMatchCandidatesErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListMatchCandidatesError = ListMatchCandidatesErrors[keyof ListMatchCandidatesErrors];
+
+export type ListMatchCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MatchCandidatePageResponse;
+};
+
+export type ListMatchCandidatesResponse = ListMatchCandidatesResponses[keyof ListMatchCandidatesResponses];
+
+export type RetryMatchCandidateData = {
+    body: RetryMatchCandidateRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+        /**
+         * Candidate Id
+         */
+        candidate_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}/candidates/{candidate_id}/retry';
+};
+
+export type RetryMatchCandidateErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type RetryMatchCandidateError = RetryMatchCandidateErrors[keyof RetryMatchCandidateErrors];
+
+export type RetryMatchCandidateResponses = {
+    /**
+     * Successful Response
+     */
+    200: TheoryCandidateResponse;
+};
+
+export type RetryMatchCandidateResponse = RetryMatchCandidateResponses[keyof RetryMatchCandidateResponses];
+
+export type ListTheoryDecisionsData = {
+    body?: never;
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/match-runs/{match_run_id}/decisions';
+};
+
+export type ListTheoryDecisionsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListTheoryDecisionsError = ListTheoryDecisionsErrors[keyof ListTheoryDecisionsErrors];
+
+export type ListTheoryDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TheoryDecisionPageResponse;
+};
+
+export type ListTheoryDecisionsResponse = ListTheoryDecisionsResponses[keyof ListTheoryDecisionsResponses];
+
+export type CreateTheoryDecisionsData = {
+    body: CreateTheoryDecisionsRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}/decisions';
+};
+
+export type CreateTheoryDecisionsErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type CreateTheoryDecisionsError = CreateTheoryDecisionsErrors[keyof CreateTheoryDecisionsErrors];
+
+export type CreateTheoryDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TheoryDecisionSetResponse;
+};
+
+export type CreateTheoryDecisionsResponse = CreateTheoryDecisionsResponses[keyof CreateTheoryDecisionsResponses];
+
+export type DeferTheoryPlanData = {
+    body: DeferTheoryPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}/defer';
+};
+
+export type DeferTheoryPlanErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type DeferTheoryPlanError = DeferTheoryPlanErrors[keyof DeferTheoryPlanErrors];
+
+export type DeferTheoryPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeferredTheoryPlanResponse;
+};
+
+export type DeferTheoryPlanResponse = DeferTheoryPlanResponses[keyof DeferTheoryPlanResponses];
+
+export type AcknowledgePartialMatchData = {
+    body: AcknowledgePartialMatchRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}/partial-completion-acknowledgements';
+};
+
+export type AcknowledgePartialMatchErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type AcknowledgePartialMatchError = AcknowledgePartialMatchErrors[keyof AcknowledgePartialMatchErrors];
+
+export type AcknowledgePartialMatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: MatchRunResponse;
+};
+
+export type AcknowledgePartialMatchResponse = AcknowledgePartialMatchResponses[keyof AcknowledgePartialMatchResponses];
+
+export type ListResearchTasksData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/research-tasks';
+};
+
+export type ListResearchTasksErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListResearchTasksError = ListResearchTasksErrors[keyof ListResearchTasksErrors];
+
+export type ListResearchTasksResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTaskPageResponse;
+};
+
+export type ListResearchTasksResponse = ListResearchTasksResponses[keyof ListResearchTasksResponses];
 
 export type CreateResearchTaskData = {
     body: CreateResearchTaskRequest;
@@ -178,9 +3701,9 @@ export type CreateResearchTaskErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchTaskError = CreateResearchTaskErrors[keyof CreateResearchTaskErrors];
@@ -193,6 +3716,50 @@ export type CreateResearchTaskResponses = {
 };
 
 export type CreateResearchTaskResponse = CreateResearchTaskResponses[keyof CreateResearchTaskResponses];
+
+export type DeleteResearchTaskData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}';
+};
+
+export type DeleteResearchTaskErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type DeleteResearchTaskError = DeleteResearchTaskErrors[keyof DeleteResearchTaskErrors];
+
+export type DeleteResearchTaskResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteResearchTaskResponse;
+};
+
+export type DeleteResearchTaskResponse2 = DeleteResearchTaskResponses[keyof DeleteResearchTaskResponses];
 
 export type GetResearchTaskData = {
     body?: never;
@@ -212,9 +3779,9 @@ export type GetResearchTaskErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetResearchTaskError = GetResearchTaskErrors[keyof GetResearchTaskErrors];
@@ -227,3 +3794,681 @@ export type GetResearchTaskResponses = {
 };
 
 export type GetResearchTaskResponse = GetResearchTaskResponses[keyof GetResearchTaskResponses];
+
+export type ExportResearchTraceData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/export';
+};
+
+export type ExportResearchTraceErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ExportResearchTraceError = ExportResearchTraceErrors[keyof ExportResearchTraceErrors];
+
+export type ExportResearchTraceResponses = {
+    /**
+     * Successful Response
+     */
+    200: MarkdownExportResponse;
+};
+
+export type ExportResearchTraceResponse = ExportResearchTraceResponses[keyof ExportResearchTraceResponses];
+
+export type CreateFrameworkData = {
+    body: CreateFrameworkRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/frameworks';
+};
+
+export type CreateFrameworkErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type CreateFrameworkError = CreateFrameworkErrors[keyof CreateFrameworkErrors];
+
+export type CreateFrameworkResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkResponse;
+};
+
+export type CreateFrameworkResponse = CreateFrameworkResponses[keyof CreateFrameworkResponses];
+
+export type SubmitDirectInputData = {
+    body: DirectInputRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/inputs/direct';
+};
+
+export type SubmitDirectInputErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type SubmitDirectInputError = SubmitDirectInputErrors[keyof SubmitDirectInputErrors];
+
+export type SubmitDirectInputResponses = {
+    /**
+     * Successful Response
+     */
+    200: EntryInputResponse;
+};
+
+export type SubmitDirectInputResponse = SubmitDirectInputResponses[keyof SubmitDirectInputResponses];
+
+export type SubmitMaterialInputData = {
+    body: MaterialInputRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/inputs/material';
+};
+
+export type SubmitMaterialInputErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type SubmitMaterialInputError = SubmitMaterialInputErrors[keyof SubmitMaterialInputErrors];
+
+export type SubmitMaterialInputResponses = {
+    /**
+     * Successful Response
+     */
+    200: EntryInputResponse;
+};
+
+export type SubmitMaterialInputResponse = SubmitMaterialInputResponses[keyof SubmitMaterialInputResponses];
+
+export type CreateMatchRunData = {
+    body: CreateMatchRunRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/match-runs';
+};
+
+export type CreateMatchRunErrors = {
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type CreateMatchRunError = CreateMatchRunErrors[keyof CreateMatchRunErrors];
+
+export type CreateMatchRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: MatchRunResponse;
+};
+
+export type CreateMatchRunResponse = CreateMatchRunResponses[keyof CreateMatchRunResponses];
+
+export type GetResearchTaskNavigationData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/navigation';
+};
+
+export type GetResearchTaskNavigationErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetResearchTaskNavigationError = GetResearchTaskNavigationErrors[keyof GetResearchTaskNavigationErrors];
+
+export type GetResearchTaskNavigationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTaskNavigationResponse;
+};
+
+export type GetResearchTaskNavigationResponse = GetResearchTaskNavigationResponses[keyof GetResearchTaskNavigationResponses];
+
+export type ExtractPhenomenonCandidatesData = {
+    body: ExtractPhenomenonCandidatesRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates';
+};
+
+export type ExtractPhenomenonCandidatesErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ExtractPhenomenonCandidatesError = ExtractPhenomenonCandidatesErrors[keyof ExtractPhenomenonCandidatesErrors];
+
+export type ExtractPhenomenonCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonCandidatePageResponse;
+};
+
+export type ExtractPhenomenonCandidatesResponse = ExtractPhenomenonCandidatesResponses[keyof ExtractPhenomenonCandidatesResponses];
+
+export type GetPhenomenonCandidateData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Candidate Id
+         */
+        candidate_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}';
+};
+
+export type GetPhenomenonCandidateErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetPhenomenonCandidateError = GetPhenomenonCandidateErrors[keyof GetPhenomenonCandidateErrors];
+
+export type GetPhenomenonCandidateResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonCandidateResponse;
+};
+
+export type GetPhenomenonCandidateResponse = GetPhenomenonCandidateResponses[keyof GetPhenomenonCandidateResponses];
+
+export type UpdatePhenomenonCandidateData = {
+    body: UpdatePhenomenonCandidateRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Candidate Id
+         */
+        candidate_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}';
+};
+
+export type UpdatePhenomenonCandidateErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type UpdatePhenomenonCandidateError = UpdatePhenomenonCandidateErrors[keyof UpdatePhenomenonCandidateErrors];
+
+export type UpdatePhenomenonCandidateResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonCandidateResponse;
+};
+
+export type UpdatePhenomenonCandidateResponse = UpdatePhenomenonCandidateResponses[keyof UpdatePhenomenonCandidateResponses];
+
+export type ConfirmPhenomenonCandidateData = {
+    body: ConfirmPhenomenonCandidateRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Candidate Id
+         */
+        candidate_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}/confirm';
+};
+
+export type ConfirmPhenomenonCandidateErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ConfirmPhenomenonCandidateError = ConfirmPhenomenonCandidateErrors[keyof ConfirmPhenomenonCandidateErrors];
+
+export type ConfirmPhenomenonCandidateResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonSnapshotResponse;
+};
+
+export type ConfirmPhenomenonCandidateResponse = ConfirmPhenomenonCandidateResponses[keyof ConfirmPhenomenonCandidateResponses];
+
+export type ListPhenomenonSnapshotsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/research-tasks/{task_id}/phenomenon-snapshots';
+};
+
+export type ListPhenomenonSnapshotsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type ListPhenomenonSnapshotsError = ListPhenomenonSnapshotsErrors[keyof ListPhenomenonSnapshotsErrors];
+
+export type ListPhenomenonSnapshotsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonSnapshotPageResponse;
+};
+
+export type ListPhenomenonSnapshotsResponse = ListPhenomenonSnapshotsResponses[keyof ListPhenomenonSnapshotsResponses];
+
+export type GetResearchTraceData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/research-tasks/{task_id}/trace';
+};
+
+export type GetResearchTraceErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetResearchTraceError = GetResearchTraceErrors[keyof GetResearchTraceErrors];
+
+export type GetResearchTraceResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTraceResponse;
+};
+
+export type GetResearchTraceResponse = GetResearchTraceResponses[keyof GetResearchTraceResponses];
+
+export type GetCurrentSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/session';
+};
+
+export type GetCurrentSessionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetCurrentSessionError = GetCurrentSessionErrors[keyof GetCurrentSessionErrors];
+
+export type GetCurrentSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionResponse;
+};
+
+export type GetCurrentSessionResponse = GetCurrentSessionResponses[keyof GetCurrentSessionResponses];
+
+export type LoginSessionData = {
+    body: LoginSessionRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/session/login';
+};
+
+export type LoginSessionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type LoginSessionError = LoginSessionErrors[keyof LoginSessionErrors];
+
+export type LoginSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionResponse;
+};
+
+export type LoginSessionResponse = LoginSessionResponses[keyof LoginSessionResponses];
+
+export type LogoutSessionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/session/logout';
+};
+
+export type LogoutSessionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type LogoutSessionError = LogoutSessionErrors[keyof LogoutSessionErrors];
+
+export type LogoutSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: LogoutSessionResponse;
+};
+
+export type LogoutSessionResponse2 = LogoutSessionResponses[keyof LogoutSessionResponses];
+
+export type RegisterSessionData = {
+    body: RegisterSessionRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/session/register';
+};
+
+export type RegisterSessionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type RegisterSessionError = RegisterSessionErrors[keyof RegisterSessionErrors];
+
+export type RegisterSessionResponses = {
+    /**
+     * Successful Response
+     */
+    201: SessionResponse;
+};
+
+export type RegisterSessionResponse = RegisterSessionResponses[keyof RegisterSessionResponses];

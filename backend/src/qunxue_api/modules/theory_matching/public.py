@@ -33,6 +33,8 @@ class TheoryDecisionAction(StrEnum):
     ADOPT = "adopt"
     EXCLUDE = "exclude"
     RETAIN = "retain"
+    COMBINE = "combine"
+    DEFER = "defer"
     REQUEST_MORE_EVIDENCE = "request_more_evidence"
     REVISE_APPLICABILITY = "revise_applicability"
 
@@ -42,6 +44,28 @@ class TheoryJudgementVerdict(StrEnum):
     CONDITIONAL = "conditional"
     INSUFFICIENT = "insufficient"
     NOT_APPLICABLE = "not_applicable"
+
+
+class CandidateJudgementRunStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    TIMED_OUT = "timed_out"
+    INSUFFICIENT_SOURCES = "insufficient_sources"
+
+
+class CandidateContentStatus(StrEnum):
+    REVIEWED = "reviewed"
+    MODEL_GENERATED = "model_generated"
+    EXTERNAL_UNREVIEWED = "external_unreviewed"
+    USER_SUPPLIED = "user_supplied"
+
+
+class MatchCompletionBasis(StrEnum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    PARTIAL_WITH_USER_ACK = "partial_with_user_ack"
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +105,9 @@ class TheoryCandidateContentSnapshot:
     reviewed_profile: TheoryProfileSnapshot | None
     formal_adoption_eligible: bool
     adoption_blockers: tuple[str, ...]
+    knowledge_id: str | None = None
+    seed_theory_id: str | None = None
+    content_status: CandidateContentStatus = CandidateContentStatus.MODEL_GENERATED
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +135,44 @@ class TheoryJudgementDraft:
 
 
 @dataclass(frozen=True, slots=True)
+class TheoryJudgementBatchItem:
+    candidate_id: UUID
+    candidate_version: int
+    judgement_input: TheoryJudgementInput
+
+
+@dataclass(frozen=True, slots=True)
+class TheoryJudgementBatchInput:
+    """One ordered candidate set; target IDs narrow a retry without losing context."""
+
+    items: tuple[TheoryJudgementBatchItem, ...]
+    target_candidate_ids: tuple[UUID, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class TheoryJudgementBatchItemResult:
+    candidate_id: UUID
+    candidate_version: int
+    status: CandidateJudgementRunStatus
+    judgement: TheoryJudgementDraft | None
+    failure_code: str | None
+    trace_id: UUID
+    request_id: UUID
+    contract_version: str
+
+
+@dataclass(frozen=True, slots=True)
+class TheoryJudgementBatchResult:
+    """Stable rerank output with per-candidate failure and retry information."""
+
+    results: tuple[TheoryJudgementBatchItemResult, ...]
+    input_candidate_order: tuple[UUID, ...]
+    ranked_candidate_order: tuple[UUID, ...]
+    completion_basis: MatchCompletionBasis
+    retryable_candidate_ids: tuple[UUID, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class TheoryCandidateSnapshot:
     candidate_id: UUID
     candidate_version: int
@@ -116,6 +181,9 @@ class TheoryCandidateSnapshot:
     trace_id: UUID
     request_id: UUID
     contract_version: str
+    judgement_run_status: CandidateJudgementRunStatus = (
+        CandidateJudgementRunStatus.SUCCEEDED
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,6 +196,10 @@ class MatchRunSnapshot:
     knowledge_release: KnowledgeReleaseRef
     evidence_bundle: EvidenceBundleSnapshot
     candidates: tuple[TheoryCandidateSnapshot, ...]
+    completion_basis: MatchCompletionBasis = MatchCompletionBasis.COMPLETE
+    partial_completion_acknowledged: bool = False
+    stable_candidate_order: tuple[UUID, ...] = ()
+    next_cursor: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,6 +210,7 @@ class TheoryDecisionCommand:
     reason: str
     related_source_ids: tuple[str, ...] = ()
     revised_applicability: str | None = None
+    related_candidate_ids: tuple[UUID, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +223,7 @@ class TheoryDecisionRecord:
     related_source_ids: tuple[str, ...]
     revised_applicability: str | None
     recorded_at: datetime
+    related_candidate_ids: tuple[UUID, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -245,9 +319,13 @@ class TheoryEvidenceSource(Protocol):
 
 
 class TheoryCandidateJudge(Protocol):
-    """单一模型能力；提供方路由留在 adapter，不形成宽泛 ai-engine。"""
+    """批量判断并稳定重排；提供方路由留在 adapter。"""
 
-    def judge(self, *, input: TheoryJudgementInput) -> TheoryJudgementDraft: ...
+    def judge_and_rerank(
+        self,
+        *,
+        input: TheoryJudgementBatchInput,
+    ) -> TheoryJudgementBatchResult: ...
 
 
 class TheoryMatching(Protocol):

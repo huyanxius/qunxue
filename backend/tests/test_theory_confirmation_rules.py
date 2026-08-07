@@ -63,7 +63,14 @@ def _candidate(
 def _decision(
     candidate_id: UUID,
     action: TheoryDecisionAction,
+    *,
+    related_candidate_ids: tuple[UUID, ...] = (),
 ) -> TheoryDecisionRecord:
+    related_candidates = (
+        {"related_candidate_ids": related_candidate_ids}
+        if related_candidate_ids
+        else {}
+    )
     return TheoryDecisionRecord(
         decision_id=UUID(int=10 + candidate_id.int),
         candidate_id=candidate_id,
@@ -73,6 +80,7 @@ def _decision(
         related_source_ids=("source-1",),
         revised_applicability=None,
         recorded_at=NOW,
+        **related_candidates,
     )
 
 
@@ -154,6 +162,46 @@ def test_confirmation_gate_accepts_complete_multi_theory_plan() -> None:
                 supporting_evidence=("稳定互助规则",),
                 excluding_evidence=("不存在资源差异",),
                 distinguishing_evidence=("跨资源组比较",),
+            ),
+        ),
+    )
+
+    assert validate_theory_plan_confirmation(
+        decision_set,
+        (_candidate(CANDIDATE_A), _candidate(CANDIDATE_B)),
+    ) == (CANDIDATE_A, CANDIDATE_B)
+
+
+def test_confirmation_gate_treats_explicit_combine_as_selected_theories() -> None:
+    combine = getattr(TheoryDecisionAction, "COMBINE", None)
+    assert combine is not None
+    decision_set = _decision_set(
+        decisions=(
+            _decision(
+                CANDIDATE_A,
+                combine,
+                related_candidate_ids=(CANDIDATE_B,),
+            ),
+            _decision(
+                CANDIDATE_B,
+                combine,
+                related_candidate_ids=(CANDIDATE_A,),
+            ),
+        ),
+        assignments=(
+            TheoryUseAssignment(CANDIDATE_A, "primary", "解释规范形成"),
+            TheoryUseAssignment(CANDIDATE_B, "complementary", "解释资源约束"),
+        ),
+        relations=(
+            TheoryRelationSnapshot(
+                relation_id=UUID(int=31),
+                candidate_ids=(CANDIDATE_A, CANDIDATE_B),
+                relation_kind="combined",
+                explanation="把规范与资源机制作为明确组合使用",
+                premise_compatibility="分析层次不同且前提相容",
+                supporting_evidence=("规范与资源共同变化",),
+                excluding_evidence=("只有单一机制变化",),
+                distinguishing_evidence=("跨情境机制比较",),
             ),
         ),
     )
