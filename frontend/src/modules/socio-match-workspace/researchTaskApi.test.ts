@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createResearchTaskViaApi,
+  startMaterialViaApi,
   startPhenomenonViaApi,
 } from './researchTaskApi'
 
@@ -19,6 +20,8 @@ describe('research task API', () => {
           status: 'draft',
           version: 1,
           allowed_actions: ['submit_phenomenon'],
+          seed_theory_id: null,
+          seed_theory_name: null,
           created_at: '2026-07-28T00:00:00Z',
           updated_at: '2026-07-28T00:00:00Z',
         }),
@@ -38,6 +41,7 @@ describe('research task API', () => {
       status: 'draft',
       version: 1,
       allowedActions: ['submit_phenomenon'],
+      seedTheory: null,
       createdAt: '2026-07-28T00:00:00Z',
       updatedAt: '2026-07-28T00:00:00Z',
     })
@@ -57,6 +61,8 @@ describe('research task API', () => {
           status: 'draft',
           version: 1,
           allowed_actions: ['submit_phenomenon'],
+          seed_theory_id: null,
+          seed_theory_name: null,
           created_at: '2026-08-07T00:00:00Z',
           updated_at: '2026-08-07T00:00:00Z',
         }, { status: 201 })
@@ -87,6 +93,9 @@ describe('research task API', () => {
           context: null,
           source_ref_ids: ['input:direct'],
           evidence_refs: [],
+          missing_information: [],
+          source_traceability: 'traceable',
+          content_origin: 'system_generated',
           model: {
             provider: 'deterministic-mock',
             model_version: 'mock-sociology-v1',
@@ -126,6 +135,60 @@ describe('research task API', () => {
     const directRequest = fetchMock.mock.calls[1][0] as Request
     expect(await directRequest.json()).toMatchObject({
       phenomenon: '社区互助为何减少？',
+    })
+  })
+
+  it('submits one material with processing confirmations and its seed clue', async () => {
+    const taskId = '6f7f21c9-5691-49e5-9d6b-f0e8f307d01f'
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const request = input as Request
+      if (request.url.endsWith('/api/research-tasks')) {
+        return Response.json({
+          task_id: taskId,
+          entry_type: 'material_input',
+          status: 'draft',
+          version: 1,
+          allowed_actions: ['submit_phenomenon'],
+          seed_theory_id: 'theory-social-capital',
+          seed_theory_name: '社会资本理论',
+          created_at: '2026-08-08T00:00:00Z',
+          updated_at: '2026-08-08T00:00:00Z',
+        }, { status: 201 })
+      }
+      return Response.json({
+        run_id: 'material-run-1',
+        task_id: taskId,
+        status: 'completed',
+        filename: 'pasted-material.txt',
+        media_type: 'text/plain',
+        processing_policy_version: '2026-08-08',
+        candidates: [],
+        accepted_at: '2026-08-08T00:00:01Z',
+      }, { status: 201 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await startMaterialViaApi({
+      pastedText: '第一段观察。\n\n第二段观察。\n\n第三段观察。',
+      file: null,
+      researchIntent: '',
+      context: '',
+      processingPolicyVersion: '2026-08-08',
+      seedTheory: { theoryId: 'theory-social-capital', name: '社会资本理论' },
+    })
+
+    const createRequest = fetchMock.mock.calls[0][0] as Request
+    expect(await createRequest.json()).toMatchObject({
+      entry_type: 'material_input',
+      seed_theory_id: 'theory-social-capital',
+    })
+    const materialRequest = fetchMock.mock.calls[1][0] as Request
+    expect(await materialRequest.json()).toMatchObject({
+      pasted_text: '第一段观察。\n\n第二段观察。\n\n第三段观察。',
+      deidentification_confirmed: true,
+      processing_rights_confirmed: true,
+      external_processing_acknowledged: true,
+      processing_policy_version: '2026-08-08',
     })
   })
 })

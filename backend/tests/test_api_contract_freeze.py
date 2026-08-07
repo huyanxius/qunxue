@@ -250,7 +250,7 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
         "raw_content",
         "persist_raw_material",
     } & set(material["properties"])
-    assert schemas["EntryType"]["enum"] == ["direct_input"]
+    assert schemas["EntryType"]["enum"] == ["direct_input", "material_input"]
     assert schemas["EntryInputType"]["enum"] == ["direct_input", "material_input"]
     assert {"candidate_id", "version", "status", "allowed_actions", "model"} <= set(
         schemas["PhenomenonCandidateResponse"]["required"]
