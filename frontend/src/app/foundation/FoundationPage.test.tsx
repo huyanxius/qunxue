@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, useLocation } from 'react-router'
+import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { FoundationPage } from './FoundationPage'
@@ -11,39 +11,62 @@ afterEach(() => {
 })
 
 describe('FoundationPage', () => {
-  it('opens a newly created research task at its protected phenomenon route', async () => {
-    vi.stubGlobal('crypto', { randomUUID: () => 'test-request-key' })
-    let requestCount = 0
-    const fetchMock = vi.fn(async () => {
-      requestCount += 1
-      if (requestCount === 1) {
-        return new Response(
+  it('shows the product boundary and all four stable content provenance marks', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
           JSON.stringify({
             status: 'ok',
             service: '群学致知 API',
-            runtime_mode: 'inline_demo',
+            runtime_mode: 'mock',
             persistence: 'sqlite',
-            contract_version: '2026-07-foundation',
+            contract_version: '2026-08-m1',
+            capability: 'mock',
+            knowledge_release_id: 'knowledge-demo-v1',
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
-        )
-      }
-      return new Response(
-        JSON.stringify({
-          task_id: 'task-1',
-          entry_type: 'direct_input',
-          status: 'draft',
-          version: 1,
-          allowed_actions: ['submit_phenomenon'],
-          created_at: '2026-07-28T00:00:00Z',
-          updated_at: '2026-07-28T00:00:00Z',
-        }),
-        { status: 201, headers: { 'Content-Type': 'application/json' } },
-      )
+        ),
+      ),
+    )
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
     })
+
+    const { container } = render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <FoundationPage />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    )
+
+    expect(
+      screen.getByRole('heading', {
+        name: '从社会现象找到可比较理论，再形成研究框架。',
+      }),
+    ).toBeVisible()
+    expect(screen.getByText('产品输出止于研究框架')).toBeVisible()
+    expect(await screen.findByText('演示数据')).toBeVisible()
+
+    expect(container.querySelector('.content-mark--verified')).toHaveTextContent(
+      '已审核知识',
+    )
+    expect(container.querySelector('.content-mark--analysis')).toHaveTextContent(
+      '系统分析',
+    )
+    expect(container.querySelector('.content-mark--external')).toHaveTextContent(
+      '库外线索',
+    )
+    expect(container.querySelector('.content-mark--user')).toHaveTextContent(
+      '用户内容',
+    )
+  })
+
+  it('keeps both peer entrances navigable when the health request fails', async () => {
     vi.stubGlobal(
       'fetch',
-      fetchMock,
+      vi.fn(async () => new Response(null, { status: 503 })),
     )
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -53,20 +76,19 @@ describe('FoundationPage', () => {
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
           <FoundationPage />
-          <RouteLocation />
         </QueryClientProvider>
       </MemoryRouter>,
     )
 
-    await screen.findByText('接口已接通')
-    fireEvent.click(screen.getByRole('button', { name: '建立空白研究任务' }))
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2)
-      expect(screen.getByTestId('route-location')).toHaveTextContent(
-        '/research/task-1/phenomenon',
-      )
-    })
+    expect(await screen.findByText('接口暂不可用')).toBeVisible()
+    expect(screen.getByRole('link', { name: '开始一项研究' })).toHaveAttribute(
+      'href',
+      '/research/new',
+    )
+    expect(screen.getByRole('link', { name: '浏览知识库' })).toHaveAttribute(
+      'href',
+      '/knowledge',
+    )
   })
 
   it('shows the real backend contract after the health request succeeds', async () => {
@@ -77,9 +99,11 @@ describe('FoundationPage', () => {
           JSON.stringify({
             status: 'ok',
             service: '群学致知 API',
-            runtime_mode: 'inline_demo',
+            runtime_mode: 'mock',
             persistence: 'sqlite',
             contract_version: '2026-07-foundation',
+            capability: 'mock',
+            knowledge_release_id: 'knowledge-demo-v1',
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
@@ -97,16 +121,14 @@ describe('FoundationPage', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('接口已接通')).toBeInTheDocument()
+    expect(await screen.findByText('系统可用')).toBeInTheDocument()
     expect(screen.getByText('2026-07-foundation')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '建立空白研究任务' })).toBeEnabled()
+    expect(screen.getByRole('link', { name: '开始一项研究' })).toHaveAttribute(
+      'href',
+      '/research/new',
+    )
     expect(
-      screen.getByRole('link', { name: '进入可视化知识库' }),
+      screen.getByRole('link', { name: '浏览知识库' }),
     ).toHaveAttribute('href', '/knowledge')
   })
 })
-
-function RouteLocation() {
-  const location = useLocation()
-  return <div data-testid="route-location">{location.pathname}</div>
-}
