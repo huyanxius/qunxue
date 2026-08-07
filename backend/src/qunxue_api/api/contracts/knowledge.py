@@ -3,6 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel
 
 from qunxue_api.modules.knowledge_catalog import (
+    KnowledgeDirectoryNodeType,
     KnowledgeReleaseLevel,
     KnowledgeReviewStatus,
     SourceVerificationStatus,
@@ -23,12 +24,21 @@ class KnowledgeReleaseResponse(BaseModel):
     content_hash: str
 
 
+class KnowledgeDirectoryNodeResponse(BaseModel):
+    node_id: str
+    node_type: KnowledgeDirectoryNodeType
+    title: str
+
+
 class KnowledgeEntrySummaryResponse(BaseModel):
     knowledge_id: str
     content_version: int
     title: str
+    category_id: str
     category: str
+    dimension_id: str
     dimension: str
+    directory_path: list[KnowledgeDirectoryNodeResponse]
     review_status: KnowledgeReviewStatus
     eligibility: KnowledgeUseEligibilityResponse
 
@@ -88,8 +98,11 @@ class KnowledgeEntryDetailResponse(BaseModel):
     knowledge_id: str
     content_version: int
     title: str
+    category_id: str
     category: str
+    dimension_id: str
     dimension: str
+    directory_path: list[KnowledgeDirectoryNodeResponse]
     review_status: KnowledgeReviewStatus
     eligibility: KnowledgeUseEligibilityResponse
     aliases: list[str]

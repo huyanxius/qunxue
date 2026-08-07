@@ -37,6 +37,8 @@ def list_knowledge_entries(
     knowledge_release_id: str | None = None,
     query: str | None = None,
     category: str | None = None,
+    category_id: str | None = None,
+    dimension_id: str | None = None,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
 ) -> JSONResponse:

@@ -30,6 +30,20 @@ class SourceVerificationStatus(StrEnum):
     PENDING = "pending"
 
 
+class KnowledgeDirectoryNodeType(StrEnum):
+    CATEGORY = "category"
+    DIMENSION = "dimension"
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeDirectoryNodeSnapshot:
+    """One stable segment of an entry's catalog path."""
+
+    node_id: str
+    node_type: KnowledgeDirectoryNodeType
+    title: str
+
+
 @dataclass(frozen=True, slots=True)
 class KnowledgeUseEligibility:
     """展示、检索、训练候选和正式匹配是四个独立准入结论。"""
@@ -65,8 +79,11 @@ class KnowledgeEntrySummary:
     knowledge_id: str
     content_version: int
     title: str
+    category_id: str
     category: str
+    dimension_id: str
     dimension: str
+    directory_path: tuple[KnowledgeDirectoryNodeSnapshot, ...]
     review_status: KnowledgeReviewStatus
     eligibility: KnowledgeUseEligibility
 
@@ -167,6 +184,8 @@ class KnowledgeCatalog(Protocol):
         release_id: str,
         query: str | None,
         category: str | None,
+        category_id: str | None,
+        dimension_id: str | None,
         cursor: str | None,
     ) -> KnowledgeEntryPage: ...
 

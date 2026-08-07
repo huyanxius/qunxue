@@ -2,6 +2,8 @@
 
 from qunxue_api.modules.knowledge_catalog.public import (
     KnowledgeCatalog,
+    KnowledgeDirectoryNodeSnapshot,
+    KnowledgeDirectoryNodeType,
     KnowledgeEntryDetail,
     KnowledgeEntryPage,
     KnowledgeEntrySummary,
@@ -21,6 +23,8 @@ from qunxue_api.modules.knowledge_catalog.public import (
 
 __all__ = [
     "KnowledgeCatalog",
+    "KnowledgeDirectoryNodeSnapshot",
+    "KnowledgeDirectoryNodeType",
     "KnowledgeEntryDetail",
     "KnowledgeEntryPage",
     "KnowledgeEntrySummary",

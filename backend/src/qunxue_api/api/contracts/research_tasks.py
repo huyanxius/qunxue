@@ -24,6 +24,34 @@ class ResearchTraceActor(StrEnum):
     MOCK = "mock"
 
 
+class ResearchTaskLifecycleStatus(StrEnum):
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
+class ResearchTaskStage(StrEnum):
+    PHENOMENON_INPUT = "phenomenon_input"
+    PHENOMENON_CONFIRMATION = "phenomenon_confirmation"
+    THEORY_MATCHING = "theory_matching"
+    THEORY_DECISION = "theory_decision"
+    FRAMEWORK_DRAFTING = "framework_drafting"
+    FRAMEWORK_REVIEW = "framework_review"
+    COMPLETED = "completed"
+
+
+class ResearchTaskNavigationAction(StrEnum):
+    SUBMIT_PHENOMENON = "submit_phenomenon"
+    CONFIRM_PHENOMENON = "confirm_phenomenon"
+    START_MATCHING = "start_matching"
+    REVIEW_THEORY_CANDIDATES = "review_theory_candidates"
+    CONFIRM_THEORY_PLAN = "confirm_theory_plan"
+    CREATE_FRAMEWORK = "create_framework"
+    REVIEW_FRAMEWORK = "review_framework"
+    CONFIRM_FRAMEWORK = "confirm_framework"
+    EXPORT = "export"
+
+
 class ResearchTaskResponse(BaseModel):
     task_id: UUID
     entry_type: EntryType
@@ -46,8 +74,34 @@ class ResearchTaskResponse(BaseModel):
         )
 
 
+class ResearchTaskPhenomenonSummaryResponse(BaseModel):
+    phenomenon_query_id: UUID
+    version: int
+    phenomenon: str
+    research_intent: str | None
+
+
+class ResearchTaskNavigationResponse(BaseModel):
+    """Task-scoped aggregate used by `/my` and task-only deep links."""
+
+    task_id: UUID
+    entry_type: EntryType
+    status: ResearchTaskLifecycleStatus
+    current_stage: ResearchTaskStage
+    version: int
+    allowed_actions: list[ResearchTaskNavigationAction]
+    seed_theory_id: str | None
+    phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | None
+    adopted_theory_count: int
+    current_phenomenon_candidate_id: UUID | None
+    current_match_run_id: UUID | None
+    current_framework_id: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class ResearchTaskPageResponse(BaseModel):
-    items: list[ResearchTaskResponse]
+    items: list[ResearchTaskNavigationResponse]
     next_cursor: str | None
 
 
