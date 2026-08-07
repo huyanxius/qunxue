@@ -4,6 +4,7 @@ from qunxue_api.adapters.sqlite.base import Base
 from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
 from qunxue_api.adapters.sqlite.model_invocation_model import ModelInvocationRow
 from qunxue_api.adapters.sqlite.research_intake_model import (
+    MaterialIntakeRunRow,
     PhenomenonCandidateVersionRow,
     PhenomenonExampleRow,
     PhenomenonStateRow,
@@ -13,6 +14,7 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
 __all__ = [
     "Base",
     "ModelInvocationRow",
+    "MaterialIntakeRunRow",
     "PhenomenonCandidateVersionRow",
     "PhenomenonExampleRow",
     "PhenomenonStateRow",

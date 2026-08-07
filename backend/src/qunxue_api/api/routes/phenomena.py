@@ -1,6 +1,11 @@
+import base64
+import binascii
 from dataclasses import replace
 from datetime import datetime
-from uuid import UUID
+from io import BytesIO
+from uuid import UUID, uuid4
+from xml.etree import ElementTree
+from zipfile import BadZipFile, ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
@@ -17,6 +22,8 @@ from qunxue_api.api.contracts.phenomena import (
     EntryInputResponse,
     ExtractPhenomenonCandidatesRequest,
     MaterialInputRequest,
+    MaterialIntakeRequest,
+    MaterialIntakeRunResponse,
     PhenomenonCandidateAction,
     PhenomenonCandidatePageResponse,
     PhenomenonCandidateResponse,
@@ -29,6 +36,7 @@ from qunxue_api.api.contracts.phenomena import (
     UpdatePhenomenonCandidateRequest,
 )
 from qunxue_api.api.dependencies import (
+    CurrentSessionDependency,
     OwnedResearchTaskDependency,
     PhenomenonServiceDependency,
     get_owned_research_task,
@@ -37,6 +45,7 @@ from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
     EntryInputType,
+    MaterialIntakeRun,
     PhenomenonCandidate,
     PhenomenonCandidateStatus,
     PhenomenonEvidenceRefSnapshot,
@@ -51,6 +60,7 @@ router = APIRouter(
     dependencies=[Depends(get_owned_research_task)],
 )
 example_router = APIRouter(tags=["phenomena"])
+material_router = APIRouter(tags=["phenomena"])
 
 
 @example_router.get(
@@ -73,6 +83,23 @@ def list_phenomenon_examples(
             for item in service.list_examples()
         ]
     )
+
+
+@material_router.get(
+    "/api/material-intake-runs/{run_id}",
+    operation_id="get_material_intake_run",
+    response_model=MaterialIntakeRunResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def get_material_intake_run(
+    run_id: UUID,
+    current: CurrentSessionDependency,
+    service: PhenomenonServiceDependency,
+) -> MaterialIntakeRunResponse:
+    run = service.get_material_run(run_id, user_id=current.user.user_id)
+    if run is None:
+        raise HTTPException(status_code=404)
+    return _material_run_response(run)
 
 
 @router.post(
@@ -116,6 +143,43 @@ def submit_material_input(
     _idempotency_key: IdempotencyKey,
 ) -> JSONResponse:
     return not_implemented_response()
+
+
+@router.post(
+    "/material-intakes",
+    operation_id="submit_material_intake",
+    response_model=MaterialIntakeRunResponse,
+    status_code=201,
+    responses={404: {"model": ErrorResponse}},
+)
+def submit_material_intake(
+    task_id: UUID,
+    payload: MaterialIntakeRequest,
+    idempotency_key: IdempotencyKey,
+    request: Request,
+    service: PhenomenonServiceDependency,
+) -> MaterialIntakeRunResponse:
+    run = service.submit_material(
+        task_id=task_id,
+        idempotency_key=idempotency_key,
+        filename=payload.filename,
+        media_type=payload.media_type,
+        text=_material_text(payload),
+        research_intent=payload.research_intent,
+        context=payload.context,
+        processing_policy_version=payload.processing_policy_version,
+        model=PhenomenonModelSnapshot(
+            provider="deterministic-material-parser",
+            model_version="1",
+            capability="mock",
+            degraded=False,
+            knowledge_release_id=None,
+            trace_id=uuid4(),
+            request_id=uuid4(),
+            contract_version=request.app.state.settings.contract_version,
+        ),
+    )
+    return _material_run_response(run)
 
 
 @router.post(
@@ -334,8 +398,55 @@ def _candidate_response(candidate: PhenomenonCandidate) -> PhenomenonCandidateRe
         context=candidate.context,
         source_ref_ids=list(candidate.source_ref_ids),
         evidence_refs=[_evidence_response(item) for item in candidate.evidence_refs],
+        missing_information=list(candidate.missing_information),
+        source_traceability=candidate.source_traceability,
         model=_model_response(candidate.model),
     )
+
+
+def _material_run_response(run: MaterialIntakeRun) -> MaterialIntakeRunResponse:
+    return MaterialIntakeRunResponse(
+        run_id=run.run_id,
+        task_id=run.task_id,
+        status="completed",
+        filename=run.filename,
+        media_type=run.media_type,
+        processing_policy_version=run.processing_policy_version,
+        candidates=[_candidate_response(item) for item in run.candidates],
+        accepted_at=run.accepted_at,
+    )
+
+
+def _material_text(payload: MaterialIntakeRequest) -> str:
+    if payload.pasted_text is not None:
+        return payload.pasted_text.strip()
+    assert payload.content_base64 is not None
+    try:
+        content = base64.b64decode(payload.content_base64, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise HTTPException(status_code=422) from error
+    if len(content) > 2_000_000:
+        raise HTTPException(status_code=422)
+    if payload.media_type == "text/plain":
+        try:
+            return content.decode("utf-8").strip()
+        except UnicodeDecodeError as error:
+            raise HTTPException(status_code=422) from error
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            document_xml = archive.read("word/document.xml")
+        root = ElementTree.fromstring(document_xml)
+    except (BadZipFile, KeyError, ElementTree.ParseError) as error:
+        raise HTTPException(status_code=422) from error
+    namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    paragraphs = []
+    for paragraph in root.iter(f"{namespace}p"):
+        text = "".join(node.text or "" for node in paragraph.iter(f"{namespace}t"))
+        if text.strip():
+            paragraphs.append(text.strip())
+    if not paragraphs:
+        raise HTTPException(status_code=422)
+    return "\n\n".join(paragraphs)
 
 
 def _snapshot_response(

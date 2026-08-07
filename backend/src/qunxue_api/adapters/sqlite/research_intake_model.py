@@ -74,6 +74,8 @@ class PhenomenonStateRow(Base):
     context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
     source_ref_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    missing_information: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    source_traceability: Mapped[str] = mapped_column(String(32), nullable=False)
     model_provider: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model_capability: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -107,6 +109,8 @@ class PhenomenonCandidateVersionRow(Base):
     context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
     source_ref_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    missing_information: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    source_traceability: Mapped[str] = mapped_column(String(32), nullable=False)
     model_provider: Mapped[str] = mapped_column(String(128), nullable=False)
     model_version: Mapped[str] = mapped_column(String(128), nullable=False)
     model_capability: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -127,3 +131,26 @@ class PhenomenonExampleRow(Base):
     phenomenon: Mapped[str] = mapped_column(String(10000), nullable=False)
     research_intent: Mapped[str | None] = mapped_column(String(4000), nullable=True)
     context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
+
+
+class MaterialIntakeRunRow(Base):
+    __tablename__ = "material_intake_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "task_id",
+            "idempotency_key",
+            name="uq_material_intake_task_request",
+        ),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    processing_policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    candidate_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

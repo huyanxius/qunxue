@@ -6,6 +6,7 @@ from uuid import UUID
 
 class EntryType(StrEnum):
     DIRECT_INPUT = "direct_input"
+    MATERIAL_INPUT = "material_input"
 
 
 class EntryInputType(StrEnum):
@@ -112,6 +113,28 @@ class PhenomenonCandidate:
     source_ref_ids: tuple[str, ...]
     evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...]
     model: PhenomenonModelSnapshot
+    missing_information: tuple[str, ...] = ()
+    source_traceability: str = "traceable"
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialIntakeRun:
+    run_id: UUID
+    task_id: UUID
+    status: str
+    filename: str
+    media_type: str
+    processing_policy_version: str
+    candidates: tuple[PhenomenonCandidate, ...]
+    accepted_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedPhenomenonCandidate:
+    candidate_id: UUID
+    draft: PhenomenonCandidateDraft
+    evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...]
+    missing_information: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -7,12 +8,15 @@ from qunxue_api.modules.research_intake.domain import (
     ConfirmedPhenomenonSnapshot,
     DirectPhenomenonInput,
     EntryType,
+    MaterialIntakeRun,
     PhenomenonCandidate,
     PhenomenonCandidateDraft,
     PhenomenonEvidenceRefSnapshot,
+    PhenomenonEvidenceVerificationStatus,
     PhenomenonExample,
     PhenomenonModelSnapshot,
     PhenomenonProgress,
+    PreparedPhenomenonCandidate,
     ResearchTask,
     ResearchTaskStatus,
 )
@@ -90,6 +94,87 @@ class PhenomenonService:
 
     def list_examples(self) -> list[PhenomenonExample]:
         return self._repository.list_examples()
+
+    def submit_material(
+        self,
+        *,
+        task_id: UUID,
+        idempotency_key: str,
+        filename: str,
+        media_type: str,
+        text: str,
+        research_intent: str | None,
+        context: str | None,
+        processing_policy_version: str,
+        model: PhenomenonModelSnapshot,
+    ) -> MaterialIntakeRun:
+        run_id = self._id_factory()
+        segments = [
+            segment.strip()
+            for segment in re.split(r"\n\s*\n|\n", text)
+            if segment.strip()
+        ][:5]
+        if not segments:
+            raise ValueError("material contains no readable text")
+        prepared: list[PreparedPhenomenonCandidate] = []
+        prompts = (
+            "材料所述现象在不同时间或情境中如何变化？",
+            "材料中对同一现象的经历有哪些异同？",
+            "材料所述现象在什么条件下持续或中断？",
+        )
+        candidate_count = min(5, max(3, len(segments)))
+        for index in range(candidate_count):
+            source_index = min(index, len(segments) - 1)
+            excerpt = segments[source_index][:1000]
+            phenomenon = excerpt if index < len(segments) else prompts[index % len(prompts)]
+            source_ref_id = f"material:{run_id}"
+            prepared.append(
+                PreparedPhenomenonCandidate(
+                    candidate_id=self._id_factory(),
+                    draft=PhenomenonCandidateDraft(
+                        phenomenon=phenomenon,
+                        research_intent=research_intent,
+                        context=context,
+                        source_ref_ids=(source_ref_id,),
+                    ),
+                    evidence_refs=(
+                        PhenomenonEvidenceRefSnapshot(
+                            evidence_ref_id=f"{source_ref_id}:paragraph:{source_index + 1}",
+                            excerpt=excerpt,
+                            source_ref_id=source_ref_id,
+                            source_description=filename,
+                            locator=f"第{source_index + 1}段",
+                            verification_status=(
+                                PhenomenonEvidenceVerificationStatus.USER_ATTESTED
+                            ),
+                            use_boundary="来自用户确认可处理的去标识化材料，尚未经外部核验。",
+                        ),
+                    ),
+                    missing_information=(
+                        "现象发生的时间范围",
+                        "可比较的情境或参与者差异",
+                    ),
+                )
+            )
+        return self._repository.submit_material(
+            run_id=run_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            filename=filename,
+            media_type=media_type,
+            processing_policy_version=processing_policy_version,
+            candidates=tuple(prepared),
+            model=model,
+            now=self._clock(),
+        )
+
+    def get_material_run(
+        self,
+        run_id: UUID,
+        *,
+        user_id: UUID,
+    ) -> MaterialIntakeRun | None:
+        return self._repository.get_material_run(run_id, user_id)
 
     def submit_direct(
         self,

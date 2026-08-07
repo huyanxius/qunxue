@@ -74,6 +74,8 @@ def upgrade() -> None:
         sa.Column("context", sa.String(length=10000), nullable=True),
         sa.Column("source_ref_ids", sa.JSON(), nullable=False),
         sa.Column("evidence_refs", sa.JSON(), nullable=False),
+        sa.Column("missing_information", sa.JSON(), nullable=False),
+        sa.Column("source_traceability", sa.String(length=32), nullable=False),
         sa.Column("model_provider", sa.String(length=128), nullable=True),
         sa.Column("model_version", sa.String(length=128), nullable=True),
         sa.Column("model_capability", sa.String(length=32), nullable=True),
@@ -104,6 +106,8 @@ def upgrade() -> None:
         sa.Column("context", sa.String(length=10000), nullable=True),
         sa.Column("source_ref_ids", sa.JSON(), nullable=False),
         sa.Column("evidence_refs", sa.JSON(), nullable=False),
+        sa.Column("missing_information", sa.JSON(), nullable=False),
+        sa.Column("source_traceability", sa.String(length=32), nullable=False),
         sa.Column("model_provider", sa.String(length=128), nullable=False),
         sa.Column("model_version", sa.String(length=128), nullable=False),
         sa.Column("model_capability", sa.String(length=32), nullable=False),
@@ -123,9 +127,31 @@ def upgrade() -> None:
         "phenomenon_candidate_versions",
         ["task_id", "candidate_id"],
     )
+    op.create_table(
+        "material_intake_runs",
+        sa.Column("run_id", sa.String(length=36), nullable=False),
+        sa.Column("task_id", sa.String(length=36), nullable=False),
+        sa.Column("idempotency_key", sa.String(length=128), nullable=False),
+        sa.Column("status", sa.String(length=32), nullable=False),
+        sa.Column("filename", sa.String(length=255), nullable=False),
+        sa.Column("media_type", sa.String(length=128), nullable=False),
+        sa.Column("processing_policy_version", sa.String(length=64), nullable=False),
+        sa.Column("candidate_ids", sa.JSON(), nullable=False),
+        sa.Column("accepted_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["task_id"], ["research_tasks.task_id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("run_id"),
+        sa.UniqueConstraint(
+            "task_id",
+            "idempotency_key",
+            name="uq_material_intake_task_request",
+        ),
+    )
 
 
 def downgrade() -> None:
+    op.drop_table("material_intake_runs")
     op.drop_index(
         "ix_phenomenon_candidate_versions_task",
         table_name="phenomenon_candidate_versions",

@@ -5,12 +5,14 @@ from uuid import UUID
 from qunxue_api.modules.research_intake.domain import (
     ConfirmedPhenomenonSnapshot,
     DirectPhenomenonInput,
+    MaterialIntakeRun,
     PhenomenonCandidate,
     PhenomenonCandidateDraft,
     PhenomenonEvidenceRefSnapshot,
     PhenomenonExample,
     PhenomenonModelSnapshot,
     PhenomenonProgress,
+    PreparedPhenomenonCandidate,
     ResearchTask,
 )
 
@@ -46,6 +48,26 @@ class ResearchTaskRepository(Protocol):
 @runtime_checkable
 class PhenomenonRepository(Protocol):
     def list_examples(self) -> list[PhenomenonExample]: ...
+
+    def submit_material(
+        self,
+        *,
+        run_id: UUID,
+        task_id: UUID,
+        idempotency_key: str,
+        filename: str,
+        media_type: str,
+        processing_policy_version: str,
+        candidates: tuple[PreparedPhenomenonCandidate, ...],
+        model: PhenomenonModelSnapshot,
+        now: datetime,
+    ) -> MaterialIntakeRun: ...
+
+    def get_material_run(
+        self,
+        run_id: UUID,
+        user_id: UUID,
+    ) -> MaterialIntakeRun | None: ...
 
     def submit_direct(
         self,

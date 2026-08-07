@@ -29,6 +29,7 @@ from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
 from qunxue_api.api.routes.matching import router as matching_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
+from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
@@ -116,6 +117,7 @@ def create_app(
     app.include_router(research_tasks_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)
+    app.include_router(material_intakes_router)
     app.include_router(knowledge_router)
     app.include_router(matching_router)
     app.include_router(frameworks_router)
