@@ -103,6 +103,7 @@ def test_direct_input_can_be_edited_confirmed_and_restored(
     snapshot = confirmed.json()
     assert snapshot["phenomenon"] == "社区互助在成员流动后为何持续减少？"
     assert snapshot["status"] == "confirmed"
+    assert len(snapshot["content_hash"]) == 64
 
     restored_candidate = client.get(
         f"/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}"
@@ -126,6 +127,40 @@ def test_direct_input_can_be_edited_confirmed_and_restored(
     ]
     assert my_research.status_code == 200
     assert my_research.json()["items"][0]["current_stage"] == "theory_matching"
+
+
+def test_candidate_edit_preserves_the_previous_version(client: TestClient) -> None:
+    task = _register_and_create_task(client)
+    task_id = str(task["task_id"])
+    candidate = _submit_and_extract(client, task_id)
+    candidate_id = str(candidate["candidate_id"])
+
+    edited = client.patch(
+        f"/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}",
+        headers=_request_headers(),
+        json={
+            "expected_version": candidate["version"],
+            "phenomenon": "成员流动后，社区互助为何持续减少？",
+            "research_intent": None,
+            "context": None,
+        },
+    )
+    assert edited.status_code == 200
+
+    previous = client.get(
+        f"/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}",
+        params={"version": candidate["version"]},
+    )
+    current = client.get(
+        f"/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}"
+    )
+
+    assert previous.status_code == 200
+    assert previous.json()["version"] == 1
+    assert previous.json()["status"] == "proposed"
+    assert previous.json()["phenomenon"] == "同一社区中的互助为何逐渐减少？"
+    assert current.json()["version"] == 2
+    assert current.json()["phenomenon"] == "成员流动后，社区互助为何持续减少？"
 
 
 def test_matching_is_blocked_until_the_phenomenon_is_confirmed(
