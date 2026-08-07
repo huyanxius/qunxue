@@ -24,6 +24,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import shutil
@@ -58,19 +59,30 @@ ENTRY_RE = re.compile(r"^####\s+\*{0,2}([A-Z])(\d+)\b")
 
 
 def find_pandoc() -> str:
-    """查找 pandoc 可执行文件。"""
+    """查找 pandoc 可执行文件。pandoc 必须在系统 PATH 中，或安装在常见位置。"""
     p = shutil.which("pandoc")
     if p:
         return p
     candidates = [
         r"C:\Program Files\Pandoc\pandoc.exe",
         os.path.expanduser(r"~\AppData\Local\Pandoc\pandoc.exe"),
-        os.path.join(os.path.dirname(__file__), "..", "pandoc_bin", "pandoc-3.10", "pandoc.exe"),
     ]
     for c in candidates:
         if os.path.isfile(c):
             return c
     raise RuntimeError("pandoc 未找到，请先安装：https://pandoc.org/installing.html")
+
+
+def get_pandoc_version() -> str:
+    """获取 pandoc 版本号，用于转换报告。"""
+    try:
+        pandoc = find_pandoc()
+        r = subprocess.run([pandoc, "--version"], capture_output=True, text=True, timeout=5)
+        if r.returncode == 0:
+            return r.stdout.split("\n")[0].strip()
+    except Exception:
+        pass
+    return "unknown"
 
 
 def run_pandoc(src: Path, dst: Path) -> None:
@@ -98,10 +110,15 @@ def safe_name(heading: str) -> str:
     return name.strip(". ") or "未命名"
 
 
-def split_by_subcategory(md: str) -> list[tuple[str, str, str]]:
+def split_by_subcategory(md: str) -> tuple[str, list[tuple[str, str, str]]]:
     """
-    切成 (大类, 子类, 正文) 三元组。正文包含所属标题本身，这样每个文件单独打开
-    也知道自己是什么。
+    切成 (preamble, blocks) 二元组。
+
+    preamble 是第一个 ## 之前的全部内容（文档标题 + T1-T4 定义等），
+    单独落一个 00-00-文档说明.md，否则仓库里全是「T1 萌发期」却没有
+    一个文件解释 T1-T4 是什么。
+
+    blocks 是 (大类, 子类, 正文) 三元组列表。正文包含所属标题本身。
 
     子类这一层不是每份稿子都有：价值论有 30 个大类但只有 15 个子类，部分大类底
     下直接就是条目。所以进入大类就开始缓冲，遇到子类再另起一块；没有子类的大类
@@ -111,6 +128,7 @@ def split_by_subcategory(md: str) -> list[tuple[str, str, str]]:
     197 条的原因。
     """
     blocks: list[tuple[str, str, str]] = []
+    preamble: list[str] = []
     category = ""
     subcategory = ""
     buf: list[str] = []
@@ -134,17 +152,24 @@ def split_by_subcategory(md: str) -> list[tuple[str, str, str]]:
             buf.append(line)
         elif category:
             buf.append(line)
+        else:
+            # 第一个 ## 之前的内容——文档标题与 T1-T4 定义
+            preamble.append(line)
     flush()
-    return blocks
+    return "\n".join(preamble).strip(), blocks
 
 
 def convert(dimension: str, src: Path, out_root: Path) -> dict:
     raw = out_root / f".{dimension}.pandoc.md"
-    run_pandoc(src, raw)
-    md = raw.read_text(encoding="utf-8")
-    raw.unlink()
+    try:
+        run_pandoc(src, raw)
+        md = raw.read_text(encoding="utf-8")
+    finally:
+        # 确保中间文件被清理，即使 pandoc 挂了
+        if raw.exists():
+            raw.unlink()
 
-    blocks = split_by_subcategory(md)
+    preamble, blocks = split_by_subcategory(md)
 
     out_dir = out_root / dimension
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -152,6 +177,13 @@ def convert(dimension: str, src: Path, out_root: Path) -> dict:
     # 清理旧文件
     for old in out_dir.glob("*.md"):
         old.unlink()
+
+    # 写文档说明（T1-T4 定义等），放在 00-00 确保排在最前
+    if preamble:
+        (out_dir / "00-00-文档说明.md").write_text(preamble + "\n", encoding="utf-8")
+
+    # 计算源 docx 的 SHA-256 哈希，用于冻结快照事后自证
+    sha256 = hashlib.sha256(src.read_bytes()).hexdigest()[:16]
 
     prefix = DIMENSIONS[dimension]
     seen_ids: list[str] = []
@@ -183,6 +215,7 @@ def convert(dimension: str, src: Path, out_root: Path) -> dict:
 
     wrong_prefix = [i for i in seen_ids if not i.startswith(prefix)]
     duplicates = sorted({i for i in seen_ids if seen_ids.count(i) > 1})
+    placeholder_count = sum(1 for _, cnt in files if cnt == 0)
 
     return {
         "dimension": dimension,
@@ -192,6 +225,9 @@ def convert(dimension: str, src: Path, out_root: Path) -> dict:
         "expected": EXPECTED_ENTRY_COUNT[dimension],
         "wrong_prefix": wrong_prefix,
         "duplicates": duplicates,
+        "placeholder_count": placeholder_count,
+        "source_hash": sha256,
+        "pandoc_version": get_pandoc_version(),
     }
 
 
@@ -220,8 +256,10 @@ def main() -> int:
     lines = [
         "# 转换报告",
         "",
-        "| 维度 | 文件数 | 条目数 | 去重后 | 预期 | 状态 |",
-        "| --- | ---: | ---: | ---: | ---: | --- |",
+        f"pandoc 版本：{reports[0]['pandoc_version']}",
+        "",
+        "| 维度 | 文件数 | 占位文件 | 条目数 | 去重后 | 预期 | 前缀核对 | 状态 |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
     ]
     for r in reports:
         status = []
@@ -233,10 +271,13 @@ def main() -> int:
             status.append(f"前缀异常 {len(r['wrong_prefix'])} 个")
         if status:
             ok = False
+        prefix_ok = "✅ 无异常" if not r["wrong_prefix"] else f"❌ {len(r['wrong_prefix'])} 个异常"
         lines.append(
-            f"| {r['dimension']} | {len(r['files'])} | {r['entry_count']} | "
-            f"{r['unique_entry_count']} | {r['expected']} | {'；'.join(status) or 'OK'} |"
+            f"| {r['dimension']} | {len(r['files'])} | {r['placeholder_count']} | "
+            f"{r['entry_count']} | {r['unique_entry_count']} | {r['expected']} | "
+            f"{prefix_ok} | {'；'.join(status) or 'OK'} |"
         )
+        lines.append(f"  - 源文件 SHA-256：`{r['source_hash']}`")
 
     total = sum(r["entry_count"] for r in reports)
     lines += ["", f"条目合计：{total}"]
