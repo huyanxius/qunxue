@@ -9,7 +9,6 @@ from qunxue_api.adapters.model import (
     InMemoryModelInvocationRecorder,
     ModelCapabilityName,
     ModelGateway,
-    ModelInvocationError,
     ModelScenario,
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
@@ -33,14 +32,18 @@ from qunxue_api.modules.research_framework import (
 )
 from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
 from qunxue_api.modules.theory_matching import (
+    CandidateJudgementRunStatus,
     CandidateOrigin,
     ConfirmedTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchCompletionBasis,
     TheoryCandidateContentSnapshot,
     TheoryCandidateSnapshot,
     TheoryDecisionAction,
     TheoryDecisionRecord,
+    TheoryJudgementBatchInput,
+    TheoryJudgementBatchItem,
     TheoryJudgementDraft,
     TheoryJudgementInput,
     TheoryJudgementVerdict,
@@ -219,6 +222,20 @@ def _model_inputs(
     return judgement_input, framework_input, placeholder_framework
 
 
+def _batch_input(input: TheoryJudgementInput) -> TheoryJudgementBatchInput:
+    candidate_id = UUID(int=103)
+    return TheoryJudgementBatchInput(
+        items=(
+            TheoryJudgementBatchItem(
+                candidate_id=candidate_id,
+                candidate_version=1,
+                judgement_input=input,
+            ),
+        ),
+        target_candidate_ids=(candidate_id,),
+    )
+
+
 def test_one_gateway_serves_four_capabilities_and_records_truthful_traces() -> None:
     catalog = BuiltInCaseCatalog.default()
     success = catalog.get("success")
@@ -238,12 +255,18 @@ def test_one_gateway_serves_four_capabilities_and_records_truthful_traces() -> N
         research_intent=success.research_intent,
         context=success.context,
     )
-    judgement = gateway.judge(input=judgement_input)
+    judgement = gateway.judge_and_rerank(input=_batch_input(judgement_input))
     draft = gateway.draft(input=framework_input)
     audit = gateway.audit(framework=framework)
 
     assert phenomenon.phenomenon == success.phenomenon
-    assert judgement.verdict is TheoryJudgementVerdict.CONDITIONAL
+    assert judgement.results[0].judgement is not None
+    assert judgement.results[0].judgement.verdict is TheoryJudgementVerdict.CONDITIONAL
+    assert judgement.results[0].status is CandidateJudgementRunStatus.SUCCEEDED
+    assert judgement.input_candidate_order == (UUID(int=103),)
+    assert judgement.ranked_candidate_order == (UUID(int=103),)
+    assert judgement.completion_basis is MatchCompletionBasis.COMPLETE
+    assert judgement.retryable_candidate_ids == ()
     assert draft.concept_mappings[0].candidate_id == UUID(int=103)
     assert audit.overall_status is AuditOverallStatus.REVISE
 
@@ -271,20 +294,34 @@ def test_one_gateway_serves_four_capabilities_and_records_truthful_traces() -> N
     assert records[0].input_evidence["raw_input_sha256"].startswith("sha256:")
     assert "raw_input" not in records[0].input_evidence
     assert records[1].input_evidence["evidence_ref_ids"] == ["evidence-demo-1"]
+    assert records[1].trace_id == judgement.results[0].trace_id
+    assert records[1].request_id == judgement.results[0].request_id
     assert len(recorder.list_for_task(UUID(int=101))) == 3
 
 
 @pytest.mark.parametrize(
-    ("case_id", "expected_code"),
+    ("case_id", "expected_code", "expected_status", "retryable"),
     [
-        ("timeout", "model_timeout"),
-        ("insufficient-sources", "insufficient_sources"),
-        ("no-reliable-candidate", "no_reliable_candidate"),
+        ("timeout", "model_timeout", CandidateJudgementRunStatus.TIMED_OUT, True),
+        (
+            "insufficient-sources",
+            "insufficient_sources",
+            CandidateJudgementRunStatus.INSUFFICIENT_SOURCES,
+            True,
+        ),
+        (
+            "no-reliable-candidate",
+            "no_reliable_candidate",
+            CandidateJudgementRunStatus.FAILED,
+            False,
+        ),
     ],
 )
-def test_failures_are_typed_recoverable_states_and_are_recorded(
+def test_candidate_failures_are_formal_batch_states_and_are_recorded(
     case_id: str,
     expected_code: str,
+    expected_status: CandidateJudgementRunStatus,
+    retryable: bool,
 ) -> None:
     catalog = BuiltInCaseCatalog.default()
     scenario = catalog.get(case_id)
@@ -298,12 +335,16 @@ def test_failures_are_typed_recoverable_states_and_are_recorded(
     )
     judgement_input, _, _ = _model_inputs(scenario.phenomenon)
 
-    with pytest.raises(ModelInvocationError) as captured:
-        gateway.judge(input=judgement_input)
+    result = gateway.judge_and_rerank(input=_batch_input(judgement_input))
 
-    assert captured.value.code == expected_code
-    assert captured.value.recoverable is True
-    assert captured.value.trace_id == UUID(int=1)
+    item = result.results[0]
+    assert item.status is expected_status
+    assert item.judgement is None
+    assert item.failure_code == expected_code
+    assert item.trace_id == UUID(int=1)
+    assert item.request_id == UUID(int=2)
+    assert result.completion_basis is MatchCompletionBasis.PARTIAL
+    assert result.retryable_candidate_ids == ((UUID(int=103),) if retryable else ())
     record = recorder.list_all()[0]
     assert record.degraded is True
     assert record.error_code == expected_code

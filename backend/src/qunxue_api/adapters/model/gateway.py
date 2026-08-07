@@ -25,8 +25,12 @@ from qunxue_api.modules.research_framework import (
 )
 from qunxue_api.modules.research_intake import PhenomenonCandidateDraft
 from qunxue_api.modules.theory_matching import (
-    TheoryJudgementDraft,
-    TheoryJudgementInput,
+    CandidateJudgementRunStatus,
+    MatchCompletionBasis,
+    TheoryJudgementBatchInput,
+    TheoryJudgementBatchItemResult,
+    TheoryJudgementBatchResult,
+    TheoryJudgementVerdict,
 )
 
 ResultT = TypeVar("ResultT")
@@ -81,24 +85,117 @@ class ModelGateway:
             ),
         )
 
-    def judge(self, *, input: TheoryJudgementInput) -> TheoryJudgementDraft:
-        input_evidence: JsonObject = {
-            "phenomenon": _to_jsonable(input.phenomenon),
-            "candidate": _to_jsonable(input.candidate),
-            "comparison_candidate_theory_ids": [
-                candidate.theory_id for candidate in input.comparison_candidates
-            ],
-            "evidence_ref_ids": [
-                evidence.evidence_ref_id for evidence in input.evidence_items
-            ],
-            "evidence": _to_jsonable(input.evidence_items),
-        }
-        return self._invoke(
-            capability=ModelCapabilityName.CANDIDATE_JUDGEMENT_AND_RERANK,
-            task_id=input.phenomenon.task_id,
-            phenomenon=input.phenomenon.phenomenon,
-            input_evidence=input_evidence,
-            call=lambda: self._provider.judge_candidate(input=input),
+    def judge_and_rerank(
+        self,
+        *,
+        input: TheoryJudgementBatchInput,
+    ) -> TheoryJudgementBatchResult:
+        input_order = tuple(item.candidate_id for item in input.items)
+        target_ids = set(input.target_candidate_ids or input_order)
+        results: list[TheoryJudgementBatchItemResult] = []
+        retryable_ids: list[UUID] = []
+
+        for item in input.items:
+            if item.candidate_id not in target_ids:
+                continue
+            judgement_input = item.judgement_input
+            trace_id = self._id_factory()
+            request_id = self._id_factory()
+            input_evidence: JsonObject = {
+                "candidate_id": str(item.candidate_id),
+                "candidate_version": item.candidate_version,
+                "input_candidate_order": [str(value) for value in input_order],
+                "target_candidate_ids": [
+                    str(value) for value in input.target_candidate_ids
+                ],
+                "phenomenon": _to_jsonable(judgement_input.phenomenon),
+                "candidate": _to_jsonable(judgement_input.candidate),
+                "comparison_candidate_theory_ids": [
+                    candidate.theory_id
+                    for candidate in judgement_input.comparison_candidates
+                ],
+                "evidence_ref_ids": [
+                    evidence.evidence_ref_id
+                    for evidence in judgement_input.evidence_items
+                ],
+                "evidence": _to_jsonable(judgement_input.evidence_items),
+            }
+            try:
+                judgement = self._invoke(
+                    capability=(
+                        ModelCapabilityName.CANDIDATE_JUDGEMENT_AND_RERANK
+                    ),
+                    task_id=judgement_input.phenomenon.task_id,
+                    phenomenon=judgement_input.phenomenon.phenomenon,
+                    input_evidence=input_evidence,
+                    call=lambda judgement_input=judgement_input: (
+                        self._provider.judge_candidate(input=judgement_input)
+                    ),
+                    trace_id=trace_id,
+                    request_id=request_id,
+                )
+            except ModelInvocationError as error:
+                status = {
+                    "model_timeout": CandidateJudgementRunStatus.TIMED_OUT,
+                    "insufficient_sources": (
+                        CandidateJudgementRunStatus.INSUFFICIENT_SOURCES
+                    ),
+                }.get(error.code, CandidateJudgementRunStatus.FAILED)
+                if status in {
+                    CandidateJudgementRunStatus.TIMED_OUT,
+                    CandidateJudgementRunStatus.INSUFFICIENT_SOURCES,
+                }:
+                    retryable_ids.append(item.candidate_id)
+                results.append(
+                    TheoryJudgementBatchItemResult(
+                        candidate_id=item.candidate_id,
+                        candidate_version=item.candidate_version,
+                        status=status,
+                        judgement=None,
+                        failure_code=error.code,
+                        trace_id=error.trace_id,
+                        request_id=error.request_id,
+                        contract_version=self._contract_version,
+                    )
+                )
+                continue
+
+            results.append(
+                TheoryJudgementBatchItemResult(
+                    candidate_id=item.candidate_id,
+                    candidate_version=item.candidate_version,
+                    status=CandidateJudgementRunStatus.SUCCEEDED,
+                    judgement=judgement,
+                    failure_code=None,
+                    trace_id=trace_id,
+                    request_id=request_id,
+                    contract_version=self._contract_version,
+                )
+            )
+
+        result_by_id = {result.candidate_id: result for result in results}
+        ranked_order = tuple(
+            sorted(
+                input_order,
+                key=lambda candidate_id: _judgement_rank(
+                    result_by_id.get(candidate_id)
+                ),
+            )
+        )
+        completed = len(results) == len(input.items) and all(
+            result.status is CandidateJudgementRunStatus.SUCCEEDED
+            for result in results
+        )
+        return TheoryJudgementBatchResult(
+            results=tuple(results),
+            input_candidate_order=input_order,
+            ranked_candidate_order=ranked_order,
+            completion_basis=(
+                MatchCompletionBasis.COMPLETE
+                if completed
+                else MatchCompletionBasis.PARTIAL
+            ),
+            retryable_candidate_ids=tuple(retryable_ids),
         )
 
     def draft(self, *, input: ResearchFrameworkDraftInput) -> ResearchFrameworkDraft:
@@ -127,9 +224,11 @@ class ModelGateway:
         phenomenon: str,
         input_evidence: JsonObject,
         call: Callable[[], ModelProviderResult[ResultT]],
+        trace_id: UUID | None = None,
+        request_id: UUID | None = None,
     ) -> ResultT:
-        trace_id = self._id_factory()
-        request_id = self._id_factory()
+        trace_id = trace_id or self._id_factory()
+        request_id = request_id or self._id_factory()
         started_at = self._clock()
         descriptor = self._provider.descriptor
         scenario = self._scenario_for_phenomenon(phenomenon)
@@ -201,6 +300,16 @@ class ModelGateway:
             return ModelScenario.SUCCESS
         return ModelScenario(selector(phenomenon))
 
+
+def _judgement_rank(result: TheoryJudgementBatchItemResult | None) -> int:
+    if result is None or result.judgement is None:
+        return 4
+    return {
+        TheoryJudgementVerdict.APPLICABLE: 0,
+        TheoryJudgementVerdict.CONDITIONAL: 1,
+        TheoryJudgementVerdict.INSUFFICIENT: 2,
+        TheoryJudgementVerdict.NOT_APPLICABLE: 3,
+    }[result.judgement.verdict]
 
 def _to_jsonable(value: object) -> object:
     if is_dataclass(value) and not isinstance(value, type):
