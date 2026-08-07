@@ -1,0 +1,160 @@
+.account-layout {
+  width: min(100%, 560px);
+}
+
+.account-form {
+  display: grid;
+  gap: 24px;
+  padding: 32px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.account-form label,
+.account-field {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.account-field label {
+  display: block;
+}
+
+.account-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 84%, white);
+  font: inherit;
+}
+
+.account-form input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.account-form small,
+.account-switch {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.account-primary {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--accent);
+  color: var(--paper);
+  background: var(--accent);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.account-primary:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.account-error,
+.account-notice {
+  margin: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--danger);
+  color: var(--danger);
+  line-height: 1.6;
+}
+
+.account-notice {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.account-switch {
+  margin: 20px 0 0;
+}
+
+.account-switch a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--accent);
+  text-underline-offset: 4px;
+}
+
+.my-research-list {
+  display: grid;
+  gap: 16px;
+}
+
+.my-research-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 24px;
+  padding: 20px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.my-research-stage,
+.my-research-time,
+.delete-warning {
+  margin: 0;
+}
+
+.my-research-stage {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.my-research-time {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.my-research-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.text-action,
+.danger-action {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.danger-action,
+.delete-warning {
+  color: var(--danger);
+}
+
+.delete-warning {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .my-research-item {
+    grid-template-columns: 1fr;
+  }
+
+  .my-research-actions {
+    justify-content: flex-start;
+  }
+}

@@ -9,15 +9,20 @@ const defaultSourceRoot = path.resolve(path.dirname(scriptPath), '../src')
 /** Every module is declared, even when it has no dependencies. */
 export const defaultBoundaryPolicy = Object.freeze({
   moduleDependencies: Object.freeze({
+    account: Object.freeze([]),
     'knowledge-explorer': Object.freeze([]),
     'socio-match-workspace': Object.freeze([]),
   }),
   generatedApiAdapters: Object.freeze([
     'api/client.ts',
     'api/system.ts',
+    'modules/account/accountApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
-  moduleApiAdapters: Object.freeze(['modules/socio-match-workspace/researchTaskApi.ts']),
+  moduleApiAdapters: Object.freeze([
+    'modules/account/accountApi.ts',
+    'modules/socio-match-workspace/researchTaskApi.ts',
+  ]),
   appApiAdapters: Object.freeze(['api/system.ts']),
   httpRuntimeAdapters: Object.freeze(['api/client.ts']),
 })

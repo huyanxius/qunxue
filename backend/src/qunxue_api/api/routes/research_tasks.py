@@ -9,13 +9,21 @@ from qunxue_api.api.contracts.research_tasks import (
     CreateResearchTaskRequest,
     DeleteResearchTaskResponse,
     MarkdownExportResponse,
+    ResearchTaskLifecycleStatus,
+    ResearchTaskNavigationAction,
     ResearchTaskNavigationResponse,
     ResearchTaskPageResponse,
     ResearchTaskResponse,
+    ResearchTaskStage,
     ResearchTraceResponse,
 )
-from qunxue_api.api.dependencies import ResearchTaskServiceDependency
+from qunxue_api.api.dependencies import (
+    CurrentSessionDependency,
+    OwnedResearchTaskDependency,
+    ResearchTaskServiceDependency,
+)
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
+from qunxue_api.modules.research_intake import ResearchTask
 
 router = APIRouter(
     prefix="/api/research-tasks",
@@ -34,12 +42,14 @@ router = APIRouter(
 def create_research_task(
     payload: CreateResearchTaskRequest,
     service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
     idempotency_key: Annotated[
         str,
         Header(alias="Idempotency-Key", min_length=8, max_length=128),
     ],
 ) -> ResearchTaskResponse:
     task = service.create(
+        user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
     )
@@ -54,9 +64,9 @@ def create_research_task(
 )
 def get_research_task(
     task_id: UUID,
-    service: ResearchTaskServiceDependency,
+    owned_task: OwnedResearchTaskDependency,
 ) -> ResearchTaskResponse:
-    return ResearchTaskResponse.from_domain(service.get(task_id))
+    return ResearchTaskResponse.from_domain(owned_task)
 
 
 @router.get(
@@ -66,10 +76,16 @@ def get_research_task(
     responses={401: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
 def list_research_tasks(
+    service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
-) -> JSONResponse:
-    return not_implemented_response()
+) -> ResearchTaskPageResponse:
+    tasks = service.list_for_user(current.user.user_id, limit=limit)
+    return ResearchTaskPageResponse(
+        items=[_navigation_response(task) for task in tasks],
+        next_cursor=None,
+    )
 
 
 @router.get(
@@ -78,8 +94,13 @@ def list_research_tasks(
     response_model=ResearchTaskNavigationResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def get_research_task_navigation(task_id: UUID) -> JSONResponse:
-    return not_implemented_response()
+def get_research_task_navigation(
+    task_id: UUID,
+    owned_task: OwnedResearchTaskDependency,
+) -> ResearchTaskNavigationResponse:
+    if owned_task.task_id != task_id:
+        raise RuntimeError("owned task dependency returned a different task")
+    return _navigation_response(owned_task)
 
 
 @router.delete(
@@ -91,8 +112,16 @@ def get_research_task_navigation(task_id: UUID) -> JSONResponse:
 def delete_research_task(
     task_id: UUID,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
+) -> DeleteResearchTaskResponse:
+    task = service.delete(task_id, user_id=current.user.user_id)
+    return DeleteResearchTaskResponse(
+        task_id=task.task_id,
+        version=task.version + 1,
+        allowed_actions=[],
+        deleted=True,
+    )
 
 
 @router.get(
@@ -103,6 +132,7 @@ def delete_research_task(
 )
 def get_research_trace(
     task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
     cursor: str | None = None,
     limit: int = Query(default=50, ge=1, le=100),
 ) -> JSONResponse:
@@ -115,5 +145,29 @@ def get_research_trace(
     response_model=MarkdownExportResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def export_research_trace(task_id: UUID) -> JSONResponse:
+def export_research_trace(
+    task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
+) -> JSONResponse:
     return not_implemented_response()
+
+
+def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
+    """现有持久化任务只有 draft 状态，因此进入点必须忠实落在现象输入。"""
+
+    return ResearchTaskNavigationResponse(
+        task_id=task.task_id,
+        entry_type=task.entry_type,
+        status=ResearchTaskLifecycleStatus.DRAFT,
+        current_stage=ResearchTaskStage.PHENOMENON_INPUT,
+        version=task.version,
+        allowed_actions=[ResearchTaskNavigationAction.SUBMIT_PHENOMENON],
+        seed_theory_id=None,
+        phenomenon_summary=None,
+        adopted_theory_count=0,
+        current_phenomenon_candidate_id=None,
+        current_match_run_id=None,
+        current_framework_id=None,
+        created_at=task.created_at,
+        updated_at=task.updated_at,
+    )

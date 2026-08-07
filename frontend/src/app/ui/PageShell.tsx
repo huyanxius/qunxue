@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import type { PropsWithChildren, ReactNode } from 'react'
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useNavigate } from 'react-router'
+
+import { useAccount } from '../../modules/account'
 
 type PageTitleProps = {
   eyebrow: string
@@ -8,6 +11,20 @@ type PageTitleProps = {
 }
 
 export function PageShell({ children }: PropsWithChildren) {
+  const account = useAccount()
+  const navigate = useNavigate()
+  const [logoutFailed, setLogoutFailed] = useState(false)
+
+  async function logout() {
+    setLogoutFailed(false)
+    try {
+      await account.logout()
+      navigate('/', { replace: true })
+    } catch {
+      setLogoutFailed(true)
+    }
+  }
+
   return (
     <main className="page-shell">
       <header className="masthead">
@@ -18,7 +35,19 @@ export function PageShell({ children }: PropsWithChildren) {
         <nav className="app-navigation" aria-label="主导航">
           <NavLink to="/knowledge">知识</NavLink>
           <NavLink to="/research/new">研究</NavLink>
-          <NavLink to="/my">我的</NavLink>
+          {account.sessionState.status === 'authenticated' ? (
+            <>
+              <NavLink to="/my">我的研究</NavLink>
+              <span className="session-email">{account.sessionState.session.user.email}</span>
+              <button className="nav-action" type="button" onClick={logout}>
+                {logoutFailed ? '退出失败，请重试' : '退出'}
+              </button>
+            </>
+          ) : account.sessionState.status === 'loading' ? (
+            <span className="session-email">确认中</span>
+          ) : (
+            <NavLink to="/login">登录</NavLink>
+          )}
         </nav>
       </header>
       {children}
