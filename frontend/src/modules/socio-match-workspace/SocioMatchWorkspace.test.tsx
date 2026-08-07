@@ -12,6 +12,8 @@ afterEach(() => {
 describe('SocioMatchWorkspace public API', () => {
   it('keeps transport functions and query hooks private', () => {
     expect(Object.keys(publicApi).sort()).toEqual([
+      'NewResearchPage',
+      'PhenomenonWorkspace',
       'SocioMatchWorkspace',
       'startResearchTask',
     ])
