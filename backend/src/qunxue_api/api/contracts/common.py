@@ -41,6 +41,7 @@ class ModelMetadata(BaseModel):
     model_version: str
     capability: ModelCapability
     degraded: bool
+    knowledge_release_id: str | None
     trace: TraceMetadata
 
 

@@ -10,6 +10,8 @@ from qunxue_api.api.contracts.matching import (
     ConfirmTheoryPlanRequest,
     CreateMatchRunRequest,
     CreateTheoryDecisionsRequest,
+    DeferredTheoryPlanResponse,
+    DeferTheoryPlanRequest,
     MatchCandidatePageResponse,
     MatchRunResponse,
     RetryMatchCandidateRequest,
@@ -126,6 +128,24 @@ def list_theory_decisions(
     match_run_id: UUID,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
+) -> JSONResponse:
+    return not_implemented_response()
+
+
+@router.post(
+    "/api/match-runs/{match_run_id}/defer",
+    operation_id="defer_theory_plan",
+    response_model=DeferredTheoryPlanResponse,
+    responses={
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        501: {"model": ErrorResponse},
+    },
+)
+def defer_theory_plan(
+    match_run_id: UUID,
+    payload: DeferTheoryPlanRequest,
+    _idempotency_key: IdempotencyKey,
 ) -> JSONResponse:
     return not_implemented_response()
 

@@ -12,6 +12,7 @@ from qunxue_api.api.contracts.frameworks import (
     FormalFrameworkExportResponse,
     FrameworkResponse,
     FrameworkReviewResponse,
+    RetryFrameworkReviewRequest,
     StartFrameworkReviewRequest,
     SubmitAuditResolutionsRequest,
     UpdateFrameworkRequest,
@@ -89,6 +90,25 @@ def start_framework_review(
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
 def get_framework_review(framework_id: UUID, review_run_id: UUID) -> JSONResponse:
+    return not_implemented_response()
+
+
+@router.post(
+    "/api/frameworks/{framework_id}/reviews/{review_run_id}/retry",
+    operation_id="retry_framework_review",
+    response_model=FrameworkReviewResponse,
+    responses={
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        501: {"model": ErrorResponse},
+    },
+)
+def retry_framework_review(
+    framework_id: UUID,
+    review_run_id: UUID,
+    payload: RetryFrameworkReviewRequest,
+    _idempotency_key: IdempotencyKey,
+) -> JSONResponse:
     return not_implemented_response()
 
 

@@ -6,10 +6,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from qunxue_api.api.contracts.common import ModelMetadata
+from qunxue_api.api.contracts.matching import ConfirmedTheoryPlanResponse
 from qunxue_api.modules.research_framework import (
     AuditFindingSeverity,
     AuditFindingType,
     AuditOverallStatus,
+    FrameworkReviewFailureCode,
     FrameworkReviewRunStatus,
 )
 from qunxue_api.modules.research_framework import (
@@ -35,6 +37,7 @@ class FrameworkAction(StrEnum):
 
 class FrameworkReviewAction(StrEnum):
     REFRESH = "refresh"
+    RETRY = "retry"
     SUBMIT_AUDIT_RESOLUTIONS = "submit_audit_resolutions"
     REVISE_FRAMEWORK = "revise_framework"
     CONFIRM_FRAMEWORK = "confirm_framework"
@@ -114,6 +117,7 @@ class FrameworkDraftContract(BaseModel):
 class FrameworkInputResponse(BaseModel):
     theory_plan_id: UUID
     theory_plan_version: int
+    theory_plan: ConfirmedTheoryPlanResponse
     original_research_question: str
     confirmed_research_question: str
     question_adjustment_reason: str | None
@@ -171,6 +175,13 @@ class FrameworkAuditResponse(BaseModel):
     contract_version: str
 
 
+class FrameworkReviewFailureResponse(BaseModel):
+    code: FrameworkReviewFailureCode
+    message: str
+    retryable: bool
+    requested_source_ids: list[str]
+
+
 class FrameworkReviewResponse(BaseModel):
     review_run_id: UUID
     framework_id: UUID
@@ -180,8 +191,16 @@ class FrameworkReviewResponse(BaseModel):
     allowed_actions: list[FrameworkReviewAction]
     knowledge_release_id: str
     audit: FrameworkAuditResponse | None
+    retry_of_review_run_id: UUID | None
+    attempt: int
+    failure: FrameworkReviewFailureResponse | None
     model: ModelMetadata
     contract_version: str
+
+
+class RetryFrameworkReviewRequest(BaseModel):
+    expected_revision_id: UUID
+    expected_review_version: int = Field(ge=1)
 
 
 class AuditResolutionInput(BaseModel):
