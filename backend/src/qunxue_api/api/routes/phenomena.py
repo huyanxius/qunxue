@@ -89,7 +89,7 @@ def list_phenomenon_examples(
     "/api/material-intake-runs/{run_id}",
     operation_id="get_material_intake_run",
     response_model=MaterialIntakeRunResponse,
-    responses={404: {"model": ErrorResponse}},
+    responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
 )
 def get_material_intake_run(
     run_id: UUID,
