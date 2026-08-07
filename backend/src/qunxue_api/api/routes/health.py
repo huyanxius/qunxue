@@ -19,12 +19,14 @@ router = APIRouter(
 def get_health(request: Request) -> HealthResponse:
     settings: Settings = request.app.state.settings
     request.app.state.database.is_ready()
+    descriptor = request.app.state.model_gateway.descriptor
+    case_catalog = request.app.state.builtin_case_catalog
     return HealthResponse(
         status="ok",
         service=settings.app_name,
         runtime_mode="inline_demo",
         persistence="sqlite",
         contract_version=settings.contract_version,
-        capability="unavailable",
-        knowledge_release_id=None,
+        capability=descriptor.capability_tier,
+        knowledge_release_id=case_catalog.knowledge_release_id,
     )

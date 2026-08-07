@@ -7,6 +7,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from qunxue_api.adapters.model import (
+    BuiltInCaseCatalog,
+    ModelGateway,
+    ModelInvocationError,
+    ModelProvider,
+    SqliteModelInvocationRecorder,
+    create_deterministic_mock_provider,
+)
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
@@ -32,6 +40,7 @@ def create_app(
     settings: Settings | None = None,
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
+    model_provider: ModelProvider | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
@@ -43,6 +52,18 @@ def create_app(
     )
     app.state.settings = resolved_settings
     app.state.database = resolved_database
+    builtin_case_catalog = BuiltInCaseCatalog.default()
+    resolved_model_provider = model_provider or create_deterministic_mock_provider(
+        catalog=builtin_case_catalog
+    )
+    model_invocation_recorder = SqliteModelInvocationRecorder(resolved_database)
+    app.state.builtin_case_catalog = builtin_case_catalog
+    app.state.model_invocation_recorder = model_invocation_recorder
+    app.state.model_gateway = ModelGateway(
+        provider=resolved_model_provider,
+        recorder=model_invocation_recorder,
+        contract_version=resolved_settings.contract_version,
+    )
     app.state.research_journey = (
         ResearchJourney(journey_dependencies)
         if journey_dependencies is not None
@@ -77,6 +98,28 @@ def create_app(
         )
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(ModelInvocationError)
+    async def handle_model_invocation_error(
+        _request: Request,
+        error: ModelInvocationError,
+    ) -> JSONResponse:
+        response_status = {
+            ErrorCode.MODEL_TIMEOUT: status.HTTP_503_SERVICE_UNAVAILABLE,
+            ErrorCode.NO_RELIABLE_CANDIDATE: status.HTTP_409_CONFLICT,
+            ErrorCode.INSUFFICIENT_SOURCES: status.HTTP_409_CONFLICT,
+        }[ErrorCode(error.code)]
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode(error.code),
+                message=str(error),
+                trace_id=str(error.trace_id),
+            )
+        )
+        return JSONResponse(
+            status_code=response_status,
             content=body.model_dump(mode="json"),
         )
 
