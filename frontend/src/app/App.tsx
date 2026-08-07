@@ -7,6 +7,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
+  useSearchParams,
 } from 'react-router'
 import type { ReactNode } from 'react'
 
@@ -182,6 +183,12 @@ function MyResearchRoute() {
 
 function NewResearchRoute() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const seedTheoryId = searchParams.get('seed_theory_id')
+  const seedTheoryName = searchParams.get('seed_theory_name')
+  const seedTheory = seedTheoryId && seedTheoryName
+    ? { theoryId: seedTheoryId, name: seedTheoryName }
+    : null
   return (
     <PageShell>
       <PageTitle
@@ -191,6 +198,7 @@ function NewResearchRoute() {
       />
       <PageContent>
         <NewResearchPage
+          seedTheory={seedTheory}
           onStarted={(taskId) => navigate(`/research/${taskId}/phenomenon`)}
         />
       </PageContent>

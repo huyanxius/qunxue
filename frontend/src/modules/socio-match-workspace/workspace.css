@@ -108,6 +108,90 @@
   line-height: 1.65;
 }
 
+.research-entry,
+.phenomenon-workspace {
+  max-width: 880px;
+}
+
+.entry-methods,
+.candidate-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.entry-methods button,
+.candidate-tabs button,
+.example-list button,
+.smart-topic-placeholder button {
+  padding: 12px 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+
+.entry-methods button[aria-pressed="true"],
+.candidate-tabs button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.seed-clue,
+.origin-badge {
+  width: fit-content;
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+.example-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.example-list h2 {
+  width: 100%;
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.processing-consents {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.processing-consents label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.next-step-gate {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.next-step-gate p,
+.snapshot-hash {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
 .phenomenon-form button {
   justify-self: start;
   margin-top: 14px;
@@ -160,5 +244,10 @@
   .task-record dl {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .entry-methods,
+  .candidate-tabs {
+    grid-template-columns: 1fr;
   }
 }
