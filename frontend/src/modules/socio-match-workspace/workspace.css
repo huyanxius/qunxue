@@ -82,6 +82,80 @@
   text-underline-offset: 4px;
 }
 
+.phenomenon-form {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.phenomenon-form label {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.phenomenon-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px 16px;
+  resize: vertical;
+  border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.65;
+}
+
+.phenomenon-form button {
+  justify-self: start;
+  margin-top: 14px;
+  padding: 12px 20px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+}
+
+.phenomenon-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.model-badge {
+  width: fit-content;
+  padding: 6px 10px;
+  border: 1px solid var(--ink-soft);
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+.evidence-card {
+  margin-top: 16px;
+  padding: 20px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.evidence-card h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.evidence-card p,
+.evidence-card small {
+  color: var(--ink-soft);
+}
+
+.confirmed-phenomenon {
+  max-width: 760px;
+  padding: 28px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
 @media (max-width: 760px) {
   .task-record dl {
     grid-template-columns: 1fr;
