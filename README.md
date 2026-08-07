@@ -75,6 +75,25 @@ make check
 
 SQLite 仅用于单实例、单 worker、本地非敏感演示。当前同步执行不是可靠异步队列；认证、多用户、生产数据库、真实知识库和模型接入均不在本次基线范围。
 
+## E2E 测试
+
+本项目使用 Playwright 进行端到端测试。
+
+### 本地运行（Windows）
+
+由于 Windows 环境限制，请分步启动：
+
+```bash
+# 终端 1：启动后端（自动使用隔离数据库）
+make dev-api
+
+# 终端 2：启动前端
+make dev-web
+
+# 终端 3：运行测试
+cd frontend
+npx playwright test --ui    # UI 模式（推荐调试）
+npx playwright test         # 命令行模式
 ## 协作规范
 
 1. main 已开分支保护：所有改动走分支 + PR 合入，不直接推 main。
