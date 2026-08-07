@@ -187,6 +187,53 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent(destination)
   })
 
+  it('returns home after logging out from my research', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = input as Request
+      if (request.method === 'GET' && request.url.endsWith('/api/session')) {
+        return new Response(JSON.stringify({
+          session_id: '25b191bb-2d85-4a88-8863-2cabf506a7a8',
+          status: 'active',
+          version: 1,
+          allowed_actions: ['logout'],
+          user: {
+            user_id: '95306bf9-194d-4677-be2d-eef4f6aa86d1',
+            email: 'researcher@example.com',
+            display_name: null,
+          },
+          expires_at: '2026-08-14T00:00:00Z',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (request.method === 'GET') {
+        return new Response(JSON.stringify({ items: [], next_cursor: null }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({
+        status: 'logged_out',
+        version: 1,
+        allowed_actions: [],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }))
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <MemoryRouter initialEntries={['/my']} useTransitions={false}>
+        <QueryClientProvider client={queryClient}>
+          <AccountProvider>
+            <AppRoutes />
+            <RouteLocation />
+          </AccountProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '退出' }))
+
+    expect(await screen.findByRole('link', { name: '浏览知识库' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/')
+  })
+
   it('renders the demo knowledge explorer from a direct /knowledge entry', async () => {
     renderRoute('/knowledge')
 

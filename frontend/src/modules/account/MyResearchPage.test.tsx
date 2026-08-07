@@ -62,7 +62,7 @@ it('shows the real stage entry path and requires a second delete confirmation', 
     'href',
     '/research/95306bf9-194d-4677-be2d-eef4f6aa86d1/match',
   )
-  expect(screen.getByText('理论匹配')).toBeVisible()
+  expect(screen.getByText('匹配生成中')).toBeVisible()
   expect(screen.getByText('成员流动后，社区互助为何持续减少？')).toBeVisible()
   expect(screen.getByText(/已采用 2 个理论/)).toBeVisible()
   expect(screen.getByText(/创建于/)).toBeVisible()
@@ -76,20 +76,21 @@ it('shows the real stage entry path and requires a second delete confirmation', 
   expect(await screen.findByText('还没有研究任务。')).toBeVisible()
 })
 
-it('renders empty and service-failure states without demo data', async () => {
+it('retries the real research list after a service failure', async () => {
   const fetchMock = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({
+      error: { code: 'internal_server_error', message: 'failed', trace_id: 'trace-1' },
+    }), { status: 500, headers: { 'Content-Type': 'application/json' } }))
     .mockResolvedValueOnce(new Response(JSON.stringify({ items: [], next_cursor: null }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }))
-    .mockResolvedValueOnce(new Response(JSON.stringify({
-      error: { code: 'internal_server_error', message: 'failed', trace_id: 'trace-1' },
-    }), { status: 500, headers: { 'Content-Type': 'application/json' } }))
   vi.stubGlobal('fetch', fetchMock)
   renderPage()
-  expect(await screen.findByText('还没有研究任务。')).toBeVisible()
 
-  cleanup()
-  renderPage()
   expect(await screen.findByText('暂时无法读取研究列表，请稍后重试。')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '重试' }))
+
+  expect(await screen.findByText('还没有研究任务。')).toBeVisible()
+  expect(fetchMock).toHaveBeenCalledTimes(2)
 })
