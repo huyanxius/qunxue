@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -12,6 +13,7 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     ResearchTask,
+    ResearchTaskStatus,
 )
 from qunxue_api.modules.research_intake.errors import ResearchTaskNotFound
 from qunxue_api.modules.research_intake.ports import (
@@ -63,16 +65,21 @@ class ResearchTaskService:
             raise ResearchTaskNotFound(str(task_id))
         return task
 
+    def save_progress(self, task: ResearchTask) -> ResearchTask | None:
+        return self._repository.save_progress(task)
+
 
 class PhenomenonService:
     def __init__(
         self,
         repository: PhenomenonRepository,
+        research_tasks: ResearchTaskRepository,
         *,
         id_factory: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._repository = repository
+        self._research_tasks = research_tasks
         self._id_factory = id_factory
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -142,14 +149,34 @@ class PhenomenonService:
         task_id: UUID,
         candidate_id: UUID,
         expected_version: int,
+        task: ResearchTask,
     ) -> tuple[ConfirmedPhenomenonSnapshot, datetime] | None:
-        return self._repository.confirm_candidate(
+        result = self._repository.confirm_candidate(
             task_id=task_id,
             candidate_id=candidate_id,
             expected_version=expected_version,
             query_id=self._id_factory(),
             now=self._clock(),
         )
+        if result is None:
+            return None
+        snapshot, confirmed_at = result
+        saved_task = self._research_tasks.save_progress(
+            replace(
+                task,
+                status=ResearchTaskStatus.PHENOMENON_CONFIRMED,
+                version=task.version + 1,
+                updated_at=confirmed_at,
+                phenomenon_query_id=snapshot.phenomenon_query_id,
+                phenomenon_version=snapshot.version,
+                phenomenon_summary=snapshot.phenomenon,
+                phenomenon_research_intent=snapshot.research_intent,
+                current_phenomenon_candidate_id=candidate_id,
+            )
+        )
+        if saved_task is None:
+            raise RuntimeError("owned research task disappeared during confirmation")
+        return result
 
     def progress(self, task_id: UUID) -> PhenomenonProgress:
         return self._repository.progress(task_id)

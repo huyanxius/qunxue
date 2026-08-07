@@ -1,7 +1,7 @@
 """persist one direct phenomenon confirmation chain
 
 Revision ID: 20260807_0059
-Revises: 20260807_0052
+Revises: 20260808_0003
 """
 
 from collections.abc import Sequence
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260807_0059"
-down_revision: str | Sequence[str] | None = "20260807_0052"
+down_revision: str | Sequence[str] | None = "20260808_0003"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -102,7 +102,10 @@ def create_app(
     @contextmanager
     def phenomenon_service_scope() -> Iterator[PhenomenonService]:
         with resolved_database.session() as session:
-            yield PhenomenonService(SqlitePhenomenonRepository(session))
+            yield PhenomenonService(
+                SqlitePhenomenonRepository(session),
+                SqliteResearchTaskRepository(session),
+            )
 
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope

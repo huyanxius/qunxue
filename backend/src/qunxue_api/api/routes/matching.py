@@ -1,9 +1,9 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
-from qunxue_api.api.contracts.common import ErrorResponse
+from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.contracts.matching import (
     AcknowledgePartialMatchRequest,
     ConfirmedTheoryPlanResponse,
@@ -21,6 +21,7 @@ from qunxue_api.api.contracts.matching import (
 )
 from qunxue_api.api.dependencies import (
     OwnedResearchTaskDependency,
+    PhenomenonServiceDependency,
     get_current_session,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
@@ -43,7 +44,17 @@ def create_match_run(
     _owned_task: OwnedResearchTaskDependency,
     payload: CreateMatchRunRequest,
     _idempotency_key: IdempotencyKey,
+    phenomenon_service: PhenomenonServiceDependency,
 ) -> JSONResponse:
+    if phenomenon_service.progress(task_id).confirmed is None:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.PHENOMENON_UNCONFIRMED,
+                message="Confirm the phenomenon before starting theory matching.",
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(status_code=409, content=body.model_dump(mode="json"))
     return not_implemented_response()
 
 
