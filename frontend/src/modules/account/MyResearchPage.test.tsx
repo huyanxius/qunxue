@@ -35,15 +35,20 @@ it('shows the real stage entry path and requires a second delete confirmation', 
       items: [{
         task_id: '95306bf9-194d-4677-be2d-eef4f6aa86d1',
         entry_type: 'direct_input',
-        status: 'draft',
-        current_stage: 'phenomenon_input',
-        version: 1,
-        allowed_actions: ['submit_phenomenon'],
+        status: 'in_progress',
+        current_stage: 'theory_matching',
+        version: 4,
+        allowed_actions: ['review_theory_candidates'],
         seed_theory_id: null,
-        phenomenon_summary: null,
-        adopted_theory_count: 0,
+        phenomenon_summary: {
+          phenomenon_query_id: '59f192dd-85fc-41bf-abaf-d66caa7df958',
+          version: 2,
+          phenomenon: '成员流动后，社区互助为何持续减少？',
+          research_intent: null,
+        },
+        adopted_theory_count: 2,
         current_phenomenon_candidate_id: null,
-        current_match_run_id: null,
+        current_match_run_id: 'b32448bd-18ef-44a4-89fc-e24d735edfb6',
         current_framework_id: null,
         created_at: '2026-08-07T00:00:00Z',
         updated_at: '2026-08-07T01:00:00Z',
@@ -55,9 +60,13 @@ it('shows the real stage entry path and requires a second delete confirmation', 
 
   expect(await screen.findByRole('link', { name: '继续研究' })).toHaveAttribute(
     'href',
-    '/research/95306bf9-194d-4677-be2d-eef4f6aa86d1/phenomenon',
+    '/research/95306bf9-194d-4677-be2d-eef4f6aa86d1/match',
   )
-  expect(screen.getByText('现象输入')).toBeVisible()
+  expect(screen.getByText('理论匹配')).toBeVisible()
+  expect(screen.getByText('成员流动后，社区互助为何持续减少？')).toBeVisible()
+  expect(screen.getByText(/已采用 2 个理论/)).toBeVisible()
+  expect(screen.getByText(/创建于/)).toBeVisible()
+  expect(screen.getByText(/更新于/)).toBeVisible()
 
   fireEvent.click(screen.getByRole('button', { name: '删除研究' }))
   expect(deleted).toBe(false)

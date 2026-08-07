@@ -1,9 +1,16 @@
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from qunxue_api.adapters.sqlite import UserRow
+from qunxue_api.api.routes.research_tasks import _navigation_response
+from qunxue_api.modules.research_intake import (
+    EntryType,
+    ResearchTask,
+    ResearchTaskStatus,
+)
 
 
 def register(
@@ -160,3 +167,22 @@ def test_protected_research_endpoints_require_a_session(client: TestClient) -> N
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "unauthenticated"
+
+
+def test_matching_task_navigation_resumes_at_the_match_stage() -> None:
+    task = ResearchTask(
+        task_id=uuid4(),
+        user_id=uuid4(),
+        entry_type=EntryType.DIRECT_INPUT,
+        status=ResearchTaskStatus.MATCH_GENERATING,
+        version=4,
+        idempotency_key="matching-task-request",
+        created_at=datetime(2026, 8, 7, tzinfo=UTC),
+        updated_at=datetime(2026, 8, 8, tzinfo=UTC),
+    )
+
+    navigation = _navigation_response(task)
+
+    assert navigation.status == "in_progress"
+    assert navigation.current_stage == "theory_matching"
+    assert navigation.allowed_actions == ["review_theory_candidates"]
