@@ -1,8 +1,15 @@
+from datetime import datetime
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from qunxue_api.modules.research_intake.domain import (
+    ConfirmedPhenomenonSnapshot,
+    DirectPhenomenonInput,
+    PhenomenonCandidate,
     PhenomenonCandidateDraft,
+    PhenomenonEvidenceRefSnapshot,
+    PhenomenonModelSnapshot,
+    PhenomenonProgress,
     ResearchTask,
 )
 
@@ -33,3 +40,56 @@ class ResearchTaskRepository(Protocol):
     def add_or_get_by_idempotency_key(self, task: ResearchTask) -> ResearchTask: ...
 
     def save_progress(self, task: ResearchTask) -> ResearchTask | None: ...
+
+
+@runtime_checkable
+class PhenomenonRepository(Protocol):
+    def submit_direct(
+        self,
+        *,
+        task_id: UUID,
+        phenomenon: str,
+        research_intent: str | None,
+        context: str | None,
+        now: datetime,
+        input_id: UUID,
+    ) -> DirectPhenomenonInput: ...
+
+    def input_for_task(self, task_id: UUID) -> DirectPhenomenonInput | None: ...
+
+    def save_candidate(
+        self,
+        *,
+        task_id: UUID,
+        candidate_id: UUID,
+        draft: PhenomenonCandidateDraft,
+        evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...],
+        model: PhenomenonModelSnapshot,
+    ) -> PhenomenonCandidate: ...
+
+    def get_candidate(
+        self, task_id: UUID, candidate_id: UUID
+    ) -> PhenomenonCandidate | None: ...
+
+    def update_candidate(
+        self,
+        *,
+        task_id: UUID,
+        candidate_id: UUID,
+        expected_version: int,
+        phenomenon: str,
+        research_intent: str | None,
+        context: str | None,
+    ) -> PhenomenonCandidate | None: ...
+
+    def confirm_candidate(
+        self,
+        *,
+        task_id: UUID,
+        candidate_id: UUID,
+        expected_version: int,
+        query_id: UUID,
+        now: datetime,
+    ) -> tuple[ConfirmedPhenomenonSnapshot, datetime] | None: ...
+
+    def progress(self, task_id: UUID) -> PhenomenonProgress: ...

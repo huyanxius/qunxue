@@ -32,6 +32,12 @@ class PhenomenonEvidenceVerificationStatus(StrEnum):
     PENDING = "pending"
 
 
+class PhenomenonCandidateStatus(StrEnum):
+    PROPOSED = "proposed"
+    EDITED = "edited"
+    CONFIRMED = "confirmed"
+
+
 @dataclass(frozen=True, slots=True)
 class PhenomenonEvidenceRefSnapshot:
     """Displayable evidence retained with a phenomenon, not an orphaned ID."""
@@ -67,6 +73,51 @@ class PhenomenonCandidateDraft:
     context: str | None
     source_ref_ids: tuple[str, ...]
     evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class PhenomenonModelSnapshot:
+    provider: str
+    model_version: str
+    capability: str
+    degraded: bool
+    knowledge_release_id: str | None
+    trace_id: UUID
+    request_id: UUID
+    contract_version: str
+
+
+@dataclass(frozen=True, slots=True)
+class DirectPhenomenonInput:
+    input_id: UUID
+    task_id: UUID
+    version: int
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    source_ref_ids: tuple[str, ...]
+    accepted_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PhenomenonCandidate:
+    candidate_id: UUID
+    task_id: UUID
+    version: int
+    status: PhenomenonCandidateStatus
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    source_ref_ids: tuple[str, ...]
+    evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...]
+    model: PhenomenonModelSnapshot
+
+
+@dataclass(frozen=True, slots=True)
+class PhenomenonProgress:
+    candidate: PhenomenonCandidate | None
+    confirmed: ConfirmedPhenomenonSnapshot | None
+    confirmed_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
