@@ -1,6 +1,6 @@
 # RUN_STATE
 
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
-- M2: PR #58 implementation and full checks passed; ready to push and update.
+- M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - Not integrated: M3-M5 production flows do not yet call `save_progress`.
-- Next breakpoint: wait for the user to merge PRs before starting another module.
+- Next breakpoint: user reviews and merges #66, then #58; no next module starts here.
