@@ -103,6 +103,7 @@
 }
 
 .my-research-stage,
+.my-research-summary,
 .my-research-time,
 .delete-warning {
   margin: 0;
@@ -111,6 +112,15 @@
 .my-research-stage {
   color: var(--ink);
   font-weight: 650;
+}
+
+.my-research-summary {
+  max-width: 54ch;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .my-research-time {

@@ -21,5 +21,8 @@ export type MyResearchItem = {
   taskId: string
   stageLabel: string
   entryPath: string
+  phenomenonSummary: string
+  adoptedTheoryCount: number
+  createdAt: string
   updatedAt: string
 }

@@ -44,8 +44,13 @@ export function MyResearchPage() {
           <article className="my-research-item" key={item.taskId}>
             <div>
               <p className="my-research-stage">{item.stageLabel}</p>
+              <p className="my-research-summary" title={item.phenomenonSummary}>
+                {item.phenomenonSummary}
+              </p>
               <p className="my-research-time">
-                更新于 {new Date(item.updatedAt).toLocaleString('zh-CN')}
+                已采用 {item.adoptedTheoryCount} 个理论
+                {' · '}创建于 {new Date(item.createdAt).toLocaleString('zh-CN')}
+                {' · '}更新于 {new Date(item.updatedAt).toLocaleString('zh-CN')}
               </p>
             </div>
             <div className="my-research-actions">

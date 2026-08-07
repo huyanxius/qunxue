@@ -99,6 +99,9 @@ export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
       taskId: item.task_id,
       stageLabel: presentation.label,
       entryPath: `/research/${item.task_id}/${presentation.route}`,
+      phenomenonSummary: item.phenomenon_summary?.phenomenon ?? '尚未确认现象',
+      adoptedTheoryCount: item.adopted_theory_count,
+      createdAt: item.created_at,
       updatedAt: item.updated_at,
     }
   })
