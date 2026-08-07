@@ -23,7 +23,7 @@ from qunxue_api.api.dependencies import (
     ResearchTaskServiceDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
-from qunxue_api.modules.research_intake import ResearchTask
+from qunxue_api.modules.research_intake import ResearchTask, ResearchTaskStatus
 
 router = APIRouter(
     prefix="/api/research-tasks",
@@ -153,15 +153,47 @@ def export_research_trace(
 
 
 def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
-    """现有持久化任务只有 draft 状态，因此进入点必须忠实落在现象输入。"""
+    navigation_by_status = {
+        ResearchTaskStatus.DRAFT: (
+            ResearchTaskLifecycleStatus.DRAFT,
+            ResearchTaskStage.PHENOMENON_INPUT,
+            ResearchTaskNavigationAction.SUBMIT_PHENOMENON,
+        ),
+        ResearchTaskStatus.PHENOMENON_CONFIRMED: (
+            ResearchTaskLifecycleStatus.IN_PROGRESS,
+            ResearchTaskStage.THEORY_MATCHING,
+            ResearchTaskNavigationAction.START_MATCHING,
+        ),
+        ResearchTaskStatus.MATCH_GENERATING: (
+            ResearchTaskLifecycleStatus.IN_PROGRESS,
+            ResearchTaskStage.THEORY_MATCHING,
+            ResearchTaskNavigationAction.REVIEW_THEORY_CANDIDATES,
+        ),
+        ResearchTaskStatus.DECISIONS_RECORDED: (
+            ResearchTaskLifecycleStatus.IN_PROGRESS,
+            ResearchTaskStage.THEORY_DECISION,
+            ResearchTaskNavigationAction.CONFIRM_THEORY_PLAN,
+        ),
+        ResearchTaskStatus.FRAMEWORK_DRAFT: (
+            ResearchTaskLifecycleStatus.IN_PROGRESS,
+            ResearchTaskStage.FRAMEWORK_DRAFTING,
+            ResearchTaskNavigationAction.REVIEW_FRAMEWORK,
+        ),
+        ResearchTaskStatus.FRAMEWORK_CONFIRMED: (
+            ResearchTaskLifecycleStatus.COMPLETED,
+            ResearchTaskStage.COMPLETED,
+            ResearchTaskNavigationAction.EXPORT,
+        ),
+    }
+    lifecycle_status, current_stage, action = navigation_by_status[task.status]
 
     return ResearchTaskNavigationResponse(
         task_id=task.task_id,
         entry_type=task.entry_type,
-        status=ResearchTaskLifecycleStatus.DRAFT,
-        current_stage=ResearchTaskStage.PHENOMENON_INPUT,
+        status=lifecycle_status,
+        current_stage=current_stage,
         version=task.version,
-        allowed_actions=[ResearchTaskNavigationAction.SUBMIT_PHENOMENON],
+        allowed_actions=[action],
         seed_theory_id=None,
         phenomenon_summary=None,
         adopted_theory_count=0,

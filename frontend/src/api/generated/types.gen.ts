@@ -1988,7 +1988,7 @@ export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' |
 /**
  * ResearchTaskStatus
  */
-export type ResearchTaskStatus = 'draft';
+export type ResearchTaskStatus = 'draft' | 'phenomenon_confirmed' | 'match_generating' | 'decisions_recorded' | 'framework_draft' | 'framework_confirmed';
 
 /**
  * ResearchTraceActor

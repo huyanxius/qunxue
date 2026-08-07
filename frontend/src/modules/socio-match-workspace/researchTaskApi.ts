@@ -9,16 +9,11 @@ import type {
   ResearchTask,
   ResearchTaskAction,
   ResearchTaskEntryType,
-  ResearchTaskStatus,
 } from './researchTaskModel'
 
 const entryTypes = {
   direct_input: 'direct_input',
 } satisfies Record<ResearchTaskResponse['entry_type'], ResearchTaskEntryType>
-
-const taskStatuses = {
-  draft: 'draft',
-} satisfies Record<ResearchTaskResponse['status'], ResearchTaskStatus>
 
 const taskActions = {
   submit_phenomenon: 'submit_phenomenon',
@@ -31,7 +26,7 @@ function toResearchTask(response: ResearchTaskResponse): ResearchTask {
   return {
     taskId: response.task_id,
     entryType: entryTypes[response.entry_type],
-    status: taskStatuses[response.status],
+    status: response.status,
     version: response.version,
     allowedActions: response.allowed_actions.map(
       (action) => taskActions[action],

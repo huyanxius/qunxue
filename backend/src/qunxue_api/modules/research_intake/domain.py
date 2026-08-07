@@ -15,6 +15,11 @@ class EntryInputType(StrEnum):
 
 class ResearchTaskStatus(StrEnum):
     DRAFT = "draft"
+    PHENOMENON_CONFIRMED = "phenomenon_confirmed"
+    MATCH_GENERATING = "match_generating"
+    DECISIONS_RECORDED = "decisions_recorded"
+    FRAMEWORK_DRAFT = "framework_draft"
+    FRAMEWORK_CONFIRMED = "framework_confirmed"
 
 
 class ResearchTaskAction(StrEnum):

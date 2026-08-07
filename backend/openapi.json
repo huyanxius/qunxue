@@ -3457,7 +3457,12 @@
       },
       "ResearchTaskStatus": {
         "enum": [
-          "draft"
+          "draft",
+          "phenomenon_confirmed",
+          "match_generating",
+          "decisions_recorded",
+          "framework_draft",
+          "framework_confirmed"
         ],
         "title": "ResearchTaskStatus",
         "type": "string"
