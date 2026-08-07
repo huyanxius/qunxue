@@ -1,4 +1,4 @@
-import { apiClient } from '../../api/client'
+﻿import { apiClient } from '../../api/client'
 import { ApiRequestError } from '../../api/error'
 import {
   createResearchTask as createResearchTaskRequest,
@@ -70,7 +70,7 @@ export async function submitResearchTaskViaApi(
     })
     if (!data) {
       throw new ApiRequestError(
-        extractErrorMessage(error, 'Research task creation failed.'),
+        extractErrorMessage(error, '研究任务创建失败。'),
         response?.status,
       )
     }
@@ -79,7 +79,7 @@ export async function submitResearchTaskViaApi(
     if (error instanceof ApiRequestError) {
       throw error
     }
-    throw new ApiRequestError('The service could not save this task. Please retry.')
+    throw new ApiRequestError('服务暂时无法保存这条研究任务，请稍后重试。')
   }
 }
 
@@ -93,7 +93,7 @@ export async function getResearchTaskViaApi(
     })
     if (!data) {
       throw new ApiRequestError(
-        extractErrorMessage(error, 'Research task recovery failed.'),
+        extractErrorMessage(error, '研究任务恢复失败。'),
         response?.status,
       )
     }
@@ -102,6 +102,6 @@ export async function getResearchTaskViaApi(
     if (error instanceof ApiRequestError) {
       throw error
     }
-    throw new ApiRequestError('The service could not restore this task. Please retry.')
+    throw new ApiRequestError('服务暂时无法恢复这条研究任务，请稍后重试。')
   }
 }

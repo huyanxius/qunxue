@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+﻿from collections.abc import Iterator
 from contextlib import contextmanager
 from uuid import uuid4
 
@@ -33,7 +33,7 @@ def create_app(
     app = FastAPI(
         title=resolved_settings.app_name,
         version="0.1.0",
-        description="SocioMatch API.",
+        description="群学致知前后端架构基线 API。",
     )
     app.state.settings = resolved_settings
     app.state.database = resolved_database

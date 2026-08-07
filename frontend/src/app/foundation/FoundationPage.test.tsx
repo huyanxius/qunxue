@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -40,7 +40,7 @@ describe('FoundationPage', () => {
         new Response(
           JSON.stringify({
             status: 'ok',
-            service: 'SocioMatch API',
+            service: '群学致知 API',
             runtime_mode: 'inline_demo',
             persistence: 'sqlite',
             contract_version: '2026-07-foundation',
@@ -66,16 +66,16 @@ describe('FoundationPage', () => {
 
     renderFoundationPage()
 
-    fireEvent.change(screen.getByLabelText('Phenomenon *'), {
+    fireEvent.change(screen.getByLabelText('研究现象 *'), {
       target: { value: 'Team jokes disappear after a leadership change.' },
     })
-    fireEvent.change(screen.getByLabelText('Research intent'), {
+    fireEvent.change(screen.getByLabelText('研究意图'), {
       target: { value: 'Study shifts in safety signals.' },
     })
-    fireEvent.change(screen.getByLabelText('Context'), {
+    fireEvent.change(screen.getByLabelText('补充背景'), {
       target: { value: 'Observed across two weekly rituals.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Create research task' }))
+    fireEvent.click(screen.getByRole('button', { name: '创建研究任务' }))
 
     expect(
       await screen.findByText('task route: 9c2fb49f-cfd0-41f1-9556-118371c9de65'),
@@ -87,7 +87,7 @@ describe('FoundationPage', () => {
       new Response(
         JSON.stringify({
           status: 'ok',
-          service: 'SocioMatch API',
+          service: '群学致知 API',
           runtime_mode: 'inline_demo',
           persistence: 'sqlite',
           contract_version: '2026-07-foundation',
@@ -99,10 +99,10 @@ describe('FoundationPage', () => {
 
     renderFoundationPage()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create research task' }))
+    fireEvent.click(screen.getByRole('button', { name: '创建研究任务' }))
 
     expect(
-      await screen.findByText('Please describe the phenomenon you want to study.'),
+      await screen.findByText('请先描述你想研究的社会现象。'),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledOnce()
   })
@@ -114,7 +114,7 @@ describe('FoundationPage', () => {
         new Response(
           JSON.stringify({
             status: 'ok',
-            service: 'SocioMatch API',
+            service: '群学致知 API',
             runtime_mode: 'inline_demo',
             persistence: 'sqlite',
             contract_version: '2026-07-foundation',
@@ -138,15 +138,15 @@ describe('FoundationPage', () => {
 
     renderFoundationPage()
 
-    fireEvent.change(screen.getByLabelText('Phenomenon *'), {
+    fireEvent.change(screen.getByLabelText('研究现象 *'), {
       target: { value: 'A fragile routine breaks after the server failure.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Create research task' }))
+    fireEvent.click(screen.getByRole('button', { name: '创建研究任务' }))
 
     expect(
-      await screen.findByText('The service could not save this task. Please retry.'),
+      await screen.findByText('服务暂时无法保存这条研究任务，请稍后重试。'),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Phenomenon *')).toHaveValue(
+    expect(screen.getByLabelText('研究现象 *')).toHaveValue(
       'A fragile routine breaks after the server failure.',
     )
   })

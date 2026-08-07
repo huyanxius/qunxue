@@ -1,4 +1,4 @@
-export const copy = {
+﻿export const copy = {
   eyebrow: '社会学理论发现与研究设计',
   title: '把一个模糊的现象，留成可以追问的研究起点。',
   lede:

@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+﻿import { useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
 
 import { submitResearchTask } from '../../modules/socio-match-workspace'
+import { copy } from './copy'
 import './foundation.css'
 import { useSystemHealth } from './useSystemHealth'
 
@@ -23,11 +24,11 @@ function isRequestLikeError(error: unknown): error is RequestLikeError {
 function describeSubmitError(error: unknown): string {
   if (isRequestLikeError(error)) {
     if (!error.status || error.status >= 500) {
-      return 'The service could not save this task. Please retry.'
+      return '服务暂时无法保存这条研究任务，请稍后重试。'
     }
     return error.message
   }
-  return 'The service could not save this task. Please retry.'
+  return '服务暂时无法保存这条研究任务，请稍后重试。'
 }
 
 export function FoundationPage() {
@@ -50,10 +51,10 @@ export function FoundationPage() {
   })
 
   const connectionLabel = health.isPending
-    ? 'Checking API contract'
+    ? '正在检查接口契约'
     : health.isError
-      ? 'API currently unavailable'
-      : 'API connected'
+      ? '接口暂时不可用'
+      : '接口已连接'
 
   function clearFormError() {
     if (formError) {
@@ -64,7 +65,7 @@ export function FoundationPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (phenomenon.trim() === '') {
-      setFormError('Please describe the phenomenon you want to study.')
+      setFormError('请先描述你想研究的社会现象。')
       return
     }
     setFormError(null)
@@ -74,25 +75,19 @@ export function FoundationPage() {
   return (
     <main className="page-shell">
       <header className="masthead">
-        <Link className="wordmark" to="/" aria-label="SocioMatch home">
+        <Link className="wordmark" to="/" aria-label="群学致知首页">
           <span className="wordmark-mark" aria-hidden="true">
-            SQ
+            群
           </span>
-          <span>SocioMatch</span>
+          <span>群学致知</span>
         </Link>
-        <p>RESEARCH INTAKE</p>
+        <p>研究现象录入</p>
       </header>
 
       <section className="opening">
-        <div>
-          <p className="eyebrow">Step 1 of the SocioMatch chain</p>
-          <h1 className="display-title">Record the phenomenon before formal matching begins.</h1>
-        </div>
-        <p className="opening-lede">
-          Start from a rough social observation. This step stores the original
-          user wording, creates a recoverable task, and leaves theory matching
-          for later stages.
-        </p>
+        <p className="eyebrow">{copy.eyebrow}</p>
+        <h1 className="display-title">{copy.title}</h1>
+        <p className="opening-lede">{copy.lede}</p>
       </section>
 
       <section className="connection" aria-live="polite">
@@ -106,35 +101,34 @@ export function FoundationPage() {
         {health.data ? (
           <dl>
             <div>
-              <dt>Contract</dt>
+              <dt>契约</dt>
               <dd>{health.data.contractVersion}</dd>
             </div>
             <div>
-              <dt>Runtime</dt>
+              <dt>运行</dt>
               <dd>{health.data.runtimeMode}</dd>
             </div>
             <div>
-              <dt>Persistence</dt>
+              <dt>保存</dt>
               <dd>{health.data.persistence}</dd>
             </div>
           </dl>
         ) : null}
         {health.isError ? (
-          <p className="connection-note">The form still keeps your text if the API request fails.</p>
+          <p className="connection-note">
+            即使接口请求失败，这个表单里已经填写的内容也不会丢失。
+          </p>
         ) : null}
       </section>
 
       <section className="action-line action-line-form">
         <div>
-          <p className="section-index">01 / Research intake</p>
-          <h2>Describe the social phenomenon in your own words.</h2>
-          <p>
-            The phenomenon field is required. Research intent and context stay
-            optional and are stored without extra judgment at this stage.
-          </p>
+          <p className="section-index">01 / 研究现象录入</p>
+          <h2>先用你自己的话，把观察到的现象留下来。</h2>
+          <p>{copy.actionNote}</p>
         </div>
         <form className="intake-form" onSubmit={handleSubmit}>
-          <label htmlFor="phenomenon">Phenomenon *</label>
+          <label htmlFor="phenomenon">研究现象 *</label>
           <textarea
             id="phenomenon"
             name="phenomenon"
@@ -146,7 +140,7 @@ export function FoundationPage() {
             }}
           />
 
-          <label htmlFor="research-intent">Research intent</label>
+          <label htmlFor="research-intent">研究意图</label>
           <input
             id="research-intent"
             name="researchIntent"
@@ -158,7 +152,7 @@ export function FoundationPage() {
             }}
           />
 
-          <label htmlFor="context">Context</label>
+          <label htmlFor="context">补充背景</label>
           <textarea
             id="context"
             name="context"
@@ -171,7 +165,7 @@ export function FoundationPage() {
           />
 
           <button type="submit" disabled={createTask.isPending}>
-            {createTask.isPending ? 'Saving task...' : 'Create research task'}
+            {createTask.isPending ? '正在保存研究任务...' : '创建研究任务'}
           </button>
           {formError ? (
             <p className="inline-error" role="alert">
@@ -184,7 +178,7 @@ export function FoundationPage() {
       <footer className="architecture-line">
         <span>React</span>
         <i aria-hidden="true">-&gt;</i>
-        <span>Generated SDK</span>
+        <span>生成 SDK</span>
         <i aria-hidden="true">-&gt;</i>
         <span>OpenAPI</span>
         <i aria-hidden="true">-&gt;</i>

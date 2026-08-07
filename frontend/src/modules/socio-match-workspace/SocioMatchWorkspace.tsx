@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+﻿import type { MouseEvent } from 'react'
 
 import './workspace.css'
 import { useResearchTask } from './useResearchTask'
@@ -24,7 +24,7 @@ function isRequestLikeError(error: unknown): error is RequestLikeError {
 }
 
 function optionalField(value: string | null): string {
-  return value ?? 'Not provided'
+  return value ?? '未填写'
 }
 
 export function SocioMatchWorkspace({
@@ -58,34 +58,33 @@ export function SocioMatchWorkspace({
       <header className="masthead">
         <a className="wordmark" href={homeHref} onClick={navigateHome}>
           <span className="wordmark-mark" aria-hidden="true">
-            SQ
+            群
           </span>
-          <span>SocioMatch</span>
+          <span>群学致知</span>
         </a>
-        <p>RESEARCH TASK</p>
+        <p>研究任务</p>
       </header>
 
       <section className="task-heading">
-        <p className="eyebrow">Restorable intake record</p>
-        <h1 className="display-title">Research phenomenon saved</h1>
+        <p className="eyebrow">可恢复的现象记录</p>
+        <h1 className="display-title">研究现象已录入</h1>
         <p>
-          This task keeps the original user-submitted observation intact so the
-          next matching step can only begin from a confirmed phenomenon.
+          当前任务保留用户提交的原始现象描述，后续正式匹配只能从已确认的现象出发。
         </p>
       </section>
 
-      {task.isPending ? <p className="loading-line">Restoring task...</p> : null}
+      {task.isPending ? <p className="loading-line">正在恢复任务...</p> : null}
       {requestError ? (
         <section className="recovery-error" role="alert">
           <h2>
             {isMissingTask
-              ? 'No research task exists for this task_id.'
-              : 'This research task could not be restored right now.'}
+              ? '不存在这个 task_id 对应的研究任务。'
+              : '暂时无法恢复这个研究任务。'}
           </h2>
           <p>
             {isMissingTask
               ? requestError.message
-              : 'Please retry in a moment. Your saved task is not replaced by the interface.'}
+              : '请稍后重试。已保存的研究任务不会被界面覆盖。'}
           </p>
         </section>
       ) : null}
@@ -93,42 +92,42 @@ export function SocioMatchWorkspace({
         <section className="task-record">
           <dl>
             <div className="task-field task-field-wide">
-              <dt>Phenomenon</dt>
+              <dt>研究现象</dt>
               <dd>{task.data.phenomenon}</dd>
             </div>
             <div>
-              <dt>Research intent</dt>
+              <dt>研究意图</dt>
               <dd>{optionalField(task.data.researchIntent)}</dd>
             </div>
             <div>
-              <dt>Context</dt>
+              <dt>补充背景</dt>
               <dd>{optionalField(task.data.context)}</dd>
             </div>
             <div>
-              <dt>Source</dt>
+              <dt>来源</dt>
               <dd>{task.data.source}</dd>
             </div>
             <div>
-              <dt>Task ID</dt>
+              <dt>任务 ID</dt>
               <dd>{task.data.taskId}</dd>
             </div>
             <div>
-              <dt>Created at</dt>
+              <dt>创建时间</dt>
               <dd>{task.data.createdAt}</dd>
             </div>
             <div>
-              <dt>Updated at</dt>
+              <dt>更新时间</dt>
               <dd>{task.data.updatedAt}</dd>
             </div>
           </dl>
           <p className="task-note">
-            Refreshing this page restores the same task by its task_id in the URL.
+            刷新页面后，系统会根据 URL 中的 task_id 恢复同一任务。
           </p>
         </section>
       ) : null}
 
       <a className="text-link" href={homeHref} onClick={navigateHome}>
-        Back to intake
+        返回录入页
       </a>
     </main>
   )

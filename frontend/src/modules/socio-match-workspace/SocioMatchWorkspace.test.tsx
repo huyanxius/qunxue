@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -63,7 +63,7 @@ describe('SocioMatchWorkspace public API', () => {
     expect(screen.getByText('Study coordination drift.')).toBeVisible()
     expect(screen.getByText('user_input')).toBeVisible()
 
-    const returnLink = screen.getByRole('link', { name: 'Back to intake' })
+    const returnLink = screen.getByRole('link', { name: '返回录入页' })
     expect(returnLink).toHaveAttribute('href', '/')
     fireEvent.click(returnLink)
     expect(onNavigateHome).toHaveBeenCalledOnce()
@@ -89,7 +89,7 @@ describe('SocioMatchWorkspace public API', () => {
     renderWorkspace('missing')
 
     expect(
-      await screen.findByText('No research task exists for this task_id.'),
+      await screen.findByText('不存在这个 task_id 对应的研究任务。'),
     ).toBeVisible()
     expect(
       screen.getByText("research task 'missing' was not found"),

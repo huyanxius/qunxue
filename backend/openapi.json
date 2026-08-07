@@ -235,7 +235,7 @@
     }
   },
   "info": {
-    "description": "SocioMatch API.",
+    "description": "群学致知前后端架构基线 API。",
     "title": "群学致知 API",
     "version": "0.1.0"
   },
