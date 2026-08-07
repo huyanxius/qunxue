@@ -9,6 +9,7 @@ from qunxue_api.api.contracts.research_tasks import (
     CreateResearchTaskRequest,
     DeleteResearchTaskResponse,
     MarkdownExportResponse,
+    ResearchTaskNavigationResponse,
     ResearchTaskPageResponse,
     ResearchTaskResponse,
     ResearchTraceResponse,
@@ -68,6 +69,16 @@ def list_research_tasks(
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
 ) -> JSONResponse:
+    return not_implemented_response()
+
+
+@router.get(
+    "/{task_id}/navigation",
+    operation_id="get_research_task_navigation",
+    response_model=ResearchTaskNavigationResponse,
+    responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
+)
+def get_research_task_navigation(task_id: UUID) -> JSONResponse:
     return not_implemented_response()
 
 

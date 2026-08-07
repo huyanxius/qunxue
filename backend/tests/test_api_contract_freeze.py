@@ -138,6 +138,16 @@ def test_error_and_model_metadata_enums_are_stable(client: TestClient) -> None:
     assert schemas["ModelCapability"]["enum"] == ["mock", "base", "sft"]
 
 
+def test_model_metadata_marks_knowledge_release_as_nullable_not_applicable(
+    client: TestClient,
+) -> None:
+    model = client.app.openapi()["components"]["schemas"]["ModelMetadata"]
+
+    assert "knowledge_release_id" in model["required"]
+    variants = model["properties"]["knowledge_release_id"]["anyOf"]
+    assert {variant.get("type") for variant in variants} == {"string", "null"}
+
+
 def test_session_and_research_contracts_preserve_state_and_trace_fields(
     client: TestClient,
 ) -> None:
@@ -163,6 +173,50 @@ def test_session_and_research_contracts_preserve_state_and_trace_fields(
         ["application/json"]["schema"]["$ref"]
         .endswith("/ResearchTaskPageResponse")
     )
+
+
+def test_research_task_navigation_restores_my_list_and_task_only_deep_links(
+    client: TestClient,
+) -> None:
+    schema = client.app.openapi()
+    schemas = schema["components"]["schemas"]
+    navigation = schemas["ResearchTaskNavigationResponse"]
+
+    assert {
+        "task_id",
+        "entry_type",
+        "status",
+        "current_stage",
+        "version",
+        "allowed_actions",
+        "seed_theory_id",
+        "phenomenon_summary",
+        "adopted_theory_count",
+        "current_phenomenon_candidate_id",
+        "current_match_run_id",
+        "current_framework_id",
+        "created_at",
+        "updated_at",
+    } <= set(navigation["required"])
+    assert {"draft", "in_progress", "completed"} <= set(
+        schemas["ResearchTaskLifecycleStatus"]["enum"]
+    )
+    assert {
+        "phenomenon_input",
+        "phenomenon_confirmation",
+        "theory_matching",
+        "theory_decision",
+        "framework_drafting",
+        "framework_review",
+        "completed",
+    } == set(schemas["ResearchTaskStage"]["enum"])
+    assert (
+        schema["paths"]["/api/research-tasks/{task_id}/navigation"]["get"]
+        ["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        .endswith("/ResearchTaskNavigationResponse")
+    )
+    page_items = schemas["ResearchTaskPageResponse"]["properties"]["items"]["items"]
+    assert page_items["$ref"].endswith("/ResearchTaskNavigationResponse")
 
 
 def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
@@ -209,6 +263,27 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
     } <= set(schemas["KnowledgeEntryDetailResponse"]["required"])
 
 
+def test_knowledge_results_keep_directory_position_and_stable_filters(
+    client: TestClient,
+) -> None:
+    schema = client.app.openapi()
+    schemas = schema["components"]["schemas"]
+    directory_node = schemas["KnowledgeDirectoryNodeResponse"]
+    summary = schemas["KnowledgeEntrySummaryResponse"]
+    detail = schemas["KnowledgeEntryDetailResponse"]
+    operation = schema["paths"]["/api/knowledge/entries"]["get"]
+    parameters = {parameter["name"] for parameter in operation["parameters"]}
+
+    assert {"node_id", "node_type", "title"} <= set(directory_node["required"])
+    assert {"category_id", "dimension_id", "directory_path"} <= set(
+        summary["required"]
+    )
+    assert {"category_id", "dimension_id", "directory_path"} <= set(
+        detail["required"]
+    )
+    assert {"category_id", "dimension_id"} <= parameters
+
+
 def test_material_input_rejects_missing_authority_acknowledgements(
     client: TestClient,
 ) -> None:
@@ -231,6 +306,25 @@ def test_material_input_rejects_missing_authority_acknowledgements(
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_error"
+
+
+def test_phenomenon_candidates_embed_displayable_evidence_references(
+    client: TestClient,
+) -> None:
+    schemas = client.app.openapi()["components"]["schemas"]
+    evidence = schemas["PhenomenonEvidenceReferenceResponse"]
+
+    assert {
+        "evidence_ref_id",
+        "excerpt",
+        "source_ref_id",
+        "source_description",
+        "locator",
+        "verification_status",
+        "use_boundary",
+    } <= set(evidence["required"])
+    assert "evidence_refs" in schemas["PhenomenonCandidateResponse"]["required"]
+    assert "evidence_refs" in schemas["PhenomenonSnapshotResponse"]["required"]
 
 
 def test_match_candidates_are_dynamic_ordered_and_retryable(client: TestClient) -> None:
@@ -296,6 +390,54 @@ def test_match_candidates_are_dynamic_ordered_and_retryable(client: TestClient) 
     assert invalid.json()["error"]["code"] == "validation_error"
 
 
+def test_match_evidence_keeps_excerpt_locator_and_source_snapshot(
+    client: TestClient,
+) -> None:
+    schemas = client.app.openapi()["components"]["schemas"]
+    evidence = schemas["EvidenceReferenceResponse"]
+
+    assert {
+        "evidence_ref_id",
+        "claim",
+        "excerpt",
+        "locator",
+        "source",
+        "verification_status",
+        "use_boundary",
+    } <= set(evidence["required"])
+    source_schema = evidence["properties"]["source"]["anyOf"][0]["$ref"]
+    assert source_schema.endswith("/SourceRecordResponse")
+
+
+def test_theory_decisions_support_five_core_actions_and_explicit_defer(
+    client: TestClient,
+) -> None:
+    schema = client.app.openapi()
+    schemas = schema["components"]["schemas"]
+
+    assert {"adopt", "exclude", "retain", "combine", "defer"} <= set(
+        schemas["TheoryDecisionAction"]["enum"]
+    )
+    assert {"reason", "related_candidate_ids"} <= set(
+        schemas["TheoryDecisionInput"]["required"]
+    )
+    assert {"reason", "related_candidate_ids"} <= set(
+        schemas["TheoryDecisionRecordResponse"]["required"]
+    )
+    defer_operation = schema["paths"]["/api/match-runs/{match_run_id}/defer"][
+        "post"
+    ]
+    assert defer_operation["operationId"] == "defer_theory_plan"
+    assert (
+        defer_operation["responses"]["200"]["content"]["application/json"]
+        ["schema"]["$ref"]
+        .endswith("/DeferredTheoryPlanResponse")
+    )
+    assert {"task_id", "match_run_id", "version", "allowed_actions", "reason"} <= set(
+        schemas["DeferredTheoryPlanResponse"]["required"]
+    )
+
+
 def test_framework_contract_freezes_revision_audit_and_export_gates(
     client: TestClient,
 ) -> None:
@@ -330,6 +472,58 @@ def test_framework_contract_freezes_revision_audit_and_export_gates(
         "markdown",
         "contract_version",
     } <= set(schemas["FormalFrameworkExportResponse"]["required"])
+
+
+def test_framework_read_restores_confirmed_phenomenon_and_theory_plan(
+    client: TestClient,
+) -> None:
+    schemas = client.app.openapi()["components"]["schemas"]
+    theory_plan = schemas["ConfirmedTheoryPlanResponse"]
+
+    assert {
+        "confirmed_phenomenon",
+        "decisions",
+        "use_assignments",
+        "relations",
+    } <= set(theory_plan["required"])
+    assert "theory_plan" in schemas["FrameworkInputResponse"]["required"]
+    assert {
+        "relation_id",
+        "candidate_ids",
+        "relation_kind",
+        "explanation",
+        "premise_compatibility",
+    } <= set(schemas["TheoryRelationResponse"]["required"])
+
+
+def test_framework_review_failures_are_recoverable_and_target_retryable(
+    client: TestClient,
+) -> None:
+    schema = client.app.openapi()
+    schemas = schema["components"]["schemas"]
+
+    assert {"timed_out", "insufficient_sources"} <= set(
+        schemas["FrameworkReviewRunStatus"]["enum"]
+    )
+    assert "retry" in schemas["FrameworkReviewAction"]["enum"]
+    assert {"code", "message", "retryable", "requested_source_ids"} <= set(
+        schemas["FrameworkReviewFailureResponse"]["required"]
+    )
+    assert {"retry_of_review_run_id", "attempt", "failure"} <= set(
+        schemas["FrameworkReviewResponse"]["required"]
+    )
+    retry = schema["paths"][
+        "/api/frameworks/{framework_id}/reviews/{review_run_id}/retry"
+    ]["post"]
+    assert retry["operationId"] == "retry_framework_review"
+    assert (
+        retry["responses"]["200"]["content"]["application/json"]["schema"]
+        ["$ref"]
+        .endswith("/FrameworkReviewResponse")
+    )
+    assert {"expected_revision_id", "expected_review_version"} <= set(
+        schemas["RetryFrameworkReviewRequest"]["required"]
+    )
 
 
 def test_every_documented_json_error_uses_error_response(client: TestClient) -> None:

@@ -37,8 +37,17 @@ class AuditFindingSeverity(StrEnum):
 
 class FrameworkReviewRunStatus(StrEnum):
     REQUESTED = "requested"
+    RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    TIMED_OUT = "timed_out"
+    INSUFFICIENT_SOURCES = "insufficient_sources"
+
+
+class FrameworkReviewFailureCode(StrEnum):
+    MODEL_TIMEOUT = "model_timeout"
+    INSUFFICIENT_SOURCES = "insufficient_sources"
+    REVIEW_FAILED = "review_failed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,6 +176,14 @@ class FrameworkAuditSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class FrameworkReviewFailureSnapshot:
+    code: FrameworkReviewFailureCode
+    message: str
+    retryable: bool
+    requested_source_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class FrameworkReviewRunSnapshot:
     review_run_id: UUID
     framework_id: UUID
@@ -177,6 +194,9 @@ class FrameworkReviewRunSnapshot:
     status: FrameworkReviewRunStatus
     audit: FrameworkAuditSnapshot | None
     revision_id: UUID | None = None
+    retry_of_review_run_id: UUID | None = None
+    attempt: int = 1
+    failure: FrameworkReviewFailureSnapshot | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,6 +266,15 @@ class ResearchFrameworkWorkflow(Protocol):
     def get_review_run(
         self,
         review_run_id: UUID,
+    ) -> FrameworkReviewRunSnapshot: ...
+
+    def retry_review(
+        self,
+        *,
+        framework_id: UUID,
+        review_run_id: UUID,
+        expected_revision_id: UUID,
+        expected_review_version: int,
     ) -> FrameworkReviewRunSnapshot: ...
 
     def get_audit(self, audit_id: UUID) -> FrameworkAuditSnapshot: ...

@@ -1,10 +1,13 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from qunxue_api.api.contracts.common import ModelMetadata
+from qunxue_api.api.contracts.knowledge import SourceRecordResponse
+from qunxue_api.api.contracts.phenomena import PhenomenonSnapshotResponse
 from qunxue_api.modules.knowledge_catalog import SourceVerificationStatus
 from qunxue_api.modules.theory_matching import (
     CandidateContentStatus,
@@ -41,7 +44,10 @@ class TheoryPlanAction(StrEnum):
 class EvidenceReferenceResponse(BaseModel):
     evidence_ref_id: str
     claim: str
+    excerpt: str | None
+    locator: str | None
     source_id: str | None
+    source: SourceRecordResponse | None
     verification_status: SourceVerificationStatus
     use_boundary: str
 
@@ -137,6 +143,7 @@ class TheoryDecisionInput(BaseModel):
     action: TheoryDecisionAction
     reason: str = Field(min_length=1, max_length=4_000)
     related_source_ids: list[str] = Field(default_factory=list)
+    related_candidate_ids: list[UUID]
     revised_applicability: str | None = None
 
 
@@ -146,8 +153,25 @@ class TheoryUseAssignmentInput(BaseModel):
     responsibility: str
 
 
+class TheoryUseAssignmentResponse(BaseModel):
+    candidate_id: UUID
+    role_code: str
+    responsibility: str
+
+
 class TheoryRelationInput(BaseModel):
     candidate_ids: list[UUID] = Field(min_length=2)
+    relation_kind: str
+    explanation: str
+    premise_compatibility: str
+    supporting_evidence: list[str]
+    excluding_evidence: list[str]
+    distinguishing_evidence: list[str]
+
+
+class TheoryRelationResponse(BaseModel):
+    relation_id: UUID
+    candidate_ids: list[UUID]
     relation_kind: str
     explanation: str
     premise_compatibility: str
@@ -171,6 +195,7 @@ class TheoryDecisionRecordResponse(BaseModel):
     action: TheoryDecisionAction
     reason: str
     related_source_ids: list[str]
+    related_candidate_ids: list[UUID]
     revised_applicability: str | None
     recorded_at: datetime
 
@@ -183,8 +208,8 @@ class TheoryDecisionSetResponse(BaseModel):
     knowledge_release_id: str
     completion_basis: MatchCompletionBasis
     decisions: list[TheoryDecisionRecordResponse]
-    use_assignments: list[TheoryUseAssignmentInput]
-    relations: list[TheoryRelationInput]
+    use_assignments: list[TheoryUseAssignmentResponse]
+    relations: list[TheoryRelationResponse]
 
 
 class TheoryDecisionPageResponse(BaseModel):
@@ -200,6 +225,21 @@ class ConfirmTheoryPlanRequest(BaseModel):
     expected_decision_set_version: int = Field(ge=1)
 
 
+class DeferTheoryPlanRequest(BaseModel):
+    expected_match_run_version: int = Field(ge=1)
+    reason: str = Field(min_length=1, max_length=4_000)
+
+
+class DeferredTheoryPlanResponse(BaseModel):
+    task_id: UUID
+    match_run_id: UUID
+    version: int
+    status: Literal["deferred"]
+    allowed_actions: list[MatchRunAction]
+    reason: str
+    deferred_at: datetime
+
+
 class ConfirmedTheoryPlanResponse(BaseModel):
     theory_plan_id: UUID
     task_id: UUID
@@ -211,4 +251,8 @@ class ConfirmedTheoryPlanResponse(BaseModel):
     phenomenon_version: int
     knowledge_release_id: str
     adopted_candidate_ids: list[UUID]
+    confirmed_phenomenon: PhenomenonSnapshotResponse
+    decisions: list[TheoryDecisionRecordResponse]
+    use_assignments: list[TheoryUseAssignmentResponse]
+    relations: list[TheoryRelationResponse]
     confirmed_at: datetime

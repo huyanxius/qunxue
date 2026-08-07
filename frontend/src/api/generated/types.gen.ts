@@ -336,10 +336,15 @@ export type ConfirmedTheoryPlanResponse = {
      * Confirmed At
      */
     confirmed_at: string;
+    confirmed_phenomenon: PhenomenonSnapshotResponse;
     /**
      * Decision Set Id
      */
     decision_set_id: string;
+    /**
+     * Decisions
+     */
+    decisions: Array<TheoryDecisionRecordResponse>;
     /**
      * Knowledge Release Id
      */
@@ -357,6 +362,10 @@ export type ConfirmedTheoryPlanResponse = {
      */
     phenomenon_version: number;
     /**
+     * Relations
+     */
+    relations: Array<TheoryRelationResponse>;
+    /**
      * Task Id
      */
     task_id: string;
@@ -364,6 +373,10 @@ export type ConfirmedTheoryPlanResponse = {
      * Theory Plan Id
      */
     theory_plan_id: string;
+    /**
+     * Use Assignments
+     */
+    use_assignments: Array<TheoryUseAssignmentResponse>;
     /**
      * Version
      */
@@ -463,6 +476,54 @@ export type CreateTheoryDecisionsRequest = {
      * Use Assignments
      */
     use_assignments: Array<TheoryUseAssignmentInput>;
+};
+
+/**
+ * DeferTheoryPlanRequest
+ */
+export type DeferTheoryPlanRequest = {
+    /**
+     * Expected Match Run Version
+     */
+    expected_match_run_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DeferredTheoryPlanResponse
+ */
+export type DeferredTheoryPlanResponse = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<MatchRunAction>;
+    /**
+     * Deferred At
+     */
+    deferred_at: string;
+    /**
+     * Match Run Id
+     */
+    match_run_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Status
+     */
+    status: 'deferred';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -612,6 +673,15 @@ export type EvidenceReferenceResponse = {
      * Evidence Ref Id
      */
     evidence_ref_id: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string | null;
+    /**
+     * Locator
+     */
+    locator: string | null;
+    source: SourceRecordResponse | null;
     /**
      * Source Id
      */
@@ -837,6 +907,7 @@ export type FrameworkInputResponse = {
      * Research Object
      */
     research_object: string;
+    theory_plan: ConfirmedTheoryPlanResponse;
     /**
      * Theory Plan Id
      */
@@ -888,7 +959,31 @@ export type FrameworkResponse = {
 /**
  * FrameworkReviewAction
  */
-export type FrameworkReviewAction = 'refresh' | 'submit_audit_resolutions' | 'revise_framework' | 'confirm_framework';
+export type FrameworkReviewAction = 'refresh' | 'retry' | 'submit_audit_resolutions' | 'revise_framework' | 'confirm_framework';
+
+/**
+ * FrameworkReviewFailureCode
+ */
+export type FrameworkReviewFailureCode = 'model_timeout' | 'insufficient_sources' | 'review_failed';
+
+/**
+ * FrameworkReviewFailureResponse
+ */
+export type FrameworkReviewFailureResponse = {
+    code: FrameworkReviewFailureCode;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Requested Source Ids
+     */
+    requested_source_ids: Array<string>;
+    /**
+     * Retryable
+     */
+    retryable: boolean;
+};
 
 /**
  * FrameworkReviewResponse
@@ -898,11 +993,16 @@ export type FrameworkReviewResponse = {
      * Allowed Actions
      */
     allowed_actions: Array<FrameworkReviewAction>;
+    /**
+     * Attempt
+     */
+    attempt: number;
     audit: FrameworkAuditResponse | null;
     /**
      * Contract Version
      */
     contract_version: string;
+    failure: FrameworkReviewFailureResponse | null;
     /**
      * Framework Id
      */
@@ -912,6 +1012,10 @@ export type FrameworkReviewResponse = {
      */
     knowledge_release_id: string;
     model: ModelMetadata;
+    /**
+     * Retry Of Review Run Id
+     */
+    retry_of_review_run_id: string | null;
     /**
      * Review Run Id
      */
@@ -930,7 +1034,7 @@ export type FrameworkReviewResponse = {
 /**
  * FrameworkReviewRunStatus
  */
-export type FrameworkReviewRunStatus = 'requested' | 'succeeded' | 'failed';
+export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | 'failed' | 'timed_out' | 'insufficient_sources';
 
 /**
  * FrameworkStatus
@@ -998,6 +1102,26 @@ export type InferenceLinkContract = {
 };
 
 /**
+ * KnowledgeDirectoryNodeResponse
+ */
+export type KnowledgeDirectoryNodeResponse = {
+    /**
+     * Node Id
+     */
+    node_id: string;
+    node_type: KnowledgeDirectoryNodeType;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeDirectoryNodeType
+ */
+export type KnowledgeDirectoryNodeType = 'category' | 'dimension';
+
+/**
  * KnowledgeEntryDetailResponse
  */
 export type KnowledgeEntryDetailResponse = {
@@ -1010,6 +1134,10 @@ export type KnowledgeEntryDetailResponse = {
      */
     category: string;
     /**
+     * Category Id
+     */
+    category_id: string;
+    /**
      * Content
      */
     content: string;
@@ -1021,6 +1149,14 @@ export type KnowledgeEntryDetailResponse = {
      * Dimension
      */
     dimension: string;
+    /**
+     * Dimension Id
+     */
+    dimension_id: string;
+    /**
+     * Directory Path
+     */
+    directory_path: Array<KnowledgeDirectoryNodeResponse>;
     eligibility: KnowledgeUseEligibilityResponse;
     /**
      * Knowledge Id
@@ -1077,6 +1213,10 @@ export type KnowledgeEntrySummaryResponse = {
      */
     category: string;
     /**
+     * Category Id
+     */
+    category_id: string;
+    /**
      * Content Version
      */
     content_version: number;
@@ -1084,6 +1224,14 @@ export type KnowledgeEntrySummaryResponse = {
      * Dimension
      */
     dimension: string;
+    /**
+     * Dimension Id
+     */
+    dimension_id: string;
+    /**
+     * Directory Path
+     */
+    directory_path: Array<KnowledgeDirectoryNodeResponse>;
     eligibility: KnowledgeUseEligibilityResponse;
     /**
      * Knowledge Id
@@ -1449,6 +1597,10 @@ export type ModelMetadata = {
      */
     degraded: boolean;
     /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
+    /**
      * Model Version
      */
     model_version: string;
@@ -1511,6 +1663,10 @@ export type PhenomenonCandidateResponse = {
      * Context
      */
     context: string | null;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs: Array<PhenomenonEvidenceReferenceResponse>;
     model: ModelMetadata;
     /**
      * Phenomenon
@@ -1539,6 +1695,42 @@ export type PhenomenonCandidateResponse = {
  * PhenomenonCandidateStatus
  */
 export type PhenomenonCandidateStatus = 'proposed' | 'edited' | 'confirmed' | 'superseded';
+
+/**
+ * PhenomenonEvidenceReferenceResponse
+ */
+export type PhenomenonEvidenceReferenceResponse = {
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string;
+    /**
+     * Locator
+     */
+    locator: string | null;
+    /**
+     * Source Description
+     */
+    source_description: string | null;
+    /**
+     * Source Ref Id
+     */
+    source_ref_id: string;
+    /**
+     * Use Boundary
+     */
+    use_boundary: string;
+    verification_status: PhenomenonEvidenceVerificationStatus;
+};
+
+/**
+ * PhenomenonEvidenceVerificationStatus
+ */
+export type PhenomenonEvidenceVerificationStatus = 'verified' | 'user_attested' | 'pending';
 
 /**
  * PhenomenonSnapshotAction
@@ -1587,6 +1779,10 @@ export type PhenomenonSnapshotResponse = {
      * Context
      */
     context: string | null;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs: Array<PhenomenonEvidenceReferenceResponse>;
     /**
      * Phenomenon
      */
@@ -1659,17 +1855,101 @@ export type RelatedTheoryResponse = {
 export type ResearchTaskAction = 'submit_phenomenon';
 
 /**
+ * ResearchTaskLifecycleStatus
+ */
+export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed';
+
+/**
+ * ResearchTaskNavigationAction
+ */
+export type ResearchTaskNavigationAction = 'submit_phenomenon' | 'confirm_phenomenon' | 'start_matching' | 'review_theory_candidates' | 'confirm_theory_plan' | 'create_framework' | 'review_framework' | 'confirm_framework' | 'export';
+
+/**
+ * ResearchTaskNavigationResponse
+ *
+ * Task-scoped aggregate used by `/my` and task-only deep links.
+ */
+export type ResearchTaskNavigationResponse = {
+    /**
+     * Adopted Theory Count
+     */
+    adopted_theory_count: number;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<ResearchTaskNavigationAction>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Current Framework Id
+     */
+    current_framework_id: string | null;
+    /**
+     * Current Match Run Id
+     */
+    current_match_run_id: string | null;
+    /**
+     * Current Phenomenon Candidate Id
+     */
+    current_phenomenon_candidate_id: string | null;
+    current_stage: ResearchTaskStage;
+    entry_type: EntryType;
+    phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | null;
+    /**
+     * Seed Theory Id
+     */
+    seed_theory_id: string | null;
+    status: ResearchTaskLifecycleStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ResearchTaskPageResponse
  */
 export type ResearchTaskPageResponse = {
     /**
      * Items
      */
-    items: Array<ResearchTaskResponse>;
+    items: Array<ResearchTaskNavigationResponse>;
     /**
      * Next Cursor
      */
     next_cursor: string | null;
+};
+
+/**
+ * ResearchTaskPhenomenonSummaryResponse
+ */
+export type ResearchTaskPhenomenonSummaryResponse = {
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Phenomenon Query Id
+     */
+    phenomenon_query_id: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -1699,6 +1979,11 @@ export type ResearchTaskResponse = {
      */
     version: number;
 };
+
+/**
+ * ResearchTaskStage
+ */
+export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' | 'theory_matching' | 'theory_decision' | 'framework_drafting' | 'framework_review' | 'completed';
 
 /**
  * ResearchTaskStatus
@@ -1769,6 +2054,20 @@ export type ResearchTraceResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * RetryFrameworkReviewRequest
+ */
+export type RetryFrameworkReviewRequest = {
+    /**
+     * Expected Review Version
+     */
+    expected_review_version: number;
+    /**
+     * Expected Revision Id
+     */
+    expected_revision_id: string;
 };
 
 /**
@@ -2036,7 +2335,7 @@ export type TheoryCandidateResponse = {
 /**
  * TheoryDecisionAction
  */
-export type TheoryDecisionAction = 'adopt' | 'exclude' | 'retain' | 'request_more_evidence' | 'revise_applicability';
+export type TheoryDecisionAction = 'adopt' | 'exclude' | 'retain' | 'combine' | 'defer' | 'request_more_evidence' | 'revise_applicability';
 
 /**
  * TheoryDecisionInput
@@ -2055,6 +2354,10 @@ export type TheoryDecisionInput = {
      * Reason
      */
     reason: string;
+    /**
+     * Related Candidate Ids
+     */
+    related_candidate_ids: Array<string>;
     /**
      * Related Source Ids
      */
@@ -2121,6 +2424,10 @@ export type TheoryDecisionRecordResponse = {
      */
     recorded_at: string;
     /**
+     * Related Candidate Ids
+     */
+    related_candidate_ids: Array<string>;
+    /**
      * Related Source Ids
      */
     related_source_ids: Array<string>;
@@ -2163,11 +2470,11 @@ export type TheoryDecisionSetResponse = {
     /**
      * Relations
      */
-    relations: Array<TheoryRelationInput>;
+    relations: Array<TheoryRelationResponse>;
     /**
      * Use Assignments
      */
-    use_assignments: Array<TheoryUseAssignmentInput>;
+    use_assignments: Array<TheoryUseAssignmentResponse>;
     /**
      * Version
      */
@@ -2278,9 +2585,65 @@ export type TheoryRelationInput = {
 };
 
 /**
+ * TheoryRelationResponse
+ */
+export type TheoryRelationResponse = {
+    /**
+     * Candidate Ids
+     */
+    candidate_ids: Array<string>;
+    /**
+     * Distinguishing Evidence
+     */
+    distinguishing_evidence: Array<string>;
+    /**
+     * Excluding Evidence
+     */
+    excluding_evidence: Array<string>;
+    /**
+     * Explanation
+     */
+    explanation: string;
+    /**
+     * Premise Compatibility
+     */
+    premise_compatibility: string;
+    /**
+     * Relation Id
+     */
+    relation_id: string;
+    /**
+     * Relation Kind
+     */
+    relation_kind: string;
+    /**
+     * Supporting Evidence
+     */
+    supporting_evidence: Array<string>;
+};
+
+/**
  * TheoryUseAssignmentInput
  */
 export type TheoryUseAssignmentInput = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Responsibility
+     */
+    responsibility: string;
+    /**
+     * Role Code
+     */
+    role_code: string;
+};
+
+/**
+ * TheoryUseAssignmentResponse
+ */
+export type TheoryUseAssignmentResponse = {
     /**
      * Candidate Id
      */
@@ -2696,6 +3059,58 @@ export type GetFrameworkReviewResponses = {
 
 export type GetFrameworkReviewResponse = GetFrameworkReviewResponses[keyof GetFrameworkReviewResponses];
 
+export type RetryFrameworkReviewData = {
+    body: RetryFrameworkReviewRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+        /**
+         * Review Run Id
+         */
+        review_run_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/reviews/{review_run_id}/retry';
+};
+
+export type RetryFrameworkReviewErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type RetryFrameworkReviewError = RetryFrameworkReviewErrors[keyof RetryFrameworkReviewErrors];
+
+export type RetryFrameworkReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkReviewResponse;
+};
+
+export type RetryFrameworkReviewResponse = RetryFrameworkReviewResponses[keyof RetryFrameworkReviewResponses];
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -2783,6 +3198,14 @@ export type ListKnowledgeEntriesData = {
          * Category
          */
         category?: string | null;
+        /**
+         * Category Id
+         */
+        category_id?: string | null;
+        /**
+         * Dimension Id
+         */
+        dimension_id?: string | null;
         /**
          * Cursor
          */
@@ -3124,6 +3547,54 @@ export type CreateTheoryDecisionsResponses = {
 };
 
 export type CreateTheoryDecisionsResponse = CreateTheoryDecisionsResponses[keyof CreateTheoryDecisionsResponses];
+
+export type DeferTheoryPlanData = {
+    body: DeferTheoryPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Match Run Id
+         */
+        match_run_id: string;
+    };
+    query?: never;
+    url: '/api/match-runs/{match_run_id}/defer';
+};
+
+export type DeferTheoryPlanErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type DeferTheoryPlanError = DeferTheoryPlanErrors[keyof DeferTheoryPlanErrors];
+
+export type DeferTheoryPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeferredTheoryPlanResponse;
+};
+
+export type DeferTheoryPlanResponse = DeferTheoryPlanResponses[keyof DeferTheoryPlanResponses];
 
 export type AcknowledgePartialMatchData = {
     body: AcknowledgePartialMatchRequest;
@@ -3537,6 +4008,44 @@ export type CreateMatchRunResponses = {
 };
 
 export type CreateMatchRunResponse = CreateMatchRunResponses[keyof CreateMatchRunResponses];
+
+export type GetResearchTaskNavigationData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/navigation';
+};
+
+export type GetResearchTaskNavigationErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: ErrorResponse;
+};
+
+export type GetResearchTaskNavigationError = GetResearchTaskNavigationErrors[keyof GetResearchTaskNavigationErrors];
+
+export type GetResearchTaskNavigationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTaskNavigationResponse;
+};
+
+export type GetResearchTaskNavigationResponse = GetResearchTaskNavigationResponses[keyof GetResearchTaskNavigationResponses];
 
 export type ExtractPhenomenonCandidatesData = {
     body: ExtractPhenomenonCandidatesRequest;

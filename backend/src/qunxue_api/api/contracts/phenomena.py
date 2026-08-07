@@ -6,7 +6,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from qunxue_api.api.contracts.common import ModelMetadata
-from qunxue_api.modules.research_intake import EntryInputType
+from qunxue_api.modules.research_intake import (
+    EntryInputType,
+    PhenomenonEvidenceVerificationStatus,
+)
 
 
 class EntryInputAction(StrEnum):
@@ -66,6 +69,16 @@ class ExtractPhenomenonCandidatesRequest(BaseModel):
     requested_count: int = Field(default=4, ge=1, le=8)
 
 
+class PhenomenonEvidenceReferenceResponse(BaseModel):
+    evidence_ref_id: str
+    excerpt: str
+    source_ref_id: str
+    source_description: str | None
+    locator: str | None
+    verification_status: PhenomenonEvidenceVerificationStatus
+    use_boundary: str
+
+
 class PhenomenonCandidateResponse(BaseModel):
     candidate_id: UUID
     task_id: UUID
@@ -76,6 +89,7 @@ class PhenomenonCandidateResponse(BaseModel):
     research_intent: str | None
     context: str | None
     source_ref_ids: list[str]
+    evidence_refs: list[PhenomenonEvidenceReferenceResponse]
     model: ModelMetadata
 
 
@@ -110,6 +124,7 @@ class PhenomenonSnapshotResponse(BaseModel):
     research_intent: str | None
     context: str | None
     source_ref_ids: list[str]
+    evidence_refs: list[PhenomenonEvidenceReferenceResponse]
     confirmed_at: datetime
 
 
