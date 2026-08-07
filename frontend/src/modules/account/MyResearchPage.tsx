@@ -26,7 +26,21 @@ export function MyResearchPage() {
   })
 
   if (research.isPending) return <p role="status">正在读取研究列表…</p>
-  if (research.isError) return <p role="alert">暂时无法读取研究列表，请稍后重试。</p>
+  if (research.isError) {
+    return (
+      <div role="alert">
+        <p>暂时无法读取研究列表，请稍后重试。</p>
+        <button
+          type="button"
+          className="text-action"
+          disabled={research.isFetching}
+          onClick={() => research.refetch()}
+        >
+          {research.isFetching ? '正在重试…' : '重试'}
+        </button>
+      </div>
+    )
+  }
   if (research.data.length === 0) {
     return (
       <div className="my-research-empty">

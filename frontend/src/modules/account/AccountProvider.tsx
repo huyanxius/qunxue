@@ -15,7 +15,7 @@ type AccountContextValue = {
   sessionState: AccountSessionState
   login(email: string, password: string): Promise<AccountSession>
   register(email: string, password: string): Promise<AccountSession>
-  logout(): Promise<void>
+  logout(onSucceeded?: () => void): Promise<void>
   retrySession(): void
 }
 
@@ -27,7 +27,7 @@ const anonymousAccount: AccountContextValue = {
   register: async () => {
     throw new Error('AccountProvider is missing.')
   },
-  logout: async () => undefined,
+  logout: async (_onSucceeded) => undefined,
   retrySession: () => undefined,
 }
 
@@ -78,8 +78,9 @@ export function AccountProvider({ children }: PropsWithChildren) {
       queryClient.setQueryData(sessionQueryKey, session)
       return session
     },
-    async logout() {
+    async logout(onSucceeded) {
       await logoutMutation.mutateAsync()
+      onSucceeded?.()
       setExpired(false)
       queryClient.setQueryData(sessionQueryKey, null)
     },

@@ -9,22 +9,35 @@ import {
   logoutSession,
   registerSession,
   type SessionResponse,
+  type ResearchTaskNavigationAction,
   type ResearchTaskNavigationResponse,
 } from '../../api/generated'
 import type { AccountSession, MyResearchItem } from './types'
 
 const stagePresentation = {
-  phenomenon_input: { label: '现象输入', route: 'phenomenon' },
-  phenomenon_confirmation: { label: '现象确认', route: 'phenomenon' },
-  theory_matching: { label: '理论匹配', route: 'match' },
-  theory_decision: { label: '理论决策', route: 'match' },
-  framework_drafting: { label: '框架草拟', route: 'framework' },
-  framework_review: { label: '框架审校', route: 'framework' },
-  completed: { label: '研究完成', route: 'framework' },
+  phenomenon_input: 'phenomenon',
+  phenomenon_confirmation: 'phenomenon',
+  theory_matching: 'match',
+  theory_decision: 'match',
+  framework_drafting: 'framework',
+  framework_review: 'framework',
+  completed: 'framework',
 } satisfies Record<
   ResearchTaskNavigationResponse['current_stage'],
-  { label: string; route: string }
+  string
 >
+
+const stageLabelByAction = {
+  submit_phenomenon: '草稿',
+  confirm_phenomenon: '现象待确认',
+  start_matching: '现象已确认',
+  review_theory_candidates: '匹配生成中',
+  confirm_theory_plan: '已有决策',
+  create_framework: '已有决策',
+  review_framework: '框架草稿',
+  confirm_framework: '框架草稿',
+  export: '框架已确认',
+} satisfies Record<ResearchTaskNavigationAction, string>
 
 export function watchSessionRejection(listener: () => void) {
   return subscribeToSessionRejected(listener)
@@ -66,6 +79,14 @@ export async function loginViaApi(
   return toAccountSession(data)
 }
 
+export function isLoginServiceFailure(failure: unknown): boolean {
+  return (
+    failure instanceof ApiRequestError
+    && failure.status !== undefined
+    && failure.status !== 401
+  )
+}
+
 export async function registerViaApi(
   email: string,
   password: string,
@@ -94,11 +115,12 @@ export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
   })
   if (!data) throw new ApiRequestError('研究列表读取失败。', response?.status)
   return data.items.map((item) => {
-    const presentation = stagePresentation[item.current_stage]
+    const route = stagePresentation[item.current_stage]
+    const action = item.allowed_actions[0]!
     return {
       taskId: item.task_id,
-      stageLabel: presentation.label,
-      entryPath: `/research/${item.task_id}/${presentation.route}`,
+      stageLabel: stageLabelByAction[action],
+      entryPath: `/research/${item.task_id}/${route}`,
       phenomenonSummary: item.phenomenon_summary?.phenomenon ?? '尚未确认现象',
       adoptedTheoryCount: item.adopted_theory_count,
       createdAt: item.created_at,

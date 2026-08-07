@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 
+import { isLoginServiceFailure } from './accountApi'
 import './account.css'
 
 type LoginPageProps = {
@@ -32,8 +33,13 @@ export function LoginPage({
     const data = new FormData(event.currentTarget)
     const email = String(data.get('email') ?? '').trim()
     const password = String(data.get('password') ?? '')
-    if (!emailPattern.test(email) || password.length < 8) {
-      setError('请检查邮箱格式，密码至少需要 8 个字符。')
+    if (
+      !emailPattern.test(email)
+      || email.length > 320
+      || password.length < 8
+      || password.length > 128
+    ) {
+      setError('请检查邮箱格式，密码需要 8–128 个字符。')
       return
     }
     setSubmitting(true)
@@ -41,8 +47,12 @@ export function LoginPage({
     try {
       await onLogin(email, password)
       onAuthenticated()
-    } catch {
-      setError('邮箱或密码不正确，请重新输入。')
+    } catch (failure) {
+      if (isLoginServiceFailure(failure)) {
+        setError('登录服务暂时不可用，请稍后重试。')
+      } else {
+        setError('邮箱或密码不正确，请重新输入。')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -56,11 +66,11 @@ export function LoginPage({
         ) : null}
         <label>
           <span>邮箱</span>
-          <input name="email" type="email" autoComplete="email" required />
+          <input name="email" type="email" autoComplete="email" maxLength={320} required />
         </label>
         <label>
           <span>密码</span>
-          <input name="password" type="password" autoComplete="current-password" minLength={8} required />
+          <input name="password" type="password" autoComplete="current-password" minLength={8} maxLength={128} required />
         </label>
         {error ? <p className="account-error" role="alert">{error}</p> : null}
         <button className="account-primary" type="submit" disabled={submitting}>
@@ -86,12 +96,12 @@ export function RegisterPage({
     const email = String(data.get('email') ?? '').trim()
     const password = String(data.get('password') ?? '')
     const confirmation = String(data.get('confirmation') ?? '')
-    if (!emailPattern.test(email)) {
+    if (!emailPattern.test(email) || email.length > 320) {
       setError('请输入有效的邮箱地址。')
       return
     }
-    if (password.length < 8) {
-      setError('密码至少需要 8 个字符。')
+    if (password.length < 8 || password.length > 128) {
+      setError('密码需要 8–128 个字符。')
       return
     }
     if (password !== confirmation) {
@@ -115,16 +125,16 @@ export function RegisterPage({
       <form className="account-form" onSubmit={submit} noValidate>
         <label>
           <span>邮箱</span>
-          <input name="email" type="email" autoComplete="email" required />
+          <input name="email" type="email" autoComplete="email" maxLength={320} required />
         </label>
         <div className="account-field">
           <label htmlFor="register-password">密码</label>
-          <input id="register-password" name="password" type="password" autoComplete="new-password" minLength={8} aria-describedby="password-help" required />
-          <small id="password-help">至少 8 个字符；密码仅用于本次加密传输，不会保存在浏览器里。</small>
+          <input id="register-password" name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} aria-describedby="password-help" required />
+          <small id="password-help">8–128 个字符。</small>
         </div>
         <label>
           <span>确认密码</span>
-          <input name="confirmation" type="password" autoComplete="new-password" minLength={8} required />
+          <input name="confirmation" type="password" autoComplete="new-password" minLength={8} maxLength={128} required />
         </label>
         {error ? <p className="account-error" role="alert">{error}</p> : null}
         <button className="account-primary" type="submit" disabled={submitting}>

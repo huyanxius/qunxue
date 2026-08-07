@@ -46,8 +46,9 @@ export function PageShell({ children }: PropsWithChildren) {
   async function logout() {
     setLogoutFailed(false)
     try {
-      await account.logout()
-      navigate('/', { replace: true })
+      await account.logout(() => {
+        navigate('/', { replace: true })
+      })
     } catch {
       setLogoutFailed(true)
     }
