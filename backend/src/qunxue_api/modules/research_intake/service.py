@@ -99,6 +99,7 @@ class PhenomenonService:
         self,
         *,
         task_id: UUID,
+        task: ResearchTask,
         idempotency_key: str,
         filename: str,
         media_type: str,
@@ -156,7 +157,7 @@ class PhenomenonService:
                     ),
                 )
             )
-        return self._repository.submit_material(
+        run = self._repository.submit_material(
             run_id=run_id,
             task_id=task_id,
             idempotency_key=idempotency_key,
@@ -167,6 +168,19 @@ class PhenomenonService:
             model=model,
             now=self._clock(),
         )
+        if task.current_material_intake_run_id != run.run_id:
+            saved = self._research_tasks.save_progress(
+                replace(
+                    task,
+                    version=task.version + 1,
+                    updated_at=run.accepted_at,
+                    current_phenomenon_candidate_id=run.candidates[0].candidate_id,
+                    current_material_intake_run_id=run.run_id,
+                )
+            )
+            if saved is None:
+                raise RuntimeError("owned research task disappeared during material intake")
+        return run
 
     def get_material_run(
         self,

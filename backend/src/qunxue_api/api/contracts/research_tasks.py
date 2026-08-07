@@ -107,6 +107,7 @@ class ResearchTaskNavigationResponse(BaseModel):
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | None
     adopted_theory_count: int
     current_phenomenon_candidate_id: UUID | None
+    current_material_intake_run_id: UUID | None
     current_match_run_id: UUID | None
     current_framework_id: UUID | None
     created_at: datetime

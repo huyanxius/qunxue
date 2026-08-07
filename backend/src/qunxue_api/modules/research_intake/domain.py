@@ -115,6 +115,7 @@ class PhenomenonCandidate:
     model: PhenomenonModelSnapshot
     missing_information: tuple[str, ...] = ()
     source_traceability: str = "traceable"
+    content_origin: str = "system_generated"
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,6 +172,7 @@ class ResearchTask:
     phenomenon_research_intent: str | None = None
     adopted_theory_count: int = 0
     current_phenomenon_candidate_id: UUID | None = None
+    current_material_intake_run_id: UUID | None = None
     current_match_run_id: UUID | None = None
     current_framework_id: UUID | None = None
 

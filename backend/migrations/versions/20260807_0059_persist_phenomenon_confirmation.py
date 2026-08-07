@@ -19,6 +19,9 @@ def upgrade() -> None:
     with op.batch_alter_table("research_tasks") as batch_op:
         batch_op.add_column(sa.Column("seed_theory_id", sa.String(128), nullable=True))
         batch_op.add_column(sa.Column("seed_theory_name", sa.String(300), nullable=True))
+        batch_op.add_column(
+            sa.Column("current_material_intake_run_id", sa.String(36), nullable=True)
+        )
 
     examples = op.create_table(
         "phenomenon_examples",
@@ -76,6 +79,7 @@ def upgrade() -> None:
         sa.Column("evidence_refs", sa.JSON(), nullable=False),
         sa.Column("missing_information", sa.JSON(), nullable=False),
         sa.Column("source_traceability", sa.String(length=32), nullable=False),
+        sa.Column("content_origin", sa.String(length=32), nullable=False),
         sa.Column("model_provider", sa.String(length=128), nullable=True),
         sa.Column("model_version", sa.String(length=128), nullable=True),
         sa.Column("model_capability", sa.String(length=32), nullable=True),
@@ -108,6 +112,7 @@ def upgrade() -> None:
         sa.Column("evidence_refs", sa.JSON(), nullable=False),
         sa.Column("missing_information", sa.JSON(), nullable=False),
         sa.Column("source_traceability", sa.String(length=32), nullable=False),
+        sa.Column("content_origin", sa.String(length=32), nullable=False),
         sa.Column("model_provider", sa.String(length=128), nullable=False),
         sa.Column("model_version", sa.String(length=128), nullable=False),
         sa.Column("model_capability", sa.String(length=32), nullable=False),
@@ -160,5 +165,6 @@ def downgrade() -> None:
     op.drop_table("phenomenon_states")
     op.drop_table("phenomenon_examples")
     with op.batch_alter_table("research_tasks") as batch_op:
+        batch_op.drop_column("current_material_intake_run_id")
         batch_op.drop_column("seed_theory_name")
         batch_op.drop_column("seed_theory_id")

@@ -50,6 +50,10 @@ class ResearchTaskRow(Base):
         String(36),
         nullable=True,
     )
+    current_material_intake_run_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+    )
     current_match_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_framework_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -76,6 +80,7 @@ class PhenomenonStateRow(Base):
     evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
     missing_information: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     source_traceability: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_origin: Mapped[str] = mapped_column(String(32), nullable=False)
     model_provider: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model_capability: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -111,6 +116,7 @@ class PhenomenonCandidateVersionRow(Base):
     evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
     missing_information: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     source_traceability: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_origin: Mapped[str] = mapped_column(String(32), nullable=False)
     model_provider: Mapped[str] = mapped_column(String(128), nullable=False)
     model_version: Mapped[str] = mapped_column(String(128), nullable=False)
     model_capability: Mapped[str] = mapped_column(String(32), nullable=False)

@@ -90,6 +90,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
                 model=model,
                 missing_information=item.missing_information,
                 source_traceability="traceable",
+                content_origin="system_generated",
             )
             for item in candidates
         )
@@ -127,6 +128,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
                 ],
                 missing_information=list(first.missing_information),
                 source_traceability=first.source_traceability,
+                content_origin=first.content_origin,
                 model_provider=model.provider,
                 model_version=model.model_version,
                 model_capability=model.capability,
@@ -187,6 +189,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
                 evidence_refs=[],
                 missing_information=[],
                 source_traceability="traceable",
+                content_origin="system_generated",
                 model_provider=None,
                 model_version=None,
                 model_capability=None,
@@ -291,6 +294,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             current,
             version=current.version + 1,
             status=PhenomenonCandidateStatus.EDITED,
+            content_origin="user_modified",
             phenomenon=phenomenon.strip(),
             research_intent=research_intent,
             context=context,
@@ -383,6 +387,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
                 ],
                 missing_information=list(candidate.missing_information),
                 source_traceability=candidate.source_traceability,
+                content_origin=candidate.content_origin,
                 model_provider=candidate.model.provider,
                 model_version=candidate.model.model_version,
                 model_capability=candidate.model.capability,
@@ -413,6 +418,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
         ]
         row.missing_information = list(candidate.missing_information)
         row.source_traceability = candidate.source_traceability
+        row.content_origin = candidate.content_origin
         row.model_provider = candidate.model.provider
         row.model_version = candidate.model.model_version
         row.model_capability = candidate.model.capability
@@ -472,6 +478,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             ),
             missing_information=tuple(row.missing_information),
             source_traceability=row.source_traceability,
+            content_origin=row.content_origin,
         )
 
     @classmethod
@@ -503,6 +510,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             ),
             missing_information=tuple(row.missing_information),
             source_traceability=row.source_traceability,
+            content_origin=row.content_origin,
         )
 
     @classmethod

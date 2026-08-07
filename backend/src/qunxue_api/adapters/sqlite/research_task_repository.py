@@ -83,6 +83,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                     if task.current_phenomenon_candidate_id
                     else None
                 ),
+                current_material_intake_run_id=(
+                    str(task.current_material_intake_run_id)
+                    if task.current_material_intake_run_id
+                    else None
+                ),
                 current_match_run_id=(
                     str(task.current_match_run_id) if task.current_match_run_id else None
                 ),
@@ -131,6 +136,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             if task.current_phenomenon_candidate_id
             else None
         )
+        row.current_material_intake_run_id = (
+            str(task.current_material_intake_run_id)
+            if task.current_material_intake_run_id
+            else None
+        )
         row.current_match_run_id = (
             str(task.current_match_run_id) if task.current_match_run_id else None
         )
@@ -165,6 +175,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             current_phenomenon_candidate_id=(
                 UUID(row.current_phenomenon_candidate_id)
                 if row.current_phenomenon_candidate_id
+                else None
+            ),
+            current_material_intake_run_id=(
+                UUID(row.current_material_intake_run_id)
+                if row.current_material_intake_run_id
                 else None
             ),
             current_match_run_id=(

@@ -234,6 +234,7 @@ def _navigation_response(
             task.current_phenomenon_candidate_id
             or (progress.candidate.candidate_id if progress.candidate else None)
         ),
+        current_material_intake_run_id=task.current_material_intake_run_id,
         current_match_run_id=task.current_match_run_id,
         current_framework_id=task.current_framework_id,
         created_at=task.created_at,

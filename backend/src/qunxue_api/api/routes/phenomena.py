@@ -158,9 +158,11 @@ def submit_material_intake(
     idempotency_key: IdempotencyKey,
     request: Request,
     service: PhenomenonServiceDependency,
+    owned_task: OwnedResearchTaskDependency,
 ) -> MaterialIntakeRunResponse:
     run = service.submit_material(
         task_id=task_id,
+        task=owned_task,
         idempotency_key=idempotency_key,
         filename=payload.filename,
         media_type=payload.media_type,
@@ -400,6 +402,7 @@ def _candidate_response(candidate: PhenomenonCandidate) -> PhenomenonCandidateRe
         evidence_refs=[_evidence_response(item) for item in candidate.evidence_refs],
         missing_information=list(candidate.missing_information),
         source_traceability=candidate.source_traceability,
+        content_origin=candidate.content_origin,
         model=_model_response(candidate.model),
     )
 

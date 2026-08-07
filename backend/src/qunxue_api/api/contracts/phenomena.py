@@ -92,6 +92,7 @@ class PhenomenonCandidateResponse(BaseModel):
     evidence_refs: list[PhenomenonEvidenceReferenceResponse]
     missing_information: list[str]
     source_traceability: Literal["traceable", "partial", "untraceable"]
+    content_origin: Literal["system_generated", "user_modified"]
     model: ModelMetadata
 
 
