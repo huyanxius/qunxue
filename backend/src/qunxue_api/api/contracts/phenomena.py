@@ -123,6 +123,7 @@ class PhenomenonSnapshotResponse(BaseModel):
     phenomenon: str
     research_intent: str | None
     context: str | None
+    content_hash: str = Field(min_length=64, max_length=64)
     source_ref_ids: list[str]
     evidence_refs: list[PhenomenonEvidenceReferenceResponse]
     confirmed_at: datetime

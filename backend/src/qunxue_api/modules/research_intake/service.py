@@ -117,12 +117,13 @@ class PhenomenonService:
             draft=draft,
             evidence_refs=evidence_refs,
             model=model,
+            now=self._clock(),
         )
 
     def get_candidate(
-        self, task_id: UUID, candidate_id: UUID
+        self, task_id: UUID, candidate_id: UUID, version: int | None = None
     ) -> PhenomenonCandidate | None:
-        return self._repository.get_candidate(task_id, candidate_id)
+        return self._repository.get_candidate(task_id, candidate_id, version)
 
     def update_candidate(
         self,
@@ -141,6 +142,7 @@ class PhenomenonService:
             phenomenon=phenomenon,
             research_intent=research_intent,
             context=context,
+            now=self._clock(),
         )
 
     def confirm_candidate(

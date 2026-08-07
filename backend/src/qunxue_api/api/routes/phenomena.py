@@ -26,8 +26,11 @@ from qunxue_api.api.contracts.phenomena import (
     PhenomenonSnapshotResponse,
     UpdatePhenomenonCandidateRequest,
 )
-from qunxue_api.api.dependencies import PhenomenonServiceDependency, get_owned_research_task
-from qunxue_api.api.dependencies import OwnedResearchTaskDependency
+from qunxue_api.api.dependencies import (
+    OwnedResearchTaskDependency,
+    PhenomenonServiceDependency,
+    get_owned_research_task,
+)
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
@@ -167,8 +170,9 @@ def get_phenomenon_candidate(
     task_id: UUID,
     candidate_id: UUID,
     service: PhenomenonServiceDependency,
+    version: int | None = Query(default=None, ge=1),
 ) -> PhenomenonCandidateResponse:
-    candidate = service.get_candidate(task_id, candidate_id)
+    candidate = service.get_candidate(task_id, candidate_id, version)
     if candidate is None:
         raise HTTPException(status_code=404)
     return _candidate_response(candidate)
@@ -323,6 +327,7 @@ def _snapshot_response(
         phenomenon=snapshot.phenomenon,
         research_intent=snapshot.research_intent,
         context=snapshot.context,
+        content_hash=snapshot.content_hash,
         source_ref_ids=list(candidate.source_ref_ids),
         evidence_refs=[_evidence_response(item) for item in snapshot.evidence_refs],
         confirmed_at=confirmed_at,

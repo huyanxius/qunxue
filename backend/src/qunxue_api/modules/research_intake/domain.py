@@ -61,6 +61,7 @@ class ConfirmedPhenomenonSnapshot:
     phenomenon: str
     research_intent: str | None
     context: str | None
+    content_hash: str = ""
     evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...] = ()
 
 

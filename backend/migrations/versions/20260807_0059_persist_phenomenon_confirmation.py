@@ -38,6 +38,7 @@ def upgrade() -> None:
         sa.Column("request_id", sa.String(length=36), nullable=True),
         sa.Column("contract_version", sa.String(length=64), nullable=True),
         sa.Column("phenomenon_query_id", sa.String(length=36), nullable=True),
+        sa.Column("content_hash", sa.String(length=64), nullable=True),
         sa.Column("confirmed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("accepted_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
@@ -47,7 +48,42 @@ def upgrade() -> None:
         sa.UniqueConstraint("candidate_id"),
         sa.UniqueConstraint("input_id"),
     )
+    op.create_table(
+        "phenomenon_candidate_versions",
+        sa.Column("candidate_id", sa.String(length=36), nullable=False),
+        sa.Column("version", sa.Integer(), nullable=False),
+        sa.Column("task_id", sa.String(length=36), nullable=False),
+        sa.Column("status", sa.String(length=32), nullable=False),
+        sa.Column("phenomenon", sa.String(length=10000), nullable=False),
+        sa.Column("research_intent", sa.String(length=4000), nullable=True),
+        sa.Column("context", sa.String(length=10000), nullable=True),
+        sa.Column("source_ref_ids", sa.JSON(), nullable=False),
+        sa.Column("evidence_refs", sa.JSON(), nullable=False),
+        sa.Column("model_provider", sa.String(length=128), nullable=False),
+        sa.Column("model_version", sa.String(length=128), nullable=False),
+        sa.Column("model_capability", sa.String(length=32), nullable=False),
+        sa.Column("model_degraded", sa.Boolean(), nullable=False),
+        sa.Column("knowledge_release_id", sa.String(length=128), nullable=True),
+        sa.Column("trace_id", sa.String(length=36), nullable=False),
+        sa.Column("request_id", sa.String(length=36), nullable=False),
+        sa.Column("contract_version", sa.String(length=64), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["task_id"], ["research_tasks.task_id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("candidate_id", "version"),
+    )
+    op.create_index(
+        "ix_phenomenon_candidate_versions_task",
+        "phenomenon_candidate_versions",
+        ["task_id", "candidate_id"],
+    )
 
 
 def downgrade() -> None:
+    op.drop_index(
+        "ix_phenomenon_candidate_versions_task",
+        table_name="phenomenon_candidate_versions",
+    )
+    op.drop_table("phenomenon_candidate_versions")
     op.drop_table("phenomenon_states")

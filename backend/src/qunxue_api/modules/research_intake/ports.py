@@ -65,10 +65,11 @@ class PhenomenonRepository(Protocol):
         draft: PhenomenonCandidateDraft,
         evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...],
         model: PhenomenonModelSnapshot,
+        now: datetime,
     ) -> PhenomenonCandidate: ...
 
     def get_candidate(
-        self, task_id: UUID, candidate_id: UUID
+        self, task_id: UUID, candidate_id: UUID, version: int | None = None
     ) -> PhenomenonCandidate | None: ...
 
     def update_candidate(
@@ -80,6 +81,7 @@ class PhenomenonRepository(Protocol):
         phenomenon: str,
         research_intent: str | None,
         context: str | None,
+        now: datetime,
     ) -> PhenomenonCandidate | None: ...
 
     def confirm_candidate(

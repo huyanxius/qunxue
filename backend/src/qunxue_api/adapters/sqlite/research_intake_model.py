@@ -81,5 +81,36 @@ class PhenomenonStateRow(Base):
     request_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     contract_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     phenomenon_query_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PhenomenonCandidateVersionRow(Base):
+    """Append-only candidate content; the state row only points at the latest version."""
+
+    __tablename__ = "phenomenon_candidate_versions"
+    __table_args__ = (
+        Index("ix_phenomenon_candidate_versions_task", "task_id", "candidate_id"),
+    )
+
+    candidate_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    phenomenon: Mapped[str] = mapped_column(String(10000), nullable=False)
+    research_intent: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
+    source_ref_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    model_provider: Mapped[str] = mapped_column(String(128), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    model_capability: Mapped[str] = mapped_column(String(32), nullable=False)
+    model_degraded: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    knowledge_release_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    trace_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    contract_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

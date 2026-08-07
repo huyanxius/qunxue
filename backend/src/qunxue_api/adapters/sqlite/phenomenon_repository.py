@@ -1,9 +1,15 @@
+import json
 from datetime import UTC, datetime
+from hashlib import sha256
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from qunxue_api.adapters.sqlite import PhenomenonStateRow
+from qunxue_api.adapters.sqlite import (
+    PhenomenonCandidateVersionRow,
+    PhenomenonStateRow,
+)
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
     DirectPhenomenonInput,
@@ -59,6 +65,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
                 request_id=None,
                 contract_version=None,
                 phenomenon_query_id=None,
+                content_hash=None,
                 confirmed_at=None,
                 accepted_at=now,
             )
@@ -78,6 +85,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
         draft: PhenomenonCandidateDraft,
         evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...],
         model: PhenomenonModelSnapshot,
+        now: datetime,
     ) -> PhenomenonCandidate:
         row = self._session.get(PhenomenonStateRow, str(task_id))
         if row is None:
@@ -99,12 +107,23 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             row.trace_id = str(model.trace_id)
             row.request_id = str(model.request_id)
             row.contract_version = model.contract_version
+            row.content_hash = None
+            self._append_candidate_version(row, now=now)
             self._session.flush()
         return self._to_candidate(row)
 
     def get_candidate(
-        self, task_id: UUID, candidate_id: UUID
+        self, task_id: UUID, candidate_id: UUID, version: int | None = None
     ) -> PhenomenonCandidate | None:
+        if version is not None:
+            historical = self._session.scalar(
+                select(PhenomenonCandidateVersionRow).where(
+                    PhenomenonCandidateVersionRow.task_id == str(task_id),
+                    PhenomenonCandidateVersionRow.candidate_id == str(candidate_id),
+                    PhenomenonCandidateVersionRow.version == version,
+                )
+            )
+            return self._to_historical_candidate(historical) if historical else None
         row = self._session.get(PhenomenonStateRow, str(task_id))
         if row is None or row.candidate_id != str(candidate_id):
             return None
@@ -119,6 +138,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
         phenomenon: str,
         research_intent: str | None,
         context: str | None,
+        now: datetime,
     ) -> PhenomenonCandidate | None:
         row = self._session.get(PhenomenonStateRow, str(task_id))
         if (
@@ -133,6 +153,7 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
         row.phenomenon = phenomenon.strip()
         row.research_intent = research_intent
         row.context = context
+        self._append_candidate_version(row, now=now)
         self._session.flush()
         return self._to_candidate(row)
 
@@ -156,7 +177,9 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             row.candidate_version += 1
             row.candidate_status = PhenomenonCandidateStatus.CONFIRMED.value
             row.phenomenon_query_id = str(query_id)
+            row.content_hash = self._content_hash(row)
             row.confirmed_at = now
+            self._append_candidate_version(row, now=now)
             self._session.flush()
         return self._to_snapshot(row), _as_utc(row.confirmed_at)
 
@@ -231,8 +254,92 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
             phenomenon=row.phenomenon,
             research_intent=row.research_intent,
             context=row.context,
+            content_hash=row.content_hash or "",
             evidence_refs=tuple(cls._evidence_from_json(item) for item in row.evidence_refs),
         )
+
+    def _append_candidate_version(
+        self,
+        row: PhenomenonStateRow,
+        *,
+        now: datetime,
+    ) -> None:
+        assert row.candidate_id is not None
+        assert row.candidate_version is not None
+        assert row.candidate_status is not None
+        assert row.model_provider is not None
+        assert row.model_version is not None
+        assert row.model_capability is not None
+        assert row.model_degraded is not None
+        assert row.trace_id is not None
+        assert row.request_id is not None
+        assert row.contract_version is not None
+        self._session.add(
+            PhenomenonCandidateVersionRow(
+                candidate_id=row.candidate_id,
+                version=row.candidate_version,
+                task_id=row.task_id,
+                status=row.candidate_status,
+                phenomenon=row.phenomenon,
+                research_intent=row.research_intent,
+                context=row.context,
+                source_ref_ids=list(row.source_ref_ids),
+                evidence_refs=list(row.evidence_refs),
+                model_provider=row.model_provider,
+                model_version=row.model_version,
+                model_capability=row.model_capability,
+                model_degraded=row.model_degraded,
+                knowledge_release_id=row.knowledge_release_id,
+                trace_id=row.trace_id,
+                request_id=row.request_id,
+                contract_version=row.contract_version,
+                created_at=now,
+            )
+        )
+
+    @classmethod
+    def _to_historical_candidate(
+        cls,
+        row: PhenomenonCandidateVersionRow,
+    ) -> PhenomenonCandidate:
+        return PhenomenonCandidate(
+            candidate_id=UUID(row.candidate_id),
+            task_id=UUID(row.task_id),
+            version=row.version,
+            status=PhenomenonCandidateStatus(row.status),
+            phenomenon=row.phenomenon,
+            research_intent=row.research_intent,
+            context=row.context,
+            source_ref_ids=tuple(row.source_ref_ids),
+            evidence_refs=tuple(cls._evidence_from_json(item) for item in row.evidence_refs),
+            model=PhenomenonModelSnapshot(
+                provider=row.model_provider,
+                model_version=row.model_version,
+                capability=row.model_capability,
+                degraded=row.model_degraded,
+                knowledge_release_id=row.knowledge_release_id,
+                trace_id=UUID(row.trace_id),
+                request_id=UUID(row.request_id),
+                contract_version=row.contract_version,
+            ),
+        )
+
+    @classmethod
+    def _content_hash(cls, row: PhenomenonStateRow) -> str:
+        payload = {
+            "phenomenon": row.phenomenon,
+            "research_intent": row.research_intent,
+            "context": row.context,
+            "source_ref_ids": row.source_ref_ids,
+            "evidence_refs": row.evidence_refs,
+        }
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return sha256(encoded).hexdigest()
 
     @staticmethod
     def _evidence_to_json(item: PhenomenonEvidenceRefSnapshot) -> dict[str, object]:
