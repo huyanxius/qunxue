@@ -19,6 +19,7 @@ from qunxue_api.adapters.model import (
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
+from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -39,6 +40,7 @@ from qunxue_api.modules.identity import (
     Unauthenticated,
 )
 from qunxue_api.modules.research_intake import (
+    PhenomenonService,
     ResearchTaskNotFound,
     ResearchTaskService,
 )
@@ -97,7 +99,13 @@ def create_app(
         with resolved_database.session() as session:
             yield ResearchTaskService(SqliteResearchTaskRepository(session))
 
+    @contextmanager
+    def phenomenon_service_scope() -> Iterator[PhenomenonService]:
+        with resolved_database.session() as session:
+            yield PhenomenonService(SqlitePhenomenonRepository(session))
+
     app.state.research_task_service_scope = research_task_service_scope
+    app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)

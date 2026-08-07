@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import Depends, Request
 
 from qunxue_api.modules.identity import AuthenticatedSession, IdentityService
-from qunxue_api.modules.research_intake import ResearchTask, ResearchTaskService
+from qunxue_api.modules.research_intake import PhenomenonService, ResearchTask, ResearchTaskService
 
 
 def get_identity_service(request: Request) -> Iterator[IdentityService]:
@@ -43,6 +43,17 @@ def get_research_task_service(
 ResearchTaskServiceDependency = Annotated[
     ResearchTaskService,
     Depends(get_research_task_service),
+]
+
+
+def get_phenomenon_service(request: Request) -> Iterator[PhenomenonService]:
+    with request.app.state.phenomenon_service_scope() as service:
+        yield service
+
+
+PhenomenonServiceDependency = Annotated[
+    PhenomenonService,
+    Depends(get_phenomenon_service),
 ]
 
 
