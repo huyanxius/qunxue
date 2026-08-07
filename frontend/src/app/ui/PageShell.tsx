@@ -1,28 +1,62 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 
+import brandMark from '../../assets/qunxue-brand-mark.svg'
+
 type PageTitleProps = {
   eyebrow: string
   title: string
   lede?: string
 }
 
+const navigationItems = [
+  { href: '/', label: '首页', mark: '·', end: true },
+  { href: '/knowledge', label: '知识', mark: '知' },
+  { href: '/research/new', label: '研究', mark: '研' },
+  { href: '/my', label: '我的', mark: '我' },
+]
+
+function PrimaryNavigation({
+  className,
+  label,
+}: {
+  className: string
+  label: string
+}) {
+  return (
+    <nav className={className} aria-label={label}>
+      {navigationItems.map(({ href, label: itemLabel, mark, end }) => (
+        <NavLink key={href} to={href} end={end}>
+          <span aria-hidden="true">{mark}</span>
+          <span>{itemLabel}</span>
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
+
 export function PageShell({ children }: PropsWithChildren) {
   return (
-    <main className="page-shell">
+    <div className="app-frame">
       <header className="masthead">
         <Link className="wordmark" to="/" aria-label="群学致知首页">
-          <span className="wordmark-mark" aria-hidden="true">群</span>
-          <span>群学致知</span>
+          <img src={brandMark} alt="" />
+          <span className="wordmark__copy">
+            <strong>群学致知</strong>
+            <small>COLLECTIVE INQUIRY</small>
+          </span>
         </Link>
-        <nav className="app-navigation" aria-label="主导航">
-          <NavLink to="/knowledge">知识</NavLink>
-          <NavLink to="/research/new">研究</NavLink>
-          <NavLink to="/my">我的</NavLink>
-        </nav>
+        <span className="masthead__context">社会学理论发现与研究设计</span>
       </header>
-      {children}
-    </main>
+
+      <aside className="desktop-rail">
+        <PrimaryNavigation className="desktop-navigation" label="桌面主导航" />
+      </aside>
+
+      <main className="page-shell">{children}</main>
+
+      <PrimaryNavigation className="mobile-navigation" label="移动主导航" />
+    </div>
   )
 }
 
