@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from qunxue_api.adapters.sqlite.base import Base
@@ -25,3 +25,34 @@ class ResearchTaskRow(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PhenomenonStateRow(Base):
+    """One current candidate chain per task; confirmed content is retained in-place."""
+
+    __tablename__ = "phenomenon_states"
+
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), primary_key=True
+    )
+    input_id: Mapped[str] = mapped_column(String(36), nullable=False, unique=True)
+    input_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    candidate_id: Mapped[str | None] = mapped_column(String(36), nullable=True, unique=True)
+    candidate_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    candidate_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    phenomenon: Mapped[str] = mapped_column(String(10000), nullable=False)
+    research_intent: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
+    source_ref_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    evidence_refs: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    model_provider: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    model_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    model_capability: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    model_degraded: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    knowledge_release_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    contract_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    phenomenon_query_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
