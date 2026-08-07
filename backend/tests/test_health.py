@@ -11,6 +11,6 @@ def test_health_reports_runtime_contract(client: TestClient) -> None:
         "runtime_mode": "inline_demo",
         "persistence": "sqlite",
         "contract_version": "2026-07-foundation",
-        "capability": "unavailable",
-        "knowledge_release_id": None,
+        "capability": "mock",
+        "knowledge_release_id": "knowledge-demo-v1",
     }

@@ -1,7 +1,7 @@
 """add identity and research task ownership
 
 Revision ID: 20260807_0002
-Revises: 20260728_0001
+Revises: 20260807_0051
 Create Date: 2026-08-07
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260807_0002"
-down_revision: str | Sequence[str] | None = "20260728_0001"
+down_revision: str | Sequence[str] | None = "20260807_0051"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
