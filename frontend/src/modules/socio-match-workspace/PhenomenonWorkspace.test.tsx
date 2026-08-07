@@ -11,6 +11,7 @@ vi.mock('./researchTaskApi')
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  vi.unstubAllGlobals()
 })
 
 function renderWithQuery(ui: React.ReactNode) {
@@ -149,5 +150,60 @@ describe('phenomenon confirmation workspace', () => {
     expect(screen.getByText('用户修改')).toBeVisible()
     expect(screen.getByText('用户直接输入')).toBeVisible()
     expect(screen.getByText('成员流动后，社区互助为何持续减少？')).toBeVisible()
+  })
+
+  it('confirms an untouched system candidate without relabeling it', async () => {
+    const restoredCandidate = candidate()
+    vi.mocked(api.restorePhenomenonViaApi).mockResolvedValue({
+      candidates: [restoredCandidate],
+      candidate: restoredCandidate,
+      snapshot: null,
+      seedTheory: null,
+    })
+    const actualApi = await vi.importActual<typeof import('./researchTaskApi')>(
+      './researchTaskApi',
+    )
+    vi.mocked(api.confirmEditedPhenomenonViaApi).mockImplementation(
+      actualApi.confirmEditedPhenomenonViaApi,
+    )
+    const fetchMock = vi.fn(async () => Response.json({
+      task_id: 'task-1',
+      phenomenon_query_id: 'query-1',
+      version: 2,
+      status: 'confirmed',
+      allowed_actions: ['start_matching'],
+      phenomenon: restoredCandidate.phenomenon,
+      research_intent: null,
+      context: null,
+      source_ref_ids: ['input:direct'],
+      evidence_refs: [],
+      content_hash: 'a'.repeat(64),
+      confirmed_at: '2026-08-08T00:00:00Z',
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderWithQuery(<PhenomenonWorkspace taskId="task-1" />)
+
+    await vi.waitFor(() => expect(screen.getByLabelText('现象表述')).toHaveValue(
+      restoredCandidate.phenomenon,
+    ))
+    fireEvent.click(screen.getByRole('button', { name: '确认这个现象' }))
+
+    expect(await screen.findByText('现象已经确认并保存')).toBeVisible()
+    expect(vi.mocked(api.confirmEditedPhenomenonViaApi).mock.calls[0]).toEqual([
+      restoredCandidate,
+      {
+        phenomenon: restoredCandidate.phenomenon,
+        researchIntent: '',
+        context: '',
+      },
+    ])
+    expect(fetchMock.mock.calls.map(([input]) => {
+      const request = input as Request
+      return { method: request.method, url: request.url }
+    })).toEqual([{
+      method: 'POST',
+      url: expect.stringContaining('/confirm'),
+    }])
+    expect(screen.getByText('系统生成')).toBeVisible()
   })
 })

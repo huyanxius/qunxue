@@ -137,3 +137,75 @@ def test_docx_material_is_parsed_without_persisting_the_original_file(
 
     assert response.status_code == 201
     assert len(response.json()["candidates"]) == 3
+
+
+def test_docx_material_rejects_an_oversized_uncompressed_document(
+    client: TestClient,
+) -> None:
+    task_id = _register_and_create_task(client)
+    document = BytesIO()
+    with ZipFile(document, "w", ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "word/document.xml",
+            (
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+                'wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>'
+                f"{'x' * 2_000_001}"
+                "</w:t></w:r></w:p></w:body></w:document>"
+            ),
+        )
+
+    response = client.post(
+        f"/api/research-tasks/{task_id}/material-intakes",
+        headers=_headers(),
+        json={
+            "filename": "oversized.docx",
+            "media_type": (
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+            "content_base64": base64.b64encode(document.getvalue()).decode(),
+            **_consents(),
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_confirming_one_material_candidate_prevents_replacing_its_snapshot(
+    client: TestClient,
+) -> None:
+    task_id = _register_and_create_task(client)
+    submitted = client.post(
+        f"/api/research-tasks/{task_id}/material-intakes",
+        headers=_headers(),
+        json={
+            "filename": "community-notes.txt",
+            "media_type": "text/plain",
+            "pasted_text": "第一段观察。\n\n第二段观察。\n\n第三段观察。",
+            **_consents(),
+        },
+    )
+    candidates = submitted.json()["candidates"]
+    first, second = candidates[0], candidates[1]
+
+    confirmed = client.post(
+        (
+            f"/api/research-tasks/{task_id}/phenomenon-candidates/"
+            f"{first['candidate_id']}/confirm"
+        ),
+        headers=_headers(),
+        json={"expected_version": first["version"]},
+    )
+    replacement = client.post(
+        (
+            f"/api/research-tasks/{task_id}/phenomenon-candidates/"
+            f"{second['candidate_id']}/confirm"
+        ),
+        headers=_headers(),
+        json={"expected_version": second["version"]},
+    )
+    snapshots = client.get(f"/api/research-tasks/{task_id}/phenomenon-snapshots")
+
+    assert confirmed.status_code == 200
+    assert replacement.status_code == 409
+    assert snapshots.json()["snapshots"] == [confirmed.json()]

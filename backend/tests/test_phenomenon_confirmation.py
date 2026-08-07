@@ -164,6 +164,45 @@ def test_candidate_edit_preserves_the_previous_version(client: TestClient) -> No
     assert current.json()["phenomenon"] == "成员流动后，社区互助为何持续减少？"
 
 
+def test_candidate_generation_and_edit_advance_the_task_projection(
+    client: TestClient,
+) -> None:
+    task = _register_and_create_task(client)
+    task_id = str(task["task_id"])
+    candidate = _submit_and_extract(client, task_id)
+
+    after_generation = client.get(
+        f"/api/research-tasks/{task_id}/navigation"
+    ).json()
+    assert after_generation["current_phenomenon_candidate_id"] == str(
+        candidate["candidate_id"]
+    )
+    assert after_generation["version"] == task["version"] + 1
+    assert after_generation["updated_at"] > task["updated_at"]
+
+    edited = client.patch(
+        (
+            f"/api/research-tasks/{task_id}/phenomenon-candidates/"
+            f"{candidate['candidate_id']}"
+        ),
+        headers=_request_headers(),
+        json={
+            "expected_version": candidate["version"],
+            "phenomenon": "成员流动后，社区互助为何持续减少？",
+            "research_intent": candidate["research_intent"],
+            "context": candidate["context"],
+        },
+    )
+    assert edited.status_code == 200
+    after_edit = client.get(f"/api/research-tasks/{task_id}/navigation").json()
+
+    assert after_edit["current_phenomenon_candidate_id"] == str(
+        candidate["candidate_id"]
+    )
+    assert after_edit["version"] == after_generation["version"] + 1
+    assert after_edit["updated_at"] > after_generation["updated_at"]
+
+
 def test_matching_is_blocked_until_the_phenomenon_is_confirmed(
     client: TestClient,
 ) -> None:
