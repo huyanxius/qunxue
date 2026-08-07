@@ -37,19 +37,30 @@ def validate_theory_plan_confirmation(
         violations.append("every candidate must have a final user decision")
 
     non_final_actions = {
+        TheoryDecisionAction.DEFER,
         TheoryDecisionAction.REQUEST_MORE_EVIDENCE,
         TheoryDecisionAction.REVISE_APPLICABILITY,
     }
     if any(action in non_final_actions for action in action_by_candidate.values()):
         violations.append(
-            "evidence requests and applicability revisions must finish before confirmation"
+            "deferred decisions, evidence requests, and applicability revisions must "
+            "finish before confirmation"
         )
 
     adopted = tuple(
         candidate_id
         for candidate_id, action in action_by_candidate.items()
-        if action is TheoryDecisionAction.ADOPT
+        if action in {TheoryDecisionAction.ADOPT, TheoryDecisionAction.COMBINE}
     )
+    adopted_set = set(adopted)
+    for decision in decision_set.decisions:
+        if decision.action is not TheoryDecisionAction.COMBINE:
+            continue
+        if not decision.related_candidate_ids:
+            violations.append("each combined theory must identify related candidates")
+            continue
+        if not set(decision.related_candidate_ids) <= adopted_set:
+            violations.append("combined theories may only reference selected candidates")
     if not adopted:
         violations.append("at least one candidate must be adopted")
     for candidate_id in adopted:
@@ -82,7 +93,6 @@ def validate_theory_plan_confirmation(
         violations.append("every adopted theory must have a role and responsibility")
 
     if len(adopted) > 1:
-        adopted_set = set(adopted)
         graph = {candidate_id: set() for candidate_id in adopted}
         for relation in decision_set.relations:
             members = adopted_set.intersection(relation.candidate_ids)
