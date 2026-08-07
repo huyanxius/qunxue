@@ -321,6 +321,11 @@ class SqlitePhenomenonRepository(PhenomenonRepository):
         state = self._session.get(PhenomenonStateRow, str(task_id))
         if state is None:
             return None
+        if (
+            state.phenomenon_query_id is not None
+            and state.candidate_id != str(candidate_id)
+        ):
+            return None
         if current.status is not PhenomenonCandidateStatus.CONFIRMED:
             current = replace(
                 current,
