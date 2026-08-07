@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from './App'
@@ -10,7 +10,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderRoute(path: string) {
+function renderRoute(
+  path: string,
+  sessionState: { status: 'authenticated' | 'anonymous' | 'expired' | 'loading' } = {
+    status: 'anonymous',
+  },
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -18,13 +23,111 @@ function renderRoute(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <QueryClientProvider client={queryClient}>
-        <AppRoutes />
+        <AppRoutes sessionState={sessionState} />
+        <RouteLocation />
       </QueryClientProvider>
     </MemoryRouter>,
   )
 }
 
+function RouteLocation() {
+  const location = useLocation()
+  return <div data-testid="route-location">{`${location.pathname}${location.search}${location.hash}`}</div>
+}
+
 describe('App routes', () => {
+  it.each([
+    ['/', '把一个模糊的现象，留成可以追问的研究起点。'],
+    ['/knowledge', '可视化知识库'],
+    ['/knowledge/knowledge-field-theory', '知识条目'],
+    ['/research/new', '新建研究任务'],
+    ['/research/task-1/phenomenon', '确认现象'],
+    ['/research/task-1/match', '匹配理论'],
+    ['/research/task-1/framework', '研究框架'],
+    ['/login', '登录'],
+    ['/register', '注册'],
+    ['/my', '我的研究'],
+  ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
+    renderRoute(path, { status: 'authenticated' })
+
+    expect(
+      await screen.findByRole('heading', { name: title }),
+    ).toBeVisible()
+  })
+
+  it.each([
+    '/research/new?source=home',
+    '/research/task-1/phenomenon',
+    '/research/task-1/match',
+    '/research/task-1/framework',
+    '/my',
+  ])('sends anonymous visitors to login while preserving %s', async (path) => {
+    renderRoute(path)
+
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      `/login?redirect=${encodeURIComponent(path)}`,
+    )
+  })
+
+  it('keeps an authenticated visitor on a protected route', async () => {
+    renderRoute('/research/task-1/phenomenon', { status: 'authenticated' })
+
+    expect(
+      await screen.findByRole('heading', { name: '确认现象' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('heading', { name: '登录' })).not.toBeInTheDocument()
+  })
+
+  it('waits for the session boundary before deciding on a protected route', async () => {
+    renderRoute('/my', { status: 'loading' })
+
+    expect(await screen.findByRole('status')).toHaveTextContent('正在确认登录状态')
+    expect(screen.queryByRole('heading', { name: '登录' })).not.toBeInTheDocument()
+  })
+
+  it('uses a same-origin redirect after login', async () => {
+    renderRoute('/login?redirect=%2Fresearch%2Ftask-1%2Fframework')
+
+    expect(await screen.findByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      '/research/task-1/framework',
+    )
+  })
+
+  it('rejects an external login redirect', async () => {
+    renderRoute('/login?redirect=https%3A%2F%2Fevil.example%2Ftakeover')
+
+    expect(await screen.findByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it('rejects a malformed login redirect without crashing the page', async () => {
+    renderRoute('/login?redirect=%2F%2F%5B')
+
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it('preserves a protected route hash through login', async () => {
+    const destination = '/research/task-1/phenomenon?source=home#evidence'
+    renderRoute(destination)
+
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      `/login?redirect=${encodeURIComponent(destination)}`,
+    )
+    expect(screen.getByRole('link', { name: '登录成功后继续' })).toHaveAttribute(
+      'href',
+      destination,
+    )
+  })
+
   it('renders the demo knowledge explorer from a direct /knowledge entry', async () => {
     renderRoute('/knowledge')
 
