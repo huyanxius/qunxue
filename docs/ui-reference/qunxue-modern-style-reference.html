@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>群学致知 · 现代研究画布</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #fcfdfe;
+      --surface-2: #f7f9fb;
+      --surface-3: #edf1f4;
+      --ink: #33404a;
+      --muted: #707b84;
+      --quiet: #97a0a8;
+      --line: #dfe5e9;
+      --line-strong: #c8d1d7;
+      --accent: #3e7cb1;
+      --accent-soft: #e6f0f7;
+      --accent-dark: #285c88;
+      --blue: #3e7cb1;
+      --blue-soft: #edf4f8;
+      --green: #55705f;
+      --green-soft: #eef3ef;
+      --amber: #806022;
+      --amber-soft: #f7f2e7;
+      --red: #98434b;
+      --red-soft: #f8edef;
+      --shadow-sm: 0 1px 2px rgba(18, 20, 19, .06), 0 8px 24px rgba(18, 20, 19, .04);
+      --shadow-lg: 0 20px 65px rgba(18, 20, 19, .18), 0 2px 8px rgba(18, 20, 19, .08);
+      --ease: cubic-bezier(.16, 1, .3, 1);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { color: inherit; }
+    ::selection { background: #d4e7f4; color: #1f475f; }
+    :focus-visible { outline: 3px solid rgba(62, 124, 177, .22); outline-offset: 2px; }
+
+    .sprite { position: fixed; width: 0; height: 0; overflow: hidden; }
+    .icon { width: 18px; height: 18px; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .icon.sm { width: 15px; height: 15px; }
+    .icon.lg { width: 23px; height: 23px; }
+
+    .app-shell {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      background: var(--bg);
+    }
+    .rail {
+      position: relative;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 80px 12px 14px;
+      border-right: 1px solid var(--line);
+      background: rgba(249, 249, 247, .96);
+    }
+    .brand {
+      width: 42px; height: 42px;
+      border: 0;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      margin-bottom: 18px;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background .2s, transform .35s var(--ease);
+    }
+    .brand:hover { background: var(--accent-soft); transform: translateY(-1px); }
+    .brand-mark { width: 34px; height: 34px; display: block; fill: currentColor; }
+    .rail-spacer { flex: 1; }
+    .rail-btn {
+      position: relative;
+      width: 46px; height: 46px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: #717572;
+      display: grid; place-items: center;
+      padding: 0;
+      cursor: pointer;
+      transition: transform .35s var(--ease), color .2s, background .2s;
+    }
+    .rail-btn > span { display: none; }
+    .rail-btn:hover { background: #e9ebef; color: var(--ink); transform: translateY(-1px); }
+    .rail-btn.active { background: var(--accent-soft); color: var(--accent-dark); }
+    .rail-btn::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 55px;
+      top: 50%;
+      transform: translate(7px, -50%);
+      opacity: 0;
+      pointer-events: none;
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: var(--ink);
+      color: white;
+      font-size: 12px;
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+      transition: opacity .18s, transform .3s var(--ease);
+    }
+    .rail-btn:hover::after { opacity: 1; transform: translate(0, -50%); }
+
+    .workspace {
+      min-width: 0;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      padding-top: 62px;
+    }
+    .topbar {
+      position: fixed;
+      z-index: 50;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0;
+      padding: 0;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .9);
+      backdrop-filter: blur(16px);
+    }
+    .header-context { display: flex; align-items: center; min-width: 0; height: 100%; gap: 0; }
+    .header-brand {
+      display: flex; align-items: center; gap: 10px;
+      width: 76px; height: 100%; flex: 0 0 76px;
+      justify-content: center;
+      padding: 0; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink);
+      cursor: pointer; text-align: left;
+    }
+    .header-brand .brand-mark { width: 30px; height: 30px; color: var(--accent); flex: 0 0 auto; }
+    .brand-copy { display: grid; gap: 1px; margin-left: 18px; flex: 0 0 auto; }
+    .brand-copy strong { font-size: 14px; line-height: 1.2; font-weight: 720; letter-spacing: .01em; }
+    .brand-copy small { color: var(--muted); font-size: 9px; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; }
+    .header-divider { display: none; }
+    .crumbs { display: flex; align-items: center; min-width: 0; padding-left: 20px; color: var(--muted); font-size: 13px; }
+    .crumbs strong { color: var(--ink); font-weight: 620; }
+    .crumbs .slash { padding: 0 8px; color: #b4b7b4; }
+    .top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-right: 24px; }
+    .mock-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      color: #5e6070; background: #f1f2f6; border: 1px solid #d9dce4;
+      border-radius: 999px; padding: 6px 10px; font-size: 11px; letter-spacing: .04em;
+    }
+    .mock-pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .command-trigger {
+      min-width: 210px;
+      height: 36px;
+      padding: 0 10px;
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .2s, background .2s, transform .35s var(--ease);
+    }
+    .command-trigger:hover { border-color: var(--line-strong); background: white; transform: translateY(-1px); }
+    .command-trigger span { flex: 1; text-align: left; }
+    kbd {
+      border: 1px solid var(--line);
+      border-bottom-color: #c5c7c4;
+      background: white;
+      border-radius: 6px;
+      padding: 2px 5px;
+      color: #777b78;
+      font-size: 11px;
+      box-shadow: 0 1px 0 white;
+    }
+    .avatar {
+      width: 34px; height: 34px; border: 1px solid #cfd1ce; border-radius: 50%;
+      display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; font-size: 12px;
+      cursor: pointer;
+    }
+
+    .canvas {
+      position: relative;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+      background:
+        linear-gradient(#e4e9ec 1px, transparent 1px),
+        linear-gradient(90deg, #e4e9ec 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      background-position: -1px -1px;
+    }
+    .canvas::before {
+      content: "";
+      position: fixed; inset: 62px 0 0 76px;
+      pointer-events: none;
+      background: rgba(242, 243, 243, .72);
+    }
+    .view {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 64px));
+      min-height: calc(100vh - 110px);
+      margin: 28px auto 54px;
+      animation: view-in .55s var(--ease) both;
+    }
+    @keyframes view-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .stagger > * { opacity: 0; animation: item-in .48s var(--ease) forwards; }
+    .stagger > *:nth-child(1) { animation-delay: .04s; }
+    .stagger > *:nth-child(2) { animation-delay: .09s; }
+    .stagger > *:nth-child(3) { animation-delay: .14s; }
+    .stagger > *:nth-child(4) { animation-delay: .19s; }
+    .stagger > *:nth-child(5) { animation-delay: .24s; }
+    .stagger > *:nth-child(6) { animation-delay: .29s; }
+    @keyframes item-in { to { opacity: 1; transform: none; } }
+    .stagger > * { transform: translateY(8px); }
+
+    .eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--accent-dark); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--accent); }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 4px 0 26px; }
+    .page-head h1 { max-width: 780px; margin: 0; font-size: clamp(30px, 4vw, 50px); line-height: 1.04; letter-spacing: -.045em; font-weight: 660; }
+    .page-head h1 em { color: var(--accent); font-style: normal; }
+    .page-head p { max-width: 560px; margin: 10px 0 0; color: var(--muted); line-height: 1.65; font-size: 15px; }
+    .head-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+    .btn {
+      min-height: 38px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 570;
+      transition: transform .35s var(--ease), background .2s, border-color .2s, box-shadow .2s;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
+    .btn:active { transform: scale(.98); }
+    .btn.primary { border-color: var(--accent); background: var(--accent); color: white; }
+    .btn.primary:hover { border-color: var(--accent-dark); background: var(--accent-dark); }
+    .btn.accent { border-color: var(--accent); background: var(--accent); color: white; }
+    .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+    .btn.danger { color: var(--red); }
+    .btn.sm { min-height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12px; }
+    .icon-btn { width: 36px; padding: 0; }
+
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); }
+    .panel.flat { box-shadow: none; }
+    .section-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px 0 12px; }
+    .section-label h2 { margin: 0; font-size: 16px; letter-spacing: -.015em; }
+    .section-label span { color: var(--muted); font-size: 12px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .stack { display: grid; gap: 12px; }
+
+    .home-hero {
+      min-height: 340px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+      overflow: hidden;
+    }
+    .hero-copy { padding: clamp(32px, 5vw, 64px); }
+    .hero-copy h1 { margin: 0; max-width: 650px; font-size: clamp(40px, 6vw, 70px); line-height: .97; letter-spacing: -.06em; font-weight: 650; }
+    .hero-copy h1 span { color: var(--accent); }
+    .hero-copy p { margin: 22px 0 28px; max-width: 600px; color: var(--muted); line-height: 1.7; font-size: 16px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+    .hero-aside { padding: 26px; background: #e8f0f5; color: var(--ink); display: flex; flex-direction: column; justify-content: space-between; }
+    .signal-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: #67a1cf; box-shadow: 0 0 0 5px rgba(103, 161, 207, .14); animation: pulse 2.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 9px rgba(103, 161, 207, 0); } }
+    .insight-quote { margin: 42px 0; font: 400 clamp(22px, 2.7vw, 35px)/1.25 Georgia, "Songti SC", serif; letter-spacing: -.03em; }
+    .insight-source { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+    .source-mark { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #b7cedf; border-radius: 8px; color: var(--accent-dark); }
+
+    .entry-card { position: relative; min-height: 190px; padding: 24px; overflow: hidden; cursor: pointer; }
+    .entry-card::after { content: ""; position: absolute; width: 70px; height: 70px; right: -24px; bottom: -26px; border: 15px solid var(--surface-3); border-radius: 50%; transition: transform .5s var(--ease), border-color .25s; }
+    .entry-card:hover::after { transform: translate(-11px, -11px) scale(1.08); border-color: var(--accent-soft); }
+    .entry-card .num { color: var(--quiet); font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .entry-card h3 { margin: 36px 0 8px; font-size: 21px; letter-spacing: -.025em; }
+    .entry-card p { margin: 0; max-width: 80%; color: var(--muted); line-height: 1.6; }
+
+    .research-row { display: grid; grid-template-columns: 1.4fr .55fr .45fr 42px; align-items: center; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .2s, padding .3s var(--ease); }
+    .research-row:last-child { border-bottom: 0; }
+    .research-row:hover { background: var(--surface-2); padding-left: 22px; }
+    .research-title { font-weight: 620; }
+    .research-sub { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .progress { height: 5px; margin-top: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+    .progress i { display: block; height: 100%; width: var(--p, 50%); background: var(--accent); border-radius: inherit; transform-origin: left; animation: grow .9s var(--ease) .3s both; }
+    @keyframes grow { from { transform: scaleX(0); } }
+    .tag, .status { display: inline-flex; align-items: center; width: fit-content; gap: 5px; padding: 5px 8px; border-radius: 7px; background: var(--surface-3); color: #5d625f; font-size: 11px; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.green { background: var(--green-soft); color: var(--green); }
+    .status.amber { background: var(--amber-soft); color: var(--amber); }
+    .status.blue { background: var(--blue-soft); color: var(--blue); }
+
+    .toolbar { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+    .search-box { flex: 1; min-width: 220px; height: 42px; display: flex; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: white; transition: border .2s, box-shadow .2s; }
+    .search-box:focus-within { border-color: #aac7dc; box-shadow: 0 0 0 4px rgba(62, 124, 177, .07); }
+    .search-box input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--muted); font-size: 12px; cursor: pointer; transition: background .2s, color .2s, transform .3s var(--ease); }
+    .chip:hover { transform: translateY(-1px); }
+    .chip.active { border-color: #afcadd; background: var(--accent-soft); color: var(--accent-dark); }
+    .dimension-strip { display: grid; grid-template-columns: repeat(5, 1fr); margin-bottom: 14px; overflow: hidden; }
+    .dimension { padding: 15px; border-right: 1px solid var(--line); background: white; cursor: pointer; transition: background .2s; }
+    .dimension:last-child { border-right: 0; }
+    .dimension:hover, .dimension.active { background: var(--accent-soft); }
+    .dimension span { display: block; color: var(--muted); font-size: 11px; }
+    .dimension strong { display: block; margin-top: 4px; font-size: 18px; }
+
+    .knowledge-list { overflow: hidden; }
+    .knowledge-item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 20px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .2s, transform .4s var(--ease); }
+    .knowledge-item:last-child { border-bottom: 0; }
+    .knowledge-item:hover { background: var(--surface-2); }
+    .item-index { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; color: var(--quiet); font: 500 11px ui-monospace, monospace; }
+    .knowledge-item h3 { margin: 0 0 7px; font-size: 16px; letter-spacing: -.01em; }
+    .knowledge-item p { margin: 0; max-width: 750px; color: var(--muted); line-height: 1.55; }
+    .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; }
+    .confidence { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+    .confidence i { width: 54px; height: 4px; border-radius: 9px; background: var(--surface-3); overflow: hidden; }
+    .confidence i::before { content: ""; display: block; width: var(--c); height: 100%; background: var(--green); }
+
+    .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+    .article { padding: clamp(28px, 4vw, 54px); }
+    .article h1 { margin: 0 0 14px; font-size: clamp(32px, 4vw, 52px); letter-spacing: -.045em; }
+    .article .lead { margin: 0 0 34px; color: var(--muted); font-size: 17px; line-height: 1.75; }
+    .article h2 { margin: 34px 0 12px; font-size: 18px; }
+    .article p { color: #464a47; line-height: 1.85; }
+    .quote-block { margin: 28px 0; padding: 22px 24px; border-left: 3px solid var(--accent); background: var(--accent-soft); font: 400 19px/1.7 Georgia, "Songti SC", serif; }
+    .side-card { padding: 18px; }
+    .side-card h3 { margin: 0 0 14px; font-size: 13px; }
+    .relation { padding: 11px 0; border-top: 1px solid var(--line); }
+    .relation strong { display: block; font-size: 13px; }
+    .relation span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .source-link { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .source-link:hover strong { color: var(--accent-dark); }
+    .source-link div { min-width: 0; }
+    .source-link strong, .source-link span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .source-link strong { font-size: 12px; }
+    .source-link span { color: var(--muted); font-size: 10px; margin-top: 3px; }
+
+    .tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); }
+    .tab { border: 0; padding: 8px 12px; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+    .tab.active { background: white; color: var(--ink); box-shadow: 0 1px 4px rgba(18, 20, 19, .1); }
+    .composer { padding: clamp(24px, 4vw, 42px); }
+    .composer textarea { width: 100%; min-height: 190px; resize: vertical; border: 0; outline: 0; background: transparent; font-size: 24px; line-height: 1.5; letter-spacing: -.025em; color: var(--ink); }
+    .composer textarea::placeholder { color: #b7bab7; }
+    .composer-foot { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding-top: 18px; border-top: 1px solid var(--line); }
+    .upload-zone { min-height: 235px; display: grid; place-items: center; text-align: center; border: 1px dashed #b9bdb9; border-radius: var(--radius); background: #fafbf9; cursor: pointer; transition: background .2s, border .2s, transform .4s var(--ease); }
+    .upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-2px); }
+    .upload-zone .upload-icon { width: 54px; height: 54px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 15px; background: white; box-shadow: var(--shadow-sm); }
+
+    .flowbar { display: flex; align-items: center; gap: 0; margin-bottom: 20px; padding: 8px; overflow-x: auto; }
+    .flow-step { position: relative; min-width: 156px; display: flex; align-items: center; gap: 9px; padding: 9px 13px; border: 0; background: transparent; color: var(--muted); border-radius: 9px; cursor: pointer; }
+    .flow-step:not(:last-child)::after { content: ""; position: absolute; right: -1px; width: 1px; height: 18px; background: var(--line); }
+    .flow-step b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 7px; background: var(--surface-3); font-size: 10px; }
+    .flow-step.active { background: var(--accent-soft); color: var(--accent-dark); }
+    .flow-step.active b { background: var(--accent); color: white; }
+    .flow-step.done { color: var(--green); }
+
+    .field-card { padding: 22px; }
+    .field-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .field-head h3 { margin: 0; font-size: 13px; }
+    .provenance { display: inline-flex; align-items: center; gap: 5px; color: var(--blue); font-size: 10px; }
+    .field-card input, .field-card textarea, .editor-field {
+      width: 100%; border: 0; outline: 0; resize: vertical; background: transparent; color: var(--ink); line-height: 1.65;
+    }
+    .field-card textarea { min-height: 86px; font-size: 15px; }
+    .field-card input { font-size: 18px; font-weight: 620; }
+    .field-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+
+    .ai-suggestion { position: relative; padding: 18px 18px 18px 44px; border: 1px solid #c9dce8; border-radius: 12px; background: var(--blue-soft); }
+    .ai-suggestion::before { content: "AI"; position: absolute; left: 14px; top: 17px; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 6px; background: var(--blue); color: white; font-size: 8px; font-weight: 800; letter-spacing: .04em; }
+    .ai-suggestion p { margin: 0; color: #405466; line-height: 1.6; }
+    .ai-actions { display: flex; gap: 7px; margin-top: 12px; }
+
+    .compare-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 530px; overflow: hidden; }
+    .compare-list { border-right: 1px solid var(--line); background: var(--surface-2); padding: 12px; }
+    .theory-option { width: 100%; padding: 14px; border: 0; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; transition: background .2s, transform .35s var(--ease); }
+    .theory-option:hover { background: white; transform: translateX(2px); }
+    .theory-option.active { background: white; box-shadow: var(--shadow-sm); }
+    .theory-option strong { display: block; }
+    .theory-option span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .score-ring { float: right; width: 31px; height: 31px; display: grid; place-items: center; border: 3px solid #dfe8ee; border-top-color: var(--accent); border-radius: 50%; color: var(--accent-dark); font-size: 9px; font-weight: 700; }
+    .compare-main { padding: 24px; min-width: 0; }
+    .theory-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+    .theory-head h2 { margin: 0 0 7px; font-size: 27px; letter-spacing: -.035em; }
+    .theory-head p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .matrix { display: grid; grid-template-columns: 140px 1fr; margin-top: 14px; }
+    .matrix > div { padding: 14px 10px; border-bottom: 1px solid var(--line); line-height: 1.55; }
+    .matrix .key { color: var(--muted); font-size: 12px; }
+    .matrix .value { color: #343735; }
+    mark { padding: 1px 4px; background: #dceaf3; color: inherit; border-radius: 3px; }
+    .decision-dock { position: sticky; bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 20px auto 0; padding: 12px 14px; border: 1px solid #c8d9e4; border-radius: 13px; background: rgba(237, 244, 248, .96); color: var(--ink); box-shadow: var(--shadow-lg); backdrop-filter: blur(14px); }
+    .decision-dock span { color: var(--muted); font-size: 12px; }
+
+    .framework-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+    .document { padding: clamp(25px, 4vw, 46px); }
+    .doc-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; color: var(--muted); font-size: 11px; }
+    .doc-title { width: 100%; margin: 0 0 22px; border: 0; outline: 0; font-size: clamp(28px, 4vw, 44px); font-weight: 650; letter-spacing: -.045em; }
+    .doc-section { position: relative; padding: 23px 0; border-top: 1px solid var(--line); }
+    .doc-section h3 { margin: 0 0 12px; font-size: 14px; }
+    .doc-section p, .doc-section textarea { margin: 0; width: 100%; min-height: 60px; border: 0; outline: 0; resize: vertical; color: #464a47; background: transparent; line-height: 1.8; }
+    .comment-pin { position: absolute; right: -30px; top: 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--blue); color: white; font-size: 10px; box-shadow: 0 3px 10px rgba(52, 105, 232, .25); }
+    .review-panel { position: sticky; top: 0; overflow: hidden; }
+    .review-head { padding: 18px; border-bottom: 1px solid var(--line); }
+    .review-head h3 { margin: 0; font-size: 14px; }
+    .review-head p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+    .review-item { padding: 17px 18px; border-bottom: 1px solid var(--line); }
+    .review-item:last-child { border-bottom: 0; }
+    .review-item .severity { margin-bottom: 8px; color: var(--amber); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+    .review-item p { margin: 0; color: #4e5350; line-height: 1.55; font-size: 12px; }
+
+    .auth-view { min-height: calc(100vh - 130px); display: grid; place-items: center; }
+    .auth-card { width: min(430px, 100%); padding: 34px; }
+    .auth-logo { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 28px; border-radius: 12px; background: var(--accent); color: white; font: 700 18px Georgia, serif; }
+    .auth-card h1 { margin: 0; font-size: 31px; letter-spacing: -.04em; }
+    .auth-card > p { margin: 9px 0 26px; color: var(--muted); line-height: 1.6; }
+    .form-group { display: grid; gap: 7px; margin-bottom: 15px; }
+    .form-group label { font-size: 12px; font-weight: 600; }
+    .form-input { height: 44px; width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); padding: 0 12px; outline: 0; transition: border .2s, box-shadow .2s, background .2s; }
+    .form-input:focus { border-color: #aac7dc; background: white; box-shadow: 0 0 0 4px rgba(62, 124, 177, .07); }
+    .auth-submit { width: 100%; margin-top: 6px; }
+    .auth-switch { text-align: center; margin-top: 22px; color: var(--muted); }
+    .text-link { border: 0; background: transparent; color: var(--blue); cursor: pointer; padding: 0; }
+
+    .state-card { min-height: 470px; padding: 54px; display: grid; place-items: center; text-align: center; }
+    .state-symbol { width: 68px; height: 68px; margin: 0 auto 18px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 19px; background: var(--surface-2); color: var(--muted); }
+    .state-card h2 { margin: 0; font-size: 22px; }
+    .state-card p { max-width: 430px; margin: 10px auto 20px; color: var(--muted); line-height: 1.65; }
+    .degraded-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid #efd69f; border-radius: 11px; background: var(--amber-soft); color: #79520a; animation: banner-in .5s var(--ease) both; }
+    @keyframes banner-in { from { opacity: 0; transform: translateY(-8px); } }
+    .skeleton { overflow: hidden; }
+    .sk-line, .sk-box { position: relative; background: #e5e7e4; border-radius: 8px; overflow: hidden; }
+    .sk-line::after, .sk-box::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); transform: translateX(-100%); animation: shimmer 1.35s infinite; }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+    .sk-line { height: 13px; margin: 12px 0; }
+    .sk-box { height: 150px; }
+
+    .lab {
+      position: fixed;
+      z-index: 45;
+      right: 18px;
+      bottom: 18px;
+      width: 278px;
+      border: 1px solid #cbd6dd;
+      border-radius: 14px;
+      background: rgba(248, 251, 253, .97);
+      color: var(--ink);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transition: width .45s var(--ease), transform .45s var(--ease);
+      backdrop-filter: blur(16px);
+    }
+    .lab.collapsed { width: 50px; }
+    .lab-head { height: 48px; display: flex; align-items: center; gap: 9px; padding: 0 14px; cursor: pointer; }
+    .lab-head span { flex: 1; white-space: nowrap; font-size: 12px; font-weight: 650; }
+    .lab-head b { width: 8px; height: 8px; border-radius: 50%; background: #67a1cf; box-shadow: 0 0 0 4px rgba(103,161,207,.12); }
+    .lab-body { padding: 0 12px 12px; min-width: 278px; transition: opacity .2s; }
+    .lab.collapsed .lab-body, .lab.collapsed .lab-head span, .lab.collapsed .lab-head .chev { opacity: 0; pointer-events: none; }
+    .scenario-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .scenario-btn { height: 29px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--muted); cursor: pointer; font-size: 9px; }
+    .scenario-btn.active { border-color: #afcadd; color: var(--accent-dark); background: var(--accent-soft); }
+    .lab-actions { display: flex; gap: 5px; margin-top: 7px; }
+    .lab-action { flex: 1; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); cursor: pointer; font-size: 10px; }
+
+    .overlay { position: fixed; z-index: 80; inset: 0; display: grid; place-items: start center; padding-top: min(16vh, 140px); background: rgba(17, 19, 18, .28); backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    .command {
+      width: min(620px, calc(100% - 28px));
+      border: 1px solid #bfc2bf;
+      border-radius: 16px;
+      background: white;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-12px) scale(.98);
+      opacity: 0;
+      transition: transform .45s var(--ease), opacity .25s;
+      overflow: hidden;
+    }
+    .overlay.open .command { transform: none; opacity: 1; }
+    .command-search { height: 58px; display: flex; align-items: center; gap: 11px; padding: 0 18px; border-bottom: 1px solid var(--line); }
+    .command-search input { flex: 1; border: 0; outline: 0; font-size: 17px; }
+    .command-list { max-height: 380px; overflow: auto; padding: 8px; }
+    .command-group { padding: 7px 9px; color: var(--quiet); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .command-item { width: 100%; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 9px; border: 0; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
+    .command-item:hover, .command-item.selected { background: var(--surface-3); }
+    .command-item .cmd-icon { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: white; }
+    .command-item strong { display: block; font-size: 13px; }
+    .command-item span { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+
+    .inspector-scrim { position: fixed; z-index: 69; inset: 62px 0 0 76px; background: rgba(17,19,18,.12); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    .inspector-scrim.open { opacity: 1; pointer-events: auto; }
+    .inspector {
+      position: fixed; z-index: 70; top: 62px; right: 0; bottom: 0; width: min(440px, calc(100% - 76px));
+      border-left: 1px solid var(--line-strong); background: white; box-shadow: -18px 0 50px rgba(18,20,19,.12);
+      transform: translateX(102%); transition: transform .5s var(--ease); display: grid; grid-template-rows: 58px minmax(0,1fr) auto;
+    }
+    .inspector.open { transform: none; }
+    .inspector-head { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--line); }
+    .inspector-head strong { font-size: 13px; }
+    .inspector-content { padding: 24px; overflow: auto; }
+    .source-type { color: var(--accent-dark); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .inspector h2 { margin: 9px 0 10px; font-size: 25px; line-height: 1.22; letter-spacing: -.035em; }
+    .inspector .citation { color: var(--muted); font-size: 11px; }
+    .source-preview { margin: 24px 0; padding: 22px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); font-family: Georgia, "Songti SC", serif; line-height: 1.8; }
+    .source-preview mark { background: #dceaf3; }
+    .source-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .source-fact { padding: 12px; border: 1px solid var(--line); border-radius: 9px; }
+    .source-fact span { display: block; color: var(--muted); font-size: 10px; }
+    .source-fact strong { display: block; margin-top: 5px; font-size: 13px; }
+    .inspector-foot { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
+
+    .toast-stack { position: fixed; z-index: 100; right: 22px; top: 76px; display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 270px; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #c3d5e1; border-radius: 11px; background: #edf4f8; color: var(--ink); box-shadow: var(--shadow-lg); animation: toast-in .48s var(--ease) both, toast-out .35s var(--ease) 3.1s forwards; }
+    .toast.success .toast-icon { background: var(--green); }
+    .toast-icon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 7px; background: var(--blue); }
+    .toast strong { font-size: 12px; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.96); } }
+    @keyframes toast-out { to { opacity: 0; transform: translateX(12px); } }
+
+    .generating .gen-chunk { opacity: 0; transform: translateY(7px); animation: chunk .5s var(--ease) forwards; }
+    .generating .gen-chunk:nth-child(2) { animation-delay: .24s; }
+    .generating .gen-chunk:nth-child(3) { animation-delay: .48s; }
+    .generating .gen-chunk:nth-child(4) { animation-delay: .72s; }
+    @keyframes chunk { to { opacity: 1; transform: none; } }
+
+    @media (max-width: 900px) {
+      .view { width: min(100% - 32px, 760px); margin-top: 18px; }
+      .home-hero, .detail-layout, .framework-layout { grid-template-columns: 1fr; }
+      .hero-aside { min-height: 260px; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .compare-shell { grid-template-columns: 190px 1fr; }
+      .review-panel { position: static; }
+      .command-trigger { min-width: 42px; width: 42px; justify-content: center; }
+      .command-trigger span, .command-trigger kbd { display: none; }
+    }
+    @media (max-width: 650px) {
+      body { overflow: auto; }
+      .app-shell { display: block; min-height: 100vh; }
+      .rail { position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; height: 66px; flex-direction: row; justify-content: space-around; padding: 7px 10px; border-right: 0; border-top: 1px solid var(--line); }
+      .brand { width: 38px; height: 38px; margin: 0; }
+      .rail-spacer, .rail-btn.utility { display: none; }
+      .rail-btn { width: 42px; height: 42px; }
+      .rail-btn::after { display: none; }
+      .workspace { height: auto; min-height: 100vh; grid-template-rows: 56px auto; padding-top: 0; padding-bottom: 64px; }
+      .topbar { position: sticky; top: 0; height: 56px; padding: 0 12px; }
+      .header-context { gap: 10px; }
+      .header-brand .brand-mark { width: 27px; height: 27px; }
+      .brand-copy small, .header-divider, .crumbs { display: none; }
+      .mock-pill { display: none; }
+      .canvas { min-height: calc(100vh - 120px); overflow: visible; }
+      .canvas::before { display: none; }
+      .view { width: calc(100% - 24px); min-height: auto; margin: 14px auto 90px; }
+      .page-head { display: block; }
+      .page-head h1 { font-size: 34px; }
+      .head-actions { justify-content: flex-start; margin-top: 15px; }
+      .home-hero { min-height: 0; }
+      .hero-copy { padding: 30px 22px; }
+      .hero-copy h1 { font-size: 44px; }
+      .hero-aside { min-height: 230px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .research-row { grid-template-columns: 1fr 36px; }
+      .research-row > :nth-child(2), .research-row > :nth-child(3) { display: none; }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .dimension-strip { grid-template-columns: repeat(5, minmax(110px,1fr)); overflow-x: auto; }
+      .knowledge-item { grid-template-columns: 36px minmax(0,1fr); }
+      .knowledge-item > .btn { display: none; }
+      .detail-layout { display: block; }
+      .detail-layout > aside { margin-top: 14px; }
+      .composer textarea { font-size: 20px; }
+      .composer-foot { align-items: flex-start; flex-direction: column; }
+      .flowbar { width: calc(100vw - 24px); }
+      .compare-shell { display: block; }
+      .compare-list { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .theory-option { min-width: 200px; }
+      .matrix { grid-template-columns: 95px 1fr; }
+      .decision-dock { flex-direction: column; align-items: stretch; }
+      .framework-layout { display: block; }
+      .review-panel { margin-top: 14px; }
+      .comment-pin { right: 0; }
+      .lab { right: 10px; bottom: 76px; }
+      .lab:not(.collapsed) { width: calc(100vw - 20px); }
+      .inspector-scrim { inset: 56px 0 66px; }
+      .inspector { top: 56px; bottom: 66px; width: 100%; }
+      .toast-stack { top: 66px; left: 12px; right: 12px; }
+      .toast { min-width: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="brand-mark" viewBox="0 0 40 40">
+      <path d="m33 33-18.5-19.5C11.7 10.5 13.8 6 18 6h3.5c4.8 0 8 3.1 8 7.4 0 3.7-2 6.3-5.5 8.8l-9.1 6.5C11.3 31.3 6 28.8 6 24.2c0-2.1 1-4 2.8-5.5l5.4-4.4" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-command" viewBox="0 0 24 24"><path d="M9 6V5a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v14a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3Z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.3 4.7L18 9l-4.7 1.3L12 15l-1.3-4.7L6 9l4.7-1.3Z"/><path d="m18 15 .7 2.3L21 18l-2.3.7L18 21l-.7-2.3L15 18l2.3-.7Z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <nav class="rail" aria-label="主导航">
+      <button class="rail-btn active" data-route="home" data-tip="工作台"><svg class="icon"><use href="#i-home"/></svg><span>工作台</span></button>
+      <button class="rail-btn" data-route="knowledge" data-tip="知识库"><svg class="icon"><use href="#i-book"/></svg><span>知识库</span></button>
+      <button class="rail-btn" data-route="new" data-tip="新研究"><svg class="icon"><use href="#i-plus"/></svg><span>新研究</span></button>
+      <button class="rail-btn" data-route="my" data-tip="我的研究"><svg class="icon"><use href="#i-folder"/></svg><span>我的研究</span></button>
+      <div class="rail-spacer"></div>
+      <button class="rail-btn utility" data-action="open-command" data-tip="命令中心"><svg class="icon"><use href="#i-command"/></svg><span>命令中心</span></button>
+      <button class="rail-btn utility" data-action="settings" data-tip="设置"><svg class="icon"><use href="#i-settings"/></svg><span>设置</span></button>
+    </nav>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="header-context">
+          <button class="header-brand" data-route="home" aria-label="返回群学致知首页">
+            <svg class="brand-mark" aria-hidden="true"><use href="#brand-mark"/></svg>
+          </button>
+          <span class="brand-copy"><strong>群学致知</strong><small>Collective Inquiry</small></span>
+          <span class="header-divider" aria-hidden="true"></span>
+          <div class="crumbs" id="crumbs"><strong>工作台</strong></div>
+        </div>
+        <div class="top-actions">
+          <span class="mock-pill"><i></i>MOCK PROTOTYPE</span>
+          <button class="command-trigger" data-action="open-command"><svg class="icon sm"><use href="#i-search"/></svg><span>搜索页面、理论或命令</span><kbd>⌘ K</kbd></button>
+          <button class="avatar" data-route="login" aria-label="账户">访</button>
+        </div>
+      </header>
+      <section class="canvas" id="canvas"><div id="view"></div></section>
+    </main>
+  </div>
+
+  <aside class="lab" id="lab">
+    <div class="lab-head" data-action="toggle-lab"><b></b><span>原型演示控制台</span><svg class="icon sm chev"><use href="#i-more"/></svg></div>
+    <div class="lab-body">
+      <div class="scenario-row">
+        <button class="scenario-btn active" data-scenario="success">成功</button>
+        <button class="scenario-btn" data-scenario="loading">加载</button>
+        <button class="scenario-btn" data-scenario="empty">空态</button>
+        <button class="scenario-btn" data-scenario="error">失败</button>
+        <button class="scenario-btn" data-scenario="degraded">降级</button>
+      </div>
+      <div class="lab-actions">
+        <button class="lab-action" data-action="play-demo">播放动效</button>
+        <button class="lab-action" data-action="open-inspector">证据面板</button>
+        <button class="lab-action" data-action="open-command">命令中心</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="overlay" id="commandOverlay" aria-hidden="true">
+    <section class="command" role="dialog" aria-modal="true" aria-label="命令中心">
+      <div class="command-search"><svg class="icon"><use href="#i-search"/></svg><input id="commandInput" placeholder="输入命令或跳转页面…" autocomplete="off"/><kbd>ESC</kbd></div>
+      <div class="command-list" id="commandList"></div>
+    </section>
+  </div>
+
+  <div class="inspector-scrim" id="inspectorScrim" data-action="close-inspector"></div>
+  <aside class="inspector" id="inspector" aria-label="证据详情">
+    <div class="inspector-head"><strong>证据来源</strong><button class="btn ghost icon-btn" data-action="close-inspector"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="inspector-content" id="inspectorContent"></div>
+    <div class="inspector-foot"><button class="btn" data-action="copy-citation">复制引文</button><button class="btn primary" data-action="use-evidence">加入研究框架</button></div>
+  </aside>
+  <div class="toast-stack" id="toasts"></div>
+
+  <script>
+    const state = {
+      route: 'home', scenario: 'success', newTab: 'direct', theory: 0,
+      filter: '全部', labOpen: true, generated: false, frameworkAccepted: false
+    };
+
+    const routeMeta = {
+      home: ['工作台'], knowledge: ['知识库'], detail: ['知识库', '社会资本理论'],
+      new: ['研究', '新研究'], phenomenon: ['研究流程', '现象确认'],
+      theories: ['研究流程', '理论比较'], framework: ['研究流程', '研究框架'],
+      login: ['账户', '登录'], register: ['账户', '注册'], my: ['我的研究']
+    };
+
+    const theories = [
+      {name:'社会资本理论', score:92, fit:'解释“关系网络如何转化为行动资源”', strength:'能同时覆盖信任、互惠规范与弱连接的信息扩散。', risk:'容易把结构优势当作个人能力，需补充平台制度变量。', evidence:'访谈中 14/18 位成员将关键机会归因于群内弱连接。'},
+      {name:'实践共同体', score:86, fit:'解释成员如何在共同实践中完成身份迁移', strength:'适合分析从旁观者到核心参与者的学习轨迹。', risk:'对群体外部资源与结构不平等解释偏弱。', evidence:'成员语言、工具使用与问题定义出现明显趋同。'},
+      {name:'弱连接理论', score:81, fit:'解释跨圈层信息与机会如何进入群体', strength:'机制清晰，可对应关系数据与传播路径。', risk:'难以单独解释长期信任与共同规范的形成。', evidence:'高价值信息更多来自低频互动成员而非密友。'}
+    ];
+
+    const knowledge = [
+      {name:'社会资本理论', dim:'社会结构', desc:'关系网络中可被个人或集体调动的信任、规范与资源。', tags:['Coleman','关系网络'], conf:92},
+      {name:'实践共同体', dim:'群体动力', desc:'人们围绕共同关切持续互动，并在实践中形成共享身份与知识。', tags:['Wenger','身份学习'], conf:88},
+      {name:'弱连接理论', dim:'信息传播', desc:'低频、跨圈层连接更可能带来非冗余信息和新机会。', tags:['Granovetter','扩散机制'], conf:95},
+      {name:'集体效能', dim:'行动机制', desc:'群体共享的胜任信念如何影响坚持、协同与共同绩效。', tags:['Bandura','共同信念'], conf:84}
+    ];
+
+    const commands = [
+      {group:'快速前往', icon:'i-home', title:'回到工作台', sub:'查看近期研究与关键洞察', route:'home'},
+      {group:'快速前往', icon:'i-book', title:'打开知识库', sub:'浏览理论、概念与证据', route:'knowledge'},
+      {group:'快速前往', icon:'i-plus', title:'创建一项新研究', sub:'从问题、材料或智能提取开始', route:'new'},
+      {group:'研究动作', icon:'i-spark', title:'比较候选理论', sub:'进入正在进行的研究决策', route:'theories'},
+      {group:'研究动作', icon:'i-file', title:'打开研究框架', sub:'编辑框架并处理 AI 审阅', route:'framework'},
+      {group:'账户', icon:'i-folder', title:'我的研究', sub:'管理草稿、已完成和归档', route:'my'},
+      {group:'账户', icon:'i-settings', title:'登录演示', sub:'查看现代化账户表单', route:'login'}
+    ];
+
+    const icon = (id, cls='') => `<svg class="icon ${cls}"><use href="#${id}"/></svg>`;
+    const button = (label, opts='') => `<button class="btn ${opts}">${label}</button>`;
+    const degraded = () => state.scenario === 'degraded' ? `<div class="degraded-banner"><span><strong>离线证据模式：</strong>实时学术索引暂不可用，当前结果来自最近一次本地快照。</span><button class="btn sm" data-action="restore">重试连接</button></div>` : '';
+    const flowbar = (active) => `<div class="flowbar panel flat">
+      <button class="flow-step ${active==='phenomenon'?'active':'done'}" data-route="phenomenon"><b>01</b>现象确认</button>
+      <button class="flow-step ${active==='theories'?'active':active==='framework'?'done':''}" data-route="theories"><b>02</b>理论比较</button>
+      <button class="flow-step ${active==='framework'?'active':''}" data-route="framework"><b>03</b>研究框架</button>
+    </div>`;
+
+    function scenarioGate(content, name='研究内容') {
+      if (state.scenario === 'loading') return `<div class="panel state-card skeleton"><div style="width:min(720px,90%)"><div class="sk-line" style="width:28%;height:12px"></div><div class="sk-line" style="width:65%;height:34px;margin:18px 0 30px"></div><div class="grid-2"><div class="sk-box"></div><div class="sk-box"></div></div><div class="sk-line" style="width:86%;margin-top:26px"></div><div class="sk-line" style="width:72%"></div></div></div>`;
+      if (state.scenario === 'empty') return `<div class="panel state-card"><div><div class="state-symbol">${icon('i-folder','lg')}</div><h2>这里还没有${name}</h2><p>开始第一项研究后，过程、证据与决策会在这里留下清晰轨迹。</p><button class="btn primary" data-route="new">创建新研究 ${icon('i-arrow','sm')}</button></div></div>`;
+      if (state.scenario === 'error') return `<div class="panel state-card"><div><div class="state-symbol" style="color:var(--red);background:var(--red-soft)">${icon('i-close','lg')}</div><h2>内容没有载入</h2><p>Mock 服务返回了一个可恢复错误。你的本地编辑不会丢失，可以重新请求或回到上一步。</p><button class="btn primary" data-action="retry">重新载入</button></div></div>`;
+      return degraded() + content;
+    }
+
+    const views = {
+      home: () => scenarioGate(`<div class="stagger">
+        <section class="home-hero panel">
+          <div class="hero-copy"><div class="eyebrow">Research workspace</div><h1>把群体经验，变成<span>可检验</span>的知识。</h1><p>从真实现象出发，在理论、证据和研究框架之间持续校准。AI 不替你下结论，只把判断所需的材料放到正确位置。</p><div class="hero-actions"><button class="btn primary" data-route="new">开始新研究 ${icon('i-arrow','sm')}</button><button class="btn" data-route="knowledge">浏览知识库</button></div></div>
+          <aside class="hero-aside"><div class="signal-row"><span>今日研究信号</span><i class="pulse"></i></div><div class="insight-quote">“高频互动未必带来新信息，真正改变路径的常常是边缘连接。”</div><div class="insight-source"><span class="source-mark">证</span><span>来自 3 项研究、26 条访谈证据</span></div></aside>
+        </section>
+        <div class="section-label"><h2>开始一次研究</h2><span>三个平等入口，对应三种真实起点</span></div>
+        <section class="grid-3">
+          <article class="entry-card panel flat" data-route="new"><span class="num">01 / QUESTION</span><h3>从问题开始</h3><p>已经知道想研究什么，直接写下现象与困惑。</p></article>
+          <article class="entry-card panel flat" data-route="new" data-newtab="material"><span class="num">02 / MATERIAL</span><h3>从材料开始</h3><p>上传访谈、观察笔记或群聊摘录，先识别线索。</p></article>
+          <article class="entry-card panel flat" data-route="new" data-newtab="smart"><span class="num">03 / EXTRACT</span><h3>智能提取</h3><p>让系统把散乱描述整理为可确认的研究现象。</p></article>
+        </section>
+        <div class="section-label"><h2>继续研究</h2><span>自动保存于 2 分钟前</span></div>
+        <section class="panel flat">
+          <div class="research-row" data-route="theories"><div><div class="research-title">线上学习群体中的弱连接与知识迁移</div><div class="research-sub">当前：比较候选理论</div><div class="progress"><i style="--p:68%"></i></div></div><span class="status blue">研究中</span><span class="tag">68%</span>${icon('i-arrow')}</div>
+          <div class="research-row" data-route="framework"><div><div class="research-title">协作社群如何形成持续行动能力</div><div class="research-sub">当前：研究框架待确认</div><div class="progress"><i style="--p:86%"></i></div></div><span class="status amber">待确认</span><span class="tag">86%</span>${icon('i-arrow')}</div>
+        </section>
+      </div>`, '研究任务'),
+
+      knowledge: () => scenarioGate(`<div class="stagger">
+        <header class="page-head"><div><div class="eyebrow">Knowledge graph</div><h1>不是资料库，是一张<br><em>可进入研究的知识网络。</em></h1><p>每个概念都带着理论边界、证据来源与相邻关系，不让“看起来相关”冒充“能够解释”。</p></div><div class="head-actions"><button class="btn" data-action="open-command">快速检索 <kbd>⌘K</kbd></button><button class="btn primary" data-route="new">以问题开始</button></div></header>
+        <div class="toolbar"><label class="search-box">${icon('i-search','sm')}<input id="knowledgeSearch" placeholder="搜索理论、概念、作者或研究现象…" /></label><button class="btn">筛选 3</button></div>
+        <div class="filter-chips" style="margin-bottom:14px">${['全部','社会结构','群体动力','信息传播','行动机制'].map(x=>`<button class="chip ${state.filter===x?'active':''}" data-filter="${x}">${x}</button>`).join('')}</div>
+        <section class="dimension-strip panel flat"><div class="dimension active"><span>全部条目</span><strong>128</strong></div><div class="dimension"><span>核心理论</span><strong>34</strong></div><div class="dimension"><span>概念工具</span><strong>47</strong></div><div class="dimension"><span>研究证据</span><strong>31</strong></div><div class="dimension"><span>方法模板</span><strong>16</strong></div></section>
+        <section class="knowledge-list panel flat" id="knowledgeList">${knowledge.filter(x=>state.filter==='全部'||x.dim===state.filter).map((x,i)=>`<article class="knowledge-item" data-route="detail"><span class="item-index">${String(i+1).padStart(2,'0')}</span><div><h3>${x.name}</h3><p>${x.desc}</p><div class="meta-row"><span class="tag">${x.dim}</span>${x.tags.map(t=>`<span class="tag">${t}</span>`).join('')}<span class="confidence"><i style="--c:${x.conf}%"></i>${x.conf}% 证据充分度</span></div></div><button class="btn sm" data-action="open-inspector">查看证据</button></article>`).join('')}</section>
+      </div>`, '知识条目'),
+
+      detail: () => scenarioGate(`<div class="stagger">
+        <div class="head-actions" style="justify-content:flex-start;margin-bottom:14px"><button class="btn ghost" data-route="knowledge">← 返回知识库</button></div>
+        <div class="detail-layout">
+          <article class="article panel flat"><div class="eyebrow">社会结构 · 核心理论</div><h1>社会资本理论</h1><p class="lead">关系网络中可被个人或集体调动的信任、规范与资源。它关心的不是“认识多少人”，而是关系如何真正转化为行动能力。</p><div class="meta-row"><span class="tag">Coleman</span><span class="tag">Putnam</span><span class="tag">Bourdieu</span><span class="confidence"><i style="--c:92%"></i>92% 证据充分度</span></div><h2>适合解释什么</h2><p>当研究现象同时涉及关系结构、互惠规范和资源获取时，社会资本理论能提供一条完整解释链：网络位置影响信息与信任的可达性，信任降低协作成本，规范让资源交换可以持续。</p><blockquote class="quote-block">理论的价值不在于替现象命名，而在于指出：什么关系、经过什么机制、产生了什么可观察结果。</blockquote><h2>使用边界</h2><p>不能把群体中出现的一切积极结果都归因于社会资本。平台规则、权力差异与资源门槛仍需要单独进入分析，否则容易把结构优势误写成个人品质。</p><div class="ai-suggestion" style="margin-top:30px"><p>你的当前研究中，“机会更多来自低频互动成员”与该理论中的桥接型社会资本高度相关。</p><div class="ai-actions"><button class="btn sm primary" data-route="phenomenon">以此开始研究</button><button class="btn sm" data-action="open-inspector">核对证据</button></div></div></article>
+          <aside class="stack"><section class="side-card panel flat"><h3>理论关系</h3><div class="relation"><strong>弱连接理论</strong><span>机制补充 · 强关联</span></div><div class="relation"><strong>结构洞理论</strong><span>结构补充 · 强关联</span></div><div class="relation"><strong>实践共同体</strong><span>身份路径 · 中关联</span></div></section><section class="side-card panel flat"><h3>关键来源</h3>${['Social Capital in the Creation of Human Capital','The Strength of Weak Ties','Bowling Alone'].map((x,i)=>`<div class="source-link" data-action="open-inspector"><span class="source-mark" style="color:var(--ink);border-color:var(--line)">${i+1}</span><div><strong>${x}</strong><span>学术原文 · 已核验</span></div></div>`).join('')}</section></aside>
+        </div>
+      </div>`, '理论详情'),
+
+      new: () => scenarioGate(`<div class="stagger">
+        <header class="page-head"><div><div class="eyebrow">New research</div><h1>你从哪里开始，<br><em>研究就从哪里接住你。</em></h1><p>不强迫用户先学会一套流程。问题、材料和散乱想法，都可以成为同等有效的起点。</p></div></header>
+        <div class="tabs" style="margin-bottom:14px"><button class="tab ${state.newTab==='direct'?'active':''}" data-newtab="direct">直接描述</button><button class="tab ${state.newTab==='material'?'active':''}" data-newtab="material">上传材料</button><button class="tab ${state.newTab==='smart'?'active':''}" data-newtab="smart">智能提取</button></div>
+        ${newComposer()}
+        <div class="section-label"><h2>最近的起点</h2><span>仅保存在当前 Mock 会话</span></div><div class="grid-3"><div class="field-card panel flat"><span class="tag">昨日</span><h3>为什么群里活跃的人不一定获得最多新信息？</h3></div><div class="field-card panel flat"><span class="tag">3 天前</span><h3>从 18 份访谈中识别协作中断的共同节点</h3></div><div class="field-card panel flat"><span class="tag">草稿</span><h3>青年社群的持续参与与身份变化</h3></div></div>
+      </div>`, '研究起点'),
+
+      phenomenon: () => scenarioGate(`<div class="stagger">${flowbar('phenomenon')}
+        <header class="page-head"><div><div class="eyebrow">Step 01 · Clarify</div><h1>先确认<em>发生了什么</em>，<br>再急着解释为什么。</h1><p>系统把原始描述拆成可编辑字段。蓝色标记表示 AI 整理，黑色文本始终由你确认。</p></div><div class="head-actions"><button class="btn" data-action="regenerate">重新整理</button><button class="btn primary" data-route="theories">确认现象 ${icon('i-arrow','sm')}</button></div></header>
+        <div class="grid-2"><section class="field-card panel flat"><div class="field-head"><h3>核心现象</h3><span class="provenance">${icon('i-spark','sm')} AI 整理</span></div><textarea>线上学习群体中，真正带来跨领域机会的往往不是高频互动成员，而是偶尔出现的跨圈层成员。</textarea><div class="field-foot"><span>来源：原始描述 1–3 段</span><span>已自动保存</span></div></section><section class="field-card panel flat"><div class="field-head"><h3>研究对象</h3><span class="provenance">${icon('i-spark','sm')} AI 整理</span></div><input value="持续参与 6 个月以上的线上学习社群"/><div class="field-foot"><span>可继续收窄范围</span><span>28 字</span></div></section><section class="field-card panel flat"><div class="field-head"><h3>可观察差异</h3><span class="provenance">${icon('i-spark','sm')} AI 整理</span></div><textarea>高频连接提供情绪支持与日常协作；低频跨圈连接更常提供非冗余信息、项目机会与角色迁移路径。</textarea><div class="field-foot"><span>建议：补充反例</span><span>52 字</span></div></section><section class="field-card panel flat"><div class="field-head"><h3>暂不解释的部分</h3><span class="tag">用户补充</span></div><textarea>先不把差异归因于个体能力、性格外向程度或平台推荐机制。</textarea><div class="field-foot"><span>避免过早因果化</span><span>31 字</span></div></section></div>
+        <div class="ai-suggestion" style="margin-top:14px"><p>建议把“获得机会”拆为信息、协作邀请和身份跃迁三个可观察结果，后续理论比较会更准确。</p><div class="ai-actions"><button class="btn sm primary" data-action="accept-suggestion">接受并拆分</button><button class="btn sm" data-action="dismiss-suggestion">暂不处理</button></div></div>
+      </div>`, '现象字段'),
+
+      theories: () => scenarioGate(`<div class="stagger">${flowbar('theories')}
+        <header class="page-head"><div><div class="eyebrow">Step 02 · Compare</div><h1>不要选最熟悉的理论，<br>选<em>解释损耗最小</em>的那个。</h1><p>候选理论并排接受同一组问题：能解释什么、解释不了什么、需要哪些证据。</p></div><div class="head-actions"><button class="btn" data-action="open-inspector">查看 26 条证据</button></div></header>
+        <section class="compare-shell panel flat"><aside class="compare-list">${theories.map((t,i)=>`<button class="theory-option ${state.theory===i?'active':''}" data-theory="${i}"><span class="score-ring">${t.score}</span><strong>${t.name}</strong><span>匹配度 ${t.score}%</span></button>`).join('')}</aside><div class="compare-main">${theoryDetail()}</div></section>
+        <div class="decision-dock"><div><strong>当前选择：${theories[state.theory].name}</strong><br><span>这项决定会写入研究轨迹，之后仍可回溯修改。</span></div><button class="btn accent" data-route="framework">采用并生成框架 ${icon('i-arrow','sm')}</button></div>
+      </div>`, '候选理论'),
+
+      framework: () => scenarioGate(`<div class="stagger">${flowbar('framework')}
+        <header class="page-head"><div><div class="eyebrow">Step 03 · Frame</div><h1>让框架成为<em>可质疑、可修订</em><br>的研究对象。</h1><p>AI 建议直接落在文档上下文中，保留来源与修改轨迹，不另开一个悬浮聊天窗口。</p></div><div class="head-actions"><button class="btn" data-action="open-inspector">证据 26</button><button class="btn primary" data-action="finish-research">确认框架</button></div></header>
+        <div class="framework-layout"><article class="document panel flat ${state.generated?'generating':''}"><div class="doc-meta"><span class="status green">实时保存</span><span>版本 0.4</span><span>最后编辑：刚刚</span></div><input class="doc-title gen-chunk" value="弱连接如何促进线上学习社群的知识迁移"/><section class="doc-section gen-chunk"><h3>研究问题</h3><textarea>在持续参与的线上学习社群中，低频跨圈层连接通过何种机制带来非冗余信息、协作机会与身份迁移？</textarea><span class="comment-pin">1</span></section><section class="doc-section gen-chunk"><h3>核心解释链</h3><textarea>跨圈层位置 → 接触非冗余信息 → 降低机会发现成本 → 形成新的协作邀请 → 成员角色与知识边界发生迁移。</textarea></section><section class="doc-section gen-chunk"><h3>待验证假设</h3><textarea>H1：跨圈层连接数量与非冗余信息获得正相关。\nH2：关系信任在信息获得与协作邀请之间发挥中介作用。\nH3：平台可见性规则会调节弱连接的实际价值。</textarea><span class="comment-pin" style="background:var(--amber)">2</span></section><section class="doc-section gen-chunk"><h3>证据计划</h3><textarea>半结构访谈 18–24 人；绘制近 3 个月关键机会的关系来源图；对照高频核心成员与低频跨圈成员的事件序列。</textarea></section></article><aside class="review-panel panel flat"><div class="review-head"><h3>框架审阅</h3><p>2 个实质问题，1 个可选优化</p></div><div class="review-item"><div class="severity">需要澄清 · 01</div><p>“身份迁移”仍偏抽象，建议定义为角色称谓、任务责任或外部机会中的可观察变化。</p><div class="ai-actions"><button class="btn sm primary" data-action="accept-review">接受</button><button class="btn sm">忽略</button></div></div><div class="review-item"><div class="severity">证据缺口 · 02</div><p>当前访谈无法单独验证平台可见性调节效应，建议增加行为日志或删除 H3。</p><div class="ai-actions"><button class="btn sm" data-action="open-inspector">查看依据</button></div></div><div class="review-item"><div class="severity" style="color:var(--green)">结构完整 · 03</div><p>现象、理论机制与证据计划之间已形成可追溯对应。</p></div></aside></div>
+      </div>`, '研究框架'),
+
+      my: () => scenarioGate(`<div class="stagger"><header class="page-head"><div><div class="eyebrow">My research</div><h1>所有判断都有来路，<br>所有修改都能<em>回到现场</em>。</h1><p>这里管理的不只是文档，也是每项研究从现象、理论到证据的决策轨迹。</p></div><div class="head-actions"><button class="btn primary" data-route="new">新建研究</button></div></header><div class="toolbar"><label class="search-box">${icon('i-search','sm')}<input placeholder="搜索研究标题或理论…" /></label><div class="filter-chips"><button class="chip active">全部 6</button><button class="chip">研究中 2</button><button class="chip">已完成 3</button></div></div><section class="panel flat"><div class="research-row" data-route="theories"><div><div class="research-title">线上学习群体中的弱连接与知识迁移</div><div class="research-sub">社会资本理论 · 更新于 2 分钟前</div><div class="progress"><i style="--p:68%"></i></div></div><span class="status blue">研究中</span><span class="tag">68%</span><button class="btn ghost icon-btn">${icon('i-more')}</button></div><div class="research-row" data-route="framework"><div><div class="research-title">协作社群如何形成持续行动能力</div><div class="research-sub">集体效能 · 更新于昨日</div><div class="progress"><i style="--p:86%"></i></div></div><span class="status amber">待确认</span><span class="tag">86%</span><button class="btn ghost icon-btn">${icon('i-more')}</button></div><div class="research-row"><div><div class="research-title">青年社群的身份学习与参与轨迹</div><div class="research-sub">实践共同体 · 完成于 7 月 28 日</div><div class="progress"><i style="--p:100%;background:var(--green)"></i></div></div><span class="status green">已完成</span><span class="tag">100%</span><button class="btn ghost icon-btn" data-action="delete-research">${icon('i-trash')}</button></div></section></div>`, '研究任务'),
+
+      login: () => authView(false),
+      register: () => authView(true)
+    };
+
+    function newComposer() {
+      if (state.newTab === 'material') return `<section class="upload-zone" data-action="mock-upload"><div><div class="upload-icon">${icon('i-upload','lg')}</div><strong>拖入访谈、观察笔记或聊天记录</strong><p style="color:var(--muted)">支持 PDF、DOCX、TXT、Markdown · Mock 演示不会上传真实文件</p><button class="btn">选择演示文件</button></div></section>`;
+      if (state.newTab === 'smart') return `<section class="composer panel flat"><div class="provenance" style="margin-bottom:18px">${icon('i-spark','sm')} 智能提取会保留原始表述</div><textarea placeholder="把还没想清楚的观察、冲突或片段都写进来…">我发现群里聊天最多的人不一定带来新机会。有些不常出现的人反而会在关键时刻分享跨领域信息，甚至把成员带进新的项目。</textarea><div class="composer-foot"><span style="color:var(--muted)">系统会提取：现象、对象、差异与暂不解释项</span><button class="btn accent" data-action="generate-phenomenon">开始提取 ${icon('i-spark','sm')}</button></div></section>`;
+      return `<section class="composer panel flat"><textarea placeholder="写下你真正困惑的现象，不必先变成标准研究问题…">为什么线上学习群体里，互动不频繁的人反而更可能带来新的知识和机会？</textarea><div class="composer-foot"><span style="color:var(--muted)">先写真实困惑，格式由系统处理。</span><button class="btn primary" data-route="phenomenon">继续确认现象 ${icon('i-arrow','sm')}</button></div></section>`;
+    }
+
+    function theoryDetail() {
+      const t = theories[state.theory];
+      return `<div class="theory-head"><div><div class="eyebrow">推荐 ${String(state.theory+1).padStart(2,'0')}</div><h2>${t.name}</h2><p>${t.fit}</p></div><span class="status blue">匹配 ${t.score}%</span></div><div class="matrix"><div class="key">解释优势</div><div class="value">${t.strength}</div><div class="key">解释风险</div><div class="value">${t.risk}</div><div class="key">现有证据</div><div class="value"><mark>${t.evidence}</mark></div><div class="key">需要补证</div><div class="value">关系发生时间、机会具体类型，以及平台推荐造成的替代解释。</div></div><div class="ai-suggestion" style="margin-top:20px"><p>如果采用${t.name}，建议把“关系强弱”与“资源是否非冗余”分开测量，避免用互动频率替代全部机制。</p><div class="ai-actions"><button class="btn sm" data-action="open-inspector">查看判断来源</button></div></div>`;
+    }
+
+    function authView(register) {
+      return `<div class="auth-view"><section class="auth-card panel"><div class="auth-logo">群</div><div class="eyebrow">${register?'Create account':'Welcome back'}</div><h1>${register?'建立你的研究空间':'回到研究现场'}</h1><p>${register?'先创建一个只属于你的研究工作区。所有数据均为当前原型的 Mock 演示。':'继续你未完成的框架、证据与判断。'}</p>${register?'<div class="form-group"><label>姓名</label><input class="form-input" value="示例用户" /></div>':''}<div class="form-group"><label>邮箱</label><input class="form-input" type="email" value="demo@example.com" /></div><div class="form-group"><label>密码</label><input class="form-input" type="password" value="" placeholder="仅用于原型演示" /></div>${register?'<div class="form-group"><label>研究方向</label><select class="form-input"><option>群体学习与协作</option><option>教育社会学</option><option>组织研究</option></select></div>':''}<button class="btn primary auth-submit" data-action="auth-submit">${register?'创建账户':'登录并继续'}</button><div class="auth-switch">${register?'已有账户？':'第一次来？'} <button class="text-link" data-route="${register?'login':'register'}">${register?'直接登录':'创建研究空间'}</button></div></section></div>`;
+    }
+
+    function render() {
+      const target = document.getElementById('view');
+      target.innerHTML = `<div class="view">${views[state.route]()}</div>`;
+      document.querySelectorAll('.rail-btn[data-route]').forEach(b => b.classList.toggle('active', b.dataset.route === state.route || (['detail'].includes(state.route) && b.dataset.route==='knowledge') || (['phenomenon','theories','framework'].includes(state.route) && b.dataset.route==='new')));
+      document.querySelectorAll('.scenario-btn').forEach(b => b.classList.toggle('active', b.dataset.scenario === state.scenario));
+      const crumbs = routeMeta[state.route] || ['工作台'];
+      document.getElementById('crumbs').innerHTML = crumbs.map((x,i)=>`${i?'<span class="slash">/</span>':''}${i===crumbs.length-1?`<strong>${x}</strong>`:`<span>${x}</span>`}`).join('');
+      document.getElementById('canvas').scrollTop = 0;
+    }
+
+    function navigate(route) {
+      state.route = route;
+      render();
+    }
+
+    function toast(message, type='success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span class="toast-icon">${icon(type==='success'?'i-check':'i-spark','sm')}</span><strong>${message}</strong>`;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(()=>el.remove(), 3600);
+    }
+
+    function openCommand() {
+      renderCommands('');
+      const overlay = document.getElementById('commandOverlay');
+      overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+      setTimeout(()=>document.getElementById('commandInput').focus(), 80);
+    }
+    function closeCommand() { const o=document.getElementById('commandOverlay'); o.classList.remove('open'); o.setAttribute('aria-hidden','true'); }
+    function renderCommands(q) {
+      const list = document.getElementById('commandList');
+      const filtered = commands.filter(c => (c.title+c.sub+c.group).toLowerCase().includes(q.toLowerCase()));
+      let group='';
+      list.innerHTML = filtered.map((c,i)=>`${c.group!==group?(group=c.group,`<div class="command-group">${c.group}</div>`):''}<button class="command-item ${i===0?'selected':''}" data-command-route="${c.route}"><span class="cmd-icon">${icon(c.icon,'sm')}</span><span><strong>${c.title}</strong><span>${c.sub}</span></span>${icon('i-arrow','sm')}</button>`).join('') || `<div class="state-card" style="min-height:180px;padding:30px"><div><strong>没有匹配命令</strong><p>换一个关键词试试。</p></div></div>`;
+    }
+
+    function openInspector() {
+      document.getElementById('inspectorContent').innerHTML = `<div class="source-type">Verified source · Mock</div><h2>弱连接更可能承载非冗余信息</h2><div class="citation">Granovetter, M. S. (1973) · American Journal of Sociology</div><div class="source-preview">“与个体联系较弱的人，往往连接着不同的社会圈层，因此更可能带来<mark>当前网络中尚未重复的信息</mark>。”<br><small>原文概念的中文释义，本原型不展示受版权保护的完整文本。</small></div><div class="source-facts"><div class="source-fact"><span>来源类型</span><strong>同行评审论文</strong></div><div class="source-fact"><span>核验状态</span><strong style="color:var(--green)">已核验</strong></div><div class="source-fact"><span>支持内容</span><strong>信息非冗余机制</strong></div><div class="source-fact"><span>适用边界</span><strong>不直接证明因果</strong></div></div><div class="ai-suggestion" style="margin-top:18px"><p>这条证据支持“跨圈连接带来信息差异”，但不能单独支持“最终获得更多机会”。</p></div>`;
+      document.getElementById('inspector').classList.add('open');
+      document.getElementById('inspectorScrim').classList.add('open');
+    }
+    function closeInspector(){ document.getElementById('inspector').classList.remove('open'); document.getElementById('inspectorScrim').classList.remove('open'); }
+
+    async function playDemo() {
+      toast('自动演示开始：命令 → 证据 → 决策');
+      openCommand();
+      await wait(900); closeCommand();
+      await wait(260); openInspector();
+      await wait(1100); closeInspector();
+      await wait(250); state.route='framework'; state.scenario='success'; state.generated=true; render();
+      await wait(1150); toast('AI 分段生成完成，仍等待你的确认');
+    }
+    const wait = ms => new Promise(r=>setTimeout(r,ms));
+
+    document.addEventListener('click', e => {
+      const actionEl = e.target.closest('[data-action]');
+      if (actionEl) {
+        const a=actionEl.dataset.action;
+        if(a==='open-command') openCommand();
+        if(a==='close-inspector') closeInspector();
+        if(a==='open-inspector') openInspector();
+        if(a==='toggle-lab') { state.labOpen=!state.labOpen; document.getElementById('lab').classList.toggle('collapsed',!state.labOpen); }
+        if(a==='play-demo') playDemo();
+        if(a==='retry'||a==='restore') { state.scenario='success'; render(); toast('内容已恢复'); }
+        if(a==='settings') toast('设置面板已留作产品扩展位','info');
+        if(a==='accept-suggestion') { actionEl.closest('.ai-suggestion')?.remove(); toast('建议已写入现象字段'); }
+        if(a==='dismiss-suggestion') { actionEl.closest('.ai-suggestion')?.remove(); }
+        if(a==='accept-review') { state.frameworkAccepted=true; actionEl.closest('.review-item').innerHTML='<div class="severity" style="color:var(--green)">已处理</div><p>已把身份迁移定义为可观察的角色、责任与机会变化。</p>'; toast('修改已写入框架'); }
+        if(a==='finish-research') toast('研究框架已确认并创建版本 1.0');
+        if(a==='copy-citation') toast('Mock 引文已复制');
+        if(a==='use-evidence') { closeInspector(); toast('证据已加入研究框架'); }
+        if(a==='mock-upload') { toast('已载入演示访谈记录：18 份'); setTimeout(()=>navigate('phenomenon'),500); }
+        if(a==='generate-phenomenon'||a==='regenerate') { toast('正在按语义段落整理，不逐字打字'); setTimeout(()=>navigate('phenomenon'),700); }
+        if(a==='auth-submit') { toast('Mock 登录成功'); setTimeout(()=>navigate('home'),500); }
+        if(a==='delete-research') { if(confirm('删除这项 Mock 研究？此操作仅影响当前演示。')) { actionEl.closest('.research-row').style.cssText='opacity:0;transform:translateX(20px);transition:.35s var(--ease)'; setTimeout(()=>actionEl.closest('.research-row')?.remove(),330); toast('研究已移入回收站'); } }
+        return;
+      }
+      const routeEl = e.target.closest('[data-route]');
+      if (routeEl) { if(routeEl.dataset.newtab) state.newTab=routeEl.dataset.newtab; navigate(routeEl.dataset.route); return; }
+      const sc=e.target.closest('[data-scenario]'); if(sc){ state.scenario=sc.dataset.scenario; render(); return; }
+      const tab=e.target.closest('[data-newtab]'); if(tab){ state.newTab=tab.dataset.newtab; render(); return; }
+      const th=e.target.closest('[data-theory]'); if(th){ state.theory=Number(th.dataset.theory); render(); return; }
+      const filter=e.target.closest('[data-filter]'); if(filter){ state.filter=filter.dataset.filter; render(); return; }
+      const cmd=e.target.closest('[data-command-route]'); if(cmd){ closeCommand(); navigate(cmd.dataset.commandRoute); }
+      if(e.target===document.getElementById('commandOverlay')) closeCommand();
+    });
+
+    document.addEventListener('input', e => {
+      if(e.target.id==='commandInput') renderCommands(e.target.value);
+      if(e.target.id==='knowledgeSearch') {
+        const q=e.target.value.toLowerCase();
+        document.querySelectorAll('.knowledge-item').forEach(el=>el.style.display=el.textContent.toLowerCase().includes(q)?'grid':'none');
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openCommand(); }
+      if(e.key==='Escape'){ closeCommand(); closeInspector(); }
+      if(e.key==='Enter'&&document.getElementById('commandOverlay').classList.contains('open')){ const selected=document.querySelector('.command-item.selected'); if(selected){ closeCommand(); navigate(selected.dataset.commandRoute); } }
+    });
+
+    render();
+  </script>
+</body>
+</html>
