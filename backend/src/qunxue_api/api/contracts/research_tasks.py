@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from qunxue_api.modules.research_intake import (
     EntryType,
@@ -15,6 +15,14 @@ from qunxue_api.modules.research_intake import (
 
 class CreateResearchTaskRequest(BaseModel):
     entry_type: EntryType = EntryType.DIRECT_INPUT
+    seed_theory_id: str | None = Field(default=None, min_length=1, max_length=128)
+    seed_theory_name: str | None = Field(default=None, min_length=1, max_length=300)
+
+    @model_validator(mode="after")
+    def validate_seed_clue(self) -> "CreateResearchTaskRequest":
+        if (self.seed_theory_id is None) != (self.seed_theory_name is None):
+            raise ValueError("seed theory id and name must be supplied together")
+        return self
 
 
 class ResearchTraceActor(StrEnum):
@@ -58,6 +66,8 @@ class ResearchTaskResponse(BaseModel):
     status: ResearchTaskStatus
     version: int
     allowed_actions: list[ResearchTaskAction]
+    seed_theory_id: str | None
+    seed_theory_name: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -69,6 +79,8 @@ class ResearchTaskResponse(BaseModel):
             status=task.status,
             version=task.version,
             allowed_actions=list(task.allowed_actions),
+            seed_theory_id=task.seed_theory_id,
+            seed_theory_name=task.seed_theory_name,
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
@@ -91,6 +103,7 @@ class ResearchTaskNavigationResponse(BaseModel):
     version: int
     allowed_actions: list[ResearchTaskNavigationAction]
     seed_theory_id: str | None
+    seed_theory_name: str | None
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | None
     adopted_theory_count: int
     current_phenomenon_candidate_id: UUID | None

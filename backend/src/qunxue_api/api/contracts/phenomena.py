@@ -135,3 +135,16 @@ class PhenomenonSnapshotPageResponse(BaseModel):
     allowed_actions: list[PhenomenonSnapshotAction]
     snapshots: list[PhenomenonSnapshotResponse]
     next_cursor: str | None
+
+
+class PhenomenonExampleResponse(BaseModel):
+    example_id: str
+    title: str
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    source_type: Literal["built_in_example"] = "built_in_example"
+
+
+class PhenomenonExamplePageResponse(BaseModel):
+    items: list[PhenomenonExampleResponse]

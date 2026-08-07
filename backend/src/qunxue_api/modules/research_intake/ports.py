@@ -8,6 +8,7 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonCandidate,
     PhenomenonCandidateDraft,
     PhenomenonEvidenceRefSnapshot,
+    PhenomenonExample,
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     ResearchTask,
@@ -44,6 +45,8 @@ class ResearchTaskRepository(Protocol):
 
 @runtime_checkable
 class PhenomenonRepository(Protocol):
+    def list_examples(self) -> list[PhenomenonExample]: ...
+
     def submit_direct(
         self,
         *,

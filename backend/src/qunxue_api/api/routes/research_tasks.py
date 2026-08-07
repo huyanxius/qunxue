@@ -58,6 +58,8 @@ def create_research_task(
         user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
+        seed_theory_id=payload.seed_theory_id,
+        seed_theory_name=payload.seed_theory_name,
     )
     return ResearchTaskResponse.from_domain(task)
 
@@ -224,7 +226,8 @@ def _navigation_response(
         current_stage=current_stage,
         version=task.version,
         allowed_actions=[action],
-        seed_theory_id=None,
+        seed_theory_id=task.seed_theory_id,
+        seed_theory_name=task.seed_theory_name,
         phenomenon_summary=phenomenon_summary,
         adopted_theory_count=task.adopted_theory_count,
         current_phenomenon_candidate_id=(

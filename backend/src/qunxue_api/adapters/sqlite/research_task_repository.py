@@ -69,6 +69,8 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 status=task.status.value,
                 version=task.version,
                 idempotency_key=task.idempotency_key,
+                seed_theory_id=task.seed_theory_id,
+                seed_theory_name=task.seed_theory_name,
                 phenomenon_query_id=(
                     str(task.phenomenon_query_id) if task.phenomenon_query_id else None
                 ),
@@ -149,6 +151,8 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             status=ResearchTaskStatus(row.status),
             version=row.version,
             idempotency_key=row.idempotency_key,
+            seed_theory_id=row.seed_theory_id,
+            seed_theory_name=row.seed_theory_name,
             created_at=_as_utc(row.created_at),
             updated_at=_as_utc(row.updated_at),
             phenomenon_query_id=(

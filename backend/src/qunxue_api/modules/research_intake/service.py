@@ -10,6 +10,7 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonCandidate,
     PhenomenonCandidateDraft,
     PhenomenonEvidenceRefSnapshot,
+    PhenomenonExample,
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     ResearchTask,
@@ -40,12 +41,16 @@ class ResearchTaskService:
         user_id: UUID,
         entry_type: EntryType,
         idempotency_key: str,
+        seed_theory_id: str | None = None,
+        seed_theory_name: str | None = None,
     ) -> ResearchTask:
         task = ResearchTask.create(
             task_id=self._id_factory(),
             user_id=user_id,
             entry_type=entry_type,
             idempotency_key=idempotency_key,
+            seed_theory_id=seed_theory_id,
+            seed_theory_name=seed_theory_name,
             now=self._clock(),
         )
         return self._repository.add_or_get_by_idempotency_key(task)
@@ -82,6 +87,9 @@ class PhenomenonService:
         self._research_tasks = research_tasks
         self._id_factory = id_factory
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    def list_examples(self) -> list[PhenomenonExample]:
+        return self._repository.list_examples()
 
     def submit_direct(
         self,

@@ -21,6 +21,8 @@ from qunxue_api.api.contracts.phenomena import (
     PhenomenonCandidatePageResponse,
     PhenomenonCandidateResponse,
     PhenomenonEvidenceReferenceResponse,
+    PhenomenonExamplePageResponse,
+    PhenomenonExampleResponse,
     PhenomenonSnapshotAction,
     PhenomenonSnapshotPageResponse,
     PhenomenonSnapshotResponse,
@@ -48,6 +50,29 @@ router = APIRouter(
     responses={422: {"model": ErrorResponse}},
     dependencies=[Depends(get_owned_research_task)],
 )
+example_router = APIRouter(tags=["phenomena"])
+
+
+@example_router.get(
+    "/api/phenomenon-examples",
+    operation_id="list_phenomenon_examples",
+    response_model=PhenomenonExamplePageResponse,
+)
+def list_phenomenon_examples(
+    service: PhenomenonServiceDependency,
+) -> PhenomenonExamplePageResponse:
+    return PhenomenonExamplePageResponse(
+        items=[
+            PhenomenonExampleResponse(
+                example_id=item.example_id,
+                title=item.title,
+                phenomenon=item.phenomenon,
+                research_intent=item.research_intent,
+                context=item.context,
+            )
+            for item in service.list_examples()
+        ]
+    )
 
 
 @router.post(

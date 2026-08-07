@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite import (
     PhenomenonCandidateVersionRow,
+    PhenomenonExampleRow,
     PhenomenonStateRow,
 )
 from qunxue_api.modules.research_intake import (
@@ -18,6 +19,7 @@ from qunxue_api.modules.research_intake import (
     PhenomenonCandidateStatus,
     PhenomenonEvidenceRefSnapshot,
     PhenomenonEvidenceVerificationStatus,
+    PhenomenonExample,
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     PhenomenonRepository,
@@ -31,6 +33,21 @@ def _as_utc(value: datetime) -> datetime:
 class SqlitePhenomenonRepository(PhenomenonRepository):
     def __init__(self, session: Session) -> None:
         self._session = session
+
+    def list_examples(self) -> list[PhenomenonExample]:
+        rows = self._session.scalars(
+            select(PhenomenonExampleRow).order_by(PhenomenonExampleRow.position)
+        )
+        return [
+            PhenomenonExample(
+                example_id=row.example_id,
+                title=row.title,
+                phenomenon=row.phenomenon,
+                research_intent=row.research_intent,
+                context=row.context,
+            )
+            for row in rows
+        ]
 
     def submit_direct(
         self,
