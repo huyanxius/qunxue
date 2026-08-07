@@ -116,6 +116,7 @@ def test_direct_input_can_be_edited_confirmed_and_restored(
 
     assert restored_candidate.status_code == 200
     assert restored_candidate.json()["status"] == "confirmed"
+    assert restored_candidate.json()["content_origin"] == "user_modified"
     assert restored_snapshots.status_code == 200
     assert restored_snapshots.json()["snapshots"] == [snapshot]
     assert navigation.status_code == 200

@@ -100,6 +100,8 @@ def test_pasted_material_returns_traceable_candidates_and_restores_the_run(
     restored = client.get(f"/api/material-intake-runs/{run['run_id']}")
     assert restored.status_code == 200
     assert restored.json() == run
+    navigation = client.get(f"/api/research-tasks/{task_id}/navigation")
+    assert navigation.json()["current_material_intake_run_id"] == run["run_id"]
 
 
 def test_docx_material_is_parsed_without_persisting_the_original_file(
