@@ -1855,7 +1855,11 @@
             "type": "string"
           },
           "runtime_mode": {
-            "const": "inline_demo",
+            "enum": [
+              "mock",
+              "base",
+              "sft"
+            ],
             "title": "Runtime Mode",
             "type": "string"
           },

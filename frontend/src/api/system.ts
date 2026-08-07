@@ -3,16 +3,20 @@ import { ApiRequestError } from './error'
 import { getHealth, type HealthResponse } from './generated'
 
 export interface SystemHealth {
+  readonly capability: 'unavailable' | 'mock' | 'base' | 'sft'
   readonly contractVersion: string
+  readonly knowledgeReleaseId: string | null
   readonly persistence: 'sqlite'
-  readonly runtimeMode: 'inline_demo'
+  readonly runtimeMode: 'mock' | 'base' | 'sft'
   readonly service: string
   readonly status: 'ok'
 }
 
 function toSystemHealth(response: HealthResponse): SystemHealth {
   return {
+    capability: response.capability,
     contractVersion: response.contract_version,
+    knowledgeReleaseId: response.knowledge_release_id,
     persistence: response.persistence,
     runtimeMode: response.runtime_mode,
     service: response.service,

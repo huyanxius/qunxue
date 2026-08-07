@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,7 +29,7 @@ def is_sqlite_memory_url(database_url: str) -> bool:
 class Settings(BaseSettings):
     app_name: str = "群学致知 API"
     contract_version: str = "2026-07-foundation"
-    runtime_mode: str = "inline_demo"
+    runtime_mode: Literal["mock", "base", "sft"] = "mock"
     database_url: str = DEFAULT_DATABASE_URL
 
     model_config = SettingsConfigDict(
