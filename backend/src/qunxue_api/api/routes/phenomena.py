@@ -1,23 +1,42 @@
+from dataclasses import replace
+from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
-from qunxue_api.api.contracts.common import ErrorResponse
+from qunxue_api.api.contracts.common import (
+    ErrorResponse,
+    ModelCapability,
+    ModelMetadata,
+    TraceMetadata,
+)
 from qunxue_api.api.contracts.phenomena import (
     ConfirmPhenomenonCandidateRequest,
     DirectInputRequest,
     EntryInputResponse,
     ExtractPhenomenonCandidatesRequest,
     MaterialInputRequest,
+    PhenomenonCandidateAction,
     PhenomenonCandidatePageResponse,
     PhenomenonCandidateResponse,
+    PhenomenonEvidenceReferenceResponse,
+    PhenomenonSnapshotAction,
     PhenomenonSnapshotPageResponse,
     PhenomenonSnapshotResponse,
     UpdatePhenomenonCandidateRequest,
 )
-from qunxue_api.api.dependencies import get_owned_research_task
+from qunxue_api.api.dependencies import PhenomenonServiceDependency, get_owned_research_task
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
+from qunxue_api.modules.research_intake import (
+    ConfirmedPhenomenonSnapshot,
+    EntryInputType,
+    PhenomenonCandidate,
+    PhenomenonCandidateStatus,
+    PhenomenonEvidenceRefSnapshot,
+    PhenomenonEvidenceVerificationStatus,
+    PhenomenonModelSnapshot,
+)
 
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}",
@@ -37,8 +56,23 @@ def submit_direct_input(
     task_id: UUID,
     payload: DirectInputRequest,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    service: PhenomenonServiceDependency,
+) -> EntryInputResponse:
+    direct = service.submit_direct(
+        task_id=task_id,
+        phenomenon=payload.phenomenon,
+        research_intent=payload.research_intent,
+        context=payload.context,
+    )
+    return EntryInputResponse(
+        input_id=direct.input_id,
+        task_id=direct.task_id,
+        entry_type=EntryInputType.DIRECT_INPUT,
+        version=direct.version,
+        allowed_actions=["extract_phenomenon_candidates"],
+        source_ref_ids=list(direct.source_ref_ids),
+        accepted_at=direct.accepted_at,
+    )
 
 
 @router.post(
@@ -65,8 +99,61 @@ def extract_phenomenon_candidates(
     task_id: UUID,
     payload: ExtractPhenomenonCandidatesRequest,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    request: Request,
+    service: PhenomenonServiceDependency,
+) -> PhenomenonCandidatePageResponse:
+    direct = service.input_for_task(task_id)
+    if direct is None:
+        raise HTTPException(status_code=409)
+    existing = service.progress(task_id).candidate
+    if existing is None:
+        draft = request.app.state.model_gateway.build(
+            task_id=task_id,
+            raw_input=direct.phenomenon,
+            research_intent=direct.research_intent,
+            context=direct.context,
+        )
+        draft = replace(
+            draft,
+            source_ref_ids=tuple(
+                dict.fromkeys((*draft.source_ref_ids, "input:direct"))
+            ),
+        )
+        invocation = request.app.state.model_invocation_recorder.list_for_task(task_id)[-1]
+        evidence = PhenomenonEvidenceRefSnapshot(
+            evidence_ref_id="input:direct",
+            excerpt=direct.phenomenon,
+            source_ref_id="input:direct",
+            source_description="用户直接输入",
+            locator=None,
+            verification_status=PhenomenonEvidenceVerificationStatus.USER_ATTESTED,
+            use_boundary="仅代表用户陈述，尚未经外部来源核验。",
+        )
+        existing = service.save_candidate(
+            task_id=task_id,
+            draft=draft,
+            evidence_refs=(evidence,),
+            model=PhenomenonModelSnapshot(
+                provider=invocation.provider,
+                model_version=invocation.model_version,
+                capability=invocation.capability_tier,
+                degraded=invocation.degraded,
+                knowledge_release_id=invocation.knowledge_release_id,
+                trace_id=invocation.trace_id,
+                request_id=invocation.request_id,
+                contract_version=invocation.contract_version,
+            ),
+        )
+    response = _candidate_response(existing)
+    return PhenomenonCandidatePageResponse(
+        task_id=task_id,
+        version=existing.version,
+        allowed_actions=list(response.allowed_actions),
+        candidates=[response],
+        stable_order=[existing.candidate_id],
+        next_cursor=None,
+        model=response.model,
+    )
 
 
 @router.get(
@@ -75,8 +162,15 @@ def extract_phenomenon_candidates(
     response_model=PhenomenonCandidateResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def get_phenomenon_candidate(task_id: UUID, candidate_id: UUID) -> JSONResponse:
-    return not_implemented_response()
+def get_phenomenon_candidate(
+    task_id: UUID,
+    candidate_id: UUID,
+    service: PhenomenonServiceDependency,
+) -> PhenomenonCandidateResponse:
+    candidate = service.get_candidate(task_id, candidate_id)
+    if candidate is None:
+        raise HTTPException(status_code=404)
+    return _candidate_response(candidate)
 
 
 @router.patch(
@@ -90,8 +184,19 @@ def update_phenomenon_candidate(
     candidate_id: UUID,
     payload: UpdatePhenomenonCandidateRequest,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    service: PhenomenonServiceDependency,
+) -> PhenomenonCandidateResponse:
+    candidate = service.update_candidate(
+        task_id=task_id,
+        candidate_id=candidate_id,
+        expected_version=payload.expected_version,
+        phenomenon=payload.phenomenon,
+        research_intent=payload.research_intent,
+        context=payload.context,
+    )
+    if candidate is None:
+        raise HTTPException(status_code=409)
+    return _candidate_response(candidate)
 
 
 @router.post(
@@ -105,8 +210,19 @@ def confirm_phenomenon_candidate(
     candidate_id: UUID,
     payload: ConfirmPhenomenonCandidateRequest,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    service: PhenomenonServiceDependency,
+) -> PhenomenonSnapshotResponse:
+    result = service.confirm_candidate(
+        task_id=task_id,
+        candidate_id=candidate_id,
+        expected_version=payload.expected_version,
+    )
+    if result is None:
+        raise HTTPException(status_code=409)
+    snapshot, confirmed_at = result
+    candidate = service.get_candidate(task_id, candidate_id)
+    assert candidate is not None
+    return _snapshot_response(snapshot, candidate, confirmed_at)
 
 
 @router.get(
@@ -117,7 +233,94 @@ def confirm_phenomenon_candidate(
 )
 def list_phenomenon_snapshots(
     task_id: UUID,
+    service: PhenomenonServiceDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
-) -> JSONResponse:
-    return not_implemented_response()
+) -> PhenomenonSnapshotPageResponse:
+    progress = service.progress(task_id)
+    snapshots = []
+    if progress.confirmed is not None and progress.confirmed_at is not None:
+        assert progress.candidate is not None
+        snapshots.append(
+            _snapshot_response(
+                progress.confirmed,
+                progress.candidate,
+                progress.confirmed_at,
+            )
+        )
+    return PhenomenonSnapshotPageResponse(
+        task_id=task_id,
+        version=progress.candidate.version if progress.candidate else 1,
+        allowed_actions=[PhenomenonSnapshotAction.START_MATCHING] if snapshots else [],
+        snapshots=snapshots,
+        next_cursor=None,
+    )
+
+
+def _evidence_response(
+    evidence: PhenomenonEvidenceRefSnapshot,
+) -> PhenomenonEvidenceReferenceResponse:
+    return PhenomenonEvidenceReferenceResponse(**{
+        "evidence_ref_id": evidence.evidence_ref_id,
+        "excerpt": evidence.excerpt,
+        "source_ref_id": evidence.source_ref_id,
+        "source_description": evidence.source_description,
+        "locator": evidence.locator,
+        "verification_status": evidence.verification_status,
+        "use_boundary": evidence.use_boundary,
+    })
+
+
+def _model_response(model: PhenomenonModelSnapshot) -> ModelMetadata:
+    return ModelMetadata(
+        provider=model.provider,
+        model_version=model.model_version,
+        capability=ModelCapability(model.capability),
+        degraded=model.degraded,
+        knowledge_release_id=model.knowledge_release_id,
+        trace=TraceMetadata(
+            trace_id=model.trace_id,
+            request_id=model.request_id,
+            contract_version=model.contract_version,
+        ),
+    )
+
+
+def _candidate_response(candidate: PhenomenonCandidate) -> PhenomenonCandidateResponse:
+    actions = [] if candidate.status is PhenomenonCandidateStatus.CONFIRMED else [
+        PhenomenonCandidateAction.UPDATE,
+        PhenomenonCandidateAction.CONFIRM,
+    ]
+    return PhenomenonCandidateResponse(
+        candidate_id=candidate.candidate_id,
+        task_id=candidate.task_id,
+        version=candidate.version,
+        status=candidate.status.value,
+        allowed_actions=actions,
+        phenomenon=candidate.phenomenon,
+        research_intent=candidate.research_intent,
+        context=candidate.context,
+        source_ref_ids=list(candidate.source_ref_ids),
+        evidence_refs=[_evidence_response(item) for item in candidate.evidence_refs],
+        model=_model_response(candidate.model),
+    )
+
+
+def _snapshot_response(
+    snapshot: ConfirmedPhenomenonSnapshot,
+    candidate: PhenomenonCandidate,
+    confirmed_at: datetime,
+) -> PhenomenonSnapshotResponse:
+    return PhenomenonSnapshotResponse(
+        phenomenon_query_id=snapshot.phenomenon_query_id,
+        task_id=snapshot.task_id,
+        version=snapshot.version,
+        status="confirmed",
+        allowed_actions=[PhenomenonSnapshotAction.START_MATCHING],
+        phenomenon=snapshot.phenomenon,
+        research_intent=snapshot.research_intent,
+        context=snapshot.context,
+        source_ref_ids=list(candidate.source_ref_ids),
+        evidence_refs=[_evidence_response(item) for item in snapshot.evidence_refs],
+        confirmed_at=confirmed_at,
+    )

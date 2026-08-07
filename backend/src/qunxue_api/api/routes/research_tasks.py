@@ -13,6 +13,7 @@ from qunxue_api.api.contracts.research_tasks import (
     ResearchTaskNavigationAction,
     ResearchTaskNavigationResponse,
     ResearchTaskPageResponse,
+    ResearchTaskPhenomenonSummaryResponse,
     ResearchTaskResponse,
     ResearchTaskStage,
     ResearchTraceResponse,
@@ -20,10 +21,11 @@ from qunxue_api.api.contracts.research_tasks import (
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
     OwnedResearchTaskDependency,
+    PhenomenonServiceDependency,
     ResearchTaskServiceDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
-from qunxue_api.modules.research_intake import ResearchTask
+from qunxue_api.modules.research_intake import PhenomenonProgress, ResearchTask
 
 router = APIRouter(
     prefix="/api/research-tasks",
@@ -77,13 +79,17 @@ def get_research_task(
 )
 def list_research_tasks(
     service: ResearchTaskServiceDependency,
+    phenomenon_service: PhenomenonServiceDependency,
     current: CurrentSessionDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
 ) -> ResearchTaskPageResponse:
     tasks = service.list_for_user(current.user.user_id, limit=limit)
     return ResearchTaskPageResponse(
-        items=[_navigation_response(task) for task in tasks],
+        items=[
+            _navigation_response(task, phenomenon_service.progress(task.task_id))
+            for task in tasks
+        ],
         next_cursor=None,
     )
 
@@ -97,10 +103,11 @@ def list_research_tasks(
 def get_research_task_navigation(
     task_id: UUID,
     owned_task: OwnedResearchTaskDependency,
+    phenomenon_service: PhenomenonServiceDependency,
 ) -> ResearchTaskNavigationResponse:
     if owned_task.task_id != task_id:
         raise RuntimeError("owned task dependency returned a different task")
-    return _navigation_response(owned_task)
+    return _navigation_response(owned_task, phenomenon_service.progress(task_id))
 
 
 @router.delete(
@@ -152,20 +159,44 @@ def export_research_trace(
     return not_implemented_response()
 
 
-def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
-    """现有持久化任务只有 draft 状态，因此进入点必须忠实落在现象输入。"""
+def _navigation_response(
+    task: ResearchTask,
+    progress: PhenomenonProgress,
+) -> ResearchTaskNavigationResponse:
+    if progress.confirmed is not None:
+        stage = ResearchTaskStage.THEORY_MATCHING
+        status = ResearchTaskLifecycleStatus.IN_PROGRESS
+        actions = [ResearchTaskNavigationAction.START_MATCHING]
+        summary = ResearchTaskPhenomenonSummaryResponse(
+            phenomenon_query_id=progress.confirmed.phenomenon_query_id,
+            version=progress.confirmed.version,
+            phenomenon=progress.confirmed.phenomenon,
+            research_intent=progress.confirmed.research_intent,
+        )
+    elif progress.candidate is not None:
+        stage = ResearchTaskStage.PHENOMENON_CONFIRMATION
+        status = ResearchTaskLifecycleStatus.IN_PROGRESS
+        actions = [ResearchTaskNavigationAction.CONFIRM_PHENOMENON]
+        summary = None
+    else:
+        stage = ResearchTaskStage.PHENOMENON_INPUT
+        status = ResearchTaskLifecycleStatus.DRAFT
+        actions = [ResearchTaskNavigationAction.SUBMIT_PHENOMENON]
+        summary = None
 
     return ResearchTaskNavigationResponse(
         task_id=task.task_id,
         entry_type=task.entry_type,
-        status=ResearchTaskLifecycleStatus.DRAFT,
-        current_stage=ResearchTaskStage.PHENOMENON_INPUT,
+        status=status,
+        current_stage=stage,
         version=task.version,
-        allowed_actions=[ResearchTaskNavigationAction.SUBMIT_PHENOMENON],
+        allowed_actions=actions,
         seed_theory_id=None,
-        phenomenon_summary=None,
+        phenomenon_summary=summary,
         adopted_theory_count=0,
-        current_phenomenon_candidate_id=None,
+        current_phenomenon_candidate_id=(
+            progress.candidate.candidate_id if progress.candidate else None
+        ),
         current_match_run_id=None,
         current_framework_id=None,
         created_at=task.created_at,
