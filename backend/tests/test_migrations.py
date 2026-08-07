@@ -145,7 +145,7 @@ def test_backend_env_file_is_independent_of_working_directory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     dotenv_path = tmp_path / ".env"
-    dotenv_path.write_text("QUNXUE_RUNTIME_MODE=dotenv-marker\n", encoding="utf-8")
+    dotenv_path.write_text("QUNXUE_RUNTIME_MODE=sft\n", encoding="utf-8")
     monkeypatch.delenv("QUNXUE_RUNTIME_MODE", raising=False)
 
     assert Settings.model_config["env_file"] == BACKEND_ROOT / ".env"
@@ -155,8 +155,8 @@ def test_backend_env_file_is_independent_of_working_directory(
     monkeypatch.chdir(BACKEND_ROOT)
     settings_from_backend = Settings()
 
-    assert settings_from_repository_root.runtime_mode == "dotenv-marker"
-    assert settings_from_backend.runtime_mode == "dotenv-marker"
+    assert settings_from_repository_root.runtime_mode == "sft"
+    assert settings_from_backend.runtime_mode == "sft"
 
 
 def test_relative_database_override_is_independent_of_working_directory(

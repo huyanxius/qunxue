@@ -1064,7 +1064,7 @@ export type HealthResponse = {
     /**
      * Runtime Mode
      */
-    runtime_mode: 'inline_demo';
+    runtime_mode: 'mock' | 'base' | 'sft';
     /**
      * Service
      */

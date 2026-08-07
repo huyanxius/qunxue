@@ -37,8 +37,19 @@ function RouteLocation() {
 }
 
 describe('App routes', () => {
+  it('provides distinct desktop and mobile navigation surfaces', async () => {
+    renderRoute('/knowledge')
+
+    expect(
+      await screen.findByRole('navigation', { name: '桌面主导航' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: '移动主导航' }),
+    ).toBeInTheDocument()
+  })
+
   it.each([
-    ['/', '把一个模糊的现象，留成可以追问的研究起点。'],
+    ['/', '从社会现象找到可比较理论，再形成研究框架。'],
     ['/knowledge', '可视化知识库'],
     ['/knowledge/knowledge-field-theory', '知识条目'],
     ['/research/new', '新建研究任务'],
@@ -206,7 +217,7 @@ describe('App routes', () => {
     fireEvent.click(screen.getByRole('link', { name: '返回首页' }))
 
     expect(
-      await screen.findByRole('link', { name: '进入可视化知识库' }),
+      await screen.findByRole('link', { name: '浏览知识库' }),
     ).toHaveAttribute('href', '/knowledge')
   })
 })
