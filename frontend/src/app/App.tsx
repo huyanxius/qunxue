@@ -12,6 +12,7 @@ import type { ReactNode } from 'react'
 
 import {
   LoginPage,
+  MyResearchPage,
   RegisterPage,
   useAccount,
 } from '../modules/account'
@@ -162,6 +163,19 @@ function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
   )
 }
 
+function MyResearchRoute() {
+  return (
+    <PageShell>
+      <PageTitle
+        eyebrow="ACCOUNT / MY"
+        title="我的研究"
+        lede="按最近更新时间继续研究；删除操作不可恢复。"
+      />
+      <PageContent><MyResearchPage /></PageContent>
+    </PageShell>
+  )
+}
+
 function ProtectedRoute({
   sessionState,
   children,
@@ -203,7 +217,7 @@ export function AppRoutes({
       <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
-      <Route path="/my" element={protectedRoute(<PlaceholderPage eyebrow="ACCOUNT / MY" title="我的研究" />)} />
+      <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />
     </Routes>
   )
 }

@@ -16,3 +16,10 @@ export type AccountSessionState =
   | { status: 'anonymous' }
   | { status: 'expired' }
   | { status: 'error' }
+
+export type MyResearchItem = {
+  taskId: string
+  stageLabel: string
+  entryPath: string
+  updatedAt: string
+}

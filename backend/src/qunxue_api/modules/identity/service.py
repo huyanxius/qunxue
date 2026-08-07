@@ -1,7 +1,7 @@
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-import re
 from secrets import token_urlsafe
 from uuid import UUID, uuid4
 

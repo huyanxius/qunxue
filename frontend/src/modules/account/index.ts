@@ -1,3 +1,9 @@
 export { AccountProvider, useAccount } from './AccountProvider'
 export { LoginPage, RegisterPage } from './AccountPages'
-export type { AccountSession, AccountSessionState, AccountUser } from './types'
+export { MyResearchPage } from './MyResearchPage'
+export type {
+  AccountSession,
+  AccountSessionState,
+  AccountUser,
+  MyResearchItem,
+} from './types'

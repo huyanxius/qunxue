@@ -88,3 +88,73 @@
   color: var(--accent);
   text-underline-offset: 4px;
 }
+
+.my-research-list {
+  display: grid;
+  gap: 16px;
+}
+
+.my-research-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 24px;
+  padding: 20px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.my-research-stage,
+.my-research-time,
+.delete-warning {
+  margin: 0;
+}
+
+.my-research-stage {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.my-research-time {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.my-research-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.text-action,
+.danger-action {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.danger-action,
+.delete-warning {
+  color: var(--danger);
+}
+
+.delete-warning {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .my-research-item {
+    grid-template-columns: 1fr;
+  }
+
+  .my-research-actions {
+    justify-content: flex-start;
+  }
+}

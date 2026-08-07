@@ -116,6 +116,7 @@ def test_research_tasks_are_scoped_to_the_current_user_and_hard_deleted(
     client.cookies.clear()
     register(client, "second@example.com")
     assert client.get(f"/api/research-tasks/{task_id}").status_code == 404
+    assert client.get(f"/api/research-tasks/{task_id}/navigation").status_code == 404
     assert client.post(
         f"/api/research-tasks/{task_id}/inputs/direct",
         headers={"Idempotency-Key": str(uuid4())},
@@ -135,6 +136,13 @@ def test_research_tasks_are_scoped_to_the_current_user_and_hard_deleted(
     listed = client.get("/api/research-tasks")
     assert listed.status_code == 200
     assert [item["task_id"] for item in listed.json()["items"]] == [task_id]
+    assert listed.json()["items"][0]["status"] == "draft"
+    assert listed.json()["items"][0]["current_stage"] == "phenomenon_input"
+    assert listed.json()["items"][0]["allowed_actions"] == ["submit_phenomenon"]
+
+    navigation = client.get(f"/api/research-tasks/{task_id}/navigation")
+    assert navigation.status_code == 200
+    assert navigation.json() == listed.json()["items"][0]
 
     deleted = client.delete(
         f"/api/research-tasks/{task_id}",

@@ -1,4 +1,18 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
+
+
+def _authenticate(client: TestClient) -> None:
+    response = client.post(
+        "/api/session/register",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "email": f"{uuid4()}@example.com",
+            "password": "research-passphrase",
+        },
+    )
+    assert response.status_code == 201
 
 
 def test_ten_page_contract_registers_the_required_route_surface(
@@ -82,11 +96,11 @@ def test_stub_and_validation_failures_use_the_stable_error_envelope(
     missing = client.get("/api/not-a-route")
     wrong_method = client.put("/api/session")
 
-    assert stub.status_code == 501
+    assert stub.status_code == 401
     assert stub.json() == {
         "error": {
-            "code": "not_implemented",
-            "message": "This contract is frozen but not implemented.",
+            "code": "unauthenticated",
+            "message": "请先登录。",
             "trace_id": stub.json()["error"]["trace_id"],
         }
     }
@@ -287,8 +301,15 @@ def test_knowledge_results_keep_directory_position_and_stable_filters(
 def test_material_input_rejects_missing_authority_acknowledgements(
     client: TestClient,
 ) -> None:
+    _authenticate(client)
+    task = client.post(
+        "/api/research-tasks",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"entry_type": "direct_input"},
+    )
+    assert task.status_code == 201
     response = client.post(
-        "/api/research-tasks/00000000-0000-0000-0000-000000000001/inputs/material",
+        f"/api/research-tasks/{task.json()['task_id']}/inputs/material",
         headers={"Idempotency-Key": "material-contract-key"},
         json={
             "materials": [
@@ -382,6 +403,7 @@ def test_match_candidates_are_dynamic_ordered_and_retryable(client: TestClient) 
         schema["components"]["schemas"]["ConfirmedTheoryPlanResponse"]["required"]
     )
 
+    _authenticate(client)
     invalid = client.get(
         "/api/match-runs/00000000-0000-0000-0000-000000000001/candidates",
         params={"limit": 9},
