@@ -79,6 +79,14 @@ class ResearchTask:
     idempotency_key: str
     created_at: datetime
     updated_at: datetime
+    phenomenon_query_id: UUID | None = None
+    phenomenon_version: int | None = None
+    phenomenon_summary: str | None = None
+    phenomenon_research_intent: str | None = None
+    adopted_theory_count: int = 0
+    current_phenomenon_candidate_id: UUID | None = None
+    current_match_run_id: UUID | None = None
+    current_framework_id: UUID | None = None
 
     @property
     def allowed_actions(self) -> tuple[ResearchTaskAction, ...]:

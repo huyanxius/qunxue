@@ -13,6 +13,7 @@ from qunxue_api.api.contracts.research_tasks import (
     ResearchTaskNavigationAction,
     ResearchTaskNavigationResponse,
     ResearchTaskPageResponse,
+    ResearchTaskPhenomenonSummaryResponse,
     ResearchTaskResponse,
     ResearchTaskStage,
     ResearchTraceResponse,
@@ -186,6 +187,18 @@ def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
         ),
     }
     lifecycle_status, current_stage, action = navigation_by_status[task.status]
+    phenomenon_summary = None
+    if (
+        task.phenomenon_query_id is not None
+        and task.phenomenon_version is not None
+        and task.phenomenon_summary is not None
+    ):
+        phenomenon_summary = ResearchTaskPhenomenonSummaryResponse(
+            phenomenon_query_id=task.phenomenon_query_id,
+            version=task.phenomenon_version,
+            phenomenon=task.phenomenon_summary,
+            research_intent=task.phenomenon_research_intent,
+        )
 
     return ResearchTaskNavigationResponse(
         task_id=task.task_id,
@@ -195,11 +208,11 @@ def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
         version=task.version,
         allowed_actions=[action],
         seed_theory_id=None,
-        phenomenon_summary=None,
-        adopted_theory_count=0,
-        current_phenomenon_candidate_id=None,
-        current_match_run_id=None,
-        current_framework_id=None,
+        phenomenon_summary=phenomenon_summary,
+        adopted_theory_count=task.adopted_theory_count,
+        current_phenomenon_candidate_id=task.current_phenomenon_candidate_id,
+        current_match_run_id=task.current_match_run_id,
+        current_framework_id=task.current_framework_id,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )
