@@ -46,6 +46,7 @@ class PhenomenonCandidateDraft:
 @dataclass(frozen=True, slots=True)
 class ResearchTask:
     task_id: UUID
+    user_id: UUID
     entry_type: EntryType
     status: ResearchTaskStatus
     version: int
@@ -64,6 +65,7 @@ class ResearchTask:
         cls,
         *,
         task_id: UUID,
+        user_id: UUID,
         entry_type: EntryType,
         idempotency_key: str,
         now: datetime,
@@ -72,6 +74,7 @@ class ResearchTask:
             now = now.replace(tzinfo=UTC)
         return cls(
             task_id=task_id,
+            user_id=user_id,
             entry_type=entry_type,
             status=ResearchTaskStatus.DRAFT,
             version=1,

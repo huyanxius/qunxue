@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorResponse
@@ -16,11 +16,16 @@ from qunxue_api.api.contracts.frameworks import (
     SubmitAuditResolutionsRequest,
     UpdateFrameworkRequest,
 )
+from qunxue_api.api.dependencies import (
+    OwnedResearchTaskDependency,
+    get_current_session,
+)
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 
 router = APIRouter(
     tags=["frameworks"],
     responses={422: {"model": ErrorResponse}},
+    dependencies=[Depends(get_current_session)],
 )
 
 
@@ -32,6 +37,7 @@ router = APIRouter(
 )
 def create_framework(
     task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
     payload: CreateFrameworkRequest,
     _idempotency_key: IdempotencyKey,
 ) -> JSONResponse:

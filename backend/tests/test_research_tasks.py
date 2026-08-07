@@ -5,7 +5,17 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 
+def authenticate(client: TestClient) -> None:
+    response = client.post(
+        "/api/session/register",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": f"{uuid4()}@example.com", "password": "research-passphrase"},
+    )
+    assert response.status_code == 201
+
+
 def test_create_and_restore_research_task(client: TestClient) -> None:
+    authenticate(client)
     idempotency_key = str(uuid4())
     created = client.post(
         "/api/research-tasks",
@@ -25,6 +35,7 @@ def test_create_and_restore_research_task(client: TestClient) -> None:
 
 
 def test_create_is_idempotent(client: TestClient) -> None:
+    authenticate(client)
     headers = {"Idempotency-Key": str(uuid4())}
     first = client.post(
         "/api/research-tasks",
@@ -43,6 +54,7 @@ def test_create_is_idempotent(client: TestClient) -> None:
 
 
 def test_concurrent_create_is_idempotent(client: TestClient) -> None:
+    authenticate(client)
     worker_count = 4
     barrier = Barrier(worker_count)
     headers = {"Idempotency-Key": str(uuid4())}
@@ -64,6 +76,7 @@ def test_concurrent_create_is_idempotent(client: TestClient) -> None:
 
 
 def test_missing_research_task_returns_stable_error(client: TestClient) -> None:
+    authenticate(client)
     task_id = uuid4()
     response = client.get(f"/api/research-tasks/{task_id}")
 

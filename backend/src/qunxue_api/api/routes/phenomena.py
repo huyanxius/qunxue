@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorResponse
@@ -16,12 +16,14 @@ from qunxue_api.api.contracts.phenomena import (
     PhenomenonSnapshotResponse,
     UpdatePhenomenonCandidateRequest,
 )
+from qunxue_api.api.dependencies import get_owned_research_task
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}",
     tags=["phenomena"],
     responses={422: {"model": ErrorResponse}},
+    dependencies=[Depends(get_owned_research_task)],
 )
 
 

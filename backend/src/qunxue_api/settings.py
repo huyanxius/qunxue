@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     contract_version: str = "2026-07-foundation"
     runtime_mode: str = "inline_demo"
     database_url: str = DEFAULT_DATABASE_URL
+    session_cookie_name: str = "qunxue_session"
+    session_ttl_seconds: int = 60 * 60 * 24 * 7
+    session_cookie_secure: bool = False
 
     model_config = SettingsConfigDict(
         env_prefix="QUNXUE_",

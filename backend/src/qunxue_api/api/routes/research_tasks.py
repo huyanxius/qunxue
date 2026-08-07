@@ -13,7 +13,11 @@ from qunxue_api.api.contracts.research_tasks import (
     ResearchTaskResponse,
     ResearchTraceResponse,
 )
-from qunxue_api.api.dependencies import ResearchTaskServiceDependency
+from qunxue_api.api.dependencies import (
+    CurrentSessionDependency,
+    OwnedResearchTaskDependency,
+    ResearchTaskServiceDependency,
+)
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 
 router = APIRouter(
@@ -33,12 +37,14 @@ router = APIRouter(
 def create_research_task(
     payload: CreateResearchTaskRequest,
     service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
     idempotency_key: Annotated[
         str,
         Header(alias="Idempotency-Key", min_length=8, max_length=128),
     ],
 ) -> ResearchTaskResponse:
     task = service.create(
+        user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
     )
@@ -53,9 +59,9 @@ def create_research_task(
 )
 def get_research_task(
     task_id: UUID,
-    service: ResearchTaskServiceDependency,
+    owned_task: OwnedResearchTaskDependency,
 ) -> ResearchTaskResponse:
-    return ResearchTaskResponse.from_domain(service.get(task_id))
+    return ResearchTaskResponse.from_domain(owned_task)
 
 
 @router.get(
@@ -65,10 +71,16 @@ def get_research_task(
     responses={401: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
 def list_research_tasks(
+    service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
-) -> JSONResponse:
-    return not_implemented_response()
+) -> ResearchTaskPageResponse:
+    tasks = service.list_for_user(current.user.user_id, limit=limit)
+    return ResearchTaskPageResponse(
+        items=[ResearchTaskResponse.from_domain(task) for task in tasks],
+        next_cursor=None,
+    )
 
 
 @router.delete(
@@ -80,8 +92,16 @@ def list_research_tasks(
 def delete_research_task(
     task_id: UUID,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
+) -> DeleteResearchTaskResponse:
+    task = service.delete(task_id, user_id=current.user.user_id)
+    return DeleteResearchTaskResponse(
+        task_id=task.task_id,
+        version=task.version + 1,
+        allowed_actions=[],
+        deleted=True,
+    )
 
 
 @router.get(
@@ -92,6 +112,7 @@ def delete_research_task(
 )
 def get_research_trace(
     task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
     cursor: str | None = None,
     limit: int = Query(default=50, ge=1, le=100),
 ) -> JSONResponse:
@@ -104,5 +125,8 @@ def get_research_trace(
     response_model=MarkdownExportResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def export_research_trace(task_id: UUID) -> JSONResponse:
+def export_research_trace(
+    task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
+) -> JSONResponse:
     return not_implemented_response()

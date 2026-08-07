@@ -11,18 +11,24 @@ import {
 import type { ReactNode } from 'react'
 
 import {
+  LoginPage,
+  RegisterPage,
+  useAccount,
+} from '../modules/account'
+import {
   demoKnowledgeDataSource,
   KnowledgeExplorer,
 } from '../modules/knowledge-explorer'
 import { FoundationPage } from './foundation/FoundationPage'
 import { PageContent, PageShell, PageTitle } from './ui/PageShell'
-import { LoadingState } from './ui/States'
+import { ErrorState, LoadingState } from './ui/States'
 
 export type SessionState =
   | { status: 'loading' }
   | { status: 'authenticated' }
   | { status: 'anonymous' }
   | { status: 'expired' }
+  | { status: 'error' }
 
 type AppRoutesProps = {
   sessionState?: SessionState
@@ -99,16 +105,58 @@ function loginRedirect(value: string | null) {
   }
 }
 
-function LoginRoute() {
+function LoginRoute({ sessionState }: { sessionState: SessionState }) {
   const { search } = useLocation()
+  const navigate = useNavigate()
+  const account = useAccount()
   const destination = loginRedirect(new URLSearchParams(search).get('redirect'))
+
+  if (sessionState.status === 'authenticated') {
+    return <Navigate replace to={destination} />
+  }
 
   return (
     <PageShell>
-      <PageTitle eyebrow="ACCOUNT / LOGIN" title="登录" />
+      <PageTitle
+        eyebrow="ACCOUNT / LOGIN"
+        title="登录"
+        lede="继续你的研究，或回到刚才准备查看的页面。"
+      />
       <PageContent>
-        <p className="page-placeholder">登录能力将在会话契约完成后接入。</p>
-        <Link className="text-link" to={destination}>登录成功后继续</Link>
+        <LoginPage
+          onLogin={account.login}
+          onAuthenticated={() => navigate(destination, { replace: true })}
+          registerHref={`/register?redirect=${encodeURIComponent(destination)}`}
+          sessionExpired={sessionState.status === 'expired'}
+        />
+      </PageContent>
+    </PageShell>
+  )
+}
+
+function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
+  const { search } = useLocation()
+  const navigate = useNavigate()
+  const account = useAccount()
+  const destination = loginRedirect(new URLSearchParams(search).get('redirect'))
+
+  if (sessionState.status === 'authenticated') {
+    return <Navigate replace to={destination} />
+  }
+
+  return (
+    <PageShell>
+      <PageTitle
+        eyebrow="ACCOUNT / REGISTER"
+        title="注册"
+        lede="研究内容长期保存在你的账号下；你可以随时手动删除一项研究。"
+      />
+      <PageContent>
+        <RegisterPage
+          onRegister={account.register}
+          onAuthenticated={() => navigate(destination, { replace: true })}
+          loginHref={`/login?redirect=${encodeURIComponent(destination)}`}
+        />
       </PageContent>
     </PageShell>
   )
@@ -127,16 +175,21 @@ function ProtectedRoute({
     return <LoadingState message="正在确认登录状态" />
   }
   if (sessionState.status === 'authenticated') return children
+  if (sessionState.status === 'error') {
+    return <ErrorState detail="暂时无法确认登录状态，请稍后重试。" />
+  }
 
   const redirect = `${location.pathname}${location.search}${location.hash}`
   return <Navigate replace to={`/login?redirect=${encodeURIComponent(redirect)}`} />
 }
 
 export function AppRoutes({
-  sessionState = { status: 'anonymous' },
+  sessionState,
 }: AppRoutesProps) {
+  const account = useAccount()
+  const resolvedSessionState: SessionState = sessionState ?? account.sessionState
   const protectedRoute = (element: ReactNode) => (
-    <ProtectedRoute sessionState={sessionState}>{element}</ProtectedRoute>
+    <ProtectedRoute sessionState={resolvedSessionState}>{element}</ProtectedRoute>
   )
 
   return (
@@ -148,8 +201,8 @@ export function AppRoutes({
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / PHENOMENON" title="确认现象" />)} />
       <Route path="/research/:task_id/match" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / MATCH" title="匹配理论" />)} />
       <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
-      <Route path="/login" element={<LoginRoute />} />
-      <Route path="/register" element={<PlaceholderPage eyebrow="ACCOUNT / REGISTER" title="注册" />} />
+      <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
+      <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/my" element={protectedRoute(<PlaceholderPage eyebrow="ACCOUNT / MY" title="我的研究" />)} />
     </Routes>
   )

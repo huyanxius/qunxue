@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorResponse
@@ -17,11 +17,16 @@ from qunxue_api.api.contracts.matching import (
     TheoryDecisionPageResponse,
     TheoryDecisionSetResponse,
 )
+from qunxue_api.api.dependencies import (
+    OwnedResearchTaskDependency,
+    get_current_session,
+)
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 
 router = APIRouter(
     tags=["matching"],
     responses={422: {"model": ErrorResponse}},
+    dependencies=[Depends(get_current_session)],
 )
 
 
@@ -33,6 +38,7 @@ router = APIRouter(
 )
 def create_match_run(
     task_id: UUID,
+    _owned_task: OwnedResearchTaskDependency,
     payload: CreateMatchRunRequest,
     _idempotency_key: IdempotencyKey,
 ) -> JSONResponse:
