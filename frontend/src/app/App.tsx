@@ -21,6 +21,10 @@ import {
   KnowledgeExplorer,
 } from '../modules/knowledge-explorer'
 import { FoundationPage } from './foundation/FoundationPage'
+import {
+  NewResearchPage,
+  PhenomenonWorkspace,
+} from '../modules/socio-match-workspace'
 import { PageContent, PageShell, PageTitle } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 
@@ -176,6 +180,40 @@ function MyResearchRoute() {
   )
 }
 
+function NewResearchRoute() {
+  const navigate = useNavigate()
+  return (
+    <PageShell>
+      <PageTitle
+        eyebrow="RESEARCH / NEW"
+        title="新建研究任务"
+        lede="先留下你观察到的现象，再决定是否确认演示 AI 提出的候选。"
+      />
+      <PageContent>
+        <NewResearchPage
+          onStarted={(taskId) => navigate(`/research/${taskId}/phenomenon`)}
+        />
+      </PageContent>
+    </PageShell>
+  )
+}
+
+function PhenomenonRoute() {
+  const { task_id: taskId } = useParams<{ task_id: string }>()
+  return (
+    <PageShell>
+      <PageTitle
+        eyebrow="RESEARCH / PHENOMENON"
+        title="确认现象"
+        lede="编辑演示候选；只有你的确认会形成后续匹配可用的现象快照。"
+      />
+      <PageContent>
+        {taskId ? <PhenomenonWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}
+      </PageContent>
+    </PageShell>
+  )
+}
+
 function ProtectedRoute({
   sessionState,
   children,
@@ -211,8 +249,8 @@ export function AppRoutes({
       <Route path="/" element={<FoundationPage />} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
-      <Route path="/research/new" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / NEW" title="新建研究任务" />)} />
-      <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / PHENOMENON" title="确认现象" />)} />
+      <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
+      <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
       <Route path="/research/:task_id/match" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / MATCH" title="匹配理论" />)} />
       <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
