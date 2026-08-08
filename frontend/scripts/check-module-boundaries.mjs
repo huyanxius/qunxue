@@ -19,10 +19,12 @@ export const defaultBoundaryPolicy = Object.freeze({
     'api/system.ts',
     'modules/account/accountApi.ts',
     'modules/knowledge-graph/knowledgeGraphAdapter.ts',
+    'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   moduleApiAdapters: Object.freeze([
     'modules/account/accountApi.ts',
+    'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   appApiAdapters: Object.freeze(['api/system.ts']),
