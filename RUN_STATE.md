@@ -4,6 +4,7 @@
 - M6 stage B: SQLite preview 发布会持久化真实 Markdown、目录与导入溯源；相同内容复用 release，健康检查与当前发布接口返回同一真实 release。下一步：列表、搜索与详情。
 - M6 stage C: 列表、搜索与详情已固定在 release 内；`browse_eligible=false` 不会泄漏。下一步：生成契约并接真实知识浏览前端。
 - M6 stage D: OpenAPI 与生成 SDK 已随真实知识浏览接口同步（`7f8cb68`）；下一步：接入独立知识浏览前端。
+- M6 shared graph baseline: 图谱模块已登记生成 SDK 适配边界（`54aad08`）；图谱线从该基线独立推进，RUN_STATE 由主线串行记录。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
