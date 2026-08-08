@@ -5,6 +5,7 @@
 - M6 stage C: 列表、搜索与详情已固定在 release 内；`browse_eligible=false` 不会泄漏。下一步：生成契约并接真实知识浏览前端。
 - M6 stage D: OpenAPI 与生成 SDK 已随真实知识浏览接口同步（`7f8cb68`）；下一步：接入独立知识浏览前端。
 - M6 shared graph baseline: 图谱模块已登记生成 SDK 适配边界（`54aad08`）；图谱线从该基线独立推进，RUN_STATE 由主线串行记录。
+- M6 shared graph guard: 边界检查允许精确白名单导入生成 DTO，同时仍拒绝模块直连非生成 API（`6125f42`）。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
