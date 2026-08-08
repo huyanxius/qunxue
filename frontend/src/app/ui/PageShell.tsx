@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import type { PropsWithChildren, ReactNode } from 'react'
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useNavigate } from 'react-router'
+
+import { useAccount } from '../../modules/account'
 
 import brandMark from '../../assets/qunxue-brand-mark.svg'
 
@@ -36,6 +39,21 @@ function PrimaryNavigation({
 }
 
 export function PageShell({ children }: PropsWithChildren) {
+  const account = useAccount()
+  const navigate = useNavigate()
+  const [logoutFailed, setLogoutFailed] = useState(false)
+
+  async function logout() {
+    setLogoutFailed(false)
+    try {
+      await account.logout(() => {
+        navigate('/', { replace: true })
+      })
+    } catch {
+      setLogoutFailed(true)
+    }
+  }
+
   return (
     <div className="app-frame">
       <header className="masthead">
@@ -47,6 +65,21 @@ export function PageShell({ children }: PropsWithChildren) {
           </span>
         </Link>
         <span className="masthead__context">社会学理论发现与研究设计</span>
+        <nav className="account-navigation" aria-label="账户导航">
+          {account.sessionState.status === 'authenticated' ? (
+            <>
+              <NavLink className="account-navigation__research" to="/my">我的研究</NavLink>
+              <span className="session-email">{account.sessionState.session.user.email}</span>
+              <button className="nav-action" type="button" onClick={logout}>
+                {logoutFailed ? '退出失败，请重试' : '退出'}
+              </button>
+            </>
+          ) : account.sessionState.status === 'loading' ? (
+            <span className="session-email">确认中</span>
+          ) : (
+            <NavLink to="/login">登录</NavLink>
+          )}
+        </nav>
       </header>
 
       <aside className="desktop-rail">

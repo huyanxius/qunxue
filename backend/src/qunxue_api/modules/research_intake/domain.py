@@ -15,6 +15,11 @@ class EntryInputType(StrEnum):
 
 class ResearchTaskStatus(StrEnum):
     DRAFT = "draft"
+    PHENOMENON_CONFIRMED = "phenomenon_confirmed"
+    MATCH_GENERATING = "match_generating"
+    DECISIONS_RECORDED = "decisions_recorded"
+    FRAMEWORK_DRAFT = "framework_draft"
+    FRAMEWORK_CONFIRMED = "framework_confirmed"
 
 
 class ResearchTaskAction(StrEnum):
@@ -67,12 +72,21 @@ class PhenomenonCandidateDraft:
 @dataclass(frozen=True, slots=True)
 class ResearchTask:
     task_id: UUID
+    user_id: UUID
     entry_type: EntryType
     status: ResearchTaskStatus
     version: int
     idempotency_key: str
     created_at: datetime
     updated_at: datetime
+    phenomenon_query_id: UUID | None = None
+    phenomenon_version: int | None = None
+    phenomenon_summary: str | None = None
+    phenomenon_research_intent: str | None = None
+    adopted_theory_count: int = 0
+    current_phenomenon_candidate_id: UUID | None = None
+    current_match_run_id: UUID | None = None
+    current_framework_id: UUID | None = None
 
     @property
     def allowed_actions(self) -> tuple[ResearchTaskAction, ...]:
@@ -85,6 +99,7 @@ class ResearchTask:
         cls,
         *,
         task_id: UUID,
+        user_id: UUID,
         entry_type: EntryType,
         idempotency_key: str,
         now: datetime,
@@ -93,6 +108,7 @@ class ResearchTask:
             now = now.replace(tzinfo=UTC)
         return cls(
             task_id=task_id,
+            user_id=user_id,
             entry_type=entry_type,
             status=ResearchTaskStatus.DRAFT,
             version=1,

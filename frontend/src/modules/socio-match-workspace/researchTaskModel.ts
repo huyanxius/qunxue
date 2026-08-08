@@ -1,5 +1,11 @@
 export type ResearchTaskEntryType = 'direct_input'
-export type ResearchTaskStatus = 'draft'
+export type ResearchTaskStatus =
+  | 'draft'
+  | 'phenomenon_confirmed'
+  | 'match_generating'
+  | 'decisions_recorded'
+  | 'framework_draft'
+  | 'framework_confirmed'
 export type ResearchTaskAction = 'submit_phenomenon'
 
 /**

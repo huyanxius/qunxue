@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import timedelta
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, status
@@ -15,7 +16,9 @@ from qunxue_api.adapters.model import (
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
+from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.database import Database
+from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -28,6 +31,13 @@ from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import ResearchJourney, ResearchJourneyDependencies
+from qunxue_api.modules.identity import (
+    EmailAlreadyRegistered,
+    IdentityError,
+    IdentityService,
+    InvalidEmail,
+    Unauthenticated,
+)
 from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
@@ -69,6 +79,18 @@ def create_app(
         if journey_dependencies is not None
         else None
     )
+    password_hasher = Argon2PasswordHasher()
+    invalid_password_hash = password_hasher.hash("invalid-account-password")
+
+    @contextmanager
+    def identity_service_scope() -> Iterator[IdentityService]:
+        with resolved_database.session() as session:
+            yield IdentityService(
+                SqliteIdentityRepository(session),
+                password_hasher,
+                invalid_password_hash=invalid_password_hash,
+                session_ttl=timedelta(seconds=resolved_settings.session_ttl_seconds),
+            )
 
     @contextmanager
     def research_task_service_scope() -> Iterator[ResearchTaskService]:
@@ -76,6 +98,7 @@ def create_app(
             yield ResearchTaskService(SqliteResearchTaskRepository(session))
 
     app.state.research_task_service_scope = research_task_service_scope
+    app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)
     app.include_router(research_tasks_router)
@@ -100,6 +123,43 @@ def create_app(
             status_code=status.HTTP_404_NOT_FOUND,
             content=body.model_dump(mode="json"),
         )
+
+    @app.exception_handler(IdentityError)
+    async def handle_identity_error(
+        _request: Request,
+        error: IdentityError,
+    ) -> JSONResponse:
+        if isinstance(error, EmailAlreadyRegistered):
+            status_code = status.HTTP_409_CONFLICT
+        elif isinstance(error, InvalidEmail):
+            status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+        else:
+            status_code = status.HTTP_401_UNAUTHORIZED
+        code = (
+            ErrorCode.UNAUTHENTICATED
+            if status_code == status.HTTP_401_UNAUTHORIZED
+            else ErrorCode.VALIDATION_ERROR
+        )
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=code,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        response = JSONResponse(
+            status_code=status_code,
+            content=body.model_dump(mode="json"),
+        )
+        if isinstance(error, Unauthenticated):
+            response.delete_cookie(
+                resolved_settings.session_cookie_name,
+                path="/",
+                secure=resolved_settings.session_cookie_secure,
+                httponly=True,
+                samesite="lax",
+            )
+        return response
 
     @app.exception_handler(ModelInvocationError)
     async def handle_model_invocation_error(
