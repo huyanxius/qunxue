@@ -59,7 +59,7 @@ export function KnowledgeEntryPage({
     return () => {
       cancelled = true
     }
-  }, [knowledgeId, releaseId])
+  }, [knowledgeId, onReleaseResolved, releaseId])
 
   return (
     <article className="knowledge-explorer knowledge-explorer--entry">
