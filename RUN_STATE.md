@@ -1,5 +1,6 @@
 # RUN_STATE
 
+- M6 stage A: Markdown 解析器已按维度命名 P 条目、保留目录与条目边界；D2/D6 真实源文件解析通过。下一步：持久化 preview 发布快照。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
