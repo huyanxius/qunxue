@@ -1,8 +1,0 @@
-# pandoc 中间文件
-.*.pandoc.md
-
-# 本地 pandoc 二进制（不要入库）
-pandoc_bin/
-
-# 临时文件
-temp_*.md
