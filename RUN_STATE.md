@@ -7,6 +7,7 @@
 - M6 shared graph baseline: 图谱模块已登记生成 SDK 适配边界（`54aad08`）；图谱线从该基线独立推进，RUN_STATE 由主线串行记录。
 - M6 shared graph guard: 边界检查允许精确白名单导入生成 DTO，同时仍拒绝模块直连非生成 API（`6125f42`）。
 - M6 graph adapter: `feat/69-knowledge-graph` 已独立提交 `6293e0f`（审核关系 DTO 投影）；独立 Terra Max 验收通过，未合并，未进入 UI/Cytoscape。
+- M6 graph runtime: Cytoscape `3.34.0` 已固定（`fe6e48b`）；图谱线可从该依赖节点开始画布实现，主线未引入画布或路由。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
