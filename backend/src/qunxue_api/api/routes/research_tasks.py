@@ -21,10 +21,15 @@ from qunxue_api.api.contracts.research_tasks import (
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
     OwnedResearchTaskDependency,
+    PhenomenonServiceDependency,
     ResearchTaskServiceDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
-from qunxue_api.modules.research_intake import ResearchTask, ResearchTaskStatus
+from qunxue_api.modules.research_intake import (
+    PhenomenonProgress,
+    ResearchTask,
+    ResearchTaskStatus,
+)
 
 router = APIRouter(
     prefix="/api/research-tasks",
@@ -53,6 +58,8 @@ def create_research_task(
         user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
+        seed_theory_id=payload.seed_theory_id,
+        seed_theory_name=payload.seed_theory_name,
     )
     return ResearchTaskResponse.from_domain(task)
 
@@ -78,13 +85,17 @@ def get_research_task(
 )
 def list_research_tasks(
     service: ResearchTaskServiceDependency,
+    phenomenon_service: PhenomenonServiceDependency,
     current: CurrentSessionDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
 ) -> ResearchTaskPageResponse:
     tasks = service.list_for_user(current.user.user_id, limit=limit)
     return ResearchTaskPageResponse(
-        items=[_navigation_response(task) for task in tasks],
+        items=[
+            _navigation_response(task, phenomenon_service.progress(task.task_id))
+            for task in tasks
+        ],
         next_cursor=None,
     )
 
@@ -98,10 +109,11 @@ def list_research_tasks(
 def get_research_task_navigation(
     task_id: UUID,
     owned_task: OwnedResearchTaskDependency,
+    phenomenon_service: PhenomenonServiceDependency,
 ) -> ResearchTaskNavigationResponse:
     if owned_task.task_id != task_id:
         raise RuntimeError("owned task dependency returned a different task")
-    return _navigation_response(owned_task)
+    return _navigation_response(owned_task, phenomenon_service.progress(task_id))
 
 
 @router.delete(
@@ -153,7 +165,10 @@ def export_research_trace(
     return not_implemented_response()
 
 
-def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
+def _navigation_response(
+    task: ResearchTask,
+    progress: PhenomenonProgress,
+) -> ResearchTaskNavigationResponse:
     navigation_by_status = {
         ResearchTaskStatus.DRAFT: (
             ResearchTaskLifecycleStatus.DRAFT,
@@ -187,6 +202,10 @@ def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
         ),
     }
     lifecycle_status, current_stage, action = navigation_by_status[task.status]
+    if task.status is ResearchTaskStatus.DRAFT and progress.candidate is not None:
+        lifecycle_status = ResearchTaskLifecycleStatus.IN_PROGRESS
+        current_stage = ResearchTaskStage.PHENOMENON_CONFIRMATION
+        action = ResearchTaskNavigationAction.CONFIRM_PHENOMENON
     phenomenon_summary = None
     if (
         task.phenomenon_query_id is not None
@@ -207,10 +226,15 @@ def _navigation_response(task: ResearchTask) -> ResearchTaskNavigationResponse:
         current_stage=current_stage,
         version=task.version,
         allowed_actions=[action],
-        seed_theory_id=None,
+        seed_theory_id=task.seed_theory_id,
+        seed_theory_name=task.seed_theory_name,
         phenomenon_summary=phenomenon_summary,
         adopted_theory_count=task.adopted_theory_count,
-        current_phenomenon_candidate_id=task.current_phenomenon_candidate_id,
+        current_phenomenon_candidate_id=(
+            task.current_phenomenon_candidate_id
+            or (progress.candidate.candidate_id if progress.candidate else None)
+        ),
+        current_material_intake_run_id=task.current_material_intake_run_id,
         current_match_run_id=task.current_match_run_id,
         current_framework_id=task.current_framework_id,
         created_at=task.created_at,

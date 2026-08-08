@@ -19,6 +19,7 @@ from qunxue_api.adapters.model import (
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
+from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -27,6 +28,8 @@ from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
 from qunxue_api.api.routes.matching import router as matching_router
+from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
+from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
@@ -39,6 +42,7 @@ from qunxue_api.modules.identity import (
     Unauthenticated,
 )
 from qunxue_api.modules.research_intake import (
+    PhenomenonService,
     ResearchTaskNotFound,
     ResearchTaskService,
 )
@@ -97,12 +101,23 @@ def create_app(
         with resolved_database.session() as session:
             yield ResearchTaskService(SqliteResearchTaskRepository(session))
 
+    @contextmanager
+    def phenomenon_service_scope() -> Iterator[PhenomenonService]:
+        with resolved_database.session() as session:
+            yield PhenomenonService(
+                SqlitePhenomenonRepository(session),
+                SqliteResearchTaskRepository(session),
+            )
+
     app.state.research_task_service_scope = research_task_service_scope
+    app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)
     app.include_router(research_tasks_router)
     app.include_router(phenomena_router)
+    app.include_router(phenomenon_examples_router)
+    app.include_router(material_intakes_router)
     app.include_router(knowledge_router)
     app.include_router(matching_router)
     app.include_router(frameworks_router)

@@ -69,6 +69,8 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 status=task.status.value,
                 version=task.version,
                 idempotency_key=task.idempotency_key,
+                seed_theory_id=task.seed_theory_id,
+                seed_theory_name=task.seed_theory_name,
                 phenomenon_query_id=(
                     str(task.phenomenon_query_id) if task.phenomenon_query_id else None
                 ),
@@ -79,6 +81,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 current_phenomenon_candidate_id=(
                     str(task.current_phenomenon_candidate_id)
                     if task.current_phenomenon_candidate_id
+                    else None
+                ),
+                current_material_intake_run_id=(
+                    str(task.current_material_intake_run_id)
+                    if task.current_material_intake_run_id
                     else None
                 ),
                 current_match_run_id=(
@@ -129,6 +136,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             if task.current_phenomenon_candidate_id
             else None
         )
+        row.current_material_intake_run_id = (
+            str(task.current_material_intake_run_id)
+            if task.current_material_intake_run_id
+            else None
+        )
         row.current_match_run_id = (
             str(task.current_match_run_id) if task.current_match_run_id else None
         )
@@ -149,6 +161,8 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             status=ResearchTaskStatus(row.status),
             version=row.version,
             idempotency_key=row.idempotency_key,
+            seed_theory_id=row.seed_theory_id,
+            seed_theory_name=row.seed_theory_name,
             created_at=_as_utc(row.created_at),
             updated_at=_as_utc(row.updated_at),
             phenomenon_query_id=(
@@ -161,6 +175,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             current_phenomenon_candidate_id=(
                 UUID(row.current_phenomenon_candidate_id)
                 if row.current_phenomenon_candidate_id
+                else None
+            ),
+            current_material_intake_run_id=(
+                UUID(row.current_material_intake_run_id)
+                if row.current_material_intake_run_id
                 else None
             ),
             current_match_run_id=(

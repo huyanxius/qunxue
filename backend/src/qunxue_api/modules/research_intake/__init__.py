@@ -2,11 +2,19 @@
 
 from qunxue_api.modules.research_intake.domain import (
     ConfirmedPhenomenonSnapshot,
+    DirectPhenomenonInput,
     EntryInputType,
     EntryType,
+    MaterialIntakeRun,
+    PhenomenonCandidate,
     PhenomenonCandidateDraft,
+    PhenomenonCandidateStatus,
     PhenomenonEvidenceRefSnapshot,
     PhenomenonEvidenceVerificationStatus,
+    PhenomenonExample,
+    PhenomenonModelSnapshot,
+    PhenomenonProgress,
+    PreparedPhenomenonCandidate,
     ResearchTask,
     ResearchTaskAction,
     ResearchTaskStatus,
@@ -14,18 +22,29 @@ from qunxue_api.modules.research_intake.domain import (
 from qunxue_api.modules.research_intake.errors import ResearchTaskNotFound
 from qunxue_api.modules.research_intake.ports import (
     PhenomenonCandidateBuilder,
+    PhenomenonRepository,
     ResearchTaskRepository,
 )
-from qunxue_api.modules.research_intake.service import ResearchTaskService
+from qunxue_api.modules.research_intake.service import PhenomenonService, ResearchTaskService
 
 __all__ = [
     "ConfirmedPhenomenonSnapshot",
+    "DirectPhenomenonInput",
     "EntryInputType",
     "EntryType",
+    "MaterialIntakeRun",
+    "PhenomenonCandidate",
     "PhenomenonEvidenceRefSnapshot",
     "PhenomenonEvidenceVerificationStatus",
+    "PhenomenonExample",
     "PhenomenonCandidateBuilder",
     "PhenomenonCandidateDraft",
+    "PhenomenonCandidateStatus",
+    "PhenomenonModelSnapshot",
+    "PhenomenonProgress",
+    "PreparedPhenomenonCandidate",
+    "PhenomenonRepository",
+    "PhenomenonService",
     "ResearchTask",
     "ResearchTaskAction",
     "ResearchTaskNotFound",

@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from qunxue_api.api.contracts.common import ModelMetadata
 from qunxue_api.modules.research_intake import (
@@ -90,6 +90,9 @@ class PhenomenonCandidateResponse(BaseModel):
     context: str | None
     source_ref_ids: list[str]
     evidence_refs: list[PhenomenonEvidenceReferenceResponse]
+    missing_information: list[str]
+    source_traceability: Literal["traceable", "partial", "untraceable"]
+    content_origin: Literal["system_generated", "user_modified"]
     model: ModelMetadata
 
 
@@ -123,6 +126,7 @@ class PhenomenonSnapshotResponse(BaseModel):
     phenomenon: str
     research_intent: str | None
     context: str | None
+    content_hash: str = Field(min_length=64, max_length=64)
     source_ref_ids: list[str]
     evidence_refs: list[PhenomenonEvidenceReferenceResponse]
     confirmed_at: datetime
@@ -134,3 +138,51 @@ class PhenomenonSnapshotPageResponse(BaseModel):
     allowed_actions: list[PhenomenonSnapshotAction]
     snapshots: list[PhenomenonSnapshotResponse]
     next_cursor: str | None
+
+
+class PhenomenonExampleResponse(BaseModel):
+    example_id: str
+    title: str
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    source_type: Literal["built_in_example"] = "built_in_example"
+
+
+class PhenomenonExamplePageResponse(BaseModel):
+    items: list[PhenomenonExampleResponse]
+
+
+class MaterialIntakeRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    media_type: Literal[
+        "text/plain",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
+    pasted_text: str | None = Field(default=None, min_length=1, max_length=100_000)
+    content_base64: str | None = Field(default=None, min_length=1, max_length=2_800_000)
+    research_intent: str | None = Field(default=None, max_length=4_000)
+    context: str | None = Field(default=None, max_length=10_000)
+    deidentification_confirmed: Literal[True]
+    processing_rights_confirmed: Literal[True]
+    external_processing_acknowledged: Literal[True]
+    processing_policy_version: str = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def validate_content(self) -> "MaterialIntakeRequest":
+        if (self.pasted_text is None) == (self.content_base64 is None):
+            raise ValueError("provide exactly one material content source")
+        if self.media_type.endswith("document") and self.content_base64 is None:
+            raise ValueError("DOCX material requires base64 file content")
+        return self
+
+
+class MaterialIntakeRunResponse(BaseModel):
+    run_id: UUID
+    task_id: UUID
+    status: Literal["completed"]
+    filename: str
+    media_type: str
+    processing_policy_version: str
+    candidates: list[PhenomenonCandidateResponse]
+    accepted_at: datetime

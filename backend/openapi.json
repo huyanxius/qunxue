@@ -751,6 +751,32 @@
           "entry_type": {
             "$ref": "#/components/schemas/EntryType",
             "default": "direct_input"
+          },
+          "seed_theory_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Id"
+          },
+          "seed_theory_name": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Name"
           }
         },
         "title": "CreateResearchTaskRequest",
@@ -1053,7 +1079,8 @@
       },
       "EntryType": {
         "enum": [
-          "direct_input"
+          "direct_input",
+          "material_input"
         ],
         "title": "EntryType",
         "type": "string"
@@ -2627,6 +2654,160 @@
         "title": "MaterialInputRequest",
         "type": "object"
       },
+      "MaterialIntakeRequest": {
+        "properties": {
+          "content_base64": {
+            "anyOf": [
+              {
+                "maxLength": 2800000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Base64"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "deidentification_confirmed": {
+            "const": true,
+            "title": "Deidentification Confirmed",
+            "type": "boolean"
+          },
+          "external_processing_acknowledged": {
+            "const": true,
+            "title": "External Processing Acknowledged",
+            "type": "boolean"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "media_type": {
+            "enum": [
+              "text/plain",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ],
+            "title": "Media Type",
+            "type": "string"
+          },
+          "pasted_text": {
+            "anyOf": [
+              {
+                "maxLength": 100000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pasted Text"
+          },
+          "processing_policy_version": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Processing Policy Version",
+            "type": "string"
+          },
+          "processing_rights_confirmed": {
+            "const": true,
+            "title": "Processing Rights Confirmed",
+            "type": "boolean"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          }
+        },
+        "required": [
+          "filename",
+          "media_type",
+          "deidentification_confirmed",
+          "processing_rights_confirmed",
+          "external_processing_acknowledged",
+          "processing_policy_version"
+        ],
+        "title": "MaterialIntakeRequest",
+        "type": "object"
+      },
+      "MaterialIntakeRunResponse": {
+        "properties": {
+          "accepted_at": {
+            "format": "date-time",
+            "title": "Accepted At",
+            "type": "string"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonCandidateResponse"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "processing_policy_version": {
+            "title": "Processing Policy Version",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "task_id",
+          "status",
+          "filename",
+          "media_type",
+          "processing_policy_version",
+          "candidates",
+          "accepted_at"
+        ],
+        "title": "MaterialIntakeRunResponse",
+        "type": "object"
+      },
       "MethodIntentContract": {
         "properties": {
           "constraints": {
@@ -2836,6 +3017,14 @@
             "title": "Candidate Id",
             "type": "string"
           },
+          "content_origin": {
+            "enum": [
+              "system_generated",
+              "user_modified"
+            ],
+            "title": "Content Origin",
+            "type": "string"
+          },
           "context": {
             "anyOf": [
               {
@@ -2852,6 +3041,13 @@
               "$ref": "#/components/schemas/PhenomenonEvidenceReferenceResponse"
             },
             "title": "Evidence Refs",
+            "type": "array"
+          },
+          "missing_information": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Information",
             "type": "array"
           },
           "model": {
@@ -2879,6 +3075,15 @@
             "title": "Source Ref Ids",
             "type": "array"
           },
+          "source_traceability": {
+            "enum": [
+              "traceable",
+              "partial",
+              "untraceable"
+            ],
+            "title": "Source Traceability",
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/PhenomenonCandidateStatus"
           },
@@ -2903,6 +3108,9 @@
           "context",
           "source_ref_ids",
           "evidence_refs",
+          "missing_information",
+          "source_traceability",
+          "content_origin",
           "model"
         ],
         "title": "PhenomenonCandidateResponse",
@@ -2983,6 +3191,75 @@
         "title": "PhenomenonEvidenceVerificationStatus",
         "type": "string"
       },
+      "PhenomenonExamplePageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PhenomenonExampleResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PhenomenonExamplePageResponse",
+        "type": "object"
+      },
+      "PhenomenonExampleResponse": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "example_id": {
+            "title": "Example Id",
+            "type": "string"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "source_type": {
+            "const": "built_in_example",
+            "default": "built_in_example",
+            "title": "Source Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "example_id",
+          "title",
+          "phenomenon",
+          "research_intent",
+          "context"
+        ],
+        "title": "PhenomenonExampleResponse",
+        "type": "object"
+      },
       "PhenomenonSnapshotAction": {
         "enum": [
           "start_matching"
@@ -3049,6 +3326,12 @@
           "confirmed_at": {
             "format": "date-time",
             "title": "Confirmed At",
+            "type": "string"
+          },
+          "content_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Content Hash",
             "type": "string"
           },
           "context": {
@@ -3120,6 +3403,7 @@
           "phenomenon",
           "research_intent",
           "context",
+          "content_hash",
           "source_ref_ids",
           "evidence_refs",
           "confirmed_at"
@@ -3259,6 +3543,18 @@
             ],
             "title": "Current Match Run Id"
           },
+          "current_material_intake_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Material Intake Run Id"
+          },
           "current_phenomenon_candidate_id": {
             "anyOf": [
               {
@@ -3298,6 +3594,17 @@
             ],
             "title": "Seed Theory Id"
           },
+          "seed_theory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Name"
+          },
           "status": {
             "$ref": "#/components/schemas/ResearchTaskLifecycleStatus"
           },
@@ -3324,9 +3631,11 @@
           "version",
           "allowed_actions",
           "seed_theory_id",
+          "seed_theory_name",
           "phenomenon_summary",
           "adopted_theory_count",
           "current_phenomenon_candidate_id",
+          "current_material_intake_run_id",
           "current_match_run_id",
           "current_framework_id",
           "created_at",
@@ -3416,6 +3725,28 @@
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
           },
+          "seed_theory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Id"
+          },
+          "seed_theory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Theory Name"
+          },
           "status": {
             "$ref": "#/components/schemas/ResearchTaskStatus"
           },
@@ -3440,6 +3771,8 @@
           "status",
           "version",
           "allowed_actions",
+          "seed_theory_id",
+          "seed_theory_name",
           "created_at",
           "updated_at"
         ],
@@ -6499,6 +6832,80 @@
         ]
       }
     },
+    "/api/material-intake-runs/{run_id}": {
+      "get": {
+        "operationId": "get_material_intake_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialIntakeRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Material Intake Run",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
+    "/api/phenomenon-examples": {
+      "get": {
+        "operationId": "list_phenomenon_examples",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenomenonExamplePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Phenomenon Examples",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
     "/api/research-tasks": {
       "get": {
         "operationId": "list_research_tasks",
@@ -7166,6 +7573,80 @@
         ]
       }
     },
+    "/api/research-tasks/{task_id}/material-intakes": {
+      "post": {
+        "operationId": "submit_material_intake",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialIntakeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialIntakeRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Submit Material Intake",
+        "tags": [
+          "phenomena"
+        ]
+      }
+    },
     "/api/research-tasks/{task_id}/navigation": {
       "get": {
         "operationId": "get_research_task_navigation",
@@ -7335,6 +7816,23 @@
               "format": "uuid",
               "title": "Candidate Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
             }
           }
         ],

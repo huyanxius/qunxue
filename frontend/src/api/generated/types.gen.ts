@@ -453,6 +453,14 @@ export type CreateMatchRunRequest = {
  */
 export type CreateResearchTaskRequest = {
     entry_type?: EntryType;
+    /**
+     * Seed Theory Id
+     */
+    seed_theory_id?: string | null;
+    /**
+     * Seed Theory Name
+     */
+    seed_theory_name?: string | null;
 };
 
 /**
@@ -632,7 +640,7 @@ export type EntryInputType = 'direct_input' | 'material_input';
 /**
  * EntryType
  */
-export type EntryType = 'direct_input';
+export type EntryType = 'direct_input' | 'material_input';
 
 /**
  * ErrorCode
@@ -1539,6 +1547,90 @@ export type MaterialInputRequest = {
 };
 
 /**
+ * MaterialIntakeRequest
+ */
+export type MaterialIntakeRequest = {
+    /**
+     * Content Base64
+     */
+    content_base64?: string | null;
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Deidentification Confirmed
+     */
+    deidentification_confirmed: true;
+    /**
+     * External Processing Acknowledged
+     */
+    external_processing_acknowledged: true;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Media Type
+     */
+    media_type: 'text/plain' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    /**
+     * Pasted Text
+     */
+    pasted_text?: string | null;
+    /**
+     * Processing Policy Version
+     */
+    processing_policy_version: string;
+    /**
+     * Processing Rights Confirmed
+     */
+    processing_rights_confirmed: true;
+    /**
+     * Research Intent
+     */
+    research_intent?: string | null;
+};
+
+/**
+ * MaterialIntakeRunResponse
+ */
+export type MaterialIntakeRunResponse = {
+    /**
+     * Accepted At
+     */
+    accepted_at: string;
+    /**
+     * Candidates
+     */
+    candidates: Array<PhenomenonCandidateResponse>;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Processing Policy Version
+     */
+    processing_policy_version: string;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: 'completed';
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
  * MethodIntentContract
  */
 export type MethodIntentContract = {
@@ -1660,6 +1752,10 @@ export type PhenomenonCandidateResponse = {
      */
     candidate_id: string;
     /**
+     * Content Origin
+     */
+    content_origin: 'system_generated' | 'user_modified';
+    /**
      * Context
      */
     context: string | null;
@@ -1667,6 +1763,10 @@ export type PhenomenonCandidateResponse = {
      * Evidence Refs
      */
     evidence_refs: Array<PhenomenonEvidenceReferenceResponse>;
+    /**
+     * Missing Information
+     */
+    missing_information: Array<string>;
     model: ModelMetadata;
     /**
      * Phenomenon
@@ -1680,6 +1780,10 @@ export type PhenomenonCandidateResponse = {
      * Source Ref Ids
      */
     source_ref_ids: Array<string>;
+    /**
+     * Source Traceability
+     */
+    source_traceability: 'traceable' | 'partial' | 'untraceable';
     status: PhenomenonCandidateStatus;
     /**
      * Task Id
@@ -1733,6 +1837,46 @@ export type PhenomenonEvidenceReferenceResponse = {
 export type PhenomenonEvidenceVerificationStatus = 'verified' | 'user_attested' | 'pending';
 
 /**
+ * PhenomenonExamplePageResponse
+ */
+export type PhenomenonExamplePageResponse = {
+    /**
+     * Items
+     */
+    items: Array<PhenomenonExampleResponse>;
+};
+
+/**
+ * PhenomenonExampleResponse
+ */
+export type PhenomenonExampleResponse = {
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Example Id
+     */
+    example_id: string;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Source Type
+     */
+    source_type?: 'built_in_example';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * PhenomenonSnapshotAction
  */
 export type PhenomenonSnapshotAction = 'start_matching';
@@ -1775,6 +1919,10 @@ export type PhenomenonSnapshotResponse = {
      * Confirmed At
      */
     confirmed_at: string;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
     /**
      * Context
      */
@@ -1891,6 +2039,10 @@ export type ResearchTaskNavigationResponse = {
      */
     current_match_run_id: string | null;
     /**
+     * Current Material Intake Run Id
+     */
+    current_material_intake_run_id: string | null;
+    /**
      * Current Phenomenon Candidate Id
      */
     current_phenomenon_candidate_id: string | null;
@@ -1901,6 +2053,10 @@ export type ResearchTaskNavigationResponse = {
      * Seed Theory Id
      */
     seed_theory_id: string | null;
+    /**
+     * Seed Theory Name
+     */
+    seed_theory_name: string | null;
     status: ResearchTaskLifecycleStatus;
     /**
      * Task Id
@@ -1965,6 +2121,14 @@ export type ResearchTaskResponse = {
      */
     created_at: string;
     entry_type: EntryType;
+    /**
+     * Seed Theory Id
+     */
+    seed_theory_id: string | null;
+    /**
+     * Seed Theory Name
+     */
+    seed_theory_name: string | null;
     status: ResearchTaskStatus;
     /**
      * Task Id
@@ -3640,6 +3804,56 @@ export type AcknowledgePartialMatchResponses = {
 
 export type AcknowledgePartialMatchResponse = AcknowledgePartialMatchResponses[keyof AcknowledgePartialMatchResponses];
 
+export type GetMaterialIntakeRunData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/material-intake-runs/{run_id}';
+};
+
+export type GetMaterialIntakeRunErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetMaterialIntakeRunError = GetMaterialIntakeRunErrors[keyof GetMaterialIntakeRunErrors];
+
+export type GetMaterialIntakeRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: MaterialIntakeRunResponse;
+};
+
+export type GetMaterialIntakeRunResponse = GetMaterialIntakeRunResponses[keyof GetMaterialIntakeRunResponses];
+
+export type ListPhenomenonExamplesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/phenomenon-examples';
+};
+
+export type ListPhenomenonExamplesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PhenomenonExamplePageResponse;
+};
+
+export type ListPhenomenonExamplesResponse = ListPhenomenonExamplesResponses[keyof ListPhenomenonExamplesResponses];
+
 export type ListResearchTasksData = {
     body?: never;
     path?: never;
@@ -4009,6 +4223,46 @@ export type CreateMatchRunResponses = {
 
 export type CreateMatchRunResponse = CreateMatchRunResponses[keyof CreateMatchRunResponses];
 
+export type SubmitMaterialIntakeData = {
+    body: MaterialIntakeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-intakes';
+};
+
+export type SubmitMaterialIntakeErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type SubmitMaterialIntakeError = SubmitMaterialIntakeErrors[keyof SubmitMaterialIntakeErrors];
+
+export type SubmitMaterialIntakeResponses = {
+    /**
+     * Successful Response
+     */
+    201: MaterialIntakeRunResponse;
+};
+
+export type SubmitMaterialIntakeResponse = SubmitMaterialIntakeResponses[keyof SubmitMaterialIntakeResponses];
+
 export type GetResearchTaskNavigationData = {
     body?: never;
     path: {
@@ -4103,7 +4357,12 @@ export type GetPhenomenonCandidateData = {
          */
         candidate_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
     url: '/api/research-tasks/{task_id}/phenomenon-candidates/{candidate_id}';
 };
 
