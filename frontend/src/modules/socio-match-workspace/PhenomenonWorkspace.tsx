@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 
-import { ContentMark } from '../../app/ui/ContentMark'
 import {
   confirmEditedPhenomenonViaApi,
   listPhenomenonExamplesViaApi,
@@ -107,7 +106,12 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
           <textarea id="direct-intent" value={researchIntent} onChange={(event) => setResearchIntent(event.target.value)} rows={2} />
           <label htmlFor="direct-context">语境（可选）</label>
           <textarea id="direct-context" value={context} onChange={(event) => setContext(event.target.value)} rows={2} />
-          {exampleSource ? <ContentMark kind="analysis">当前内容来自内置案例</ContentMark> : <ContentMark kind="user">当前内容由你输入</ContentMark>}
+          <article className={`content-mark content-mark--${exampleSource ? 'analysis' : 'user'}`}>
+            <span className="content-mark__label">
+              {exampleSource ? '系统分析' : '用户内容'}
+            </span>
+            <p>{exampleSource ? '当前内容来自内置案例' : '当前内容由你输入'}</p>
+          </article>
           <button type="submit" disabled={directStart.isPending || !phenomenon.trim()}>
             {directStart.isPending ? '正在生成候选…' : '生成可编辑候选'}
           </button>
