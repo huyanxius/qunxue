@@ -10,6 +10,7 @@ const defaultSourceRoot = path.resolve(path.dirname(scriptPath), '../src')
 export const defaultBoundaryPolicy = Object.freeze({
   moduleDependencies: Object.freeze({
     account: Object.freeze([]),
+    'knowledge-graph': Object.freeze([]),
     'knowledge-explorer': Object.freeze([]),
     'socio-match-workspace': Object.freeze([]),
   }),
@@ -17,6 +18,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'api/client.ts',
     'api/system.ts',
     'modules/account/accountApi.ts',
+    'modules/knowledge-graph/knowledgeGraphAdapter.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   moduleApiAdapters: Object.freeze([
