@@ -10,6 +10,7 @@ from qunxue_api.api.contracts.knowledge import (
     KnowledgeReleaseResponse,
 )
 from qunxue_api.api.routes.stubs import not_implemented_response
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 
 router = APIRouter(
     prefix="/api/knowledge",
@@ -24,8 +25,15 @@ router = APIRouter(
     response_model=KnowledgeReleaseResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def get_current_knowledge_release() -> JSONResponse:
-    return not_implemented_response()
+def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
+    release = request.app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    )
+    return KnowledgeReleaseResponse(
+        knowledge_release_id=release.knowledge_release_id,
+        level=release.level,
+        content_hash=release.content_hash,
+    )
 
 
 @router.get(
