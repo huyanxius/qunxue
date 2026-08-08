@@ -1,6 +1,7 @@
 # RUN_STATE
 
-- M6 stage A: Markdown 解析器已覆盖 C/E/V/M/P/H 与源目录元数据；当前文本解析出 2,860 条且无重复。D7 的 H088-H091 正文不在当前目录，未伪造。下一步：持久化 preview 发布快照。
+- M6 stage A: Markdown 解析器已覆盖 C/E/V/M/P/H 与源目录元数据；当前文本解析出 2,860 条且无重复。D7 的 H088-H091 正文不在当前目录，未伪造。
+- M6 stage B: SQLite preview 发布会持久化真实 Markdown、目录与导入溯源；相同内容复用 release，健康检查与当前发布接口返回同一真实 release。下一步：列表、搜索与详情。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
