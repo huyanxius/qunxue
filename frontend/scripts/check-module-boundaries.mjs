@@ -391,7 +391,11 @@ export async function findBoundaryViolations({
           !appAdapters.has(path.resolve(target)),
         `${relative} imports API internals instead of an approved app adapter`,
       )
-      report(sourceModule && targetApi && !moduleApiAdapters.has(sourcePath),
+      report(
+        sourceModule &&
+          targetApi &&
+          !targetGenerated &&
+          !moduleApiAdapters.has(sourcePath),
         `${relative} imports API internals outside its module adapter`)
       report(inApi && !inGenerated && targetModule,
         `${relative} imports product module code from the API layer`)

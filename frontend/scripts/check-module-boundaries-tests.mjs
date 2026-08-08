@@ -190,3 +190,47 @@ test('allows mapped adapters and ignores comments, strings, URLs, and local name
 
   assert.deepEqual(violations, [])
 })
+
+test('allows a generated-only module adapter without opening other API internals', async () => {
+  const policy = {
+    appApiAdapters: [],
+    generatedApiAdapters: ['modules/graph/knowledgeGraphAdapter.ts'],
+    httpRuntimeAdapters: [],
+    moduleApiAdapters: [],
+  }
+  const sharedFiles = {
+    'api/generated/index.ts':
+      'export interface KnowledgeDto { readonly knowledge_id: string }',
+    'modules/graph/index.ts': 'export {}',
+    'modules/graph/knowledgeGraphAdapter.ts': `
+      import type { KnowledgeDto } from '../../api/generated/index.js'
+      export const toId = (entry: KnowledgeDto) => entry.knowledge_id
+    `,
+  }
+
+  assert.deepEqual(
+    await check(sharedFiles, { graph: [] }, policy),
+    [],
+  )
+
+  const violations = await check(
+    {
+      ...sharedFiles,
+      'api/client.ts': 'export const apiClient = {}',
+      'modules/graph/knowledgeGraphAdapter.ts': `
+        import type { KnowledgeDto } from '../../api/generated/index.js'
+        import { apiClient } from '../../api/client.js'
+        export const toId = (entry: KnowledgeDto) => [entry.knowledge_id, apiClient]
+      `,
+    },
+    { graph: [] },
+    policy,
+  )
+
+  assert.ok(
+    violations.includes(
+      'modules/graph/knowledgeGraphAdapter.ts imports API internals outside its module adapter',
+    ),
+    violations.join('\n'),
+  )
+})
