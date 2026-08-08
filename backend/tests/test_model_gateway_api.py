@@ -19,14 +19,18 @@ def test_bootstrap_is_the_only_composition_point_for_the_model_gateway(
     assert client.app.state.builtin_case_catalog.get("success").case_id == "success"
 
 
-def test_health_reports_the_actual_model_capability_and_demo_release(
+def test_health_reports_the_actual_model_capability_and_current_knowledge_release(
     client: TestClient,
 ) -> None:
     response = client.get("/api/health")
+    current_release = client.get("/api/knowledge/releases/current")
 
     assert response.status_code == 200
     assert response.json()["capability"] == "mock"
-    assert response.json()["knowledge_release_id"] == "knowledge-demo-v1"
+    assert current_release.status_code == 200
+    assert response.json()["knowledge_release_id"] == current_release.json()[
+        "knowledge_release_id"
+    ]
 
 
 def test_builtin_cases_are_served_from_the_backend_with_opaque_pagination(
