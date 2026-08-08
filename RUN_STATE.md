@@ -9,6 +9,7 @@
 - M6 graph adapter: `feat/69-knowledge-graph` 已独立提交 `6293e0f`（审核关系 DTO 投影）；独立 Terra Max 验收通过，未合并，未进入 UI/Cytoscape。
 - M6 graph runtime: Cytoscape `3.34.0` 已固定（`fe6e48b`）；图谱线可从该依赖节点开始画布实现，主线未引入画布或路由。
 - M6 frontend dependency: `react-markdown 10.1.0` 已固定（`2588b1e`）以渲染真实知识正文；该提交未含图谱画布、路由或 Cytoscape import。
+- M6 frontend: `/knowledge` 与 `/knowledge/:knowledge_id` 已通过生成 SDK 固定真实发布、七维目录、搜索、详情、来源、审核关系与安全 `return_to`（`1cc2d3e`）；聚焦前端测试 37 项与边界检查均通过。下一步：横屏浏览器验收、完整检查与独立复验。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
