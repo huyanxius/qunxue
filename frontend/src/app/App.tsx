@@ -123,7 +123,10 @@ function KnowledgeEntryRoute() {
           onReleaseResolved={resolveRelease}
           onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
           onStartResearch={({ theoryId, theoryName }) => {
-            navigate(`/research/new?seed_theory_id=${encodeURIComponent(theoryId)}&seed_theory_name=${encodeURIComponent(theoryName)}`)
+            navigate(
+              `/research/new?seed_theory_id=${encodeURIComponent(theoryId)}`,
+              { state: { seedTheoryName: theoryName } },
+            )
           }}
         />
       </PageContent>
@@ -217,10 +220,13 @@ function MyResearchRoute() {
 
 function NewResearchRoute() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const seedTheoryId = searchParams.get('seed_theory_id')
-  const seedTheoryName = searchParams.get('seed_theory_name')
-  const seedTheory = seedTheoryId && seedTheoryName
+  const seedTheoryName = (
+    location.state as { seedTheoryName?: string } | null
+  )?.seedTheoryName
+  const seedTheory = seedTheoryId
     ? { theoryId: seedTheoryId, name: seedTheoryName }
     : null
   return (

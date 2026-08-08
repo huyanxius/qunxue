@@ -12,7 +12,7 @@ import type {
   PhenomenonCandidate,
   PhenomenonExample,
   PhenomenonSnapshot,
-  SeedTheoryClue,
+  SeedTheoryStart,
 } from './researchTaskModel'
 import './workspace.css'
 
@@ -20,7 +20,7 @@ type EntryMethod = 'direct' | 'material' | 'smart'
 
 interface NewResearchPageProps {
   readonly onStarted: (taskId: string) => void
-  readonly seedTheory?: SeedTheoryClue | null
+  readonly seedTheory?: SeedTheoryStart | null
 }
 
 export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPageProps) {
@@ -81,7 +81,7 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
 
   return (
     <section className="research-entry">
-      {seedTheory ? <p className="seed-clue">起始线索：{seedTheory.name}</p> : null}
+      {seedTheory?.name ? <p className="seed-clue">起始线索：{seedTheory.name}</p> : null}
       <nav className="entry-methods" aria-label="研究进入方式">
         <button type="button" aria-pressed={method === 'direct'} onClick={() => setMethod('direct')}>直接输入</button>
         <button type="button" aria-pressed={method === 'material'} onClick={() => setMethod('material')}>单份材料</button>

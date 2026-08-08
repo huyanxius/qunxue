@@ -81,6 +81,28 @@ function knowledgeDetail() {
   }
 }
 
+function knowledgeDetailWithTheoryProfile() {
+  return {
+    ...knowledgeDetail(),
+    theory_profile: {
+      analysis_levels: [],
+      applicable_phenomena: [],
+      competing_or_complementary_theory_ids: [],
+      content_version: 1,
+      core_propositions: [],
+      exclusion_signals: [],
+      match_eligible: true,
+      observable_evidence: [],
+      prerequisites: [],
+      related_knowledge_ids: ['D1:C001'],
+      review_status: 'reviewed',
+      source_ids: [],
+      theory_id: 'theory-social-capital',
+      title: '社会资本理论',
+    },
+  }
+}
+
 function json(body: unknown) {
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -339,6 +361,25 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('heading', { name: '匹配理论' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
+  it('keeps only the theory ID in the URL when starting research from knowledge', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      if (request.pathname === '/api/knowledge/entries/D1%3AC001') {
+        return json(knowledgeDetailWithTheoryProfile())
+      }
+      if (request.pathname === '/api/phenomenon-examples') return json({ items: [] })
+      return json(knowledgeDetailWithTheoryProfile())
+    }))
+    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a', { status: 'authenticated' })
+
+    fireEvent.click(await screen.findByRole('button', { name: '以此理论开始研究' }))
+
+    expect(await screen.findByText('起始线索：社会资本理论')).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      /^\/research\/new\?seed_theory_id=theory-social-capital$/,
+    )
   })
 
   it('resolves a deep knowledge entry to one fixed release before reading its detail', async () => {
