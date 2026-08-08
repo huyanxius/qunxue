@@ -9,4 +9,6 @@
 - M3 stage E: `/research/new` exposes direct input, one material, and the smart-topic placeholder; generated adapters restore candidate provenance, seed clues, evidence, and confirmation snapshots without opening the M4 boundary.
 - M3 review repairs: candidate generation and edits advance the M2 task projection; only the first candidate may freeze the snapshot; DOCX XML expansion is bounded; the workspace no longer imports app UI; unchanged system candidates retain their source label.
 - M3 focused verification: 12 backend intake/task tests, 9 frontend workspace/adapter tests, and the module-boundary check passed on the current review-fix head.
-- Next breakpoint: full delivery check, landscape runtime evidence, and clean-context Terra acceptance before the stacked PR is submitted.
+- M3 full verification: `make check` passed (89 backend tests, 58 frontend tests, boundary, lint, typecheck, build, and generated-drift checks); lint retains two pre-existing account warnings.
+- M3 landscape runtime: direct example -> untouched confirmation -> refresh recovery -> M2 "我的研究" projection, plus pasted material -> three traceable candidates, passed at 1440x900 without horizontal overflow or browser console errors. Evidence: `docs/screenshots/m3-research-entry-landscape.jpg`, `docs/screenshots/m3-material-candidates-landscape.jpg`, and `docs/screenshots/m3-phenomenon-confirmation-landscape.jpg`.
+- Next breakpoint: clean-context Terra acceptance, then submit the stacked PR without merging it.
