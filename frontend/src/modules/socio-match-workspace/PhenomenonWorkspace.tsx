@@ -186,9 +186,18 @@ export function PhenomenonWorkspace({ taskId }: { readonly taskId: string }) {
   }, [selected, restored.data?.snapshot])
 
   const confirmation = useMutation({
-    mutationFn: () => confirmEditedPhenomenonViaApi(selected!, { phenomenon, researchIntent, context }),
-    onSuccess: (snapshot) => {
-      setConfirmedAsUserModified(true)
+    mutationFn: async () => {
+      const values = { phenomenon, researchIntent, context }
+      const modified = phenomenon.trim() !== selected!.phenomenon
+        || (researchIntent.trim() || null) !== selected!.researchIntent
+        || (context.trim() || null) !== selected!.context
+      return {
+        snapshot: await confirmEditedPhenomenonViaApi(selected!, values),
+        modified,
+      }
+    },
+    onSuccess: ({ snapshot, modified }) => {
+      setConfirmedAsUserModified(modified)
       setConfirmed(snapshot)
     },
   })

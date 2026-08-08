@@ -256,23 +256,33 @@ export async function confirmEditedPhenomenonViaApi(
   candidate: PhenomenonCandidate,
   values: { phenomenon: string; researchIntent: string; context: string },
 ): Promise<PhenomenonSnapshot> {
-  const updated = await updatePhenomenonCandidate({
-    client: apiClient,
-    path: { task_id: candidate.taskId, candidate_id: candidate.candidateId },
-    headers: { 'Idempotency-Key': idempotencyKey() },
-    body: {
-      expected_version: candidate.version,
-      phenomenon: values.phenomenon,
-      research_intent: values.researchIntent || null,
-      context: values.context || null,
-    },
-  })
-  if (!updated.data) throw new ApiRequestError('候选修改保存失败。', updated.response?.status)
+  const phenomenon = values.phenomenon.trim()
+  const researchIntent = values.researchIntent.trim() || null
+  const context = values.context.trim() || null
+  const changed = phenomenon !== candidate.phenomenon
+    || researchIntent !== candidate.researchIntent
+    || context !== candidate.context
+  let version = candidate.version
+  if (changed) {
+    const updated = await updatePhenomenonCandidate({
+      client: apiClient,
+      path: { task_id: candidate.taskId, candidate_id: candidate.candidateId },
+      headers: { 'Idempotency-Key': idempotencyKey() },
+      body: {
+        expected_version: candidate.version,
+        phenomenon,
+        research_intent: researchIntent,
+        context,
+      },
+    })
+    if (!updated.data) throw new ApiRequestError('候选修改保存失败。', updated.response?.status)
+    version = updated.data.version
+  }
   const confirmed = await confirmPhenomenonCandidate({
     client: apiClient,
     path: { task_id: candidate.taskId, candidate_id: candidate.candidateId },
     headers: { 'Idempotency-Key': idempotencyKey() },
-    body: { expected_version: updated.data.version },
+    body: { expected_version: version },
   })
   if (!confirmed.data) throw new ApiRequestError('现象确认失败。', confirmed.response?.status)
   return toSnapshot(confirmed.data)
