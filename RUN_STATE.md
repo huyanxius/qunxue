@@ -7,5 +7,6 @@
 - M3 stage C: three built-in examples are migration-seeded and API-served; task creation and recovery retain the narrow seed theory id/name clue.
 - M3 stage D: single pasted/TXT/DOCX material requires all four processing confirmations, runs synchronously, persists no complete source document, and restores 3-5 traceable candidates.
 - M3 stage E: `/research/new` exposes direct input, one material, and the smart-topic placeholder; generated adapters restore candidate provenance, seed clues, evidence, and confirmation snapshots without opening the M4 boundary.
-- M3 focused verification: 15 backend intake/task tests, 18 API contract tests, 8 frontend workspace/adapter tests, typecheck, and lint passed (lint retains two pre-existing account warnings).
-- Next breakpoint: parent diff review, independent clean-context acceptance, and landscape runtime evidence before the stacked PR is submitted.
+- M3 review repairs: candidate generation and edits advance the M2 task projection; only the first candidate may freeze the snapshot; DOCX XML expansion is bounded; the workspace no longer imports app UI; unchanged system candidates retain their source label.
+- M3 focused verification: 12 backend intake/task tests, 9 frontend workspace/adapter tests, and the module-boundary check passed on the current review-fix head.
+- Next breakpoint: full delivery check, landscape runtime evidence, and clean-context Terra acceptance before the stacked PR is submitted.
