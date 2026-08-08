@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Query, status
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorResponse
@@ -25,6 +25,7 @@ from qunxue_api.api.dependencies import (
     ResearchTaskServiceDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 from qunxue_api.modules.research_intake import (
     PhenomenonProgress,
     ResearchTask,
@@ -47,6 +48,7 @@ router = APIRouter(
 )
 def create_research_task(
     payload: CreateResearchTaskRequest,
+    request: Request,
     service: ResearchTaskServiceDependency,
     current: CurrentSessionDependency,
     idempotency_key: Annotated[
@@ -54,12 +56,26 @@ def create_research_task(
         Header(alias="Idempotency-Key", min_length=8, max_length=128),
     ],
 ) -> ResearchTaskResponse:
+    seed_theory_name = None
+    if payload.seed_theory_id is not None:
+        catalog = request.app.state.knowledge_catalog
+        release = catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
+        try:
+            seed_theory_name = catalog.get_theory_profile(
+                theory_id=payload.seed_theory_id,
+                release_id=release.knowledge_release_id,
+            ).title
+        except LookupError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Seed theory is not in the current knowledge release.",
+            ) from error
     task = service.create(
         user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
         seed_theory_id=payload.seed_theory_id,
-        seed_theory_name=payload.seed_theory_name,
+        seed_theory_name=seed_theory_name,
     )
     return ResearchTaskResponse.from_domain(task)
 

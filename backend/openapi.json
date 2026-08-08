@@ -764,19 +764,6 @@
               }
             ],
             "title": "Seed Theory Id"
-          },
-          "seed_theory_name": {
-            "anyOf": [
-              {
-                "maxLength": 300,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Seed Theory Name"
           }
         },
         "title": "CreateResearchTaskRequest",

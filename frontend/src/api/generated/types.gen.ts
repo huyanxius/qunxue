@@ -457,10 +457,6 @@ export type CreateResearchTaskRequest = {
      * Seed Theory Id
      */
     seed_theory_id?: string | null;
-    /**
-     * Seed Theory Name
-     */
-    seed_theory_name?: string | null;
 };
 
 /**

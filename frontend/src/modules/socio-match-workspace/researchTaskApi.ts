@@ -27,6 +27,7 @@ import type {
   ResearchTaskEntryType,
   RestoredPhenomenon,
   SeedTheoryClue,
+  SeedTheoryStart,
   StartedPhenomenon,
 } from './researchTaskModel'
 
@@ -98,7 +99,7 @@ export async function createResearchTaskViaApi(
   requestKey: string,
   options: {
     entryType?: ResearchTaskEntryType
-    seedTheory?: SeedTheoryClue | null
+    seedTheory?: SeedTheoryStart | null
   } = {},
 ): Promise<ResearchTask> {
   const { data, response } = await createResearchTaskRequest({
@@ -106,7 +107,6 @@ export async function createResearchTaskViaApi(
     body: {
       entry_type: options.entryType ?? 'direct_input',
       seed_theory_id: options.seedTheory?.theoryId ?? null,
-      seed_theory_name: options.seedTheory?.name ?? null,
     },
     headers: { 'Idempotency-Key': requestKey },
   })
@@ -141,7 +141,7 @@ export async function startPhenomenonViaApi(
     phenomenon: string
     researchIntent: string
     context: string
-    seedTheory?: SeedTheoryClue | null
+    seedTheory?: SeedTheoryStart | null
   },
 ): Promise<StartedPhenomenon> {
   const values = typeof input === 'string'
