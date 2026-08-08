@@ -24,7 +24,7 @@ def get_health(request: Request) -> HealthResponse:
     return HealthResponse(
         status="ok",
         service=settings.app_name,
-        runtime_mode="inline_demo",
+        runtime_mode=settings.runtime_mode,
         persistence="sqlite",
         contract_version=settings.contract_version,
         capability=descriptor.capability_tier,
