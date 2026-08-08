@@ -3391,10 +3391,6 @@ export type ListKnowledgeEntriesErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type ListKnowledgeEntriesError = ListKnowledgeEntriesErrors[keyof ListKnowledgeEntriesErrors];
@@ -3434,10 +3430,6 @@ export type GetKnowledgeEntryErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetKnowledgeEntryError = GetKnowledgeEntryErrors[keyof GetKnowledgeEntryErrors];
@@ -3467,10 +3459,6 @@ export type GetCurrentKnowledgeReleaseErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetCurrentKnowledgeReleaseError = GetCurrentKnowledgeReleaseErrors[keyof GetCurrentKnowledgeReleaseErrors];
