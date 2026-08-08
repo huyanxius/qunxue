@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.health import HealthResponse
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 from qunxue_api.settings import Settings
 
 router = APIRouter(
@@ -20,7 +21,9 @@ def get_health(request: Request) -> HealthResponse:
     settings: Settings = request.app.state.settings
     request.app.state.database.is_ready()
     descriptor = request.app.state.model_gateway.descriptor
-    case_catalog = request.app.state.builtin_case_catalog
+    release = request.app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    )
     return HealthResponse(
         status="ok",
         service=settings.app_name,
@@ -28,5 +31,5 @@ def get_health(request: Request) -> HealthResponse:
         persistence="sqlite",
         contract_version=settings.contract_version,
         capability=descriptor.capability_tier,
-        knowledge_release_id=case_catalog.knowledge_release_id,
+        knowledge_release_id=release.knowledge_release_id,
     )
