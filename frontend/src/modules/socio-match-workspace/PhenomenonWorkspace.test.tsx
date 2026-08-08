@@ -166,7 +166,7 @@ describe('phenomenon confirmation workspace', () => {
     vi.mocked(api.confirmEditedPhenomenonViaApi).mockImplementation(
       actualApi.confirmEditedPhenomenonViaApi,
     )
-    const fetchMock = vi.fn(async () => Response.json({
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async () => Response.json({
       task_id: 'task-1',
       phenomenon_query_id: 'query-1',
       version: 2,
