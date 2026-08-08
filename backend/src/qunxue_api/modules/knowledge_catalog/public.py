@@ -187,6 +187,7 @@ class KnowledgeCatalog(Protocol):
         category_id: str | None,
         dimension_id: str | None,
         cursor: str | None,
+        limit: int,
     ) -> KnowledgeEntryPage: ...
 
     def get_entry(
