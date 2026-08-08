@@ -1,6 +1,5 @@
 import {
   BrowserRouter,
-  Link,
   Navigate,
   Route,
   Routes,
@@ -18,8 +17,10 @@ import {
   useAccount,
 } from '../modules/account'
 import {
-  demoKnowledgeDataSource,
-  KnowledgeExplorer,
+  KnowledgeEntryPage,
+  KnowledgeExplorerPage,
+  readKnowledgeUrlState,
+  writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
 import { FoundationPage } from './foundation/FoundationPage'
 import {
@@ -40,20 +41,25 @@ type AppRoutesProps = {
   sessionState?: SessionState
 }
 
-const demoDataNotice =
-  '当前页面仅使用虚构占位数据验证信息结构、状态和导航，不代表正式知识库、学术来源或审核结论。'
-
 function KnowledgeExplorerRoute() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state = readKnowledgeUrlState(searchParams)
+
+  function updateState(nextState: typeof state) {
+    setSearchParams(writeKnowledgeUrlState(nextState))
+  }
 
   return (
     <PageShell>
       <PageContent>
-        <KnowledgeExplorer
-          dataSource={demoKnowledgeDataSource}
-          dataNotice={demoDataNotice}
-          homeHref="/"
-          onNavigateHome={() => navigate('/')}
+        <KnowledgeExplorerPage
+          state={state}
+          onStateChange={updateState}
+          onOpenEntry={(knowledgeId) => {
+            const query = writeKnowledgeUrlState(state).toString()
+            navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
+          }}
         />
       </PageContent>
     </PageShell>
@@ -83,15 +89,32 @@ function PlaceholderPage({
 
 function KnowledgeEntryRoute() {
   const { knowledge_id: knowledgeId } = useParams<{ knowledge_id: string }>()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state = readKnowledgeUrlState(searchParams)
+
+  if (!knowledgeId) {
+    return (
+      <PageShell>
+        <PageContent><ErrorState detail="知识条目地址无效。" /></PageContent>
+      </PageShell>
+    )
+  }
 
   return (
     <PageShell>
-      <PageTitle eyebrow="KNOWLEDGE / ENTRY" title="知识条目" />
       <PageContent>
-        <p className="page-placeholder">
-          {knowledgeId ? `正在保留条目 ${knowledgeId} 的稳定地址。` : '正在保留条目的稳定地址。'}
-        </p>
-        <Link className="text-link" to="/knowledge">返回知识浏览</Link>
+        <KnowledgeEntryPage
+          knowledgeId={knowledgeId}
+          releaseId={state.releaseId}
+          onReleaseResolved={(releaseId) => {
+            setSearchParams(writeKnowledgeUrlState({ ...state, releaseId }))
+          }}
+          onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
+          onStartResearch={({ theoryId, theoryName }) => {
+            navigate(`/research/new?seed_theory_id=${encodeURIComponent(theoryId)}&seed_theory_name=${encodeURIComponent(theoryName)}`)
+          }}
+        />
       </PageContent>
     </PageShell>
   )
