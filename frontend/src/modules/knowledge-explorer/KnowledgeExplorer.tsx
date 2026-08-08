@@ -19,6 +19,7 @@ const directoryPageSize = 100
 export interface KnowledgeExplorerPageProps {
   state: KnowledgeUrlState
   onStateChange: (state: KnowledgeUrlState) => void
+  onReleaseResolved: (releaseId: string) => void
   onOpenEntry: (knowledgeId: string) => void
 }
 
@@ -28,17 +29,19 @@ function errorMessage(error: unknown) {
 
 function filteredEntries(
   entries: readonly KnowledgeEntrySummary[],
-  state: KnowledgeUrlState,
+  dimensionId: string | undefined,
+  categoryId: string | undefined,
 ) {
   return entries.filter((entry) =>
-    (!state.dimensionId || entry.dimensionId === state.dimensionId) &&
-    (!state.categoryId || entry.categoryId === state.categoryId),
+    (!dimensionId || entry.dimensionId === dimensionId) &&
+    (!categoryId || entry.categoryId === categoryId),
   )
 }
 
 export function KnowledgeExplorerPage({
   state,
   onStateChange,
+  onReleaseResolved,
   onOpenEntry,
 }: KnowledgeExplorerPageProps) {
   const [queryInput, setQueryInput] = useState(state.query ?? '')
@@ -67,17 +70,17 @@ export function KnowledgeExplorerPage({
     let cancelled = false
 
     async function loadDirectory() {
+      const releaseId = state.releaseId
       setReleaseState('loading')
       setReleaseError('')
       setLoadedReleaseId(undefined)
       setDirectoryEntries([])
       setDirectory([])
       try {
-        let releaseId = state.releaseId
         if (!releaseId) {
           const currentRelease = await readCurrentKnowledgeRelease()
           if (cancelled) return
-          onStateChange({ ...state, releaseId: currentRelease.knowledgeReleaseId })
+          onReleaseResolved(currentRelease.knowledgeReleaseId)
           return
         }
 
@@ -91,7 +94,7 @@ export function KnowledgeExplorerPage({
       } catch (error) {
         if (cancelled) return
         setReleaseError(errorMessage(error))
-        setReleaseState(state.releaseId ? 'degraded' : 'unavailable')
+        setReleaseState(releaseId ? 'degraded' : 'unavailable')
       }
     }
 
@@ -99,7 +102,7 @@ export function KnowledgeExplorerPage({
     return () => {
       cancelled = true
     }
-  }, [state.releaseId])
+  }, [onReleaseResolved, state.releaseId])
 
   useEffect(() => {
     let cancelled = false
@@ -110,7 +113,11 @@ export function KnowledgeExplorerPage({
       setNextCursor(undefined)
       setResultTotal(undefined)
       if (!state.query) {
-        const allResults = filteredEntries(directoryEntries, state)
+        const allResults = filteredEntries(
+          directoryEntries,
+          state.dimensionId,
+          state.categoryId,
+        )
         const nextResults = allResults.slice(0, directoryResultLimit)
         if (cancelled) return
         setResults(nextResults)

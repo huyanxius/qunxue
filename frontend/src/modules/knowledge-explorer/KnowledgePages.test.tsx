@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { KnowledgeEntryPage, KnowledgeExplorerPage } from './index'
@@ -121,6 +121,7 @@ describe('knowledge pages', () => {
       <KnowledgeExplorerPage
         state={{ releaseId: 'release-a' }}
         onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
         onStateChange={vi.fn()}
       />,
     )
@@ -144,11 +145,68 @@ describe('knowledge pages', () => {
       <KnowledgeExplorerPage
         state={{ releaseId: 'release-a' }}
         onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
         onStateChange={vi.fn()}
       />,
     )
 
     expect(await screen.findByText('显示 100 / 101 条')).toBeVisible()
+  })
+
+  it('resolves the initial release without rewinding newer URL state', async () => {
+    let resolveCurrentRelease: ((response: Response) => void) | undefined
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => {
+      resolveCurrentRelease = resolve
+    })))
+    const onReleaseResolved = vi.fn()
+    const onStateChange = vi.fn()
+    const { rerender } = render(
+      <KnowledgeExplorerPage
+        state={{ query: '先前查询' }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={onReleaseResolved}
+        onStateChange={onStateChange}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(resolveCurrentRelease).toBeTypeOf('function')
+    })
+
+    rerender(
+      <KnowledgeExplorerPage
+        state={{ query: '最新查询' }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={onReleaseResolved}
+        onStateChange={onStateChange}
+      />,
+    )
+    if (!resolveCurrentRelease) throw new Error('当前发布请求未发出')
+    resolveCurrentRelease(json({
+      content_hash: 'sha256:release-a',
+      knowledge_release_id: 'release-a',
+      level: 'preview',
+    }))
+
+    await waitFor(() => {
+      expect(onReleaseResolved).toHaveBeenCalledWith('release-a')
+    })
+    expect(onStateChange).not.toHaveBeenCalled()
+  })
+
+  it('shows an unavailable state when the current release cannot be read', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 503 })))
+
+    render(
+      <KnowledgeExplorerPage
+        state={{}}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={vi.fn()}
+      />,
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('知识服务暂时不可用')
   })
 
   it('presents real reviewed relations and a theory seed without adopting it', async () => {

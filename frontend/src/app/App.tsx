@@ -8,7 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router'
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 
 import {
   LoginPage,
@@ -46,9 +46,15 @@ function KnowledgeExplorerRoute() {
   const [searchParams, setSearchParams] = useSearchParams()
   const state = readKnowledgeUrlState(searchParams)
 
-  function updateState(nextState: typeof state) {
+  const updateState = useCallback((nextState: typeof state) => {
     setSearchParams(writeKnowledgeUrlState(nextState))
-  }
+  }, [setSearchParams])
+  const resolveRelease = useCallback((releaseId: string) => {
+    setSearchParams((current) => writeKnowledgeUrlState({
+      ...readKnowledgeUrlState(current),
+      releaseId,
+    }))
+  }, [setSearchParams])
 
   return (
     <PageShell>
@@ -56,6 +62,7 @@ function KnowledgeExplorerRoute() {
         <KnowledgeExplorerPage
           state={state}
           onStateChange={updateState}
+          onReleaseResolved={resolveRelease}
           onOpenEntry={(knowledgeId) => {
             const query = writeKnowledgeUrlState(state).toString()
             navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
@@ -92,6 +99,12 @@ function KnowledgeEntryRoute() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const state = readKnowledgeUrlState(searchParams)
+  const resolveRelease = useCallback((releaseId: string) => {
+    setSearchParams((current) => writeKnowledgeUrlState({
+      ...readKnowledgeUrlState(current),
+      releaseId,
+    }))
+  }, [setSearchParams])
 
   if (!knowledgeId) {
     return (
@@ -107,9 +120,7 @@ function KnowledgeEntryRoute() {
         <KnowledgeEntryPage
           knowledgeId={knowledgeId}
           releaseId={state.releaseId}
-          onReleaseResolved={(releaseId) => {
-            setSearchParams(writeKnowledgeUrlState({ ...state, releaseId }))
-          }}
+          onReleaseResolved={resolveRelease}
           onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
           onStartResearch={({ theoryId, theoryName }) => {
             navigate(`/research/new?seed_theory_id=${encodeURIComponent(theoryId)}&seed_theory_name=${encodeURIComponent(theoryName)}`)
