@@ -12,6 +12,7 @@
 - M6 frontend: `/knowledge` 与 `/knowledge/:knowledge_id` 已通过生成 SDK 固定真实发布、七维目录、搜索、详情、来源、审核关系与安全 `return_to`（`1cc2d3e`）；聚焦前端测试 37 项与边界检查均通过。下一步：横屏浏览器验收、完整检查与独立复验。
 - M6 health test repair: 全量检查暴露旧 `knowledge-demo-v1` 断言和未迁移内存库夹具；已改为验证健康接口与当前真实发布一致（`68b83bf`），四个健康契约用例通过。下一步：重跑完整检查。
 - M6 migration test repair: SQLite FTS5 的虚拟表与影子表不属于 ORM metadata；迁移自检仅在这组反射表上排除比较（`8d771e5`），其余业务表、主键、约束与索引仍严格校验。下一步：重跑完整检查。
+- M6 URL-state repair: 当前发布异步解析不再覆盖用户刚更新的查询/筛选，详情页同样声明稳定回调依赖（`68a125f`、`c4d00f4`）；31 项聚焦前端测试通过，知识页新增 lint 警告已清零。下一步：重跑完整检查。
 - M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
 - M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
 - M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
