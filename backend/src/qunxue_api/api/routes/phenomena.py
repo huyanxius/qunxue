@@ -441,7 +441,10 @@ def _material_text(payload: MaterialIntakeRequest) -> str:
             raise HTTPException(status_code=422) from error
     try:
         with ZipFile(BytesIO(content)) as archive:
-            document_xml = archive.read("word/document.xml")
+            document_info = archive.getinfo("word/document.xml")
+            if document_info.file_size > 2_000_000:
+                raise HTTPException(status_code=422)
+            document_xml = archive.read(document_info)
         root = ElementTree.fromstring(document_xml)
     except (BadZipFile, KeyError, ElementTree.ParseError) as error:
         raise HTTPException(status_code=422) from error
