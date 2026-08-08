@@ -45,3 +45,64 @@ def test_parse_knowledge_markdown_keeps_dimension_namespaces_and_entry_boundarie
         "学派传统",
         "文明过程/历史社会学",
     ]
+
+
+def test_parse_knowledge_markdown_preserves_source_metadata() -> None:
+    value_entries = parse_knowledge_markdown(
+        source_path=Path("knowledge/价值论/example.md"),
+        markdown="""\
+<!-- 大类：I. 社会学的学科目的 -->
+
+## I. 社会学的学科目的
+
+#### **V230 差序格局与关系伦理**
+
+价值条目正文。
+""",
+    )
+    school_entries = parse_knowledge_markdown(
+        source_path=Path("knowledge/学派传统/example.md"),
+        markdown="""\
+<!-- 学统：中国学统 -->
+<!-- 地区传统：当代重建 -->
+
+##### 【P158】郑杭生
+
+人物条目正文。
+""",
+    )
+    history_entries = parse_knowledge_markdown(
+        source_path=Path("knowledge/学科史/example.md"),
+        markdown="""\
+<!-- 学科史分组：统一前史 -->
+
+# **H001 从伊本·赫勒敦到孔德之前**
+
+编年条目正文。
+""",
+    )
+    school_headings = parse_knowledge_markdown(
+        source_path=Path("knowledge/学派传统/example.md"),
+        markdown="""\
+#### S043 土耳其民族主义
+""",
+    )
+
+    assert value_entries[0].knowledge_id == "D4:V230"
+    assert value_entries[0].title == "差序格局与关系伦理"
+    assert [node.title for node in value_entries[0].directory_path] == [
+        "价值论",
+        "I. 社会学的学科目的",
+    ]
+    assert school_entries[0].knowledge_id == "D6:P158"
+    assert [node.title for node in school_entries[0].directory_path] == [
+        "学派传统",
+        "中国学统",
+        "当代重建",
+    ]
+    assert history_entries[0].knowledge_id == "D7:H001"
+    assert [node.title for node in history_entries[0].directory_path] == [
+        "学科史",
+        "统一前史",
+    ]
+    assert school_headings == ()
