@@ -11,4 +11,5 @@
 - M3 focused verification: 12 backend intake/task tests, 9 frontend workspace/adapter tests, and the module-boundary check passed on the current review-fix head.
 - M3 full verification: `make check` passed (89 backend tests, 58 frontend tests, boundary, lint, typecheck, build, and generated-drift checks); lint retains two pre-existing account warnings.
 - M3 landscape runtime: direct example -> untouched confirmation -> refresh recovery -> M2 "我的研究" projection, plus pasted material -> three traceable candidates, passed at 1440x900 without horizontal overflow or browser console errors. Evidence: `docs/screenshots/m3-research-entry-landscape.jpg`, `docs/screenshots/m3-material-candidates-landscape.jpg`, and `docs/screenshots/m3-phenomenon-confirmation-landscape.jpg`.
-- Next breakpoint: clean-context Terra acceptance, then submit the stacked PR without merging it.
+- M3 independent acceptance: fresh Terra Max reviewer returned PASS after independently reviewing the full diff and rerunning `make check`; only the two pre-existing AccountProvider lint warnings remain.
+- Next breakpoint: submit the stacked PR without merging it; it depends on the still-open M2 PR #58.
