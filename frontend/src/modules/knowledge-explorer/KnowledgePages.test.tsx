@@ -58,7 +58,7 @@ function detail() {
   return {
     ...summary(),
     aliases: ['概念别名'],
-    content: '## 正文标题\n\n一段真实条目正文。',
+    content: '## 正文标题\n\n一段真实条目正文。\n\n> **文献：**示例文献',
     content_version: 2,
     knowledge_release_id: 'release-a',
     relations: [
@@ -230,6 +230,7 @@ describe('knowledge pages', () => {
 
     expect(await screen.findByRole('heading', { name: '概念' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '正文标题' })).toBeVisible()
+    expect(screen.getByText('文献：', { selector: 'strong' })).toBeVisible()
     expect(screen.getByText('知识库原始 Markdown')).toBeVisible()
     expect(screen.getByText(/核验状态：待核验/)).toBeVisible()
     expect(screen.getByText('D1:C002')).toBeVisible()

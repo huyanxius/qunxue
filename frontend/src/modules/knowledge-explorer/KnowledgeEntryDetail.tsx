@@ -18,6 +18,12 @@ function sourceMetadata(source: KnowledgeEntryDetail['sources'][number]) {
   ].filter(Boolean).join(' · ')
 }
 
+function markdownForDisplay(content: string) {
+  // Repository evidence labels omit the separating space CommonMark needs
+  // before following prose, so normalize that established source form here.
+  return content.replace(/(\*\*[^*\n]+：\*\*)(?=\S)/g, '$1 ')
+}
+
 export function KnowledgeEntryDetail({
   detail,
   onStartResearch,
@@ -35,7 +41,7 @@ export function KnowledgeEntryDetail({
       <p className="knowledge-explorer__path">
         {detail.directoryPath.map((node) => node.title).join(' / ')}
       </p>
-      <div className="knowledge-explorer__content"><Markdown>{detail.content}</Markdown></div>
+      <div className="knowledge-explorer__content"><Markdown>{markdownForDisplay(detail.content)}</Markdown></div>
 
       {detail.aliases.length > 0 ? (
         <section>
