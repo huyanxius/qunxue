@@ -214,18 +214,31 @@ class PhenomenonService:
         self,
         *,
         task_id: UUID,
+        task: ResearchTask,
         draft: PhenomenonCandidateDraft,
         evidence_refs: tuple[PhenomenonEvidenceRefSnapshot, ...],
         model: PhenomenonModelSnapshot,
     ) -> PhenomenonCandidate:
-        return self._repository.save_candidate(
+        now = self._clock()
+        candidate = self._repository.save_candidate(
             task_id=task_id,
             candidate_id=self._id_factory(),
             draft=draft,
             evidence_refs=evidence_refs,
             model=model,
-            now=self._clock(),
+            now=now,
         )
+        saved = self._research_tasks.save_progress(
+            replace(
+                task,
+                version=task.version + 1,
+                updated_at=now,
+                current_phenomenon_candidate_id=candidate.candidate_id,
+            )
+        )
+        if saved is None:
+            raise RuntimeError("owned research task disappeared during candidate generation")
+        return candidate
 
     def get_candidate(
         self, task_id: UUID, candidate_id: UUID, version: int | None = None
@@ -236,21 +249,36 @@ class PhenomenonService:
         self,
         *,
         task_id: UUID,
+        task: ResearchTask,
         candidate_id: UUID,
         expected_version: int,
         phenomenon: str,
         research_intent: str | None,
         context: str | None,
     ) -> PhenomenonCandidate | None:
-        return self._repository.update_candidate(
+        now = self._clock()
+        candidate = self._repository.update_candidate(
             task_id=task_id,
             candidate_id=candidate_id,
             expected_version=expected_version,
             phenomenon=phenomenon,
             research_intent=research_intent,
             context=context,
-            now=self._clock(),
+            now=now,
         )
+        if candidate is None:
+            return None
+        saved = self._research_tasks.save_progress(
+            replace(
+                task,
+                version=task.version + 1,
+                updated_at=now,
+                current_phenomenon_candidate_id=candidate.candidate_id,
+            )
+        )
+        if saved is None:
+            raise RuntimeError("owned research task disappeared during candidate update")
+        return candidate
 
     def confirm_candidate(
         self,

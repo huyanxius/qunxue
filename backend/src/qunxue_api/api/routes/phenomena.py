@@ -196,6 +196,7 @@ def extract_phenomenon_candidates(
     _idempotency_key: IdempotencyKey,
     request: Request,
     service: PhenomenonServiceDependency,
+    owned_task: OwnedResearchTaskDependency,
 ) -> PhenomenonCandidatePageResponse:
     direct = service.input_for_task(task_id)
     if direct is None:
@@ -226,6 +227,7 @@ def extract_phenomenon_candidates(
         )
         existing = service.save_candidate(
             task_id=task_id,
+            task=owned_task,
             draft=draft,
             evidence_refs=(evidence,),
             model=PhenomenonModelSnapshot(
@@ -281,9 +283,11 @@ def update_phenomenon_candidate(
     payload: UpdatePhenomenonCandidateRequest,
     _idempotency_key: IdempotencyKey,
     service: PhenomenonServiceDependency,
+    owned_task: OwnedResearchTaskDependency,
 ) -> PhenomenonCandidateResponse:
     candidate = service.update_candidate(
         task_id=task_id,
+        task=owned_task,
         candidate_id=candidate_id,
         expected_version=payload.expected_version,
         phenomenon=payload.phenomenon,
