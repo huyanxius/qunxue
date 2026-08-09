@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     session_cookie_name: str = "qunxue_session"
     session_ttl_seconds: int = 60 * 60 * 24 * 7
     session_cookie_secure: bool = False
+    model_base_url: str | None = None
+    model_api_key: SecretStr | None = None
+    model_name: str | None = None
+    model_timeout_seconds: float = Field(default=30, gt=0)
+    model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
+    model_sft_resource_header: str = "X-LoRA-ID"
+    model_sft_resource_id: SecretStr | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="QUNXUE_",

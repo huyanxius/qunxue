@@ -13,6 +13,7 @@ from qunxue_api.adapters.model import (
     ModelGateway,
     ModelInvocationError,
     ModelProvider,
+    OpenAICompatibleModelProvider,
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
@@ -82,8 +83,9 @@ def create_app(
         knowledge_root=KNOWLEDGE_ROOT,
     )
     builtin_case_catalog = BuiltInCaseCatalog.default()
-    resolved_model_provider = model_provider or create_deterministic_mock_provider(
-        catalog=builtin_case_catalog
+    resolved_model_provider = model_provider or _model_provider_from_settings(
+        settings=resolved_settings,
+        builtin_case_catalog=builtin_case_catalog,
     )
     model_invocation_recorder = SqliteModelInvocationRecorder(resolved_database)
     app.state.builtin_case_catalog = builtin_case_catalog
@@ -217,14 +219,35 @@ def create_app(
         _request: Request,
         error: ModelInvocationError,
     ) -> JSONResponse:
-        response_status = {
-            ErrorCode.MODEL_TIMEOUT: status.HTTP_503_SERVICE_UNAVAILABLE,
-            ErrorCode.NO_RELIABLE_CANDIDATE: status.HTTP_409_CONFLICT,
-            ErrorCode.INSUFFICIENT_SOURCES: status.HTTP_409_CONFLICT,
-        }[ErrorCode(error.code)]
+        public_code, response_status = {
+            "model_timeout": (
+                ErrorCode.MODEL_TIMEOUT,
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            ),
+            "model_unavailable": (
+                ErrorCode.MODEL_TIMEOUT,
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            ),
+            "model_rate_limited": (
+                ErrorCode.MODEL_TIMEOUT,
+                status.HTTP_429_TOO_MANY_REQUESTS,
+            ),
+            "model_invalid_output": (
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                status.HTTP_502_BAD_GATEWAY,
+            ),
+            "no_reliable_candidate": (
+                ErrorCode.NO_RELIABLE_CANDIDATE,
+                status.HTTP_409_CONFLICT,
+            ),
+            "insufficient_sources": (
+                ErrorCode.INSUFFICIENT_SOURCES,
+                status.HTTP_409_CONFLICT,
+            ),
+        }[error.code]
         body = ErrorResponse(
             error=ErrorDetail(
-                code=ErrorCode(error.code),
+                code=public_code,
                 message=str(error),
                 trace_id=str(error.trace_id),
             )
@@ -293,3 +316,40 @@ def create_app(
         )
 
     return app
+
+
+def _model_provider_from_settings(
+    *,
+    settings: Settings,
+    builtin_case_catalog: BuiltInCaseCatalog,
+) -> ModelProvider:
+    if settings.runtime_mode == "mock":
+        return create_deterministic_mock_provider(catalog=builtin_case_catalog)
+    if settings.model_base_url is None or settings.model_name is None:
+        raise ValueError(
+            "QUNXUE_MODEL_BASE_URL (model_base_url) and "
+            "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
+        )
+
+    headers = {
+        name: value.get_secret_value()
+        for name, value in settings.model_extra_headers.items()
+    }
+    if settings.runtime_mode == "sft" and settings.model_sft_resource_id is not None:
+        header_name = settings.model_sft_resource_header
+        if header_name.lower() in {name.lower() for name in headers}:
+            raise ValueError("SFT resource header duplicates a model extension header")
+        headers[header_name] = settings.model_sft_resource_id.get_secret_value()
+
+    return OpenAICompatibleModelProvider(
+        base_url=settings.model_base_url,
+        api_key=(
+            settings.model_api_key.get_secret_value()
+            if settings.model_api_key is not None
+            else None
+        ),
+        model=settings.model_name,
+        timeout_seconds=settings.model_timeout_seconds,
+        capability_tier=settings.runtime_mode,
+        extra_headers=headers,
+    )
