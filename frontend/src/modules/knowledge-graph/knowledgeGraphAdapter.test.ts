@@ -54,7 +54,7 @@ const entries = [
 ]
 
 describe('projectKnowledgeGraph', () => {
-  it('projects only reviewed relations whose endpoints are supplied', () => {
+  it('projects reviewed relations whose endpoints are supplied', () => {
     const graph = projectKnowledgeGraph({
       release,
       entries,
@@ -68,20 +68,10 @@ describe('projectKnowledgeGraph', () => {
           description: '场域分析需要结合行动者的惯习。',
           evidence_source_ids: ['source-book-1'],
           evidence_grade: 'A',
+          algorithm_weight: 0.91,
+          algorithm_config_version: 'relation-rules-v1',
           content_version: 2,
           review_status: 'reviewed',
-        },
-        {
-          relation_id: 'relation-pending',
-          source_knowledge_id: 'knowledge-field',
-          target_knowledge_id: 'knowledge-habitus',
-          relation_type: '待核验关系',
-          direction: 'directed',
-          description: '不应在图中显示。',
-          evidence_source_ids: [],
-          evidence_grade: 'C',
-          content_version: 1,
-          review_status: 'pending',
         },
         {
           relation_id: 'relation-missing-target',
@@ -92,6 +82,8 @@ describe('projectKnowledgeGraph', () => {
           description: '不能凭 ID 伪造节点。',
           evidence_source_ids: ['source-book-1'],
           evidence_grade: 'A',
+          algorithm_weight: null,
+          algorithm_config_version: null,
           content_version: 1,
           review_status: 'reviewed',
         },
