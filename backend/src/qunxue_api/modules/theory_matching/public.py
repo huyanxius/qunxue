@@ -128,6 +128,7 @@ class TheoryCandidateContentSnapshot:
 class TheoryJudgementInput:
     """模型能力的完整不可变输入，禁止实现自行读取其他模块的数据库。"""
 
+    knowledge_release: KnowledgeReleaseRef
     phenomenon: ConfirmedPhenomenonSnapshot
     candidate: TheoryCandidateContentSnapshot
     comparison_candidates: tuple[TheoryCandidateContentSnapshot, ...]
