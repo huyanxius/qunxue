@@ -6,6 +6,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
 import { AccountProvider } from '../modules/account'
 
+const cytoscapeMock = vi.hoisted(() => vi.fn(() => ({
+  destroy: vi.fn(),
+  on: vi.fn(),
+})))
+
+vi.mock('cytoscape', () => ({ default: cytoscapeMock }))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -146,6 +153,18 @@ describe('App routes', () => {
     expect(
       screen.getByRole('navigation', { name: '移动主导航' }),
     ).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: '图' })).toHaveLength(2)
+    expect(screen.getAllByRole('link', { name: '图' })[0]).toHaveAttribute(
+      'href',
+      '/knowledge/graph',
+    )
+  })
+
+  it('renders the graph workspace from its independent route', async () => {
+    renderRoute('/knowledge/graph?knowledge_release_id=release-a')
+
+    expect(await screen.findByRole('heading', { name: '知识图谱' })).toBeVisible()
+    expect(screen.getByRole('region', { name: '全屏知识图谱工作台' })).toBeVisible()
   })
 
   it.each([
@@ -381,6 +400,19 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('heading', { name: '匹配理论' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
+  it('returns from a detail to a safe graph workspace context', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgeDetail())))
+    const graphContext = '/knowledge/graph?knowledge_release_id=release-a&query=%E7%A4%BE%E4%BC%9A&center=D1%3AC001&pending=1'
+    renderRoute(
+      `/knowledge/D1%3AC001?knowledge_release_id=release-a&return_to=${encodeURIComponent(graphContext)}`,
+    )
+
+    expect(await screen.findByText('一段真实条目正文。')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '返回知识图谱' }))
+
+    expect(screen.getByTestId('route-location')).toHaveTextContent(graphContext)
   })
 
   it('exposes the structural graph on the knowledge page without eagerly requesting edges', async () => {
