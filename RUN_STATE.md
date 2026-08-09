@@ -4,10 +4,7 @@
 - M6 stage B: SQLite preview 发布会持久化真实 Markdown、目录与导入溯源；相同内容复用 release，健康检查与当前发布接口返回同一真实 release。下一步：列表、搜索与详情。
 - M6 stage C: 列表、搜索与详情已固定在 release 内；`browse_eligible=false` 不会泄漏。下一步：生成契约并接真实知识浏览前端。
 - M6 stage D: OpenAPI 与生成 SDK 已随真实知识浏览接口同步（`7f8cb68`）；下一步：接入独立知识浏览前端。
-- M6 shared graph baseline: 图谱模块已登记生成 SDK 适配边界（`54aad08`）；图谱线从该基线独立推进，RUN_STATE 由主线串行记录。
-- M6 shared graph guard: 边界检查允许精确白名单导入生成 DTO，同时仍拒绝模块直连非生成 API（`6125f42`）。
-- M6 graph adapter: `feat/69-knowledge-graph` 已独立提交 `6293e0f`（审核关系 DTO 投影）；独立 Terra Max 验收通过，未合并，未进入 UI/Cytoscape。
-- M6 graph runtime: Cytoscape `3.34.0` 已固定（`fe6e48b`）；图谱线可从该依赖节点开始画布实现，主线未引入画布或路由。
+- M6 graph delivery: PR #71 已承载 Cytoscape `3.34.0`、生成 DTO 投影、已审核关系画布与真实空态；保持 OPEN，等待用户合并。
 - M6 frontend dependency: `react-markdown 10.1.0` 已固定（`2588b1e`）以渲染真实知识正文；该提交未含图谱画布、路由或 Cytoscape import。
 - M6 frontend: `/knowledge` 与 `/knowledge/:knowledge_id` 已通过生成 SDK 固定真实发布、七维目录、搜索、详情、来源、审核关系与安全 `return_to`（`1cc2d3e`）；聚焦前端测试 37 项与边界检查均通过。下一步：横屏浏览器验收、完整检查与独立复验。
 - M6 health test repair: 全量检查暴露旧 `knowledge-demo-v1` 断言和未迁移内存库夹具；已改为验证健康接口与当前真实发布一致（`68b83bf`），四个健康契约用例通过。下一步：重跑完整检查。
