@@ -1279,14 +1279,6 @@ export type KnowledgeRelationPageResponse = {
  */
 export type KnowledgeRelationResponse = {
     /**
-     * Algorithm Config Version
-     */
-    algorithm_config_version: string | null;
-    /**
-     * Algorithm Weight
-     */
-    algorithm_weight: number | null;
-    /**
      * Content Version
      */
     content_version: number;

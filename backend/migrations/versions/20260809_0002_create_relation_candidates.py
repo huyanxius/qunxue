@@ -17,14 +17,6 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "knowledge_relations",
-        sa.Column("algorithm_weight", sa.Float(), nullable=True),
-    )
-    op.add_column(
-        "knowledge_relations",
-        sa.Column("algorithm_config_version", sa.String(length=64), nullable=True),
-    )
     op.create_table(
         "knowledge_relation_candidates",
         sa.Column("knowledge_release_id", sa.String(length=128), nullable=False),
@@ -64,5 +56,3 @@ def downgrade() -> None:
         table_name="knowledge_relation_candidates",
     )
     op.drop_table("knowledge_relation_candidates")
-    op.drop_column("knowledge_relations", "algorithm_config_version")
-    op.drop_column("knowledge_relations", "algorithm_weight")

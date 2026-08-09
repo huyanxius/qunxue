@@ -73,8 +73,6 @@ class KnowledgeRelationResponse(BaseModel):
     description: str
     evidence_source_ids: list[str]
     evidence_grade: str
-    algorithm_weight: float | None
-    algorithm_config_version: str | None
     content_version: int
     review_status: Literal[KnowledgeReviewStatus.REVIEWED]
 

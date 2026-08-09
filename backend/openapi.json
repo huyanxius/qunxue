@@ -2214,28 +2214,6 @@
       },
       "KnowledgeRelationResponse": {
         "properties": {
-          "algorithm_config_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Algorithm Config Version"
-          },
-          "algorithm_weight": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Algorithm Weight"
-          },
           "content_version": {
             "title": "Content Version",
             "type": "integer"
@@ -2290,8 +2268,6 @@
           "description",
           "evidence_source_ids",
           "evidence_grade",
-          "algorithm_weight",
-          "algorithm_config_version",
           "content_version",
           "review_status"
         ],

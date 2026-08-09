@@ -96,8 +96,6 @@ class KnowledgeRelationRow(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     evidence_source_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     evidence_grade: Mapped[str] = mapped_column(String(32), nullable=False)
-    algorithm_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
-    algorithm_config_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     content_version: Mapped[int] = mapped_column(Integer, nullable=False)
     review_status: Mapped[str] = mapped_column(String(32), nullable=False)
 
