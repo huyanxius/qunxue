@@ -4,20 +4,27 @@ const listKnowledgeConnections = vi.hoisted(() => vi.fn())
 const listKnowledgeRelationCandidates = vi.hoisted(() => vi.fn())
 const listKnowledgeRelations = vi.hoisted(() => vi.fn())
 const getKnowledgeEntry = vi.hoisted(() => vi.fn())
+const getCurrentKnowledgeRelease = vi.hoisted(() => vi.fn())
+const listKnowledgeEntries = vi.hoisted(() => vi.fn())
 
 vi.mock('../../api/generated/sdk.gen', () => ({
   listKnowledgeConnections,
   listKnowledgeRelationCandidates,
   listKnowledgeRelations,
   getKnowledgeEntry,
+  getCurrentKnowledgeRelease,
+  listKnowledgeEntries,
 }))
 vi.mock('../../api/client', () => ({ apiClient: { kind: 'generated-client' } }))
 
 import {
   readIncidentCandidatePage,
   readIncidentRelationPage,
+  readCurrentKnowledgeGraphRelease,
+  readKnowledgeGraphFocusEntry,
   readKnowledgeGraphEntry,
   readStructuralConnectionPage,
+  searchKnowledgeGraphEntries,
 } from './knowledgeGraphApi'
 
 beforeEach(() => {
@@ -25,6 +32,104 @@ beforeEach(() => {
 })
 
 describe('knowledge graph API adapter', () => {
+  it('resolves the current release through the generated SDK', async () => {
+    getCurrentKnowledgeRelease.mockResolvedValue({ data: {
+      content_hash: 'sha256:release-a',
+      knowledge_release_id: 'release-a',
+      level: 'preview',
+    } })
+
+    await expect(readCurrentKnowledgeGraphRelease()).resolves.toBe('release-a')
+  })
+
+  it('searches one bounded page and maps entries for graph focus', async () => {
+    listKnowledgeEntries.mockResolvedValue({ data: {
+      entries: [{
+        category: '社会关系',
+        category_id: 'D1:C001',
+        content_version: 1,
+        dimension: '本体论',
+        dimension_id: 'D1',
+        directory_path: [
+          { node_id: 'D1', node_type: 'dimension', title: '本体论' },
+          { node_id: 'D1:C001', node_type: 'category', title: '社会关系' },
+        ],
+        eligibility: {
+          browse_eligible: true,
+          match_eligible: false,
+          rag_eligible: false,
+          review_record_ids: [],
+          training_candidate_eligible: false,
+        },
+        knowledge_id: 'D1:C001:E001',
+        review_status: 'reviewed',
+        title: '社会资本',
+      }],
+      knowledge_release_id: 'release-a',
+      next_cursor: 'search-2',
+      stable_order: ['D1:C001:E001'],
+    } })
+
+    const page = await searchKnowledgeGraphEntries({
+      releaseId: 'release-a',
+      query: '社会',
+      cursor: 'search-1',
+    })
+
+    expect(page).toEqual({
+      entries: [{
+        knowledgeId: 'D1:C001:E001',
+        title: '社会资本',
+        reviewStatus: 'reviewed',
+        directoryPath: [
+          { nodeId: 'D1', nodeType: 'dimension', title: '本体论' },
+          { nodeId: 'D1:C001', nodeType: 'category', title: '社会关系' },
+        ],
+      }],
+      nextCursor: 'search-2',
+    })
+    expect(listKnowledgeEntries).toHaveBeenCalledWith({
+      client: { kind: 'generated-client' },
+      query: {
+        knowledge_release_id: 'release-a',
+        query: '社会',
+        cursor: 'search-1',
+        limit: 20,
+      },
+    })
+  })
+
+  it('maps one detail to the complete focus path', async () => {
+    getKnowledgeEntry.mockResolvedValue({ data: {
+      category: '社会关系', category_id: 'D1:C001', content_version: 1,
+      dimension: '本体论', dimension_id: 'D1',
+      directory_path: [
+        { node_id: 'D1', node_type: 'dimension', title: '本体论' },
+        { node_id: 'D1:C001', node_type: 'category', title: '社会关系' },
+      ],
+      eligibility: {
+        browse_eligible: true, match_eligible: false, rag_eligible: false,
+        review_record_ids: [], training_candidate_eligible: false,
+      },
+      knowledge_id: 'D1:C001:E001', knowledge_release_id: 'release-a',
+      review_status: 'reviewed', title: '社会资本', aliases: [], content: '',
+      relations: [], sources: [], theory_profile: null,
+    } })
+
+    await expect(readKnowledgeGraphFocusEntry({
+      releaseId: 'release-a',
+      knowledgeId: 'D1:C001:E001',
+    })).resolves.toEqual({
+      knowledgeId: 'D1:C001:E001',
+      title: '社会资本',
+      reviewStatus: 'reviewed',
+      directoryPath: [
+        { nodeId: 'D1', nodeType: 'dimension', title: '本体论' },
+        { nodeId: 'D1:C001', nodeType: 'category', title: '社会关系' },
+      ],
+    })
+  })
+
   it('keeps source-node pagination on the generated connections SDK', async () => {
     listKnowledgeConnections.mockResolvedValue({ data: {
       knowledge_release_id: 'release-a',
