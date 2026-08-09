@@ -14,7 +14,8 @@ type PageTitleProps = {
 
 const navigationItems = [
   { href: '/', label: '首页', mark: '·', end: true },
-  { href: '/knowledge', label: '知识', mark: '知' },
+  { href: '/knowledge', label: '知识', mark: '知', end: true },
+  { href: '/knowledge/graph', label: '图', mark: '图' },
   { href: '/research/new', label: '研究', mark: '研' },
   { href: '/my', label: '我的', mark: '我' },
 ]
@@ -38,7 +39,10 @@ function PrimaryNavigation({
   )
 }
 
-export function PageShell({ children }: PropsWithChildren) {
+export function PageShell({
+  children,
+  workspace = false,
+}: PropsWithChildren<{ workspace?: boolean }>) {
   const account = useAccount()
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
@@ -86,7 +90,7 @@ export function PageShell({ children }: PropsWithChildren) {
         <PrimaryNavigation className="desktop-navigation" label="桌面主导航" />
       </aside>
 
-      <main className="page-shell">{children}</main>
+      <main className={`page-shell${workspace ? ' page-shell--workspace' : ''}`}>{children}</main>
 
       <PrimaryNavigation className="mobile-navigation" label="移动主导航" />
     </div>

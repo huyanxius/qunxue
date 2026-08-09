@@ -20,9 +20,14 @@ import {
   KnowledgeEntryPage,
   KnowledgeExplorerPage,
   type KnowledgeEntrySummary,
+  readKnowledgeGraphReturnTo,
   readKnowledgeUrlState,
   writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
+import {
+  FullscreenKnowledgeGraphPage,
+  type FullscreenKnowledgeGraphState,
+} from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { FoundationPage } from './foundation/FoundationPage'
 import {
@@ -126,6 +131,7 @@ function KnowledgeEntryRoute() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const state = readKnowledgeUrlState(searchParams)
+  const graphReturnTo = readKnowledgeGraphReturnTo(searchParams)
   const resolveRelease = useCallback((releaseId: string) => {
     setSearchParams((current) => writeKnowledgeUrlState({
       ...readKnowledgeUrlState(current),
@@ -150,9 +156,14 @@ function KnowledgeEntryRoute() {
           onReleaseResolved={resolveRelease}
           onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
           onReturnToKnowledge={() => {
+            if (graphReturnTo) {
+              navigate(graphReturnTo)
+              return
+            }
             const query = writeKnowledgeUrlState({ ...state, returnTo: undefined }).toString()
             navigate(`/knowledge${query ? `?${query}` : ''}`)
           }}
+          returnToKnowledgeLabel={graphReturnTo ? '返回知识图谱' : '返回知识库'}
           onStartResearch={({ theoryId, theoryName }) => {
             navigate(
               `/research/new?seed_theory_id=${encodeURIComponent(theoryId)}`,
@@ -161,6 +172,53 @@ function KnowledgeEntryRoute() {
           }}
         />
       </PageContent>
+    </PageShell>
+  )
+}
+
+function KnowledgeGraphRoute() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state: FullscreenKnowledgeGraphState = {
+    releaseId: searchParams.get('knowledge_release_id') ?? undefined,
+    query: searchParams.get('query') ?? undefined,
+    centerId: searchParams.get('center') ?? undefined,
+    pendingEnabled: searchParams.get('pending') === '1',
+  }
+  const updateState = useCallback((changes: Partial<FullscreenKnowledgeGraphState>) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      const keys: Record<keyof FullscreenKnowledgeGraphState, string> = {
+        releaseId: 'knowledge_release_id',
+        query: 'query',
+        centerId: 'center',
+        pendingEnabled: 'pending',
+      }
+      for (const [stateKey, value] of Object.entries(changes)) {
+        const queryKey = keys[stateKey as keyof FullscreenKnowledgeGraphState]
+        if (stateKey === 'pendingEnabled') {
+          if (value) next.set(queryKey, '1')
+          else next.delete(queryKey)
+        } else if (value) next.set(queryKey, String(value))
+        else next.delete(queryKey)
+      }
+      return next
+    })
+  }, [setSearchParams])
+  const entryHref = useCallback((knowledgeId: string) => {
+    const returnTo = `/knowledge/graph?${searchParams.toString()}`
+    const detailParams = new URLSearchParams({
+      knowledge_release_id: state.releaseId ?? '',
+      return_to: returnTo,
+    })
+    return `/knowledge/${encodeURIComponent(knowledgeId)}?${detailParams}`
+  }, [searchParams, state.releaseId])
+  return (
+    <PageShell workspace>
+      <FullscreenKnowledgeGraphPage
+        state={state}
+        onStateChange={updateState}
+        entryHref={entryHref}
+      />
     </PageShell>
   )
 }
@@ -327,6 +385,7 @@ export function AppRoutes({
     <Routes>
       <Route path="/" element={<FoundationPage />} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
+      <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
