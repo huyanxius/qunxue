@@ -30,6 +30,9 @@ class ModelScenario(StrEnum):
     TIMEOUT = "timeout"
     INSUFFICIENT_SOURCES = "insufficient_sources"
     USER_DEFERRED = "user_deferred"
+    PROVIDER_UNAVAILABLE = "provider_unavailable"
+    RATE_LIMITED = "rate_limited"
+    INVALID_OUTPUT = "invalid_output"
 
 
 @dataclass(frozen=True, slots=True)

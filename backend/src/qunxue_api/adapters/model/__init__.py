@@ -10,6 +10,9 @@ from qunxue_api.adapters.model.mock_provider import (
     DeterministicMockModelProvider,
     create_deterministic_mock_provider,
 )
+from qunxue_api.adapters.model.openai_compatible_provider import (
+    OpenAICompatibleModelProvider,
+)
 from qunxue_api.adapters.model.recording import (
     InMemoryModelInvocationRecorder,
     SqliteModelInvocationRecorder,
@@ -40,6 +43,7 @@ __all__ = [
     "ModelProviderFailure",
     "ModelProviderResult",
     "ModelScenario",
+    "OpenAICompatibleModelProvider",
     "SqliteModelInvocationRecorder",
     "create_deterministic_mock_provider",
 ]
