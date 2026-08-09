@@ -1,1 +1,1 @@
-export {}
+export { KnowledgeGraph } from './KnowledgeGraph'

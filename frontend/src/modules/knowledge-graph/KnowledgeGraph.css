@@ -1,0 +1,49 @@
+.knowledge-graph {
+  margin-top: 40px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding: 24px 0 28px;
+}
+
+.knowledge-graph__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.knowledge-graph__heading p,
+.knowledge-graph__heading span {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.knowledge-graph__heading h2 {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  font-weight: 500;
+}
+
+.knowledge-graph__notice {
+  margin: 22px 0 0;
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  line-height: 1.6;
+}
+
+.knowledge-graph__canvas {
+  min-height: 360px;
+  margin-top: 22px;
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 92%, white);
+}
+
+@media (max-width: 720px) {
+  .knowledge-graph__heading { align-items: start; flex-direction: column; }
+  .knowledge-graph__canvas { min-height: 300px; }
+}
