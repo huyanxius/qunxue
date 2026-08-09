@@ -1,4 +1,6 @@
 export { KnowledgeGraph } from './KnowledgeGraph'
 export { KnowledgeGraphWorkspace } from './KnowledgeGraphWorkspace'
+export { FullscreenKnowledgeGraphPage } from './FullscreenKnowledgeGraphPage'
+export type { FullscreenKnowledgeGraphState } from './FullscreenKnowledgeGraphPage'
 export type { KnowledgeGraphProjection } from './types'
 export type { KnowledgeGraphFocusEntry } from './types'
