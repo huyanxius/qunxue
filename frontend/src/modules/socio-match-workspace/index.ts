@@ -3,6 +3,7 @@
  */
 export { SocioMatchWorkspace } from './SocioMatchWorkspace'
 export { NewResearchPage, PhenomenonWorkspace } from './PhenomenonWorkspace'
+export { ResearchDemoPreview } from './ResearchDemoPreview'
 export type { SocioMatchWorkspaceProps } from './SocioMatchWorkspace'
 export { startResearchTask } from './researchTaskActions'
 export type {

@@ -20,6 +20,7 @@ export type AccountSessionState =
 export type MyResearchItem = {
   taskId: string
   stageLabel: string
+  nextActionLabel: string
   entryPath: string
   phenomenonSummary: string
   adoptedTheoryCount: number

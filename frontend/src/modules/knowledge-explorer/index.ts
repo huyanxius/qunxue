@@ -1,5 +1,6 @@
 export { KnowledgeEntryPage } from './KnowledgeEntryPage'
 export { KnowledgeExplorerPage } from './KnowledgeExplorer'
+export { KnowledgePreview, KnowledgeTicker } from './KnowledgePreview'
 export {
   readKnowledgeGraphReturnTo,
   readKnowledgeUrlState,

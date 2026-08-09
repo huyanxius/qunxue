@@ -5,6 +5,7 @@
 html {
   min-width: 320px;
   background: var(--paper);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -17,6 +18,23 @@ body {
 button,
 a {
   font: inherit;
+}
+
+:where(a, button, input, textarea, select, summary) {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-base) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease),
+    opacity var(--motion-fast) ease;
+}
+
+button {
+  border-radius: var(--radius-control);
+}
+
+button:not(:disabled):active {
+  filter: brightness(0.94);
 }
 
 a {

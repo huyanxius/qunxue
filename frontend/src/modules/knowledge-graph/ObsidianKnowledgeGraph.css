@@ -10,6 +10,50 @@
   background-size: auto, 24px 24px, auto;
 }
 
+.obsidian-knowledge-graph--preview {
+  min-height: clamp(540px, 62vw, 760px);
+  overflow: visible;
+  background: transparent;
+}
+
+.obsidian-knowledge-graph--preview .obsidian-knowledge-graph__canvas {
+  min-height: clamp(540px, 62vw, 760px);
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+}
+
+.foundation-graph__preview.is-visible .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__canvas {
+  animation: graph-network-arrive 1840ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.obsidian-knowledge-graph--preview .obsidian-knowledge-graph__controls {
+  top: 0;
+  right: 0;
+  padding: 8px 0;
+  border: 0;
+  color: #70808a;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  opacity: 0;
+  transform: translate3d(0, -8px, 0);
+}
+
+.foundation-graph__preview.is-visible .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__controls {
+  animation: graph-meta-arrive 780ms cubic-bezier(0.16, 1, 0.3, 1) 860ms both;
+}
+
+@keyframes graph-network-arrive {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.985); }
+  42% { opacity: 0.58; }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes graph-meta-arrive {
+  from { opacity: 0; transform: translate3d(0, -8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
 .obsidian-knowledge-graph__canvas {
   width: 100%;
   height: 100%;
@@ -49,6 +93,26 @@
   background: var(--accent-soft);
 }
 
+.obsidian-knowledge-graph__tour-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.obsidian-knowledge-graph__tour-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3e7cb1;
+  box-shadow: 0 0 0 0 rgb(62 124 177 / 0%);
+  animation: graph-tour-signal 4.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes graph-tour-signal {
+  0%, 24% { box-shadow: 0 0 0 0 rgb(62 124 177 / 24%); opacity: 1; }
+  68%, 100% { box-shadow: 0 0 0 8px rgb(62 124 177 / 0%); opacity: 0.72; }
+}
+
 .obsidian-knowledge-graph__notice {
   position: absolute;
   z-index: 3;
@@ -82,7 +146,42 @@
   font-size: 0.72rem;
 }
 
+.obsidian-knowledge-graph--preview .obsidian-knowledge-graph__hover {
+  display: grid;
+  gap: 4px;
+  max-width: min(320px, 34vw);
+  padding: 11px 14px 12px;
+  border: 0;
+  border-radius: 14px;
+  color: #263b49;
+  background: rgb(252 253 254 / 90%);
+  box-shadow: 0 16px 44px rgb(24 55 75 / 10%);
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  backdrop-filter: blur(14px);
+}
+
+.obsidian-knowledge-graph--preview .obsidian-knowledge-graph__hover span {
+  color: #70808a;
+  font-family: var(--font-sans);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
 @media (max-width: 720px) {
   .obsidian-knowledge-graph__canvas { min-height: 360px; }
   .obsidian-knowledge-graph__controls > span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__canvas,
+  .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__controls {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .obsidian-knowledge-graph__tour-status i { animation: none; }
 }
