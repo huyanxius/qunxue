@@ -362,7 +362,7 @@ describe('App routes', () => {
 
     const results = (await screen.findByRole('heading', { name: '条目' })).closest('section')
     if (!results) throw new Error('知识结果区域缺失')
-    fireEvent.click(await within(results).findByRole('button', { name: /概念/ }))
+    fireEvent.click(await within(results).findByRole('button', { name: /^概念/ }))
 
     expect(screen.getByTestId('route-location')).toHaveTextContent(
       '/knowledge/D1%3AC001?knowledge_release_id=release-a&query=%E6%A6%82%E5%BF%B5&dimension_id=D1&category_id=C001',
@@ -383,30 +383,24 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
   })
 
-  it('shows the real graph empty state without another request', async () => {
-    const fetch = vi.fn(async () => json(knowledgeDetail()))
+  it('exposes the structural graph on the knowledge page without eagerly requesting edges', async () => {
+    const fetch = vi.fn(async () => json(knowledgePage()))
     vi.stubGlobal('fetch', fetch)
-    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
+    renderRoute('/knowledge?knowledge_release_id=release-a')
 
-    expect(await screen.findByRole('heading', { name: '知识关系图' })).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '当前图中没有可展示的已审核显式关系。',
-    )
+    expect(await screen.findByRole('button', { name: '打开知识图谱' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: '知识关系图' })).not.toBeInTheDocument()
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('defers a non-empty graph whose endpoint nodes are not loaded', async () => {
+  it('keeps reviewed relation details factual without a second graph request', async () => {
     const fetch = vi.fn(async () => json(knowledgeDetailWithRelation()))
     vi.stubGlobal('fetch', fetch)
     renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
 
     expect(await screen.findByText('真实已审核关系。')).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '关系端点尚未加载，图暂不可用。',
-    )
-    expect(
-      screen.queryByText('当前图中没有可展示的已审核显式关系。'),
-    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '返回知识库' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: '知识关系图' })).not.toBeInTheDocument()
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
