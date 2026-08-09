@@ -108,6 +108,9 @@ class ModelGateway:
                 "target_candidate_ids": [
                     str(value) for value in input.target_candidate_ids
                 ],
+                "knowledge_release": _to_jsonable(
+                    judgement_input.knowledge_release
+                ),
                 "phenomenon": _to_jsonable(judgement_input.phenomenon),
                 "candidate": _to_jsonable(judgement_input.candidate),
                 "comparison_candidate_theory_ids": [
@@ -141,9 +144,12 @@ class ModelGateway:
                         CandidateJudgementRunStatus.INSUFFICIENT_SOURCES
                     ),
                 }.get(error.code, CandidateJudgementRunStatus.FAILED)
-                if status in {
-                    CandidateJudgementRunStatus.TIMED_OUT,
-                    CandidateJudgementRunStatus.INSUFFICIENT_SOURCES,
+                if error.code in {
+                    "model_timeout",
+                    "model_unavailable",
+                    "model_rate_limited",
+                    "model_invalid_output",
+                    "insufficient_sources",
                 }:
                     retryable_ids.append(item.candidate_id)
                 results.append(
