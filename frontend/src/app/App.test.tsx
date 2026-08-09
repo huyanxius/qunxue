@@ -8,6 +8,8 @@ import { AccountProvider } from '../modules/account'
 
 const cytoscapeMock = vi.hoisted(() => vi.fn(() => ({
   destroy: vi.fn(),
+  elements: vi.fn(() => ({})),
+  fit: vi.fn(),
   on: vi.fn(),
 })))
 
