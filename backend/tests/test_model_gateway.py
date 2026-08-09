@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from itertools import count
 from uuid import UUID
@@ -125,6 +126,7 @@ def _model_inputs(
         knowledge_id="knowledge-social-capital",
     )
     judgement_input = TheoryJudgementInput(
+        knowledge_release=RELEASE,
         phenomenon=phenomenon,
         candidate=content,
         comparison_candidates=(),
@@ -334,6 +336,15 @@ def test_candidate_failures_are_formal_batch_states_and_are_recorded(
         contract_version="model-gateway.v1",
     )
     judgement_input, _, _ = _model_inputs(scenario.phenomenon)
+    input_release = KnowledgeReleaseRef(
+        knowledge_release_id="knowledge-input-closed-set-v2",
+        level=KnowledgeReleaseLevel.FINAL,
+        content_hash="sha256:knowledge-input-closed-set-v2",
+    )
+    judgement_input = replace(
+        judgement_input,
+        knowledge_release=input_release,
+    )
 
     result = gateway.judge_and_rerank(input=_batch_input(judgement_input))
 
@@ -349,6 +360,7 @@ def test_candidate_failures_are_formal_batch_states_and_are_recorded(
     assert record.degraded is True
     assert record.error_code == expected_code
     assert record.output is None
+    assert record.knowledge_release_id == input_release.knowledge_release_id
 
 
 def test_shared_backend_catalog_covers_five_deterministic_scenarios() -> None:
@@ -357,7 +369,13 @@ def test_shared_backend_catalog_covers_five_deterministic_scenarios() -> None:
     page = catalog.list_page(cursor=None, limit=3)
     second_page = catalog.list_page(cursor=page.next_cursor, limit=3)
 
-    assert tuple(item.scenario for item in catalog.list_all()) == tuple(ModelScenario)
+    assert tuple(item.scenario for item in catalog.list_all()) == (
+        ModelScenario.SUCCESS,
+        ModelScenario.NO_RELIABLE_CANDIDATE,
+        ModelScenario.TIMEOUT,
+        ModelScenario.INSUFFICIENT_SOURCES,
+        ModelScenario.USER_DEFERRED,
+    )
     assert [item.case_id for item in (*page.items, *second_page.items)] == [
         "success",
         "no-reliable-candidate",

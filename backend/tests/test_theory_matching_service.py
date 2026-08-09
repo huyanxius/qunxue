@@ -171,6 +171,9 @@ def test_three_reviewed_profiles_become_stably_ordered_judged_candidates() -> No
         for candidate in run.candidates
     )
     assert [record.task_id for record in recorder.list_all()] == [PHENOMENON.task_id] * 3
+    assert [record.knowledge_release_id for record in recorder.list_all()] == [
+        RELEASE.knowledge_release_id
+    ] * 3
     assert run.model is not None
     assert run.model.degraded is False
     assert run.model.trace_id == run.candidates[0].trace_id
