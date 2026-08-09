@@ -240,4 +240,22 @@ describe('knowledge pages', () => {
       theoryName: '概念理论',
     })
   })
+
+  it('renders a successful detail slot without another request', async () => {
+    const fetch = vi.fn(async () => json(detail()))
+    vi.stubGlobal('fetch', fetch)
+
+    render(
+      <KnowledgeEntryPage
+        knowledgeId="D1:C001"
+        releaseId="release-a"
+        onReleaseResolved={vi.fn()}
+        onStartResearch={vi.fn()}
+        renderAfterDetail={(entry) => <p>组合条目 {entry.knowledgeId}</p>}
+      />,
+    )
+
+    expect(await screen.findByText('组合条目 D1:C001')).toBeVisible()
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
 })
