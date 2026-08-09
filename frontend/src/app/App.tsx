@@ -30,6 +30,7 @@ import {
 } from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { FoundationPage } from './foundation/FoundationPage'
+import { AppHomePage } from './home/AppHomePage'
 import {
   NewResearchPage,
   PhenomenonWorkspace,
@@ -224,16 +225,16 @@ function KnowledgeGraphRoute() {
 }
 
 function loginRedirect(value: string | null) {
-  if (!value?.startsWith('/')) return '/'
+  if (!value?.startsWith('/')) return '/app'
 
   const origin = 'https://qunxue.local'
   try {
     const target = new URL(value, origin)
     return target.origin === origin
       ? `${target.pathname}${target.search}${target.hash}`
-      : '/'
+      : '/app'
   } catch {
-    return '/'
+    return '/app'
   }
 }
 
@@ -248,20 +249,13 @@ function LoginRoute({ sessionState }: { sessionState: SessionState }) {
   }
 
   return (
-    <PageShell>
-      <PageTitle
-        eyebrow="ACCOUNT / LOGIN"
-        title="登录"
-        lede="继续你的研究，或回到刚才准备查看的页面。"
+    <PageShell immersive>
+      <LoginPage
+        onLogin={account.login}
+        onAuthenticated={() => navigate(destination, { replace: true })}
+        registerHref={`/register?redirect=${encodeURIComponent(destination)}`}
+        sessionExpired={sessionState.status === 'expired'}
       />
-      <PageContent>
-        <LoginPage
-          onLogin={account.login}
-          onAuthenticated={() => navigate(destination, { replace: true })}
-          registerHref={`/register?redirect=${encodeURIComponent(destination)}`}
-          sessionExpired={sessionState.status === 'expired'}
-        />
-      </PageContent>
     </PageShell>
   )
 }
@@ -277,19 +271,12 @@ function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
   }
 
   return (
-    <PageShell>
-      <PageTitle
-        eyebrow="ACCOUNT / REGISTER"
-        title="注册"
-        lede="研究内容长期保存在你的账号下；你可以随时手动删除一项研究。"
+    <PageShell immersive>
+      <RegisterPage
+        onRegister={account.register}
+        onAuthenticated={() => navigate(destination, { replace: true })}
+        loginHref={`/login?redirect=${encodeURIComponent(destination)}`}
       />
-      <PageContent>
-        <RegisterPage
-          onRegister={account.register}
-          onAuthenticated={() => navigate(destination, { replace: true })}
-          loginHref={`/login?redirect=${encodeURIComponent(destination)}`}
-        />
-      </PageContent>
     </PageShell>
   )
 }
@@ -380,10 +367,20 @@ export function AppRoutes({
   const protectedRoute = (element: ReactNode) => (
     <ProtectedRoute sessionState={resolvedSessionState}>{element}</ProtectedRoute>
   )
+  const productHome = (
+    <FoundationPage authenticated={resolvedSessionState.status === 'authenticated'} />
+  )
 
   return (
     <Routes>
-      <Route path="/" element={<FoundationPage />} />
+      <Route
+        path="/"
+        element={resolvedSessionState.status === 'authenticated'
+          ? <Navigate replace to="/app" />
+          : productHome}
+      />
+      <Route path="/welcome" element={productHome} />
+      <Route path="/app" element={protectedRoute(<AppHomePage />)} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />

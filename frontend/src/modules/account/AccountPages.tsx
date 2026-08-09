@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 
+import brandMark from '../../assets/qunxue-brand-mark.svg'
 import { isLoginServiceFailure } from './accountApi'
 import './account.css'
 
@@ -18,6 +19,49 @@ type RegisterPageProps = {
 }
 
 const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
+function AccountPortal({
+  kind,
+  title,
+  formLabel,
+  children,
+  switcher,
+}: {
+  kind: 'login' | 'register'
+  title: string
+  formLabel: string
+  children: ReactNode
+  switcher: ReactNode
+}) {
+  return (
+    <section className={`account-portal account-portal--${kind}`} aria-labelledby={`account-${kind}-title`}>
+      <div className="account-portal__story">
+        <img className="account-portal__brand-echo" src={brandMark} alt="" aria-hidden="true" />
+        <a className="account-portal__brand" href="/" aria-label="返回群学致知首页">
+          <span className="account-portal__brand-mark"><img src={brandMark} alt="" /></span>
+          <span className="account-portal__brand-copy">
+            <strong>群学致知</strong>
+            <small>COLLECTIVE INQUIRY</small>
+          </span>
+        </a>
+        <h1 id={`account-${kind}-title`}>{title}</h1>
+        <div className="account-portal__axis" aria-hidden="true">
+          <span>现象</span>
+          <span>理论</span>
+          <span>证据</span>
+        </div>
+      </div>
+
+      <div className="account-portal__entry">
+        <div className="account-portal__entry-inner">
+          <p className="account-portal__form-label">{formLabel}</p>
+          {children}
+          {switcher}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export function LoginPage({
   onLogin,
@@ -39,7 +83,7 @@ export function LoginPage({
       || password.length < 8
       || password.length > 128
     ) {
-      setError('请检查邮箱格式，密码需要 8–128 个字符。')
+      setError('请检查邮箱格式，密码需要 8-128 个字符。')
       return
     }
     setSubmitting(true)
@@ -59,7 +103,12 @@ export function LoginPage({
   }
 
   return (
-    <div className="account-layout">
+    <AccountPortal
+      kind="login"
+      title="登录"
+      formLabel="登录到研究档案"
+      switcher={<p className="account-switch">还没有账号？<a href={registerHref}>创建账号</a></p>}
+    >
       <form className="account-form" onSubmit={submit} noValidate>
         {sessionExpired ? (
           <p className="account-notice" role="status">登录已过期，请重新登录后继续。</p>
@@ -77,8 +126,7 @@ export function LoginPage({
           {submitting ? '正在登录…' : '登录并继续'}
         </button>
       </form>
-      <p className="account-switch">还没有账号？<a href={registerHref}>创建账号</a></p>
-    </div>
+    </AccountPortal>
   )
 }
 
@@ -101,7 +149,7 @@ export function RegisterPage({
       return
     }
     if (password.length < 8 || password.length > 128) {
-      setError('密码需要 8–128 个字符。')
+      setError('密码需要 8-128 个字符。')
       return
     }
     if (password !== confirmation) {
@@ -121,7 +169,12 @@ export function RegisterPage({
   }
 
   return (
-    <div className="account-layout">
+    <AccountPortal
+      kind="register"
+      title="注册"
+      formLabel="创建研究档案"
+      switcher={<p className="account-switch">已有账号？<a href={loginHref}>返回登录</a></p>}
+    >
       <form className="account-form" onSubmit={submit} noValidate>
         <label>
           <span>邮箱</span>
@@ -130,7 +183,7 @@ export function RegisterPage({
         <div className="account-field">
           <label htmlFor="register-password">密码</label>
           <input id="register-password" name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} aria-describedby="password-help" required />
-          <small id="password-help">8–128 个字符。</small>
+          <small id="password-help">8-128 个字符。</small>
         </div>
         <label>
           <span>确认密码</span>
@@ -141,7 +194,6 @@ export function RegisterPage({
           {submitting ? '正在创建…' : '创建账号'}
         </button>
       </form>
-      <p className="account-switch">已有账号？<a href={loginHref}>返回登录</a></p>
-    </div>
+    </AccountPortal>
   )
 }

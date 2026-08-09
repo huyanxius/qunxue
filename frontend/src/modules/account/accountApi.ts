@@ -39,6 +39,18 @@ const stageLabelByAction = {
   export: '框架已确认',
 } satisfies Record<ResearchTaskNavigationAction, string>
 
+const actionLabels = {
+  submit_phenomenon: '补充材料',
+  confirm_phenomenon: '确认现象',
+  start_matching: '开始理论匹配',
+  review_theory_candidates: '查看候选理论',
+  confirm_theory_plan: '确认理论选择',
+  create_framework: '形成研究框架',
+  review_framework: '审校研究框架',
+  confirm_framework: '确认研究框架',
+  export: '导出研究记录',
+} satisfies Record<ResearchTaskNavigationAction, string>
+
 export function watchSessionRejection(listener: () => void) {
   return subscribeToSessionRejected(listener)
 }
@@ -120,6 +132,7 @@ export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
     return {
       taskId: item.task_id,
       stageLabel: stageLabelByAction[action],
+      nextActionLabel: actionLabels[action],
       entryPath: `/research/${item.task_id}/${route}`,
       phenomenonSummary: item.phenomenon_summary?.phenomenon ?? '尚未确认现象',
       adoptedTheoryCount: item.adopted_theory_count,
