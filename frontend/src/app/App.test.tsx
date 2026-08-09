@@ -132,9 +132,9 @@ function knowledgeDetailWithTheoryProfile() {
   }
 }
 
-function json(body: unknown) {
+function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: { 'Content-Type': 'application/json' },
   })
 }
@@ -149,14 +149,20 @@ describe('App routes', () => {
   it('provides distinct desktop and mobile navigation surfaces', async () => {
     renderRoute('/knowledge')
 
-    expect(
-      await screen.findByRole('navigation', { name: '桌面主导航' }),
-    ).toBeInTheDocument()
+    const desktopNavigation = await screen.findByRole('navigation', { name: '桌面主导航' })
+    const desktopRail = screen.getByRole('complementary', { name: '群学致知功能栏' })
+
+    expect(desktopNavigation).toBeInTheDocument()
     expect(
       screen.getByRole('navigation', { name: '移动主导航' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: '图' })).toHaveLength(2)
-    expect(screen.getAllByRole('link', { name: '图' })[0]).toHaveAttribute(
+    expect(within(desktopRail).getByRole('link', { name: '群学致知首页' })).toBeVisible()
+    expect(
+      within(desktopNavigation).getAllByRole('link').every((link) => Boolean(link.querySelector('svg'))),
+    ).toBe(true)
+    expect(within(desktopNavigation).queryByText(/^[台知图研我·]$/)).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: '图谱' })).toHaveLength(2)
+    expect(screen.getAllByRole('link', { name: '图谱' })[0]).toHaveAttribute(
       'href',
       '/knowledge/graph',
     )
@@ -170,7 +176,7 @@ describe('App routes', () => {
   })
 
   it.each([
-    ['/', '从社会现象找到可比较理论，再形成研究框架。'],
+    ['/app', '继续你的研究'],
     ['/research/new', '新建研究任务'],
     ['/research/task-1/phenomenon', '确认现象'],
     ['/research/task-1/match', '匹配理论'],
@@ -184,6 +190,96 @@ describe('App routes', () => {
     ).toBeVisible()
   })
 
+  it('shows the public product home at root for an anonymous visitor', async () => {
+    renderRoute('/')
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /从真实困惑.*找到可研究的问题。/,
+      }),
+    ).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/')
+  })
+
+  it('sends an authenticated root visit straight to the work home', async () => {
+    renderRoute('/', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { name: '继续你的研究' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/app')
+  })
+
+  it('shows the latest research and its next action on the work home', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({
+      items: [{
+        adopted_theory_count: 0,
+        allowed_actions: ['confirm_phenomenon'],
+        created_at: '2026-08-08T08:00:00Z',
+        current_framework_id: null,
+        current_match_run_id: null,
+        current_material_intake_run_id: null,
+        current_phenomenon_candidate_id: 'candidate-1',
+        current_stage: 'phenomenon_confirmation',
+        entry_type: 'direct',
+        phenomenon_summary: {
+          phenomenon: '同一社区中的互助为何逐渐减少？',
+          research_intent: '比较关系持续性与制度规范的解释',
+        },
+        seed_theory_id: null,
+        seed_theory_name: null,
+        status: 'active',
+        task_id: 'task-1',
+        updated_at: '2026-08-09T08:00:00Z',
+        version: 1,
+      }],
+      next_cursor: null,
+    })))
+
+    renderRoute('/app', { status: 'authenticated' })
+
+    expect(await screen.findByText('同一社区中的互助为何逐渐减少？')).toBeVisible()
+    expect(screen.getByText('下一步：确认现象')).toBeVisible()
+    expect(screen.getByRole('link', { name: '继续研究' })).toHaveAttribute(
+      'href',
+      '/research/task-1/phenomenon',
+    )
+  })
+
+  it('offers a real starting path when the work home has no research', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+
+    renderRoute('/app', { status: 'authenticated' })
+
+    expect(await screen.findByText('还没有研究任务')).toBeVisible()
+    expect(screen.getByRole('link', { name: '从内置案例开始' })).toHaveAttribute(
+      'href',
+      '/research/new',
+    )
+  })
+
+  it('lets the user retry when the work home cannot load research', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ error: { code: 'offline' } }, 503)))
+
+    renderRoute('/app', { status: 'authenticated' })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('暂时无法读取最近研究')
+    expect(screen.getByRole('button', { name: '重新加载研究' })).toBeVisible()
+  })
+
+  it.each([
+    ['anonymous' as const, '体验研究流程'],
+    ['authenticated' as const, '进入工作台'],
+  ])('keeps /welcome public for a %s visitor', async (status, action) => {
+    renderRoute('/welcome', { status })
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /从真实困惑.*找到可研究的问题。/,
+      }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: action })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/welcome')
+  })
+
   it.each([
     ['/login', '登录'],
     ['/register', '注册'],
@@ -194,6 +290,7 @@ describe('App routes', () => {
   })
 
   it.each([
+    '/app',
     '/research/new?source=home',
     '/research/task-1/phenomenon',
     '/research/task-1/match',
@@ -239,7 +336,7 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('link', { name: '创建账号' })).toHaveAttribute(
       'href',
-      `/register?redirect=${encodeURIComponent('/')}`,
+      `/register?redirect=${encodeURIComponent('/app')}`,
     )
   })
 
@@ -249,7 +346,7 @@ describe('App routes', () => {
     expect(await screen.findByRole('heading', { name: '登录' })).toBeVisible()
     expect(screen.getByRole('link', { name: '创建账号' })).toHaveAttribute(
       'href',
-      `/register?redirect=${encodeURIComponent('/')}`,
+      `/register?redirect=${encodeURIComponent('/app')}`,
     )
   })
 
@@ -347,9 +444,10 @@ describe('App routes', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: '退出' }))
+    const accountRail = await screen.findByRole('complementary', { name: '群学致知功能栏' })
+    fireEvent.click(within(accountRail).getByRole('button', { name: '退出' }))
 
-    expect(await screen.findByRole('link', { name: '浏览知识库' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: /从真实困惑.*找到可研究的问题。/ })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/')
   })
 

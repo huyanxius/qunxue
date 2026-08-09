@@ -14,6 +14,7 @@ describe('SocioMatchWorkspace public API', () => {
     expect(Object.keys(publicApi).sort()).toEqual([
       'NewResearchPage',
       'PhenomenonWorkspace',
+      'ResearchDemoPreview',
       'SocioMatchWorkspace',
       'startResearchTask',
     ])

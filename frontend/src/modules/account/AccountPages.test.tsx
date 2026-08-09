@@ -99,7 +99,7 @@ describe('account pages', () => {
     )
 
     expect(screen.getByLabelText('邮箱')).toHaveAttribute('maxlength', '320')
-    expect(screen.getByText('8–128 个字符。')).toBeVisible()
+    expect(screen.getByText('8-128 个字符。')).toBeVisible()
     fireEvent.change(screen.getByLabelText('邮箱'), {
       target: { value: 'new@example.com' },
     })
@@ -111,7 +111,7 @@ describe('account pages', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '创建账号' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('密码需要 8–128 个字符')
+    expect(await screen.findByRole('alert')).toHaveTextContent('密码需要 8-128 个字符')
     expect(register).not.toHaveBeenCalled()
   })
 })
