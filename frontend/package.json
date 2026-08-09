@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
-    "cytoscape": "3.34.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-markdown": "10.1.0",
