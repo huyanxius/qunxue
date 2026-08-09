@@ -344,7 +344,14 @@ def test_alembic_head_matches_orm_metadata(
     database = Database(Settings().database_url)
     try:
         inspector = inspect(database.engine)
-        database_tables = set(inspector.get_table_names()) - {"alembic_version"}
+        # SQLite FTS5 creates a virtual table plus private shadow tables. Search
+        # behavior is covered at the catalog API boundary; these are not ORM rows.
+        database_tables = {
+            table_name
+            for table_name in inspector.get_table_names()
+            if table_name != "alembic_version"
+            and not table_name.startswith("knowledge_search_fts")
+        }
         metadata_tables = set(Base.metadata.tables)
         assert database_tables == metadata_tables
         assert _primary_key_mismatches(inspector, Base.metadata) == {}
@@ -352,12 +359,27 @@ def test_alembic_head_matches_orm_metadata(
         # Alembic covers foreign keys, server defaults, types, uniqueness, and
         # reflectable indexes; primary keys, check constraints, and SQLite
         # expression indexes need the explicit checks below.
+        def include_schema_object(
+            _object: object,
+            name: str | None,
+            object_type: str,
+            reflected: bool,
+            _compare_to: object,
+        ) -> bool:
+            return not (
+                reflected
+                and object_type == "table"
+                and name is not None
+                and name.startswith("knowledge_search_fts")
+            )
+
         with database.engine.connect() as connection:
             migration_context = MigrationContext.configure(
                 connection,
                 opts={
                     "compare_server_default": True,
                     "compare_type": True,
+                    "include_object": include_schema_object,
                 },
             )
             assert compare_metadata(migration_context, Base.metadata) == []

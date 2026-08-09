@@ -19,6 +19,7 @@ from qunxue_api.adapters.model import (
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
+from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
@@ -46,7 +47,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
-from qunxue_api.settings import Settings, get_settings
+from qunxue_api.settings import KNOWLEDGE_ROOT, Settings, get_settings
 
 
 def create_app(
@@ -66,6 +67,10 @@ def create_app(
     )
     app.state.settings = resolved_settings
     app.state.database = resolved_database
+    app.state.knowledge_catalog = SqliteKnowledgeCatalog(
+        resolved_database,
+        knowledge_root=KNOWLEDGE_ROOT,
+    )
     builtin_case_catalog = BuiltInCaseCatalog.default()
     resolved_model_provider = model_provider or create_deterministic_mock_provider(
         catalog=builtin_case_catalog

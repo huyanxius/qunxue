@@ -1,6 +1,5 @@
 import {
   BrowserRouter,
-  Link,
   Navigate,
   Route,
   Routes,
@@ -9,7 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router'
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 
 import {
   LoginPage,
@@ -18,8 +17,10 @@ import {
   useAccount,
 } from '../modules/account'
 import {
-  demoKnowledgeDataSource,
-  KnowledgeExplorer,
+  KnowledgeEntryPage,
+  KnowledgeExplorerPage,
+  readKnowledgeUrlState,
+  writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
 import { FoundationPage } from './foundation/FoundationPage'
 import {
@@ -40,20 +41,32 @@ type AppRoutesProps = {
   sessionState?: SessionState
 }
 
-const demoDataNotice =
-  '当前页面仅使用虚构占位数据验证信息结构、状态和导航，不代表正式知识库、学术来源或审核结论。'
-
 function KnowledgeExplorerRoute() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state = readKnowledgeUrlState(searchParams)
+
+  const updateState = useCallback((nextState: typeof state) => {
+    setSearchParams(writeKnowledgeUrlState(nextState))
+  }, [setSearchParams])
+  const resolveRelease = useCallback((releaseId: string) => {
+    setSearchParams((current) => writeKnowledgeUrlState({
+      ...readKnowledgeUrlState(current),
+      releaseId,
+    }))
+  }, [setSearchParams])
 
   return (
     <PageShell>
       <PageContent>
-        <KnowledgeExplorer
-          dataSource={demoKnowledgeDataSource}
-          dataNotice={demoDataNotice}
-          homeHref="/"
-          onNavigateHome={() => navigate('/')}
+        <KnowledgeExplorerPage
+          state={state}
+          onStateChange={updateState}
+          onReleaseResolved={resolveRelease}
+          onOpenEntry={(knowledgeId) => {
+            const query = writeKnowledgeUrlState(state).toString()
+            navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
+          }}
         />
       </PageContent>
     </PageShell>
@@ -83,15 +96,39 @@ function PlaceholderPage({
 
 function KnowledgeEntryRoute() {
   const { knowledge_id: knowledgeId } = useParams<{ knowledge_id: string }>()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state = readKnowledgeUrlState(searchParams)
+  const resolveRelease = useCallback((releaseId: string) => {
+    setSearchParams((current) => writeKnowledgeUrlState({
+      ...readKnowledgeUrlState(current),
+      releaseId,
+    }))
+  }, [setSearchParams])
+
+  if (!knowledgeId) {
+    return (
+      <PageShell>
+        <PageContent><ErrorState detail="知识条目地址无效。" /></PageContent>
+      </PageShell>
+    )
+  }
 
   return (
     <PageShell>
-      <PageTitle eyebrow="KNOWLEDGE / ENTRY" title="知识条目" />
       <PageContent>
-        <p className="page-placeholder">
-          {knowledgeId ? `正在保留条目 ${knowledgeId} 的稳定地址。` : '正在保留条目的稳定地址。'}
-        </p>
-        <Link className="text-link" to="/knowledge">返回知识浏览</Link>
+        <KnowledgeEntryPage
+          knowledgeId={knowledgeId}
+          releaseId={state.releaseId}
+          onReleaseResolved={resolveRelease}
+          onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
+          onStartResearch={({ theoryId, theoryName }) => {
+            navigate(
+              `/research/new?seed_theory_id=${encodeURIComponent(theoryId)}`,
+              { state: { seedTheoryName: theoryName } },
+            )
+          }}
+        />
       </PageContent>
     </PageShell>
   )
@@ -183,10 +220,13 @@ function MyResearchRoute() {
 
 function NewResearchRoute() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const seedTheoryId = searchParams.get('seed_theory_id')
-  const seedTheoryName = searchParams.get('seed_theory_name')
-  const seedTheory = seedTheoryId && seedTheoryName
+  const seedTheoryName = (
+    location.state as { seedTheoryName?: string } | null
+  )?.seedTheoryName
+  const seedTheory = seedTheoryId
     ? { theoryId: seedTheoryId, name: seedTheoryName }
     : null
   return (

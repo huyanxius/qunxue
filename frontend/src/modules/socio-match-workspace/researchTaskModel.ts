@@ -8,8 +8,12 @@ export type ResearchTaskStatus =
   | 'framework_confirmed'
 export type ResearchTaskAction = 'submit_phenomenon'
 
-export interface SeedTheoryClue {
+export interface SeedTheoryStart {
   readonly theoryId: string
+  readonly name?: string
+}
+
+export interface SeedTheoryClue extends SeedTheoryStart {
   readonly name: string
 }
 
@@ -83,5 +87,5 @@ export interface MaterialStartInput {
   readonly researchIntent: string
   readonly context: string
   readonly processingPolicyVersion: string
-  readonly seedTheory?: SeedTheoryClue | null
+  readonly seedTheory?: SeedTheoryStart | null
 }

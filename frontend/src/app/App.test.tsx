@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,6 +36,86 @@ function RouteLocation() {
   return <div data-testid="route-location">{`${location.pathname}${location.search}${location.hash}`}</div>
 }
 
+function knowledgeSummary() {
+  return {
+    category: '概念',
+    category_id: 'C001',
+    content_version: 1,
+    dimension: '本体论',
+    dimension_id: 'D1',
+    directory_path: [
+      { node_id: 'D1', node_type: 'dimension', title: '本体论' },
+      { node_id: 'C001', node_type: 'category', title: '概念' },
+    ],
+    eligibility: {
+      browse_eligible: true,
+      match_eligible: false,
+      rag_eligible: false,
+      review_record_ids: [],
+      training_candidate_eligible: false,
+    },
+    knowledge_id: 'D1:C001',
+    review_status: 'pending',
+    title: '概念',
+  }
+}
+
+function knowledgePage() {
+  return {
+    entries: [knowledgeSummary()],
+    knowledge_release_id: 'release-a',
+    next_cursor: null,
+    stable_order: ['D1:C001'],
+  }
+}
+
+function knowledgeDetail() {
+  return {
+    ...knowledgeSummary(),
+    aliases: [],
+    content: '一段真实条目正文。',
+    knowledge_release_id: 'release-a',
+    relations: [],
+    sources: [],
+    theory_profile: null,
+  }
+}
+
+function knowledgeDetailWithTheoryProfile() {
+  return {
+    ...knowledgeDetail(),
+    theory_profile: {
+      analysis_levels: [],
+      applicable_phenomena: [],
+      competing_or_complementary_theory_ids: [],
+      content_version: 1,
+      core_propositions: [],
+      exclusion_signals: [],
+      match_eligible: true,
+      observable_evidence: [],
+      prerequisites: [],
+      related_knowledge_ids: ['D1:C001'],
+      review_status: 'reviewed',
+      source_ids: [],
+      theory_id: 'theory-social-capital',
+      title: '社会资本理论',
+    },
+  }
+}
+
+function json(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return new URL(input)
+  if (input instanceof URL) return input
+  return new URL(input.url)
+}
+
 describe('App routes', () => {
   it('provides distinct desktop and mobile navigation surfaces', async () => {
     renderRoute('/knowledge')
@@ -50,8 +130,6 @@ describe('App routes', () => {
 
   it.each([
     ['/', '从社会现象找到可比较理论，再形成研究框架。'],
-    ['/knowledge', '可视化知识库'],
-    ['/knowledge/knowledge-field-theory', '知识条目'],
     ['/research/new', '新建研究任务'],
     ['/research/task-1/phenomenon', '确认现象'],
     ['/research/task-1/match', '匹配理论'],
@@ -234,37 +312,97 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent('/')
   })
 
-  it('renders the demo knowledge explorer from a direct /knowledge entry', async () => {
+  it('resolves a first knowledge visit to one fixed release before loading its directory', async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      return request.pathname === '/api/knowledge/releases/current'
+        ? json({
+            content_hash: 'sha256:release-a',
+            knowledge_release_id: 'release-a',
+            level: 'preview',
+          })
+        : json(knowledgePage())
+    })
+    vi.stubGlobal('fetch', fetch)
+
     renderRoute('/knowledge')
 
-    expect(
-      await screen.findByRole('heading', { name: '可视化知识库' }),
-    ).toBeVisible()
-    expect(screen.getByRole('note')).toHaveTextContent(
-      '不代表正式知识库、学术来源或审核结论',
-    )
-
-    fireEvent.click(
-      await screen.findByRole('button', { name: /情境概念（演示）/ }),
-    )
-
-    expect(
-      await screen.findByText('演示来源记录 A'),
-    ).toBeVisible()
-    expect(screen.getByRole('heading', { name: '显式关系' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '条目' })).toBeVisible()
+    await waitFor(() => {
+      expect(screen.getByTestId('route-location')).toHaveTextContent(
+        '/knowledge?knowledge_release_id=release-a',
+      )
+    })
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
-  it('navigates from the knowledge explorer back to the home page', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 503 })),
+  it('keeps the selected release and filters while opening an independent detail route', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgePage())))
+    renderRoute('/knowledge?knowledge_release_id=release-a&query=%E6%A6%82%E5%BF%B5&dimension_id=D1&category_id=C001')
+
+    const results = (await screen.findByRole('heading', { name: '条目' })).closest('section')
+    if (!results) throw new Error('知识结果区域缺失')
+    fireEvent.click(await within(results).findByRole('button', { name: /概念/ }))
+
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      '/knowledge/D1%3AC001?knowledge_release_id=release-a&query=%E6%A6%82%E5%BF%B5&dimension_id=D1&category_id=C001',
     )
-    renderRoute('/knowledge')
+  })
 
-    fireEvent.click(screen.getByRole('link', { name: '返回首页' }))
+  it('opens a release-pinned detail and returns to the supplied research task', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgeDetail())))
+    renderRoute(
+      '/knowledge/D1%3AC001?knowledge_release_id=release-a&return_to=%2Fresearch%2Ftask-1%2Fmatch',
+      { status: 'authenticated' },
+    )
 
-    expect(
-      await screen.findByRole('link', { name: '浏览知识库' }),
-    ).toHaveAttribute('href', '/knowledge')
+    expect(await screen.findByText('一段真实条目正文。')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '返回研究任务' }))
+
+    expect(await screen.findByRole('heading', { name: '匹配理论' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
+  it('keeps only the theory ID in the URL when starting research from knowledge', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      if (request.pathname === '/api/knowledge/entries/D1%3AC001') {
+        return json(knowledgeDetailWithTheoryProfile())
+      }
+      if (request.pathname === '/api/phenomenon-examples') return json({ items: [] })
+      return json(knowledgeDetailWithTheoryProfile())
+    }))
+    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a', { status: 'authenticated' })
+
+    fireEvent.click(await screen.findByRole('button', { name: '以此理论开始研究' }))
+
+    expect(await screen.findByText('起始线索：社会资本理论')).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent(
+      /^\/research\/new\?seed_theory_id=theory-social-capital$/,
+    )
+  })
+
+  it('resolves a deep knowledge entry to one fixed release before reading its detail', async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      return request.pathname === '/api/knowledge/releases/current'
+        ? json({
+            content_hash: 'sha256:release-a',
+            knowledge_release_id: 'release-a',
+            level: 'preview',
+          })
+        : json(knowledgeDetail())
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    renderRoute('/knowledge/D1%3AC001')
+
+    expect(await screen.findByText('一段真实条目正文。')).toBeVisible()
+    await waitFor(() => {
+      expect(screen.getByTestId('route-location')).toHaveTextContent(
+        '/knowledge/D1%3AC001?knowledge_release_id=release-a',
+      )
+    })
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 })

@@ -2,6 +2,8 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from qunxue_api.adapters.sqlite.knowledge_catalog_model import KnowledgeTheoryProfileRow
+
 
 def _headers() -> dict[str, str]:
     return {"Idempotency-Key": str(uuid4())}
@@ -14,6 +16,32 @@ def _register(client: TestClient) -> None:
         json={"email": "entry-sources@example.com", "password": "research-passphrase"},
     )
     assert response.status_code == 201
+
+
+def _seed_theory_profile(client: TestClient) -> None:
+    release = client.get("/api/knowledge/releases/current")
+
+    assert release.status_code == 200
+    with client.app.state.database.session() as session:
+        session.add(
+            KnowledgeTheoryProfileRow(
+                knowledge_release_id=release.json()["knowledge_release_id"],
+                theory_id="theory-social-capital",
+                related_knowledge_ids=["D1:C001"],
+                title="服务端确认的社会资本理论",
+                core_propositions=[],
+                applicable_phenomena=[],
+                analysis_levels=[],
+                prerequisites=[],
+                exclusion_signals=[],
+                observable_evidence=[],
+                competing_or_complementary_theory_ids=[],
+                source_ids=[],
+                content_version=1,
+                review_status="reviewed",
+                match_eligible=True,
+            )
+        )
 
 
 def test_direct_input_examples_come_from_persisted_seed_data(
@@ -52,9 +80,10 @@ def test_direct_input_examples_come_from_persisted_seed_data(
     }
 
 
-def test_seed_theory_clue_is_persisted_with_the_research_task(
+def test_seed_theory_name_is_resolved_from_the_current_knowledge_release(
     client: TestClient,
 ) -> None:
+    _seed_theory_profile(client)
     _register(client)
     created = client.post(
         "/api/research-tasks",
@@ -62,16 +91,33 @@ def test_seed_theory_clue_is_persisted_with_the_research_task(
         json={
             "entry_type": "direct_input",
             "seed_theory_id": "theory-social-capital",
-            "seed_theory_name": "社会资本理论",
         },
     )
 
     assert created.status_code == 201
     assert created.json()["seed_theory_id"] == "theory-social-capital"
-    assert created.json()["seed_theory_name"] == "社会资本理论"
+    assert created.json()["seed_theory_name"] == "服务端确认的社会资本理论"
 
     task_id = created.json()["task_id"]
     navigation = client.get(f"/api/research-tasks/{task_id}/navigation")
     assert navigation.status_code == 200
     assert navigation.json()["seed_theory_id"] == "theory-social-capital"
-    assert navigation.json()["seed_theory_name"] == "社会资本理论"
+    assert navigation.json()["seed_theory_name"] == "服务端确认的社会资本理论"
+
+
+def test_unknown_seed_theory_id_is_rejected_even_with_an_old_name_field(
+    client: TestClient,
+) -> None:
+    _register(client)
+
+    response = client.post(
+        "/api/research-tasks",
+        headers=_headers(),
+        json={
+            "entry_type": "direct_input",
+            "seed_theory_id": "theory-not-in-current-release",
+            "seed_theory_name": "客户端伪造名称",
+        },
+    )
+
+    assert response.status_code == 422

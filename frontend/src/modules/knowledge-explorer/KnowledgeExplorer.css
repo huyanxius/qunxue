@@ -89,6 +89,40 @@
   gap: clamp(32px, 6vw, 72px);
   margin-top: 38px;
 }
+.knowledge-explorer__directory h2 {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-weight: 500;
+}
+.knowledge-explorer__directory ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.knowledge-explorer__directory > ul > li { border-top: 1px solid var(--rule); }
+.knowledge-explorer__directory button,
+.knowledge-explorer__directory summary {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.knowledge-explorer__directory button[aria-pressed='true'] { color: var(--accent); }
+.knowledge-explorer__directory small,
+.knowledge-explorer__directory p {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+.knowledge-explorer__directory summary::marker { color: var(--ink-soft); }
+.knowledge-explorer__directory ul ul { padding-left: 16px; }
+.knowledge-explorer__directory p { margin: 0 0 12px; }
 .knowledge-explorer__results h2,
 .knowledge-explorer__detail h2,
 .knowledge-explorer__detail h3 { font-family: var(--serif); font-weight: 500; }
@@ -134,6 +168,20 @@
 .knowledge-explorer__detail-heading p,
 .knowledge-explorer__detail-heading span { color: var(--ink-soft); font-size: 0.75rem; }
 .knowledge-explorer__content { padding: 22px 0; font-family: var(--serif); line-height: 1.85; }
+.knowledge-explorer__content > :first-child { margin-top: 0; }
+.knowledge-explorer__content > :last-child { margin-bottom: 0; }
+.knowledge-explorer__content h1,
+.knowledge-explorer__content h2,
+.knowledge-explorer__content h3,
+.knowledge-explorer__content h4,
+.knowledge-explorer__content h5,
+.knowledge-explorer__content h6 { font-weight: 500; line-height: 1.35; }
+.knowledge-explorer__content blockquote {
+  margin: 18px 0;
+  padding-left: 16px;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--rule);
+}
 .knowledge-explorer__detail > section { padding: 22px 0; }
 .knowledge-explorer__eligibility {
   display: grid;

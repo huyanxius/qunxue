@@ -1,15 +1,20 @@
 from fastapi import APIRouter, HTTPException, Query, Request, status
-from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.knowledge import (
     BuiltInCasePageResponse,
     BuiltInCaseResponse,
+    KnowledgeDirectoryNodeResponse,
     KnowledgeEntryDetailResponse,
     KnowledgeEntryPageResponse,
+    KnowledgeEntrySummaryResponse,
+    KnowledgeRelationResponse,
     KnowledgeReleaseResponse,
+    KnowledgeUseEligibilityResponse,
+    SourceRecordResponse,
+    TheoryProfileResponse,
 )
-from qunxue_api.api.routes.stubs import not_implemented_response
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 
 router = APIRouter(
     prefix="/api/knowledge",
@@ -22,19 +27,27 @@ router = APIRouter(
     "/releases/current",
     operation_id="get_current_knowledge_release",
     response_model=KnowledgeReleaseResponse,
-    responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
+    responses={404: {"model": ErrorResponse}},
 )
-def get_current_knowledge_release() -> JSONResponse:
-    return not_implemented_response()
+def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
+    release = request.app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    )
+    return KnowledgeReleaseResponse(
+        knowledge_release_id=release.knowledge_release_id,
+        level=release.level,
+        content_hash=release.content_hash,
+    )
 
 
 @router.get(
     "/entries",
     operation_id="list_knowledge_entries",
     response_model=KnowledgeEntryPageResponse,
-    responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
+    responses={404: {"model": ErrorResponse}},
 )
 def list_knowledge_entries(
+    request: Request,
     knowledge_release_id: str | None = None,
     query: str | None = None,
     category: str | None = None,
@@ -42,21 +55,158 @@ def list_knowledge_entries(
     dimension_id: str | None = None,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
-) -> JSONResponse:
-    return not_implemented_response()
+) -> KnowledgeEntryPageResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        page = catalog.browse(
+            release_id=release_id,
+            query=query,
+            category=category,
+            category_id=category_id,
+            dimension_id=dimension_id,
+            cursor=cursor,
+            limit=limit,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from error
+    return KnowledgeEntryPageResponse(
+        knowledge_release_id=page.release.knowledge_release_id,
+        entries=[_entry_summary_response(entry) for entry in page.entries],
+        stable_order=[entry.knowledge_id for entry in page.entries],
+        next_cursor=page.next_cursor,
+    )
 
 
 @router.get(
     "/entries/{knowledge_id}",
     operation_id="get_knowledge_entry",
     response_model=KnowledgeEntryDetailResponse,
-    responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
+    responses={404: {"model": ErrorResponse}},
 )
 def get_knowledge_entry(
+    request: Request,
     knowledge_id: str,
     knowledge_release_id: str | None = None,
-) -> JSONResponse:
-    return not_implemented_response()
+) -> KnowledgeEntryDetailResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        entry = catalog.get_entry(knowledge_id=knowledge_id, release_id=release_id)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    return KnowledgeEntryDetailResponse(
+        knowledge_release_id=entry.release.knowledge_release_id,
+        knowledge_id=entry.summary.knowledge_id,
+        content_version=entry.summary.content_version,
+        title=entry.summary.title,
+        category_id=entry.summary.category_id,
+        category=entry.summary.category,
+        dimension_id=entry.summary.dimension_id,
+        dimension=entry.summary.dimension,
+        directory_path=[
+            KnowledgeDirectoryNodeResponse(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                title=node.title,
+            )
+            for node in entry.summary.directory_path
+        ],
+        review_status=entry.summary.review_status,
+        eligibility=_eligibility_response(entry.summary.eligibility),
+        aliases=list(entry.aliases),
+        content=entry.content,
+        sources=[
+            SourceRecordResponse(
+                source_id=source.source_id,
+                source_type=source.source_type,
+                title=source.title,
+                authors_or_institution=list(source.authors_or_institution),
+                year=source.year,
+                publication=source.publication,
+                locator=source.locator,
+                url=source.url,
+                verification_status=source.verification_status,
+                use_boundary=source.use_boundary,
+            )
+            for source in entry.sources
+        ],
+        relations=[
+            KnowledgeRelationResponse(
+                relation_id=relation.relation_id,
+                source_knowledge_id=relation.source_knowledge_id,
+                target_knowledge_id=relation.target_knowledge_id,
+                relation_type=relation.relation_type,
+                direction=relation.direction,
+                description=relation.description,
+                evidence_source_ids=list(relation.evidence_source_ids),
+                evidence_grade=relation.evidence_grade,
+                content_version=relation.content_version,
+                review_status=relation.review_status,
+            )
+            for relation in entry.relations
+        ],
+        theory_profile=(
+            TheoryProfileResponse(
+                theory_id=entry.theory_profile.theory_id,
+                related_knowledge_ids=list(entry.theory_profile.related_knowledge_ids),
+                title=entry.theory_profile.title,
+                core_propositions=list(entry.theory_profile.core_propositions),
+                applicable_phenomena=list(entry.theory_profile.applicable_phenomena),
+                analysis_levels=list(entry.theory_profile.analysis_levels),
+                prerequisites=list(entry.theory_profile.prerequisites),
+                exclusion_signals=list(entry.theory_profile.exclusion_signals),
+                observable_evidence=list(entry.theory_profile.observable_evidence),
+                competing_or_complementary_theory_ids=list(
+                    entry.theory_profile.competing_or_complementary_theory_ids
+                ),
+                source_ids=list(entry.theory_profile.source_ids),
+                content_version=entry.theory_profile.content_version,
+                review_status=entry.theory_profile.review_status,
+                match_eligible=entry.theory_profile.match_eligible,
+            )
+            if entry.theory_profile is not None
+            else None
+        ),
+    )
+
+
+def _entry_summary_response(entry: object) -> KnowledgeEntrySummaryResponse:
+    return KnowledgeEntrySummaryResponse(
+        knowledge_id=entry.knowledge_id,
+        content_version=entry.content_version,
+        title=entry.title,
+        category_id=entry.category_id,
+        category=entry.category,
+        dimension_id=entry.dimension_id,
+        dimension=entry.dimension,
+        directory_path=[
+            KnowledgeDirectoryNodeResponse(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                title=node.title,
+            )
+            for node in entry.directory_path
+        ],
+        review_status=entry.review_status,
+        eligibility=_eligibility_response(entry.eligibility),
+    )
+
+
+def _eligibility_response(eligibility: object) -> KnowledgeUseEligibilityResponse:
+    return KnowledgeUseEligibilityResponse(
+        browse_eligible=eligibility.browse_eligible,
+        rag_eligible=eligibility.rag_eligible,
+        training_candidate_eligible=eligibility.training_candidate_eligible,
+        match_eligible=eligibility.match_eligible,
+        review_record_ids=list(eligibility.review_record_ids),
+    )
 
 
 @router.get(

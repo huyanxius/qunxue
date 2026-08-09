@@ -178,7 +178,7 @@ describe('research task API', () => {
     })
 
     const createRequest = fetchMock.mock.calls[0][0] as Request
-    expect(await createRequest.json()).toMatchObject({
+    expect(await createRequest.json()).toEqual({
       entry_type: 'material_input',
       seed_theory_id: 'theory-social-capital',
     })

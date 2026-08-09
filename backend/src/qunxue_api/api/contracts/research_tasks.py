@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from qunxue_api.modules.research_intake import (
     EntryType,
@@ -16,13 +16,6 @@ from qunxue_api.modules.research_intake import (
 class CreateResearchTaskRequest(BaseModel):
     entry_type: EntryType = EntryType.DIRECT_INPUT
     seed_theory_id: str | None = Field(default=None, min_length=1, max_length=128)
-    seed_theory_name: str | None = Field(default=None, min_length=1, max_length=300)
-
-    @model_validator(mode="after")
-    def validate_seed_clue(self) -> "CreateResearchTaskRequest":
-        if (self.seed_theory_id is None) != (self.seed_theory_name is None):
-            raise ValueError("seed theory id and name must be supplied together")
-        return self
 
 
 class ResearchTraceActor(StrEnum):

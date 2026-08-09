@@ -12,34 +12,49 @@ export type KnowledgeSourceVerificationStatus =
   | 'system_summary'
   | 'pending'
 
-export interface KnowledgeUseEligibility {
-  browseEligible: boolean
-  ragEligible: boolean
-  trainingCandidateEligible: boolean
-  matchEligible: boolean
-  reviewRecordIds: readonly string[]
+export interface KnowledgeDirectoryNode {
+  nodeId: string
+  nodeType: 'dimension' | 'category'
+  title: string
 }
 
-export interface KnowledgeSource {
+export interface KnowledgeEntrySummary {
+  knowledgeId: string
+  contentVersion: number
+  title: string
+  category: string
+  categoryId: string
+  dimension: string
+  dimensionId: string
+  directoryPath: readonly KnowledgeDirectoryNode[]
+  reviewStatus: KnowledgeReviewStatus
+}
+
+export interface KnowledgeRelease {
+  knowledgeReleaseId: string
+  level: 'preview' | 'final'
+  contentHash: string
+}
+
+export interface KnowledgeSourceView {
   sourceId: string
   title: string
-  contributor?: string
+  authorsOrInstitution: readonly string[]
   year?: number
   publication?: string
   locator?: string
   url?: string
   sourceType: string
   verificationStatus: KnowledgeSourceVerificationStatus
-  usageBoundary?: string
+  useBoundary: string
 }
 
-export interface KnowledgeRelation {
+export interface KnowledgeRelationView {
   relationId: string
   sourceKnowledgeId: string
   targetKnowledgeId: string
-  relatedTitle: string
   relationType: string
-  direction: 'directed' | 'bidirectional'
+  direction: string
   description: string
   evidenceSourceIds: readonly string[]
   evidenceGrade?: string
@@ -47,54 +62,19 @@ export interface KnowledgeRelation {
   contentVersion: number
 }
 
-export interface KnowledgeExplorerEntry {
-  knowledgeId: string
-  contentVersion: number
+export interface KnowledgeTheoryProfile {
+  theoryId: string
   title: string
-  category: string
-  dimension: string
+  relatedKnowledgeIds: readonly string[]
   reviewStatus: KnowledgeReviewStatus
+  matchEligible: boolean
 }
 
-export interface KnowledgeExplorerRelease {
+export interface KnowledgeEntryDetail extends KnowledgeEntrySummary {
   knowledgeReleaseId: string
-  level: 'working' | 'preview' | 'final'
-  contentHash: string
-}
-
-export interface KnowledgeExplorerPage {
-  release: KnowledgeExplorerRelease
-  entries: readonly KnowledgeExplorerEntry[]
-  nextCursor?: string
-}
-
-export interface KnowledgeExplorerDetail {
-  entry: KnowledgeExplorerEntry
+  aliases: readonly string[]
   content: string
-  theoryId?: string
-  sources: readonly KnowledgeSource[]
-  relations: readonly KnowledgeRelation[]
-  useEligibility: KnowledgeUseEligibility
-}
-
-export interface KnowledgeExplorerDataSource {
-  currentRelease(): Promise<KnowledgeExplorerRelease>
-  search(input: {
-    releaseId: string
-    query?: string
-    category?: string
-    cursor?: string
-  }): Promise<KnowledgeExplorerPage>
-  getEntry(input: {
-    knowledgeId: string
-    releaseId: string
-  }): Promise<KnowledgeExplorerDetail>
-}
-
-export interface KnowledgeExplorerProps {
-  dataSource: KnowledgeExplorerDataSource
-  initialKnowledgeId?: string
-  dataNotice?: string
-  homeHref?: string
-  onNavigateHome?: () => void
+  sources: readonly KnowledgeSourceView[]
+  relations: readonly KnowledgeRelationView[]
+  theoryProfile?: KnowledgeTheoryProfile
 }
