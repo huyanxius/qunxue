@@ -20,9 +20,15 @@
   --paper: var(--bg);
   --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
   --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --radius: 14px;
+  --radius: 16px;
+  --radius-control: 10px;
+  --radius-large: 24px;
   --shadow-sm: 0 1px 2px rgb(20 40 55 / 5%), 0 10px 30px rgb(20 40 55 / 5%);
+  --motion-fast: 140ms;
+  --motion-base: 240ms;
+  --motion-slow: 420ms;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.65, 0, 0.35, 1);
   color: var(--ink);
   background: var(--bg);
   font-family: var(--sans);

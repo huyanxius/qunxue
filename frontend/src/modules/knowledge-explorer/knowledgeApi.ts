@@ -169,6 +169,21 @@ export async function loadKnowledgeDirectory(releaseId: string) {
   return entries
 }
 
+export async function readKnowledgePreview(releaseId: string) {
+  const { data } = await listKnowledgeEntries({
+    client: apiClient,
+    query: {
+      knowledge_release_id: releaseId,
+      limit: 48,
+    },
+  })
+  if (!data) throw new Error('知识服务暂时不可用')
+  if (data.knowledge_release_id !== releaseId) {
+    throw new Error('知识服务返回了不同发布版本，请重新进入知识库')
+  }
+  return data.entries.map(entrySummary)
+}
+
 export async function searchKnowledgeEntries(input: {
   releaseId: string
   query: string
