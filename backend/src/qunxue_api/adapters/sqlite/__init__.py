@@ -19,6 +19,10 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
     PhenomenonStateRow,
     ResearchTaskRow,
 )
+from qunxue_api.adapters.sqlite.theory_matching_model import (
+    MatchRunRow,
+    TheoryMatchingRequestRow,
+)
 
 __all__ = [
     "Base",
@@ -31,10 +35,12 @@ __all__ = [
     "KnowledgeTheoryProfileRow",
     "ModelInvocationRow",
     "MaterialIntakeRunRow",
+    "MatchRunRow",
     "PhenomenonCandidateVersionRow",
     "PhenomenonExampleRow",
     "PhenomenonStateRow",
     "ResearchTaskRow",
+    "TheoryMatchingRequestRow",
     "UserRow",
     "UserSessionRow",
 ]
