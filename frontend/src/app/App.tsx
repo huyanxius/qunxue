@@ -22,6 +22,7 @@ import {
   readKnowledgeUrlState,
   writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
+import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { FoundationPage } from './foundation/FoundationPage'
 import {
   NewResearchPage,
@@ -128,6 +129,17 @@ function KnowledgeEntryRoute() {
               { state: { seedTheoryName: theoryName } },
             )
           }}
+          renderAfterDetail={(detail) => (
+            <KnowledgeGraphIntegration
+              detail={detail}
+              onSelectKnowledge={(nextKnowledgeId) => {
+                const query = writeKnowledgeUrlState(state).toString()
+                navigate(
+                  `/knowledge/${encodeURIComponent(nextKnowledgeId)}${query ? `?${query}` : ''}`,
+                )
+              }}
+            />
+          )}
         />
       </PageContent>
     </PageShell>
