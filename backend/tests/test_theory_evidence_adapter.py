@@ -189,4 +189,3 @@ def test_recall_pages_in_catalog_order_and_stops_after_five_eligible_profiles() 
     ]
     assert all(item.excerpt is None for item in first.evidence_items)
     assert first == second
-
