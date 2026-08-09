@@ -1508,7 +1508,7 @@ export type MatchRunResponse = {
      * Match Run Id
      */
     match_run_id: string;
-    model: ModelMetadata;
+    model: ModelMetadata | null;
     /**
      * Partial Completion Acknowledged
      */
