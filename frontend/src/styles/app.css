@@ -162,6 +162,14 @@
   padding: 34px 0 64px;
 }
 
+.page-shell--workspace {
+  width: 100%;
+  height: calc(100vh - 64px);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .mobile-navigation {
   display: none;
 }
@@ -384,6 +392,12 @@
     padding: 22px 0 44px;
   }
 
+  .page-shell--workspace {
+    width: 100%;
+    height: calc(100vh - 122px);
+    padding: 0;
+  }
+
   .mobile-navigation {
     position: fixed;
     z-index: 40;
@@ -391,7 +405,7 @@
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     min-height: 66px;
     padding: 6px 8px max(6px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--rule);

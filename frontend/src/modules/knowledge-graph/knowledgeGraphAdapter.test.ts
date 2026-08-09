@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  mergeDirectoryPath,
+  mergeGraphEntries,
   mergeRelationCandidates,
   mergeReviewedRelations,
   mergeStructuralConnections,
@@ -59,7 +61,55 @@ const entries = [
 ]
 
 describe('projectKnowledgeGraph', () => {
-  it('projects reviewed relations whose endpoints are supplied', () => {
+  it('derives the complete structural path from entry detail without scanning connection pages', () => {
+    const graph = mergeDirectoryPath({
+      releaseId: 'release-preview-2026-08',
+      nodes: [],
+      edges: [],
+    }, {
+      knowledgeId: 'D1:C001:E001',
+      title: '社会资本',
+      reviewStatus: 'reviewed',
+      directoryPath: [
+        { nodeId: 'D1', nodeType: 'dimension', title: '本体论' },
+        { nodeId: 'D1:C001', nodeType: 'category', title: '社会关系' },
+      ],
+    })
+
+    expect(graph.nodes.map((node) => node.id)).toEqual([
+      'D1', 'D1:C001', 'D1:C001:E001',
+    ])
+    expect(graph.edges).toEqual([
+      expect.objectContaining({
+        source: 'D1', target: 'D1:C001', layer: 'structure', relationType: 'contains',
+      }),
+      expect.objectContaining({
+        source: 'D1:C001', target: 'D1:C001:E001', layer: 'structure', relationType: 'contains',
+      }),
+    ])
+  })
+
+  it('hydrates relation endpoint ids with real entry titles', () => {
+    const graph = mergeGraphEntries({
+      releaseId: 'release-preview-2026-08',
+      nodes: [{ id: 'D1:C001:E002', label: 'D1:C001:E002', nodeType: 'entry' }],
+      edges: [],
+    }, [{
+      knowledgeId: 'D1:C001:E002',
+      title: '关系资源',
+      reviewStatus: 'reviewed',
+      directoryPath: [],
+    }])
+
+    expect(graph.nodes).toEqual([{
+      id: 'D1:C001:E002',
+      label: '关系资源',
+      nodeType: 'entry',
+      reviewStatus: 'reviewed',
+    }])
+  })
+
+  it('projects only reviewed relations whose endpoints are supplied', () => {
     const graph = projectKnowledgeGraph({
       release,
       entries,
@@ -73,8 +123,6 @@ describe('projectKnowledgeGraph', () => {
           description: '场域分析需要结合行动者的惯习。',
           evidence_source_ids: ['source-book-1'],
           evidence_grade: 'A',
-          algorithm_weight: null,
-          algorithm_config_version: null,
           content_version: 2,
           review_status: 'reviewed',
         },
@@ -87,8 +135,6 @@ describe('projectKnowledgeGraph', () => {
           description: '不能凭 ID 伪造节点。',
           evidence_source_ids: ['source-book-1'],
           evidence_grade: 'A',
-          algorithm_weight: null,
-          algorithm_config_version: null,
           content_version: 1,
           review_status: 'reviewed',
         },
@@ -181,8 +227,6 @@ describe('projectKnowledgeGraph', () => {
         description: '两者在分析层次上形成对照。',
         evidence_source_ids: ['source:D1:C001:E001'],
         evidence_grade: 'reviewed',
-        algorithm_weight: null,
-        algorithm_config_version: null,
         content_version: 3,
         review_status: 'reviewed',
       },

@@ -1,0 +1,88 @@
+.obsidian-knowledge-graph {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 46%, rgb(62 124 177 / 8%), transparent 38%),
+    radial-gradient(circle, rgb(51 64 74 / 9%) 1px, transparent 1px),
+    color-mix(in srgb, var(--paper) 93%, white);
+  background-size: auto, 24px 24px, auto;
+}
+
+.obsidian-knowledge-graph__canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+}
+
+.obsidian-knowledge-graph__controls {
+  position: absolute;
+  z-index: 4;
+  top: 16px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid rgb(199 211 220 / 82%);
+  border-radius: 10px;
+  color: var(--ink-soft);
+  background: rgb(252 253 254 / 88%);
+  box-shadow: 0 8px 28px rgb(20 40 55 / 8%);
+  font-size: 0.68rem;
+  backdrop-filter: blur(12px);
+}
+
+.obsidian-knowledge-graph__controls > div { display: flex; gap: 5px; }
+
+.obsidian-knowledge-graph__controls button {
+  min-height: 30px;
+  border-color: transparent;
+  padding: 5px 8px;
+  color: var(--accent-dark);
+  background: transparent;
+}
+
+.obsidian-knowledge-graph__controls button:hover {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.obsidian-knowledge-graph__notice {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  left: 20px;
+  max-width: 360px;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid rgb(199 211 220 / 72%);
+  border-radius: 8px;
+  color: var(--ink-soft);
+  background: rgb(252 253 254 / 88%);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  backdrop-filter: blur(10px);
+}
+
+.obsidian-knowledge-graph__hover {
+  position: absolute;
+  z-index: 4;
+  right: 20px;
+  bottom: 18px;
+  max-width: 320px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  color: var(--ink);
+  background: rgb(252 253 254 / 92%);
+  box-shadow: 0 8px 24px rgb(20 40 55 / 7%);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 720px) {
+  .obsidian-knowledge-graph__canvas { min-height: 360px; }
+  .obsidian-knowledge-graph__controls > span { display: none; }
+}

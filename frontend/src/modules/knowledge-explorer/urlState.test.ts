@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { readKnowledgeUrlState, writeKnowledgeUrlState } from './urlState'
+import {
+  readKnowledgeGraphReturnTo,
+  readKnowledgeUrlState,
+  writeKnowledgeUrlState,
+} from './urlState'
 
 describe('knowledge URL state', () => {
   it('restores a fixed release with query and directory filters', () => {
@@ -26,5 +30,24 @@ describe('knowledge URL state', () => {
     ))
 
     expect(state.returnTo).toBeUndefined()
+  })
+
+  it('restores only safe graph context keys from a knowledge return target', () => {
+    const params = new URLSearchParams({
+      return_to: '/knowledge/graph?knowledge_release_id=release-a&query=社会&center=D1:C001&pending=1&redirect=https://evil.test',
+    })
+
+    expect(readKnowledgeGraphReturnTo(params)).toBe(
+      '/knowledge/graph?knowledge_release_id=release-a&query=%E7%A4%BE%E4%BC%9A&center=D1%3AC001&pending=1',
+    )
+  })
+
+  it.each([
+    'https://evil.test/takeover',
+    '//evil.test/takeover',
+    '/research/task-1/match',
+    '/knowledge/D1:C001',
+  ])('rejects an unsafe graph return target %s', (returnTo) => {
+    expect(readKnowledgeGraphReturnTo(new URLSearchParams({ return_to: returnTo }))).toBeUndefined()
   })
 })
