@@ -10,7 +10,6 @@ const defaultSourceRoot = path.resolve(path.dirname(scriptPath), '../src')
 export const defaultBoundaryPolicy = Object.freeze({
   moduleDependencies: Object.freeze({
     account: Object.freeze([]),
-    'knowledge-graph': Object.freeze([]),
     'knowledge-explorer': Object.freeze([]),
     'socio-match-workspace': Object.freeze([]),
   }),
@@ -18,7 +17,6 @@ export const defaultBoundaryPolicy = Object.freeze({
     'api/client.ts',
     'api/system.ts',
     'modules/account/accountApi.ts',
-    'modules/knowledge-graph/knowledgeGraphAdapter.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
@@ -393,11 +391,7 @@ export async function findBoundaryViolations({
           !appAdapters.has(path.resolve(target)),
         `${relative} imports API internals instead of an approved app adapter`,
       )
-      report(
-        sourceModule &&
-          targetApi &&
-          !targetGenerated &&
-          !moduleApiAdapters.has(sourcePath),
+      report(sourceModule && targetApi && !moduleApiAdapters.has(sourcePath),
         `${relative} imports API internals outside its module adapter`)
       report(inApi && !inGenerated && targetModule,
         `${relative} imports product module code from the API layer`)
