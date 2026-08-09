@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { KnowledgeGraph, type KnowledgeGraphProjection } from './index'
@@ -13,11 +13,13 @@ const projection: KnowledgeGraphProjection = {
     {
       id: 'knowledge-field',
       label: '场域理论',
+      nodeType: 'entry',
       reviewStatus: 'reviewed',
     },
     {
       id: 'knowledge-habitus',
       label: '惯习',
+      nodeType: 'entry',
       reviewStatus: 'pending',
     },
   ],
@@ -28,12 +30,16 @@ const projection: KnowledgeGraphProjection = {
       target: 'knowledge-habitus',
       relationType: '概念依赖',
       direction: 'directed',
+      layer: 'reviewed',
     },
   ],
 }
 
 interface CytoscapeCoreStub {
   readonly destroy: ReturnType<typeof vi.fn>
+  readonly fit: ReturnType<typeof vi.fn>
+  readonly elements: ReturnType<typeof vi.fn>
+  readonly getElementById: ReturnType<typeof vi.fn>
   readonly layout: ReturnType<typeof vi.fn>
   readonly on: ReturnType<typeof vi.fn>
 }
@@ -41,8 +47,17 @@ interface CytoscapeCoreStub {
 const cores: CytoscapeCoreStub[] = []
 
 function createCore(): CytoscapeCoreStub {
+  const pathCollection = { kind: 'focused-path' }
+  const focused = {
+    nonempty: () => true,
+    predecessors: vi.fn(() => ({ kind: 'predecessors' })),
+    union: vi.fn(() => pathCollection),
+  }
   return {
     destroy: vi.fn(),
+    elements: vi.fn(() => pathCollection),
+    fit: vi.fn(),
+    getElementById: vi.fn(() => focused),
     layout: vi.fn(() => ({ run: vi.fn() })),
     on: vi.fn(),
   }
@@ -100,6 +115,67 @@ describe('KnowledgeGraph', () => {
     expect(onSelectKnowledge).toHaveBeenCalledWith('knowledge-field')
   })
 
+  it('expands directory nodes, navigates entry nodes, and selects candidate edges', () => {
+    const onExpandNode = vi.fn()
+    const onSelectKnowledge = vi.fn()
+    const onSelectEdge = vi.fn()
+    const layeredProjection: KnowledgeGraphProjection = {
+      ...projection,
+      nodes: [
+        { id: 'D1', label: '本体论', nodeType: 'dimension' },
+        ...projection.nodes,
+      ],
+      edges: [
+        ...projection.edges,
+        {
+          id: 'candidate:one',
+          source: 'knowledge-field',
+          target: 'knowledge-habitus',
+          relationType: 'extends',
+          direction: 'outbound',
+          layer: 'candidate',
+          reviewStatus: 'pending',
+        },
+      ],
+    }
+    render(
+      <KnowledgeGraph
+        projection={layeredProjection}
+        onExpandNode={onExpandNode}
+        onSelectEdge={onSelectEdge}
+        onSelectKnowledge={onSelectKnowledge}
+      />,
+    )
+
+    const nodeTapHandler = cores[0]?.on.mock.calls.find(
+      ([event, selector]) => event === 'tap' && selector === 'node',
+    )?.[2]
+    nodeTapHandler?.({ target: { data: (key: string) => key === 'nodeType' ? 'dimension' : 'D1', id: () => 'D1' } })
+    nodeTapHandler?.({ target: { data: (key: string) => key === 'nodeType' ? 'entry' : 'knowledge-field', id: () => 'knowledge-field' } })
+
+    const edgeTapHandler = cores[0]?.on.mock.calls.find(
+      ([event, selector]) => event === 'tap' && selector === 'edge',
+    )?.[2]
+    edgeTapHandler?.({ target: { id: () => 'candidate:one' } })
+
+    expect(onExpandNode).toHaveBeenCalledWith('D1')
+    expect(onSelectKnowledge).toHaveBeenCalledWith('knowledge-field')
+    expect(onSelectEdge).toHaveBeenCalledWith('candidate:one')
+    const options = cytoscapeMock.mock.calls[0]?.[0]
+    expect(options?.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        selector: 'edge[layer = "candidate"]',
+        style: expect.objectContaining({
+          'line-style': 'dashed',
+          label: 'data(label)',
+          width: 4,
+        }),
+      }),
+    ]))
+    fireEvent.click(screen.getByRole('button', { name: '查看待审核发现关系 extends' }))
+    expect(onSelectEdge).toHaveBeenLastCalledWith('candidate:one')
+  })
+
   it('makes a pending node review status visible in the graph label', () => {
     render(
       <KnowledgeGraph projection={projection} onSelectKnowledge={vi.fn()} />,
@@ -116,6 +192,33 @@ describe('KnowledgeGraph', () => {
 
     expect(pendingNode?.data.displayLabel).toBe('惯习\n待核验')
     expect(nodeStyle?.style.label).toBe('data(displayLabel)')
+    expect(nodeStyle?.style.width).toBe(184)
+    expect(nodeStyle?.style.height).toBe(68)
+    expect(nodeStyle?.style['text-wrap']).toBe('wrap')
+  })
+
+  it('uses a spaced two-row preset for a focused path', () => {
+    render(
+      <KnowledgeGraph
+        projection={projection}
+        focusNodeId="knowledge-habitus"
+        onSelectKnowledge={vi.fn()}
+      />,
+    )
+
+    const options = cytoscapeMock.mock.calls[0]?.[0]
+    expect(options.layout).toEqual(expect.objectContaining({
+      name: 'preset',
+      fit: true,
+      padding: 50,
+    }))
+    const nodeElements = options.elements.filter(
+      (element: { data: { source?: string } }) => !element.data.source,
+    )
+    expect(nodeElements.map((element: { position: unknown }) => element.position)).toEqual([
+      { x: 140, y: 110 },
+      { x: 400, y: 110 },
+    ])
   })
 
   it('keeps a reviewed node title unchanged', () => {

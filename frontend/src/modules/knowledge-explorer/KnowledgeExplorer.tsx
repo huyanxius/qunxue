@@ -21,6 +21,7 @@ export interface KnowledgeExplorerPageProps {
   onStateChange: (state: KnowledgeUrlState) => void
   onReleaseResolved: (releaseId: string) => void
   onOpenEntry: (knowledgeId: string) => void
+  onLocateEntry?: (entry: KnowledgeEntrySummary) => void
 }
 
 function errorMessage(error: unknown) {
@@ -43,6 +44,7 @@ export function KnowledgeExplorerPage({
   onStateChange,
   onReleaseResolved,
   onOpenEntry,
+  onLocateEntry,
 }: KnowledgeExplorerPageProps) {
   const [queryInput, setQueryInput] = useState(state.query ?? '')
   const [loadedReleaseId, setLoadedReleaseId] = useState<string>()
@@ -266,6 +268,7 @@ export function KnowledgeExplorerPage({
             totalEntries={resultTotal}
             loadingMore={loadingMore}
             onSelect={onOpenEntry}
+            onLocate={onLocateEntry}
             onLoadMore={() => void loadMore()}
           />
         </div>

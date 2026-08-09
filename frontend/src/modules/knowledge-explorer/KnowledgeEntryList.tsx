@@ -9,6 +9,7 @@ interface KnowledgeEntryListProps {
   totalEntries?: number
   loadingMore: boolean
   onSelect: (knowledgeId: string) => void
+  onLocate?: (entry: KnowledgeEntrySummary) => void
   onLoadMore: () => void
 }
 
@@ -20,6 +21,7 @@ export function KnowledgeEntryList({
   totalEntries,
   loadingMore,
   onSelect,
+  onLocate,
   onLoadMore,
 }: KnowledgeEntryListProps) {
   return (
@@ -40,12 +42,24 @@ export function KnowledgeEntryList({
         <ul>
           {entries.map((entry) => (
             <li key={`${entry.knowledgeId}:${entry.contentVersion}`}>
-              <button type="button" onClick={() => onSelect(entry.knowledgeId)}>
-                <span>{entry.title}</span>
-                <small>
-                  {entry.dimension} · {entry.directoryPath.map((node) => node.title).join(' / ')} · {reviewStatusLabels[entry.reviewStatus]}
-                </small>
-              </button>
+              <div className="knowledge-explorer__result-actions">
+                <button type="button" onClick={() => onSelect(entry.knowledgeId)}>
+                  <span>{entry.title}</span>
+                  <small>
+                    {entry.dimension} · {entry.directoryPath.map((node) => node.title).join(' / ')} · {reviewStatusLabels[entry.reviewStatus]}
+                  </small>
+                </button>
+                {onLocate ? (
+                  <button
+                    type="button"
+                    className="knowledge-explorer__locate"
+                    aria-label={`在图中定位 ${entry.title}`}
+                    onClick={() => onLocate(entry)}
+                  >
+                    定位图中
+                  </button>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>

@@ -8,7 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router'
-import { useCallback, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 
 import {
   LoginPage,
@@ -19,6 +19,7 @@ import {
 import {
   KnowledgeEntryPage,
   KnowledgeExplorerPage,
+  type KnowledgeEntrySummary,
   readKnowledgeUrlState,
   writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
@@ -46,6 +47,8 @@ function KnowledgeExplorerRoute() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const state = readKnowledgeUrlState(searchParams)
+  const [graphOpen, setGraphOpen] = useState(false)
+  const [focusEntry, setFocusEntry] = useState<KnowledgeEntrySummary>()
 
   const updateState = useCallback((nextState: typeof state) => {
     setSearchParams(writeKnowledgeUrlState(nextState))
@@ -68,7 +71,30 @@ function KnowledgeExplorerRoute() {
             const query = writeKnowledgeUrlState(state).toString()
             navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
           }}
+          onLocateEntry={(entry) => {
+            setFocusEntry(entry)
+            setGraphOpen(true)
+          }}
         />
+        {state.releaseId ? (
+          <>
+            <div className="knowledge-graph-launch">
+              <button type="button" onClick={() => setGraphOpen((open) => !open)}>
+                {graphOpen ? '收起知识图谱' : '打开知识图谱'}
+              </button>
+            </div>
+            {graphOpen ? (
+              <KnowledgeGraphIntegration
+                releaseId={state.releaseId}
+                focusEntry={focusEntry}
+                onSelectKnowledge={(knowledgeId) => {
+                  const query = writeKnowledgeUrlState(state).toString()
+                  navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
+                }}
+              />
+            ) : null}
+          </>
+        ) : null}
       </PageContent>
     </PageShell>
   )
@@ -123,23 +149,16 @@ function KnowledgeEntryRoute() {
           releaseId={state.releaseId}
           onReleaseResolved={resolveRelease}
           onReturnToResearch={state.returnTo ? () => navigate(state.returnTo) : undefined}
+          onReturnToKnowledge={() => {
+            const query = writeKnowledgeUrlState({ ...state, returnTo: undefined }).toString()
+            navigate(`/knowledge${query ? `?${query}` : ''}`)
+          }}
           onStartResearch={({ theoryId, theoryName }) => {
             navigate(
               `/research/new?seed_theory_id=${encodeURIComponent(theoryId)}`,
               { state: { seedTheoryName: theoryName } },
             )
           }}
-          renderAfterDetail={(detail) => (
-            <KnowledgeGraphIntegration
-              detail={detail}
-              onSelectKnowledge={(nextKnowledgeId) => {
-                const query = writeKnowledgeUrlState(state).toString()
-                navigate(
-                  `/knowledge/${encodeURIComponent(nextKnowledgeId)}${query ? `?${query}` : ''}`,
-                )
-              }}
-            />
-          )}
         />
       </PageContent>
     </PageShell>

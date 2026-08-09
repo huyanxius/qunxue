@@ -153,6 +153,30 @@ describe('knowledge pages', () => {
     expect(await screen.findByText('显示 100 / 101 条')).toBeVisible()
   })
 
+  it('hands a complete search result path to the graph without opening detail', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(page())))
+    const onLocateEntry = vi.fn()
+
+    render(
+      <KnowledgeExplorerPage
+        state={{ releaseId: 'release-a', query: '概念' }}
+        onLocateEntry={onLocateEntry}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '在图中定位 概念' }))
+
+    expect(onLocateEntry).toHaveBeenCalledWith(expect.objectContaining({
+      knowledgeId: 'D1:C001',
+      directoryPath: expect.arrayContaining([
+        expect.objectContaining({ nodeId: 'D1', nodeType: 'dimension' }),
+      ]),
+    }))
+  })
+
   it('resolves the initial release without rewinding newer URL state', async () => {
     let resolveCurrentRelease: ((response: Response) => void) | undefined
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => {

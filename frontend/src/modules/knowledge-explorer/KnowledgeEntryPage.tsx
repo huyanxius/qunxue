@@ -10,6 +10,7 @@ interface KnowledgeEntryPageProps {
   releaseId?: string
   onReleaseResolved: (releaseId: string) => void
   onReturnToResearch?: () => void
+  onReturnToKnowledge?: () => void
   onStartResearch: (input: { theoryId: string; theoryName: string }) => void
   renderAfterDetail?: (detail: KnowledgeEntryDetailModel) => ReactNode
 }
@@ -23,6 +24,7 @@ export function KnowledgeEntryPage({
   releaseId,
   onReleaseResolved,
   onReturnToResearch,
+  onReturnToKnowledge,
   onStartResearch,
   renderAfterDetail,
 }: KnowledgeEntryPageProps) {
@@ -73,6 +75,11 @@ export function KnowledgeEntryPage({
         {onReturnToResearch ? (
           <button type="button" className="knowledge-explorer__plain-action" onClick={onReturnToResearch}>
             返回研究任务
+          </button>
+        ) : null}
+        {onReturnToKnowledge ? (
+          <button type="button" className="knowledge-explorer__plain-action" onClick={onReturnToKnowledge}>
+            返回知识库
           </button>
         ) : null}
       </header>
