@@ -1,26 +1,27 @@
 # RUN_STATE
 
-- M6 stage A: Markdown 解析器已覆盖 C/E/V/M/P/H 与源目录元数据；当前文本解析出 2,860 条且无重复。D7 的 H088-H091 正文不在当前目录，未伪造。
-- M6 stage B: SQLite preview 发布会持久化真实 Markdown、目录与导入溯源；相同内容复用 release，健康检查与当前发布接口返回同一真实 release。下一步：列表、搜索与详情。
-- M6 stage C: 列表、搜索与详情已固定在 release 内；`browse_eligible=false` 不会泄漏。下一步：生成契约并接真实知识浏览前端。
-- M6 stage D: OpenAPI 与生成 SDK 已随真实知识浏览接口同步（`7f8cb68`）；下一步：接入独立知识浏览前端。
-- M6 frontend dependency: `react-markdown 10.1.0` 已固定（`2588b1e`）以渲染真实知识正文；该提交未含图谱画布、路由或 Cytoscape import。
-- M6 frontend: `/knowledge` 与 `/knowledge/:knowledge_id` 已通过生成 SDK 固定真实发布、七维目录、搜索、详情、来源、审核关系与安全 `return_to`（`1cc2d3e`）；聚焦前端测试 37 项与边界检查均通过。下一步：横屏浏览器验收、完整检查与独立复验。
-- M6 health test repair: 全量检查暴露旧 `knowledge-demo-v1` 断言和未迁移内存库夹具；已改为验证健康接口与当前真实发布一致（`68b83bf`），四个健康契约用例通过。下一步：重跑完整检查。
-- M6 migration test repair: SQLite FTS5 的虚拟表与影子表不属于 ORM metadata；迁移自检仅在这组反射表上排除比较（`8d771e5`），其余业务表、主键、约束与索引仍严格校验。下一步：重跑完整检查。
-- M6 URL-state repair: 当前发布异步解析不再覆盖用户刚更新的查询/筛选，详情页同样声明稳定回调依赖（`68a125f`、`c4d00f4`）；31 项聚焦前端测试通过，知识页新增 lint 警告已清零。下一步：重跑完整检查。
-- M6 Markdown/browser repair: 真实正文的中文粗体标签已按 CommonMark 分隔规则显示（`7c482c6`）；在 1470×835 横屏实走发布固定、搜索、独立详情、待审核来源与关系空态，证据为 `docs/screenshots/m6-knowledge-search-landscape.jpg`、`docs/screenshots/m6-knowledge-detail-sources-landscape.jpg`（`183e6aa`）。下一步：最终完整检查与独立复验。
-- M6 seed route: URL 与创建请求只传 `seed_theory_id`；服务端从当前可浏览发布解析正式名称，未知 ID 返回 422（`e1bdc12`、`c547520`）。聚焦测试、横屏真实链路与独立 Terra Max 验收已通过；下一步：最终干净门禁、推送并提 PR。
-- M1: PR #66 open, CI passed, independent review passed; awaiting user merge.
-- M2: PR #58 open, CI passed, independent review passed; awaiting user merge.
-- M3 stage A: direct input -> editable candidate -> confirmation -> refresh recovery is green on the stacked M2 baseline; confirmation updates the M2 progress projection and unconfirmed matching returns `phenomenon_unconfirmed`.
-- M3 stage B: candidate edits append retrievable versions; confirmation freezes a SHA-256-addressed snapshot while updating M2 progress.
-- M3 stage C: three built-in examples are migration-seeded and API-served; task creation and recovery retain the narrow seed theory id/name clue.
-- M3 stage D: single pasted/TXT/DOCX material requires all four processing confirmations, runs synchronously, persists no complete source document, and restores 3-5 traceable candidates.
-- M3 stage E: `/research/new` exposes direct input, one material, and the smart-topic placeholder; generated adapters restore candidate provenance, seed clues, evidence, and confirmation snapshots without opening the M4 boundary.
-- M3 review repairs: candidate generation and edits advance the M2 task projection; only the first candidate may freeze the snapshot; DOCX XML expansion is bounded; the workspace no longer imports app UI; unchanged system candidates retain their source label.
-- M3 focused verification: 12 backend intake/task tests, 9 frontend workspace/adapter tests, and the module-boundary check passed on the current review-fix head.
-- M3 full verification: `make check` passed (89 backend tests, 58 frontend tests, boundary, lint, typecheck, build, and generated-drift checks); lint retains two pre-existing account warnings.
-- M3 landscape runtime: direct example -> untouched confirmation -> refresh recovery -> M2 "我的研究" projection, plus pasted material -> three traceable candidates, passed at 1440x900 without horizontal overflow or browser console errors. Evidence: `docs/screenshots/m3-research-entry-landscape.jpg`, `docs/screenshots/m3-material-candidates-landscape.jpg`, and `docs/screenshots/m3-phenomenon-confirmation-landscape.jpg`.
-- M3 independent acceptance: fresh Terra Max reviewer returned PASS after independently reviewing the full diff and rerunning `make check`; only the two pre-existing AccountProvider lint warnings remain.
-- Next breakpoint: submit the stacked PR without merging it; it depends on the still-open M2 PR #58.
+> 2026-08-09 按最新 `origin/main` 与 GitHub 当前状态核对。本文记录已合并能力和仍未交付的边界，不把冻结契约、占位页面或历史验证记录算作交付。
+
+## 已合并交付
+
+- M1 / [PR #66](https://github.com/huyanxius/qunxue/pull/66)：站点壳、首页与研究/知识双入口。
+- M2 / [PR #58](https://github.com/huyanxius/qunxue/pull/58)：账号注册登录、会话恢复与“我的研究”。
+- M3 / [PR #68](https://github.com/huyanxius/qunxue/pull/68)：直接输入或单份材料、现象候选编辑与确认、进度恢复。
+- M6 / [PR #73](https://github.com/huyanxius/qunxue/pull/73)：真实 Markdown 知识发布、SQLite 持久化，以及列表、搜索、详情与来源浏览；正式路由为 `/knowledge` 和 `/knowledge/:knowledge_id`。
+
+## 尚未交付
+
+- M4 理论匹配与用户决定尚未实现。前端 `/research/:task_id/match` 是占位页；后端 matching 路由只保留冻结契约，确认现象后的业务请求仍返回 501。
+- M5 研究框架尚未实现。前端 `/research/:task_id/framework` 是占位页；后端 frameworks 路由只保留冻结契约并返回 501。
+- 公共类型、OpenAPI 契约、门禁规则或占位路由不构成 M4/M5 交付；本状态也不推进知识关系或图谱能力。
+
+## 知识条目口径
+
+- 源文档转换清单：2,864 条，其中 D7 按 `H001`–`H091` 计 91 条。
+- 当前发布与浏览解析：2,860 条；仓库实际具备正文的是 `H001`–`H087`。
+- D7 `H088`–`H091` 缺少正文，发布过程没有补写或伪造这四条内容。
+
+## 仓库治理
+
+- 所有改动走 Issue → 分支 → PR → Review → `main`，这是团队规则。
+- 当前 private 仓库的 `main` 没有 GitHub 原生分支保护；PR-only 不是平台强制。不得把升级套餐、公开仓库或改变可见性当作默认修复。
