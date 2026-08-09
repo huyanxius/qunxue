@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import './KnowledgeExplorer.css'
 import { KnowledgeEntryDetail } from './KnowledgeEntryDetail'
@@ -11,6 +11,7 @@ interface KnowledgeEntryPageProps {
   onReleaseResolved: (releaseId: string) => void
   onReturnToResearch?: () => void
   onStartResearch: (input: { theoryId: string; theoryName: string }) => void
+  renderAfterDetail?: (detail: KnowledgeEntryDetailModel) => ReactNode
 }
 
 function errorMessage(error: unknown) {
@@ -23,6 +24,7 @@ export function KnowledgeEntryPage({
   onReleaseResolved,
   onReturnToResearch,
   onStartResearch,
+  renderAfterDetail,
 }: KnowledgeEntryPageProps) {
   const [detail, setDetail] = useState<KnowledgeEntryDetailModel>()
   const [resolvedReleaseId, setResolvedReleaseId] = useState<string>()
@@ -77,7 +79,12 @@ export function KnowledgeEntryPage({
       {resolvedReleaseId ? <p className="knowledge-explorer__release">当前发布 {resolvedReleaseId}</p> : null}
       {!detail && !error ? <p role="status">正在读取详情……</p> : null}
       {error ? <p className="knowledge-explorer__error" role="alert">{error}</p> : null}
-      {detail ? <KnowledgeEntryDetail detail={detail} onStartResearch={onStartResearch} /> : null}
+      {detail ? (
+        <>
+          <KnowledgeEntryDetail detail={detail} onStartResearch={onStartResearch} />
+          {renderAfterDetail?.(detail)}
+        </>
+      ) : null}
     </article>
   )
 }

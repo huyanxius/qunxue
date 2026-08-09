@@ -81,6 +81,26 @@ function knowledgeDetail() {
   }
 }
 
+function knowledgeDetailWithRelation() {
+  return {
+    ...knowledgeDetail(),
+    relations: [
+      {
+        content_version: 1,
+        description: '真实已审核关系。',
+        direction: 'directed',
+        evidence_grade: 'A',
+        evidence_source_ids: [],
+        relation_id: 'relation-1',
+        relation_type: '概念关联',
+        review_status: 'reviewed',
+        source_knowledge_id: 'D1:C001',
+        target_knowledge_id: 'D1:C002',
+      },
+    ],
+  }
+}
+
 function knowledgeDetailWithTheoryProfile() {
   return {
     ...knowledgeDetail(),
@@ -361,6 +381,33 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('heading', { name: '匹配理论' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
+  it('shows the real graph empty state without another request', async () => {
+    const fetch = vi.fn(async () => json(knowledgeDetail()))
+    vi.stubGlobal('fetch', fetch)
+    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
+
+    expect(await screen.findByRole('heading', { name: '知识关系图' })).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '当前图中没有可展示的已审核显式关系。',
+    )
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('defers a non-empty graph whose endpoint nodes are not loaded', async () => {
+    const fetch = vi.fn(async () => json(knowledgeDetailWithRelation()))
+    vi.stubGlobal('fetch', fetch)
+    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
+
+    expect(await screen.findByText('真实已审核关系。')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '关系端点尚未加载，图暂不可用。',
+    )
+    expect(
+      screen.queryByText('当前图中没有可展示的已审核显式关系。'),
+    ).not.toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('keeps only the theory ID in the URL when starting research from knowledge', async () => {
