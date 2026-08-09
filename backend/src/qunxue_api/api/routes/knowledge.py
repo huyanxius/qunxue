@@ -8,10 +8,15 @@ from qunxue_api.api.contracts.knowledge import (
     KnowledgeEntryDetailResponse,
     KnowledgeEntryPageResponse,
     KnowledgeEntrySummaryResponse,
+    KnowledgeRelationPageResponse,
     KnowledgeRelationResponse,
     KnowledgeReleaseResponse,
     KnowledgeUseEligibilityResponse,
+    RelationCandidatePageResponse,
+    RelationCandidateResponse,
     SourceRecordResponse,
+    StructuralConnectionPageResponse,
+    StructuralConnectionResponse,
     TheoryProfileResponse,
 )
 from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
@@ -37,6 +42,151 @@ def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
         knowledge_release_id=release.knowledge_release_id,
         level=release.level,
         content_hash=release.content_hash,
+    )
+
+
+@router.get(
+    "/connections",
+    operation_id="list_knowledge_connections",
+    response_model=StructuralConnectionPageResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def list_knowledge_connections(
+    request: Request,
+    knowledge_release_id: str | None = None,
+    source_node_id: str | None = None,
+    cursor: str | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+) -> StructuralConnectionPageResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        page = catalog.list_connections(
+            release_id=release_id,
+            source_node_id=source_node_id,
+            cursor=cursor,
+            limit=limit,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from error
+    return StructuralConnectionPageResponse(
+        knowledge_release_id=page.release.knowledge_release_id,
+        connections=[
+            StructuralConnectionResponse(
+                connection_kind="structure",
+                connection_id=item.connection_id,
+                source_node_id=item.source_node_id,
+                source_node_type=item.source_node_type,
+                source_title=item.source_title,
+                target_node_id=item.target_node_id,
+                target_node_type=item.target_node_type,
+                target_title=item.target_title,
+                connection_type="contains",
+                direction="outbound",
+            )
+            for item in page.connections
+        ],
+        stable_order=[item.connection_id for item in page.connections],
+        total_count=page.total_count,
+        next_cursor=page.next_cursor,
+    )
+
+
+@router.get(
+    "/relation-candidates",
+    operation_id="list_knowledge_relation_candidates",
+    response_model=RelationCandidatePageResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def list_knowledge_relation_candidates(
+    request: Request,
+    knowledge_release_id: str | None = None,
+    knowledge_id: str | None = None,
+    cursor: str | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+) -> RelationCandidatePageResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        page = catalog.list_relation_candidates(
+            release_id=release_id,
+            knowledge_id=knowledge_id,
+            cursor=cursor,
+            limit=limit,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from error
+    return RelationCandidatePageResponse(
+        knowledge_release_id=page.release.knowledge_release_id,
+        candidates=[
+            RelationCandidateResponse(
+                candidate_id=item.candidate_id,
+                source_knowledge_id=item.source_knowledge_id,
+                target_knowledge_id=item.target_knowledge_id,
+                suggested_relation_type=item.suggested_relation_type,
+                direction=item.direction,
+                evidence_excerpt=item.evidence_excerpt,
+                evidence_locator=item.evidence_locator,
+                evidence_source_id=item.evidence_source_id,
+                source_content_version=item.source_content_version,
+                target_content_version=item.target_content_version,
+                producer=item.producer,
+                producer_config_version=item.producer_config_version,
+                score=item.score,
+                trigger_reason=item.trigger_reason,
+                review_status=item.review_status,
+                review_record_id=item.review_record_id,
+            )
+            for item in page.candidates
+        ],
+        stable_order=[item.candidate_id for item in page.candidates],
+        total_count=page.total_count,
+        next_cursor=page.next_cursor,
+    )
+
+
+@router.get(
+    "/relations",
+    operation_id="list_knowledge_relations",
+    response_model=KnowledgeRelationPageResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def list_knowledge_relations(
+    request: Request,
+    knowledge_release_id: str | None = None,
+    knowledge_id: str | None = None,
+    cursor: str | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+) -> KnowledgeRelationPageResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        page = catalog.list_relations(
+            release_id=release_id,
+            knowledge_id=knowledge_id,
+            cursor=cursor,
+            limit=limit,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from error
+    return KnowledgeRelationPageResponse(
+        knowledge_release_id=page.release.knowledge_release_id,
+        relations=[_relation_response(item) for item in page.relations],
+        stable_order=[item.relation_id for item in page.relations],
+        total_count=page.total_count,
+        next_cursor=page.next_cursor,
     )
 
 
@@ -206,6 +356,21 @@ def _eligibility_response(eligibility: object) -> KnowledgeUseEligibilityRespons
         training_candidate_eligible=eligibility.training_candidate_eligible,
         match_eligible=eligibility.match_eligible,
         review_record_ids=list(eligibility.review_record_ids),
+    )
+
+
+def _relation_response(relation: object) -> KnowledgeRelationResponse:
+    return KnowledgeRelationResponse(
+        relation_id=relation.relation_id,
+        source_knowledge_id=relation.source_knowledge_id,
+        target_knowledge_id=relation.target_knowledge_id,
+        relation_type=relation.relation_type,
+        direction=relation.direction,
+        description=relation.description,
+        evidence_source_ids=list(relation.evidence_source_ids),
+        evidence_grade=relation.evidence_grade,
+        content_version=relation.content_version,
+        review_status=relation.review_status,
     )
 
 

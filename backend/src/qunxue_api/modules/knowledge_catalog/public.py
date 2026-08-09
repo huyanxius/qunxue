@@ -66,7 +66,9 @@ class KnowledgeReleaseRef:
 class KnowledgeReleaseManifest:
     release: KnowledgeReleaseRef
     knowledge_ids: tuple[str, ...]
+    relation_candidate_ids: tuple[str, ...]
     relation_ids: tuple[str, ...]
+    structural_connection_count: int
     theory_ids: tuple[str, ...]
     source_ids: tuple[str, ...]
     review_record_ids: tuple[str, ...]
@@ -119,10 +121,69 @@ class KnowledgeRelationSnapshot:
     description: str
     evidence_source_ids: tuple[str, ...]
     evidence_grade: str
-    algorithm_weight: float | None
-    algorithm_config_version: str | None
     content_version: int
     review_status: KnowledgeReviewStatus
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralConnectionSnapshot:
+    """Release-bound projection of one directory containment fact."""
+
+    connection_id: str
+    source_node_id: str
+    source_node_type: str
+    source_title: str
+    target_node_id: str
+    target_node_type: str
+    target_title: str
+    connection_type: str
+    direction: str
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralConnectionPage:
+    release: KnowledgeReleaseRef
+    connections: tuple[StructuralConnectionSnapshot, ...]
+    total_count: int
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class RelationCandidateSnapshot:
+    """Algorithm discovery data; pending candidates are not reviewed relations."""
+
+    candidate_id: str
+    source_knowledge_id: str
+    target_knowledge_id: str
+    suggested_relation_type: str
+    direction: str
+    evidence_excerpt: str
+    evidence_locator: str
+    evidence_source_id: str
+    source_content_version: int
+    target_content_version: int
+    producer: str
+    producer_config_version: str
+    score: float | None
+    trigger_reason: str
+    review_status: KnowledgeReviewStatus
+    review_record_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class RelationCandidatePage:
+    release: KnowledgeReleaseRef
+    candidates: tuple[RelationCandidateSnapshot, ...]
+    total_count: int
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeRelationPage:
+    release: KnowledgeReleaseRef
+    relations: tuple[KnowledgeRelationSnapshot, ...]
+    total_count: int
+    next_cursor: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,6 +271,33 @@ class KnowledgeCatalog(Protocol):
         source_ids: tuple[str, ...],
         release_id: str,
     ) -> tuple[SourceRecordSnapshot, ...]: ...
+
+    def list_connections(
+        self,
+        *,
+        release_id: str,
+        source_node_id: str | None,
+        cursor: str | None,
+        limit: int,
+    ) -> StructuralConnectionPage: ...
+
+    def list_relation_candidates(
+        self,
+        *,
+        release_id: str,
+        knowledge_id: str | None,
+        cursor: str | None,
+        limit: int,
+    ) -> RelationCandidatePage: ...
+
+    def list_relations(
+        self,
+        *,
+        release_id: str,
+        knowledge_id: str | None,
+        cursor: str | None,
+        limit: int,
+    ) -> KnowledgeRelationPage: ...
 
 
 class KnowledgeReleasePublisher(Protocol):

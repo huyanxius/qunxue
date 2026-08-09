@@ -1249,6 +1249,32 @@ export type KnowledgeEntrySummaryResponse = {
 };
 
 /**
+ * KnowledgeRelationPageResponse
+ */
+export type KnowledgeRelationPageResponse = {
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Relations
+     */
+    relations: Array<KnowledgeRelationResponse>;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+    /**
+     * Total Count
+     */
+    total_count: number;
+};
+
+/**
  * KnowledgeRelationResponse
  */
 export type KnowledgeRelationResponse = {
@@ -1280,7 +1306,10 @@ export type KnowledgeRelationResponse = {
      * Relation Type
      */
     relation_type: string;
-    review_status: KnowledgeReviewStatus;
+    /**
+     * Review Status
+     */
+    review_status: 'reviewed';
     /**
      * Source Knowledge Id
      */
@@ -1994,6 +2023,102 @@ export type RelatedTheoryResponse = {
 };
 
 /**
+ * RelationCandidatePageResponse
+ */
+export type RelationCandidatePageResponse = {
+    /**
+     * Candidates
+     */
+    candidates: Array<RelationCandidateResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+    /**
+     * Total Count
+     */
+    total_count: number;
+};
+
+/**
+ * RelationCandidateResponse
+ */
+export type RelationCandidateResponse = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Direction
+     */
+    direction: string;
+    /**
+     * Evidence Excerpt
+     */
+    evidence_excerpt: string;
+    /**
+     * Evidence Locator
+     */
+    evidence_locator: string;
+    /**
+     * Evidence Source Id
+     */
+    evidence_source_id: string;
+    /**
+     * Producer
+     */
+    producer: string;
+    /**
+     * Producer Config Version
+     */
+    producer_config_version: string;
+    /**
+     * Review Record Id
+     */
+    review_record_id: string | null;
+    /**
+     * Review Status
+     */
+    review_status: 'pending';
+    /**
+     * Score
+     */
+    score: number | null;
+    /**
+     * Source Content Version
+     */
+    source_content_version: number;
+    /**
+     * Source Knowledge Id
+     */
+    source_knowledge_id: string;
+    /**
+     * Suggested Relation Type
+     */
+    suggested_relation_type: string;
+    /**
+     * Target Content Version
+     */
+    target_content_version: number;
+    /**
+     * Target Knowledge Id
+     */
+    target_knowledge_id: string;
+    /**
+     * Trigger Reason
+     */
+    trigger_reason: string;
+};
+
+/**
  * ResearchTaskAction
  */
 export type ResearchTaskAction = 'submit_phenomenon';
@@ -2356,6 +2481,78 @@ export type StartFrameworkReviewRequest = {
      * Expected Version
      */
     expected_version: number;
+};
+
+/**
+ * StructuralConnectionPageResponse
+ */
+export type StructuralConnectionPageResponse = {
+    /**
+     * Connections
+     */
+    connections: Array<StructuralConnectionResponse>;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Stable Order
+     */
+    stable_order: Array<string>;
+    /**
+     * Total Count
+     */
+    total_count: number;
+};
+
+/**
+ * StructuralConnectionResponse
+ */
+export type StructuralConnectionResponse = {
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Connection Kind
+     */
+    connection_kind: 'structure';
+    /**
+     * Connection Type
+     */
+    connection_type: 'contains';
+    /**
+     * Direction
+     */
+    direction: 'outbound';
+    /**
+     * Source Node Id
+     */
+    source_node_id: string;
+    /**
+     * Source Node Type
+     */
+    source_node_type: string;
+    /**
+     * Source Title
+     */
+    source_title: string;
+    /**
+     * Target Node Id
+     */
+    target_node_id: string;
+    /**
+     * Target Node Type
+     */
+    target_node_type: string;
+    /**
+     * Target Title
+     */
+    target_title: string;
 };
 
 /**
@@ -3342,6 +3539,52 @@ export type ListBuiltinCasesResponses = {
 
 export type ListBuiltinCasesResponse = ListBuiltinCasesResponses[keyof ListBuiltinCasesResponses];
 
+export type ListKnowledgeConnectionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+        /**
+         * Source Node Id
+         */
+        source_node_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/knowledge/connections';
+};
+
+export type ListKnowledgeConnectionsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListKnowledgeConnectionsError = ListKnowledgeConnectionsErrors[keyof ListKnowledgeConnectionsErrors];
+
+export type ListKnowledgeConnectionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: StructuralConnectionPageResponse;
+};
+
+export type ListKnowledgeConnectionsResponse = ListKnowledgeConnectionsResponses[keyof ListKnowledgeConnectionsResponses];
+
 export type ListKnowledgeEntriesData = {
     body?: never;
     path?: never;
@@ -3438,6 +3681,98 @@ export type GetKnowledgeEntryResponses = {
 };
 
 export type GetKnowledgeEntryResponse = GetKnowledgeEntryResponses[keyof GetKnowledgeEntryResponses];
+
+export type ListKnowledgeRelationCandidatesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+        /**
+         * Knowledge Id
+         */
+        knowledge_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/knowledge/relation-candidates';
+};
+
+export type ListKnowledgeRelationCandidatesErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListKnowledgeRelationCandidatesError = ListKnowledgeRelationCandidatesErrors[keyof ListKnowledgeRelationCandidatesErrors];
+
+export type ListKnowledgeRelationCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: RelationCandidatePageResponse;
+};
+
+export type ListKnowledgeRelationCandidatesResponse = ListKnowledgeRelationCandidatesResponses[keyof ListKnowledgeRelationCandidatesResponses];
+
+export type ListKnowledgeRelationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+        /**
+         * Knowledge Id
+         */
+        knowledge_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/knowledge/relations';
+};
+
+export type ListKnowledgeRelationsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListKnowledgeRelationsError = ListKnowledgeRelationsErrors[keyof ListKnowledgeRelationsErrors];
+
+export type ListKnowledgeRelationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeRelationPageResponse;
+};
+
+export type ListKnowledgeRelationsResponse = ListKnowledgeRelationsResponses[keyof ListKnowledgeRelationsResponses];
 
 export type GetCurrentKnowledgeReleaseData = {
     body?: never;

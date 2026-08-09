@@ -5,6 +5,7 @@ from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeEntryReviewRow,
     KnowledgeEntryRevisionRow,
+    KnowledgeRelationCandidateRow,
     KnowledgeRelationRow,
     KnowledgeReleaseRow,
     KnowledgeSourceRow,
@@ -24,6 +25,7 @@ __all__ = [
     "KnowledgeEntryReviewRow",
     "KnowledgeEntryRevisionRow",
     "KnowledgeRelationRow",
+    "KnowledgeRelationCandidateRow",
     "KnowledgeReleaseRow",
     "KnowledgeSourceRow",
     "KnowledgeTheoryProfileRow",

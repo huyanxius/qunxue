@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from qunxue_api.adapters.sqlite.base import Base
@@ -98,6 +98,39 @@ class KnowledgeRelationRow(Base):
     evidence_grade: Mapped[str] = mapped_column(String(32), nullable=False)
     content_version: Mapped[int] = mapped_column(Integer, nullable=False)
     review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+class KnowledgeRelationCandidateRow(Base):
+    __tablename__ = "knowledge_relation_candidates"
+    __table_args__ = (
+        Index(
+            "ix_knowledge_relation_candidates_release_status",
+            "knowledge_release_id",
+            "review_status",
+            "candidate_id",
+        ),
+    )
+
+    knowledge_release_id: Mapped[str] = mapped_column(
+        ForeignKey("knowledge_releases.knowledge_release_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    candidate_id: Mapped[str] = mapped_column(String(256), primary_key=True)
+    source_knowledge_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    target_knowledge_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    suggested_relation_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    direction: Mapped[str] = mapped_column(String(32), nullable=False)
+    evidence_excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    evidence_locator: Mapped[str] = mapped_column(String(1024), nullable=False)
+    evidence_source_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    source_content_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    target_content_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    producer: Mapped[str] = mapped_column(String(64), nullable=False)
+    producer_config_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    trigger_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    review_record_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
 
 class KnowledgeTheoryProfileRow(Base):
