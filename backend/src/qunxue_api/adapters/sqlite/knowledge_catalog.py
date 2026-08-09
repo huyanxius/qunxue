@@ -13,9 +13,18 @@ from qunxue_api.adapters.knowledge_markdown import (
     ParsedKnowledgeEntry,
     parse_knowledge_markdown,
 )
+from qunxue_api.adapters.knowledge_relations import (
+    PRODUCER_CONFIG_VERSION,
+    RelationCandidateInput,
+    StructuralConnectionInput,
+    StructuralNodeInput,
+    build_structural_connections,
+    extract_relation_candidates,
+)
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeEntryRevisionRow,
+    KnowledgeRelationCandidateRow,
     KnowledgeRelationRow,
     KnowledgeReleaseRow,
     KnowledgeSourceRow,
@@ -28,6 +37,7 @@ from qunxue_api.modules.knowledge_catalog import (
     KnowledgeEntryDetail,
     KnowledgeEntryPage,
     KnowledgeEntrySummary,
+    KnowledgeRelationPage,
     KnowledgeRelationSnapshot,
     KnowledgeReleaseLevel,
     KnowledgeReleaseManifest,
@@ -35,12 +45,16 @@ from qunxue_api.modules.knowledge_catalog import (
     KnowledgeReviewStatus,
     KnowledgeUseEligibility,
     KnowledgeUsePurpose,
+    RelationCandidatePage,
+    RelationCandidateSnapshot,
     SourceRecordSnapshot,
     SourceVerificationStatus,
+    StructuralConnectionPage,
+    StructuralConnectionSnapshot,
     TheoryProfileSnapshot,
 )
 
-_BUILD_CONFIG_VERSION = "markdown-preview-v1"
+_BUILD_CONFIG_VERSION = "markdown-preview-v2+explicit-title-trigger-v1"
 _DIMENSION_DIRECTORIES = (
     "本体论",
     "实践论",
@@ -79,6 +93,10 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     KnowledgeReleaseRow.is_current.is_(True),
                     KnowledgeReleaseRow.level.in_(
                         [KnowledgeReleaseLevel.PREVIEW.value, KnowledgeReleaseLevel.FINAL.value]
+                    ),
+                    or_(
+                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value,
+                        KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
                     ),
                 )
                 .order_by(KnowledgeReleaseRow.built_at.desc())
@@ -231,6 +249,117 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             )
             return tuple(_source_snapshot(row) for row in rows)
 
+    def list_connections(
+        self,
+        *,
+        release_id: str,
+        cursor: str | None,
+        limit: int,
+    ) -> StructuralConnectionPage:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            rows = tuple(
+                session.scalars(
+                    select(KnowledgeEntryRevisionRow)
+                    .where(
+                        KnowledgeEntryRevisionRow.knowledge_release_id == release_id,
+                        KnowledgeEntryRevisionRow.browse_eligible.is_(True),
+                    )
+                    .order_by(KnowledgeEntryRevisionRow.knowledge_id)
+                )
+            )
+            connections = build_structural_connections(
+                tuple(_structural_input(row) for row in rows)
+            )
+            page = connections[offset : offset + limit]
+            next_cursor = (
+                _encode_cursor(release_id, offset + limit)
+                if offset + limit < len(connections)
+                else None
+            )
+            return StructuralConnectionPage(
+                release=_release_ref(release),
+                connections=tuple(_connection_snapshot(item) for item in page),
+                total_count=len(connections),
+                next_cursor=next_cursor,
+            )
+
+    def list_relation_candidates(
+        self,
+        *,
+        release_id: str,
+        cursor: str | None,
+        limit: int,
+    ) -> RelationCandidatePage:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            total_count = session.scalar(
+                select(func.count())
+                .select_from(KnowledgeRelationCandidateRow)
+                .where(KnowledgeRelationCandidateRow.knowledge_release_id == release_id)
+            )
+            rows = session.scalars(
+                select(KnowledgeRelationCandidateRow)
+                .where(KnowledgeRelationCandidateRow.knowledge_release_id == release_id)
+                .order_by(KnowledgeRelationCandidateRow.candidate_id)
+                .offset(offset)
+                .limit(limit)
+            )
+            count = int(total_count or 0)
+            return RelationCandidatePage(
+                release=_release_ref(release),
+                candidates=tuple(_candidate_snapshot(row) for row in rows),
+                total_count=count,
+                next_cursor=(
+                    _encode_cursor(release_id, offset + limit)
+                    if offset + limit < count
+                    else None
+                ),
+            )
+
+    def list_relations(
+        self,
+        *,
+        release_id: str,
+        cursor: str | None,
+        limit: int,
+    ) -> KnowledgeRelationPage:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            reviewed = KnowledgeRelationRow.review_status == KnowledgeReviewStatus.REVIEWED.value
+            total_count = session.scalar(
+                select(func.count())
+                .select_from(KnowledgeRelationRow)
+                .where(
+                    KnowledgeRelationRow.knowledge_release_id == release_id,
+                    reviewed,
+                )
+            )
+            rows = session.scalars(
+                select(KnowledgeRelationRow)
+                .where(
+                    KnowledgeRelationRow.knowledge_release_id == release_id,
+                    reviewed,
+                )
+                .order_by(KnowledgeRelationRow.relation_id)
+                .offset(offset)
+                .limit(limit)
+            )
+            count = int(total_count or 0)
+            return KnowledgeRelationPage(
+                release=_release_ref(release),
+                relations=tuple(_relation_snapshot(row) for row in rows),
+                total_count=count,
+                next_cursor=(
+                    _encode_cursor(release_id, offset + limit)
+                    if offset + limit < count
+                    else None
+                ),
+            )
+
     def get_manifest(self, release_id: str) -> KnowledgeReleaseManifest:
         with self._database.session() as session:
             return _manifest(_require_release(session, release_id))
@@ -250,15 +379,64 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             existing.is_current = True
             return existing
 
+        content_versions = {}
+        for imported in imported_entries:
+            previous = session.scalar(
+                select(KnowledgeEntryRevisionRow)
+                .where(KnowledgeEntryRevisionRow.knowledge_id == imported.entry.knowledge_id)
+                .order_by(KnowledgeEntryRevisionRow.content_version.desc())
+            )
+            content_versions[imported.entry.knowledge_id] = (
+                1
+                if previous is None
+                else previous.content_version
+                if previous.content_hash == imported.content_hash
+                else previous.content_version + 1
+            )
+        candidate_inputs = tuple(
+            RelationCandidateInput(
+                knowledge_id=item.entry.knowledge_id,
+                title=item.entry.title,
+                content=item.entry.content,
+                source_path=item.source_path,
+                content_version=content_versions[item.entry.knowledge_id],
+            )
+            for item in imported_entries
+        )
+        candidates = extract_relation_candidates(candidate_inputs)
+        structural_connection_count = len(
+            build_structural_connections(
+                tuple(
+                    StructuralConnectionInput(
+                        knowledge_id=item.entry.knowledge_id,
+                        title=item.entry.title,
+                        directory_path=tuple(
+                            StructuralNodeInput(
+                                node_id=node.node_id,
+                                node_type=node.node_type.value,
+                                title=node.title,
+                            )
+                            for node in item.entry.directory_path
+                        ),
+                    )
+                    for item in imported_entries
+                )
+            )
+        )
         release_id = f"knowledge-preview-{content_hash.removeprefix('sha256:')}"
         now = datetime.now(UTC)
         manifest = {
             "knowledge_ids": [item.entry.knowledge_id for item in imported_entries],
+            "relation_candidate_ids": [item.candidate_id for item in candidates],
             "relation_ids": [],
+            "structural_connection_count": structural_connection_count,
             "theory_ids": [],
             "source_ids": [f"source:{item.entry.knowledge_id}" for item in imported_entries],
             "review_record_ids": [],
-            "artifact_hashes": [["parser_config", _BUILD_CONFIG_VERSION]],
+            "artifact_hashes": [
+                ["parser_config", _BUILD_CONFIG_VERSION],
+                ["relation_candidate_config", PRODUCER_CONFIG_VERSION],
+            ],
         }
         session.execute(
             update(KnowledgeReleaseRow)
@@ -278,18 +456,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         session.flush()
         for imported in imported_entries:
             entry = imported.entry
-            previous = session.scalar(
-                select(KnowledgeEntryRevisionRow)
-                .where(KnowledgeEntryRevisionRow.knowledge_id == entry.knowledge_id)
-                .order_by(KnowledgeEntryRevisionRow.content_version.desc())
-            )
-            content_version = (
-                1
-                if previous is None
-                else previous.content_version
-                if previous.content_hash == imported.content_hash
-                else previous.content_version + 1
-            )
+            content_version = content_versions[entry.knowledge_id]
             category_node = entry.directory_path[-1] if len(entry.directory_path) > 1 else None
             session.add(
                 KnowledgeEntryRevisionRow(
@@ -335,6 +502,28 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     url=None,
                     verification_status=SourceVerificationStatus.PENDING.value,
                     use_boundary=_PREVIEW_SOURCE_BOUNDARY,
+                )
+            )
+        for candidate in candidates:
+            session.add(
+                KnowledgeRelationCandidateRow(
+                    knowledge_release_id=release_id,
+                    candidate_id=candidate.candidate_id,
+                    source_knowledge_id=candidate.source_knowledge_id,
+                    target_knowledge_id=candidate.target_knowledge_id,
+                    suggested_relation_type=candidate.suggested_relation_type,
+                    direction=candidate.direction,
+                    evidence_excerpt=candidate.evidence_excerpt,
+                    evidence_locator=candidate.evidence_locator,
+                    evidence_source_id=candidate.evidence_source_id,
+                    source_content_version=candidate.source_content_version,
+                    target_content_version=candidate.target_content_version,
+                    producer=candidate.producer,
+                    producer_config_version=candidate.producer_config_version,
+                    score=candidate.score,
+                    trigger_reason=candidate.trigger_reason,
+                    review_status=candidate.review_status,
+                    review_record_id=None,
                 )
             )
         session.flush()
@@ -386,6 +575,7 @@ def _imported_entries(knowledge_root: Path) -> tuple[_ImportedEntry, ...]:
 def _release_hash(imported_entries: tuple[_ImportedEntry, ...]) -> str:
     payload = {
         "build_config_version": _BUILD_CONFIG_VERSION,
+        "relation_candidate_config_version": PRODUCER_CONFIG_VERSION,
         "entries": [
             {
                 "knowledge_id": item.entry.knowledge_id,
@@ -475,6 +665,56 @@ def _entry_summary(row: KnowledgeEntryRevisionRow) -> KnowledgeEntrySummary:
     )
 
 
+def _structural_input(row: KnowledgeEntryRevisionRow) -> StructuralConnectionInput:
+    return StructuralConnectionInput(
+        knowledge_id=row.knowledge_id,
+        title=row.title,
+        directory_path=tuple(
+            StructuralNodeInput(
+                node_id=node["node_id"],
+                node_type=node["node_type"],
+                title=node["title"],
+            )
+            for node in row.directory_path
+        ),
+    )
+
+
+def _connection_snapshot(item: object) -> StructuralConnectionSnapshot:
+    return StructuralConnectionSnapshot(
+        connection_id=item.connection_id,
+        source_node_id=item.source_node_id,
+        source_node_type=item.source_node_type,
+        source_title=item.source_title,
+        target_node_id=item.target_node_id,
+        target_node_type=item.target_node_type,
+        target_title=item.target_title,
+        connection_type=item.connection_type,
+        direction=item.direction,
+    )
+
+
+def _candidate_snapshot(row: KnowledgeRelationCandidateRow) -> RelationCandidateSnapshot:
+    return RelationCandidateSnapshot(
+        candidate_id=row.candidate_id,
+        source_knowledge_id=row.source_knowledge_id,
+        target_knowledge_id=row.target_knowledge_id,
+        suggested_relation_type=row.suggested_relation_type,
+        direction=row.direction,
+        evidence_excerpt=row.evidence_excerpt,
+        evidence_locator=row.evidence_locator,
+        evidence_source_id=row.evidence_source_id,
+        source_content_version=row.source_content_version,
+        target_content_version=row.target_content_version,
+        producer=row.producer,
+        producer_config_version=row.producer_config_version,
+        score=row.score,
+        trigger_reason=row.trigger_reason,
+        review_status=KnowledgeReviewStatus(row.review_status),
+        review_record_id=row.review_record_id,
+    )
+
+
 def _source_snapshot(row: KnowledgeSourceRow) -> SourceRecordSnapshot:
     return SourceRecordSnapshot(
         source_id=row.source_id,
@@ -500,8 +740,8 @@ def _relation_snapshot(row: KnowledgeRelationRow) -> KnowledgeRelationSnapshot:
         description=row.description,
         evidence_source_ids=tuple(row.evidence_source_ids),
         evidence_grade=row.evidence_grade,
-        algorithm_weight=None,
-        algorithm_config_version=None,
+        algorithm_weight=row.algorithm_weight,
+        algorithm_config_version=row.algorithm_config_version,
         content_version=row.content_version,
         review_status=KnowledgeReviewStatus(row.review_status),
     )
@@ -540,7 +780,9 @@ def _manifest(row: KnowledgeReleaseRow) -> KnowledgeReleaseManifest:
     return KnowledgeReleaseManifest(
         release=_release_ref(row),
         knowledge_ids=tuple(row.manifest["knowledge_ids"]),
+        relation_candidate_ids=tuple(row.manifest.get("relation_candidate_ids", [])),
         relation_ids=tuple(row.manifest["relation_ids"]),
+        structural_connection_count=int(row.manifest.get("structural_connection_count", 0)),
         theory_ids=tuple(row.manifest["theory_ids"]),
         source_ids=tuple(row.manifest["source_ids"]),
         review_record_ids=tuple(row.manifest["review_record_ids"]),
