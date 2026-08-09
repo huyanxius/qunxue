@@ -1106,6 +1106,29 @@ export type InferenceLinkContract = {
 };
 
 /**
+ * KnowledgeDirectoryFacetResponse
+ */
+export type KnowledgeDirectoryFacetResponse = {
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * Node Id
+     */
+    node_id: string;
+    node_type: KnowledgeDirectoryNodeType;
+    /**
+     * Parent Node Id
+     */
+    parent_node_id: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * KnowledgeDirectoryNodeResponse
  */
 export type KnowledgeDirectoryNodeResponse = {
@@ -1124,6 +1147,20 @@ export type KnowledgeDirectoryNodeResponse = {
  * KnowledgeDirectoryNodeType
  */
 export type KnowledgeDirectoryNodeType = 'category' | 'dimension';
+
+/**
+ * KnowledgeDirectorySummaryResponse
+ */
+export type KnowledgeDirectorySummaryResponse = {
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Nodes
+     */
+    nodes: Array<KnowledgeDirectoryFacetResponse>;
+};
 
 /**
  * KnowledgeEntryDetailResponse
@@ -1206,6 +1243,10 @@ export type KnowledgeEntryPageResponse = {
      * Stable Order
      */
     stable_order: Array<string>;
+    /**
+     * Total Count
+     */
+    total_count: number;
 };
 
 /**
@@ -3584,6 +3625,40 @@ export type ListKnowledgeConnectionsResponses = {
 };
 
 export type ListKnowledgeConnectionsResponse = ListKnowledgeConnectionsResponses[keyof ListKnowledgeConnectionsResponses];
+
+export type GetKnowledgeDirectoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Knowledge Release Id
+         */
+        knowledge_release_id?: string | null;
+    };
+    url: '/api/knowledge/directory';
+};
+
+export type GetKnowledgeDirectoryErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetKnowledgeDirectoryError = GetKnowledgeDirectoryErrors[keyof GetKnowledgeDirectoryErrors];
+
+export type GetKnowledgeDirectoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeDirectorySummaryResponse;
+};
+
+export type GetKnowledgeDirectoryResponse = GetKnowledgeDirectoryResponses[keyof GetKnowledgeDirectoryResponses];
 
 export type ListKnowledgeEntriesData = {
     body?: never;

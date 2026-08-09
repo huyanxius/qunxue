@@ -43,10 +43,12 @@ def test_knowledge_browse_keeps_search_and_detail_on_one_release(
 
     assert first_page.status_code == 200
     assert first_page.json()["knowledge_release_id"] == release_id
+    assert first_page.json()["total_count"] > len(first_page.json()["entries"])
     assert first_page.json()["next_cursor"]
     assert first_page.json()["entries"][0]["dimension_id"] == "D2"
     assert first_page.json()["entries"][0]["directory_path"]
     assert search.status_code == 200
+    assert search.json()["total_count"] == 3
     assert "D2:P087" in [entry["knowledge_id"] for entry in search.json()["entries"]]
     assert detail.status_code == 200
     assert detail.json()["knowledge_release_id"] == release_id
@@ -62,6 +64,75 @@ def test_knowledge_browse_keeps_search_and_detail_on_one_release(
     assert detail.json()["theory_profile"] is None
     assert detail.json()["sources"][0]["verification_status"] == "pending"
     assert detail.json()["sources"][0]["source_type"] == "repository_markdown"
+
+
+def test_knowledge_directory_summary_is_release_bound_and_hides_ineligible_entries(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+
+    before = client.get(
+        "/api/knowledge/directory",
+        params={"knowledge_release_id": release_id},
+    )
+    assert before.status_code == 200
+    payload = before.json()
+    assert payload["knowledge_release_id"] == release_id
+    assert len([node for node in payload["nodes"] if node["node_type"] == "dimension"]) == 7
+    assert all("knowledge_id" not in node for node in payload["nodes"])
+    d2_before = next(node for node in payload["nodes"] if node["node_id"] == "D2")
+    class_struggle_leaf = next(
+        node
+        for node in payload["nodes"]
+        if node["node_id"].endswith("C001 历史唯物主义（Historical Materialism）/T4 当代发展")
+    )
+    assert class_struggle_leaf["title"] == "阶级斗争（Class Struggle）"
+
+    with client.app.state.database.session() as session:
+        row = session.get(KnowledgeEntryRevisionRow, (release_id, "D2:P087"))
+        assert row is not None
+        row.browse_eligible = False
+
+    after = client.get(
+        "/api/knowledge/directory",
+        params={"knowledge_release_id": release_id},
+    )
+    assert after.status_code == 200
+    d2_after = next(
+        node for node in after.json()["nodes"] if node["node_id"] == "D2"
+    )
+    assert d2_after["entry_count"] == d2_before["entry_count"] - 1
+
+
+def test_knowledge_entry_cursor_cannot_be_reused_with_different_filters(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+    first = client.get(
+        "/api/knowledge/entries",
+        params={
+            "knowledge_release_id": release_id,
+            "dimension_id": "D2",
+            "limit": 1,
+        },
+    )
+    assert first.status_code == 200
+    assert first.json()["next_cursor"]
+
+    wrong_scope = client.get(
+        "/api/knowledge/entries",
+        params={
+            "knowledge_release_id": release_id,
+            "dimension_id": "D1",
+            "cursor": first.json()["next_cursor"],
+            "limit": 1,
+        },
+    )
+    assert wrong_scope.status_code == 422
 
 
 def test_knowledge_browse_hides_entries_without_browse_eligibility(

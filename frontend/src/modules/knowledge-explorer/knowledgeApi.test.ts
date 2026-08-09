@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  loadKnowledgeDirectory,
   readCurrentKnowledgeRelease,
+  readKnowledgeDirectory,
   readKnowledgeEntry,
   searchKnowledgeEntries,
 } from './knowledgeApi'
@@ -35,12 +35,24 @@ function page(input: {
   releaseId: string
   entries: readonly ReturnType<typeof entry>[]
   nextCursor?: string
+  totalCount?: number
 }) {
   return {
     entries: input.entries,
     knowledge_release_id: input.releaseId,
     next_cursor: input.nextCursor ?? null,
     stable_order: input.entries.map((candidate) => candidate.knowledge_id),
+    total_count: input.totalCount ?? input.entries.length,
+  }
+}
+
+function directory(releaseId = 'release-a') {
+  return {
+    knowledge_release_id: releaseId,
+    nodes: [
+      { entry_count: 12, node_id: 'D1', node_type: 'dimension', parent_node_id: null, title: '本体论' },
+      { entry_count: 4, node_id: 'C001', node_type: 'category', parent_node_id: 'D1', title: '概念' },
+    ],
   }
 }
 
@@ -144,43 +156,32 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('loadKnowledgeDirectory', () => {
-  it('reads every page from one release and retains the real directory path', async () => {
+describe('knowledge API', () => {
+  it('reads one compact directory summary without paging through entries', async () => {
     const requests: URL[] = []
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = urlFor(input)
       requests.push(request)
-      return request.searchParams.get('cursor') === 'cursor-2'
-        ? json(page({ releaseId: 'release-a', entries: [entry('D1:C002', '关系')] }))
-        : json(page({
-            releaseId: 'release-a',
-            entries: [entry('D1:C001', '概念')],
-            nextCursor: 'cursor-2',
-          }))
+      return json(directory())
     }))
 
-    const entries = await loadKnowledgeDirectory('release-a')
+    const nodes = await readKnowledgeDirectory('release-a')
 
-    expect(entries.map((candidate) => candidate.knowledgeId)).toEqual([
-      'D1:C001',
-      'D1:C002',
+    expect(nodes).toEqual([
+      { entryCount: 12, nodeId: 'D1', nodeType: 'dimension', parentNodeId: undefined, title: '本体论' },
+      { entryCount: 4, nodeId: 'C001', nodeType: 'category', parentNodeId: 'D1', title: '概念' },
     ])
-    expect(entries[0]?.directoryPath).toEqual([
-      { nodeId: 'D1', nodeType: 'dimension', title: '本体论' },
-      { nodeId: 'C001', nodeType: 'category', title: '概念' },
-    ])
-    expect(requests).toHaveLength(2)
+    expect(requests).toHaveLength(1)
+    expect(requests[0]?.pathname).toBe('/api/knowledge/directory')
     expect(requests[0]?.searchParams.get('knowledge_release_id')).toBe('release-a')
-    expect(requests[0]?.searchParams.get('limit')).toBe('100')
-    expect(requests[1]?.searchParams.get('cursor')).toBe('cursor-2')
   })
 
-  it('rejects a page that changes the fixed release', async () => {
+  it('rejects a directory that changes the fixed release', async () => {
     vi.stubGlobal('fetch', vi.fn(async () =>
-      json(page({ releaseId: 'release-b', entries: [entry('D1:C001', '概念')] })),
+      json(directory('release-b')),
     ))
 
-    await expect(loadKnowledgeDirectory('release-a')).rejects.toThrow(
+    await expect(readKnowledgeDirectory('release-a')).rejects.toThrow(
       '不同发布版本',
     )
   })
@@ -190,7 +191,11 @@ describe('loadKnowledgeDirectory', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = urlFor(input)
       requests.push(request)
-      return json(page({ releaseId: 'release-a', entries: [entry('D1:C001', '概念')] }))
+      return json(page({
+        releaseId: 'release-a',
+        entries: [entry('D1:C001', '概念')],
+        totalCount: 37,
+      }))
     }))
 
     const result = await searchKnowledgeEntries({
@@ -203,6 +208,7 @@ describe('loadKnowledgeDirectory', () => {
     expect(result.entries.map((candidate) => candidate.knowledgeId)).toEqual([
       'D1:C001',
     ])
+    expect(result.totalCount).toBe(37)
     expect(requests[0]?.searchParams.get('knowledge_release_id')).toBe('release-a')
     expect(requests[0]?.searchParams.get('query')).toBe('概念')
     expect(requests[0]?.searchParams.get('dimension_id')).toBe('D1')

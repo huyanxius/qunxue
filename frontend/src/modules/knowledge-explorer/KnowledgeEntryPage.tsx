@@ -69,25 +69,21 @@ export function KnowledgeEntryPage({
 
   return (
     <article className="knowledge-explorer knowledge-explorer--entry">
-      <header className="knowledge-explorer__header">
-        <div>
-          <p className="knowledge-explorer__eyebrow">KNOWLEDGE / ENTRY</p>
-          <h1>知识条目</h1>
-        </div>
+      <header className="knowledge-reader__actions">
         {onReturnToResearch ? (
-          <button type="button" className="knowledge-explorer__plain-action" onClick={onReturnToResearch}>
-            返回研究任务
+          <button type="button" onClick={onReturnToResearch}>
+            ← 返回研究任务
           </button>
         ) : null}
         {onReturnToKnowledge ? (
-          <button type="button" className="knowledge-explorer__plain-action" onClick={onReturnToKnowledge}>
-            {returnToKnowledgeLabel}
+          <button type="button" onClick={onReturnToKnowledge}>
+            ← {returnToKnowledgeLabel}
           </button>
         ) : null}
+        {resolvedReleaseId ? <span>固定发布 · {resolvedReleaseId.slice(0, 22)}</span> : null}
       </header>
-      {resolvedReleaseId ? <p className="knowledge-explorer__release">当前发布 {resolvedReleaseId}</p> : null}
-      {!detail && !error ? <p role="status">正在读取详情……</p> : null}
-      {error ? <p className="knowledge-explorer__error" role="alert">{error}</p> : null}
+      {!detail && !error ? <div className="knowledge-explorer__loading" role="status"><span />正在整理正文与来源</div> : null}
+      {error ? <div className="knowledge-explorer__state" role="alert"><strong>知识条目暂时无法读取</strong><p>{error}</p></div> : null}
       {detail ? (
         <>
           <KnowledgeEntryDetail detail={detail} onStartResearch={onStartResearch} />

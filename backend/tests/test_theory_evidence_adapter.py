@@ -60,6 +60,7 @@ class _CatalogFixture:
         return KnowledgeEntryPage(
             release=RELEASE,
             entries=tuple(item.summary for item in page_entries),
+            total_count=len(self.entries),
             next_cursor=str(next_offset) if next_offset < len(self.entries) else None,
         )
 

@@ -116,7 +116,8 @@ export function PageShell({
   children,
   workspace = false,
   immersive = false,
-}: PropsWithChildren<{ workspace?: boolean; immersive?: boolean }>) {
+  wide = false,
+}: PropsWithChildren<{ workspace?: boolean; immersive?: boolean; wide?: boolean }>) {
   const account = useAccount()
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
@@ -202,6 +203,7 @@ export function PageShell({
         'page-shell',
         workspace ? 'page-shell--workspace' : '',
         immersive ? 'page-shell--immersive' : '',
+        wide ? 'page-shell--wide' : '',
       ].filter(Boolean).join(' ')}>{children}</main>
 
       {immersive ? null : <PrimaryNavigation className="mobile-navigation" label="移动主导航" />}

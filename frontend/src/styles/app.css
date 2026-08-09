@@ -261,6 +261,12 @@
   overflow: hidden;
 }
 
+.page-shell--wide {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 .page-shell--immersive {
   grid-column: 1;
   width: 100%;
@@ -565,6 +571,11 @@
   .page-shell--workspace {
     width: 100%;
     height: calc(100vh - 122px);
+    padding: 0;
+  }
+
+  .page-shell--wide {
+    width: 100%;
     padding: 0;
   }
 

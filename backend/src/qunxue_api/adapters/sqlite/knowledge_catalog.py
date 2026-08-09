@@ -32,8 +32,10 @@ from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
 )
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeCatalog,
+    KnowledgeDirectoryFacetSnapshot,
     KnowledgeDirectoryNodeSnapshot,
     KnowledgeDirectoryNodeType,
+    KnowledgeDirectorySummary,
     KnowledgeEntryDetail,
     KnowledgeEntryPage,
     KnowledgeEntrySummary,
@@ -118,7 +120,15 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
     ) -> KnowledgeEntryPage:
         with self._database.session() as session:
             release = _require_release(session, release_id)
-            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            normalized_query = query.strip() if query and query.strip() else None
+            cursor_scope = _browse_cursor_scope(
+                release_id=release_id,
+                query=normalized_query,
+                category=category,
+                category_id=category_id,
+                dimension_id=dimension_id,
+            )
+            offset = _decode_cursor(cursor, cursor_scope) if cursor else 0
             statement = select(KnowledgeEntryRevisionRow).where(
                 KnowledgeEntryRevisionRow.knowledge_release_id == release_id,
                 KnowledgeEntryRevisionRow.browse_eligible.is_(True),
@@ -133,33 +143,122 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 statement = statement.where(
                     KnowledgeEntryRevisionRow.dimension_id == dimension_id
                 )
-            if query is not None and query.strip():
-                matching_ids = _matching_ids(session, release_id, query.strip())
+            if normalized_query:
+                matching_ids = _matching_ids(session, release_id, normalized_query)
                 if not matching_ids:
                     return KnowledgeEntryPage(
                         release=_release_ref(release),
                         entries=(),
+                        total_count=0,
                         next_cursor=None,
                     )
                 statement = statement.where(
                     KnowledgeEntryRevisionRow.knowledge_id.in_(matching_ids)
                 )
 
+            total_count = int(
+                session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+            )
+            if offset > total_count:
+                raise ValueError("invalid knowledge cursor")
             rows = list(
                 session.scalars(
                     statement.order_by(KnowledgeEntryRevisionRow.knowledge_id)
                     .offset(offset)
-                    .limit(limit + 1)
+                    .limit(limit)
                 )
             )
-            page_rows = rows[:limit]
             next_cursor = (
-                _encode_cursor(release_id, offset + limit) if len(rows) > limit else None
+                _encode_cursor(cursor_scope, offset + limit)
+                if offset + limit < total_count
+                else None
             )
             return KnowledgeEntryPage(
                 release=_release_ref(release),
-                entries=tuple(_entry_summary(row) for row in page_rows),
+                entries=tuple(_entry_summary(row) for row in rows),
+                total_count=total_count,
                 next_cursor=next_cursor,
+            )
+
+    def get_directory(self, *, release_id: str) -> KnowledgeDirectorySummary:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            facets: dict[str, dict[str, object]] = {
+                f"D{index}": {
+                    "node_type": KnowledgeDirectoryNodeType.DIMENSION,
+                    "title": title,
+                    "parent_node_id": None,
+                    "entry_count": 0,
+                }
+                for index, title in enumerate(_DIMENSION_DIRECTORIES, start=1)
+            }
+            rows = tuple(
+                session.execute(
+                select(
+                    KnowledgeEntryRevisionRow.directory_path,
+                    KnowledgeEntryRevisionRow.title,
+                )
+                .where(
+                    KnowledgeEntryRevisionRow.knowledge_release_id == release_id,
+                    KnowledgeEntryRevisionRow.browse_eligible.is_(True),
+                )
+                .order_by(KnowledgeEntryRevisionRow.knowledge_id)
+                )
+            )
+            terminal_counts: dict[str, int] = {}
+            node_occurrences: dict[str, int] = {}
+            for path, _entry_title in rows:
+                for raw_node in path:
+                    node_id = raw_node["node_id"]
+                    node_occurrences[node_id] = node_occurrences.get(node_id, 0) + 1
+                if path:
+                    terminal_id = path[-1]["node_id"]
+                    terminal_counts[terminal_id] = terminal_counts.get(terminal_id, 0) + 1
+            for path, entry_title in rows:
+                parent_node_id: str | None = None
+                for index, raw_node in enumerate(path):
+                    node_id = raw_node["node_id"]
+                    node_type = KnowledgeDirectoryNodeType(raw_node["node_type"])
+                    # The imported hierarchy's final label can lag behind the entry
+                    # it points to. Directory leaves represent browse destinations,
+                    # so expose the immutable entry title while preserving node IDs.
+                    title = (
+                        entry_title
+                        if index == len(path) - 1
+                        and terminal_counts[node_id] == 1
+                        and node_occurrences[node_id] == 1
+                        else raw_node["title"]
+                    )
+                    existing = facets.get(node_id)
+                    if existing is None:
+                        existing = {
+                            "node_type": node_type,
+                            "title": title,
+                            "parent_node_id": parent_node_id,
+                            "entry_count": 0,
+                        }
+                        facets[node_id] = existing
+                    elif (
+                        existing["node_type"] != node_type
+                        or existing["title"] != title
+                        or existing["parent_node_id"] != parent_node_id
+                    ):
+                        raise ValueError(f"inconsistent directory node: {node_id}")
+                    existing["entry_count"] = int(existing["entry_count"]) + 1
+                    parent_node_id = node_id
+
+            return KnowledgeDirectorySummary(
+                release=_release_ref(release),
+                nodes=tuple(
+                    KnowledgeDirectoryFacetSnapshot(
+                        node_id=node_id,
+                        node_type=facet["node_type"],
+                        title=str(facet["title"]),
+                        parent_node_id=facet["parent_node_id"],
+                        entry_count=int(facet["entry_count"]),
+                    )
+                    for node_id, facet in facets.items()
+                ),
             )
 
     def get_entry(
@@ -627,6 +726,28 @@ def _release_hash(imported_entries: tuple[_ImportedEntry, ...]) -> str:
 
 def _hash(value: str) -> str:
     return f"sha256:{sha256(value.encode()).hexdigest()}"
+
+
+def _browse_cursor_scope(
+    *,
+    release_id: str,
+    query: str | None,
+    category: str | None,
+    category_id: str | None,
+    dimension_id: str | None,
+) -> str:
+    filters = json.dumps(
+        {
+            "query": query,
+            "category": category,
+            "category_id": category_id,
+            "dimension_id": dimension_id,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"{release_id}|entries|{sha256(filters.encode()).hexdigest()}"
 
 
 def _require_release(session: object, release_id: str) -> KnowledgeReleaseRow:
