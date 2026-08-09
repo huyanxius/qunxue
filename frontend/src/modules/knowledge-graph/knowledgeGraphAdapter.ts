@@ -7,6 +7,7 @@ import type {
 } from '../../api/generated'
 import type {
   KnowledgeGraphEdge,
+  KnowledgeGraphFocusEntry,
   KnowledgeGraphNode,
   KnowledgeGraphProjection,
 } from './types'
@@ -77,6 +78,58 @@ function mergeProjection(
     nodes: [...mergedNodes.values()],
     edges: [...mergedEdges.values()],
   }
+}
+
+export function mergeGraphEntries(
+  projection: KnowledgeGraphProjection,
+  entries: readonly KnowledgeGraphFocusEntry[],
+): KnowledgeGraphProjection {
+  return mergeProjection(
+    projection,
+    entries.map((entry) => ({
+      id: entry.knowledgeId,
+      label: entry.title,
+      nodeType: 'entry',
+      reviewStatus: entry.reviewStatus,
+    })),
+    [],
+  )
+}
+
+export function mergeDirectoryPath(
+  projection: KnowledgeGraphProjection,
+  focus: KnowledgeGraphFocusEntry,
+): KnowledgeGraphProjection {
+  const path = [
+    ...focus.directoryPath,
+    {
+      nodeId: focus.knowledgeId,
+      nodeType: 'entry' as const,
+      title: focus.title,
+    },
+  ]
+  return mergeProjection(
+    projection,
+    path.map((node) => ({
+      id: node.nodeId,
+      label: node.title,
+      nodeType: node.nodeType,
+      ...(node.nodeId === focus.knowledgeId
+        ? { reviewStatus: focus.reviewStatus }
+        : {}),
+    })),
+    path.slice(0, -1).flatMap((source, index) => {
+      const target = path[index + 1]
+      return target ? [{
+        id: `structure:path:${source.nodeId}:${target.nodeId}`,
+        source: source.nodeId,
+        target: target.nodeId,
+        relationType: 'contains',
+        direction: 'outbound',
+        layer: 'structure' as const,
+      }] : []
+    }),
+  )
 }
 
 export function mergeStructuralConnections(

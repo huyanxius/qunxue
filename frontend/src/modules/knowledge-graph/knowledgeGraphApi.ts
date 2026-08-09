@@ -1,7 +1,9 @@
 import { apiClient } from '../../api/client'
 import {
+  getCurrentKnowledgeRelease,
   getKnowledgeEntry,
   listKnowledgeConnections,
+  listKnowledgeEntries,
   listKnowledgeRelationCandidates,
   listKnowledgeRelations,
 } from '../../api/generated/sdk.gen'
@@ -10,11 +12,76 @@ import type {
   RelationCandidateResponse,
   StructuralConnectionResponse,
 } from '../../api/generated/types.gen'
+import type { KnowledgeGraphFocusEntry } from './types'
 
 function requireRelease(actual: string, expected: string) {
   if (actual !== expected) {
     throw new Error('知识图谱返回了不同发布版本，请重新进入知识库')
   }
+}
+
+function focusEntry(entry: {
+  knowledge_id: string
+  title: string
+  review_status: string
+  directory_path: readonly {
+    node_id: string
+    node_type: 'dimension' | 'category'
+    title: string
+  }[]
+}): KnowledgeGraphFocusEntry {
+  return {
+    knowledgeId: entry.knowledge_id,
+    title: entry.title,
+    reviewStatus: entry.review_status,
+    directoryPath: entry.directory_path.map((node) => ({
+      nodeId: node.node_id,
+      nodeType: node.node_type,
+      title: node.title,
+    })),
+  }
+}
+
+export async function readCurrentKnowledgeGraphRelease() {
+  const { data } = await getCurrentKnowledgeRelease({ client: apiClient })
+  if (!data || data.level === 'working') throw new Error('当前知识发布不可浏览')
+  return data.knowledge_release_id
+}
+
+export async function searchKnowledgeGraphEntries(input: {
+  releaseId: string
+  query: string
+  cursor?: string
+}): Promise<{ entries: readonly KnowledgeGraphFocusEntry[]; nextCursor?: string }> {
+  const { data } = await listKnowledgeEntries({
+    client: apiClient,
+    query: {
+      knowledge_release_id: input.releaseId,
+      query: input.query,
+      cursor: input.cursor,
+      limit: 20,
+    },
+  })
+  if (!data) throw new Error('知识搜索暂时不可用')
+  requireRelease(data.knowledge_release_id, input.releaseId)
+  return {
+    entries: data.entries.map(focusEntry),
+    nextCursor: data.next_cursor ?? undefined,
+  }
+}
+
+export async function readKnowledgeGraphFocusEntry(input: {
+  releaseId: string
+  knowledgeId: string
+}): Promise<KnowledgeGraphFocusEntry> {
+  const { data } = await getKnowledgeEntry({
+    client: apiClient,
+    path: { knowledge_id: input.knowledgeId },
+    query: { knowledge_release_id: input.releaseId },
+  })
+  if (!data) throw new Error('未找到当前发布中的知识条目')
+  requireRelease(data.knowledge_release_id, input.releaseId)
+  return focusEntry(data)
 }
 
 export async function readKnowledgeGraphEntry(input: {
@@ -71,7 +138,7 @@ export async function readIncidentCandidatePage(input: {
       knowledge_release_id: input.releaseId,
       knowledge_id: input.knowledgeId,
       cursor: input.cursor,
-      limit: 200,
+      limit: 50,
     },
   })
   if (!data) throw new Error('待审核发现关系暂时不可用')
@@ -98,7 +165,7 @@ export async function readIncidentRelationPage(input: {
       knowledge_release_id: input.releaseId,
       knowledge_id: input.knowledgeId,
       cursor: input.cursor,
-      limit: 200,
+      limit: 50,
     },
   })
   if (!data) throw new Error('已审核知识关系暂时不可用')
