@@ -236,7 +236,8 @@ def test_research_task_navigation_restores_my_list_and_task_only_deep_links(
 def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
     client: TestClient,
 ) -> None:
-    schemas = client.app.openapi()["components"]["schemas"]
+    contract = client.app.openapi()
+    schemas = contract["components"]["schemas"]
     material = schemas["MaterialInputRequest"]
 
     assert {
@@ -275,6 +276,26 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
         "sources",
         "relations",
     } <= set(schemas["KnowledgeEntryDetailResponse"]["required"])
+    relation = schemas["KnowledgeRelationResponse"]
+    assert {
+        "algorithm_weight",
+        "algorithm_config_version",
+        "review_status",
+    } <= set(relation["required"])
+    candidate = schemas["RelationCandidateResponse"]
+    assert {
+        "candidate_id",
+        "suggested_relation_type",
+        "evidence_excerpt",
+        "evidence_locator",
+        "source_content_version",
+        "target_content_version",
+        "producer_config_version",
+        "review_status",
+    } <= set(candidate["required"])
+    assert "/api/knowledge/connections" in contract["paths"]
+    assert "/api/knowledge/relation-candidates" in contract["paths"]
+    assert "/api/knowledge/relations" in contract["paths"]
 
 
 def test_knowledge_results_keep_directory_position_and_stable_filters(

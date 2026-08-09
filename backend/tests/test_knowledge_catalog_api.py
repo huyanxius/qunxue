@@ -85,3 +85,52 @@ def test_knowledge_browse_hides_entries_without_browse_eligibility(
     assert search.status_code == 200
     assert "D2:P087" not in [entry["knowledge_id"] for entry in search.json()["entries"]]
     assert detail.status_code == 404
+
+
+def test_connection_candidate_and_reviewed_relation_layers_are_distinct_and_bounded(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+
+    connections = client.get(
+        "/api/knowledge/connections",
+        params={"knowledge_release_id": release_id, "limit": 5},
+    )
+    candidates = client.get(
+        "/api/knowledge/relation-candidates",
+        params={"knowledge_release_id": release_id, "limit": 5},
+    )
+    relations = client.get(
+        "/api/knowledge/relations",
+        params={"knowledge_release_id": release_id, "limit": 5},
+    )
+
+    assert connections.status_code == 200
+    assert connections.json()["knowledge_release_id"] == release_id
+    assert len(connections.json()["connections"]) == 5
+    assert connections.json()["total_count"] >= 2860
+    assert connections.json()["next_cursor"]
+    assert {
+        item["connection_kind"] for item in connections.json()["connections"]
+    } == {"structure"}
+
+    assert candidates.status_code == 200
+    assert candidates.json()["knowledge_release_id"] == release_id
+    assert candidates.json()["total_count"] > 0
+    assert candidates.json()["candidates"]
+    assert {item["review_status"] for item in candidates.json()["candidates"]} == {
+        "pending"
+    }
+    assert all("evidence_excerpt" in item for item in candidates.json()["candidates"])
+    assert all("evidence_locator" in item for item in candidates.json()["candidates"])
+
+    assert relations.status_code == 200
+    assert relations.json() == {
+        "knowledge_release_id": release_id,
+        "relations": [],
+        "stable_order": [],
+        "total_count": 0,
+        "next_cursor": None,
+    }

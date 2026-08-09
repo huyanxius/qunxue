@@ -2166,8 +2166,76 @@
         "title": "KnowledgeEntrySummaryResponse",
         "type": "object"
       },
+      "KnowledgeRelationPageResponse": {
+        "properties": {
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeRelationResponse"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "stable_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "relations",
+          "stable_order",
+          "total_count",
+          "next_cursor"
+        ],
+        "title": "KnowledgeRelationPageResponse",
+        "type": "object"
+      },
       "KnowledgeRelationResponse": {
         "properties": {
+          "algorithm_config_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algorithm Config Version"
+          },
+          "algorithm_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algorithm Weight"
+          },
           "content_version": {
             "title": "Content Version",
             "type": "integer"
@@ -2200,7 +2268,9 @@
             "type": "string"
           },
           "review_status": {
-            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+            "const": "reviewed",
+            "title": "Review Status",
+            "type": "string"
           },
           "source_knowledge_id": {
             "title": "Source Knowledge Id",
@@ -2220,6 +2290,8 @@
           "description",
           "evidence_source_ids",
           "evidence_grade",
+          "algorithm_weight",
+          "algorithm_config_version",
           "content_version",
           "review_status"
         ],
@@ -3456,6 +3528,155 @@
         "title": "RelatedTheoryResponse",
         "type": "object"
       },
+      "RelationCandidatePageResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RelationCandidateResponse"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "candidates",
+          "stable_order",
+          "total_count",
+          "next_cursor"
+        ],
+        "title": "RelationCandidatePageResponse",
+        "type": "object"
+      },
+      "RelationCandidateResponse": {
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "evidence_excerpt": {
+            "title": "Evidence Excerpt",
+            "type": "string"
+          },
+          "evidence_locator": {
+            "title": "Evidence Locator",
+            "type": "string"
+          },
+          "evidence_source_id": {
+            "title": "Evidence Source Id",
+            "type": "string"
+          },
+          "producer": {
+            "title": "Producer",
+            "type": "string"
+          },
+          "producer_config_version": {
+            "title": "Producer Config Version",
+            "type": "string"
+          },
+          "review_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Record Id"
+          },
+          "review_status": {
+            "const": "pending",
+            "title": "Review Status",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "source_content_version": {
+            "title": "Source Content Version",
+            "type": "integer"
+          },
+          "source_knowledge_id": {
+            "title": "Source Knowledge Id",
+            "type": "string"
+          },
+          "suggested_relation_type": {
+            "title": "Suggested Relation Type",
+            "type": "string"
+          },
+          "target_content_version": {
+            "title": "Target Content Version",
+            "type": "integer"
+          },
+          "target_knowledge_id": {
+            "title": "Target Knowledge Id",
+            "type": "string"
+          },
+          "trigger_reason": {
+            "title": "Trigger Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "source_knowledge_id",
+          "target_knowledge_id",
+          "suggested_relation_type",
+          "direction",
+          "evidence_excerpt",
+          "evidence_locator",
+          "evidence_source_id",
+          "source_content_version",
+          "target_content_version",
+          "producer",
+          "producer_config_version",
+          "score",
+          "trigger_reason",
+          "review_status",
+          "review_record_id"
+        ],
+        "title": "RelationCandidateResponse",
+        "type": "object"
+      },
       "ResearchTaskAction": {
         "enum": [
           "submit_phenomenon"
@@ -4140,6 +4361,113 @@
           "expected_version"
         ],
         "title": "StartFrameworkReviewRequest",
+        "type": "object"
+      },
+      "StructuralConnectionPageResponse": {
+        "properties": {
+          "connections": {
+            "items": {
+              "$ref": "#/components/schemas/StructuralConnectionResponse"
+            },
+            "title": "Connections",
+            "type": "array"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "stable_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stable Order",
+            "type": "array"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "connections",
+          "stable_order",
+          "total_count",
+          "next_cursor"
+        ],
+        "title": "StructuralConnectionPageResponse",
+        "type": "object"
+      },
+      "StructuralConnectionResponse": {
+        "properties": {
+          "connection_id": {
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "connection_kind": {
+            "const": "structure",
+            "title": "Connection Kind",
+            "type": "string"
+          },
+          "connection_type": {
+            "const": "contains",
+            "title": "Connection Type",
+            "type": "string"
+          },
+          "direction": {
+            "const": "outbound",
+            "title": "Direction",
+            "type": "string"
+          },
+          "source_node_id": {
+            "title": "Source Node Id",
+            "type": "string"
+          },
+          "source_node_type": {
+            "title": "Source Node Type",
+            "type": "string"
+          },
+          "source_title": {
+            "title": "Source Title",
+            "type": "string"
+          },
+          "target_node_id": {
+            "title": "Target Node Id",
+            "type": "string"
+          },
+          "target_node_type": {
+            "title": "Target Node Type",
+            "type": "string"
+          },
+          "target_title": {
+            "title": "Target Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_kind",
+          "connection_id",
+          "source_node_id",
+          "source_node_type",
+          "source_title",
+          "target_node_id",
+          "target_node_type",
+          "target_title",
+          "connection_type",
+          "direction"
+        ],
+        "title": "StructuralConnectionResponse",
         "type": "object"
       },
       "SubmitAuditResolutionsRequest": {
@@ -5920,6 +6248,93 @@
         ]
       }
     },
+    "/api/knowledge/connections": {
+      "get": {
+        "operationId": "list_knowledge_connections",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructuralConnectionPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Knowledge Connections",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
     "/api/knowledge/entries": {
       "get": {
         "operationId": "list_knowledge_entries",
@@ -6134,6 +6549,180 @@
           }
         },
         "summary": "Get Knowledge Entry",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/relation-candidates": {
+      "get": {
+        "operationId": "list_knowledge_relation_candidates",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationCandidatePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Knowledge Relation Candidates",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/relations": {
+      "get": {
+        "operationId": "list_knowledge_relations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeRelationPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Knowledge Relations",
         "tags": [
           "knowledge"
         ]
