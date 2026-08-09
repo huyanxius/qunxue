@@ -142,6 +142,19 @@
   border: 0;
   cursor: pointer;
 }
+.knowledge-explorer__result-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.knowledge-explorer__results li .knowledge-explorer__locate {
+  width: auto;
+  padding: 8px 10px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .knowledge-explorer__results li button[aria-pressed='true'] { color: var(--accent); }
 .knowledge-explorer__results li span,
 .knowledge-explorer__results li small { display: block; }
