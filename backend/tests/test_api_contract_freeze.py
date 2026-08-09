@@ -277,11 +277,9 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
         "relations",
     } <= set(schemas["KnowledgeEntryDetailResponse"]["required"])
     relation = schemas["KnowledgeRelationResponse"]
-    assert {
-        "algorithm_weight",
-        "algorithm_config_version",
-        "review_status",
-    } <= set(relation["required"])
+    assert "review_status" in relation["required"]
+    assert "algorithm_weight" not in relation["properties"]
+    assert "algorithm_config_version" not in relation["properties"]
     candidate = schemas["RelationCandidateResponse"]
     assert {
         "candidate_id",

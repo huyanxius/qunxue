@@ -24,6 +24,11 @@ from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRep
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
+from qunxue_api.adapters.sqlite.theory_matching import (
+    SqliteMatchingRequestRepository,
+    SqliteMatchRunRepository,
+)
+from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
@@ -34,7 +39,11 @@ from qunxue_api.api.routes.phenomena import material_router as material_intakes_
 from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
-from qunxue_api.application import ResearchJourney, ResearchJourneyDependencies
+from qunxue_api.application import (
+    ResearchJourney,
+    ResearchJourneyDependencies,
+    TheoryMatchingApplication,
+)
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
     IdentityError,
@@ -47,6 +56,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
+from qunxue_api.modules.theory_matching import TheoryMatchingService
 from qunxue_api.settings import KNOWLEDGE_ROOT, Settings, get_settings
 
 
@@ -114,8 +124,29 @@ def create_app(
                 SqliteResearchTaskRepository(session),
             )
 
+    @contextmanager
+    def theory_matching_application_scope() -> Iterator[TheoryMatchingApplication]:
+        with resolved_database.session() as session:
+            descriptor = app.state.model_gateway.descriptor
+            matching = TheoryMatchingService(
+                evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
+                judge=app.state.model_gateway,
+                repository=SqliteMatchRunRepository(session),
+                provider=descriptor.provider,
+                model_version=descriptor.model_version,
+                capability=descriptor.capability_tier,
+                contract_version=resolved_settings.contract_version,
+            )
+            yield TheoryMatchingApplication(
+                catalog=app.state.knowledge_catalog,
+                matching=matching,
+                matching_requests=SqliteMatchingRequestRepository(session),
+                research_tasks=SqliteResearchTaskRepository(session),
+            )
+
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
+    app.state.theory_matching_application_scope = theory_matching_application_scope
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)

@@ -297,8 +297,6 @@ def get_knowledge_entry(
                 description=relation.description,
                 evidence_source_ids=list(relation.evidence_source_ids),
                 evidence_grade=relation.evidence_grade,
-                algorithm_weight=relation.algorithm_weight,
-                algorithm_config_version=relation.algorithm_config_version,
                 content_version=relation.content_version,
                 review_status=relation.review_status,
             )
@@ -371,8 +369,6 @@ def _relation_response(relation: object) -> KnowledgeRelationResponse:
         description=relation.description,
         evidence_source_ids=list(relation.evidence_source_ids),
         evidence_grade=relation.evidence_grade,
-        algorithm_weight=relation.algorithm_weight,
-        algorithm_config_version=relation.algorithm_config_version,
         content_version=relation.content_version,
         review_status=relation.review_status,
     )

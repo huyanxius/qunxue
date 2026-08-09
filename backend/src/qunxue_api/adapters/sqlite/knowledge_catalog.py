@@ -767,8 +767,6 @@ def _relation_snapshot(row: KnowledgeRelationRow) -> KnowledgeRelationSnapshot:
         description=row.description,
         evidence_source_ids=tuple(row.evidence_source_ids),
         evidence_grade=row.evidence_grade,
-        algorithm_weight=row.algorithm_weight,
-        algorithm_config_version=row.algorithm_config_version,
         content_version=row.content_version,
         review_status=KnowledgeReviewStatus(row.review_status),
     )
