@@ -164,8 +164,7 @@ beforeEach(() => {
       target_knowledge_id: entries.reviewed.knowledgeId,
       relation_type: 'supports', direction: 'outbound',
       description: '社会资本支持互惠规范。', evidence_source_ids: ['source:1'],
-      evidence_grade: 'reviewed', algorithm_weight: null,
-      algorithm_config_version: null, content_version: 1, review_status: 'reviewed',
+      evidence_grade: 'reviewed', content_version: 1, review_status: 'reviewed',
     }],
     nextCursor: 'relations-2', totalCount: 2,
   })
