@@ -267,6 +267,7 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
         "knowledge_release_id",
         "entries",
         "stable_order",
+        "total_count",
         "next_cursor",
     } <= set(schemas["KnowledgeEntryPageResponse"]["required"])
     assert {
@@ -292,6 +293,7 @@ def test_phenomenon_and_knowledge_contracts_preserve_authority_and_release(
         "review_status",
     } <= set(candidate["required"])
     assert "/api/knowledge/connections" in contract["paths"]
+    assert "/api/knowledge/directory" in contract["paths"]
     assert "/api/knowledge/relation-candidates" in contract["paths"]
     assert "/api/knowledge/relations" in contract["paths"]
 

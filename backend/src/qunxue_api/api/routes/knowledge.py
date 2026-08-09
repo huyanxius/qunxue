@@ -4,7 +4,9 @@ from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.knowledge import (
     BuiltInCasePageResponse,
     BuiltInCaseResponse,
+    KnowledgeDirectoryFacetResponse,
     KnowledgeDirectoryNodeResponse,
+    KnowledgeDirectorySummaryResponse,
     KnowledgeEntryDetailResponse,
     KnowledgeEntryPageResponse,
     KnowledgeEntrySummaryResponse,
@@ -42,6 +44,39 @@ def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
         knowledge_release_id=release.knowledge_release_id,
         level=release.level,
         content_hash=release.content_hash,
+    )
+
+
+@router.get(
+    "/directory",
+    operation_id="get_knowledge_directory",
+    response_model=KnowledgeDirectorySummaryResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def get_knowledge_directory(
+    request: Request,
+    knowledge_release_id: str | None = None,
+) -> KnowledgeDirectorySummaryResponse:
+    catalog = request.app.state.knowledge_catalog
+    release_id = knowledge_release_id or catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    ).knowledge_release_id
+    try:
+        summary = catalog.get_directory(release_id=release_id)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    return KnowledgeDirectorySummaryResponse(
+        knowledge_release_id=summary.release.knowledge_release_id,
+        nodes=[
+            KnowledgeDirectoryFacetResponse(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                title=node.title,
+                parent_node_id=node.parent_node_id,
+                entry_count=node.entry_count,
+            )
+            for node in summary.nodes
+        ],
     )
 
 
@@ -228,6 +263,7 @@ def list_knowledge_entries(
         knowledge_release_id=page.release.knowledge_release_id,
         entries=[_entry_summary_response(entry) for entry in page.entries],
         stable_order=[entry.knowledge_id for entry in page.entries],
+        total_count=page.total_count,
         next_cursor=page.next_cursor,
     )
 

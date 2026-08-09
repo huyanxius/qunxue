@@ -1,5 +1,6 @@
 export { KnowledgeEntryPage } from './KnowledgeEntryPage'
 export { KnowledgeExplorerPage } from './KnowledgeExplorer'
+export { readKnowledgeListScroll, saveKnowledgeListScroll } from './listContext'
 export { KnowledgePreview, KnowledgeTicker } from './KnowledgePreview'
 export {
   readKnowledgeGraphReturnTo,

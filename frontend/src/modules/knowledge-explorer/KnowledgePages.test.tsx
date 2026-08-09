@@ -1,7 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useState } from 'react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { KnowledgeEntryPage, KnowledgeExplorerPage } from './index'
+import type { KnowledgeUrlState } from './urlState'
 
 function json(body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -51,7 +53,33 @@ function page(entries = [summary()]) {
     knowledge_release_id: 'release-a',
     next_cursor: null,
     stable_order: entries.map((entry) => entry.knowledge_id),
+    total_count: entries.length,
   }
+}
+
+function directory() {
+  return {
+    knowledge_release_id: 'release-a',
+    nodes: [
+      { entry_count: 1, node_id: 'D1', node_type: 'dimension', parent_node_id: null, title: '本体论' },
+      { entry_count: 1, node_id: 'D1:I. 古典社会学奠基', node_type: 'category', parent_node_id: 'D1', title: 'I. 古典社会学奠基' },
+      { entry_count: 1, node_id: 'D1:I. 古典社会学奠基/1. 古典社会学奠基', node_type: 'category', parent_node_id: 'D1:I. 古典社会学奠基', title: '1. 古典社会学奠基' },
+      ...['D2', 'D3', 'D4', 'D5', 'D6', 'D7'].map((nodeId, index) => ({
+        entry_count: 0,
+        node_id: nodeId,
+        node_type: 'dimension',
+        parent_node_id: null,
+        title: ['实践论', '方法论', '价值论', '认识论', '学派传统', '学科史'][index],
+      })),
+    ],
+  }
+}
+
+function knowledgeFetch(input: RequestInfo | URL) {
+  const request = urlFor(input)
+  return request.pathname === '/api/knowledge/directory'
+    ? json(directory())
+    : json(page())
 }
 
 function detail() {
@@ -114,8 +142,9 @@ afterEach(() => {
 })
 
 describe('knowledge pages', () => {
-  it('shows the fixed roots and only the complete release directory', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(page())))
+  it('opens on the seven-dimension directory instead of flattening every entry', async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input))
+    vi.stubGlobal('fetch', fetch)
 
     render(
       <KnowledgeExplorerPage
@@ -126,35 +155,76 @@ describe('knowledge pages', () => {
       />,
     )
 
-    expect(await screen.findByRole('button', { name: /本体论/ })).toBeVisible()
-    const branch = screen.getByText('I. 古典社会学奠基').closest('details')
-    expect(branch).toBeInstanceOf(HTMLDetailsElement)
-    expect(branch).not.toHaveAttribute('open')
-    expect(screen.getAllByText('当前发布暂无可浏览条目')).not.toHaveLength(0)
+    expect(await screen.findByRole('button', { name: '浏览 本体论 目录' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '从维度进入知识目录' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /打开 概念/ })).not.toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch.mock.calls.map(([input]) => urlFor(input).pathname)).toEqual([
+      '/api/knowledge/directory',
+    ])
   })
 
-  it('bounds unfiltered results while retaining the full release directory', async () => {
-    const entries = Array.from({ length: 101 }, (_, index) => ({
-      ...summary(),
-      knowledge_id: `D1:C${index + 1}`,
-      title: `条目 ${index + 1}`,
+  it('shows loaded and total results while keeping the next page explicit', async () => {
+    const entries = Array.from({ length: 20 }, (_, index) => ({
+      ...summary(), knowledge_id: `D1:C${index + 1}`, title: `条目 ${index + 1}`,
     }))
-    vi.stubGlobal('fetch', vi.fn(async () => json(page(entries))))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = urlFor(input)
+      return request.pathname === '/api/knowledge/directory'
+        ? json(directory())
+        : json({ ...page(entries), next_cursor: 'cursor-20', total_count: 101 })
+    }))
 
     render(
       <KnowledgeExplorerPage
-        state={{ releaseId: 'release-a' }}
+        state={{ releaseId: 'release-a', query: '条目' }}
         onOpenEntry={vi.fn()}
         onReleaseResolved={vi.fn()}
         onStateChange={vi.fn()}
       />,
     )
 
-    expect(await screen.findByText('显示 100 / 101 条')).toBeVisible()
+    expect(await screen.findByText('已显示 20 条，共 101 条')).toBeVisible()
+    expect(screen.getByRole('button', { name: '继续加载 81 条未显示' })).toBeVisible()
+  })
+
+  it('keeps the loaded result window when the URL records another page', async () => {
+    const firstEntries = Array.from({ length: 20 }, (_, index) => ({
+      ...summary(), knowledge_id: `D1:C${index + 1}`, title: `条目 ${index + 1}`,
+    }))
+    const secondEntries = Array.from({ length: 20 }, (_, index) => ({
+      ...summary(), knowledge_id: `D1:C${index + 21}`, title: `条目 ${index + 21}`,
+    }))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = urlFor(input)
+      if (request.pathname === '/api/knowledge/directory') return json(directory())
+      if (request.searchParams.has('cursor')) {
+        return json({ ...page(secondEntries), next_cursor: 'cursor-40', total_count: 101 })
+      }
+      return json({ ...page(firstEntries), next_cursor: 'cursor-20', total_count: 101 })
+    }))
+
+    function StatefulExplorer() {
+      const [state, setState] = useState<KnowledgeUrlState>({ releaseId: 'release-a', query: '条目' })
+      return (
+        <KnowledgeExplorerPage
+          state={state}
+          onOpenEntry={vi.fn()}
+          onReleaseResolved={() => undefined}
+          onStateChange={setState}
+        />
+      )
+    }
+
+    render(<StatefulExplorer />)
+    fireEvent.click(await screen.findByRole('button', { name: '继续加载 81 条未显示' }))
+
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /打开 条目/ })).toHaveLength(40))
+    expect(screen.getByText('已显示 40 条，共 101 条')).toBeVisible()
   })
 
   it('hands a complete search result path to the graph without opening detail', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(page())))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
     const onLocateEntry = vi.fn()
 
     render(
@@ -175,6 +245,31 @@ describe('knowledge pages', () => {
         expect.objectContaining({ nodeId: 'D1', nodeType: 'dimension' }),
       ]),
     }))
+  })
+
+  it('exposes every active filter as removable state', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
+    const onStateChange = vi.fn()
+
+    render(
+      <KnowledgeExplorerPage
+        state={{
+          releaseId: 'release-a',
+          query: '概念',
+          dimensionId: 'D1',
+          categoryId: 'D1:I. 古典社会学奠基/1. 古典社会学奠基',
+        }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={onStateChange}
+      />,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '移除关键词 概念' }))
+    expect(onStateChange).toHaveBeenCalledWith(expect.objectContaining({ query: undefined }))
+    expect(screen.getByRole('button', { name: '移除维度 本体论' })).toBeVisible()
+    expect(screen.getByRole('button', { name: /移除分类 1\. 古典社会学奠基/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: '清除全部条件' })).toBeVisible()
   })
 
   it('resolves the initial release without rewinding newer URL state', async () => {
@@ -253,10 +348,15 @@ describe('knowledge pages', () => {
     )
 
     expect(await screen.findByRole('heading', { name: '概念' })).toBeVisible()
+    expect(screen.getByText('正文节选')).toBeVisible()
+    const outline = screen.getByRole('navigation', { name: '本文目录' })
+    expect(outline).toBeVisible()
+    expect(within(outline).getByRole('link', { name: '正文标题' })).toHaveAttribute('href', '#正文标题')
     expect(screen.getByRole('heading', { name: '正文标题' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '正文标题' })).toHaveAttribute('id', '正文标题')
     expect(screen.getByText('文献：', { selector: 'strong' })).toBeVisible()
     expect(screen.getByText('知识库原始 Markdown')).toBeVisible()
-    expect(screen.getByText(/核验状态：待核验/)).toBeVisible()
+    expect(screen.getAllByText('待核验')).not.toHaveLength(0)
     expect(screen.getByText('D1:C002')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '以此理论开始研究' }))
     expect(onStartResearch).toHaveBeenCalledWith({

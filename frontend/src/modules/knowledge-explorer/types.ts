@@ -18,6 +18,11 @@ export interface KnowledgeDirectoryNode {
   title: string
 }
 
+export interface KnowledgeDirectoryFacet extends KnowledgeDirectoryNode {
+  parentNodeId?: string
+  entryCount: number
+}
+
 export interface KnowledgeEntrySummary {
   knowledgeId: string
   contentVersion: number

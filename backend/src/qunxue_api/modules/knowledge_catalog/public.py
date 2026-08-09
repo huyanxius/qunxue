@@ -94,7 +94,25 @@ class KnowledgeEntrySummary:
 class KnowledgeEntryPage:
     release: KnowledgeReleaseRef
     entries: tuple[KnowledgeEntrySummary, ...]
+    total_count: int
     next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeDirectoryFacetSnapshot:
+    """One release-bound directory node with its browsable descendant count."""
+
+    node_id: str
+    node_type: KnowledgeDirectoryNodeType
+    title: str
+    parent_node_id: str | None
+    entry_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeDirectorySummary:
+    release: KnowledgeReleaseRef
+    nodes: tuple[KnowledgeDirectoryFacetSnapshot, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,6 +275,8 @@ class KnowledgeCatalog(Protocol):
         knowledge_id: str,
         release_id: str,
     ) -> KnowledgeEntryDetail: ...
+
+    def get_directory(self, *, release_id: str) -> KnowledgeDirectorySummary: ...
 
     def get_theory_profile(
         self,

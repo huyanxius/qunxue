@@ -21,6 +21,7 @@ import {
   KnowledgeExplorerPage,
   type KnowledgeEntrySummary,
   readKnowledgeGraphReturnTo,
+  saveKnowledgeListScroll,
   readKnowledgeUrlState,
   writeKnowledgeUrlState,
 } from '../modules/knowledge-explorer'
@@ -67,13 +68,14 @@ function KnowledgeExplorerRoute() {
   }, [setSearchParams])
 
   return (
-    <PageShell>
+    <PageShell wide>
       <PageContent>
         <KnowledgeExplorerPage
           state={state}
           onStateChange={updateState}
           onReleaseResolved={resolveRelease}
           onOpenEntry={(knowledgeId) => {
+            saveKnowledgeListScroll(state, window.scrollY)
             const query = writeKnowledgeUrlState(state).toString()
             navigate(`/knowledge/${encodeURIComponent(knowledgeId)}${query ? `?${query}` : ''}`)
           }}
@@ -81,14 +83,10 @@ function KnowledgeExplorerRoute() {
             setFocusEntry(entry)
             setGraphOpen(true)
           }}
+          onOpenGraph={() => setGraphOpen(true)}
         />
         {state.releaseId ? (
           <>
-            <div className="knowledge-graph-launch">
-              <button type="button" onClick={() => setGraphOpen((open) => !open)}>
-                {graphOpen ? '收起知识图谱' : '打开知识图谱'}
-              </button>
-            </div>
             {graphOpen ? (
               <KnowledgeGraphIntegration
                 releaseId={state.releaseId}
@@ -149,7 +147,7 @@ function KnowledgeEntryRoute() {
   }
 
   return (
-    <PageShell>
+    <PageShell wide>
       <PageContent>
         <KnowledgeEntryPage
           knowledgeId={knowledgeId}

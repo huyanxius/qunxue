@@ -48,7 +48,21 @@ class KnowledgeEntryPageResponse(BaseModel):
     knowledge_release_id: str
     entries: list[KnowledgeEntrySummaryResponse]
     stable_order: list[str]
+    total_count: int
     next_cursor: str | None
+
+
+class KnowledgeDirectoryFacetResponse(BaseModel):
+    node_id: str
+    node_type: KnowledgeDirectoryNodeType
+    title: str
+    parent_node_id: str | None
+    entry_count: int
+
+
+class KnowledgeDirectorySummaryResponse(BaseModel):
+    knowledge_release_id: str
+    nodes: list[KnowledgeDirectoryFacetResponse]
 
 
 class SourceRecordResponse(BaseModel):

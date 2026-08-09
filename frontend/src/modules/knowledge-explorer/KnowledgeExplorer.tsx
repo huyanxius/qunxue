@@ -1,20 +1,22 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import './KnowledgeExplorer.css'
+import { KnowledgeCatalogIndex } from './KnowledgeCatalogIndex'
 import { KnowledgeDirectory } from './KnowledgeDirectory'
 import { buildKnowledgeDirectory, type KnowledgeDirectoryDimension } from './directoryTree'
 import { KnowledgeEntryList } from './KnowledgeEntryList'
 import {
-  loadKnowledgeDirectory,
   readCurrentKnowledgeRelease,
+  readKnowledgeDirectory,
   searchKnowledgeEntries,
 } from './knowledgeApi'
 import type { KnowledgeEntrySummary } from './types'
 import type { KnowledgeUrlState } from './urlState'
+import { readKnowledgeListScroll } from './listContext'
 
-type ReleaseState = 'loading' | 'ready' | 'degraded' | 'unavailable'
-type ResultState = 'ready' | 'empty' | 'error'
-const directoryPageSize = 100
+type ReleaseState = 'loading' | 'ready' | 'unavailable'
+type ResultState = 'loading' | 'ready' | 'empty' | 'error'
+const resultPageSize = 20
 
 export interface KnowledgeExplorerPageProps {
   state: KnowledgeUrlState
@@ -22,21 +24,11 @@ export interface KnowledgeExplorerPageProps {
   onReleaseResolved: (releaseId: string) => void
   onOpenEntry: (knowledgeId: string) => void
   onLocateEntry?: (entry: KnowledgeEntrySummary) => void
+  onOpenGraph?: () => void
 }
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : '知识服务暂时不可用'
-}
-
-function filteredEntries(
-  entries: readonly KnowledgeEntrySummary[],
-  dimensionId: string | undefined,
-  categoryId: string | undefined,
-) {
-  return entries.filter((entry) =>
-    (!dimensionId || entry.dimensionId === dimensionId) &&
-    (!categoryId || entry.categoryId === categoryId),
-  )
 }
 
 export function KnowledgeExplorerPage({
@@ -45,142 +37,167 @@ export function KnowledgeExplorerPage({
   onReleaseResolved,
   onOpenEntry,
   onLocateEntry,
+  onOpenGraph,
 }: KnowledgeExplorerPageProps) {
   const [queryInput, setQueryInput] = useState(state.query ?? '')
   const [loadedReleaseId, setLoadedReleaseId] = useState<string>()
   const [releaseState, setReleaseState] = useState<ReleaseState>('loading')
   const [releaseError, setReleaseError] = useState('')
-  const [directoryEntries, setDirectoryEntries] = useState<readonly KnowledgeEntrySummary[]>([])
   const [directory, setDirectory] = useState<readonly KnowledgeDirectoryDimension[]>([])
   const [results, setResults] = useState<readonly KnowledgeEntrySummary[]>([])
-  const [resultState, setResultState] = useState<ResultState>('empty')
+  const [resultState, setResultState] = useState<ResultState>('loading')
   const [resultError, setResultError] = useState('')
   const [nextCursor, setNextCursor] = useState<string>()
-  const [directoryResultLimit, setDirectoryResultLimit] = useState(directoryPageSize)
-  const [resultTotal, setResultTotal] = useState<number>()
+  const [resultTotal, setResultTotal] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
+  const [restoredContext, setRestoredContext] = useState(false)
+  const restorePageTargets = useRef(new Map<string, number>())
+  const resultSignature = [loadedReleaseId, state.query, state.dimensionId, state.categoryId].join('|')
+  if (!restorePageTargets.current.has(resultSignature)) {
+    restorePageTargets.current.set(resultSignature, state.loadedPages ?? 1)
+  }
+  const pagesToRestore = restorePageTargets.current.get(resultSignature) ?? 1
+  const shouldShowEntries = Boolean(state.query || state.categoryId)
 
   useEffect(() => {
     setQueryInput(state.query ?? '')
   }, [state.query])
 
   useEffect(() => {
-    setDirectoryResultLimit(directoryPageSize)
-  }, [state.categoryId, state.dimensionId, state.query])
-
-  useEffect(() => {
     let cancelled = false
 
     async function loadDirectory() {
-      const releaseId = state.releaseId
       setReleaseState('loading')
       setReleaseError('')
       setLoadedReleaseId(undefined)
-      setDirectoryEntries([])
       setDirectory([])
       try {
-        if (!releaseId) {
+        if (!state.releaseId) {
           const currentRelease = await readCurrentKnowledgeRelease()
-          if (cancelled) return
-          onReleaseResolved(currentRelease.knowledgeReleaseId)
+          if (!cancelled) onReleaseResolved(currentRelease.knowledgeReleaseId)
           return
         }
-
-        const entries = await loadKnowledgeDirectory(releaseId)
-        const nextDirectory = buildKnowledgeDirectory(entries)
+        const facets = await readKnowledgeDirectory(state.releaseId)
         if (cancelled) return
-        setLoadedReleaseId(releaseId)
-        setDirectoryEntries(entries)
-        setDirectory(nextDirectory)
+        setLoadedReleaseId(state.releaseId)
+        setDirectory(buildKnowledgeDirectory(facets))
         setReleaseState('ready')
       } catch (error) {
         if (cancelled) return
         setReleaseError(errorMessage(error))
-        setReleaseState(releaseId ? 'degraded' : 'unavailable')
+        setReleaseState('unavailable')
       }
     }
 
     void loadDirectory()
-    return () => {
-      cancelled = true
-    }
-  }, [onReleaseResolved, state.releaseId])
+    return () => { cancelled = true }
+  }, [onReleaseResolved, retryKey, state.releaseId])
 
   useEffect(() => {
     let cancelled = false
     if (!loadedReleaseId || releaseState !== 'ready') return undefined
-
-    async function loadResults() {
-      setResultError('')
+    if (!shouldShowEntries) {
+      setResults([])
+      setResultTotal(0)
       setNextCursor(undefined)
-      setResultTotal(undefined)
-      if (!state.query) {
-        const allResults = filteredEntries(
-          directoryEntries,
-          state.dimensionId,
-          state.categoryId,
-        )
-        const nextResults = allResults.slice(0, directoryResultLimit)
-        if (cancelled) return
-        setResults(nextResults)
-        setResultTotal(allResults.length)
-        setResultState(nextResults.length > 0 ? 'ready' : 'empty')
-        return
-      }
-
+      setResultState('ready')
+      return undefined
+    }
+    async function loadResults() {
+      setResultState('loading')
+      setResultError('')
+      setResults([])
+      setNextCursor(undefined)
       try {
-        const page = await searchKnowledgeEntries({
-          releaseId: loadedReleaseId,
-          query: state.query,
-          dimensionId: state.dimensionId,
-          categoryId: state.categoryId,
-        })
+        let cursor: string | undefined
+        let entries: KnowledgeEntrySummary[] = []
+        let totalCount = 0
+        for (let pageNumber = 0; pageNumber < pagesToRestore; pageNumber += 1) {
+          const page = await searchKnowledgeEntries({
+            releaseId: loadedReleaseId,
+            query: state.query,
+            dimensionId: state.dimensionId,
+            categoryId: state.categoryId,
+            cursor,
+            limit: resultPageSize,
+          })
+          entries = [...entries, ...page.entries]
+          totalCount = page.totalCount
+          cursor = page.nextCursor
+          if (!cursor) break
+        }
         if (cancelled) return
-        setResults(page.entries)
-        setNextCursor(page.nextCursor)
-        setResultState(page.entries.length > 0 ? 'ready' : 'empty')
+        setResults(entries)
+        setResultTotal(totalCount)
+        setNextCursor(cursor)
+        setResultState(entries.length > 0 ? 'ready' : 'empty')
       } catch (error) {
         if (cancelled) return
-        setResults([])
         setResultError(errorMessage(error))
         setResultState('error')
       }
     }
 
     void loadResults()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [
-    directoryEntries,
-    directoryResultLimit,
     loadedReleaseId,
+    pagesToRestore,
     releaseState,
+    retryKey,
     state.categoryId,
     state.dimensionId,
     state.query,
+    shouldShowEntries,
   ])
+
+  useEffect(() => {
+    if (resultState !== 'ready' || restoredContext || typeof window.scrollTo !== 'function') return
+    const scrollY = readKnowledgeListScroll(state)
+    if (scrollY === undefined) return
+    setRestoredContext(true)
+    requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' }))
+  }, [restoredContext, resultState, state])
+
+  const selectedDimension = useMemo(
+    () => directory.find((item) => item.nodeId === state.dimensionId),
+    [directory, state.dimensionId],
+  )
+  const selectedCategory = useMemo(() => {
+    function find(
+      categories: readonly { nodeId: string; title: string; children: readonly unknown[] }[],
+      parentTitle?: string,
+    ): string | undefined {
+      for (const category of categories) {
+        if (category.nodeId === state.categoryId) {
+          return /^T\d+\s/.test(category.title) && parentTitle ? parentTitle : category.title
+        }
+        const nested = find(category.children as readonly typeof category[], category.title)
+        if (nested) return nested
+      }
+      return undefined
+    }
+    return selectedDimension ? find(selectedDimension.categories) : undefined
+  }, [selectedDimension, state.categoryId])
+  const catalogTotal = useMemo(
+    () => directory.reduce((total, dimension) => total + dimension.entryCount, 0),
+    [directory],
+  )
+
+  function updateState(nextState: KnowledgeUrlState) {
+    onStateChange({ ...nextState, loadedPages: undefined })
+  }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    updateState({
-      ...state,
-      query: queryInput.trim() || undefined,
-    })
-  }
-
-  function updateState(nextState: KnowledgeUrlState) {
-    setDirectoryResultLimit(directoryPageSize)
-    onStateChange(nextState)
+    updateState({ ...state, query: queryInput.trim() || undefined })
   }
 
   async function loadMore() {
-    if (!state.query) {
-      setDirectoryResultLimit((limit) => limit + directoryPageSize)
-      return
-    }
     if (!loadedReleaseId || !nextCursor) return
     setLoadingMore(true)
+    setResultError('')
     try {
       const page = await searchKnowledgeEntries({
         releaseId: loadedReleaseId,
@@ -188,89 +205,113 @@ export function KnowledgeExplorerPage({
         dimensionId: state.dimensionId,
         categoryId: state.categoryId,
         cursor: nextCursor,
+        limit: resultPageSize,
       })
       setResults((current) => [...current, ...page.entries])
+      setResultTotal(page.totalCount)
       setNextCursor(page.nextCursor)
+      const loadedPages = (state.loadedPages ?? 1) + 1
+      restorePageTargets.current.set(resultSignature, loadedPages)
+      onStateChange({ ...state, loadedPages })
     } catch (error) {
       setResultError(errorMessage(error))
-      setResultState('error')
     } finally {
       setLoadingMore(false)
     }
   }
 
+  const hasFilters = Boolean(state.query || state.dimensionId || state.categoryId)
+
   return (
     <section className="knowledge-explorer" data-release-state={releaseState}>
       <header className="knowledge-explorer__header">
-        <div>
-          <p className="knowledge-explorer__eyebrow">KNOWLEDGE / PREVIEW</p>
+        <div className="knowledge-explorer__identity">
+          <p className="knowledge-explorer__eyebrow">群学知识</p>
           <h1>知识库</h1>
-          <p>按当前发布浏览目录、来源、审核状态与已审核显式关系。</p>
+        </div>
+        <form className="knowledge-explorer__search" aria-label="搜索知识库" onSubmit={submitSearch}>
+          <input
+            id="knowledge-query"
+            type="search"
+            value={queryInput}
+            onChange={(event) => setQueryInput(event.target.value)}
+            placeholder="搜索理论、概念或方法"
+          />
+          <button type="submit" disabled={releaseState === 'loading'}>搜索</button>
+        </form>
+        <div className="knowledge-explorer__toolbar-meta">
+          {loadedReleaseId ? <p className="knowledge-explorer__edition">{catalogTotal || 0} 条知识 · 当前发布</p> : null}
+          {onOpenGraph ? <button type="button" onClick={onOpenGraph}>打开知识图谱</button> : null}
         </div>
       </header>
 
-      <form className="knowledge-explorer__search" aria-label="搜索知识库" onSubmit={submitSearch}>
-        <label htmlFor="knowledge-query">关键词</label>
-        <input
-          id="knowledge-query"
-          type="search"
-          value={queryInput}
-          onChange={(event) => setQueryInput(event.target.value)}
-          placeholder="输入理论、概念或方法"
-        />
-        <button type="submit" disabled={releaseState === 'loading'}>搜索</button>
-        {state.query ? (
-          <button
-            className="knowledge-explorer__plain-action"
-            type="button"
-            onClick={() => updateState({ ...state, query: undefined })}
-          >
-            清除
+      {hasFilters ? (
+        <div className="knowledge-explorer__filters" aria-label="当前筛选条件">
+          <span>当前条件</span>
+          {state.query ? (
+            <button type="button" aria-label={`移除关键词 ${state.query}`} onClick={() => updateState({ ...state, query: undefined })}>
+              关键词 · {state.query}<b aria-hidden="true">×</b>
+            </button>
+          ) : null}
+          {state.dimensionId ? (
+            <button type="button" aria-label={`移除维度 ${selectedDimension?.title ?? state.dimensionId}`} onClick={() => updateState({ ...state, dimensionId: undefined, categoryId: undefined })}>
+              维度 · {selectedDimension?.title ?? state.dimensionId}<b aria-hidden="true">×</b>
+            </button>
+          ) : null}
+          {state.categoryId ? (
+            <button type="button" aria-label={`移除分类 ${selectedCategory ?? state.categoryId}`} onClick={() => updateState({ ...state, categoryId: undefined })}>
+              分类 · {selectedCategory ?? state.categoryId}<b aria-hidden="true">×</b>
+            </button>
+          ) : null}
+          <button className="knowledge-explorer__clear" type="button" aria-label="清除全部条件" onClick={() => updateState({ releaseId: state.releaseId, returnTo: state.returnTo })}>
+            清除全部
           </button>
-        ) : null}
-      </form>
-
-      {loadedReleaseId ? (
-        <p className="knowledge-explorer__release">
-          当前发布 {loadedReleaseId}
-        </p>
+        </div>
       ) : null}
 
-      {releaseState === 'loading' ? <p role="status">正在读取当前发布与目录……</p> : null}
-      {releaseState === 'unavailable' || releaseState === 'degraded' ? (
-        <p className="knowledge-explorer__error" role="alert">{releaseError}</p>
+      {releaseState === 'loading' ? (
+        <div className="knowledge-explorer__loading" role="status"><span />正在读取目录与首批条目</div>
+      ) : null}
+      {releaseState === 'unavailable' ? (
+        <div className="knowledge-explorer__state" role="alert">
+          <strong>知识目录暂时无法读取</strong><p>{releaseError}</p>
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)}>重新读取</button>
+        </div>
       ) : null}
 
       {releaseState === 'ready' ? (
-        <div className="knowledge-explorer__columns">
-          <KnowledgeDirectory
-            directory={directory}
-            selectedDimensionId={state.dimensionId}
-            selectedCategoryId={state.categoryId}
-            onSelectDimension={(dimensionId) => updateState({
-              ...state,
-              dimensionId,
-              categoryId: undefined,
-            })}
-            onSelectCategory={(dimensionId, categoryId) => updateState({
-              ...state,
-              dimensionId,
-              categoryId,
-            })}
-          />
-          <KnowledgeEntryList
-            entries={results}
-            state={resultState}
-            error={resultError}
-            hasNextPage={state.query
-              ? Boolean(nextCursor)
-              : (resultTotal ?? 0) > results.length}
-            totalEntries={resultTotal}
-            loadingMore={loadingMore}
-            onSelect={onOpenEntry}
-            onLocate={onLocateEntry}
-            onLoadMore={() => void loadMore()}
-          />
+        <div className="knowledge-explorer__columns" data-view={shouldShowEntries ? 'entries' : 'catalog'}>
+          {shouldShowEntries ? (
+            <KnowledgeDirectory
+              directory={directory}
+              selectedDimensionId={state.dimensionId}
+              selectedCategoryId={state.categoryId}
+              onSelectDimension={(dimensionId) => updateState({ ...state, dimensionId, categoryId: undefined })}
+              onSelectCategory={(dimensionId, categoryId) => updateState({ ...state, dimensionId, categoryId })}
+              onShowCatalog={() => updateState({ ...state, dimensionId: undefined, categoryId: undefined })}
+            />
+          ) : null}
+          {shouldShowEntries ? (
+            <KnowledgeEntryList
+              entries={results}
+              state={resultState}
+              error={resultError}
+              hasNextPage={Boolean(nextCursor)}
+              totalEntries={resultTotal}
+              loadingMore={loadingMore}
+              onSelect={onOpenEntry}
+              onLocate={onLocateEntry}
+              onLoadMore={() => void loadMore()}
+              onRetry={() => setRetryKey((value) => value + 1)}
+            />
+          ) : (
+            <KnowledgeCatalogIndex
+              directory={directory}
+              selectedDimension={selectedDimension}
+              onSelectDimension={(dimensionId) => updateState({ ...state, dimensionId, categoryId: undefined })}
+              onSelectCategory={(dimensionId, categoryId) => updateState({ ...state, dimensionId, categoryId })}
+            />
+          )}
         </div>
       ) : null}
     </section>

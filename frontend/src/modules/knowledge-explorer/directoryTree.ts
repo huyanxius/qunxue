@@ -1,4 +1,4 @@
-import type { KnowledgeEntrySummary } from './types'
+import type { KnowledgeDirectoryFacet } from './types'
 
 const taxonomy = [
   { nodeId: 'D1', title: '本体论' },
@@ -9,6 +9,8 @@ const taxonomy = [
   { nodeId: 'D6', title: '学派传统' },
   { nodeId: 'D7', title: '学科史' },
 ] as const
+
+const directoryCollator = new Intl.Collator('zh-CN', { numeric: true, sensitivity: 'base' })
 
 export interface KnowledgeDirectoryCategory {
   nodeId: string
@@ -28,88 +30,60 @@ function contractError(detail: string) {
   return new Error(`知识目录契约错误：${detail}`)
 }
 
-interface MutableKnowledgeDirectoryCategory {
-  nodeId: string
-  title: string
-  entryCount: number
-  children: Map<string, MutableKnowledgeDirectoryCategory>
-}
-
-function readCategories(
-  categories: Map<string, MutableKnowledgeDirectoryCategory>,
-): readonly KnowledgeDirectoryCategory[] {
-  return [...categories.values()].map((category) => ({
-    nodeId: category.nodeId,
-    title: category.title,
-    entryCount: category.entryCount,
-    children: readCategories(category.children),
-  }))
-}
-
 export function buildKnowledgeDirectory(
-  entries: readonly KnowledgeEntrySummary[],
+  facets: readonly KnowledgeDirectoryFacet[],
 ): readonly KnowledgeDirectoryDimension[] {
-  const dimensions = new Map<string, {
-    nodeId: string
-    title: string
-    entryCount: number
-    categories: Map<string, MutableKnowledgeDirectoryCategory>
-  }>(
-    taxonomy.map((dimension) => [
-      dimension.nodeId,
-      { ...dimension, entryCount: 0, categories: new Map<string, MutableKnowledgeDirectoryCategory>() },
-    ]),
-  )
-
-  for (const entry of entries) {
-    const [root, ...categories] = entry.directoryPath
-    if (!root || categories.length === 0) {
-      throw contractError(`${entry.knowledgeId} 缺少目录路径`)
-    }
-    if (root.nodeType !== 'dimension') {
-      throw contractError(`${entry.knowledgeId} 的根节点不是维度`)
-    }
-    const dimension = dimensions.get(root.nodeId)
-    if (!dimension || root.title !== dimension.title) {
-      throw contractError(`${entry.knowledgeId} 的维度不在固定 taxonomy 中`)
-    }
-    if (root.nodeId !== entry.dimensionId || root.title !== entry.dimension) {
-      throw contractError(`${entry.knowledgeId} 的维度字段与目录路径不一致`)
-    }
-    const leaf = categories[categories.length - 1]
-    if (!leaf || leaf.nodeId !== entry.categoryId || leaf.title !== entry.category) {
-      throw contractError(`${entry.knowledgeId} 的分类字段与目录路径不一致`)
-    }
-
-    dimension.entryCount += 1
-    let currentCategories = dimension.categories
-    for (const category of categories) {
-      if (category.nodeType !== 'category') {
-        throw contractError(`${entry.knowledgeId} 缺少分类节点`)
-      }
-      let current = currentCategories.get(category.nodeId)
-      if (!current) {
-        current = {
-          nodeId: category.nodeId,
-          title: category.title,
-          entryCount: 0,
-          children: new Map<string, MutableKnowledgeDirectoryCategory>(),
-        }
-        currentCategories.set(category.nodeId, current)
-      }
-      current.entryCount += 1
-      currentCategories = current.children
+  const nodes = new Map<string, KnowledgeDirectoryFacet>()
+  const children = new Map<string, KnowledgeDirectoryFacet[]>()
+  for (const facet of facets) {
+    if (nodes.has(facet.nodeId)) throw contractError(`${facet.nodeId} 重复`)
+    nodes.set(facet.nodeId, facet)
+    if (facet.parentNodeId) {
+      const siblings = children.get(facet.parentNodeId) ?? []
+      siblings.push(facet)
+      children.set(facet.parentNodeId, siblings)
     }
   }
 
-  return taxonomy.map((dimension) => {
-    const current = dimensions.get(dimension.nodeId)
-    if (!current) throw contractError(`${dimension.nodeId} 未初始化`)
+  for (const facet of facets) {
+    if (facet.parentNodeId && !nodes.has(facet.parentNodeId)) {
+      throw contractError(`${facet.nodeId} 的父节点不存在`)
+    }
+    if (facet.nodeType === 'dimension' && facet.parentNodeId) {
+      throw contractError(`${facet.nodeId} 的维度节点不能有父节点`)
+    }
+  }
+
+  const visited = new Set<string>()
+  function readCategories(parentNodeId: string, ancestors: Set<string>): readonly KnowledgeDirectoryCategory[] {
+    return [...(children.get(parentNodeId) ?? [])]
+      .sort((left, right) => directoryCollator.compare(left.title, right.title))
+      .map((facet) => {
+      if (facet.nodeType !== 'category') throw contractError(`${facet.nodeId} 不是分类节点`)
+      if (ancestors.has(facet.nodeId)) throw contractError(`${facet.nodeId} 形成循环`)
+      visited.add(facet.nodeId)
+      return {
+        nodeId: facet.nodeId,
+        title: facet.title,
+        entryCount: facet.entryCount,
+        children: readCategories(facet.nodeId, new Set([...ancestors, facet.nodeId])),
+      }
+      })
+  }
+
+  const directory = taxonomy.map((expected) => {
+    const facet = nodes.get(expected.nodeId)
+    if (!facet || facet.nodeType !== 'dimension' || facet.title !== expected.title) {
+      throw contractError(`${expected.nodeId} 与固定 taxonomy 不一致`)
+    }
+    visited.add(facet.nodeId)
     return {
-      nodeId: current.nodeId,
-      title: current.title,
-      entryCount: current.entryCount,
-      categories: readCategories(current.categories),
+      nodeId: facet.nodeId,
+      title: facet.title,
+      entryCount: facet.entryCount,
+      categories: readCategories(facet.nodeId, new Set([facet.nodeId])),
     }
   })
+  if (visited.size !== facets.length) throw contractError('存在未归入七维目录的节点')
+  return directory
 }

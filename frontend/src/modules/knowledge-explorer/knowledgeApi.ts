@@ -1,10 +1,12 @@
 import { apiClient } from '../../api/client'
 import {
   getCurrentKnowledgeRelease,
+  getKnowledgeDirectory,
   getKnowledgeEntry,
   listKnowledgeEntries,
 } from '../../api/generated/sdk.gen'
 import type {
+  KnowledgeDirectoryFacetResponse,
   KnowledgeDirectoryNodeResponse,
   KnowledgeEntryDetailResponse,
   KnowledgeEntrySummaryResponse,
@@ -15,6 +17,7 @@ import type {
 } from '../../api/generated/types.gen'
 
 import type {
+  KnowledgeDirectoryFacet,
   KnowledgeDirectoryNode,
   KnowledgeEntryDetail,
   KnowledgeEntrySummary,
@@ -31,6 +34,18 @@ function directoryNode(
     nodeId: node.node_id,
     nodeType: node.node_type,
     title: node.title,
+  }
+}
+
+function directoryFacet(
+  node: KnowledgeDirectoryFacetResponse,
+): KnowledgeDirectoryFacet {
+  return {
+    nodeId: node.node_id,
+    nodeType: node.node_type,
+    title: node.title,
+    parentNodeId: node.parent_node_id ?? undefined,
+    entryCount: node.entry_count,
   }
 }
 
@@ -144,29 +159,16 @@ export async function readKnowledgeEntry(input: {
   return entryDetail(data)
 }
 
-export async function loadKnowledgeDirectory(releaseId: string) {
-  const entries: KnowledgeEntrySummary[] = []
-  let cursor: string | undefined
-
-  do {
-    const { data } = await listKnowledgeEntries({
-      client: apiClient,
-      query: {
-        knowledge_release_id: releaseId,
-        cursor,
-        limit: 100,
-      },
-    })
-    if (!data) throw new Error('知识服务暂时不可用')
-    if (data.knowledge_release_id !== releaseId) {
-      throw new Error('知识服务返回了不同发布版本，请重新进入知识库')
-    }
-
-    entries.push(...data.entries.map(entrySummary))
-    cursor = data.next_cursor ?? undefined
-  } while (cursor)
-
-  return entries
+export async function readKnowledgeDirectory(releaseId: string) {
+  const { data } = await getKnowledgeDirectory({
+    client: apiClient,
+    query: { knowledge_release_id: releaseId },
+  })
+  if (!data) throw new Error('知识服务暂时不可用')
+  if (data.knowledge_release_id !== releaseId) {
+    throw new Error('知识服务返回了不同发布版本，请重新进入知识库')
+  }
+  return data.nodes.map(directoryFacet)
 }
 
 export async function readKnowledgePreview(releaseId: string) {
@@ -186,10 +188,11 @@ export async function readKnowledgePreview(releaseId: string) {
 
 export async function searchKnowledgeEntries(input: {
   releaseId: string
-  query: string
+  query?: string
   dimensionId?: string
   categoryId?: string
   cursor?: string
+  limit?: number
 }) {
   const { data } = await listKnowledgeEntries({
     client: apiClient,
@@ -199,7 +202,7 @@ export async function searchKnowledgeEntries(input: {
       dimension_id: input.dimensionId,
       category_id: input.categoryId,
       cursor: input.cursor,
-      limit: 100,
+      limit: input.limit ?? 20,
     },
   })
   if (!data) throw new Error('知识服务暂时不可用')
@@ -209,5 +212,6 @@ export async function searchKnowledgeEntries(input: {
   return {
     entries: data.entries.map(entrySummary),
     nextCursor: data.next_cursor ?? undefined,
+    totalCount: data.total_count,
   }
 }

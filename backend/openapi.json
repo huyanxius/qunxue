@@ -1932,6 +1932,45 @@
         "title": "InferenceLinkContract",
         "type": "object"
       },
+      "KnowledgeDirectoryFacetResponse": {
+        "properties": {
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "node_type": {
+            "$ref": "#/components/schemas/KnowledgeDirectoryNodeType"
+          },
+          "parent_node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Node Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "node_type",
+          "title",
+          "parent_node_id",
+          "entry_count"
+        ],
+        "title": "KnowledgeDirectoryFacetResponse",
+        "type": "object"
+      },
       "KnowledgeDirectoryNodeResponse": {
         "properties": {
           "node_id": {
@@ -1961,6 +2000,27 @@
         ],
         "title": "KnowledgeDirectoryNodeType",
         "type": "string"
+      },
+      "KnowledgeDirectorySummaryResponse": {
+        "properties": {
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeDirectoryFacetResponse"
+            },
+            "title": "Nodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "knowledge_release_id",
+          "nodes"
+        ],
+        "title": "KnowledgeDirectorySummaryResponse",
+        "type": "object"
       },
       "KnowledgeEntryDetailResponse": {
         "properties": {
@@ -2096,12 +2156,17 @@
             },
             "title": "Stable Order",
             "type": "array"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
           }
         },
         "required": [
           "knowledge_release_id",
           "entries",
           "stable_order",
+          "total_count",
           "next_cursor"
         ],
         "title": "KnowledgeEntryPageResponse",
@@ -6329,6 +6394,65 @@
           }
         },
         "summary": "List Knowledge Connections",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/directory": {
+      "get": {
+        "operationId": "get_knowledge_directory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "knowledge_release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDirectorySummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Knowledge Directory",
         "tags": [
           "knowledge"
         ]
