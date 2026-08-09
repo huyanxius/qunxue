@@ -278,6 +278,7 @@ class KnowledgeCatalog(Protocol):
         self,
         *,
         release_id: str,
+        source_node_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> StructuralConnectionPage: ...
@@ -286,6 +287,7 @@ class KnowledgeCatalog(Protocol):
         self,
         *,
         release_id: str,
+        knowledge_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> RelationCandidatePage: ...
@@ -294,6 +296,7 @@ class KnowledgeCatalog(Protocol):
         self,
         *,
         release_id: str,
+        knowledge_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> KnowledgeRelationPage: ...

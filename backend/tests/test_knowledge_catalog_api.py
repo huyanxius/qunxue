@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from qunxue_api.adapters.sqlite import KnowledgeEntryRevisionRow
+from qunxue_api.adapters.sqlite import KnowledgeEntryRevisionRow, KnowledgeRelationRow
 
 
 def test_current_knowledge_release_is_a_stable_markdown_preview(client: TestClient) -> None:
@@ -134,3 +134,132 @@ def test_connection_candidate_and_reviewed_relation_layers_are_distinct_and_boun
         "total_count": 0,
         "next_cursor": None,
     }
+
+
+def test_connections_can_page_one_source_node_without_scanning_the_global_feed(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+
+    first_page = client.get(
+        "/api/knowledge/connections",
+        params={
+            "knowledge_release_id": release_id,
+            "source_node_id": "D1",
+            "limit": 1,
+        },
+    )
+
+    assert first_page.status_code == 200
+    payload = first_page.json()
+    assert payload["total_count"] > 1
+    assert payload["next_cursor"]
+    assert {item["source_node_id"] for item in payload["connections"]} == {"D1"}
+
+    wrong_scope = client.get(
+        "/api/knowledge/connections",
+        params={
+            "knowledge_release_id": release_id,
+            "source_node_id": "D2",
+            "cursor": payload["next_cursor"],
+            "limit": 1,
+        },
+    )
+    assert wrong_scope.status_code == 422
+
+
+def test_relation_candidates_can_be_filtered_to_incident_knowledge(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+    global_page = client.get(
+        "/api/knowledge/relation-candidates",
+        params={"knowledge_release_id": release_id, "limit": 1},
+    ).json()
+    candidate = global_page["candidates"][0]
+
+    incident = client.get(
+        "/api/knowledge/relation-candidates",
+        params={
+            "knowledge_release_id": release_id,
+            "knowledge_id": candidate["target_knowledge_id"],
+        },
+    )
+    missing = client.get(
+        "/api/knowledge/relation-candidates",
+        params={
+            "knowledge_release_id": release_id,
+            "knowledge_id": "missing:knowledge",
+        },
+    )
+
+    assert incident.status_code == 200
+    assert incident.json()["candidates"]
+    assert all(
+        candidate["target_knowledge_id"]
+        in (item["source_knowledge_id"], item["target_knowledge_id"])
+        for item in incident.json()["candidates"]
+    )
+    assert missing.status_code == 200
+    assert missing.json()["total_count"] == 0
+
+
+def test_reviewed_relations_can_be_filtered_to_incident_knowledge(
+    client: TestClient,
+) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+    with client.app.state.database.session() as session:
+        session.add_all(
+            [
+                KnowledgeRelationRow(
+                    knowledge_release_id=release_id,
+                    relation_id="relation:one",
+                    source_knowledge_id="D1:C001",
+                    target_knowledge_id="D1:C002",
+                    relation_type="contrasts_with",
+                    direction="outbound",
+                    description="已审核关系一",
+                    evidence_source_ids=["source:D1:C001"],
+                    evidence_grade="reviewed",
+                    algorithm_weight=None,
+                    algorithm_config_version=None,
+                    content_version=1,
+                    review_status="reviewed",
+                ),
+                KnowledgeRelationRow(
+                    knowledge_release_id=release_id,
+                    relation_id="relation:two",
+                    source_knowledge_id="D2:P001",
+                    target_knowledge_id="D2:P002",
+                    relation_type="extends",
+                    direction="outbound",
+                    description="已审核关系二",
+                    evidence_source_ids=["source:D2:P001"],
+                    evidence_grade="reviewed",
+                    algorithm_weight=None,
+                    algorithm_config_version=None,
+                    content_version=1,
+                    review_status="reviewed",
+                ),
+            ]
+        )
+
+    response = client.get(
+        "/api/knowledge/relations",
+        params={
+            "knowledge_release_id": release_id,
+            "knowledge_id": "D1:C002",
+        },
+    )
+
+    assert response.status_code == 200
+    assert [item["relation_id"] for item in response.json()["relations"]] == [
+        "relation:one"
+    ]
+    assert response.json()["total_count"] == 1

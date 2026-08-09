@@ -6270,6 +6270,22 @@
           },
           {
             "in": "query",
+            "name": "source_node_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Node Id"
+            }
+          },
+          {
+            "in": "query",
             "name": "cursor",
             "required": false,
             "schema": {
@@ -6576,6 +6592,22 @@
           },
           {
             "in": "query",
+            "name": "knowledge_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Id"
+            }
+          },
+          {
+            "in": "query",
             "name": "cursor",
             "required": false,
             "schema": {
@@ -6659,6 +6691,22 @@
                 }
               ],
               "title": "Knowledge Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "knowledge_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Knowledge Id"
             }
           },
           {

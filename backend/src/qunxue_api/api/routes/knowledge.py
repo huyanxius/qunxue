@@ -54,6 +54,7 @@ def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
 def list_knowledge_connections(
     request: Request,
     knowledge_release_id: str | None = None,
+    source_node_id: str | None = None,
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=200),
 ) -> StructuralConnectionPageResponse:
@@ -64,6 +65,7 @@ def list_knowledge_connections(
     try:
         page = catalog.list_connections(
             release_id=release_id,
+            source_node_id=source_node_id,
             cursor=cursor,
             limit=limit,
         )
@@ -103,6 +105,7 @@ def list_knowledge_connections(
 def list_knowledge_relation_candidates(
     request: Request,
     knowledge_release_id: str | None = None,
+    knowledge_id: str | None = None,
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=200),
 ) -> RelationCandidatePageResponse:
@@ -113,6 +116,7 @@ def list_knowledge_relation_candidates(
     try:
         page = catalog.list_relation_candidates(
             release_id=release_id,
+            knowledge_id=knowledge_id,
             cursor=cursor,
             limit=limit,
         )
@@ -158,6 +162,7 @@ def list_knowledge_relation_candidates(
 def list_knowledge_relations(
     request: Request,
     knowledge_release_id: str | None = None,
+    knowledge_id: str | None = None,
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=200),
 ) -> KnowledgeRelationPageResponse:
@@ -168,6 +173,7 @@ def list_knowledge_relations(
     try:
         page = catalog.list_relations(
             release_id=release_id,
+            knowledge_id=knowledge_id,
             cursor=cursor,
             limit=limit,
         )

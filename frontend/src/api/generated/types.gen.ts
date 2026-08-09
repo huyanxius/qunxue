@@ -3556,6 +3556,10 @@ export type ListKnowledgeConnectionsData = {
          */
         knowledge_release_id?: string | null;
         /**
+         * Source Node Id
+         */
+        source_node_id?: string | null;
+        /**
          * Cursor
          */
         cursor?: string | null;
@@ -3695,6 +3699,10 @@ export type ListKnowledgeRelationCandidatesData = {
          */
         knowledge_release_id?: string | null;
         /**
+         * Knowledge Id
+         */
+        knowledge_id?: string | null;
+        /**
          * Cursor
          */
         cursor?: string | null;
@@ -3736,6 +3744,10 @@ export type ListKnowledgeRelationsData = {
          * Knowledge Release Id
          */
         knowledge_release_id?: string | null;
+        /**
+         * Knowledge Id
+         */
+        knowledge_id?: string | null;
         /**
          * Cursor
          */

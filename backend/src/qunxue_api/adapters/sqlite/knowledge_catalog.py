@@ -253,12 +253,14 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         self,
         *,
         release_id: str,
+        source_node_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> StructuralConnectionPage:
         with self._database.session() as session:
             release = _require_release(session, release_id)
-            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            cursor_scope = f"{release_id}|connections|{source_node_id or '*'}"
+            offset = _decode_cursor(cursor, cursor_scope) if cursor else 0
             rows = tuple(
                 session.scalars(
                     select(KnowledgeEntryRevisionRow)
@@ -272,9 +274,13 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             connections = build_structural_connections(
                 tuple(_structural_input(row) for row in rows)
             )
+            if source_node_id:
+                connections = tuple(
+                    item for item in connections if item.source_node_id == source_node_id
+                )
             page = connections[offset : offset + limit]
             next_cursor = (
-                _encode_cursor(release_id, offset + limit)
+                _encode_cursor(cursor_scope, offset + limit)
                 if offset + limit < len(connections)
                 else None
             )
@@ -289,20 +295,34 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         self,
         *,
         release_id: str,
+        knowledge_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> RelationCandidatePage:
         with self._database.session() as session:
             release = _require_release(session, release_id)
-            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            cursor_scope = f"{release_id}|candidates|{knowledge_id or '*'}"
+            offset = _decode_cursor(cursor, cursor_scope) if cursor else 0
+            filters = [
+                KnowledgeRelationCandidateRow.knowledge_release_id == release_id
+            ]
+            if knowledge_id:
+                filters.append(
+                    or_(
+                        KnowledgeRelationCandidateRow.source_knowledge_id
+                        == knowledge_id,
+                        KnowledgeRelationCandidateRow.target_knowledge_id
+                        == knowledge_id,
+                    )
+                )
             total_count = session.scalar(
                 select(func.count())
                 .select_from(KnowledgeRelationCandidateRow)
-                .where(KnowledgeRelationCandidateRow.knowledge_release_id == release_id)
+                .where(*filters)
             )
             rows = session.scalars(
                 select(KnowledgeRelationCandidateRow)
-                .where(KnowledgeRelationCandidateRow.knowledge_release_id == release_id)
+                .where(*filters)
                 .order_by(KnowledgeRelationCandidateRow.candidate_id)
                 .offset(offset)
                 .limit(limit)
@@ -313,7 +333,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 candidates=tuple(_candidate_snapshot(row) for row in rows),
                 total_count=count,
                 next_cursor=(
-                    _encode_cursor(release_id, offset + limit)
+                    _encode_cursor(cursor_scope, offset + limit)
                     if offset + limit < count
                     else None
                 ),
@@ -323,27 +343,34 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         self,
         *,
         release_id: str,
+        knowledge_id: str | None,
         cursor: str | None,
         limit: int,
     ) -> KnowledgeRelationPage:
         with self._database.session() as session:
             release = _require_release(session, release_id)
-            offset = _decode_cursor(cursor, release_id) if cursor else 0
+            cursor_scope = f"{release_id}|relations|{knowledge_id or '*'}"
+            offset = _decode_cursor(cursor, cursor_scope) if cursor else 0
             reviewed = KnowledgeRelationRow.review_status == KnowledgeReviewStatus.REVIEWED.value
+            filters = [
+                KnowledgeRelationRow.knowledge_release_id == release_id,
+                reviewed,
+            ]
+            if knowledge_id:
+                filters.append(
+                    or_(
+                        KnowledgeRelationRow.source_knowledge_id == knowledge_id,
+                        KnowledgeRelationRow.target_knowledge_id == knowledge_id,
+                    )
+                )
             total_count = session.scalar(
                 select(func.count())
                 .select_from(KnowledgeRelationRow)
-                .where(
-                    KnowledgeRelationRow.knowledge_release_id == release_id,
-                    reviewed,
-                )
+                .where(*filters)
             )
             rows = session.scalars(
                 select(KnowledgeRelationRow)
-                .where(
-                    KnowledgeRelationRow.knowledge_release_id == release_id,
-                    reviewed,
-                )
+                .where(*filters)
                 .order_by(KnowledgeRelationRow.relation_id)
                 .offset(offset)
                 .limit(limit)
@@ -354,7 +381,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 relations=tuple(_relation_snapshot(row) for row in rows),
                 total_count=count,
                 next_cursor=(
-                    _encode_cursor(release_id, offset + limit)
+                    _encode_cursor(cursor_scope, offset + limit)
                     if offset + limit < count
                     else None
                 ),
