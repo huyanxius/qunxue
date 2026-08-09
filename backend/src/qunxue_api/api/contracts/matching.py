@@ -115,7 +115,7 @@ class MatchRunResponse(BaseModel):
     phenomenon_version: int
     knowledge_release_id: str
     candidate_page: MatchCandidatePageResponse
-    model: ModelMetadata
+    model: ModelMetadata | None
 
 
 class CreateMatchRunRequest(BaseModel):

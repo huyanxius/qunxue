@@ -3,7 +3,15 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
-from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
+from qunxue_api.api.contracts.common import (
+    ErrorCode,
+    ErrorDetail,
+    ErrorResponse,
+    ModelCapability,
+    ModelMetadata,
+    TraceMetadata,
+)
+from qunxue_api.api.contracts.knowledge import SourceRecordResponse
 from qunxue_api.api.contracts.matching import (
     AcknowledgePartialMatchRequest,
     ConfirmedTheoryPlanResponse,
@@ -12,7 +20,9 @@ from qunxue_api.api.contracts.matching import (
     CreateTheoryDecisionsRequest,
     DeferredTheoryPlanResponse,
     DeferTheoryPlanRequest,
+    EvidenceReferenceResponse,
     MatchCandidatePageResponse,
+    MatchRunAction,
     MatchRunResponse,
     RetryMatchCandidateRequest,
     TheoryCandidateResponse,
@@ -20,11 +30,21 @@ from qunxue_api.api.contracts.matching import (
     TheoryDecisionSetResponse,
 )
 from qunxue_api.api.dependencies import (
+    CurrentSessionDependency,
     OwnedResearchTaskDependency,
     PhenomenonServiceDependency,
+    TheoryMatchingApplicationDependency,
     get_current_session,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
+from qunxue_api.application import MatchingRequestConflict, MatchingSnapshotConflict
+from qunxue_api.modules.theory_matching import (
+    EvidenceItemSnapshot,
+    MatchRunModelSnapshot,
+    MatchRunSnapshot,
+    MatchRunStatus,
+    TheoryCandidateSnapshot,
+)
 
 router = APIRouter(
     tags=["matching"],
@@ -41,12 +61,14 @@ router = APIRouter(
 )
 def create_match_run(
     task_id: UUID,
-    _owned_task: OwnedResearchTaskDependency,
+    owned_task: OwnedResearchTaskDependency,
     payload: CreateMatchRunRequest,
-    _idempotency_key: IdempotencyKey,
+    idempotency_key: IdempotencyKey,
     phenomenon_service: PhenomenonServiceDependency,
-) -> JSONResponse:
-    if phenomenon_service.progress(task_id).confirmed is None:
+    application: TheoryMatchingApplicationDependency,
+) -> MatchRunResponse | JSONResponse:
+    phenomenon = phenomenon_service.progress(task_id).confirmed
+    if phenomenon is None:
         body = ErrorResponse(
             error=ErrorDetail(
                 code=ErrorCode.PHENOMENON_UNCONFIRMED,
@@ -55,7 +77,27 @@ def create_match_run(
             )
         )
         return JSONResponse(status_code=409, content=body.model_dump(mode="json"))
-    return not_implemented_response()
+    try:
+        match_run = application.start(
+            user_id=owned_task.user_id,
+            task=owned_task,
+            phenomenon=phenomenon,
+            idempotency_key=idempotency_key,
+            expected_task_version=payload.expected_task_version,
+            phenomenon_query_id=payload.phenomenon_query_id,
+            phenomenon_version=payload.phenomenon_version,
+            requested_knowledge_release_id=payload.knowledge_release_id,
+        )
+    except (MatchingRequestConflict, MatchingSnapshotConflict) as error:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.VALIDATION_ERROR,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(status_code=409, content=body.model_dump(mode="json"))
+    return _match_run_response(match_run)
 
 
 @router.get(
@@ -64,8 +106,23 @@ def create_match_run(
     response_model=MatchRunResponse,
     responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def get_match_run(match_run_id: UUID) -> JSONResponse:
-    return not_implemented_response()
+def get_match_run(
+    match_run_id: UUID,
+    current: CurrentSessionDependency,
+    application: TheoryMatchingApplicationDependency,
+) -> MatchRunResponse | JSONResponse:
+    try:
+        match_run = application.get(match_run_id, user_id=current.user.user_id)
+    except LookupError:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.NOT_FOUND,
+                message="Match run was not found.",
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(status_code=404, content=body.model_dump(mode="json"))
+    return _match_run_response(match_run)
 
 
 @router.get(
@@ -177,3 +234,147 @@ def confirm_theory_plan(
     _idempotency_key: IdempotencyKey,
 ) -> JSONResponse:
     return not_implemented_response()
+
+
+def _match_run_response(snapshot: MatchRunSnapshot) -> MatchRunResponse:
+    allowed_actions = [MatchRunAction.REFRESH]
+    model = _model_response(snapshot.model) if snapshot.model is not None else None
+    candidate_page = MatchCandidatePageResponse(
+        match_run_id=snapshot.match_run_id,
+        version=snapshot.version,
+        allowed_actions=allowed_actions,
+        knowledge_release_id=snapshot.knowledge_release.knowledge_release_id,
+        candidates=[_candidate_response(candidate, snapshot) for candidate in snapshot.candidates],
+        stable_order=list(snapshot.stable_candidate_order),
+        next_cursor=snapshot.next_cursor,
+    )
+    return MatchRunResponse(
+        match_run_id=snapshot.match_run_id,
+        task_id=snapshot.task_id,
+        version=snapshot.version,
+        status=snapshot.status,
+        allowed_actions=allowed_actions,
+        completion_basis=snapshot.completion_basis,
+        partial_completion_acknowledged=snapshot.partial_completion_acknowledged,
+        total_candidate_count=(
+            0
+            if snapshot.status is MatchRunStatus.NO_RELIABLE_CANDIDATE
+            else len(snapshot.evidence_bundle.theory_profiles)
+        ),
+        completed_candidate_count=len(snapshot.candidates),
+        failed_candidate_count=(
+            0
+            if snapshot.status is MatchRunStatus.NO_RELIABLE_CANDIDATE
+            else len(snapshot.evidence_bundle.theory_profiles) - len(snapshot.candidates)
+        ),
+        phenomenon_query_id=snapshot.phenomenon.phenomenon_query_id,
+        phenomenon_version=snapshot.phenomenon.version,
+        knowledge_release_id=snapshot.knowledge_release.knowledge_release_id,
+        candidate_page=candidate_page,
+        model=model,
+    )
+
+
+def _candidate_response(
+    candidate: TheoryCandidateSnapshot,
+    snapshot: MatchRunSnapshot,
+) -> TheoryCandidateResponse:
+    if snapshot.model is None:
+        raise RuntimeError("match run has no persisted model metadata")
+    profile = candidate.content.reviewed_profile
+    if profile is None:
+        raise RuntimeError("M4-A candidate has no reviewed theory profile")
+    evidence_by_id = {
+        item.evidence_ref_id: item for item in snapshot.evidence_bundle.evidence_items
+    }
+    supporting = [
+        _evidence_response(evidence_by_id[evidence_ref_id])
+        for evidence_ref_id in candidate.judgement.evidence_ref_ids
+        if evidence_ref_id in evidence_by_id
+    ]
+    return TheoryCandidateResponse(
+        candidate_id=candidate.candidate_id,
+        version=candidate.candidate_version,
+        allowed_actions=[],
+        judgement_run_status=candidate.judgement_run_status,
+        knowledge_release_id=snapshot.knowledge_release.knowledge_release_id,
+        knowledge_id=candidate.content.knowledge_id,
+        theory_id=candidate.content.theory_id,
+        seed_theory_id=candidate.content.seed_theory_id,
+        origin=candidate.content.origin,
+        content_status=candidate.content.content_status,
+        title=candidate.content.title,
+        problem_focus=candidate.content.problem_focus,
+        core_claims=list(candidate.content.core_claims),
+        analysis_levels=list(candidate.content.analysis_levels),
+        prerequisites=list(profile.prerequisites),
+        applicability_judgement=candidate.judgement.verdict,
+        applicability_rationale=candidate.judgement.match_rationale,
+        supporting_evidence=supporting,
+        conflicting_evidence=[],
+        missing_evidence=list(candidate.judgement.evidence_gaps),
+        requested_material=list(candidate.judgement.material_requirements),
+        limitations=list(candidate.judgement.limitations),
+        misuse_boundaries=[*profile.exclusion_signals, *candidate.content.adoption_blockers],
+        competing_theories=[],
+        complementary_theories=[],
+        source_ids=list(candidate.content.source_ids),
+        formal_adoption_eligible=candidate.content.formal_adoption_eligible,
+        adoption_blockers=list(candidate.content.adoption_blockers),
+        model=_model_response(
+            snapshot.model,
+            trace_id=candidate.trace_id,
+            request_id=candidate.request_id,
+            contract_version=candidate.contract_version,
+        ),
+    )
+
+
+def _evidence_response(item: EvidenceItemSnapshot) -> EvidenceReferenceResponse:
+    source = item.source
+    return EvidenceReferenceResponse(
+        evidence_ref_id=item.evidence_ref_id,
+        claim=item.claim,
+        excerpt=item.excerpt,
+        locator=item.locator,
+        source_id=source.source_id if source is not None else None,
+        source=(
+            SourceRecordResponse(
+                source_id=source.source_id,
+                source_type=source.source_type,
+                title=source.title,
+                authors_or_institution=list(source.authors_or_institution),
+                year=source.year,
+                publication=source.publication,
+                locator=source.locator,
+                url=source.url,
+                verification_status=source.verification_status,
+                use_boundary=source.use_boundary,
+            )
+            if source is not None
+            else None
+        ),
+        verification_status=item.verification_status,
+        use_boundary=item.use_boundary,
+    )
+
+
+def _model_response(
+    model: MatchRunModelSnapshot,
+    *,
+    trace_id: UUID | None = None,
+    request_id: UUID | None = None,
+    contract_version: str | None = None,
+) -> ModelMetadata:
+    return ModelMetadata(
+        provider=model.provider,
+        model_version=model.model_version,
+        capability=ModelCapability(model.capability),
+        degraded=model.degraded,
+        knowledge_release_id=model.knowledge_release_id,
+        trace=TraceMetadata(
+            trace_id=trace_id or model.trace_id,
+            request_id=request_id or model.request_id,
+            contract_version=contract_version or model.contract_version,
+        ),
+    )

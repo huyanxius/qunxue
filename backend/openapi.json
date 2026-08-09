@@ -2565,7 +2565,14 @@
             "type": "string"
           },
           "model": {
-            "$ref": "#/components/schemas/ModelMetadata"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "partial_completion_acknowledged": {
             "title": "Partial Completion Acknowledged",

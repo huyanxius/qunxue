@@ -69,6 +69,20 @@ class MatchCompletionBasis(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class MatchRunModelSnapshot:
+    """Configured judge identity plus the trace attached to one matching run."""
+
+    provider: str
+    model_version: str
+    capability: str
+    degraded: bool
+    knowledge_release_id: str
+    trace_id: UUID
+    request_id: UUID
+    contract_version: str
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceItemSnapshot:
     """一次匹配运行实际看到的证据；无需再跨模块按 ID 回查正文。"""
 
@@ -200,6 +214,7 @@ class MatchRunSnapshot:
     partial_completion_acknowledged: bool = False
     stable_candidate_order: tuple[UUID, ...] = ()
     next_cursor: str | None = None
+    model: MatchRunModelSnapshot | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -316,6 +331,12 @@ class TheoryEvidenceSource(Protocol):
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> EvidenceBundleSnapshot: ...
+
+
+class MatchRunRepository(Protocol):
+    def add(self, snapshot: MatchRunSnapshot) -> MatchRunSnapshot: ...
+
+    def get(self, match_run_id: UUID) -> MatchRunSnapshot | None: ...
 
 
 class TheoryCandidateJudge(Protocol):
