@@ -98,39 +98,17 @@ describe('projectKnowledgeGraph', () => {
       ],
     })
 
-    expect(graph.release).toEqual({
-      knowledgeReleaseId: 'release-preview-2026-08',
-      level: 'preview',
-      contentHash: 'sha256:preview-content',
-    })
+    expect(graph.releaseId).toBe('release-preview-2026-08')
     expect(graph.nodes).toEqual([
       {
         id: 'knowledge-field',
         label: '场域理论',
-        dimensionId: 'D6',
-        dimension: '学派传统',
-        categoryId: 'category-theory',
-        category: '理论',
-        directoryPath: [
-          { id: 'D6', type: 'dimension', title: '学派传统' },
-          { id: 'category-theory', type: 'category', title: '理论' },
-        ],
         reviewStatus: 'reviewed',
-        contentVersion: 3,
       },
       {
         id: 'knowledge-habitus',
         label: '惯习',
-        dimensionId: 'D1',
-        dimension: '本体论',
-        categoryId: 'category-concept',
-        category: '概念',
-        directoryPath: [
-          { id: 'D1', type: 'dimension', title: '本体论' },
-          { id: 'category-concept', type: 'category', title: '概念' },
-        ],
         reviewStatus: 'pending',
-        contentVersion: 2,
       },
     ])
     expect(graph.edges).toEqual([
@@ -140,11 +118,6 @@ describe('projectKnowledgeGraph', () => {
         target: 'knowledge-habitus',
         relationType: '概念依赖',
         direction: 'directed',
-        description: '场域分析需要结合行动者的惯习。',
-        evidenceSourceIds: ['source-book-1'],
-        evidenceGrade: 'A',
-        reviewStatus: 'reviewed',
-        contentVersion: 2,
       },
     ])
   })

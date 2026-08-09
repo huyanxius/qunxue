@@ -1,8 +1,8 @@
 import cytoscape, { type ElementDefinition } from 'cytoscape'
 import { useEffect, useRef, useState } from 'react'
 
-import type { KnowledgeGraphProjection } from './knowledgeGraphAdapter'
 import './KnowledgeGraph.css'
+import type { KnowledgeGraphProjection } from './types'
 
 interface KnowledgeGraphProps {
   readonly projection: KnowledgeGraphProjection
@@ -138,7 +138,7 @@ export function KnowledgeGraph({
     <section className="knowledge-graph" aria-labelledby="knowledge-graph-title">
       <header className="knowledge-graph__heading">
         <div>
-          <p>当前发布 · {projection.release.knowledgeReleaseId}</p>
+          <p>当前发布 · {projection.releaseId}</p>
           <h2 id="knowledge-graph-title">知识关系图</h2>
         </div>
         <span>{projection.edges.length} 条已审核显式关系</span>
