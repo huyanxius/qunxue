@@ -42,6 +42,10 @@ make bootstrap
 - `QUNXUE_DATABASE_URL`：覆盖应用与 Alembic 使用的数据库地址，通过启动命令前的 shell 环境或 `backend/.env` 提供；
 - `VITE_API_BASE_URL`：覆盖浏览器请求的 API 地址，通过启动命令前的 shell 环境或 `frontend/.env.local` 提供。本地开发不要设置；跨源部署还必须由 API 明确允许前端来源，当前基线没有配置 CORS。
 
+模型运行默认是 `QUNXUE_RUNTIME_MODE=mock`，继续使用 deterministic Mock，不需要密钥。`base` 与 `sft` 会装配同一个 OpenAI-compatible Provider，并要求同时设置 `QUNXUE_MODEL_BASE_URL`（包含兼容服务的 `/v1` 前缀）和 `QUNXUE_MODEL_NAME`。可选配置包括 `QUNXUE_MODEL_API_KEY`、`QUNXUE_MODEL_TIMEOUT_SECONDS`，以及 JSON 对象形式的 `QUNXUE_MODEL_EXTRA_HEADERS`。`sft` 还可用 `QUNXUE_MODEL_SFT_RESOURCE_HEADER` 和 `QUNXUE_MODEL_SFT_RESOURCE_ID` 增加一个受控资源请求头。
+
+仓库只通过本地假服务验证 OpenAI-compatible HTTP 边界；这不表示任何真实模型或供应商服务已经接入。
+
 本地 `.env` 和任何密钥都不得提交。
 
 ## 3. 启动

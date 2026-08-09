@@ -29,7 +29,7 @@ React
 | `modules/research_framework/` | 研究框架草拟、审校、修订与确认 | 公共契约 |
 | `application/` | 通过模块公共入口编排跨模块流程 | 契约编排骨架 |
 | `api/` | HTTP DTO、路由、依赖与异常映射 | 健康、账号、研究任务、现象与知识接口；M4/M5 为 501 契约 |
-| `adapters/` | 数据库、模型、检索等端口实现 | SQLite 账号、研究任务、现象与知识仓储，以及 Markdown 知识解析 |
+| `adapters/` | 数据库、模型、检索等端口实现 | SQLite 仓储、Markdown 知识解析、deterministic Mock 与 OpenAI-compatible 模型 Provider |
 | `bootstrap.py` | 创建应用并装配具体实现 | 唯一装配入口 |
 
 业务模块之间的依赖是单向的：
