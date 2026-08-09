@@ -1,6 +1,10 @@
 export { KnowledgeEntryPage } from './KnowledgeEntryPage'
 export { KnowledgeExplorerPage } from './KnowledgeExplorer'
-export { readKnowledgeUrlState, writeKnowledgeUrlState } from './urlState'
+export {
+  readKnowledgeGraphReturnTo,
+  readKnowledgeUrlState,
+  writeKnowledgeUrlState,
+} from './urlState'
 export type {
   KnowledgeEntryDetail,
   KnowledgeEntrySummary,

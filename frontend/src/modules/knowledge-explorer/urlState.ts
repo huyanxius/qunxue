@@ -18,6 +18,34 @@ function researchReturnTo(input: string | undefined) {
   return `${target.pathname}${target.search}${target.hash}`
 }
 
+const graphReturnQueryKeys = new Set([
+  'knowledge_release_id',
+  'query',
+  'center',
+  'pending',
+])
+
+export function readKnowledgeGraphReturnTo(params: URLSearchParams) {
+  const input = value(params, 'return_to')
+  if (!input?.startsWith('/') || input.startsWith('//')) return undefined
+
+  try {
+    const target = new URL(input, 'https://qunxue.local')
+    if (target.origin !== 'https://qunxue.local') return undefined
+    if (target.pathname !== '/knowledge' && target.pathname !== '/knowledge/graph') {
+      return undefined
+    }
+    const safeQuery = new URLSearchParams()
+    target.searchParams.forEach((queryValue, key) => {
+      if (graphReturnQueryKeys.has(key)) safeQuery.append(key, queryValue)
+    })
+    const query = safeQuery.toString()
+    return `${target.pathname}${query ? `?${query}` : ''}`
+  } catch {
+    return undefined
+  }
+}
+
 export function readKnowledgeUrlState(
   params: URLSearchParams,
 ): KnowledgeUrlState {
