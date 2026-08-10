@@ -121,6 +121,7 @@ class TheoryMatchingService:
                     candidate_id=candidate_id,
                     candidate_version=1,
                     judgement_input=TheoryJudgementInput(
+                        knowledge_release=evidence_bundle.release,
                         phenomenon=phenomenon,
                         candidate=content,
                         comparison_candidates=tuple(

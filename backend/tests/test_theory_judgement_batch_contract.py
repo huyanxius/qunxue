@@ -1,6 +1,10 @@
 from uuid import UUID
 
 import qunxue_api.modules.theory_matching as matching
+from qunxue_api.modules.knowledge_catalog import (
+    KnowledgeReleaseLevel,
+    KnowledgeReleaseRef,
+)
 from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
 
 
@@ -38,6 +42,11 @@ def test_batch_judgement_preserves_identity_order_partial_failure_and_retry_targ
         adoption_blockers=("来源待核验",),
     )
     judgement_input = matching.TheoryJudgementInput(
+        knowledge_release=KnowledgeReleaseRef(
+            knowledge_release_id="knowledge-test-v1",
+            level=KnowledgeReleaseLevel.PREVIEW,
+            content_hash="sha256:knowledge-test-v1",
+        ),
         phenomenon=phenomenon,
         candidate=candidate,
         comparison_candidates=(candidate,),

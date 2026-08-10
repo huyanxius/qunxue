@@ -78,17 +78,21 @@ def test_invalid_builtin_case_cursor_uses_the_stable_error_envelope(
 
 
 @pytest.mark.parametrize(
-    ("code", "expected_status"),
+    ("code", "expected_status", "expected_public_code"),
     [
-        ("model_timeout", 503),
-        ("no_reliable_candidate", 409),
-        ("insufficient_sources", 409),
+        ("model_timeout", 503, "model_timeout"),
+        ("model_unavailable", 503, "model_timeout"),
+        ("model_rate_limited", 429, "model_timeout"),
+        ("model_invalid_output", 502, "internal_server_error"),
+        ("no_reliable_candidate", 409, "no_reliable_candidate"),
+        ("insufficient_sources", 409, "insufficient_sources"),
     ],
 )
 def test_model_failures_use_recoverable_http_errors_instead_of_500(
     client: TestClient,
     code: str,
     expected_status: int,
+    expected_public_code: str,
 ) -> None:
     trace_id = UUID(int=901)
 
@@ -111,7 +115,7 @@ def test_model_failures_use_recoverable_http_errors_instead_of_500(
     assert response.status_code == expected_status
     assert response.json() == {
         "error": {
-            "code": code,
+            "code": expected_public_code,
             "message": "Recoverable model invocation failure.",
             "trace_id": str(trace_id),
         }

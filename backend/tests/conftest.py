@@ -24,7 +24,16 @@ def client(
 ) -> Iterator[TestClient]:
     database_url = f"sqlite:///{tmp_path / 'test.db'}"
     monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
-    settings = Settings()
+    settings = Settings(
+        _env_file=None,
+        database_url=database_url,
+        runtime_mode="mock",
+        model_base_url=None,
+        model_api_key=None,
+        model_name=None,
+        model_extra_headers={},
+        model_sft_resource_id=None,
+    )
     command.upgrade(alembic_config, "head")
     database = Database(settings.database_url)
     app = create_app(settings=settings, database=database)

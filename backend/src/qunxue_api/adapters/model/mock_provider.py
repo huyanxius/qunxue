@@ -49,7 +49,11 @@ class DeterministicMockModelProvider:
         context: str | None,
     ) -> ModelProviderResult[PhenomenonCandidateDraft]:
         case = self._catalog.find_by_phenomenon(raw_input)
-        self._raise_if_unavailable(case, capability="extract")
+        self._raise_if_unavailable(
+            case,
+            capability="extract",
+            knowledge_release_id=None,
+        )
         source_ref_ids = (f"case:{case.case_id}",) if case else ("input:direct",)
         return ModelProviderResult(
             output=PhenomenonCandidateDraft(
@@ -69,7 +73,11 @@ class DeterministicMockModelProvider:
         input: TheoryJudgementInput,
     ) -> ModelProviderResult[TheoryJudgementDraft]:
         case = self._catalog.find_by_phenomenon(input.phenomenon.phenomenon)
-        self._raise_if_unavailable(case, capability="judge")
+        self._raise_if_unavailable(
+            case,
+            capability="judge",
+            knowledge_release_id=input.knowledge_release.knowledge_release_id,
+        )
         evidence_ids = tuple(item.evidence_ref_id for item in input.evidence_items)
         title = input.candidate.title
         return ModelProviderResult(
@@ -85,7 +93,7 @@ class DeterministicMockModelProvider:
                 alternative_explanations=("资源供给变化", "组织规则调整"),
                 evidence_ref_ids=evidence_ids,
             ),
-            knowledge_release_id=(case.knowledge_release_id if case else None),
+            knowledge_release_id=input.knowledge_release.knowledge_release_id,
             degraded=False,
         )
 
@@ -97,7 +105,13 @@ class DeterministicMockModelProvider:
         case = self._catalog.find_by_phenomenon(
             input.theory_plan.phenomenon.phenomenon
         )
-        self._raise_if_unavailable(case, capability="framework")
+        self._raise_if_unavailable(
+            case,
+            capability="framework",
+            knowledge_release_id=(
+                input.theory_plan.knowledge_release.knowledge_release_id
+            ),
+        )
         adopted_ids = {
             decision.candidate_id
             for decision in input.theory_plan.decisions
@@ -166,7 +180,13 @@ class DeterministicMockModelProvider:
         case = self._catalog.find_by_phenomenon(
             framework.input.theory_plan.phenomenon.phenomenon
         )
-        self._raise_if_unavailable(case, capability="audit")
+        self._raise_if_unavailable(
+            case,
+            capability="audit",
+            knowledge_release_id=(
+                framework.input.theory_plan.knowledge_release.knowledge_release_id
+            ),
+        )
         findings = (
             (
                 AuditFindingDraft(
@@ -210,6 +230,7 @@ class DeterministicMockModelProvider:
         case: BuiltInCase | None,
         *,
         capability: str,
+        knowledge_release_id: str | None,
     ) -> None:
         if case is None:
             return
@@ -236,9 +257,7 @@ class DeterministicMockModelProvider:
         raise ModelProviderFailure(
             code=code,
             message=message,
-            knowledge_release_id=(
-                None if capability == "extract" else case.knowledge_release_id
-            ),
+            knowledge_release_id=knowledge_release_id,
             scenario=case.scenario,
         )
 
