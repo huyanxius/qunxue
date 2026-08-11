@@ -13,6 +13,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'knowledge-graph': Object.freeze([]),
     'knowledge-explorer': Object.freeze([]),
     'socio-match-workspace': Object.freeze([]),
+    'theory-decision-workspace': Object.freeze([]),
   }),
   generatedApiAdapters: Object.freeze([
     'api/client.ts',
@@ -22,12 +23,14 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/knowledge-graph/knowledgeGraphApi.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
+    'modules/theory-decision-workspace/theoryDecisionApi.ts',
   ]),
   moduleApiAdapters: Object.freeze([
     'modules/account/accountApi.ts',
     'modules/knowledge-graph/knowledgeGraphApi.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
+    'modules/theory-decision-workspace/theoryDecisionApi.ts',
   ]),
   appApiAdapters: Object.freeze(['api/system.ts']),
   httpRuntimeAdapters: Object.freeze(['api/client.ts']),
