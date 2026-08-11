@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal
@@ -218,6 +220,8 @@ class TheoryDecisionPageResponse(BaseModel):
     allowed_actions: list[TheoryDecisionSetAction]
     knowledge_release_id: str
     decision_sets: list[TheoryDecisionSetResponse]
+    confirmed_plan: ConfirmedTheoryPlanResponse | None = None
+    deferred_plan: DeferredTheoryPlanResponse | None = None
     next_cursor: str | None
 
 

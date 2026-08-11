@@ -27,7 +27,17 @@ from qunxue_api.api.contracts.matching import (
     RetryMatchCandidateRequest,
     TheoryCandidateResponse,
     TheoryDecisionPageResponse,
+    TheoryDecisionRecordResponse,
+    TheoryDecisionSetAction,
     TheoryDecisionSetResponse,
+    TheoryPlanAction,
+    TheoryRelationResponse,
+    TheoryUseAssignmentResponse,
+)
+from qunxue_api.api.contracts.phenomena import (
+    PhenomenonEvidenceReferenceResponse,
+    PhenomenonSnapshotAction,
+    PhenomenonSnapshotResponse,
 )
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
@@ -39,11 +49,19 @@ from qunxue_api.api.dependencies import (
 from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 from qunxue_api.application import MatchingRequestConflict, MatchingSnapshotConflict
 from qunxue_api.modules.theory_matching import (
+    ConfirmedTheoryPlanSnapshot,
+    DeferredTheoryPlanSnapshot,
     EvidenceItemSnapshot,
     MatchRunModelSnapshot,
     MatchRunSnapshot,
     MatchRunStatus,
     TheoryCandidateSnapshot,
+    TheoryDecisionCommand,
+    TheoryDecisionConflict,
+    TheoryDecisionSetSnapshot,
+    TheoryPlanGateViolation,
+    TheoryRelationCommand,
+    TheoryUseAssignment,
 )
 
 router = APIRouter(
@@ -153,7 +171,7 @@ def retry_match_candidate(
     match_run_id: UUID,
     candidate_id: UUID,
     payload: RetryMatchCandidateRequest,
-    _idempotency_key: IdempotencyKey,
+    idempotency_key: IdempotencyKey,
 ) -> JSONResponse:
     return not_implemented_response()
 
@@ -176,14 +194,62 @@ def acknowledge_partial_match(
     "/api/match-runs/{match_run_id}/decisions",
     operation_id="create_theory_decisions",
     response_model=TheoryDecisionSetResponse,
+    status_code=201,
     responses={409: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
 def create_theory_decisions(
     match_run_id: UUID,
     payload: CreateTheoryDecisionsRequest,
-    _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+    current: CurrentSessionDependency,
+    application: TheoryMatchingApplicationDependency,
+    idempotency_key: IdempotencyKey,
+) -> TheoryDecisionSetResponse | JSONResponse:
+    try:
+        match_run = application.get(match_run_id, user_id=current.user.user_id)
+        snapshot = application.record_decisions(
+            match_run_id=match_run_id,
+            user_id=current.user.user_id,
+            idempotency_key=idempotency_key,
+            expected_version=payload.expected_match_run_version,
+            completion_basis=payload.completion_basis,
+            decisions=tuple(
+                TheoryDecisionCommand(
+                    candidate_id=item.candidate_id,
+                    candidate_version=item.candidate_version,
+                    action=item.action,
+                    reason=item.reason,
+                    related_source_ids=tuple(item.related_source_ids),
+                    related_candidate_ids=tuple(item.related_candidate_ids),
+                    revised_applicability=item.revised_applicability,
+                )
+                for item in payload.decisions
+            ),
+            use_assignments=tuple(
+                TheoryUseAssignment(
+                    candidate_id=item.candidate_id,
+                    role_code=item.role_code,
+                    responsibility=item.responsibility,
+                )
+                for item in payload.use_assignments
+            ),
+            relations=tuple(
+                TheoryRelationCommand(
+                    candidate_ids=tuple(item.candidate_ids),
+                    relation_kind=item.relation_kind,
+                    explanation=item.explanation,
+                    premise_compatibility=item.premise_compatibility,
+                    supporting_evidence=tuple(item.supporting_evidence),
+                    excluding_evidence=tuple(item.excluding_evidence),
+                    distinguishing_evidence=tuple(item.distinguishing_evidence),
+                )
+                for item in payload.relations
+            ),
+        )
+    except LookupError:
+        return _matching_error(404, ErrorCode.NOT_FOUND, "Match run was not found.")
+    except (MatchingRequestConflict, TheoryDecisionConflict) as error:
+        return _matching_error(409, ErrorCode.VALIDATION_ERROR, str(error))
+    return _decision_set_response(snapshot, match_run)
 
 
 @router.get(
@@ -194,10 +260,34 @@ def create_theory_decisions(
 )
 def list_theory_decisions(
     match_run_id: UUID,
+    current: CurrentSessionDependency,
+    application: TheoryMatchingApplicationDependency,
     cursor: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
-) -> JSONResponse:
-    return not_implemented_response()
+) -> TheoryDecisionPageResponse | JSONResponse:
+    try:
+        match_run = application.get(match_run_id, user_id=current.user.user_id)
+        snapshots = application.list_decisions(
+            match_run_id, user_id=current.user.user_id
+        )
+        confirmed = application.confirmed_plan(
+            match_run_id, user_id=current.user.user_id
+        )
+        deferred = application.deferred_plan(
+            match_run_id, user_id=current.user.user_id
+        )
+    except LookupError:
+        return _matching_error(404, ErrorCode.NOT_FOUND, "Match run was not found.")
+    return TheoryDecisionPageResponse(
+        match_run_id=match_run_id,
+        version=max((item.version for item in snapshots), default=0),
+        allowed_actions=[],
+        knowledge_release_id=match_run.knowledge_release.knowledge_release_id,
+        decision_sets=[_decision_set_response(item, match_run) for item in snapshots],
+        confirmed_plan=_confirmed_plan_response(confirmed) if confirmed else None,
+        deferred_plan=_deferred_plan_response(deferred) if deferred else None,
+        next_cursor=None,
+    )
 
 
 @router.post(
@@ -213,9 +303,36 @@ def list_theory_decisions(
 def defer_theory_plan(
     match_run_id: UUID,
     payload: DeferTheoryPlanRequest,
+    current: CurrentSessionDependency,
+    application: TheoryMatchingApplicationDependency,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+) -> DeferredTheoryPlanResponse | JSONResponse:
+    try:
+        snapshot = application.defer_plan(
+            match_run_id=match_run_id,
+            user_id=current.user.user_id,
+            expected_version=payload.expected_match_run_version,
+            reason=payload.reason,
+        )
+    except LookupError:
+        return _matching_error(404, ErrorCode.NOT_FOUND, "Match run was not found.")
+    except TheoryDecisionConflict as error:
+        return _matching_error(409, ErrorCode.VALIDATION_ERROR, str(error))
+    return _deferred_plan_response(snapshot)
+
+
+def _deferred_plan_response(
+    snapshot: DeferredTheoryPlanSnapshot,
+) -> DeferredTheoryPlanResponse:
+    return DeferredTheoryPlanResponse(
+        task_id=snapshot.task_id,
+        match_run_id=snapshot.match_run_id,
+        version=snapshot.version,
+        status="deferred",
+        allowed_actions=[MatchRunAction.REFRESH],
+        reason=snapshot.reason,
+        deferred_at=snapshot.deferred_at,
+    )
 
 
 @router.post(
@@ -231,9 +348,169 @@ def defer_theory_plan(
 def confirm_theory_plan(
     decision_set_id: UUID,
     payload: ConfirmTheoryPlanRequest,
+    current: CurrentSessionDependency,
+    application: TheoryMatchingApplicationDependency,
     _idempotency_key: IdempotencyKey,
-) -> JSONResponse:
-    return not_implemented_response()
+) -> ConfirmedTheoryPlanResponse | JSONResponse:
+    try:
+        snapshot = application.confirm_plan(
+            decision_set_id=decision_set_id,
+            user_id=current.user.user_id,
+            expected_version=payload.expected_decision_set_version,
+        )
+    except LookupError:
+        return _matching_error(404, ErrorCode.NOT_FOUND, "Decision set was not found.")
+    except (
+        MatchingRequestConflict,
+        TheoryDecisionConflict,
+        TheoryPlanGateViolation,
+    ) as error:
+        return _matching_error(409, ErrorCode.VALIDATION_ERROR, str(error))
+    return _confirmed_plan_response(snapshot)
+
+
+def _matching_error(status_code: int, code: ErrorCode, message: str) -> JSONResponse:
+    body = ErrorResponse(
+        error=ErrorDetail(code=code, message=message, trace_id=str(uuid4()))
+    )
+    return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
+
+
+def _decision_set_response(
+    snapshot: TheoryDecisionSetSnapshot,
+    match_run: MatchRunSnapshot,
+) -> TheoryDecisionSetResponse:
+    return TheoryDecisionSetResponse(
+        decision_set_id=snapshot.decision_set_id,
+        match_run_id=snapshot.match_run_id,
+        version=snapshot.version,
+        allowed_actions=[TheoryDecisionSetAction.CONFIRM_THEORY_PLAN],
+        knowledge_release_id=match_run.knowledge_release.knowledge_release_id,
+        completion_basis=match_run.completion_basis,
+        decisions=[
+            TheoryDecisionRecordResponse(
+                decision_id=item.decision_id,
+                candidate_id=item.candidate_id,
+                candidate_version=item.candidate_version,
+                action=item.action,
+                reason=item.reason,
+                related_source_ids=list(item.related_source_ids),
+                related_candidate_ids=list(item.related_candidate_ids),
+                revised_applicability=item.revised_applicability,
+                recorded_at=item.recorded_at,
+            )
+            for item in snapshot.decisions
+        ],
+        use_assignments=[
+            TheoryUseAssignmentResponse(
+                candidate_id=item.candidate_id,
+                role_code=item.role_code,
+                responsibility=item.responsibility,
+            )
+            for item in snapshot.use_assignments
+        ],
+        relations=[
+            TheoryRelationResponse(
+                relation_id=item.relation_id,
+                candidate_ids=list(item.candidate_ids),
+                relation_kind=item.relation_kind,
+                explanation=item.explanation,
+                premise_compatibility=item.premise_compatibility,
+                supporting_evidence=list(item.supporting_evidence),
+                excluding_evidence=list(item.excluding_evidence),
+                distinguishing_evidence=list(item.distinguishing_evidence),
+            )
+            for item in snapshot.relations
+        ],
+    )
+
+
+def _confirmed_plan_response(
+    snapshot: ConfirmedTheoryPlanSnapshot,
+) -> ConfirmedTheoryPlanResponse:
+    adopted = {
+        item.candidate_id
+        for item in snapshot.decisions
+        if item.action.value in {"adopt", "combine"}
+    }
+    source_ref_ids = list(
+        dict.fromkeys(item.source_ref_id for item in snapshot.phenomenon.evidence_refs)
+    )
+    return ConfirmedTheoryPlanResponse(
+        theory_plan_id=snapshot.theory_plan_id,
+        task_id=snapshot.task_id,
+        match_run_id=snapshot.match_run_id,
+        decision_set_id=snapshot.decision_set_id,
+        version=snapshot.version,
+        allowed_actions=[TheoryPlanAction.CREATE_FRAMEWORK],
+        phenomenon_query_id=snapshot.phenomenon.phenomenon_query_id,
+        phenomenon_version=snapshot.phenomenon.version,
+        knowledge_release_id=snapshot.knowledge_release.knowledge_release_id,
+        adopted_candidate_ids=[
+            item.candidate_id for item in snapshot.candidates if item.candidate_id in adopted
+        ],
+        confirmed_phenomenon=PhenomenonSnapshotResponse(
+            phenomenon_query_id=snapshot.phenomenon.phenomenon_query_id,
+            task_id=snapshot.phenomenon.task_id,
+            version=snapshot.phenomenon.version,
+            status="confirmed",
+            allowed_actions=[PhenomenonSnapshotAction.START_MATCHING],
+            phenomenon=snapshot.phenomenon.phenomenon,
+            research_intent=snapshot.phenomenon.research_intent,
+            context=snapshot.phenomenon.context,
+            content_hash=snapshot.phenomenon.content_hash,
+            source_ref_ids=source_ref_ids,
+            evidence_refs=[
+                PhenomenonEvidenceReferenceResponse(
+                    evidence_ref_id=item.evidence_ref_id,
+                    excerpt=item.excerpt,
+                    source_ref_id=item.source_ref_id,
+                    source_description=item.source_description,
+                    locator=item.locator,
+                    verification_status=item.verification_status,
+                    use_boundary=item.use_boundary,
+                )
+                for item in snapshot.phenomenon.evidence_refs
+            ],
+            confirmed_at=snapshot.confirmed_at,
+        ),
+        decisions=[
+            TheoryDecisionRecordResponse(
+                decision_id=item.decision_id,
+                candidate_id=item.candidate_id,
+                candidate_version=item.candidate_version,
+                action=item.action,
+                reason=item.reason,
+                related_source_ids=list(item.related_source_ids),
+                related_candidate_ids=list(item.related_candidate_ids),
+                revised_applicability=item.revised_applicability,
+                recorded_at=item.recorded_at,
+            )
+            for item in snapshot.decisions
+        ],
+        use_assignments=[
+            TheoryUseAssignmentResponse(
+                candidate_id=item.candidate_id,
+                role_code=item.role_code,
+                responsibility=item.responsibility,
+            )
+            for item in snapshot.use_assignments
+        ],
+        relations=[
+            TheoryRelationResponse(
+                relation_id=item.relation_id,
+                candidate_ids=list(item.candidate_ids),
+                relation_kind=item.relation_kind,
+                explanation=item.explanation,
+                premise_compatibility=item.premise_compatibility,
+                supporting_evidence=list(item.supporting_evidence),
+                excluding_evidence=list(item.excluding_evidence),
+                distinguishing_evidence=list(item.distinguishing_evidence),
+            )
+            for item in snapshot.relations
+        ],
+        confirmed_at=snapshot.confirmed_at,
+    )
 
 
 def _match_run_response(snapshot: MatchRunSnapshot) -> MatchRunResponse:

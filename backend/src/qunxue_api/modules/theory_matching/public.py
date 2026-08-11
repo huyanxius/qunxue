@@ -340,6 +340,36 @@ class MatchRunRepository(Protocol):
     def get(self, match_run_id: UUID) -> MatchRunSnapshot | None: ...
 
 
+class TheoryDecisionRepository(Protocol):
+    def add_decision_set(
+        self, snapshot: TheoryDecisionSetSnapshot
+    ) -> TheoryDecisionSetSnapshot: ...
+
+    def list_decision_sets(
+        self, match_run_id: UUID
+    ) -> tuple[TheoryDecisionSetSnapshot, ...]: ...
+
+    def get_decision_set(
+        self, decision_set_id: UUID
+    ) -> TheoryDecisionSetSnapshot | None: ...
+
+    def add_confirmed_plan(
+        self, snapshot: ConfirmedTheoryPlanSnapshot
+    ) -> ConfirmedTheoryPlanSnapshot: ...
+
+    def get_confirmed_plan(
+        self, match_run_id: UUID
+    ) -> ConfirmedTheoryPlanSnapshot | None: ...
+
+    def add_deferred_plan(
+        self, snapshot: DeferredTheoryPlanSnapshot
+    ) -> DeferredTheoryPlanSnapshot: ...
+
+    def get_deferred_plan(
+        self, match_run_id: UUID
+    ) -> DeferredTheoryPlanSnapshot | None: ...
+
+
 class TheoryCandidateJudge(Protocol):
     """批量判断并稳定重排；提供方路由留在 adapter。"""
 
@@ -373,6 +403,7 @@ class TheoryMatching(Protocol):
         *,
         match_run_id: UUID,
         expected_version: int,
+        completion_basis: MatchCompletionBasis,
         decisions: tuple[TheoryDecisionCommand, ...],
         use_assignments: tuple[TheoryUseAssignment, ...],
         relations: tuple[TheoryRelationCommand, ...],

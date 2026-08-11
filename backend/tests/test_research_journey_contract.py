@@ -40,6 +40,7 @@ from qunxue_api.modules.theory_matching import (
     DeferredTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchCompletionBasis,
     MatchRunSnapshot,
     MatchRunStatus,
     TheoryCandidateContentSnapshot,
@@ -269,6 +270,7 @@ def test_research_journey_calls_public_protocols_with_complete_snapshots() -> No
     recorded = journey.record_theory_decisions(
         match_run_id=started.match_run_id,
         expected_version=started.version,
+        completion_basis=MatchCompletionBasis.COMPLETE,
         decisions=decisions,
         use_assignments=assignments,
         relations=(),
@@ -399,6 +401,7 @@ def test_research_journey_calls_public_protocols_with_complete_snapshots() -> No
     matching.record_decisions.assert_called_once_with(
         match_run_id=match_run.match_run_id,
         expected_version=match_run.version,
+        completion_basis=MatchCompletionBasis.COMPLETE,
         decisions=decisions,
         use_assignments=assignments,
         relations=(),

@@ -56,7 +56,7 @@ class TheoryMatchingService:
             release=release,
         )
         match_run_id = self._id_factory()
-        if len(evidence_bundle.theory_profiles) >= 3:
+        if evidence_bundle.theory_profiles:
             return self._start_judgement(
                 match_run_id=match_run_id,
                 phenomenon=phenomenon,
