@@ -14,7 +14,7 @@ React
 → SQLite
 ```
 
-真实完成的是健康检查、账号会话、研究任务与现象确认，以及知识发布、搜索、详情和来源浏览。`theory_matching`、`research_framework` 目前主要提供公共类型、冻结路由契约和人工门禁规则；前端对应页面仍为占位，后端对应接口仍返回 501，不代表 M4/M5 已经实现。
+真实完成的是健康检查、账号会话、研究任务与现象确认，以及知识发布、搜索、详情和来源浏览。`research_framework` 已实现版本化草拟、审校处理、确认门禁与 SQLite 恢复；它只消费 `theory_matching` 提供的已确认理论方案读取端口，在 M4 完成默认装配前不会自行构造上游结果。导出仍保留为 501，且不属于 M5 范围。
 
 ## 后端
 
@@ -26,9 +26,9 @@ React
 | `modules/research_intake/` | 研究任务、入口输入、现象候选与确认边界 | 创建、恢复、材料输入与现象确认已实现 |
 | `modules/knowledge_catalog/` | 版本化知识发布、来源、关系与理论身份 | 发布、列表、搜索、详情与来源浏览已实现 |
 | `modules/theory_matching/` | 候选理论判断、证据交接与用户决定 | 公共契约和门禁规则 |
-| `modules/research_framework/` | 研究框架草拟、审校、修订与确认 | 公共契约 |
-| `application/` | 通过模块公共入口编排跨模块流程 | 契约编排骨架 |
-| `api/` | HTTP DTO、路由、依赖与异常映射 | 健康、账号、研究任务、现象与知识接口；M4/M5 为 501 契约 |
+| `modules/research_framework/` | 研究框架草拟、审校、修订与确认 | 版本、审校失效和确认门禁已实现 |
+| `application/` | 通过模块公共入口编排跨模块流程 | 研究框架与研究任务投影已编排 |
+| `api/` | HTTP DTO、路由、依赖与异常映射 | M5 创建、恢复、修订、审校和确认接口已实现；框架导出仍为 501 |
 | `adapters/` | 数据库、模型、检索等端口实现 | SQLite 仓储、Markdown 知识解析、deterministic Mock 与 OpenAI-compatible 模型 Provider |
 | `bootstrap.py` | 创建应用并装配具体实现 | 唯一装配入口 |
 
@@ -66,6 +66,7 @@ app → module public API → module adapter → generated API
 | `src/modules/account/` | 注册、登录、会话状态与“我的研究” |
 | `src/modules/socio-match-workspace/` | 研究任务创建、恢复和工作区 |
 | `src/modules/knowledge-explorer/` | 知识发布浏览、搜索、详情和来源展示 |
+| `src/modules/research-framework/` | 框架恢复、版本编辑、审校处理与用户确认 |
 | `src/api/` | 通用 HTTP 配置、系统接口和生成客户端 |
 | `src/api/generated/` | 从 OpenAPI 生成的传输代码 |
 
@@ -75,7 +76,7 @@ app → module public API → module adapter → generated API
 - 远端数据由 TanStack Query 管理；可分享、可恢复的筛选和选中状态放进 URL；临时展示状态留在组件。
 - 业务代码不得裸调用 `fetch`、引入另一套 HTTP 客户端或直接调用模型 SDK。
 
-`knowledge-explorer` 已通过生成 SDK 接入 `/knowledge` 与 `/knowledge/:knowledge_id`，使用当前知识发布提供列表、搜索、详情与来源。`/research/:task_id/match` 与 `/research/:task_id/framework` 仍由 `app` 提供占位页。
+`knowledge-explorer` 已通过生成 SDK 接入 `/knowledge` 与 `/knowledge/:knowledge_id`，使用当前知识发布提供列表、搜索、详情与来源。`/research/:task_id/framework` 已接入生成 SDK 和真实恢复链路；`/research/:task_id/match` 仍等待 M4 正式页面。
 
 ## 契约生成
 
