@@ -1,6 +1,6 @@
 """Research-framework drafting, audit handling, and final user confirmation."""
 
-from qunxue_api.modules.research_framework.public import (
+from qunxue_api.modules.research_framework.domain import (
     AuditFindingDraft,
     AuditFindingSeverity,
     AuditFindingSnapshot,
@@ -8,11 +8,15 @@ from qunxue_api.modules.research_framework.public import (
     AuditOverallStatus,
     AuditResolution,
     AuditResolutionAction,
+    AuditResolutionSetSnapshot,
     ConceptMappingDraft,
     ConfirmedFrameworkSnapshot,
     FrameworkAuditDraft,
     FrameworkAuditSnapshot,
+    FrameworkContentOrigin,
     FrameworkEvidenceRequirementDraft,
+    FrameworkRecord,
+    FrameworkRepository,
     FrameworkReviewFailureCode,
     FrameworkReviewFailureSnapshot,
     FrameworkReviewRunSnapshot,
@@ -27,6 +31,14 @@ from qunxue_api.modules.research_framework.public import (
     ResearchFrameworkDraftInput,
     ResearchFrameworkWorkflow,
 )
+from qunxue_api.modules.research_framework.errors import (
+    FrameworkAuditConflict,
+    FrameworkConfirmationBlocked,
+    FrameworkNotFound,
+    FrameworkRevisionConflict,
+    ResearchFrameworkError,
+)
+from qunxue_api.modules.research_framework.service import ResearchFrameworkService
 
 __all__ = [
     "AuditFindingDraft",
@@ -35,11 +47,15 @@ __all__ = [
     "AuditFindingType",
     "AuditOverallStatus",
     "AuditResolution",
+    "AuditResolutionSetSnapshot",
     "AuditResolutionAction",
     "ConceptMappingDraft",
     "ConfirmedFrameworkSnapshot",
     "FrameworkAuditDraft",
     "FrameworkAuditSnapshot",
+    "FrameworkContentOrigin",
+    "FrameworkRecord",
+    "FrameworkRepository",
     "FrameworkEvidenceRequirementDraft",
     "FrameworkReviewFailureCode",
     "FrameworkReviewFailureSnapshot",
@@ -54,4 +70,10 @@ __all__ = [
     "ResearchFrameworkAuditor",
     "ResearchFrameworkDrafter",
     "ResearchFrameworkWorkflow",
+    "FrameworkAuditConflict",
+    "FrameworkConfirmationBlocked",
+    "FrameworkNotFound",
+    "FrameworkRevisionConflict",
+    "ResearchFrameworkError",
+    "ResearchFrameworkService",
 ]

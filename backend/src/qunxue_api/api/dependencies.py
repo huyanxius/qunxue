@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 
-from qunxue_api.application import TheoryMatchingApplication
+from qunxue_api.application import ResearchFrameworkApplication, TheoryMatchingApplication
 from qunxue_api.modules.identity import AuthenticatedSession, IdentityService
 from qunxue_api.modules.research_intake import PhenomenonService, ResearchTask, ResearchTaskService
 
@@ -68,6 +68,22 @@ def get_theory_matching_application(
 TheoryMatchingApplicationDependency = Annotated[
     TheoryMatchingApplication,
     Depends(get_theory_matching_application),
+]
+
+
+def get_research_framework_application(
+    request: Request,
+    current: CurrentSessionDependency,
+) -> Iterator[ResearchFrameworkApplication]:
+    with request.app.state.research_framework_application_scope(
+        current.user.user_id
+    ) as application:
+        yield application
+
+
+ResearchFrameworkApplicationDependency = Annotated[
+    ResearchFrameworkApplication,
+    Depends(get_research_framework_application),
 ]
 
 

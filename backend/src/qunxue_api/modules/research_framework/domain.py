@@ -1,3 +1,5 @@
+"""Stable framework values and ports re-exported by the module package root."""
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -14,10 +16,15 @@ class AuditOverallStatus(StrEnum):
 
 
 class AuditResolutionAction(StrEnum):
-    HANDLED = "handled"
-    OVERRIDDEN = "overridden"
-    ACCEPT = "handled"
-    OVERRIDE = "overridden"
+    ACCEPT = "accept"
+    REJECT = "reject"
+    DEFER = "defer"
+    OVERRIDE = "override"
+
+
+class FrameworkContentOrigin(StrEnum):
+    SYSTEM_GENERATED = "system_generated"
+    USER_MODIFIED = "user_modified"
 
 
 class AuditFindingType(StrEnum):
@@ -133,6 +140,10 @@ class FrameworkVersionSnapshot:
     input: ResearchFrameworkDraftInput
     draft: ResearchFrameworkDraft
     revision_id: UUID | None = None
+    previous_revision_id: UUID | None = None
+    content_origin: FrameworkContentOrigin = FrameworkContentOrigin.SYSTEM_GENERATED
+    revision_reason: str | None = None
+    created_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,6 +184,8 @@ class FrameworkAuditSnapshot:
     framework_version: int
     overall_status: AuditOverallStatus
     findings: tuple[AuditFindingSnapshot, ...]
+    revision_id: UUID | None = None
+    is_stale: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,6 +225,46 @@ class ConfirmedFrameworkSnapshot:
     audit: FrameworkAuditSnapshot
     resolutions: tuple[AuditResolution, ...]
     confirmed_at: datetime
+    unresolved_finding_ids: tuple[UUID, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class AuditResolutionSetSnapshot:
+    resolution_set_id: UUID
+    framework_id: UUID
+    revision_id: UUID
+    version: int
+    audit_id: UUID
+    resolutions: tuple[AuditResolution, ...]
+    unresolved_blocking: bool
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class FrameworkRecord:
+    framework_id: UUID
+    task_id: UUID
+    versions: tuple[FrameworkVersionSnapshot, ...]
+    review_runs: tuple[FrameworkReviewRunSnapshot, ...] = ()
+    resolution_sets: tuple[AuditResolutionSetSnapshot, ...] = ()
+    confirmed: ConfirmedFrameworkSnapshot | None = None
+
+    @property
+    def current(self) -> FrameworkVersionSnapshot:
+        return self.versions[-1]
+
+
+class FrameworkRepository(Protocol):
+    def add(self, record: FrameworkRecord) -> FrameworkRecord: ...
+
+    def get(self, framework_id: UUID) -> FrameworkRecord | None: ...
+
+    def save(
+        self,
+        record: FrameworkRecord,
+        *,
+        expected_version: int,
+    ) -> FrameworkRecord | None: ...
 
 
 class ResearchFrameworkDrafter(Protocol):

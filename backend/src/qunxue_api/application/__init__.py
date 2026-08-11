@@ -1,5 +1,10 @@
 """Cross-module use-case composition. Business rules remain inside their owners."""
 
+from qunxue_api.application.research_framework import (
+    FrameworkTaskConflict,
+    FrameworkTheoryPlanUnavailable,
+    ResearchFrameworkApplication,
+)
 from qunxue_api.application.research_journey import (
     ResearchJourney,
     ResearchJourneyConfigurationError,
@@ -18,4 +23,7 @@ __all__ = [
     "MatchingRequestConflict",
     "MatchingSnapshotConflict",
     "TheoryMatchingApplication",
+    "FrameworkTaskConflict",
+    "FrameworkTheoryPlanUnavailable",
+    "ResearchFrameworkApplication",
 ]

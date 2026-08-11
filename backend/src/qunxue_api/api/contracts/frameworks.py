@@ -11,6 +11,7 @@ from qunxue_api.modules.research_framework import (
     AuditFindingSeverity,
     AuditFindingType,
     AuditOverallStatus,
+    FrameworkContentOrigin,
     FrameworkReviewFailureCode,
     FrameworkReviewRunStatus,
 )
@@ -44,8 +45,10 @@ class FrameworkReviewAction(StrEnum):
 
 
 class AuditResolutionAction(StrEnum):
-    HANDLED = DomainAuditResolutionAction.HANDLED.value
-    OVERRIDDEN = DomainAuditResolutionAction.OVERRIDDEN.value
+    ACCEPT = DomainAuditResolutionAction.ACCEPT.value
+    REJECT = DomainAuditResolutionAction.REJECT.value
+    DEFER = DomainAuditResolutionAction.DEFER.value
+    OVERRIDE = DomainAuditResolutionAction.OVERRIDE.value
 
 
 class MethodIntentContract(BaseModel):
@@ -58,10 +61,10 @@ class CreateFrameworkRequest(BaseModel):
     expected_task_version: int = Field(ge=1)
     theory_plan_id: UUID
     theory_plan_version: int = Field(ge=1)
-    original_research_question: str
-    confirmed_research_question: str
+    original_research_question: str = Field(min_length=1, max_length=4_000)
+    confirmed_research_question: str = Field(min_length=1, max_length=4_000)
     question_adjustment_reason: str | None = None
-    research_object: str
+    research_object: str = Field(min_length=1, max_length=2_000)
     analysis_unit: str | None = None
     context: str | None = None
     method_intent: MethodIntentContract
@@ -127,6 +130,25 @@ class FrameworkInputResponse(BaseModel):
     method_intent: MethodIntentContract
 
 
+class CurrentFrameworkFindingResponse(BaseModel):
+    finding_id: UUID
+    finding_type: AuditFindingType
+    severity: AuditFindingSeverity
+    summary: str
+    reason: str
+    impact: str
+    recommendation: str
+    blocking: bool
+
+
+class CurrentFrameworkAuditResponse(BaseModel):
+    audit_id: UUID
+    revision_id: UUID
+    overall_status: AuditOverallStatus
+    findings: list[CurrentFrameworkFindingResponse]
+    is_stale: bool
+
+
 class FrameworkResponse(BaseModel):
     framework_id: UUID
     task_id: UUID
@@ -139,6 +161,16 @@ class FrameworkResponse(BaseModel):
     draft: FrameworkDraftContract
     unresolved_blocking_audit: bool
     model: ModelMetadata | None
+    content_origin: FrameworkContentOrigin
+    previous_revision_id: UUID | None
+    revision_reason: str | None
+    created_at: datetime | None
+    audit: CurrentFrameworkAuditResponse | None
+
+
+class FrameworkVersionPageResponse(BaseModel):
+    framework_id: UUID
+    versions: list[FrameworkResponse]
 
 
 class UpdateFrameworkRequest(BaseModel):
@@ -173,6 +205,7 @@ class FrameworkAuditResponse(BaseModel):
     findings: list[AuditFindingResponse]
     unresolved_blocking: bool
     contract_version: str
+    is_stale: bool
 
 
 class FrameworkReviewFailureResponse(BaseModel):
@@ -194,7 +227,7 @@ class FrameworkReviewResponse(BaseModel):
     retry_of_review_run_id: UUID | None
     attempt: int
     failure: FrameworkReviewFailureResponse | None
-    model: ModelMetadata
+    model: ModelMetadata | None
     contract_version: str
 
 
@@ -231,7 +264,7 @@ class ConfirmFrameworkRequest(BaseModel):
     expected_revision_id: UUID
     expected_version: int = Field(ge=1)
     audit_id: UUID
-    resolution_set_id: UUID | None = None
+    resolutions: list[AuditResolutionInput]
 
 
 class ConfirmedFrameworkResponse(BaseModel):
@@ -247,6 +280,7 @@ class ConfirmedFrameworkResponse(BaseModel):
     resolutions: list[AuditResolutionInput]
     confirmed_at: datetime
     contract_version: str
+    unresolved_finding_ids: list[UUID]
 
 
 class FormalFrameworkExportResponse(BaseModel):

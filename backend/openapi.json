@@ -119,8 +119,10 @@
       },
       "AuditResolutionAction": {
         "enum": [
-          "handled",
-          "overridden"
+          "accept",
+          "reject",
+          "defer",
+          "override"
         ],
         "title": "AuditResolutionAction",
         "type": "string"
@@ -401,23 +403,19 @@
             "title": "Expected Version",
             "type": "integer"
           },
-          "resolution_set_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resolution Set Id"
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/AuditResolutionInput"
+            },
+            "title": "Resolutions",
+            "type": "array"
           }
         },
         "required": [
           "expected_revision_id",
           "expected_version",
-          "audit_id"
+          "audit_id",
+          "resolutions"
         ],
         "title": "ConfirmFrameworkRequest",
         "type": "object"
@@ -505,6 +503,14 @@
             "title": "Task Id",
             "type": "string"
           },
+          "unresolved_finding_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Unresolved Finding Ids",
+            "type": "array"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -522,7 +528,8 @@
           "audit",
           "resolutions",
           "confirmed_at",
-          "contract_version"
+          "contract_version",
+          "unresolved_finding_ids"
         ],
         "title": "ConfirmedFrameworkResponse",
         "type": "object"
@@ -645,6 +652,8 @@
             "title": "Analysis Unit"
           },
           "confirmed_research_question": {
+            "maxLength": 4000,
+            "minLength": 1,
             "title": "Confirmed Research Question",
             "type": "string"
           },
@@ -668,6 +677,8 @@
             "$ref": "#/components/schemas/MethodIntentContract"
           },
           "original_research_question": {
+            "maxLength": 4000,
+            "minLength": 1,
             "title": "Original Research Question",
             "type": "string"
           },
@@ -683,6 +694,8 @@
             "title": "Question Adjustment Reason"
           },
           "research_object": {
+            "maxLength": 2000,
+            "minLength": 1,
             "title": "Research Object",
             "type": "string"
           },
@@ -810,6 +823,90 @@
           "relations"
         ],
         "title": "CreateTheoryDecisionsRequest",
+        "type": "object"
+      },
+      "CurrentFrameworkAuditResponse": {
+        "properties": {
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/CurrentFrameworkFindingResponse"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "is_stale": {
+            "title": "Is Stale",
+            "type": "boolean"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/AuditOverallStatus"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "audit_id",
+          "revision_id",
+          "overall_status",
+          "findings",
+          "is_stale"
+        ],
+        "title": "CurrentFrameworkAuditResponse",
+        "type": "object"
+      },
+      "CurrentFrameworkFindingResponse": {
+        "properties": {
+          "blocking": {
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "finding_id": {
+            "format": "uuid",
+            "title": "Finding Id",
+            "type": "string"
+          },
+          "finding_type": {
+            "$ref": "#/components/schemas/AuditFindingType"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "recommendation": {
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AuditFindingSeverity"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id",
+          "finding_type",
+          "severity",
+          "summary",
+          "reason",
+          "impact",
+          "recommendation",
+          "blocking"
+        ],
+        "title": "CurrentFrameworkFindingResponse",
         "type": "object"
       },
       "DeferTheoryPlanRequest": {
@@ -1339,6 +1436,10 @@
             "title": "Framework Version",
             "type": "integer"
           },
+          "is_stale": {
+            "title": "Is Stale",
+            "type": "boolean"
+          },
           "overall_status": {
             "$ref": "#/components/schemas/AuditOverallStatus"
           },
@@ -1360,10 +1461,19 @@
           "overall_status",
           "findings",
           "unresolved_blocking",
-          "contract_version"
+          "contract_version",
+          "is_stale"
         ],
         "title": "FrameworkAuditResponse",
         "type": "object"
+      },
+      "FrameworkContentOrigin": {
+        "enum": [
+          "system_generated",
+          "user_modified"
+        ],
+        "title": "FrameworkContentOrigin",
+        "type": "string"
       },
       "FrameworkDraftContract": {
         "properties": {
@@ -1601,6 +1711,31 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "audit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurrentFrameworkAuditResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_origin": {
+            "$ref": "#/components/schemas/FrameworkContentOrigin"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
           "draft": {
             "$ref": "#/components/schemas/FrameworkDraftContract"
           },
@@ -1626,10 +1761,33 @@
               }
             ]
           },
+          "previous_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Revision Id"
+          },
           "revision_id": {
             "format": "uuid",
             "title": "Revision Id",
             "type": "string"
+          },
+          "revision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Reason"
           },
           "status": {
             "$ref": "#/components/schemas/FrameworkStatus"
@@ -1659,7 +1817,12 @@
           "input",
           "draft",
           "unresolved_blocking_audit",
-          "model"
+          "model",
+          "content_origin",
+          "previous_revision_id",
+          "revision_reason",
+          "created_at",
+          "audit"
         ],
         "title": "FrameworkResponse",
         "type": "object"
@@ -1761,7 +1924,14 @@
             "type": "string"
           },
           "model": {
-            "$ref": "#/components/schemas/ModelMetadata"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "retry_of_review_run_id": {
             "anyOf": [
@@ -1833,6 +2003,28 @@
         ],
         "title": "FrameworkStatus",
         "type": "string"
+      },
+      "FrameworkVersionPageResponse": {
+        "properties": {
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkResponse"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "framework_id",
+          "versions"
+        ],
+        "title": "FrameworkVersionPageResponse",
+        "type": "object"
       },
       "HealthResponse": {
         "properties": {
@@ -5576,16 +5768,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Get Framework",
@@ -5658,16 +5840,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Update Framework",
@@ -5742,16 +5914,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Submit Audit Resolutions",
@@ -5826,16 +5988,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Confirm Framework",
@@ -5944,7 +6096,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5973,16 +6125,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Start Framework Review",
@@ -6046,16 +6188,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Get Framework Review",
@@ -6150,8 +6282,41 @@
               }
             },
             "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Retry Framework Review",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/api/frameworks/{framework_id}/versions": {
+      "get": {
+        "operationId": "list_framework_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkVersionPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
           },
-          "501": {
+          "404": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6159,10 +6324,20 @@
                 }
               }
             },
-            "description": "Not Implemented"
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         },
-        "summary": "Retry Framework Review",
+        "summary": "List Framework Versions",
         "tags": [
           "frameworks"
         ]
@@ -7975,7 +8150,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8004,16 +8179,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Create Framework",

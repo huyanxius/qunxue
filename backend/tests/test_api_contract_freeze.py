@@ -499,7 +499,12 @@ def test_framework_contract_freezes_revision_audit_and_export_gates(
     assert {"finding_type", "severity", "blocking"} <= set(
         schemas["AuditFindingResponse"]["required"]
     )
-    assert schemas["AuditResolutionAction"]["enum"] == ["handled", "overridden"]
+    assert schemas["AuditResolutionAction"]["enum"] == [
+        "accept",
+        "reject",
+        "defer",
+        "override",
+    ]
     assert {"revision_id", "overall_status", "unresolved_blocking", "contract_version"} <= set(
         schemas["FrameworkAuditResponse"]["required"]
     )

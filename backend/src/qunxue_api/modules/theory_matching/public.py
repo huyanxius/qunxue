@@ -340,6 +340,15 @@ class MatchRunRepository(Protocol):
     def get(self, match_run_id: UUID) -> MatchRunSnapshot | None: ...
 
 
+class ConfirmedTheoryPlanReader(Protocol):
+    """Public read boundary consumed by the research-framework module."""
+
+    def get_confirmed(
+        self,
+        theory_plan_id: UUID,
+    ) -> ConfirmedTheoryPlanSnapshot | None: ...
+
+
 class TheoryCandidateJudge(Protocol):
     """批量判断并稳定重排；提供方路由留在 adapter。"""
 

@@ -22,6 +22,7 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
+from qunxue_api.adapters.sqlite.research_framework import SqliteFrameworkRepository
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -41,6 +42,9 @@ from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
+    FrameworkTaskConflict,
+    FrameworkTheoryPlanUnavailable,
+    ResearchFrameworkApplication,
     ResearchJourney,
     ResearchJourneyDependencies,
     TheoryMatchingApplication,
@@ -52,12 +56,23 @@ from qunxue_api.modules.identity import (
     InvalidEmail,
     Unauthenticated,
 )
+from qunxue_api.modules.research_framework import (
+    FrameworkAuditConflict,
+    FrameworkConfirmationBlocked,
+    FrameworkNotFound,
+    FrameworkRevisionConflict,
+    ResearchFrameworkService,
+)
 from qunxue_api.modules.research_intake import (
     PhenomenonService,
     ResearchTaskNotFound,
     ResearchTaskService,
 )
-from qunxue_api.modules.theory_matching import TheoryMatchingService
+from qunxue_api.modules.theory_matching import (
+    ConfirmedTheoryPlanReader,
+    ConfirmedTheoryPlanSnapshot,
+    TheoryMatchingService,
+)
 from qunxue_api.settings import KNOWLEDGE_ROOT, Settings, get_settings
 
 
@@ -67,6 +82,7 @@ def create_app(
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
     model_provider: ModelProvider | None = None,
+    confirmed_theory_plan_reader: ConfirmedTheoryPlanReader | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
@@ -94,6 +110,9 @@ def create_app(
         provider=resolved_model_provider,
         recorder=model_invocation_recorder,
         contract_version=resolved_settings.contract_version,
+    )
+    app.state.confirmed_theory_plan_reader = (
+        confirmed_theory_plan_reader or _UnavailableTheoryPlanReader()
     )
     app.state.research_journey = (
         ResearchJourney(journey_dependencies)
@@ -146,9 +165,32 @@ def create_app(
                 research_tasks=SqliteResearchTaskRepository(session),
             )
 
+    @contextmanager
+    def research_framework_application_scope(
+        user_id,
+    ) -> Iterator[ResearchFrameworkApplication]:
+        with resolved_database.session() as session:
+            repository = SqliteFrameworkRepository(
+                session,
+                user_id=user_id,
+                theory_plans=app.state.confirmed_theory_plan_reader,
+            )
+            yield ResearchFrameworkApplication(
+                workflow=ResearchFrameworkService(
+                    drafter=app.state.model_gateway,
+                    auditor=app.state.model_gateway,
+                    repository=repository,
+                ),
+                theory_plans=app.state.confirmed_theory_plan_reader,
+                research_tasks=SqliteResearchTaskRepository(session),
+            )
+
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
+    app.state.research_framework_application_scope = (
+        research_framework_application_scope
+    )
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)
@@ -257,6 +299,42 @@ def create_app(
             content=body.model_dump(mode="json"),
         )
 
+    @app.exception_handler(FrameworkNotFound)
+    async def handle_framework_not_found(
+        _request: Request,
+        _error: FrameworkNotFound,
+    ) -> JSONResponse:
+        return _framework_error_response(ErrorCode.NOT_FOUND, status.HTTP_404_NOT_FOUND)
+
+    @app.exception_handler(FrameworkTheoryPlanUnavailable)
+    async def handle_framework_plan_unavailable(
+        _request: Request,
+        _error: FrameworkTheoryPlanUnavailable,
+    ) -> JSONResponse:
+        return _framework_error_response(ErrorCode.NO_ADOPTED_THEORY, status.HTTP_409_CONFLICT)
+
+    @app.exception_handler(FrameworkConfirmationBlocked)
+    async def handle_framework_confirmation_blocked(
+        _request: Request,
+        _error: FrameworkConfirmationBlocked,
+    ) -> JSONResponse:
+        return _framework_error_response(
+            ErrorCode.UNRESOLVED_BLOCKING_AUDIT,
+            status.HTTP_409_CONFLICT,
+        )
+
+    @app.exception_handler(FrameworkRevisionConflict)
+    @app.exception_handler(FrameworkAuditConflict)
+    @app.exception_handler(FrameworkTaskConflict)
+    async def handle_framework_conflict(
+        _request: Request,
+        _error: Exception,
+    ) -> JSONResponse:
+        return _framework_error_response(
+            ErrorCode.STALE_FRAMEWORK_REVISION,
+            status.HTTP_409_CONFLICT,
+        )
+
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation_error(
         _request: Request,
@@ -316,6 +394,32 @@ def create_app(
         )
 
     return app
+
+
+class _UnavailableTheoryPlanReader:
+    def get_confirmed(
+        self,
+        _theory_plan_id,
+    ) -> ConfirmedTheoryPlanSnapshot | None:
+        return None
+
+
+def _framework_error_response(code: ErrorCode, status_code: int) -> JSONResponse:
+    body = ErrorResponse(
+        error=ErrorDetail(
+            code=code,
+            message={
+                ErrorCode.NOT_FOUND: "Research framework not found.",
+                ErrorCode.NO_ADOPTED_THEORY: "A confirmed theory plan is required.",
+                ErrorCode.UNRESOLVED_BLOCKING_AUDIT: (
+                    "Unresolved blocking audit findings prevent confirmation."
+                ),
+                ErrorCode.STALE_FRAMEWORK_REVISION: "Framework revision is stale.",
+            }[code],
+            trace_id=str(uuid4()),
+        )
+    )
+    return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
 
 
 def _model_provider_from_settings(
