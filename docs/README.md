@@ -13,3 +13,7 @@
 ## 产品文档
 
 产品定位、竞赛约束、证据边界和待决问题见 [`product/README.md`](product/README.md)。进行全局产品分析前，请先完整阅读该目录。
+
+## 模型训练数据
+
+- [`TRAINING_DATASET_PROTOCOL.md`](TRAINING_DATASET_PROTOCOL.md)：训练集母案例、五维形式比例、知识门控、派生任务、审核验收与扩容总协议。
