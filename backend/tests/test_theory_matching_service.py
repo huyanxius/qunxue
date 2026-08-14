@@ -179,8 +179,8 @@ def test_three_reviewed_profiles_become_stably_ordered_judged_candidates() -> No
     assert run.model.trace_id == run.candidates[0].trace_id
 
 
-def test_fewer_than_three_profiles_persist_empty_without_invoking_the_judge() -> None:
-    service, recorder = _service(_bundle(2))
+def test_zero_profiles_persist_empty_without_invoking_the_judge() -> None:
+    service, recorder = _service(_bundle(0))
 
     run = service.start(phenomenon=PHENOMENON, release=RELEASE)
 
@@ -189,3 +189,26 @@ def test_fewer_than_three_profiles_persist_empty_without_invoking_the_judge() ->
     assert run.stable_candidate_order == ()
     assert run.model is None
     assert recorder.list_all() == ()
+
+
+def test_one_reviewed_profile_remains_a_real_comparable_candidate() -> None:
+    service, recorder = _service(_bundle(1))
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.AWAITING_DECISION
+    assert [candidate.content.theory_id for candidate in run.candidates] == ["theory-1"]
+    assert len(recorder.list_all()) == 1
+
+
+def test_eight_reviewed_profiles_remain_stably_ordered() -> None:
+    service, recorder = _service(_bundle(8))
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.AWAITING_DECISION
+    assert len(run.candidates) == 8
+    assert run.stable_candidate_order == tuple(
+        candidate.candidate_id for candidate in run.candidates
+    )
+    assert len(recorder.list_all()) == 8

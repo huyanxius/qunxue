@@ -1,0 +1,183 @@
+.theory-workspace {
+  display: grid;
+  gap: 36px;
+  min-width: 0;
+}
+
+.theory-workspace__intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: end;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.theory-workspace__intro h2 {
+  max-width: 760px;
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 4.4rem);
+  line-height: 1.04;
+}
+
+.theory-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.theory-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.theory-card > header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.theory-card > header > span {
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.theory-card h3 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+}
+
+.theory-card header p,
+.content-owner,
+.evidence-list h4 {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.comparison-dimensions {
+  display: grid;
+  gap: 0;
+  margin: 24px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.comparison-dimensions div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.comparison-dimensions dt {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.comparison-dimensions dd { margin: 0; }
+
+.ai-judgement {
+  padding: 18px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.ai-judgement strong { display: block; margin-top: 10px; }
+.ai-judgement small { color: var(--ink-soft); }
+
+.evidence-list { padding: 22px 0; }
+.evidence-list p { overflow-wrap: anywhere; }
+.evidence-list small { color: var(--ink-soft); }
+.evidence-list a { color: var(--accent-dark); text-underline-offset: 4px; }
+
+.user-decision,
+.theory-relation {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--ink);
+}
+
+.user-decision legend,
+.theory-relation legend {
+  padding: 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.user-decision label,
+.theory-relation label,
+.assignment-fields {
+  display: grid;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.user-decision select,
+.user-decision input,
+.user-decision textarea,
+.theory-relation input,
+.theory-relation textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.theory-relation {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.theory-relation legend { grid-column: 1 / -1; }
+.theory-card__blocked { color: var(--signal); font-weight: 700; }
+
+.decision-actions {
+  position: sticky;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--ink);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.decision-actions button {
+  padding: 12px 18px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+}
+
+.decision-actions button:disabled { opacity: 0.45; }
+.decision-actions p { margin: 0; color: var(--ink-soft); font-size: 0.82rem; }
+
+@media (max-width: 700px) {
+  .theory-workspace__intro { display: grid; align-items: start; }
+  .theory-comparison { grid-template-columns: minmax(0, 1fr); }
+  .theory-card { padding: 18px; }
+  .comparison-dimensions div { grid-template-columns: 1fr; gap: 5px; }
+  .theory-relation { grid-template-columns: 1fr; }
+  .decision-actions { position: static; display: grid; }
+  .decision-actions button { width: 100%; }
+}

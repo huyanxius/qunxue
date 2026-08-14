@@ -61,3 +61,75 @@ class TheoryMatchingRequestRow(Base):
         unique=True,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TheoryDecisionSetRow(Base):
+    __tablename__ = "theory_decision_sets"
+    __table_args__ = (Index("ix_theory_decision_sets_match", "match_run_id", "recorded_at"),)
+
+    decision_set_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TheoryDecisionRequestRow(Base):
+    __tablename__ = "theory_decision_requests"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "idempotency_key",
+            name="uq_theory_decision_user_request",
+        ),
+    )
+
+    request_record_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(72), nullable=False)
+    decision_set_id: Mapped[str] = mapped_column(
+        ForeignKey("theory_decision_sets.decision_set_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ConfirmedTheoryPlanRow(Base):
+    __tablename__ = "confirmed_theory_plans"
+
+    theory_plan_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    decision_set_id: Mapped[str] = mapped_column(
+        ForeignKey("theory_decision_sets.decision_set_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class DeferredTheoryPlanRow(Base):
+    __tablename__ = "deferred_theory_plans"
+
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), primary_key=True
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str] = mapped_column(String(4000), nullable=False)
+    deferred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

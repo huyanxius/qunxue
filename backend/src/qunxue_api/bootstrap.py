@@ -28,6 +28,8 @@ from qunxue_api.adapters.sqlite.research_task_repository import (
 from qunxue_api.adapters.sqlite.theory_matching import (
     SqliteMatchingRequestRepository,
     SqliteMatchRunRepository,
+    SqliteTheoryDecisionRepository,
+    SqliteTheoryDecisionRequestRepository,
 )
 from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
@@ -57,7 +59,10 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
-from qunxue_api.modules.theory_matching import TheoryMatchingService
+from qunxue_api.modules.theory_matching import (
+    TheoryDecisionService,
+    TheoryMatchingService,
+)
 from qunxue_api.settings import KNOWLEDGE_ROOT, Settings, get_settings
 
 
@@ -130,10 +135,11 @@ def create_app(
     def theory_matching_application_scope() -> Iterator[TheoryMatchingApplication]:
         with resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
+            match_runs = SqliteMatchRunRepository(session)
             matching = TheoryMatchingService(
                 evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
                 judge=app.state.model_gateway,
-                repository=SqliteMatchRunRepository(session),
+                repository=match_runs,
                 provider=descriptor.provider,
                 model_version=descriptor.model_version,
                 capability=descriptor.capability_tier,
@@ -142,7 +148,11 @@ def create_app(
             yield TheoryMatchingApplication(
                 catalog=app.state.knowledge_catalog,
                 matching=matching,
+                decisions=TheoryDecisionService(
+                    SqliteTheoryDecisionRepository(session, match_runs)
+                ),
                 matching_requests=SqliteMatchingRequestRepository(session),
+                decision_requests=SqliteTheoryDecisionRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
             )
 

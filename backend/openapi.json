@@ -4853,12 +4853,32 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "confirmed_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmedTheoryPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "decision_sets": {
             "items": {
               "$ref": "#/components/schemas/TheoryDecisionSetResponse"
             },
             "title": "Decision Sets",
             "type": "array"
+          },
+          "deferred_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeferredTheoryPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
@@ -7308,7 +7328,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {

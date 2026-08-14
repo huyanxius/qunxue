@@ -36,6 +36,7 @@ import {
   NewResearchPage,
   PhenomenonWorkspace,
 } from '../modules/socio-match-workspace'
+import { TheoryDecisionWorkspace } from '../modules/theory-decision-workspace'
 import { PageContent, PageShell, PageTitle } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 
@@ -336,6 +337,22 @@ function PhenomenonRoute() {
   )
 }
 
+function TheoryMatchRoute() {
+  const { task_id: taskId } = useParams<{ task_id: string }>()
+  return (
+    <PageShell wide>
+      <PageTitle
+        eyebrow="RESEARCH / MATCH"
+        title="匹配理论"
+        lede="用相同维度比较候选；模型判断提供依据，采用与组合由你确认。"
+      />
+      <PageContent>
+        {taskId ? <TheoryDecisionWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}
+      </PageContent>
+    </PageShell>
+  )
+}
+
 function ProtectedRoute({
   sessionState,
   children,
@@ -384,7 +401,7 @@ export function AppRoutes({
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
-      <Route path="/research/:task_id/match" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / MATCH" title="匹配理论" />)} />
+      <Route path="/research/:task_id/match" element={protectedRoute(<TheoryMatchRoute />)} />
       <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />

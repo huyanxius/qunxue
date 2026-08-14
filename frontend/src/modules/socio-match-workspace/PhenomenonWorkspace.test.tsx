@@ -150,6 +150,10 @@ describe('phenomenon confirmation workspace', () => {
     expect(screen.getByText('用户修改')).toBeVisible()
     expect(screen.getByText('用户直接输入')).toBeVisible()
     expect(screen.getByText('成员流动后，社区互助为何持续减少？')).toBeVisible()
+    expect(screen.getByRole('link', { name: '进入理论匹配' })).toHaveAttribute(
+      'href',
+      '/research/task-1/match',
+    )
   })
 
   it('confirms an untouched system candidate without relabeling it', async () => {

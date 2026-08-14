@@ -2774,10 +2774,12 @@ export type TheoryDecisionPageResponse = {
      * Allowed Actions
      */
     allowed_actions: Array<TheoryDecisionSetAction>;
+    confirmed_plan?: ConfirmedTheoryPlanResponse | null;
     /**
      * Decision Sets
      */
     decision_sets: Array<TheoryDecisionSetResponse>;
+    deferred_plan?: DeferredTheoryPlanResponse | null;
     /**
      * Knowledge Release Id
      */
@@ -4101,7 +4103,7 @@ export type CreateTheoryDecisionsResponses = {
     /**
      * Successful Response
      */
-    200: TheoryDecisionSetResponse;
+    201: TheoryDecisionSetResponse;
 };
 
 export type CreateTheoryDecisionsResponse = CreateTheoryDecisionsResponses[keyof CreateTheoryDecisionsResponses];

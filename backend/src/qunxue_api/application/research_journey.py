@@ -20,6 +20,7 @@ from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
 from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
     DeferredTheoryPlanSnapshot,
+    MatchCompletionBasis,
     MatchRunSnapshot,
     TheoryDecisionCommand,
     TheoryDecisionSetSnapshot,
@@ -70,6 +71,7 @@ class ResearchJourney:
         *,
         match_run_id: UUID,
         expected_version: int,
+        completion_basis: MatchCompletionBasis,
         decisions: tuple[TheoryDecisionCommand, ...],
         use_assignments: tuple[TheoryUseAssignment, ...],
         relations: tuple[TheoryRelationCommand, ...],
@@ -77,6 +79,7 @@ class ResearchJourney:
         return self._theory_matching.record_decisions(
             match_run_id=match_run_id,
             expected_version=expected_version,
+            completion_basis=completion_basis,
             decisions=decisions,
             use_assignments=use_assignments,
             relations=relations,

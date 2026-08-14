@@ -1,5 +1,9 @@
 """Evidence assembly, candidate judgement, and user-owned theory decisions."""
 
+from qunxue_api.modules.theory_matching.decisions import (
+    TheoryDecisionConflict,
+    TheoryDecisionService,
+)
 from qunxue_api.modules.theory_matching.matching import TheoryMatchingService
 from qunxue_api.modules.theory_matching.public import (
     CandidateContentStatus,
@@ -20,6 +24,7 @@ from qunxue_api.modules.theory_matching.public import (
     TheoryDecisionAction,
     TheoryDecisionCommand,
     TheoryDecisionRecord,
+    TheoryDecisionRepository,
     TheoryDecisionSetSnapshot,
     TheoryEvidenceSource,
     TheoryJudgementBatchInput,
@@ -58,6 +63,9 @@ __all__ = [
     "TheoryDecisionAction",
     "TheoryDecisionCommand",
     "TheoryDecisionRecord",
+    "TheoryDecisionRepository",
+    "TheoryDecisionConflict",
+    "TheoryDecisionService",
     "TheoryDecisionSetSnapshot",
     "TheoryEvidenceSource",
     "TheoryJudgementInput",
