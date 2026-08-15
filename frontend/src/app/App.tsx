@@ -36,6 +36,7 @@ import {
   NewResearchPage,
   PhenomenonWorkspace,
 } from '../modules/socio-match-workspace'
+import { ResearchFrameworkPage } from '../modules/research-framework'
 import { PageContent, PageShell, PageTitle } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 
@@ -336,6 +337,36 @@ function PhenomenonRoute() {
   )
 }
 
+function FrameworkRoute() {
+  const { task_id: taskId } = useParams<{ task_id: string }>()
+  const [searchParams] = useSearchParams()
+  if (!taskId) return <ErrorState detail="研究任务地址无效。" />
+  const theoryPlanId = searchParams.get('theory_plan_id')
+  const theoryPlanVersion = Number(searchParams.get('theory_plan_version'))
+  const taskVersion = Number(searchParams.get('task_version'))
+  const creationContext = theoryPlanId && theoryPlanVersion > 0 && taskVersion > 0
+    ? {
+        theoryPlanId,
+        theoryPlanVersion,
+        taskVersion,
+        phenomenon: searchParams.get('question') ?? '',
+        context: searchParams.get('context') ?? '',
+      }
+    : null
+  return (
+    <PageShell wide>
+      <PageTitle
+        eyebrow="RESEARCH / FRAMEWORK"
+        title="研究框架"
+        lede="修改、审校并确认由你负责的研究路径。"
+      />
+      <PageContent>
+        <ResearchFrameworkPage taskId={taskId} creationContext={creationContext} />
+      </PageContent>
+    </PageShell>
+  )
+}
+
 function ProtectedRoute({
   sessionState,
   children,
@@ -385,7 +416,7 @@ export function AppRoutes({
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
       <Route path="/research/:task_id/match" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / MATCH" title="匹配理论" />)} />
-      <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
+      <Route path="/research/:task_id/framework" element={protectedRoute(<FrameworkRoute />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />

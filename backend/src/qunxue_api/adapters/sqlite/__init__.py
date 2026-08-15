@@ -12,6 +12,7 @@ from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeTheoryProfileRow,
 )
 from qunxue_api.adapters.sqlite.model_invocation_model import ModelInvocationRow
+from qunxue_api.adapters.sqlite.research_framework_model import ResearchFrameworkRow
 from qunxue_api.adapters.sqlite.research_intake_model import (
     MaterialIntakeRunRow,
     PhenomenonCandidateVersionRow,
@@ -40,6 +41,7 @@ __all__ = [
     "PhenomenonExampleRow",
     "PhenomenonStateRow",
     "ResearchTaskRow",
+    "ResearchFrameworkRow",
     "TheoryMatchingRequestRow",
     "UserRow",
     "UserSessionRow",

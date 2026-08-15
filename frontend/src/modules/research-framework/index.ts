@@ -1,0 +1,1 @@
+export { ResearchFrameworkPage } from './ResearchFrameworkPage'

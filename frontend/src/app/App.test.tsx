@@ -368,11 +368,17 @@ describe('App routes', () => {
     const destination = '/research/task-1/framework?from=my#methods'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = input as Request
-      if (request.method === 'GET') {
+      if (request.method === 'GET' && request.url.endsWith('/api/session')) {
         return new Response(
           JSON.stringify({ error: { code: 'unauthenticated', message: '请先登录。', trace_id: 'trace-1' } }),
           { status: 401, headers: { 'Content-Type': 'application/json' } },
         )
+      }
+      if (request.method === 'GET') {
+        return new Response(JSON.stringify({
+          task_id: 'task-1',
+          current_framework_id: null,
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
       }
       return new Response(JSON.stringify({
         session_id: '25b191bb-2d85-4a88-8863-2cabf506a7a8',

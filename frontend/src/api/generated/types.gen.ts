@@ -76,7 +76,7 @@ export type AuditOverallStatus = 'pass' | 'revise' | 'insufficient';
 /**
  * AuditResolutionAction
  */
-export type AuditResolutionAction = 'handled' | 'overridden';
+export type AuditResolutionAction = 'accept' | 'reject' | 'defer' | 'override';
 
 /**
  * AuditResolutionInput
@@ -247,9 +247,9 @@ export type ConfirmFrameworkRequest = {
      */
     expected_version: number;
     /**
-     * Resolution Set Id
+     * Resolutions
      */
-    resolution_set_id?: string | null;
+    resolutions: Array<AuditResolutionInput>;
 };
 
 /**
@@ -314,6 +314,10 @@ export type ConfirmedFrameworkResponse = {
      * Task Id
      */
     task_id: string;
+    /**
+     * Unresolved Finding Ids
+     */
+    unresolved_finding_ids: Array<string>;
     /**
      * Version
      */
@@ -480,6 +484,61 @@ export type CreateTheoryDecisionsRequest = {
      * Use Assignments
      */
     use_assignments: Array<TheoryUseAssignmentInput>;
+};
+
+/**
+ * CurrentFrameworkAuditResponse
+ */
+export type CurrentFrameworkAuditResponse = {
+    /**
+     * Audit Id
+     */
+    audit_id: string;
+    /**
+     * Findings
+     */
+    findings: Array<CurrentFrameworkFindingResponse>;
+    /**
+     * Is Stale
+     */
+    is_stale: boolean;
+    overall_status: AuditOverallStatus;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+};
+
+/**
+ * CurrentFrameworkFindingResponse
+ */
+export type CurrentFrameworkFindingResponse = {
+    /**
+     * Blocking
+     */
+    blocking: boolean;
+    /**
+     * Finding Id
+     */
+    finding_id: string;
+    finding_type: AuditFindingType;
+    /**
+     * Impact
+     */
+    impact: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Recommendation
+     */
+    recommendation: string;
+    severity: AuditFindingSeverity;
+    /**
+     * Summary
+     */
+    summary: string;
 };
 
 /**
@@ -794,6 +853,10 @@ export type FrameworkAuditResponse = {
      * Framework Version
      */
     framework_version: number;
+    /**
+     * Is Stale
+     */
+    is_stale: boolean;
     overall_status: AuditOverallStatus;
     /**
      * Revision Id
@@ -804,6 +867,11 @@ export type FrameworkAuditResponse = {
      */
     unresolved_blocking: boolean;
 };
+
+/**
+ * FrameworkContentOrigin
+ */
+export type FrameworkContentOrigin = 'system_generated' | 'user_modified';
 
 /**
  * FrameworkDraftContract
@@ -930,6 +998,12 @@ export type FrameworkResponse = {
      * Allowed Actions
      */
     allowed_actions: Array<FrameworkAction>;
+    audit: CurrentFrameworkAuditResponse | null;
+    content_origin: FrameworkContentOrigin;
+    /**
+     * Created At
+     */
+    created_at: string | null;
     draft: FrameworkDraftContract;
     /**
      * Framework Id
@@ -942,9 +1016,17 @@ export type FrameworkResponse = {
     knowledge_release_id: string;
     model: ModelMetadata | null;
     /**
+     * Previous Revision Id
+     */
+    previous_revision_id: string | null;
+    /**
      * Revision Id
      */
     revision_id: string;
+    /**
+     * Revision Reason
+     */
+    revision_reason: string | null;
     status: FrameworkStatus;
     /**
      * Task Id
@@ -1015,7 +1097,7 @@ export type FrameworkReviewResponse = {
      * Knowledge Release Id
      */
     knowledge_release_id: string;
-    model: ModelMetadata;
+    model: ModelMetadata | null;
     /**
      * Retry Of Review Run Id
      */
@@ -1044,6 +1126,20 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
+
+/**
+ * FrameworkVersionPageResponse
+ */
+export type FrameworkVersionPageResponse = {
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Versions
+     */
+    versions: Array<FrameworkResponse>;
+};
 
 /**
  * HealthResponse
@@ -3184,10 +3280,6 @@ export type GetFrameworkErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetFrameworkError = GetFrameworkErrors[keyof GetFrameworkErrors];
@@ -3228,10 +3320,6 @@ export type UpdateFrameworkErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type UpdateFrameworkError = UpdateFrameworkErrors[keyof UpdateFrameworkErrors];
@@ -3272,10 +3360,6 @@ export type SubmitAuditResolutionsErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type SubmitAuditResolutionsError = SubmitAuditResolutionsErrors[keyof SubmitAuditResolutionsErrors];
@@ -3316,10 +3400,6 @@ export type ConfirmFrameworkErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type ConfirmFrameworkError = ConfirmFrameworkErrors[keyof ConfirmFrameworkErrors];
@@ -3398,10 +3478,6 @@ export type StartFrameworkReviewErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type StartFrameworkReviewError = StartFrameworkReviewErrors[keyof StartFrameworkReviewErrors];
@@ -3410,7 +3486,7 @@ export type StartFrameworkReviewResponses = {
     /**
      * Successful Response
      */
-    200: FrameworkReviewResponse;
+    201: FrameworkReviewResponse;
 };
 
 export type StartFrameworkReviewResponse = StartFrameworkReviewResponses[keyof StartFrameworkReviewResponses];
@@ -3440,10 +3516,6 @@ export type GetFrameworkReviewErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetFrameworkReviewError = GetFrameworkReviewErrors[keyof GetFrameworkReviewErrors];
@@ -3492,10 +3564,6 @@ export type RetryFrameworkReviewErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type RetryFrameworkReviewError = RetryFrameworkReviewErrors[keyof RetryFrameworkReviewErrors];
@@ -3508,6 +3576,40 @@ export type RetryFrameworkReviewResponses = {
 };
 
 export type RetryFrameworkReviewResponse = RetryFrameworkReviewResponses[keyof RetryFrameworkReviewResponses];
+
+export type ListFrameworkVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Framework Id
+         */
+        framework_id: string;
+    };
+    query?: never;
+    url: '/api/frameworks/{framework_id}/versions';
+};
+
+export type ListFrameworkVersionsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListFrameworkVersionsError = ListFrameworkVersionsErrors[keyof ListFrameworkVersionsErrors];
+
+export type ListFrameworkVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrameworkVersionPageResponse;
+};
+
+export type ListFrameworkVersionsResponse = ListFrameworkVersionsResponses[keyof ListFrameworkVersionsResponses];
 
 export type GetHealthData = {
     body?: never;
@@ -4468,10 +4570,6 @@ export type CreateFrameworkErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type CreateFrameworkError = CreateFrameworkErrors[keyof CreateFrameworkErrors];
@@ -4480,7 +4578,7 @@ export type CreateFrameworkResponses = {
     /**
      * Successful Response
      */
-    200: FrameworkResponse;
+    201: FrameworkResponse;
 };
 
 export type CreateFrameworkResponse = CreateFrameworkResponses[keyof CreateFrameworkResponses];
