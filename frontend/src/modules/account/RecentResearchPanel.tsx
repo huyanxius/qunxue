@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ComponentType, PropsWithChildren } from 'react'
+import { ArrowRightIcon, TrayIcon } from '@phosphor-icons/react'
 
 import { listMyResearchViaApi } from './accountApi'
 import './recent-research.css'
@@ -69,30 +70,31 @@ export function RecentResearchPanel({
   if (!latest) {
     return (
       <section className="recent-research recent-research--empty">
-        <p className="recent-research__label">最近研究</p>
+        <span className="recent-research__empty-icon" aria-hidden="true">
+          <TrayIcon size={21} weight="regular" />
+        </span>
         <h2>还没有研究任务</h2>
-        <p>从自己的现象开始，或先用内置案例熟悉确认与比较方式。</p>
-        <div className="recent-research__actions">
-          <LinkComponent className="primary-action" href="/research/new">开始新研究</LinkComponent>
-          <LinkComponent className="secondary-action" href="/research/new">从内置案例开始</LinkComponent>
-        </div>
+        <p>从一个具体的社会现象开始。研究阶段、依据和下一步会保存在这里。</p>
+        <LinkComponent className="primary-action" href="/research/new">
+          新建研究
+        </LinkComponent>
       </section>
     )
   }
 
   return (
     <section className="recent-research recent-research--ready">
-      <div className="recent-research__meta">
-        <p className="recent-research__label">最近研究</p>
-        <span>{relativeUpdate(latest.updatedAt)}</span>
-      </div>
-      <p className="recent-research__stage">{latest.stageLabel}</p>
-      <h2>{latest.phenomenonSummary}</h2>
-      <p className="recent-research__next">下一步：{latest.nextActionLabel}</p>
-      <div className="recent-research__actions">
-        <LinkComponent className="primary-action" href={latest.entryPath}>继续研究</LinkComponent>
-        <LinkComponent className="secondary-action" href="/my">查看全部研究</LinkComponent>
-      </div>
+      <LinkComponent className="recent-research__task" href={latest.entryPath}>
+        <span className="recent-research__task-main">
+          <span className="recent-research__stage">{latest.stageLabel}</span>
+          <strong>{latest.phenomenonSummary}</strong>
+          <span className="recent-research__next">下一步：{latest.nextActionLabel}</span>
+        </span>
+        <span className="recent-research__task-meta">
+          {relativeUpdate(latest.updatedAt)}
+          <ArrowRightIcon size={16} weight="regular" aria-hidden="true" />
+        </span>
+      </LinkComponent>
     </section>
   )
 }

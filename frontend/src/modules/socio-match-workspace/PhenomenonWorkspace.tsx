@@ -16,7 +16,7 @@ import type {
 } from './researchTaskModel'
 import './workspace.css'
 
-type EntryMethod = 'direct' | 'material' | 'smart'
+type EntryMethod = 'direct' | 'material'
 
 interface NewResearchPageProps {
   readonly onStarted: (taskId: string) => void
@@ -85,7 +85,6 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
       <nav className="entry-methods" aria-label="研究进入方式">
         <button type="button" aria-pressed={method === 'direct'} onClick={() => setMethod('direct')}>直接输入</button>
         <button type="button" aria-pressed={method === 'material'} onClick={() => setMethod('material')}>单份材料</button>
-        <button type="button" aria-pressed={method === 'smart'} onClick={() => setMethod('smart')}>智能选题</button>
       </nav>
 
       {method === 'direct' ? (
@@ -102,10 +101,15 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
             required
             rows={6}
           />
-          <label htmlFor="direct-intent">研究意图（可选）</label>
-          <textarea id="direct-intent" value={researchIntent} onChange={(event) => setResearchIntent(event.target.value)} rows={2} />
-          <label htmlFor="direct-context">语境（可选）</label>
-          <textarea id="direct-context" value={context} onChange={(event) => setContext(event.target.value)} rows={2} />
+          <details className="research-entry__details">
+            <summary>补充研究意图与语境（可选）</summary>
+            <div>
+              <label htmlFor="direct-intent">你希望理解什么</label>
+              <textarea id="direct-intent" value={researchIntent} onChange={(event) => setResearchIntent(event.target.value)} rows={2} />
+              <label htmlFor="direct-context">对象、地点或时间范围</label>
+              <textarea id="direct-context" value={context} onChange={(event) => setContext(event.target.value)} rows={2} />
+            </div>
+          </details>
           <article className={`content-mark content-mark--${exampleSource ? 'analysis' : 'user'}`}>
             <span className="content-mark__label">
               {exampleSource ? '系统分析' : '用户内容'}
@@ -146,13 +150,6 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
         </form>
       ) : null}
 
-      {method === 'smart' ? (
-        <section className="smart-topic-placeholder">
-          <h2>智能选题即将开放</h2>
-          <p>当前模块只保留入口，不生成题目或研究结论。</p>
-          <button type="button" disabled>暂未开放</button>
-        </section>
-      ) : null}
     </section>
   )
 }

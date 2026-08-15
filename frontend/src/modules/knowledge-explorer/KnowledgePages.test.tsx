@@ -86,7 +86,7 @@ function detail() {
   return {
     ...summary(),
     aliases: ['概念别名'],
-    content: '## 正文标题\n\n一段真实条目正文。\n\n> **文献：**示例文献',
+    content: '## 正文标题\n\n一段真实条目正文。\n\n> **观点—文献依据（1条）**\n>\n> P1 | [A] 一段真实条目正文。\n>\n> **文献：** 示例文献\n>\n> **支持范围：** 直接支持该观点。\n\n## T4 当代发展\n\n一段当代发展正文。',
     content_version: 2,
     knowledge_release_id: 'release-a',
     relations: [
@@ -142,7 +142,7 @@ afterEach(() => {
 })
 
 describe('knowledge pages', () => {
-  it('opens on the seven-dimension directory instead of flattening every entry', async () => {
+  it('opens as a persistent knowledge tree with a focused dimension overview', async () => {
     const fetch = vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input))
     vi.stubGlobal('fetch', fetch)
 
@@ -155,13 +155,38 @@ describe('knowledge pages', () => {
       />,
     )
 
-    expect(await screen.findByRole('button', { name: '浏览 本体论 目录' })).toBeVisible()
-    expect(await screen.findByRole('heading', { name: '从维度进入知识目录' })).toBeVisible()
+    const dimensionButton = await screen.findByRole('button', { name: '浏览 本体论 目录' })
+    expect(dimensionButton).toBeVisible()
+    expect(within(dimensionButton).getByText('D1')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '本体论' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '知识目录' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '收起 本体论' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '进入 I. 古典社会学奠基' })).toBeVisible()
     expect(screen.queryByRole('button', { name: /打开 概念/ })).not.toBeInTheDocument()
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(fetch.mock.calls.map(([input]) => urlFor(input).pathname)).toEqual([
       '/api/knowledge/directory',
     ])
+  })
+
+  it('keeps the graph shortcut named when its visible label is hidden on narrow screens', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
+
+    render(
+      <KnowledgeExplorerPage
+        state={{ releaseId: 'release-a' }}
+        onOpenEntry={vi.fn()}
+        onOpenGraph={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={vi.fn()}
+      />,
+    )
+
+    expect(await screen.findByRole('button', { name: '打开知识图谱' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '打开知识图谱' })).toHaveAttribute(
+      'aria-label',
+      '打开知识图谱',
+    )
   })
 
   it('shows loaded and total results while keeping the next page explicit', async () => {
@@ -186,6 +211,54 @@ describe('knowledge pages', () => {
 
     expect(await screen.findByText('已显示 20 条，共 101 条')).toBeVisible()
     expect(screen.getByRole('button', { name: '继续加载 81 条未显示' })).toBeVisible()
+  })
+
+  it('keeps the knowledge tree visible while a selected category shows results', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
+
+    render(
+      <KnowledgeExplorerPage
+        state={{
+          releaseId: 'release-a',
+          dimensionId: 'D1',
+          categoryId: 'D1:I. 古典社会学奠基/1. 古典社会学奠基',
+        }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={vi.fn()}
+      />,
+    )
+
+    expect(await screen.findByRole('heading', { name: '条目' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '返回 本体论 目录' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '知识目录' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '浏览 本体论 目录' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+  })
+
+  it('drills through parent categories before applying an exact leaf filter', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
+    const onStateChange = vi.fn()
+
+    render(
+      <KnowledgeExplorerPage
+        state={{ releaseId: 'release-a', dimensionId: 'D1' }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={onStateChange}
+      />,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '进入 I. 古典社会学奠基' }))
+    expect(onStateChange).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '浏览 1. 古典社会学奠基' }))
+    expect(onStateChange).toHaveBeenCalledWith(expect.objectContaining({
+      dimensionId: 'D1',
+      categoryId: 'D1:I. 古典社会学奠基/1. 古典社会学奠基',
+    }))
   })
 
   it('keeps the loaded result window when the URL records another page', async () => {
@@ -348,13 +421,33 @@ describe('knowledge pages', () => {
     )
 
     expect(await screen.findByRole('heading', { name: '概念' })).toBeVisible()
-    expect(screen.getByText('正文节选')).toBeVisible()
+    expect(screen.queryByText('正文节选')).not.toBeInTheDocument()
+    expect(screen.getAllByText('一段真实条目正文。')).toHaveLength(1)
     const outline = screen.getByRole('navigation', { name: '本文目录' })
     expect(outline).toBeVisible()
     expect(within(outline).getByRole('link', { name: '正文标题' })).toHaveAttribute('href', '#正文标题')
     expect(screen.getByRole('heading', { name: '正文标题' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '正文标题' })).toHaveAttribute('id', '正文标题')
-    expect(screen.getByText('文献：', { selector: 'strong' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'T4 当代发展' })).toHaveAttribute('data-stage', '4')
+    const evidenceClaim = screen.getByText('一段真实条目正文。', { selector: 'p' })
+    const evidenceNote = screen.getByRole('note', { name: '文献依据，1 条' })
+    expect(evidenceClaim).toHaveAttribute('tabindex', '0')
+    expect(evidenceClaim).toHaveAttribute('aria-describedby', evidenceNote.id)
+    expect(evidenceNote).toHaveAttribute('data-content-role', 'evidence')
+    expect(screen.getByText('文献：', { selector: 'strong' })).toBeInTheDocument()
+    const articleContent = evidenceClaim.closest('.knowledge-reader__content')
+    expect(articleContent).toHaveAttribute('data-evidence-display', 'annotations')
+    expect(screen.getByRole('radio', { name: '点击批注显示文献' })).toHaveAttribute('aria-checked', 'true')
+
+    fireEvent.click(screen.getByRole('button', { name: '打开第 1 条文献依据' }))
+    expect(screen.getByRole('note', { name: '文献依据，1 条' })).toHaveAttribute('data-open', 'true')
+
+    fireEvent.click(screen.getByRole('radio', { name: '悬浮正文显示文献' }))
+    expect(articleContent).toHaveAttribute('data-evidence-display', 'hover')
+
+    fireEvent.click(screen.getByRole('radio', { name: '默认展开全部文献' }))
+    expect(articleContent).toHaveAttribute('data-evidence-display', 'expanded')
+    expect(screen.getByRole('button', { name: '划线批注（暂未开放）' })).toBeDisabled()
     expect(screen.getByText('知识库原始 Markdown')).toBeVisible()
     expect(screen.getAllByText('待核验')).not.toHaveLength(0)
     expect(screen.getByText('D1:C002')).toBeVisible()
@@ -382,4 +475,5 @@ describe('knowledge pages', () => {
     expect(await screen.findByText('组合条目 D1:C001')).toBeVisible()
     expect(fetch).toHaveBeenCalledTimes(1)
   })
+
 })

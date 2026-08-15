@@ -75,7 +75,32 @@ function knowledgePage() {
     knowledge_release_id: 'release-a',
     next_cursor: null,
     stable_order: ['D1:C001'],
+    total_count: 1,
   }
+}
+
+function knowledgeDirectory() {
+  return {
+    knowledge_release_id: 'release-a',
+    nodes: [
+      { entry_count: 1, node_id: 'D1', node_type: 'dimension', parent_node_id: null, title: '本体论' },
+      { entry_count: 1, node_id: 'C001', node_type: 'category', parent_node_id: 'D1', title: '概念' },
+      ...['D2', 'D3', 'D4', 'D5', 'D6', 'D7'].map((nodeId, index) => ({
+        entry_count: 0,
+        node_id: nodeId,
+        node_type: 'dimension',
+        parent_node_id: null,
+        title: ['实践论', '方法论', '价值论', '认识论', '学派传统', '学科史'][index],
+      })),
+    ],
+  }
+}
+
+function knowledgeResponse(input: RequestInfo | URL) {
+  const request = requestUrl(input)
+  return request.pathname === '/api/knowledge/directory'
+    ? json(knowledgeDirectory())
+    : json(knowledgePage())
 }
 
 function knowledgeDetail() {
@@ -146,26 +171,80 @@ function requestUrl(input: RequestInfo | URL) {
 }
 
 describe('App routes', () => {
-  it('provides distinct desktop and mobile navigation surfaces', async () => {
-    renderRoute('/knowledge')
+  it('uses one task-oriented navigation model across desktop and mobile', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+    renderRoute('/app', { status: 'authenticated' })
 
     const desktopNavigation = await screen.findByRole('navigation', { name: '桌面主导航' })
     const desktopRail = screen.getByRole('complementary', { name: '群学致知功能栏' })
+    const mobileNavigation = screen.getByRole('navigation', { name: '移动主导航' })
 
     expect(desktopNavigation).toBeInTheDocument()
-    expect(
-      screen.getByRole('navigation', { name: '移动主导航' }),
-    ).toBeInTheDocument()
-    expect(within(desktopRail).getByRole('link', { name: '群学致知首页' })).toBeVisible()
+    expect(mobileNavigation).toBeInTheDocument()
+    expect(within(desktopRail).getByRole('link', { name: '群学致知工作台' })).toHaveAttribute('href', '/app')
     expect(
       within(desktopNavigation).getAllByRole('link').every((link) => Boolean(link.querySelector('svg'))),
     ).toBe(true)
-    expect(within(desktopNavigation).queryByText(/^[台知图研我·]$/)).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: '图谱' })).toHaveLength(2)
-    expect(screen.getAllByRole('link', { name: '图谱' })[0]).toHaveAttribute(
+    expect(within(desktopNavigation).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      '工作台',
+      '研究 Agent',
+      '新建研究',
+      '我的研究',
+      '知识库',
+      '知识图谱',
+    ])
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(6)
+    expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
+      'href',
+      '/agent',
+    )
+    expect(within(desktopNavigation).queryByRole('link', { name: '首页' })).not.toBeInTheDocument()
+    expect(within(mobileNavigation).getByRole('link', { name: '图谱' })).toHaveAttribute(
       'href',
       '/knowledge/graph',
     )
+  })
+
+  it('renders the work home as a focused research library instead of a dashboard card grid', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+
+    renderRoute('/app', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { level: 1, name: '工作台' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '研究视图' })).toBeVisible()
+    expect(screen.getByRole('region', { name: '最近研究' })).toBeVisible()
+    expect(await screen.findByRole('heading', { level: 2, name: '还没有研究任务' })).toBeVisible()
+    expect(
+      within(screen.getByRole('main')).getByRole('link', { name: '新建研究' }),
+    ).toHaveAttribute('href', '/research/new')
+    expect(screen.queryByRole('region', { name: '研究资料' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '从现象到框架' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['/research/task-1/match', '比较理论', '理论比较尚未开放'],
+    ['/research/task-1/framework', '形成框架', '研究框架尚未开放'],
+  ])('shows %s as an honest research-stage state', async (path, stage, message) => {
+    renderRoute(path, { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { name: message })).toBeVisible()
+    expect(screen.getByText(stage).closest('li')).toHaveAttribute('aria-current', 'step')
+    expect(screen.getByRole('region', { name: '当前研究任务' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '返回我的研究' })).toHaveAttribute('href', '/my')
+  })
+
+  it('renders my research as a compact task library inside the shared app shell', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+    renderRoute('/my', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { level: 1, name: '我的研究' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '研究库视图' })).toBeVisible()
+    expect(screen.getByRole('region', { name: '研究任务列表' })).toBeVisible()
+    expect(within(screen.getByRole('main')).getByRole('link', { name: '新建研究' })).toHaveAttribute(
+      'href',
+      '/research/new',
+    )
+    expect(screen.queryByText('ACCOUNT / MY')).not.toBeInTheDocument()
   })
 
   it('renders the graph workspace from its independent route', async () => {
@@ -175,12 +254,36 @@ describe('App routes', () => {
     expect(screen.getByRole('region', { name: '全屏知识图谱工作台' })).toBeVisible()
   })
 
+  it('opens the knowledge library with the product rail collapsed', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeResponse(input)))
+
+    renderRoute('/knowledge?knowledge_release_id=release-a')
+
+    expect(await screen.findByRole('heading', { name: '本体论' })).toBeVisible()
+    const expandRail = screen.getByRole('button', { name: '展开侧栏' })
+    expect(expandRail).toBeVisible()
+    fireEvent.click(expandRail)
+    expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
+  })
+
+  it('keeps a knowledge entry in its own scrollable workspace', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgeDetail())))
+
+    renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
+
+    expect(await screen.findByRole('heading', { name: '概念' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '展开侧栏' })).toBeVisible()
+    expect(screen.getByRole('main')).toHaveClass('page-shell--workspace')
+    expect(screen.getByRole('region', { name: '知识条目正文' })).toBeVisible()
+  })
+
   it.each([
-    ['/app', '继续你的研究'],
+    ['/app', '工作台'],
+    ['/agent', '你想研究什么？'],
     ['/research/new', '新建研究任务'],
     ['/research/task-1/phenomenon', '确认现象'],
-    ['/research/task-1/match', '匹配理论'],
-    ['/research/task-1/framework', '研究框架'],
+    ['/research/task-1/match', '理论比较尚未开放'],
+    ['/research/task-1/framework', '研究框架尚未开放'],
     ['/my', '我的研究'],
   ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
     renderRoute(path, { status: 'authenticated' })
@@ -188,6 +291,94 @@ describe('App routes', () => {
     expect(
       await screen.findByRole('heading', { name: title }),
     ).toBeVisible()
+  })
+
+  it('opens an independent Agent conversation page from the product rail', async () => {
+    renderRoute('/agent', { status: 'authenticated' })
+
+    const desktopNavigation = await screen.findByRole('navigation', { name: '桌面主导航' })
+    expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
+
+    const agentConversation = screen.getByRole('region', { name: '研究 Agent 对话' })
+    const textbox = within(agentConversation).getByRole('textbox', { name: '描述研究现象' })
+    const sendButton = within(agentConversation).getByRole('button', {
+      name: '发送给研究 Agent',
+    })
+
+    expect(textbox).toBeVisible()
+    expect(sendButton).toBeDisabled()
+    expect(within(agentConversation).queryByText('交互预览 · 未连接模型')).not.toBeInTheDocument()
+    expect(within(agentConversation).queryByText(/^研究 Agent$/)).not.toBeInTheDocument()
+
+    fireEvent.click(within(agentConversation).getByRole('button', {
+      name: '为什么同一社区里的互助正在减少？',
+    }))
+    expect(textbox).toHaveValue('为什么同一社区里的互助正在减少？')
+    expect(sendButton).toBeEnabled()
+
+    fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
+
+    const conversationPreview = within(agentConversation).getByRole('log', { name: '对话预览' })
+    expect(
+      within(conversationPreview).getByText('为什么同一社区里的互助正在减少？'),
+    ).toBeVisible()
+    expect(
+      within(conversationPreview).getByText('当前只演示对话界面，尚未连接研究模型。'),
+    ).toBeVisible()
+    expect(
+      within(screen.getByRole('region', { name: 'Agent 对话记录' })).getByRole('button', {
+        name: /为什么同一社区里的互助正在减少？/,
+      }),
+    ).toBeVisible()
+    expect(textbox).toHaveValue('')
+    expect(sendButton).toBeDisabled()
+  })
+
+  it('keeps Agent conversation history after the page is reopened', async () => {
+    window.localStorage.clear()
+    renderRoute('/agent', { status: 'authenticated' })
+
+    const textbox = await screen.findByRole('textbox', { name: '描述研究现象' })
+    fireEvent.change(textbox, { target: { value: '县城青年为什么重新组织熟人关系？' } })
+    fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
+
+    cleanup()
+    renderRoute('/agent', { status: 'authenticated' })
+
+    const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
+    fireEvent.click(within(history).getByRole('button', {
+      name: /县城青年为什么重新组织熟人关系？/,
+    }))
+
+    expect(
+      within(screen.getByRole('log', { name: '对话预览' })).getByText(
+        '县城青年为什么重新组织熟人关系？',
+      ),
+    ).toBeVisible()
+  })
+
+  it('keeps Shift+Enter available for a new line on the Agent page', async () => {
+    renderRoute('/agent', { status: 'authenticated' })
+
+    const agentConversation = await screen.findByRole('region', { name: '研究 Agent 对话' })
+    const textbox = within(agentConversation).getByRole('textbox', { name: '描述研究现象' })
+
+    fireEvent.change(textbox, { target: { value: '第一行' } })
+    expect(fireEvent.keyDown(textbox, {
+      key: 'Enter',
+      code: 'Enter',
+      shiftKey: true,
+    })).toBe(true)
+    fireEvent.change(textbox, { target: { value: '第一行\n第二行' } })
+
+    expect(textbox).toHaveValue('第一行\n第二行')
+    expect(
+      within(agentConversation).queryByText('当前只演示对话界面，尚未连接研究模型。'),
+    ).not.toBeInTheDocument()
   })
 
   it('shows the public product home at root for an anonymous visitor', async () => {
@@ -202,9 +393,10 @@ describe('App routes', () => {
   })
 
   it('sends an authenticated root visit straight to the work home', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
     renderRoute('/', { status: 'authenticated' })
 
-    expect(await screen.findByRole('heading', { name: '继续你的研究' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '工作台' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/app')
   })
 
@@ -238,7 +430,7 @@ describe('App routes', () => {
 
     expect(await screen.findByText('同一社区中的互助为何逐渐减少？')).toBeVisible()
     expect(screen.getByText('下一步：确认现象')).toBeVisible()
-    expect(screen.getByRole('link', { name: '继续研究' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /现象待确认.*同一社区中的互助为何逐渐减少/ })).toHaveAttribute(
       'href',
       '/research/task-1/phenomenon',
     )
@@ -250,10 +442,8 @@ describe('App routes', () => {
     renderRoute('/app', { status: 'authenticated' })
 
     expect(await screen.findByText('还没有研究任务')).toBeVisible()
-    expect(screen.getByRole('link', { name: '从内置案例开始' })).toHaveAttribute(
-      'href',
-      '/research/new',
-    )
+    expect(screen.getAllByRole('link', { name: '新建研究' })).toHaveLength(2)
+    expect(screen.queryByRole('link', { name: /内置案例/ })).not.toBeInTheDocument()
   })
 
   it('lets the user retry when the work home cannot load research', async () => {
@@ -291,6 +481,7 @@ describe('App routes', () => {
 
   it.each([
     '/app',
+    '/agent',
     '/research/new?source=home',
     '/research/task-1/phenomenon',
     '/research/task-1/match',
@@ -399,7 +590,7 @@ describe('App routes', () => {
     fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'research-passphrase' } })
     fireEvent.click(screen.getByRole('button', { name: '登录并继续' }))
 
-    expect(await screen.findByRole('heading', { name: '研究框架' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '研究框架尚未开放' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent(destination)
   })
 
@@ -460,13 +651,13 @@ describe('App routes', () => {
             knowledge_release_id: 'release-a',
             level: 'preview',
           })
-        : json(knowledgePage())
+        : knowledgeResponse(input)
     })
     vi.stubGlobal('fetch', fetch)
 
     renderRoute('/knowledge')
 
-    expect(await screen.findByRole('heading', { name: '条目' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '本体论' })).toBeVisible()
     await waitFor(() => {
       expect(screen.getByTestId('route-location')).toHaveTextContent(
         '/knowledge?knowledge_release_id=release-a',
@@ -476,12 +667,12 @@ describe('App routes', () => {
   })
 
   it('keeps the selected release and filters while opening an independent detail route', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgePage())))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeResponse(input)))
     renderRoute('/knowledge?knowledge_release_id=release-a&query=%E6%A6%82%E5%BF%B5&dimension_id=D1&category_id=C001')
 
     const results = (await screen.findByRole('heading', { name: '条目' })).closest('section')
     if (!results) throw new Error('知识结果区域缺失')
-    fireEvent.click(await within(results).findByRole('button', { name: /^概念/ }))
+    fireEvent.click(await within(results).findByRole('button', { name: '打开 概念' }))
 
     expect(screen.getByTestId('route-location')).toHaveTextContent(
       '/knowledge/D1%3AC001?knowledge_release_id=release-a&query=%E6%A6%82%E5%BF%B5&dimension_id=D1&category_id=C001',
@@ -498,7 +689,7 @@ describe('App routes', () => {
     expect(await screen.findByText('一段真实条目正文。')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '返回研究任务' }))
 
-    expect(await screen.findByRole('heading', { name: '匹配理论' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '理论比较尚未开放' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
   })
 
@@ -516,7 +707,7 @@ describe('App routes', () => {
   })
 
   it('exposes the structural graph on the knowledge page without eagerly requesting edges', async () => {
-    const fetch = vi.fn(async () => json(knowledgePage()))
+    const fetch = vi.fn(async (input: RequestInfo | URL) => knowledgeResponse(input))
     vi.stubGlobal('fetch', fetch)
     renderRoute('/knowledge?knowledge_release_id=release-a')
 

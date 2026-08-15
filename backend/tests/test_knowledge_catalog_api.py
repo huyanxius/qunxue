@@ -78,6 +78,7 @@ def test_knowledge_directory_summary_is_release_bound_and_hides_ineligible_entri
         params={"knowledge_release_id": release_id},
     )
     assert before.status_code == 200
+    assert before.headers["cache-control"] == "private, max-age=31536000, immutable"
     payload = before.json()
     assert payload["knowledge_release_id"] == release_id
     assert len([node for node in payload["nodes"] if node["node_type"] == "dimension"]) == 7

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.knowledge import (
@@ -55,6 +55,7 @@ def get_current_knowledge_release(request: Request) -> KnowledgeReleaseResponse:
 )
 def get_knowledge_directory(
     request: Request,
+    response: Response,
     knowledge_release_id: str | None = None,
 ) -> KnowledgeDirectorySummaryResponse:
     catalog = request.app.state.knowledge_catalog
@@ -65,6 +66,11 @@ def get_knowledge_directory(
         summary = catalog.get_directory(release_id=release_id)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+    response.headers["Cache-Control"] = (
+        "private, max-age=31536000, immutable"
+        if knowledge_release_id is not None
+        else "private, no-cache"
+    )
     return KnowledgeDirectorySummaryResponse(
         knowledge_release_id=summary.release.knowledge_release_id,
         nodes=[

@@ -1,7 +1,9 @@
 import type { CSSProperties } from 'react'
+import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 
 import type { KnowledgeEntrySummary } from './types'
 import { reviewStatusLabels } from './labels'
+import { describeTaxonomyNode, dimensionTone } from './taxonomyPresentation'
 
 interface KnowledgeEntryListProps {
   entries: readonly KnowledgeEntrySummary[]
@@ -39,8 +41,8 @@ export function KnowledgeEntryList({
     <section className="knowledge-explorer__results" aria-labelledby="knowledge-results-title" data-result-state={state}>
       <header className="knowledge-explorer__results-heading">
         <div>
-          <p>知识条目</p>
-          <h2 id="knowledge-results-title">发现与阅读</h2>
+          <p>搜索结果</p>
+          <h2 id="knowledge-results-title">条目</h2>
         </div>
         {state === 'ready' ? <p aria-live="polite">已显示 {entries.length} 条，共 {totalEntries} 条</p> : null}
       </header>
@@ -65,22 +67,36 @@ export function KnowledgeEntryList({
 
       {entries.length > 0 ? (
         <ol className="knowledge-explorer__result-list">
-          {entries.map((entry, index) => (
-            <li key={`${entry.knowledgeId}:${entry.contentVersion}`} style={{ '--entry-index': index } as CSSProperties}>
-              <span className="knowledge-explorer__result-index">{String(index + 1).padStart(2, '0')}</span>
+          {entries.map((entry, index) => {
+            const category = describeTaxonomyNode(entry.category)
+            return (
+            <li
+              key={`${entry.knowledgeId}:${entry.contentVersion}`}
+              data-dimension-tone={dimensionTone(entry.dimensionId)}
+              style={{ '--entry-index': index } as CSSProperties}
+            >
+              <span className="knowledge-explorer__result-index" aria-hidden="true">
+                {entry.knowledgeId.split(':').at(-1)}
+              </span>
               <button className="knowledge-explorer__result-main" type="button" aria-label={`打开 ${entry.title}`} onClick={() => onSelect(entry.knowledgeId)}>
-                <span className="knowledge-explorer__result-kicker">{entry.dimension} · {entry.category}</span>
+                <span className="knowledge-explorer__result-kicker">
+                  <span>{entry.dimensionId} {entry.dimension}</span>
+                  <span data-node-kind={category.kind}>{category.badge ?? '分类'} {category.label}</span>
+                </span>
                 <strong>{entry.title}</strong>
                 <small>{contextPath(entry)}</small>
               </button>
               <div className="knowledge-explorer__result-meta">
                 <span data-review-status={entry.reviewStatus}>{reviewStatusLabels[entry.reviewStatus]}</span>
                 {onLocate ? (
-                  <button type="button" aria-label={`在图中定位 ${entry.title}`} onClick={() => onLocate(entry)}>定位图谱 ↗</button>
+                  <button type="button" aria-label={`在图中定位 ${entry.title}`} onClick={() => onLocate(entry)}>
+                    定位图谱 <ArrowSquareOutIcon size={13} weight="regular" aria-hidden="true" />
+                  </button>
                 ) : null}
               </div>
             </li>
-          ))}
+            )
+          })}
         </ol>
       ) : null}
 
