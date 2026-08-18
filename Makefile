@@ -1,6 +1,6 @@
 UV_CACHE_DIR ?= .cache/uv
 
-.PHONY: bootstrap contract check dev-api dev-web
+.PHONY: bootstrap contract check dev-api dev-web e2e-install e2e
 
 bootstrap:
 	cd backend && uv --cache-dir $(UV_CACHE_DIR) sync
@@ -26,3 +26,9 @@ dev-api:
 
 dev-web:
 	cd frontend && npm run dev
+
+e2e-install:
+	cd frontend && npx playwright install chromium
+
+e2e:
+	cd frontend && npx playwright test
