@@ -12,6 +12,10 @@ from qunxue_api.modules.agent_conversation.domain import (
 )
 from qunxue_api.modules.agent_conversation.errors import ConversationNotFound, RunAlreadyActive
 from qunxue_api.modules.agent_conversation.ports import ConversationRepository
+from qunxue_api.modules.agent_conversation.research_map import (
+    aggregate_research_map,
+    patches_from_tool_summary,
+)
 
 
 class _MemoryRepository:
@@ -38,12 +42,23 @@ class _MemoryRepository:
         }
         if not runs_by_turn:
             return conversation
+        patches_by_turn = {
+            turn_id: patches_from_tool_summary(summary) for turn_id, summary in runs_by_turn.items()
+        }
+        all_patches = [
+            patch for turn in conversation.turns for patch in patches_by_turn.get(turn.turn_id, ())
+        ]
         return replace(
             conversation,
             turns=tuple(
-                replace(turn, tool_summary=runs_by_turn.get(turn.turn_id, turn.tool_summary))
+                replace(
+                    turn,
+                    tool_summary=runs_by_turn.get(turn.turn_id, turn.tool_summary),
+                    canvas_patches=patches_by_turn.get(turn.turn_id, turn.canvas_patches),
+                )
                 for turn in conversation.turns
             ),
+            research_map=aggregate_research_map(all_patches),
         )
 
     def list(self, *, user_id: UUID) -> Sequence[Conversation]:

@@ -3,6 +3,8 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
+from qunxue_api.modules.agent_conversation.research_map import empty_research_map
+
 
 def _now() -> datetime:
     return datetime.now(UTC)
@@ -35,6 +37,7 @@ class AgentTurn:
     assistant_message: AgentMessage
     evidence_ids: frozenset[str]
     tool_summary: tuple[dict[str, object], ...] = ()
+    canvas_patches: tuple[dict[str, object], ...] = ()
 
     @classmethod
     def create(
@@ -82,6 +85,7 @@ class Conversation:
     created_at: datetime
     updated_at: datetime
     turns: tuple[AgentTurn, ...] = ()
+    research_map: dict[str, object] = field(default_factory=empty_research_map)
 
 
 UserConversation = Conversation

@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from qunxue_api.modules.agent_conversation import (
@@ -64,6 +65,7 @@ class DisciplinaryAgentApplication:
         conversation_id: UUID | None,
         prompt: str,
         idempotency_key: str,
+        workspace: Literal["agent", "research"] = "agent",
         on_run_started: Callable[[UUID, UUID, bool], None] | None = None,
         on_delta: Callable[[str], None] | None = None,
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
@@ -119,6 +121,11 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             conversation_id=conversation.conversation_id,
         )
+        if workspace == "research":
+            enable_research_map = getattr(tools, "enable_research_map", None)
+            if not callable(enable_research_map):
+                raise RuntimeError("research workspace tools are unavailable")
+            enable_research_map(current.research_map)
         if on_run_started is not None:
             on_run_started(run.run_id, run.conversation_id, run.status == "completed")
         if run.status == "completed" and run.turn_id is not None:

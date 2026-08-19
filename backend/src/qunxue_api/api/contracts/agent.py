@@ -39,6 +39,7 @@ class AgentTurnResponse(BaseModel):
     assistant: AgentMessageResponse
     tool_traces: list[AgentToolTraceResponse] = Field(default_factory=list)
     knowledge_release_id: str | None = None
+    canvas_patches: list[dict[str, object]] = Field(default_factory=list)
 
 
 class AgentConversationSummaryResponse(BaseModel):
@@ -51,6 +52,7 @@ class AgentConversationSummaryResponse(BaseModel):
 class AgentConversationResponse(AgentConversationSummaryResponse):
     created_at: datetime
     turns: list[AgentTurnResponse]
+    research_map: dict[str, object] = Field(default_factory=dict)
 
 
 class AgentConversationListResponse(BaseModel):
@@ -60,3 +62,4 @@ class AgentConversationListResponse(BaseModel):
 class AgentTurnRequest(BaseModel):
     conversation_id: UUID | None = None
     message: str = Field(min_length=1, max_length=12000)
+    workspace: Literal["agent", "research"] = "agent"

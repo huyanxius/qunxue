@@ -144,6 +144,7 @@ def stream_agent_turn(
                         conversation_id=payload.conversation_id,
                         prompt=payload.message,
                         idempotency_key=idempotency_key,
+                        workspace=payload.workspace,
                         on_run_started=on_run_started,
                         on_delta=on_delta,
                         on_tool_event=on_tool_event,
@@ -187,6 +188,13 @@ def stream_agent_turn(
                         f"tool_{event_payload.phase}",
                         tool_payload,
                     )
+                    if (
+                        event_payload.tool == "update_research_map"
+                        and event_payload.phase == "finished"
+                        and isinstance(event_payload.output, dict)
+                        and event_payload.output.get("schema_version") == 1
+                    ):
+                        yield _event("canvas_patch", event_payload.output)
                 elif event_name == "failed":
                     if isinstance(event_payload, BaseException):
                         raise event_payload
@@ -212,9 +220,7 @@ def stream_agent_turn(
                                 release_ids={execution.turn.turn_id: execution.result.release_id}
                                 if execution.turn is not None
                                 else {},
-                            ).model_dump(
-                                mode="json"
-                            ),
+                            ).model_dump(mode="json"),
                             "knowledge_release_id": execution.result.release_id,
                         },
                     )
@@ -291,9 +297,11 @@ def _conversation(
                     for entry in resolved_tool_summaries.get(turn.turn_id, turn.tool_summary)
                 ],
                 knowledge_release_id=resolved_release_ids.get(turn.turn_id),
+                canvas_patches=[dict(patch) for patch in turn.canvas_patches],
             )
             for turn in item.turns
         ],
+        research_map=dict(item.research_map),
     )
 
 
@@ -327,6 +335,7 @@ def _citation(item) -> dict[str, object]:
         "knowledge_id": item.knowledge_id,
         "source_id": item.source_id,
     }
+
 
 def _tool_trace(item: dict[str, object]):
     return {

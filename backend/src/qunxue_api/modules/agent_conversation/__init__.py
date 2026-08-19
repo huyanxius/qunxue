@@ -23,6 +23,13 @@ from qunxue_api.modules.agent_conversation.ports import (
     AgentToolEvent,
     SubjectAgentRunner,
 )
+from qunxue_api.modules.agent_conversation.research_map import (
+    aggregate_research_map,
+    apply_research_map_patch,
+    empty_research_map,
+    normalize_research_map_patch,
+    patches_from_tool_summary,
+)
 from qunxue_api.modules.agent_conversation.service import ConversationService
 
 __all__ = [
@@ -44,4 +51,9 @@ __all__ = [
     "RunAlreadyActive",
     "UserConversation",
     "SubjectAgentRunner",
+    "aggregate_research_map",
+    "apply_research_map_patch",
+    "empty_research_map",
+    "normalize_research_map_patch",
+    "patches_from_tool_summary",
 ]

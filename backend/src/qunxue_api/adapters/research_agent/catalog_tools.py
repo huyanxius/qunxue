@@ -1,6 +1,12 @@
 import re
+from collections.abc import Mapping, Sequence
 
-from qunxue_api.modules.agent_conversation import AgentEvidence
+from qunxue_api.modules.agent_conversation import (
+    AgentEvidence,
+    apply_research_map_patch,
+    empty_research_map,
+    normalize_research_map_patch,
+)
 from qunxue_api.modules.knowledge_catalog import KnowledgeCatalog, KnowledgeUsePurpose
 
 from .retrieval import RetrievalCandidate, fuzzy_match_score, lexical_relevance_score
@@ -16,6 +22,48 @@ class KnowledgeToolRegistry:
         self.release = catalog.current_release(purpose=KnowledgeUsePurpose.RAG)
         self.evidence: dict[str, KnowledgeEvidence] = {}
         self._allowed_source_ids: set[str] = set()
+        self.research_map_enabled = False
+        self.research_map: dict[str, object] = empty_research_map()
+
+    def enable_research_map(self, current: Mapping[str, object] | None = None) -> None:
+        """Opt this turn into the research workspace's structured-map tool set."""
+
+        self.research_map_enabled = True
+        if current is not None:
+            self.research_map = {
+                "schema_version": 1,
+                "nodes": [
+                    dict(item) for item in current.get("nodes", []) if isinstance(item, Mapping)
+                ],
+                "relations": [
+                    dict(item) for item in current.get("relations", []) if isinstance(item, Mapping)
+                ],
+            }
+
+    def update_research_map(
+        self,
+        *,
+        nodes: Sequence[Mapping[str, object]] | None = None,
+        relations: Sequence[Mapping[str, object]] | None = None,
+        remove_node_ids: Sequence[str] | None = None,
+        remove_relation_ids: Sequence[str] | None = None,
+    ) -> dict[str, object]:
+        if not self.research_map_enabled:
+            raise ValueError("research map is only available in the research workspace")
+        patch = normalize_research_map_patch(
+            nodes=nodes,
+            relations=relations,
+            remove_node_ids=remove_node_ids,
+            remove_relation_ids=remove_relation_ids,
+            known_node_ids={
+                str(item["id"])
+                for item in self.research_map.get("nodes", [])
+                if isinstance(item, Mapping) and item.get("id")
+            },
+            evidence_ids=set(self.evidence),
+        )
+        self.research_map = apply_research_map_patch(self.research_map, patch)
+        return patch
 
     def search_knowledge(self, query: str, *, limit: int = 5) -> list[dict[str, object]]:
         pages = []
@@ -261,17 +309,12 @@ class KnowledgeToolRegistry:
         safe_limit = max(1, min(limit, 40))
         if query and query.strip():
             ranked_nodes = sorted(
-                (
-                    (fuzzy_match_score(query, title=node.title), node)
-                    for node in directory.nodes
-                ),
+                ((fuzzy_match_score(query, title=node.title), node) for node in directory.nodes),
                 key=lambda item: (-item[0], item[1].node_id),
             )
             nodes = [node for score, node in ranked_nodes if score >= 0.18][:safe_limit]
         else:
-            nodes = [node for node in directory.nodes if node.parent_node_id is None][
-                :safe_limit
-            ]
+            nodes = [node for node in directory.nodes if node.parent_node_id is None][:safe_limit]
         values: list[dict[str, object]] = []
         for node in nodes:
             citation_id = f"directory:{node.node_id}"
@@ -282,16 +325,16 @@ class KnowledgeToolRegistry:
                 excerpt=f"{node.entry_count} 个知识条目",
             )
             value: dict[str, object] = {
-                    "citation_id": citation_id,
-                    "node_id": node.node_id,
-                    "title": node.title,
-                    "node_type": node.node_type,
-                    "parent_node_id": node.parent_node_id,
-                    "entry_count": node.entry_count,
-                    "entries": self._directory_entry_previews(node, limit=6)
-                    if query and query.strip()
-                    else [],
-                }
+                "citation_id": citation_id,
+                "node_id": node.node_id,
+                "title": node.title,
+                "node_type": node.node_type,
+                "parent_node_id": node.parent_node_id,
+                "entry_count": node.entry_count,
+                "entries": self._directory_entry_previews(node, limit=6)
+                if query and query.strip()
+                else [],
+            }
             values.append(value)
         return values
 

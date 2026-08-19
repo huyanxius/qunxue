@@ -50,8 +50,21 @@ class AgentToolEvent:
 class AgentToolContext(Protocol):
     release: AgentRelease
     evidence: Mapping[str, AgentEvidence]
+    research_map_enabled: bool
+    research_map: Mapping[str, object]
 
     def search_knowledge(self, query: str, *, limit: int = 5) -> list[dict[str, object]]: ...
+
+    def enable_research_map(self, current: Mapping[str, object] | None = None) -> None: ...
+
+    def update_research_map(
+        self,
+        *,
+        nodes: Sequence[Mapping[str, object]] | None = None,
+        relations: Sequence[Mapping[str, object]] | None = None,
+        remove_node_ids: Sequence[str] | None = None,
+        remove_relation_ids: Sequence[str] | None = None,
+    ) -> dict[str, object]: ...
 
 
 class SubjectAgentRunner(Protocol):

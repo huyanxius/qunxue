@@ -15,6 +15,8 @@ from qunxue_api.modules.agent_conversation import (
     ConversationNotFound,
     IdempotentTurn,
     RunAlreadyActive,
+    aggregate_research_map,
+    patches_from_tool_summary,
 )
 
 
@@ -69,6 +71,10 @@ class SqliteConversationRepository:
             )
             if row.turn_id is not None
         }
+        patches_by_turn = {
+            turn_id: patches_from_tool_summary(summary)
+            for turn_id, summary in run_summaries.items()
+        }
         turns: list[AgentTurn] = []
         for index in range(0, len(messages), 2):
             user_row, assistant_row = messages[index : index + 2]
@@ -82,8 +88,10 @@ class SqliteConversationRepository:
                     assistant_message=_message(assistant_row),
                     evidence_ids=frozenset(item.citation_id for item in citations),
                     tool_summary=run_summaries.get(str(user_row.turn_id), ()),
+                    canvas_patches=patches_by_turn.get(str(user_row.turn_id), ()),
                 )
             )
+        all_patches = [patch for turn in turns for patch in turn.canvas_patches]
         return Conversation(
             conversation_id=UUID(row.conversation_id),
             user_id=UUID(row.user_id),
@@ -91,6 +99,7 @@ class SqliteConversationRepository:
             created_at=_utc(row.created_at),
             updated_at=_utc(row.updated_at),
             turns=tuple(turns),
+            research_map=aggregate_research_map(all_patches),
         )
 
     def list(self, *, user_id: UUID) -> list[Conversation]:
