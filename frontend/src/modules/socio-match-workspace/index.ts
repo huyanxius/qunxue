@@ -4,6 +4,8 @@
 export { SocioMatchWorkspace } from './SocioMatchWorkspace'
 export { NewResearchPage, PhenomenonWorkspace } from './PhenomenonWorkspace'
 export { ResearchDemoPreview } from './ResearchDemoPreview'
+export { ResearchWorkspaceShell } from './ResearchWorkspaceShell'
+export type { ResearchStageId } from './ResearchWorkspaceShell'
 export type { SocioMatchWorkspaceProps } from './SocioMatchWorkspace'
 export { startResearchTask } from './researchTaskActions'
 export type {

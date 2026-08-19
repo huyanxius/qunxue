@@ -30,13 +30,15 @@ import {
   type FullscreenKnowledgeGraphState,
 } from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
+import { ResearchAgentPage } from './agent/ResearchAgentPage'
+import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import {
-  NewResearchPage,
   PhenomenonWorkspace,
+  ResearchWorkspaceShell,
 } from '../modules/socio-match-workspace'
-import { PageContent, PageShell, PageTitle } from './ui/PageShell'
+import { PageContent, PageShell } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 
 export type SessionState =
@@ -68,7 +70,7 @@ function KnowledgeExplorerRoute() {
   }, [setSearchParams])
 
   return (
-    <PageShell wide>
+    <PageShell workspace defaultRailCollapsed>
       <PageContent>
         <KnowledgeExplorerPage
           state={state}
@@ -104,27 +106,6 @@ function KnowledgeExplorerRoute() {
   )
 }
 
-function PlaceholderPage({
-  eyebrow,
-  title,
-}: {
-  eyebrow: string
-  title: string
-}) {
-  return (
-    <PageShell>
-      <PageTitle
-        eyebrow={eyebrow}
-        title={title}
-        lede="页面已保留稳定入口；具体业务能力将在对应边界完成后接入。"
-      />
-      <PageContent>
-        <p className="page-placeholder">此处暂不展示业务数据或预设结果。</p>
-      </PageContent>
-    </PageShell>
-  )
-}
-
 function KnowledgeEntryRoute() {
   const { knowledge_id: knowledgeId } = useParams<{ knowledge_id: string }>()
   const navigate = useNavigate()
@@ -147,7 +128,7 @@ function KnowledgeEntryRoute() {
   }
 
   return (
-    <PageShell wide>
+    <PageShell workspace defaultRailCollapsed>
       <PageContent>
         <KnowledgeEntryPage
           knowledgeId={knowledgeId}
@@ -281,57 +262,97 @@ function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
 
 function MyResearchRoute() {
   return (
-    <PageShell>
-      <PageTitle
-        eyebrow="ACCOUNT / MY"
-        title="我的研究"
-        lede="按最近更新时间继续研究；删除操作不可恢复。"
-      />
-      <PageContent><MyResearchPage /></PageContent>
+    <PageShell wide>
+      <PageContent>
+        <section className="research-library">
+          <header className="research-library__header">
+            <h1>我的研究</h1>
+            <a href="/research/new">新建研究</a>
+          </header>
+          <div className="research-library__toolbar">
+            <nav aria-label="研究库视图">
+              <span aria-current="page">全部研究</span>
+            </nav>
+          </div>
+          <section className="research-library__content" aria-label="研究任务列表">
+            <MyResearchPage />
+          </section>
+        </section>
+      </PageContent>
+    </PageShell>
+  )
+}
+
+function UnavailableResearchStageRoute({
+  stage,
+}: {
+  stage: 'theory' | 'framework'
+}) {
+  const { task_id: taskId } = useParams<{ task_id: string }>()
+  const isTheory = stage === 'theory'
+  const title = isTheory ? '理论比较尚未开放' : '研究框架尚未开放'
+
+  return (
+    <PageShell wide>
+      <ResearchWorkspaceShell
+        currentStage={stage}
+        eyebrow="研究任务"
+        title={title}
+        lede={isTheory
+          ? '当前版本尚未接入理论匹配运行与候选审阅能力，因此不会展示预设候选或虚构结果。'
+          : '当前版本尚未接入框架生成、审校与确认能力，因此不会提前展示框架草稿。'}
+        taskLabel={taskId ? `任务 ${taskId}` : undefined}
+        context={(
+          <>
+            <p>当前能力状态</p>
+            <h2>保留真实边界</h2>
+            <p>页面保留稳定入口和研究阶段，但只有后端返回的真实结果才会进入工作区。</p>
+            <ul>
+              <li>不会用示例数据冒充研究结果</li>
+              <li>已有任务与现象快照仍然保留</li>
+              <li>能力接入后可从同一路径继续</li>
+            </ul>
+          </>
+        )}
+      >
+        <section className="research-unavailable">
+          <p>这一步需要对应的后端运行与审核能力，目前尚未开放。</p>
+          <a href="/my">返回我的研究</a>
+        </section>
+      </ResearchWorkspaceShell>
     </PageShell>
   )
 }
 
 function NewResearchRoute() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams] = useSearchParams()
-  const seedTheoryId = searchParams.get('seed_theory_id')
-  const seedTheoryName = (
-    location.state as { seedTheoryName?: string } | null
-  )?.seedTheoryName
-  const seedTheory = seedTheoryId
-    ? { theoryId: seedTheoryId, name: seedTheoryName }
-    : null
-  return (
-    <PageShell>
-      <PageTitle
-        eyebrow="RESEARCH / NEW"
-        title="新建研究任务"
-        lede="先留下你观察到的现象，再决定是否确认演示 AI 提出的候选。"
-      />
-      <PageContent>
-        <NewResearchPage
-          seedTheory={seedTheory}
-          onStarted={(taskId) => navigate(`/research/${taskId}/phenomenon`)}
-        />
-      </PageContent>
-    </PageShell>
-  )
+  return <NewResearchWorkspacePage />
 }
 
 function PhenomenonRoute() {
   const { task_id: taskId } = useParams<{ task_id: string }>()
   return (
-    <PageShell>
-      <PageTitle
-        eyebrow="RESEARCH / PHENOMENON"
+    <PageShell wide>
+      <ResearchWorkspaceShell
+        currentStage="phenomenon"
+        eyebrow="研究任务"
         title="确认现象"
-        lede="编辑演示候选；只有你的确认会形成后续匹配可用的现象快照。"
-      />
-      <PageContent>
+        lede="核对系统整理的表述、语境与依据。确认后会形成可恢复的现象快照。"
+        taskLabel={taskId ? `任务 ${taskId.slice(0, 8)}` : undefined}
+        context={(
+          <>
+            <p>当前步骤说明</p>
+            <h2>判断仍然属于你</h2>
+            <p>候选只是对输入的整理，不是已经成立的研究结论。确认前可以直接修改。</p>
+            <ul>
+              <li>检查研究对象与变化是否准确</li>
+              <li>确认依据能回到原始输入</li>
+              <li>缺失信息不会被系统自动补成事实</li>
+            </ul>
+          </>
+        )}
+      >
         {taskId ? <PhenomenonWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}
-      </PageContent>
+      </ResearchWorkspaceShell>
     </PageShell>
   )
 }
@@ -379,13 +400,14 @@ export function AppRoutes({
       />
       <Route path="/welcome" element={productHome} />
       <Route path="/app" element={protectedRoute(<AppHomePage />)} />
+      <Route path="/agent" element={protectedRoute(<ResearchAgentPage />)} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
-      <Route path="/research/:task_id/match" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / MATCH" title="匹配理论" />)} />
-      <Route path="/research/:task_id/framework" element={protectedRoute(<PlaceholderPage eyebrow="RESEARCH / FRAMEWORK" title="研究框架" />)} />
+      <Route path="/research/:task_id/match" element={protectedRoute(<UnavailableResearchStageRoute stage="theory" />)} />
+      <Route path="/research/:task_id/framework" element={protectedRoute(<UnavailableResearchStageRoute stage="framework" />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />

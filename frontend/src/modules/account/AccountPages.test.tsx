@@ -63,6 +63,31 @@ describe('account pages', () => {
     )
   })
 
+  it('does not mislabel a disconnected API as rejected credentials', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      throw new TypeError('Failed to fetch')
+    }))
+    render(
+      <LoginPage
+        onLogin={loginViaApi}
+        onAuthenticated={() => undefined}
+        registerHref="/register"
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('邮箱'), {
+      target: { value: 'known@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('密码'), {
+      target: { value: 'research-passphrase' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '登录并继续' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '登录服务暂时不可用，请稍后重试',
+    )
+  })
+
   it('does not submit registration while passwords differ', async () => {
     const register = vi.fn(async () => undefined)
     render(

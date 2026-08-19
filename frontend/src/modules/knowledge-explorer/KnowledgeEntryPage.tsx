@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 
-import './KnowledgeExplorer.css'
+import './knowledge-ui.css'
+import './knowledge-reader.css'
 import { KnowledgeEntryDetail } from './KnowledgeEntryDetail'
 import { readCurrentKnowledgeRelease, readKnowledgeEntry } from './knowledgeApi'
 import type { KnowledgeEntryDetail as KnowledgeEntryDetailModel } from './types'
@@ -68,22 +70,29 @@ export function KnowledgeEntryPage({
   }, [knowledgeId, onReleaseResolved, releaseId])
 
   return (
-    <article className="knowledge-explorer knowledge-explorer--entry">
+    <article
+      className="knowledge-surface knowledge-reader-page"
+      role="region"
+      aria-label="知识条目正文"
+      tabIndex={0}
+    >
       <header className="knowledge-reader__actions">
         {onReturnToResearch ? (
-          <button type="button" onClick={onReturnToResearch}>
-            ← 返回研究任务
+          <button type="button" aria-label="返回研究任务" onClick={onReturnToResearch}>
+            <ArrowLeftIcon size={14} weight="bold" aria-hidden="true" />
+            返回研究任务
           </button>
         ) : null}
         {onReturnToKnowledge ? (
-          <button type="button" onClick={onReturnToKnowledge}>
-            ← {returnToKnowledgeLabel}
+          <button type="button" aria-label={returnToKnowledgeLabel} onClick={onReturnToKnowledge}>
+            <ArrowLeftIcon size={14} weight="bold" aria-hidden="true" />
+            {returnToKnowledgeLabel}
           </button>
         ) : null}
         {resolvedReleaseId ? <span>固定发布 · {resolvedReleaseId.slice(0, 22)}</span> : null}
       </header>
-      {!detail && !error ? <div className="knowledge-explorer__loading" role="status"><span />正在整理正文与来源</div> : null}
-      {error ? <div className="knowledge-explorer__state" role="alert"><strong>知识条目暂时无法读取</strong><p>{error}</p></div> : null}
+      {!detail && !error ? <div className="knowledge-ui__loading" role="status"><span />正在整理正文与来源</div> : null}
+      {error ? <div className="knowledge-ui__state" role="alert"><strong>知识条目暂时无法读取</strong><p>{error}</p></div> : null}
       {detail ? (
         <>
           <KnowledgeEntryDetail detail={detail} onStartResearch={onStartResearch} />

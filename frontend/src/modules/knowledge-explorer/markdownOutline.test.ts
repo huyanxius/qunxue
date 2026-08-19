@@ -16,10 +16,4 @@ describe('buildMarkdownOutline', () => {
       { depth: 2, id: 'section', title: '!!!' },
     ])
   })
-
-  it('uses the first prose paragraph as a clearly bounded excerpt', () => {
-    const outline = buildMarkdownOutline('# 标题\n\n> 引用\n\n第一段真实正文。\n\n第二段。')
-
-    expect(outline.excerpt).toBe('第一段真实正文。')
-  })
 })

@@ -15,6 +15,7 @@ describe('SocioMatchWorkspace public API', () => {
       'NewResearchPage',
       'PhenomenonWorkspace',
       'ResearchDemoPreview',
+      'ResearchWorkspaceShell',
       'SocioMatchWorkspace',
       'startResearchTask',
     ])

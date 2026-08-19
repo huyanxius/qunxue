@@ -27,6 +27,198 @@ export type AcknowledgePartialMatchRequest = {
 };
 
 /**
+ * AgentCitationResponse
+ */
+export type AgentCitationResponse = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Excerpt
+     */
+    excerpt?: string | null;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Knowledge Id
+     */
+    knowledge_id?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Source Id
+     */
+    source_id?: string | null;
+};
+
+/**
+ * AgentConversationListResponse
+ */
+export type AgentConversationListResponse = {
+    /**
+     * Items
+     */
+    items: Array<AgentConversationSummaryResponse>;
+};
+
+/**
+ * AgentConversationResponse
+ */
+export type AgentConversationResponse = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Turn Count
+     */
+    turn_count: number;
+    /**
+     * Turns
+     */
+    turns: Array<AgentTurnResponse>;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * AgentConversationSummaryResponse
+ */
+export type AgentConversationSummaryResponse = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Turn Count
+     */
+    turn_count: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * AgentMessageResponse
+ */
+export type AgentMessageResponse = {
+    /**
+     * Citations
+     */
+    citations?: Array<AgentCitationResponse>;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Message Id
+     */
+    message_id: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Sequence
+     */
+    sequence: number;
+};
+
+/**
+ * AgentToolTraceResponse
+ */
+export type AgentToolTraceResponse = {
+    /**
+     * Call Id
+     */
+    call_id: string;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Error
+     */
+    error?: string | null;
+    /**
+     * Input
+     */
+    input?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Output
+     */
+    output?: unknown | null;
+    /**
+     * Phase
+     */
+    phase: 'started' | 'finished' | 'failed';
+    /**
+     * Tool
+     */
+    tool: string;
+};
+
+/**
+ * AgentTurnRequest
+ */
+export type AgentTurnRequest = {
+    /**
+     * Conversation Id
+     */
+    conversation_id?: string | null;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * AgentTurnResponse
+ */
+export type AgentTurnResponse = {
+    assistant: AgentMessageResponse;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id?: string | null;
+    /**
+     * Tool Traces
+     */
+    tool_traces?: Array<AgentToolTraceResponse>;
+    /**
+     * Turn Id
+     */
+    turn_id: string;
+    user: AgentMessageResponse;
+};
+
+/**
  * AuditFindingResponse
  */
 export type AuditFindingResponse = {
@@ -3114,6 +3306,116 @@ export type UpdatePhenomenonCandidateRequest = {
      */
     research_intent?: string | null;
 };
+
+export type ListAgentConversationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/agent/conversations';
+};
+
+export type ListAgentConversationsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListAgentConversationsError = ListAgentConversationsErrors[keyof ListAgentConversationsErrors];
+
+export type ListAgentConversationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConversationListResponse;
+};
+
+export type ListAgentConversationsResponse = ListAgentConversationsResponses[keyof ListAgentConversationsResponses];
+
+export type GetAgentConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}';
+};
+
+export type GetAgentConversationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetAgentConversationError = GetAgentConversationErrors[keyof GetAgentConversationErrors];
+
+export type GetAgentConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConversationResponse;
+};
+
+export type GetAgentConversationResponse = GetAgentConversationResponses[keyof GetAgentConversationResponses];
+
+export type StreamAgentTurnData = {
+    body: AgentTurnRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/agent/turns';
+};
+
+export type StreamAgentTurnErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type StreamAgentTurnError = StreamAgentTurnErrors[keyof StreamAgentTurnErrors];
+
+export type StreamAgentTurnResponses = {
+    /**
+     * Server-sent Agent events
+     */
+    200: string;
+};
+
+export type StreamAgentTurnResponse = StreamAgentTurnResponses[keyof StreamAgentTurnResponses];
 
 export type ConfirmTheoryPlanData = {
     body: ConfirmTheoryPlanRequest;

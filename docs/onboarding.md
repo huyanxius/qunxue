@@ -42,9 +42,11 @@ make bootstrap
 - `QUNXUE_DATABASE_URL`：覆盖应用与 Alembic 使用的数据库地址，通过启动命令前的 shell 环境或 `backend/.env` 提供；
 - `VITE_API_BASE_URL`：覆盖浏览器请求的 API 地址，通过启动命令前的 shell 环境或 `frontend/.env.local` 提供。本地开发不要设置；跨源部署还必须由 API 明确允许前端来源，当前基线没有配置 CORS。
 
-模型运行默认是 `QUNXUE_RUNTIME_MODE=mock`，继续使用 deterministic Mock，不需要密钥。`base` 与 `sft` 会装配同一个 OpenAI-compatible Provider，并要求同时设置 `QUNXUE_MODEL_BASE_URL`（包含兼容服务的 `/v1` 前缀）和 `QUNXUE_MODEL_NAME`。可选配置包括 `QUNXUE_MODEL_API_KEY`、`QUNXUE_MODEL_TIMEOUT_SECONDS`，以及 JSON 对象形式的 `QUNXUE_MODEL_EXTRA_HEADERS`。`sft` 还可用 `QUNXUE_MODEL_SFT_RESOURCE_HEADER` 和 `QUNXUE_MODEL_SFT_RESOURCE_ID` 增加一个受控资源请求头。
+模型运行默认是 `QUNXUE_RUNTIME_MODE=mock`，继续使用 deterministic Mock，不需要密钥。只要在 `backend/.env` 填入 `QUNXUE_MODEL_API_KEY`，独立知识 Agent 就会自动切换到 DeepSeek OpenAI-compatible Provider，默认使用 `https://api.deepseek.com` 与 `deepseek-v4-flash`，并关闭 thinking 以节省推理 token。使用其他兼容服务时，再额外设置 `QUNXUE_MODEL_BASE_URL`（包含服务要求的路径）和 `QUNXUE_MODEL_NAME`；`base` 与 `sft` 仍可显式选择对应运行模式。可选配置包括 `QUNXUE_MODEL_TIMEOUT_SECONDS`、JSON 对象形式的 `QUNXUE_MODEL_EXTRA_HEADERS`。`sft` 还可用 `QUNXUE_MODEL_SFT_RESOURCE_HEADER` 和 `QUNXUE_MODEL_SFT_RESOURCE_ID` 增加一个受控资源请求头。
 
-仓库只通过本地假服务验证 OpenAI-compatible HTTP 边界；这不表示任何真实模型或供应商服务已经接入。
+检索模型与聊天模型独立配置：`QUNXUE_EMBEDDING_BASE_URL`、`QUNXUE_EMBEDDING_API_KEY`、`QUNXUE_EMBEDDING_MODEL` 用于 OpenAI-compatible embedding 服务，`QUNXUE_RERANKER_BASE_URL`、`QUNXUE_RERANKER_API_KEY`、`QUNXUE_RERANKER_MODEL` 用于重排服务，`QUNXUE_VECTOR_STORE_URL` 用于可选的向量库。开发机不需要运行这些模型；生产环境可以把 embedding/reranker 作为服务器上的独立服务，也可以先接入托管服务。未配置检索服务时，Agent 仍使用当前 release 绑定的词法/模糊检索。
+
+OpenAI-compatible provider 的 HTTP 边界有本地测试覆盖；是否调用真实供应商由环境变量决定，密钥不写入仓库。
 
 本地 `.env` 和任何密钥都不得提交。
 

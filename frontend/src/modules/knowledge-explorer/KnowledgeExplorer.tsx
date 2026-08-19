@@ -1,10 +1,7 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import './KnowledgeExplorer.css'
-import { KnowledgeCatalogIndex } from './KnowledgeCatalogIndex'
-import { KnowledgeDirectory } from './KnowledgeDirectory'
 import { buildKnowledgeDirectory, type KnowledgeDirectoryDimension } from './directoryTree'
-import { KnowledgeEntryList } from './KnowledgeEntryList'
+import { KnowledgeLibraryView } from './KnowledgeLibraryView'
 import {
   readCurrentKnowledgeRelease,
   readKnowledgeDirectory,
@@ -189,11 +186,6 @@ export function KnowledgeExplorerPage({
     onStateChange({ ...nextState, loadedPages: undefined })
   }
 
-  function submitSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    updateState({ ...state, query: queryInput.trim() || undefined })
-  }
-
   async function loadMore() {
     if (!loadedReleaseId || !nextCursor) return
     setLoadingMore(true)
@@ -220,100 +212,30 @@ export function KnowledgeExplorerPage({
     }
   }
 
-  const hasFilters = Boolean(state.query || state.dimensionId || state.categoryId)
-
   return (
-    <section className="knowledge-explorer" data-release-state={releaseState}>
-      <header className="knowledge-explorer__header">
-        <div className="knowledge-explorer__identity">
-          <p className="knowledge-explorer__eyebrow">群学知识</p>
-          <h1>知识库</h1>
-        </div>
-        <form className="knowledge-explorer__search" aria-label="搜索知识库" onSubmit={submitSearch}>
-          <input
-            id="knowledge-query"
-            type="search"
-            value={queryInput}
-            onChange={(event) => setQueryInput(event.target.value)}
-            placeholder="搜索理论、概念或方法"
-          />
-          <button type="submit" disabled={releaseState === 'loading'}>搜索</button>
-        </form>
-        <div className="knowledge-explorer__toolbar-meta">
-          {loadedReleaseId ? <p className="knowledge-explorer__edition">{catalogTotal || 0} 条知识 · 当前发布</p> : null}
-          {onOpenGraph ? <button type="button" onClick={onOpenGraph}>打开知识图谱</button> : null}
-        </div>
-      </header>
-
-      {hasFilters ? (
-        <div className="knowledge-explorer__filters" aria-label="当前筛选条件">
-          <span>当前条件</span>
-          {state.query ? (
-            <button type="button" aria-label={`移除关键词 ${state.query}`} onClick={() => updateState({ ...state, query: undefined })}>
-              关键词 · {state.query}<b aria-hidden="true">×</b>
-            </button>
-          ) : null}
-          {state.dimensionId ? (
-            <button type="button" aria-label={`移除维度 ${selectedDimension?.title ?? state.dimensionId}`} onClick={() => updateState({ ...state, dimensionId: undefined, categoryId: undefined })}>
-              维度 · {selectedDimension?.title ?? state.dimensionId}<b aria-hidden="true">×</b>
-            </button>
-          ) : null}
-          {state.categoryId ? (
-            <button type="button" aria-label={`移除分类 ${selectedCategory ?? state.categoryId}`} onClick={() => updateState({ ...state, categoryId: undefined })}>
-              分类 · {selectedCategory ?? state.categoryId}<b aria-hidden="true">×</b>
-            </button>
-          ) : null}
-          <button className="knowledge-explorer__clear" type="button" aria-label="清除全部条件" onClick={() => updateState({ releaseId: state.releaseId, returnTo: state.returnTo })}>
-            清除全部
-          </button>
-        </div>
-      ) : null}
-
-      {releaseState === 'loading' ? (
-        <div className="knowledge-explorer__loading" role="status"><span />正在读取目录与首批条目</div>
-      ) : null}
-      {releaseState === 'unavailable' ? (
-        <div className="knowledge-explorer__state" role="alert">
-          <strong>知识目录暂时无法读取</strong><p>{releaseError}</p>
-          <button type="button" onClick={() => setRetryKey((value) => value + 1)}>重新读取</button>
-        </div>
-      ) : null}
-
-      {releaseState === 'ready' ? (
-        <div className="knowledge-explorer__columns" data-view={shouldShowEntries ? 'entries' : 'catalog'}>
-          {shouldShowEntries ? (
-            <KnowledgeDirectory
-              directory={directory}
-              selectedDimensionId={state.dimensionId}
-              selectedCategoryId={state.categoryId}
-              onSelectDimension={(dimensionId) => updateState({ ...state, dimensionId, categoryId: undefined })}
-              onSelectCategory={(dimensionId, categoryId) => updateState({ ...state, dimensionId, categoryId })}
-              onShowCatalog={() => updateState({ ...state, dimensionId: undefined, categoryId: undefined })}
-            />
-          ) : null}
-          {shouldShowEntries ? (
-            <KnowledgeEntryList
-              entries={results}
-              state={resultState}
-              error={resultError}
-              hasNextPage={Boolean(nextCursor)}
-              totalEntries={resultTotal}
-              loadingMore={loadingMore}
-              onSelect={onOpenEntry}
-              onLocate={onLocateEntry}
-              onLoadMore={() => void loadMore()}
-              onRetry={() => setRetryKey((value) => value + 1)}
-            />
-          ) : (
-            <KnowledgeCatalogIndex
-              directory={directory}
-              selectedDimension={selectedDimension}
-              onSelectDimension={(dimensionId) => updateState({ ...state, dimensionId, categoryId: undefined })}
-              onSelectCategory={(dimensionId, categoryId) => updateState({ ...state, dimensionId, categoryId })}
-            />
-          )}
-        </div>
-      ) : null}
-    </section>
+    <KnowledgeLibraryView
+      state={state}
+      queryInput={queryInput}
+      releaseState={releaseState}
+      releaseError={releaseError}
+      resultState={resultState}
+      resultError={resultError}
+      directory={directory}
+      selectedDimension={selectedDimension}
+      selectedCategoryTitle={selectedCategory}
+      catalogTotal={catalogTotal}
+      results={results}
+      resultTotal={resultTotal}
+      hasNextPage={Boolean(nextCursor)}
+      loadingMore={loadingMore}
+      onQueryInputChange={setQueryInput}
+      onSearch={() => updateState({ ...state, query: queryInput.trim() || undefined })}
+      onStateChange={onStateChange}
+      onOpenEntry={onOpenEntry}
+      onLocateEntry={onLocateEntry}
+      onOpenGraph={onOpenGraph}
+      onLoadMore={() => void loadMore()}
+      onRetry={() => setRetryKey((value) => value + 1)}
+    />
   )
 }

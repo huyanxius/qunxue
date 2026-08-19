@@ -1,0 +1,288 @@
+import { apiClient } from '../../api/client'
+
+export type AgentCitation = {
+  citation_id: string
+  label: string
+  kind: string
+  excerpt?: string | null
+  knowledge_id?: string | null
+  source_id?: string | null
+}
+
+export type AgentResearchNodeKind = 'question' | 'theory' | 'claim' | 'evidence' | 'gap' | 'synthesis'
+export type AgentResearchNodeStatus = 'developing' | 'grounded' | 'open' | 'verified' | 'challenged' | 'complete'
+export type AgentResearchRelationKind = 'explains' | 'supports' | 'challenges' | 'derives' | 'refines'
+
+export type AgentResearchMapNode = {
+  id: string
+  kind: AgentResearchNodeKind
+  title: string
+  summary?: string | null
+  status: AgentResearchNodeStatus
+  citation_ids: string[]
+}
+
+export type AgentResearchMapRelation = {
+  id: string
+  source: string
+  target: string
+  relation: AgentResearchRelationKind
+  label?: string | null
+}
+
+export type AgentResearchMapPatch = {
+  schema_version: 1
+  nodes: AgentResearchMapNode[]
+  relations: AgentResearchMapRelation[]
+  remove_node_ids: string[]
+  remove_relation_ids: string[]
+}
+
+export type AgentResearchMap = {
+  schema_version: 1
+  nodes: AgentResearchMapNode[]
+  relations: AgentResearchMapRelation[]
+}
+
+export type AgentMessage = {
+  message_id: string
+  role: 'user' | 'assistant'
+  content: string
+  citations: AgentCitation[]
+  sequence: number
+  created_at: string
+}
+
+export type AgentTurn = {
+  turn_id: string
+  user: AgentMessage
+  assistant: AgentMessage
+  tool_traces?: AgentToolTrace[]
+  knowledge_release_id?: string | null
+  canvas_patches?: AgentResearchMapPatch[]
+}
+
+export type AgentToolTrace = {
+  tool: string
+  phase: 'started' | 'finished' | 'failed'
+  call_id: string
+  input?: Record<string, unknown> | null
+  output?: unknown
+  detail?: string | null
+  error?: string | null
+}
+
+export type AgentConversationSummary = {
+  conversation_id: string
+  title: string
+  updated_at: string
+  turn_count: number
+}
+
+export type AgentConversation = AgentConversationSummary & {
+  created_at: string
+  turns: AgentTurn[]
+  research_map?: AgentResearchMap
+}
+
+export type AgentRuntimeMode = 'mock' | 'base' | 'sft'
+
+export type AgentEvent =
+  | { type: 'turn_started'; conversation_id: string; run_id: string; replayed: boolean; runtime_mode?: AgentRuntimeMode }
+  | { type: 'agent_status'; status: 'thinking' | 'answering' }
+  | {
+      type: 'tool_started'
+      tool: string
+      call_id: string | null
+      input?: unknown
+      detail?: string | null
+    }
+  | {
+      type: 'tool_finished'
+      tool: string
+      call_id: string | null
+      output?: unknown
+      detail?: string | null
+    }
+  | {
+      type: 'tool_failed'
+      tool: string
+      call_id: string | null
+      input?: unknown
+      message: string
+      error_code: string | null
+      detail: string | null
+    }
+  | { type: 'assistant_delta'; delta: string }
+  | { type: 'citation_added'; citation: AgentCitation }
+  | { type: 'canvas_patch'; patch: AgentResearchMapPatch }
+  | { type: 'turn_completed'; conversation: AgentConversation; knowledge_release_id: string }
+  | { type: 'turn_interrupted'; code: string; message: string }
+  | { type: 'turn_failed'; code: string; message: string }
+
+export function parseAgentEventStream(stream: string): AgentEvent[] {
+  const events: AgentEvent[] = []
+  for (const block of stream.split(/\n\n+/)) {
+    const eventName = block.match(/^event:\s*(.+)$/m)?.[1]
+    const data = block.match(/^data:\s*(.+)$/m)?.[1]
+    if (!eventName || !data) continue
+    const payload = JSON.parse(data) as Record<string, unknown>
+    if (eventName === 'agent_status' && (payload.status === 'thinking' || payload.status === 'answering')) {
+      events.push({ type: eventName, status: payload.status })
+    } else if (eventName === 'tool_started' && typeof payload.tool === 'string') {
+      const event: Extract<AgentEvent, { type: 'tool_started' }> = {
+        type: eventName,
+        tool: payload.tool,
+        call_id: typeof payload.call_id === 'string' ? payload.call_id : null,
+        detail: typeof payload.detail === 'string' ? payload.detail : null,
+      }
+      if ('input' in payload || 'arguments' in payload) {
+        event.input = payload.input ?? payload.arguments
+      }
+      events.push(event)
+    } else if (eventName === 'tool_finished' && typeof payload.tool === 'string') {
+      const event: Extract<AgentEvent, { type: 'tool_finished' }> = {
+        type: eventName,
+        tool: payload.tool,
+        call_id: typeof payload.call_id === 'string' ? payload.call_id : null,
+        detail: typeof payload.detail === 'string' ? payload.detail : null,
+      }
+      if ('output' in payload) event.output = payload.output
+      events.push(event)
+    } else if (eventName === 'tool_failed' && typeof payload.tool === 'string') {
+      const event: Extract<AgentEvent, { type: 'tool_failed' }> = {
+        type: eventName,
+        tool: payload.tool,
+        call_id: typeof payload.call_id === 'string' ? payload.call_id : null,
+        message: String(payload.message ?? payload.detail ?? payload.error ?? '工具调用失败'),
+        error_code: typeof payload.error_code === 'string' ? payload.error_code : null,
+        detail: typeof payload.detail === 'string' ? payload.detail : null,
+      }
+      if ('input' in payload) event.input = payload.input
+      events.push(event)
+    } else if (eventName === 'assistant_delta' && typeof payload.delta === 'string') {
+      events.push({ type: eventName, delta: payload.delta })
+    } else if (eventName === 'citation_added' && payload.citation_id) {
+      events.push({ type: eventName, citation: payload as unknown as AgentCitation })
+    } else if (eventName === 'canvas_patch' && isResearchMapPatch(payload)) {
+      events.push({ type: eventName, patch: payload })
+    } else if (eventName === 'turn_started' && payload.conversation_id && payload.run_id) {
+      events.push({
+        type: eventName,
+        conversation_id: String(payload.conversation_id),
+        run_id: String(payload.run_id),
+        replayed: payload.replayed === true,
+        ...(payload.runtime_mode === 'mock' || payload.runtime_mode === 'base' || payload.runtime_mode === 'sft'
+          ? { runtime_mode: payload.runtime_mode }
+          : {}),
+      })
+    } else if (eventName === 'turn_completed' && payload.conversation) {
+      events.push({
+        type: eventName,
+        conversation: payload.conversation as AgentConversation,
+        knowledge_release_id: String(payload.knowledge_release_id ?? ''),
+      })
+    } else if (eventName === 'turn_interrupted') {
+      events.push({
+        type: eventName,
+        code: String(payload.code ?? 'interrupted'),
+        message: String(payload.message ?? '已停止生成。'),
+      })
+    } else if (eventName === 'turn_failed') {
+      events.push({
+        type: eventName,
+        code: String(payload.code ?? 'agent_unavailable'),
+        message: String(payload.message ?? 'Agent 暂时无法完成回答。'),
+      })
+    }
+  }
+  return events
+}
+
+function isResearchMapPatch(value: Record<string, unknown>): value is AgentResearchMapPatch {
+  return value.schema_version === 1
+    && Array.isArray(value.nodes)
+    && Array.isArray(value.relations)
+    && Array.isArray(value.remove_node_ids)
+    && Array.isArray(value.remove_relation_ids)
+    && value.nodes.every((node) => node && typeof node === 'object')
+    && value.relations.every((relation) => relation && typeof relation === 'object')
+}
+
+export async function listAgentConversations(signal?: AbortSignal): Promise<AgentConversationSummary[]> {
+  const response = await fetch(apiClient.buildUrl({ url: '/api/agent/conversations' }), {
+    credentials: 'include',
+    signal,
+  })
+  if (!response.ok) throw new Error('无法加载对话记录')
+  return ((await response.json()) as { items: AgentConversationSummary[] }).items
+}
+
+export async function getAgentConversation(
+  conversationId: string,
+  signal?: AbortSignal,
+): Promise<AgentConversation> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/conversations/{conversation_id}',
+    path: { conversation_id: conversationId },
+  }), {
+    credentials: 'include',
+    signal,
+  })
+  if (!response.ok) throw new Error('无法加载这段对话')
+  return await response.json() as AgentConversation
+}
+
+export async function streamAgentTurn(
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research' },
+  onEvent: (event: AgentEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(apiClient.buildUrl({ url: '/api/agent/turns' }), {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+      'Idempotency-Key': payload.idempotencyKey,
+    },
+    body: JSON.stringify({
+      conversation_id: payload.conversation_id,
+      message: payload.message,
+      workspace: payload.workspace ?? 'agent',
+    }),
+    signal,
+  })
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) throw new Error('登录状态已失效，请重新登录后继续研究。')
+    if (response.status === 422) throw new Error('问题长度或格式不符合要求，请修改后重试。')
+    throw new Error('Agent 暂时无法连接')
+  }
+  if (!response.body) throw new Error('Agent 暂时无法连接')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let terminalEventSeen = false
+  while (true) {
+    const { done, value } = await reader.read()
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done })
+    const blocks = buffer.split(/\n\n+/)
+    buffer = blocks.pop() ?? ''
+    for (const event of parseAgentEventStream(`${blocks.join('\n\n')}\n\n`)) {
+      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed') {
+        terminalEventSeen = true
+      }
+      onEvent(event)
+    }
+    if (done) break
+  }
+  if (buffer.trim()) {
+    for (const event of parseAgentEventStream(buffer)) {
+      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed') {
+        terminalEventSeen = true
+      }
+      onEvent(event)
+    }
+  }
+  if (!terminalEventSeen) throw new Error('Agent 流在完成前中断，请重试。')
+}

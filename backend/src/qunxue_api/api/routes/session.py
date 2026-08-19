@@ -82,7 +82,7 @@ def logout_session(
         path="/",
         secure=settings.session_cookie_secure,
         httponly=True,
-        samesite="lax",
+        samesite=settings.session_cookie_samesite,
     )
     return LogoutSessionResponse(
         session_id=authenticated.session.session_id,
@@ -131,5 +131,5 @@ def _set_session_cookie(
         path="/",
         secure=settings.session_cookie_secure,
         httponly=True,
-        samesite="lax",
+        samesite=settings.session_cookie_samesite,
     )

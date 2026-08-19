@@ -94,7 +94,6 @@ export async function loginViaApi(
 export function isLoginServiceFailure(failure: unknown): boolean {
   return (
     failure instanceof ApiRequestError
-    && failure.status !== undefined
     && failure.status !== 401
   )
 }

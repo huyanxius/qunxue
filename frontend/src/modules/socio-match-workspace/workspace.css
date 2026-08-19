@@ -84,50 +84,58 @@
 
 .phenomenon-form {
   display: grid;
-  gap: 14px;
-  max-width: 760px;
+  gap: 10px;
+  max-width: 680px;
 }
 
 .phenomenon-form label {
-  margin-top: 12px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  margin-top: 16px;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 620;
 }
 
 .phenomenon-form textarea {
   box-sizing: border-box;
   width: 100%;
-  padding: 14px 16px;
+  padding: 13px 14px;
   resize: vertical;
-  border: 1px solid var(--ink-soft);
-  border-radius: 2px;
-  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
   line-height: 1.65;
 }
 
+.phenomenon-form textarea:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  outline-offset: 1px;
+}
+
 .research-entry,
 .phenomenon-workspace {
-  max-width: 880px;
+  max-width: 680px;
 }
 
 .entry-methods,
 .candidate-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 30px;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
 }
 
 .entry-methods button,
 .candidate-tabs button,
 .example-list button,
 .smart-topic-placeholder button {
-  padding: 12px 14px;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -135,8 +143,30 @@
 
 .entry-methods button[aria-pressed="true"],
 .candidate-tabs button[aria-pressed="true"] {
-  border-color: var(--accent);
-  color: var(--accent-dark);
+  border-color: var(--rule);
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.research-entry__details {
+  margin-top: 14px;
+  padding: 12px 0 2px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.research-entry__details summary {
+  min-height: 36px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.73rem;
+  font-weight: 620;
+}
+
+.research-entry__details > div {
+  display: grid;
+  gap: 10px;
+  padding: 2px 0 14px;
 }
 
 .seed-clue,
@@ -146,13 +176,43 @@
   font-weight: 700;
 }
 
+.seed-clue {
+  margin: 0 0 18px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  font-size: 0.74rem;
+}
+
 .example-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  gap: 6px;
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--rule);
+}
+
+.example-list button {
+  width: 100%;
+  justify-self: stretch;
+  text-align: left;
+  background: var(--surface-2);
+}
+
+.example-list button:hover {
+  border-color: var(--rule-strong);
+  background: var(--surface-3);
+}
+
+.research-entry .content-mark {
+  margin-top: 8px;
+  padding: 13px 14px;
+  border-top-width: 1px;
+}
+
+.research-entry .content-mark p {
+  margin-top: 5px;
+  font-size: 0.74rem;
 }
 
 .example-list h2 {
@@ -194,11 +254,13 @@
 
 .phenomenon-form button {
   justify-self: start;
-  margin-top: 14px;
-  padding: 12px 20px;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  min-height: 42px;
+  margin-top: 16px;
+  padding: 0 16px;
+  border: 1px solid var(--ink-strong);
+  border-radius: 7px;
+  background: var(--ink-strong);
+  color: #fff;
   font: inherit;
 }
 
@@ -210,7 +272,8 @@
 .model-badge {
   width: fit-content;
   padding: 6px 10px;
-  border: 1px solid var(--ink-soft);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
   color: var(--ink-soft);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.76rem;
@@ -218,9 +281,10 @@
 
 .evidence-card {
   margin-top: 16px;
-  padding: 20px;
-  border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface-2);
 }
 
 .evidence-card h2 {
@@ -235,9 +299,10 @@
 
 .confirmed-phenomenon {
   max-width: 760px;
-  padding: 28px 0;
-  border-top: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
+  padding: 24px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface-2);
 }
 
 @media (max-width: 760px) {
@@ -248,6 +313,6 @@
 
   .entry-methods,
   .candidate-tabs {
-    grid-template-columns: 1fr;
+    overflow-x: auto;
   }
 }

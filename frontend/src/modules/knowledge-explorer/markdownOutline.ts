@@ -5,7 +5,6 @@ export interface MarkdownHeading {
 }
 
 export interface MarkdownOutline {
-  excerpt?: string
   headings: readonly MarkdownHeading[]
 }
 
@@ -44,13 +43,5 @@ export function buildMarkdownOutline(content: string): MarkdownOutline {
     })
   }
 
-  const excerpt = content
-    .split(/\n\s*\n/)
-    .map((block) => block.trim())
-    .find((block) => block && !/^(#{1,6}\s|>|[-*+]\s|\d+\.\s|```|\|)/.test(block))
-
-  return {
-    excerpt: excerpt ? plainText(excerpt.replace(/\s*\n\s*/g, ' ')) : undefined,
-    headings,
-  }
+  return { headings }
 }

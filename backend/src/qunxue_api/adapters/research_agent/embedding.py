@@ -1,0 +1,75 @@
+"""OpenAI-compatible embedding adapter for remote or self-hosted encoders."""
+
+import json
+from collections.abc import Sequence
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+
+class EmbeddingProviderError(RuntimeError):
+    """The configured embedding service returned an unusable response."""
+
+
+class OpenAICompatibleEmbeddingProvider:
+    """Call a hosted or self-hosted ``/embeddings`` endpoint.
+
+    The adapter intentionally speaks the small OpenAI-compatible contract so the
+    same application code can use a managed API in early deployment and a local
+    BGE-M3/vLLM service on the production server later.
+    """
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        api_key: str | None,
+        model: str,
+        timeout_seconds: float,
+    ) -> None:
+        self._endpoint = _embeddings_endpoint(base_url)
+        self._api_key = api_key
+        self._model = model
+        self._timeout_seconds = timeout_seconds
+
+    def embed_query(self, text: str) -> list[float]:
+        values = self.embed_documents([text])
+        if not values:
+            raise EmbeddingProviderError("embedding service returned no vector")
+        return values[0]
+
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        inputs = list(texts)
+        if not inputs:
+            return []
+        body = json.dumps({"input": inputs, "model": self._model}).encode("utf-8")
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        request = Request(self._endpoint, data=body, headers=headers, method="POST")
+        try:
+            with urlopen(request, timeout=self._timeout_seconds) as response:
+                payload = json.loads(response.read())
+        except (HTTPError, URLError, TimeoutError, OSError) as error:
+            raise EmbeddingProviderError("embedding service request failed") from error
+        return _parse_embeddings(payload, expected_count=len(inputs))
+
+
+def _embeddings_endpoint(base_url: str) -> str:
+    normalized = base_url.rstrip("/")
+    return normalized if normalized.endswith("/embeddings") else f"{normalized}/embeddings"
+
+
+def _parse_embeddings(payload: object, *, expected_count: int) -> list[list[float]]:
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        raise EmbeddingProviderError("embedding response is missing data")
+    values: list[list[float]] = []
+    for item in payload["data"]:
+        if not isinstance(item, dict) or not isinstance(item.get("embedding"), list):
+            raise EmbeddingProviderError("embedding response contains an invalid vector")
+        vector = item["embedding"]
+        if not all(isinstance(value, (int, float)) for value in vector):
+            raise EmbeddingProviderError("embedding response contains a non-numeric vector")
+        values.append([float(value) for value in vector])
+    if len(values) != expected_count:
+        raise EmbeddingProviderError("embedding response count does not match request")
+    return values

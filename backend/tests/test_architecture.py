@@ -12,6 +12,7 @@ PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "qunxue_api"
 MODULES_ROOT = PACKAGE_ROOT / "modules"
 MODULE_PACKAGE = "qunxue_api.modules"
 ALLOWED_MODULE_DEPENDENCIES = {
+    "agent_conversation": set(),
     "identity": set(),
     "knowledge_catalog": set(),
     "research_intake": set(),

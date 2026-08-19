@@ -47,7 +47,7 @@ function candidate(overrides: Partial<PhenomenonCandidate> = {}): PhenomenonCand
 }
 
 describe('research entry', () => {
-  it('shows three entry methods and fills a backend example with visible provenance', async () => {
+  it('shows only implemented entry methods and fills a backend example with visible provenance', async () => {
     vi.mocked(api.listPhenomenonExamplesViaApi).mockResolvedValue([{
       exampleId: 'community-mutual-aid',
       title: '社区互助变化',
@@ -60,7 +60,8 @@ describe('research entry', () => {
 
     expect(screen.getByRole('button', { name: '直接输入' })).toBeVisible()
     expect(screen.getByRole('button', { name: '单份材料' })).toBeVisible()
-    expect(screen.getByRole('button', { name: '智能选题' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: '智能选题' })).not.toBeInTheDocument()
+    expect(screen.getByText('补充研究意图与语境（可选）')).toBeVisible()
     fireEvent.click(await screen.findByRole('button', { name: '社区互助变化' }))
 
     expect(screen.getByLabelText('你观察到的现象')).toHaveValue('同一社区中的互助为何逐渐减少？')
@@ -95,15 +96,6 @@ describe('research entry', () => {
     expect(onStarted).toHaveBeenCalledWith('task-material')
   })
 
-  it('keeps smart topic selection as an explicit unavailable placeholder', async () => {
-    vi.mocked(api.listPhenomenonExamplesViaApi).mockResolvedValue([])
-    renderWithQuery(<NewResearchPage onStarted={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: '智能选题' }))
-
-    expect(screen.getByText('智能选题即将开放')).toBeVisible()
-    expect(screen.getByRole('button', { name: '暂未开放' })).toBeDisabled()
-  })
 })
 
 describe('phenomenon confirmation workspace', () => {
