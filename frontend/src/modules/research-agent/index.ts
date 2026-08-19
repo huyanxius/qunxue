@@ -20,4 +20,4 @@ export type {
   AgentToolStep,
   AgentToolTrace,
   AgentTurn,
-} from './researchAgentGateway'
+} from './model'

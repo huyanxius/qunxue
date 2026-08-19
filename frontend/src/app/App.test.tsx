@@ -433,10 +433,10 @@ describe('App routes', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     expect(within(workspace).getByRole('heading', { name: '从一个社会学问题开始' })).toBeVisible()
-    expect(within(workspace).getByText('研究地图')).toBeVisible()
-    expect(within(workspace).getByText('等待你的问题')).toBeVisible()
+    expect(within(workspace).getByText('研究论证地图')).toBeVisible()
+    expect(within(workspace).getByText('等待研究问题')).toBeVisible()
     expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toBeVisible()
-    expect(within(workspace).getByText('问题、证据和 Agent 综合会在这里形成可追溯的结构')).toBeVisible()
+    expect(within(workspace).getByText('不是聊天摘要。这里仅保留 Agent 明确建立的问题、理论、主张、证据与缺口。')).toBeVisible()
   })
 
   it('projects a real Agent turn into research map nodes and traceable evidence', async () => {
@@ -455,6 +455,18 @@ describe('App routes', () => {
           }],
         },
       }],
+      research_map: {
+        schema_version: 1,
+        nodes: [{
+          id: 'synthesis-mutual-aid',
+          kind: 'synthesis',
+          title: '互助关系的结构性变化',
+          summary: '把社区互助放回信任与互动机会的变化中理解。',
+          status: 'grounded',
+          citation_ids: ['knowledge:mutual-aid'],
+        }],
+        relations: [],
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = requestUrl(input)
@@ -469,8 +481,8 @@ describe('App routes', () => {
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
     expect(await within(workspace).findByText('互惠规范与社区互助')).toBeVisible()
-    expect(within(workspace).getByText('Agent 综合')).toBeVisible()
-    expect(within(workspace).getByText('已形成初步结构')).toBeVisible()
+    expect(within(workspace).getByText('研究论证地图')).toBeVisible()
+    await waitFor(() => expect(within(workspace).getByText('互助关系的结构性变化')).toBeInTheDocument())
     expect(within(workspace).getByRole('button', { name: /查看证据/ })).toBeVisible()
   })
 

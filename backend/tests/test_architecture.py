@@ -48,6 +48,9 @@ ALLOWED_MODULE_INTERNAL_DEPENDENCIES = {
     "ports": {"domain", "errors", "ports"},
     "service": {"domain", "errors", "ports", "service"},
 }
+MODULE_INTERNAL_ROLE_ALIASES = {
+    "research_map": "domain",
+}
 FORBIDDEN_INTERNAL_PREFIXES = (
     "qunxue_api.adapters",
     "qunxue_api.api",
@@ -316,7 +319,10 @@ def _architecture_violations(
                     f"from {target_module}"
                 )
 
-        source_role = Path(module_relative.parts[1]).stem
+        source_role = MODULE_INTERNAL_ROLE_ALIASES.get(
+            Path(module_relative.parts[1]).stem,
+            Path(module_relative.parts[1]).stem,
+        )
         if source_role not in ALLOWED_MODULE_INTERNAL_DEPENDENCIES:
             continue
         module_root = f"{MODULE_PACKAGE}.{source_module}"
@@ -329,7 +335,10 @@ def _architecture_violations(
                 continue
             if not imported.startswith(f"{module_root}."):
                 continue
-            target_role = imported.split(".")[3]
+            target_role = MODULE_INTERNAL_ROLE_ALIASES.get(
+                imported.split(".")[3],
+                imported.split(".")[3],
+            )
             if (
                 target_role
                 not in ALLOWED_MODULE_INTERNAL_DEPENDENCIES[source_role]
