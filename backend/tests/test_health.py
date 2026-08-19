@@ -79,3 +79,56 @@ def test_model_credentials_are_secret_values_in_runtime_settings() -> None:
     assert "local-test-api-key" not in rendered
     assert "local-test-tenant-token" not in rendered
     assert "local-test-lora-id" not in rendered
+
+
+def test_configured_frontend_origin_can_preflight_agent_requests(client: TestClient) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            cors_allowed_origins=("https://frontend.example.test",),
+        ),
+        database=client.app.state.database,
+    )
+
+    with TestClient(app) as cross_origin_client:
+        response = cross_origin_client.options(
+            "/api/agent/turns",
+            headers={
+                "Origin": "https://frontend.example.test",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type,idempotency-key",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://frontend.example.test"
+    assert response.headers["access-control-allow-credentials"] == "true"
+
+
+def test_cross_site_session_cookie_uses_secure_none_when_configured(client: TestClient) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            session_cookie_secure=True,
+            session_cookie_samesite="none",
+        ),
+        database=client.app.state.database,
+    )
+
+    with TestClient(app) as cross_origin_client:
+        response = cross_origin_client.post(
+            "/api/session/register",
+            json={
+                "email": "cross-site-cookie@example.com",
+                "password": "password-123",
+                "display_name": "跨站验收",
+            },
+            headers={"Idempotency-Key": "cross-site-cookie"},
+        )
+
+    assert response.status_code == 201
+    cookie = response.headers["set-cookie"].lower()
+    assert "samesite=none" in cookie
+    assert "secure" in cookie

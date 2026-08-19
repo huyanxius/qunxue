@@ -99,3 +99,44 @@ it('retries the real research list after a service failure', async () => {
   expect(await screen.findByRole('heading', { name: '还没有研究任务' })).toBeVisible()
   expect(fetchMock).toHaveBeenCalledTimes(2)
 })
+
+it('moves focus into the delete dialog and restores it when dismissed with Escape', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+    items: [{
+      task_id: '95306bf9-194d-4677-be2d-eef4f6aa86d1',
+      entry_type: 'direct_input',
+      status: 'in_progress',
+      current_stage: 'theory_matching',
+      version: 4,
+      allowed_actions: ['review_theory_candidates'],
+      seed_theory_id: null,
+      phenomenon_summary: {
+        phenomenon_query_id: '59f192dd-85fc-41bf-abaf-d66caa7df958',
+        version: 2,
+        phenomenon: '成员流动后，社区互助为何持续减少？',
+        research_intent: null,
+      },
+      adopted_theory_count: 2,
+      current_phenomenon_candidate_id: null,
+      current_match_run_id: 'b32448bd-18ef-44a8-89fc-e24d735edfb6',
+      current_framework_id: null,
+      created_at: '2026-08-07T00:00:00Z',
+      updated_at: '2026-08-07T01:00:00Z',
+    }],
+    next_cursor: null,
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+  renderPage()
+
+  await screen.findByRole('row', { name: /成员流动后，社区互助为何持续减少/ })
+  const trigger = screen.getByRole('button', { name: /打开研究操作/ })
+  fireEvent.click(trigger)
+  fireEvent.click(screen.getByRole('menuitem', { name: '删除研究' }))
+
+  const dialog = await screen.findByRole('dialog', { name: '永久删除这项研究？' })
+  const cancel = within(dialog).getByRole('button', { name: '取消' })
+  expect(cancel).toHaveFocus()
+  fireEvent.keyDown(dialog, { key: 'Escape' })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(trigger).toHaveFocus()
+})
