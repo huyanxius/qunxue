@@ -40,6 +40,10 @@ M4（理论匹配与用户决定）和 M5（研究框架）尚未交付：前端
 ## 文档入口
 
 - 第一次参与开发：[`docs/onboarding.md`](docs/onboarding.md)
+- 分发、运行、备份与发布前检查：[`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md)
+- 安全与隐私边界：[`docs/SECURITY.md`](docs/SECURITY.md)
+- 使用支持与排障：[`SUPPORT.md`](SUPPORT.md)
+- 变更记录：[`CHANGELOG.md`](CHANGELOG.md)
 - 模块职责与依赖方向：[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - 分支、提交与 PR：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 - 产品事实与竞赛边界：[`docs/product/README.md`](docs/product/README.md)
