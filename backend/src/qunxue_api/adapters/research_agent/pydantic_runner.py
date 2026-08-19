@@ -746,13 +746,26 @@ def _text_result(
     tools: AgentToolContext,
     model: str,
 ) -> AgentRunResult:
+    catalog_alias_counts: dict[str, int] = {}
+    for evidence in tools.evidence.values():
+        alias = _catalog_identifier_alias(evidence.knowledge_id)
+        if alias is not None:
+            catalog_alias_counts[alias] = catalog_alias_counts.get(alias, 0) + 1
+
     explicit_citation_ids = [
         citation_id
         for citation_id, evidence in tools.evidence.items()
-        if any(
-            _mentions_identifier(answer, identifier)
-            for identifier in (citation_id, evidence.knowledge_id, evidence.source_id)
-            if identifier
+        if (
+            any(
+                _mentions_identifier(answer, identifier)
+                for identifier in (citation_id, evidence.knowledge_id, evidence.source_id)
+                if identifier
+            )
+            or (
+                (alias := _catalog_identifier_alias(evidence.knowledge_id)) is not None
+                and catalog_alias_counts[alias] == 1
+                and _mentions_identifier(answer, alias)
+            )
         )
     ]
     return AgentRunResult(
@@ -762,6 +775,13 @@ def _text_result(
         provider="pydantic-ai",
         model=model,
     )
+
+
+def _catalog_identifier_alias(identifier: str | None) -> str | None:
+    if identifier is None or ":" not in identifier:
+        return None
+    alias = identifier.rsplit(":", maxsplit=1)[-1]
+    return alias if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", alias) else None
 
 
 def _mentions_identifier(answer: str, identifier: str) -> bool:
