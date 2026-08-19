@@ -1,5 +1,10 @@
 """SQLite adapter registry used by migrations and the composition root."""
 
+from qunxue_api.adapters.sqlite.agent_conversation_model import (
+    AgentConversationRow,
+    AgentMessageRow,
+    AgentRunRow,
+)
 from qunxue_api.adapters.sqlite.base import Base
 from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
@@ -26,6 +31,9 @@ from qunxue_api.adapters.sqlite.theory_matching_model import (
 
 __all__ = [
     "Base",
+    "AgentConversationRow",
+    "AgentMessageRow",
+    "AgentRunRow",
     "KnowledgeEntryReviewRow",
     "KnowledgeEntryRevisionRow",
     "KnowledgeRelationRow",

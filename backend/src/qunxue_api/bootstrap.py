@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -17,7 +18,13 @@ from qunxue_api.adapters.model import (
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
+from qunxue_api.adapters.research_agent import (
+    DeterministicKnowledgeRunner,
+    KnowledgeToolRegistry,
+    PydanticAIKnowledgeRunner,
+)
 from qunxue_api.adapters.security import Argon2PasswordHasher
+from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
@@ -31,6 +38,7 @@ from qunxue_api.adapters.sqlite.theory_matching import (
 )
 from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
+from qunxue_api.api.routes.agent import router as agent_router
 from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
@@ -41,10 +49,12 @@ from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
+    DisciplinaryAgentApplication,
     ResearchJourney,
     ResearchJourneyDependencies,
     TheoryMatchingApplication,
 )
+from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
     IdentityError,
@@ -76,6 +86,13 @@ def create_app(
         version="0.1.0",
         description="群学致知前后端架构基线 API。",
     )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(resolved_settings.cors_allowed_origins),
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Accept", "Content-Type", "Idempotency-Key"],
+    )
     app.state.settings = resolved_settings
     app.state.database = resolved_database
     app.state.knowledge_catalog = SqliteKnowledgeCatalog(
@@ -96,9 +113,7 @@ def create_app(
         contract_version=resolved_settings.contract_version,
     )
     app.state.research_journey = (
-        ResearchJourney(journey_dependencies)
-        if journey_dependencies is not None
-        else None
+        ResearchJourney(journey_dependencies) if journey_dependencies is not None else None
     )
     password_hasher = Argon2PasswordHasher()
     invalid_password_hash = password_hasher.hash("invalid-account-password")
@@ -149,6 +164,55 @@ def create_app(
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
+
+    @contextmanager
+    def disciplinary_agent_scope() -> Iterator[DisciplinaryAgentApplication]:
+        with resolved_database.session() as session:
+            conversations = ConversationService(SqliteConversationRepository(session))
+            # A key in the local .env opts the independent Agent into a real
+            # OpenAI-compatible runtime while keeping the deterministic runner
+            # as the zero-config development default.
+            use_real_agent = (
+                resolved_settings.runtime_mode != "mock"
+                or resolved_settings.has_model_api_key
+            )
+            model_base_url = resolved_settings.model_base_url or (
+                "https://api.deepseek.com" if resolved_settings.has_model_api_key else None
+            )
+            model_name = resolved_settings.model_name or (
+                "deepseek-v4-flash" if resolved_settings.has_model_api_key else None
+            )
+            if not use_real_agent:
+                runner = DeterministicKnowledgeRunner()
+            else:
+                if model_base_url is None or model_name is None:
+                    raise ValueError(
+                        "QUNXUE_MODEL_BASE_URL and QUNXUE_MODEL_NAME are required for Agent runtime"
+                    )
+                runner = PydanticAIKnowledgeRunner(
+                    base_url=model_base_url,
+                    api_key=(
+                        resolved_settings.model_api_key.get_secret_value()
+                        if resolved_settings.has_model_api_key
+                        else None
+                    ),
+                    model=model_name,
+                    timeout_seconds=resolved_settings.model_timeout_seconds,
+                    extra_headers=_model_headers_from_settings(resolved_settings),
+                )
+            try:
+                yield DisciplinaryAgentApplication(
+                    conversations=conversations,
+                    runner=runner,
+                    tools_factory=lambda: KnowledgeToolRegistry(app.state.knowledge_catalog),
+                )
+            except Exception:
+                # A failed model turn is an auditable run that must survive the
+                # request rollback so the same idempotency key can retry safely.
+                session.commit()
+                raise
+
+    app.state.disciplinary_agent_scope = disciplinary_agent_scope
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)
@@ -159,6 +223,7 @@ def create_app(
     app.include_router(knowledge_router)
     app.include_router(matching_router)
     app.include_router(frameworks_router)
+    app.include_router(agent_router)
 
     @app.exception_handler(ResearchTaskNotFound)
     async def handle_research_task_not_found(
@@ -169,6 +234,23 @@ def create_app(
             error=ErrorDetail(
                 code=error.code,
                 message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(ConversationNotFound)
+    async def handle_agent_conversation_not_found(
+        _request: Request,
+        _error: ConversationNotFound,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.NOT_FOUND,
+                message="对话不存在或无权访问。",
                 trace_id=str(uuid4()),
             )
         )
@@ -210,7 +292,7 @@ def create_app(
                 path="/",
                 secure=resolved_settings.session_cookie_secure,
                 httponly=True,
-                samesite="lax",
+                samesite=resolved_settings.session_cookie_samesite,
             )
         return response
 
@@ -298,9 +380,7 @@ def create_app(
                 ErrorCode.VALIDATION_ERROR
                 if error.status_code < 500
                 else ErrorCode.INTERNAL_SERVER_ERROR,
-                "Request failed."
-                if error.status_code < 500
-                else "Internal server error.",
+                "Request failed." if error.status_code < 500 else "Internal server error.",
             ),
         )
         body = ErrorResponse(
@@ -331,15 +411,7 @@ def _model_provider_from_settings(
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
         )
 
-    headers = {
-        name: value.get_secret_value()
-        for name, value in settings.model_extra_headers.items()
-    }
-    if settings.runtime_mode == "sft" and settings.model_sft_resource_id is not None:
-        header_name = settings.model_sft_resource_header
-        if header_name.lower() in {name.lower() for name in headers}:
-            raise ValueError("SFT resource header duplicates a model extension header")
-        headers[header_name] = settings.model_sft_resource_id.get_secret_value()
+    headers = _model_headers_from_settings(settings)
 
     return OpenAICompatibleModelProvider(
         base_url=settings.model_base_url,
@@ -353,3 +425,15 @@ def _model_provider_from_settings(
         capability_tier=settings.runtime_mode,
         extra_headers=headers,
     )
+
+
+def _model_headers_from_settings(settings: Settings) -> dict[str, str]:
+    headers = {
+        name: value.get_secret_value() for name, value in settings.model_extra_headers.items()
+    }
+    if settings.runtime_mode == "sft" and settings.model_sft_resource_id is not None:
+        header_name = settings.model_sft_resource_header
+        if header_name.lower() in {name.lower() for name in headers}:
+            raise ValueError("SFT resource header duplicates a model extension header")
+        headers[header_name] = settings.model_sft_resource_id.get_secret_value()
+    return headers
