@@ -4,7 +4,38 @@ import {
   createEmptyResearchCanvasProjection,
   projectResearchCanvas,
 } from './researchCanvasProjection'
-import type { AgentConversation, AgentToolStep } from '../research-agent'
+import type { AgentConversation, AgentResearchMapPatch, AgentToolStep } from '../research-agent'
+
+const patch: AgentResearchMapPatch = {
+  schema_version: 1,
+  nodes: [
+    {
+      id: 'question-youth-loneliness',
+      kind: 'question',
+      title: '为什么年轻人越来越孤独？',
+      summary: '把个体体验放回关系结构与制度节奏中解释。',
+      status: 'developing',
+      citation_ids: [],
+    },
+    {
+      id: 'claim-time-poverty',
+      kind: 'claim',
+      title: '时间贫困压缩稳定关系的维护空间',
+      summary: '高强度劳动与通勤使重复互动更难持续。',
+      status: 'grounded',
+      citation_ids: ['knowledge:loneliness'],
+    },
+  ],
+  relations: [{
+    id: 'relation-time-explains-question',
+    source: 'claim-time-poverty',
+    target: 'question-youth-loneliness',
+    relation: 'explains',
+    label: '结构机制',
+  }],
+  remove_node_ids: [],
+  remove_relation_ids: [],
+}
 
 const conversation: AgentConversation = {
   conversation_id: 'conversation-1',
@@ -12,6 +43,11 @@ const conversation: AgentConversation = {
   created_at: '2026-08-19T01:00:00Z',
   updated_at: '2026-08-19T01:02:00Z',
   turn_count: 1,
+  research_map: {
+    schema_version: 1,
+    nodes: patch.nodes,
+    relations: patch.relations,
+  },
   turns: [
     {
       turn_id: 'turn-1',
@@ -27,19 +63,17 @@ const conversation: AgentConversation = {
         message_id: 'message-2',
         role: 'assistant',
         content: '可以从关系结构、劳动节奏与城市流动三个层面继续分析。',
-        citations: [
-          {
-            citation_id: 'knowledge:loneliness',
-            label: '青年孤独与社会联结',
-            kind: 'entry',
-            excerpt: '稳定关系机会与城市流动共同影响孤独经验。',
-            knowledge_id: 'D1:C001',
-          },
-        ],
+        citations: [],
         sequence: 1,
         created_at: '2026-08-19T01:02:00Z',
       },
-      tool_traces: [],
+      canvas_patches: [patch],
+      tool_traces: [{
+        tool: 'update_research_map',
+        phase: 'finished',
+        call_id: 'call-map-1',
+        output: patch,
+      }],
     },
   ],
 }
@@ -62,7 +96,7 @@ describe('research canvas projection', () => {
     })
   })
 
-  it('exposes the live question and tool state while the Agent is working', () => {
+  it('keeps tool activity out of the canvas while the Agent is structuring', () => {
     const projection = projectResearchCanvas({
       conversation: null,
       streamingTurn: {
@@ -70,115 +104,73 @@ describe('research canvas projection', () => {
         answer: '',
         citations: [],
         toolSteps: [runningSearch],
+        canvasPatches: [],
       },
     })
 
     expect(projection.status).toBe('retrieving')
     expect(projection.question).toBe('请检索知识库解释青年孤独')
-    expect(projection.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'question:streaming', kind: 'question', status: 'running' }),
-      expect.objectContaining({ id: 'tool:call-search', kind: 'tool', status: 'running', title: '检索知识库' }),
-    ]))
-    expect(projection.edges).toContainEqual(expect.objectContaining({ source: 'question:streaming', target: 'tool:call-search' }))
+    expect(projection.nodes).toEqual([])
   })
 
-  it('rehydrates evidence and synthesis from the real completed conversation', () => {
+  it('projects only the persisted Agent-authored research structure', () => {
     const projection = projectResearchCanvas({ conversation })
 
     expect(projection.status).toBe('ready')
-    expect(projection.question).toBe('怎么解释年轻人越来越孤独？')
     expect(projection.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'question:turn-1', kind: 'question', status: 'complete' }),
-      expect.objectContaining({ id: 'evidence:knowledge:loneliness', kind: 'evidence', provenance: 'knowledge' }),
-      expect.objectContaining({ id: 'synthesis:turn-1', kind: 'synthesis', status: 'complete' }),
-    ]))
-    expect(projection.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({ source: 'question:turn-1', target: 'synthesis:turn-1' }),
-      expect.objectContaining({ source: 'evidence:knowledge:loneliness', target: 'synthesis:turn-1' }),
-    ]))
-  })
-
-  it('uses the product label for persisted tool traces instead of exposing adapter names', () => {
-    const projection = projectResearchCanvas({
-      conversation: {
-        ...conversation,
-        turns: [{
-          ...conversation.turns[0],
-          tool_traces: [{
-            tool: 'search_knowledge',
-            phase: 'finished',
-            call_id: 'call-persisted-search',
-            input: { query: '青年孤独' },
-            output: { items: [] },
-            detail: '检索完成',
-            error: null,
-          }],
-        }],
-      },
-    })
-
-    expect(projection.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'question-youth-loneliness', kind: 'question' }),
       expect.objectContaining({
-        id: 'tool:call-persisted-search',
-        title: '检索知识库',
+        id: 'claim-time-poverty',
+        kind: 'claim',
+        status: 'grounded',
+        citationIds: ['knowledge:loneliness'],
       }),
     ]))
-    expect(projection.nodes).not.toEqual(expect.arrayContaining([
+    expect(projection.edges).toEqual([
       expect.objectContaining({
-        id: 'tool:call-persisted-search',
-        title: 'search_knowledge',
+        source: 'claim-time-poverty',
+        target: 'question-youth-loneliness',
+        relation: 'explains',
       }),
-    ]))
+    ])
+    expect(projection.nodes.map((node) => node.kind)).toEqual(['question', 'claim'])
   })
 
-  it('keeps failure visible without inventing an evidence node', () => {
+  it('applies live patches over the persisted map without inventing answer cards', () => {
+    const livePatch: AgentResearchMapPatch = {
+      schema_version: 1,
+      nodes: [{
+        id: 'gap-comparison-group',
+        kind: 'gap',
+        title: '缺少不同城市层级的比较',
+        summary: '需要补充可比较材料。',
+        status: 'open',
+        citation_ids: [],
+      }],
+      relations: [{
+        id: 'relation-gap-refines-question',
+        source: 'gap-comparison-group',
+        target: 'question-youth-loneliness',
+        relation: 'refines',
+      }],
+      remove_node_ids: [],
+      remove_relation_ids: [],
+    }
+
     const projection = projectResearchCanvas({
-      conversation: null,
+      conversation,
       streamingTurn: {
-        question: '请找出关于平台劳动的证据',
-        answer: '',
+        question: '还缺什么证据？',
+        answer: '需要补充比较。',
         citations: [],
-        toolSteps: [{
-          id: 'call-failed',
-          tool: 'search_knowledge',
-          label: '检索知识库',
-          status: 'failed',
-          detail: '知识库检索暂时失败',
-        }],
-        failure: 'Agent 暂时无法完成回答',
+        toolSteps: [],
+        canvasPatches: [livePatch],
       },
     })
 
-    expect(projection.status).toBe('failed')
     expect(projection.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'tool:call-failed', kind: 'tool', status: 'failed' }),
+      expect.objectContaining({ id: 'gap-comparison-group', kind: 'gap' }),
     ]))
-    expect(projection.nodes.some((node) => node.kind === 'evidence')).toBe(false)
-  })
-
-  it('marks interrupted question and tool nodes as interrupted', () => {
-    const projection = projectResearchCanvas({
-      conversation: null,
-      streamingTurn: {
-        question: '请检索关于青年孤独的证据',
-        answer: '',
-        citations: [],
-        toolSteps: [{
-          id: 'call-interrupted',
-          tool: 'search_knowledge',
-          label: '检索知识库',
-          status: 'failed',
-          interrupted: true,
-          detail: '已停止',
-        }],
-        interrupted: true,
-      },
-    })
-
-    expect(projection.status).toBe('interrupted')
-    expect(projection.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'question:streaming', status: 'interrupted' }),
-      expect.objectContaining({ id: 'tool:call-interrupted', status: 'interrupted' }),
-    ]))
+    expect(projection.nodes.some((node) => node.title === 'Agent 综合')).toBe(false)
   })
 })

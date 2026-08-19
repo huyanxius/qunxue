@@ -30,7 +30,7 @@ function json(body: unknown, status = 200) {
   })
 }
 
-function conversationFixture(prompt = '为什么同一社区里的互助正在减少？', answer = '可以从信任、资源压力与互动机会三个层面分析。') {
+function conversationFixture(prompt = '为什么同一社区里的互助正在减少？', answer = '可以从信任、资源压力与互动机会三个层面分析。'): import('../../modules/research-agent').AgentConversation {
   return {
     conversation_id: 'conversation-research-new',
     title: prompt,
@@ -483,6 +483,18 @@ describe('NewResearchWorkspacePage', () => {
 
   it('turns a selected question node into an explicit follow-up prompt', async () => {
     const conversation = conversationFixture('为什么社区互助正在减少？', '可以先从信任与资源压力分析。')
+    conversation.research_map = {
+      schema_version: 1,
+      nodes: [{
+        id: 'question-community-help',
+        kind: 'question',
+        title: '为什么社区互助正在减少？',
+        summary: '追问关系结构与资源压力如何共同变化。',
+        status: 'developing',
+        citation_ids: [],
+      }],
+      relations: [],
+    }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
       if (url.pathname === '/api/agent/conversations') return json({ items: [] })
@@ -491,9 +503,10 @@ describe('NewResearchWorkspacePage', () => {
     }))
     const workspace = renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
     const region = await within(workspace.container).findByRole('region', { name: '新建研究工作区' })
-    const map = within(region).getByRole('region', { name: '研究地图' })
-    fireEvent.click(within(map).getByRole('button', { name: '以列表查看' }))
+    const map = within(region).getByRole('region', { name: '研究论证地图' })
+    fireEvent.click(within(map).getByRole('button', { name: '打开节点目录' }))
     fireEvent.click(within(map).getByRole('button', { name: /为什么社区互助正在减少/ }))
+    fireEvent.click(await within(map).findByRole('button', { name: /让 Agent 继续推进/ }))
 
     expect(within(region).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue(
       '请继续拆解这个研究问题：为什么社区互助正在减少？',

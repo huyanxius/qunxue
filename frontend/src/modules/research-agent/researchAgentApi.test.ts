@@ -99,6 +99,27 @@ describe('research agent SSE adapter', () => {
     ])
   })
 
+  it('parses a typed research canvas patch independently from tool activity', () => {
+    const patch = {
+      schema_version: 1 as const,
+      nodes: [{
+        id: 'claim-time-poverty',
+        kind: 'claim' as const,
+        title: '时间贫困压缩稳定关系的维护空间',
+        summary: '高强度劳动与通勤使重复互动更难持续。',
+        status: 'grounded' as const,
+        citation_ids: [],
+      }],
+      relations: [],
+      remove_node_ids: [],
+      remove_relation_ids: [],
+    }
+
+    expect(parseAgentEventStream(
+      `event: canvas_patch\ndata: ${JSON.stringify(patch)}\n`,
+    )).toEqual([{ type: 'canvas_patch', patch }])
+  })
+
   it('parses a failed tool call without turning it into a completed step', () => {
     expect(parseAgentEventStream([
       'event: tool_failed',

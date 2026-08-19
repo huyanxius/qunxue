@@ -712,11 +712,11 @@ def test_deepseek_flash_disables_thinking_by_default() -> None:
 
     assert runner._agent.model.settings == {
         "timeout": 30,
-        "max_tokens": 1600,
+        "max_tokens": 2400,
         "extra_body": {"thinking": {"type": "disabled"}},
     }
-    assert runner._usage_limits.request_limit == 8
-    assert runner._usage_limits.tool_calls_limit == 12
+    assert runner._usage_limits.request_limit == 12
+    assert runner._usage_limits.tool_calls_limit == 20
 
 
 def test_agent_runner_forwards_configured_model_headers() -> None:
