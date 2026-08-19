@@ -11,6 +11,12 @@
   text-align: center;
 }
 
+.recent-research--with-intro {
+  min-height: auto;
+  align-content: start;
+  padding-top: 28px;
+}
+
 .recent-research__empty-icon {
   width: 48px;
   height: 48px;
@@ -158,6 +164,10 @@
   .recent-research--empty,
   .recent-research--error {
     padding: 32px 24px 72px;
+  }
+
+  .recent-research--with-intro {
+    padding-top: 20px;
   }
 
   .recent-research__task {

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { ComponentType, PropsWithChildren } from 'react'
+import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 import { ArrowRightIcon, TrayIcon } from '@phosphor-icons/react'
 
 import { listMyResearchViaApi } from './accountApi'
@@ -29,13 +29,16 @@ function relativeUpdate(value: string) {
 
 export function RecentResearchPanel({
   LinkComponent = AnchorLink,
+  emptyIntro,
 }: {
   LinkComponent?: ComponentType<LinkAdapterProps>
+  emptyIntro?: ReactNode
 }) {
   const research = useQuery({
     queryKey: researchQueryKey,
     queryFn: listMyResearchViaApi,
     retry: false,
+    refetchOnMount: 'always',
   })
 
   if (research.isPending) {
@@ -69,16 +72,19 @@ export function RecentResearchPanel({
   const latest = research.data[0]
   if (!latest) {
     return (
-      <section className="recent-research recent-research--empty">
-        <span className="recent-research__empty-icon" aria-hidden="true">
-          <TrayIcon size={21} weight="regular" />
-        </span>
-        <h2>还没有研究任务</h2>
-        <p>从一个具体的社会现象开始。研究阶段、依据和下一步会保存在这里。</p>
-        <LinkComponent className="primary-action" href="/research/new">
-          新建研究
-        </LinkComponent>
-      </section>
+      <>
+        {emptyIntro}
+        <section className={`recent-research recent-research--empty${emptyIntro ? ' recent-research--with-intro' : ''}`}>
+          <span className="recent-research__empty-icon" aria-hidden="true">
+            <TrayIcon size={21} weight="regular" />
+          </span>
+          <h2>还没有研究任务</h2>
+          <p>从一个具体的社会现象开始。研究阶段、依据和下一步会保存在这里。</p>
+          <LinkComponent className="primary-action" href="/research/new">
+            新建研究
+          </LinkComponent>
+        </section>
+      </>
     )
   }
 

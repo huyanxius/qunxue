@@ -15,6 +15,8 @@ import {
 } from '@phosphor-icons/react'
 
 import { useAccount } from '../../modules/account'
+import { NetworkStatusNotice } from './NetworkStatusNotice'
+import { SupportCenter } from './SupportCenter'
 
 type PageTitleProps = {
   eyebrow: string
@@ -98,6 +100,7 @@ export function PageShell({
       immersive ? 'app-frame--immersive' : '',
       railCollapsed && !immersive ? 'app-frame--rail-collapsed' : '',
     ].filter(Boolean).join(' ')}>
+      <NetworkStatusNotice />
       {immersive ? null : (
         <>
           <a className="skip-link" href="#main-content">跳到主要内容</a>
@@ -186,6 +189,11 @@ export function PageShell({
         wide ? 'page-shell--wide' : '',
       ].filter(Boolean).join(' ')} id="main-content">{children}</main>
 
+      <SupportCenter
+        accountEmail={account.sessionState.status === 'authenticated'
+          ? account.sessionState.session.user.email
+          : null}
+      />
       {immersive ? null : <PrimaryNavigation className="mobile-navigation" label="移动主导航" compact />}
     </div>
   )

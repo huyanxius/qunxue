@@ -46,6 +46,27 @@ export function ErrorState({
   )
 }
 
+export function SessionRecoveryState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <ErrorState
+      title="暂时无法确认登录状态"
+      detail="请检查网络后重试；你的研究内容不会因这次连接失败而被删除。"
+      onRetry={onRetry}
+    />
+  )
+}
+
+export function NotFoundState({ homeHref = '/' }: { homeHref?: string }) {
+  return (
+    <section className="not-found-state" role="alert">
+      <p className="eyebrow">404 / NOT FOUND</p>
+      <h1>找不到这个页面</h1>
+      <p>地址可能已经失效，或页面还没有开放。</p>
+      <a className="primary-action" href={homeHref}>回到首页</a>
+    </section>
+  )
+}
+
 export function DegradedState({
   title = '部分功能暂不可用',
   detail = '页面保留当前可用的信息，暂不以不完整数据替代。',

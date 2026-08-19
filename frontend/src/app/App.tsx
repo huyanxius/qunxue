@@ -31,10 +31,10 @@ import {
 } from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { ResearchAgentPage } from './agent/ResearchAgentPage'
+import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import {
-  NewResearchPage,
   PhenomenonWorkspace,
   ResearchWorkspaceShell,
 } from '../modules/socio-match-workspace'
@@ -325,43 +325,7 @@ function UnavailableResearchStageRoute({
 }
 
 function NewResearchRoute() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams] = useSearchParams()
-  const seedTheoryId = searchParams.get('seed_theory_id')
-  const seedTheoryName = (
-    location.state as { seedTheoryName?: string } | null
-  )?.seedTheoryName
-  const seedTheory = seedTheoryId
-    ? { theoryId: seedTheoryId, name: seedTheoryName }
-    : null
-  return (
-    <PageShell wide>
-      <ResearchWorkspaceShell
-        currentStage="intake"
-        eyebrow="新研究"
-        title="新建研究任务"
-        lede="先留下一个具体观察。系统会整理候选，但只有你的确认会进入后续研究。"
-        context={(
-          <>
-            <p>当前步骤说明</p>
-            <h2>先保留问题原貌</h2>
-            <p>不需要先写成论文题目。清楚说明你看到了什么、发生在哪里，以及你真正困惑的部分。</p>
-            <ul>
-              <li>现象描述是唯一必填内容</li>
-              <li>研究意图和语境可以稍后补充</li>
-              <li>内置案例会明确标记来源</li>
-            </ul>
-          </>
-        )}
-      >
-        <NewResearchPage
-          seedTheory={seedTheory}
-          onStarted={(taskId) => navigate(`/research/${taskId}/phenomenon`)}
-        />
-      </ResearchWorkspaceShell>
-    </PageShell>
-  )
+  return <NewResearchWorkspacePage />
 }
 
 function PhenomenonRoute() {

@@ -61,6 +61,87 @@
   border-top: 1px solid transparent;
 }
 
+.research-start-guide {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.6fr);
+  gap: 24px;
+  margin: 0 16px;
+  padding: 22px 0 20px;
+  border-top: 1px solid var(--app-border);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.research-start-guide__eyebrow {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.research-start-guide h2 {
+  margin: 7px 0 0;
+  color: var(--app-ink);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.research-start-guide__lede,
+.research-start-guide__boundary {
+  margin: 9px 0 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.research-start-guide__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: start-step;
+}
+
+.research-start-guide__steps li {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding-left: 22px;
+  position: relative;
+  counter-increment: start-step;
+}
+
+.research-start-guide__steps li::before {
+  content: counter(start-step, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+
+.research-start-guide__steps strong {
+  color: var(--app-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.research-start-guide__steps span {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.research-start-guide__boundary {
+  grid-column: 2;
+  margin-top: -8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--app-border);
+}
+
 @media (max-width: 760px) {
   .work-home {
     min-height: calc(100dvh - 122px);
@@ -78,5 +159,21 @@
 
   .work-home__recent {
     min-height: calc(100dvh - 222px);
+  }
+
+  .research-start-guide {
+    display: block;
+    margin: 0 12px;
+    padding: 18px 0;
+  }
+
+  .research-start-guide__steps {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .research-start-guide__boundary {
+    margin-top: 16px;
   }
 }

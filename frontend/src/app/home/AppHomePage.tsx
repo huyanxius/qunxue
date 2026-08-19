@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { RecentResearchPanel } from '../../modules/account'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { RouterLinkAdapter } from '../ui/RouterLinkAdapter'
+import { ResearchStartGuide } from './ResearchStartGuide'
 import './app-home.css'
 
 export function AppHomePage() {
@@ -22,7 +23,10 @@ export function AppHomePage() {
           </div>
 
           <div className="work-home__recent" role="region" aria-label="最近研究">
-            <RecentResearchPanel LinkComponent={RouterLinkAdapter} />
+            <RecentResearchPanel
+              LinkComponent={RouterLinkAdapter}
+              emptyIntro={<ResearchStartGuide />}
+            />
           </div>
         </div>
       </PageContent>

@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DotsThreeIcon, FlaskIcon, TrashIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { deleteMyResearchViaApi, listMyResearchViaApi } from './accountApi'
 import type { MyResearchItem } from './types'
 import './my-research.css'
 
 const researchQueryKey = ['account', 'research-tasks'] as const
+const dialogFocusableSelector = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 function formattedDate(value: string) {
   const date = new Date(value)
@@ -23,10 +24,14 @@ export function MyResearchPage() {
   const queryClient = useQueryClient()
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const deleteDialogRef = useRef<HTMLElement | null>(null)
+  const deleteCancelRef = useRef<HTMLButtonElement | null>(null)
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null)
   const research = useQuery({
     queryKey: researchQueryKey,
     queryFn: listMyResearchViaApi,
     retry: false,
+    refetchOnMount: 'always',
   })
   const deletion = useMutation({
     mutationFn: deleteMyResearchViaApi,
@@ -39,6 +44,48 @@ export function MyResearchPage() {
       setOpenMenuId(null)
     },
   })
+
+  useEffect(() => {
+    if (!pendingDeleteId) return undefined
+
+    deleteCancelRef.current?.focus()
+    function handleDialogKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setPendingDeleteId(null)
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const dialog = deleteDialogRef.current
+      if (!dialog) return
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(dialogFocusableSelector),
+      )
+      if (focusable.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleDialogKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown)
+      if (deleteTriggerRef.current && document.contains(deleteTriggerRef.current)) {
+        deleteTriggerRef.current.focus()
+      }
+    }
+  }, [pendingDeleteId])
 
   if (research.isPending) {
     return (
@@ -122,7 +169,10 @@ export function MyResearchPage() {
                     type="button"
                     aria-label={`打开研究操作：${item.phenomenonSummary}`}
                     aria-expanded={menuOpen}
-                    onClick={() => setOpenMenuId(menuOpen ? null : item.taskId)}
+                    onClick={(event) => {
+                      deleteTriggerRef.current = event.currentTarget
+                      setOpenMenuId(menuOpen ? null : item.taskId)
+                    }}
                   >
                     <DotsThreeIcon size={19} weight="bold" aria-hidden="true" />
                   </button>
@@ -156,13 +206,16 @@ export function MyResearchPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-research-title"
+            aria-describedby="delete-research-description"
+            ref={deleteDialogRef}
+            tabIndex={-1}
           >
             <span className="delete-dialog__icon" aria-hidden="true">
               <TrashIcon size={19} weight="regular" />
             </span>
             <h2 id="delete-research-title">永久删除这项研究？</h2>
             <p className="delete-dialog__question">{pendingDelete.phenomenonSummary}</p>
-            <p>删除后，任务及其派生内容无法恢复。</p>
+            <p id="delete-research-description">删除后，任务及其派生内容无法恢复。</p>
             {deletion.isError ? (
               <p className="delete-dialog__error" role="alert">删除失败，研究内容仍然保留。</p>
             ) : null}
@@ -170,6 +223,7 @@ export function MyResearchPage() {
               <button
                 type="button"
                 disabled={deletion.isPending}
+                ref={deleteCancelRef}
                 onClick={() => setPendingDeleteId(null)}
               >
                 取消
