@@ -12,6 +12,8 @@ export const defaultBoundaryPolicy = Object.freeze({
     account: Object.freeze([]),
     'knowledge-graph': Object.freeze([]),
     'knowledge-explorer': Object.freeze([]),
+    'research-agent': Object.freeze([]),
+    'research-workspace': Object.freeze(['research-agent']),
     'socio-match-workspace': Object.freeze([]),
   }),
   generatedApiAdapters: Object.freeze([
@@ -27,10 +29,11 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/account/accountApi.ts',
     'modules/knowledge-graph/knowledgeGraphApi.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
+    'modules/research-agent/researchAgentApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   appApiAdapters: Object.freeze(['api/system.ts']),
-  httpRuntimeAdapters: Object.freeze(['api/client.ts']),
+  httpRuntimeAdapters: Object.freeze(['api/client.ts', 'modules/research-agent/researchAgentApi.ts']),
 })
 
 const sourceExtension = /\.tsx?$/
