@@ -925,6 +925,78 @@ def test_agent_accepts_a_bare_knowledge_id_from_the_current_tool_evidence(
     assert [citation.citation_id for citation in result.citations] == ["knowledge:D1:C029"]
 
 
+def test_agent_accepts_an_unambiguous_catalog_suffix_from_current_tool_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-preview")
+        evidence = {
+            "knowledge:D1:C1059": AgentEvidence(
+                citation_id="knowledge:D1:C1059",
+                label="个体化（中国）",
+                kind="preview",
+                excerpt="中国的去传统化使个体面临更大风险。",
+                knowledge_id="D1:C1059",
+            )
+        }
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    monkeypatch.setattr(
+        runner._agent,
+        "run_sync",
+        lambda *args, **kwargs: SimpleNamespace(
+            output="知识库中的个体化条目（C1059）支持这一理论线索。"
+        ),
+    )
+
+    result = runner.run(prompt="解释年轻人的孤独", conversation="", tools=_Tools())
+
+    assert [citation.citation_id for citation in result.citations] == [
+        "knowledge:D1:C1059"
+    ]
+
+
+def test_agent_rejects_an_ambiguous_catalog_suffix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-preview")
+        evidence = {
+            f"knowledge:{knowledge_id}": AgentEvidence(
+                citation_id=f"knowledge:{knowledge_id}",
+                label=label,
+                kind="preview",
+                excerpt="同一后缀不能决定实际引用的是哪一条知识。",
+                knowledge_id=knowledge_id,
+            )
+            for knowledge_id, label in (
+                ("D1:C001", "本体论条目"),
+                ("D2:C001", "实践论条目"),
+            )
+        }
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    monkeypatch.setattr(
+        runner._agent,
+        "run_sync",
+        lambda *args, **kwargs: SimpleNamespace(output="可参考知识条目 C001。"),
+    )
+
+    result = runner.run(prompt="解释社会行动", conversation="", tools=_Tools())
+
+    assert result.citations == ()
+
+
 def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
     citation_id = "knowledge:D1:C001"
 
