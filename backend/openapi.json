@@ -124,6 +124,11 @@
             "title": "Created At",
             "type": "string"
           },
+          "research_map": {
+            "additionalProperties": true,
+            "title": "Research Map",
+            "type": "object"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -318,6 +323,15 @@
             "minLength": 1,
             "title": "Message",
             "type": "string"
+          },
+          "workspace": {
+            "default": "agent",
+            "enum": [
+              "agent",
+              "research"
+            ],
+            "title": "Workspace",
+            "type": "string"
           }
         },
         "required": [
@@ -330,6 +344,14 @@
         "properties": {
           "assistant": {
             "$ref": "#/components/schemas/AgentMessageResponse"
+          },
+          "canvas_patches": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Canvas Patches",
+            "type": "array"
           },
           "knowledge_release_id": {
             "anyOf": [

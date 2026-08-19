@@ -79,6 +79,12 @@ export type AgentConversationResponse = {
      */
     created_at: string;
     /**
+     * Research Map
+     */
+    research_map?: {
+        [key: string]: unknown;
+    };
+    /**
      * Title
      */
     title: string;
@@ -196,6 +202,10 @@ export type AgentTurnRequest = {
      * Message
      */
     message: string;
+    /**
+     * Workspace
+     */
+    workspace?: 'agent' | 'research';
 };
 
 /**
@@ -203,6 +213,12 @@ export type AgentTurnRequest = {
  */
 export type AgentTurnResponse = {
     assistant: AgentMessageResponse;
+    /**
+     * Canvas Patches
+     */
+    canvas_patches?: Array<{
+        [key: string]: unknown;
+    }>;
     /**
      * Knowledge Release Id
      */
