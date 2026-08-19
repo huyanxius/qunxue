@@ -3,7 +3,22 @@ import {
   listAgentConversations as listConversations,
   streamAgentTurn as streamTurn,
   type AgentEvent as AdapterEvent,
+  type AgentResearchMap as AdapterResearchMap,
+  type AgentResearchMapPatch as AdapterResearchMapPatch,
+  type AgentResearchMapNode as AdapterResearchMapNode,
+  type AgentResearchMapRelation as AdapterResearchMapRelation,
+  type AgentResearchNodeKind as AdapterResearchNodeKind,
+  type AgentResearchNodeStatus as AdapterResearchNodeStatus,
+  type AgentResearchRelationKind as AdapterResearchRelationKind,
 } from './researchAgentApi'
+
+export type AgentResearchNodeKind = AdapterResearchNodeKind
+export type AgentResearchNodeStatus = AdapterResearchNodeStatus
+export type AgentResearchRelationKind = AdapterResearchRelationKind
+export type AgentResearchMapNode = AdapterResearchMapNode
+export type AgentResearchMapRelation = AdapterResearchMapRelation
+export type AgentResearchMapPatch = AdapterResearchMapPatch
+export type AgentResearchMap = AdapterResearchMap
 
 export type AgentCitation = {
   citation_id: string
@@ -29,6 +44,7 @@ export type AgentTurn = {
   assistant: AgentMessage
   tool_traces?: AgentToolTrace[]
   knowledge_release_id?: string | null
+  canvas_patches?: AgentResearchMapPatch[]
 }
 
 export type AgentToolTrace = {
@@ -51,6 +67,7 @@ export type AgentConversationSummary = {
 export type AgentConversation = AgentConversationSummary & {
   created_at: string
   turns: AgentTurn[]
+  research_map?: AgentResearchMap
 }
 
 export type AgentRuntimeMode = 'mock' | 'base' | 'sft'
@@ -93,6 +110,7 @@ export type AgentEvent =
     }
   | { type: 'assistant_delta'; delta: string }
   | { type: 'citation_added'; citation: AgentCitation }
+  | { type: 'canvas_patch'; patch: AgentResearchMapPatch }
   | { type: 'turn_completed'; conversation: AgentConversation; knowledge_release_id: string }
   | { type: 'turn_interrupted'; code: string; message: string }
   | { type: 'turn_failed'; code: string; message: string }
@@ -106,7 +124,7 @@ export function getAgentConversation(conversationId: string, signal?: AbortSigna
 }
 
 export function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research' },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ) {

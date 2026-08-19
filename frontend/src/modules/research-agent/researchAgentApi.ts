@@ -9,6 +9,41 @@ export type AgentCitation = {
   source_id?: string | null
 }
 
+export type AgentResearchNodeKind = 'question' | 'theory' | 'claim' | 'evidence' | 'gap' | 'synthesis'
+export type AgentResearchNodeStatus = 'developing' | 'grounded' | 'open' | 'verified' | 'challenged' | 'complete'
+export type AgentResearchRelationKind = 'explains' | 'supports' | 'challenges' | 'derives' | 'refines'
+
+export type AgentResearchMapNode = {
+  id: string
+  kind: AgentResearchNodeKind
+  title: string
+  summary?: string | null
+  status: AgentResearchNodeStatus
+  citation_ids: string[]
+}
+
+export type AgentResearchMapRelation = {
+  id: string
+  source: string
+  target: string
+  relation: AgentResearchRelationKind
+  label?: string | null
+}
+
+export type AgentResearchMapPatch = {
+  schema_version: 1
+  nodes: AgentResearchMapNode[]
+  relations: AgentResearchMapRelation[]
+  remove_node_ids: string[]
+  remove_relation_ids: string[]
+}
+
+export type AgentResearchMap = {
+  schema_version: 1
+  nodes: AgentResearchMapNode[]
+  relations: AgentResearchMapRelation[]
+}
+
 export type AgentMessage = {
   message_id: string
   role: 'user' | 'assistant'
@@ -24,6 +59,7 @@ export type AgentTurn = {
   assistant: AgentMessage
   tool_traces?: AgentToolTrace[]
   knowledge_release_id?: string | null
+  canvas_patches?: AgentResearchMapPatch[]
 }
 
 export type AgentToolTrace = {
@@ -46,6 +82,7 @@ export type AgentConversationSummary = {
 export type AgentConversation = AgentConversationSummary & {
   created_at: string
   turns: AgentTurn[]
+  research_map?: AgentResearchMap
 }
 
 export type AgentRuntimeMode = 'mock' | 'base' | 'sft'
@@ -78,6 +115,7 @@ export type AgentEvent =
     }
   | { type: 'assistant_delta'; delta: string }
   | { type: 'citation_added'; citation: AgentCitation }
+  | { type: 'canvas_patch'; patch: AgentResearchMapPatch }
   | { type: 'turn_completed'; conversation: AgentConversation; knowledge_release_id: string }
   | { type: 'turn_interrupted'; code: string; message: string }
   | { type: 'turn_failed'; code: string; message: string }
@@ -126,6 +164,8 @@ export function parseAgentEventStream(stream: string): AgentEvent[] {
       events.push({ type: eventName, delta: payload.delta })
     } else if (eventName === 'citation_added' && payload.citation_id) {
       events.push({ type: eventName, citation: payload as unknown as AgentCitation })
+    } else if (eventName === 'canvas_patch' && isResearchMapPatch(payload)) {
+      events.push({ type: eventName, patch: payload })
     } else if (eventName === 'turn_started' && payload.conversation_id && payload.run_id) {
       events.push({
         type: eventName,
@@ -159,6 +199,16 @@ export function parseAgentEventStream(stream: string): AgentEvent[] {
   return events
 }
 
+function isResearchMapPatch(value: Record<string, unknown>): value is AgentResearchMapPatch {
+  return value.schema_version === 1
+    && Array.isArray(value.nodes)
+    && Array.isArray(value.relations)
+    && Array.isArray(value.remove_node_ids)
+    && Array.isArray(value.remove_relation_ids)
+    && value.nodes.every((node) => node && typeof node === 'object')
+    && value.relations.every((relation) => relation && typeof relation === 'object')
+}
+
 export async function listAgentConversations(signal?: AbortSignal): Promise<AgentConversationSummary[]> {
   const response = await fetch(apiClient.buildUrl({ url: '/api/agent/conversations' }), {
     credentials: 'include',
@@ -184,7 +234,7 @@ export async function getAgentConversation(
 }
 
 export async function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research' },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -196,7 +246,11 @@ export async function streamAgentTurn(
       'Accept': 'text/event-stream',
       'Idempotency-Key': payload.idempotencyKey,
     },
-    body: JSON.stringify({ conversation_id: payload.conversation_id, message: payload.message }),
+    body: JSON.stringify({
+      conversation_id: payload.conversation_id,
+      message: payload.message,
+      workspace: payload.workspace ?? 'agent',
+    }),
     signal,
   })
   if (!response.ok) {

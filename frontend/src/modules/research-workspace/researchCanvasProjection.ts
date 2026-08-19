@@ -1,15 +1,13 @@
 import type {
-  AgentCitation,
   AgentConversation,
+  AgentResearchMap,
+  AgentResearchMapNode,
+  AgentResearchMapPatch,
+  AgentResearchMapRelation,
+  AgentResearchNodeKind,
+  AgentResearchNodeStatus,
   AgentToolStep,
 } from '../research-agent'
-
-const toolLabels: Record<string, string> = {
-  search_knowledge: '检索知识库',
-  read_knowledge_entry: '读取知识条目',
-  read_sources: '读取来源',
-  browse_knowledge_directory: '浏览知识目录',
-}
 
 export type ResearchCanvasStatus =
   | 'empty'
@@ -20,9 +18,8 @@ export type ResearchCanvasStatus =
   | 'failed'
   | 'interrupted'
 
-export type ResearchCanvasNodeKind = 'question' | 'tool' | 'evidence' | 'synthesis'
-
-export type ResearchCanvasNodeStatus = 'running' | 'complete' | 'failed' | 'interrupted'
+export type ResearchCanvasNodeKind = AgentResearchNodeKind
+export type ResearchCanvasNodeStatus = AgentResearchNodeStatus
 
 type ResearchCanvasToolStep = AgentToolStep & { interrupted?: boolean }
 
@@ -31,9 +28,11 @@ export type ResearchCanvasNode = {
   kind: ResearchCanvasNodeKind
   title: string
   excerpt?: string | null
+  summary?: string | null
   status: ResearchCanvasNodeStatus
-  provenance: 'user' | 'agent' | 'knowledge' | 'tool'
+  provenance: 'agent' | 'knowledge' | 'user'
   citationId?: string
+  citationIds: string[]
   turnId?: string
 }
 
@@ -41,7 +40,8 @@ export type ResearchCanvasEdge = {
   id: string
   source: string
   target: string
-  label?: string
+  relation: AgentResearchMapRelation['relation']
+  label?: string | null
 }
 
 export type ResearchCanvasProjection = {
@@ -54,8 +54,9 @@ export type ResearchCanvasProjection = {
 export type ResearchCanvasStreamingTurn = {
   question: string
   answer: string
-  citations: AgentCitation[]
+  citations: import('../research-agent').AgentCitation[]
   toolSteps: ResearchCanvasToolStep[]
+  canvasPatches: AgentResearchMapPatch[]
   interrupted?: boolean
   failure?: string
 }
@@ -71,163 +72,69 @@ export function projectResearchCanvas({
   conversation: AgentConversation | null
   streamingTurn?: ResearchCanvasStreamingTurn | null
 }): ResearchCanvasProjection {
-  const nodes = new Map<string, ResearchCanvasNode>()
-  const edges = new Map<string, ResearchCanvasEdge>()
+  let map = conversationMap(conversation)
+  for (const patch of streamingTurn?.canvasPatches ?? []) map = applyPatch(map, patch)
 
-  const addNode = (node: ResearchCanvasNode) => {
-    nodes.set(node.id, node)
-  }
-  const addEdge = (source: string, target: string, label?: string) => {
-    if (!nodes.has(source) || !nodes.has(target)) return
-    const id = `${source}->${target}`
-    edges.set(id, { id, source, target, ...(label ? { label } : {}) })
-  }
-
-  for (const turn of conversation?.turns ?? []) {
-    addPersistedTurn(turn, addNode, addEdge)
-  }
-
-  if (streamingTurn) {
-    const questionId = 'question:streaming'
-    addNode({
-      id: questionId,
-      kind: 'question',
-      title: streamingTurn.question,
-      status: streamingTurn.failure
-        ? 'failed'
-        : streamingTurn.interrupted
-          ? 'interrupted'
-          : 'running',
-      provenance: 'user',
-    })
-    for (const step of streamingTurn.toolSteps) {
-      addToolNode(step, addNode)
-      addEdge(questionId, `tool:${step.id}`, '调用')
-    }
-    for (const citation of streamingTurn.citations) {
-      addEvidenceNode(citation, undefined, addNode)
-    }
-    if (streamingTurn.answer.trim()) {
-      const synthesisId = 'synthesis:streaming'
-      addNode({
-        id: synthesisId,
-        kind: 'synthesis',
-        title: 'Agent 综合',
-        excerpt: streamingTurn.answer,
-        status: streamingTurn.failure
-          ? 'failed'
-          : streamingTurn.interrupted
-            ? 'interrupted'
-            : 'running',
-        provenance: 'agent',
-      })
-      addEdge(questionId, synthesisId, '形成综合')
-      for (const citation of streamingTurn.citations) {
-        addEdge(`evidence:${citation.citation_id}`, synthesisId, '依据')
-      }
-      for (const step of streamingTurn.toolSteps) {
-        addEdge(`tool:${step.id}`, synthesisId, '返回')
-      }
-    }
-  }
-
-  const status = inferStatus({ conversation, streamingTurn, nodes: [...nodes.values()] })
-  const latestQuestion = streamingTurn?.question
-    ?? conversation?.turns.at(-1)?.user.content
-    ?? null
-
+  const nodes = map.nodes.map((node) => toCanvasNode(node, conversation))
+  const edges = map.relations.map((relation) => ({
+    id: relation.id,
+    source: relation.source,
+    target: relation.target,
+    relation: relation.relation,
+    ...(relation.label ? { label: relation.label } : {}),
+  }))
   return {
-    status,
-    question: latestQuestion,
+    status: inferStatus({ conversation, streamingTurn, nodes }),
+    question: streamingTurn?.question ?? latestQuestion(conversation),
+    nodes,
+    edges,
+  }
+}
+
+function conversationMap(conversation: AgentConversation | null): AgentResearchMap {
+  if (conversation?.research_map?.schema_version === 1) return conversation.research_map
+  let map: AgentResearchMap = { schema_version: 1, nodes: [], relations: [] }
+  for (const turn of conversation?.turns ?? []) {
+    for (const patch of turn.canvas_patches ?? []) map = applyPatch(map, patch)
+  }
+  return map
+}
+
+function applyPatch(map: AgentResearchMap, patch: AgentResearchMapPatch): AgentResearchMap {
+  const nodes = new Map(map.nodes.map((node) => [node.id, node]))
+  const relations = new Map(map.relations.map((relation) => [relation.id, relation]))
+  for (const id of patch.remove_node_ids) nodes.delete(id)
+  for (const id of patch.remove_relation_ids) relations.delete(id)
+  for (const node of patch.nodes) nodes.set(node.id, node)
+  for (const relation of patch.relations) relations.set(relation.id, relation)
+  const valid = new Set(nodes.keys())
+  return {
+    schema_version: 1,
     nodes: [...nodes.values()],
-    edges: [...edges.values()],
+    relations: [...relations.values()].filter((relation) => valid.has(relation.source) && valid.has(relation.target)),
   }
 }
 
-function addPersistedTurn(
-  turn: AgentConversation['turns'][number],
-  addNode: (node: ResearchCanvasNode) => void,
-  addEdge: (source: string, target: string, label?: string) => void,
-) {
-  const questionId = `question:${turn.turn_id}`
-  const synthesisId = `synthesis:${turn.turn_id}`
-  addNode({
-    id: questionId,
-    kind: 'question',
-    title: turn.user.content,
-    status: 'complete',
-    provenance: 'user',
-    turnId: turn.turn_id,
-  })
-  addNode({
-    id: synthesisId,
-    kind: 'synthesis',
-    title: 'Agent 综合',
-    excerpt: turn.assistant.content,
-    status: 'complete',
-    provenance: 'agent',
-    turnId: turn.turn_id,
-  })
-  addEdge(questionId, synthesisId, '形成综合')
-
-  for (const trace of turn.tool_traces ?? []) {
-    const step: AgentToolStep = {
-      id: trace.call_id,
-      tool: trace.tool,
-      label: toolLabels[trace.tool] ?? '调用学科工具',
-      status: trace.phase === 'failed' ? 'failed' : trace.phase === 'started' ? 'running' : 'completed',
-      input: trace.input ?? undefined,
-      output: trace.output,
-      detail: trace.detail,
-    }
-    addToolNode(step, addNode, turn.turn_id)
-    addEdge(questionId, `tool:${step.id}`, '调用')
-    addEdge(`tool:${step.id}`, synthesisId, '返回')
-  }
-
-  for (const citation of turn.assistant.citations) {
-    addEvidenceNode(citation, turn.turn_id, addNode)
-    addEdge(`evidence:${citation.citation_id}`, synthesisId, '依据')
-  }
-}
-
-function addToolNode(
-  step: ResearchCanvasToolStep,
-  addNode: (node: ResearchCanvasNode) => void,
-  turnId?: string,
-) {
-  addNode({
-    id: `tool:${step.id}`,
-    kind: 'tool',
-    title: step.label,
-    excerpt: step.detail ?? null,
-    status: step.interrupted
-      ? 'interrupted'
-      : step.status === 'completed'
-        ? 'complete'
-        : step.status === 'failed'
-          ? 'failed'
-          : 'running',
-    provenance: 'tool',
+function toCanvasNode(node: AgentResearchMapNode, conversation: AgentConversation | null): ResearchCanvasNode {
+  const turnId = conversation?.turns.find((turn) =>
+    (turn.canvas_patches ?? []).some((patch) => patch.nodes.some((item) => item.id === node.id)),
+  )?.turn_id
+  return {
+    id: node.id,
+    kind: node.kind,
+    title: node.title,
+    excerpt: node.summary ?? null,
+    summary: node.summary ?? null,
+    status: node.status,
+    provenance: node.kind === 'evidence' ? 'knowledge' : node.kind === 'question' ? 'user' : 'agent',
+    citationId: node.citation_ids[0],
+    citationIds: [...node.citation_ids],
     turnId,
-  })
+  }
 }
 
-function addEvidenceNode(
-  citation: AgentCitation,
-  turnId: string | undefined,
-  addNode: (node: ResearchCanvasNode) => void,
-) {
-  addNode({
-    id: `evidence:${citation.citation_id}`,
-    kind: 'evidence',
-    title: citation.label,
-    excerpt: citation.excerpt ?? null,
-    status: 'complete',
-    provenance: citation.kind === 'source' ? 'knowledge' : 'knowledge',
-    citationId: citation.citation_id,
-    turnId,
-  })
+function latestQuestion(conversation: AgentConversation | null): string | null {
+  return conversation?.turns.at(-1)?.user.content ?? null
 }
 
 function inferStatus({

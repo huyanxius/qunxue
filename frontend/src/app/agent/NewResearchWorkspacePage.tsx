@@ -56,6 +56,7 @@ const toolLabels: Record<string, string> = {
   read_knowledge_entry: '读取知识条目',
   read_sources: '读取来源',
   browse_knowledge_directory: '浏览知识目录',
+  update_research_map: '组织研究地图',
 }
 
 type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answering' | 'error'
@@ -462,6 +463,7 @@ function AssistantTurn({
         {!answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />Agent 正在组织问题与证据…</p> : null}
         {interrupted ? <p className="new-research__turn-note is-interrupted"><WarningCircleIcon size={14} />本轮已停止，未保存未完成的回答。</p> : null}
         {failure ? <p className="new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
+        {failure && onRegenerate ? <div className="new-research__assistant-actions"><button type="button" aria-label="重试本轮" onClick={onRegenerate}><ArrowClockwiseIcon size={14} />从本轮问题重试</button></div> : null}
         {!streaming && answer && !citations.length ? <p className="new-research__provenance-note"><WarningCircleIcon size={14} />{hasKnowledgeActivity(toolSteps) ? '本轮调用过知识库，但未返回可展示的来源，请谨慎使用。' : '未调用知识库：这是基于 Agent 推理的工作假设，请要求检索或补充材料后再核验。'}</p> : null}
         <SourcePills citations={citations} onSelect={onSelectCitation} />
         {!streaming && answer && onRegenerate ? <AssistantActions content={answer} onRegenerate={onRegenerate} /> : null}
@@ -508,6 +510,7 @@ export function NewResearchWorkspacePage() {
   const conversationLoadAbortController = useRef<AbortController | null>(null)
   const conversationLoadGeneration = useRef(0)
   const pendingToolSteps = useRef<ResearchToolStep[]>([])
+  const pendingConversationId = useRef<string | null>(requestedConversationId)
   const loadedConversationId = useRef<string | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
@@ -616,6 +619,7 @@ export function NewResearchWorkspacePage() {
     conversationLoadAbortController.current?.abort()
     conversationLoadGeneration.current += 1
     loadedConversationId.current = null
+    pendingConversationId.current = null
     setActiveConversation(null)
     setAgentRuntimeMode(null)
     setToolStepsByTurnId({})
@@ -652,7 +656,7 @@ export function NewResearchWorkspacePage() {
     setError(null)
     setStatus('thinking')
     pendingToolSteps.current = []
-    setStreamingTurn({ question, answer: '', citations: [], toolSteps: [] })
+    setStreamingTurn({ question, answer: '', citations: [], toolSteps: [], canvasPatches: [] })
     const abortController = new AbortController()
     const runGeneration = streamGeneration.current + 1
     streamGeneration.current = runGeneration
@@ -660,13 +664,15 @@ export function NewResearchWorkspacePage() {
     try {
       await streamAgentTurn(
         {
-          conversation_id: activeConversation?.conversation_id ?? null,
+          conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
           message: question,
           idempotencyKey: globalThis.crypto?.randomUUID?.() ?? `research-${Date.now()}`,
+          workspace: 'research',
         },
         (event: AgentEvent) => {
           if (streamGeneration.current !== runGeneration) return
           if (event.type === 'turn_started') {
+            pendingConversationId.current = event.conversation_id
             if (event.runtime_mode) {
               setAgentRuntimeMode(event.runtime_mode)
               rememberAgentRuntimeMode(event.conversation_id, event.runtime_mode)
@@ -684,6 +690,10 @@ export function NewResearchWorkspacePage() {
             setStreamingTurn((current) => current ? { ...current, answer: current.answer + event.delta } : current)
           } else if (event.type === 'citation_added') {
             setStreamingTurn((current) => current ? { ...current, citations: [...current.citations, event.citation] } : current)
+          } else if (event.type === 'canvas_patch') {
+            setStreamingTurn((current) => current
+              ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] }
+              : current)
           } else if (event.type === 'turn_completed') {
             const localToolSteps = pendingToolSteps.current
             const completedConversation = attachLocalToolSteps(event.conversation, localToolSteps)
@@ -698,6 +708,7 @@ export function NewResearchWorkspacePage() {
             pendingToolSteps.current = []
             setActiveConversation(completedConversation)
             loadedConversationId.current = completedConversation.conversation_id
+            pendingConversationId.current = completedConversation.conversation_id
             setConversations((current) => [
               { conversation_id: completedConversation.conversation_id, title: completedConversation.title, updated_at: completedConversation.updated_at, turn_count: completedConversation.turn_count },
               ...current.filter((item) => item.conversation_id !== completedConversation.conversation_id),
@@ -827,20 +838,25 @@ export function NewResearchWorkspacePage() {
     setContextOpen(true)
   }
 
-  function openNode(node: ResearchCanvasProjection['nodes'][number]) {
+  function selectNode(node: ResearchCanvasProjection['nodes'][number]) {
     setSelectedNodeId(node.id)
-    if (node.citationId) {
-      const citation = citations.find((item) => item.citation_id === node.citationId)
-      if (citation) openCitation(citation)
-      return
-    }
-    if (node.kind === 'tool') {
-      setContextTab('activity')
-      setContextOpen(true)
-      return
-    }
-    const subject = node.kind === 'question' ? node.title : (node.excerpt || node.title).slice(0, 800)
-    setDraft(`请继续拆解这个研究问题：${subject}`)
+  }
+
+  function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
+    setSelectedNodeId(node.id)
+    const subject = (node.excerpt || node.title).slice(0, 800)
+    const prompt = node.kind === 'question'
+      ? `请继续拆解这个研究问题：${node.title}`
+      : node.kind === 'theory'
+        ? `请检验这个理论视角如何解释当前问题，并指出它的边界：${subject}`
+        : node.kind === 'claim'
+          ? `请为这个主张补充真实证据，并检查可能的反例：${subject}`
+          : node.kind === 'evidence'
+            ? `请说明这条证据支持或质疑哪些主张，并更新研究结构：${subject}`
+            : node.kind === 'gap'
+              ? `请优先补齐这个证据缺口；需要时调用知识库工具：${subject}`
+              : `请从这个阶段综合中找出最脆弱的推理，并继续推进：${subject}`
+    setDraft(prompt)
     globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
   }
 
@@ -858,7 +874,17 @@ export function NewResearchWorkspacePage() {
                   <button type="button" aria-label="开始新研究" onClick={newConversation}><PlusIcon size={16} />新研究</button>
                 </div>
               </header>
-              <ResearchMapCanvas projection={projection} selectedNodeId={selectedNodeId} onSelectNode={openNode} />
+              <ResearchMapCanvas
+                projection={projection}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={selectNode}
+                onClearSelection={() => setSelectedNodeId(null)}
+                onContinueNode={continueNode}
+                onOpenCitation={(citationId) => {
+                  const citation = citations.find((item) => item.citation_id === citationId)
+                  if (citation) openCitation(citation)
+                }}
+              />
             </div>
 
             <aside className="new-research__agent-panel" aria-label="研究 Agent 对话栏">
@@ -898,6 +924,7 @@ export function NewResearchWorkspacePage() {
                         streaming
                         onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                         onSelectCitation={openCitation}
+                        onRegenerate={() => { void submitQuestion(streamingTurn.question) }}
                       />
                     ) : null}
                     <div ref={transcriptEndRef} />
