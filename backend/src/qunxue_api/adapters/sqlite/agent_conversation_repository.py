@@ -31,6 +31,29 @@ class SqliteConversationRepository:
     def commit(self) -> None:
         self._session.commit()
 
+    def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None:
+        row = self._session.scalar(
+            select(AgentConversationRow).where(
+                AgentConversationRow.conversation_id == str(conversation_id),
+                AgentConversationRow.user_id == str(user_id),
+            )
+        )
+        if row is None:
+            raise ConversationNotFound(str(conversation_id))
+        return UUID(row.current_research_task_id) if row.current_research_task_id else None
+
+    def link_research_task(self, *, user_id: UUID, conversation_id: UUID, task_id: UUID) -> None:
+        row = self._session.scalar(
+            select(AgentConversationRow).where(
+                AgentConversationRow.conversation_id == str(conversation_id),
+                AgentConversationRow.user_id == str(user_id),
+            )
+        )
+        if row is None:
+            raise ConversationNotFound(str(conversation_id))
+        row.current_research_task_id = str(task_id)
+        self._session.flush()
+
     def create(self, conversation: Conversation) -> Conversation:
         self._session.add(
             AgentConversationRow(

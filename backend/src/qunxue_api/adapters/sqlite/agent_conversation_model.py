@@ -25,6 +25,9 @@ class AgentConversationRow(Base):
         ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(120), nullable=False)
+    current_research_task_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="SET NULL"), nullable=True
+    )
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

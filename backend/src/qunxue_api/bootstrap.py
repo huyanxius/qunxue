@@ -67,6 +67,7 @@ from qunxue_api.application import (
     ResearchJourneyDependencies,
     TheoryMatchingApplication,
 )
+from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -238,15 +239,45 @@ def create_app(
     @contextmanager
     def disciplinary_agent_scope() -> Iterator[DisciplinaryAgentApplication]:
         with resolved_database.session() as session:
-            conversations = ConversationService(SqliteConversationRepository(session))
+            conversation_repository = SqliteConversationRepository(session)
+            conversations = ConversationService(conversation_repository)
+            task_repository = SqliteResearchTaskRepository(session)
+            task_service = ResearchTaskService(task_repository)
+            phenomenon_service = PhenomenonService(
+                SqlitePhenomenonRepository(session), task_repository
+            )
             document_service = ResearchDocumentService(
                 repository=SqliteResearchDocumentRepository(session)
             )
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
+            descriptor = app.state.model_gateway.descriptor
+            matching_service = TheoryMatchingService(
+                evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
+                judge=app.state.model_gateway,
+                repository=match_runs,
+                provider=descriptor.provider,
+                model_version=descriptor.model_version,
+                capability=descriptor.capability_tier,
+                contract_version=resolved_settings.contract_version,
+            )
+            matching_application = TheoryMatchingApplication(
+                catalog=app.state.knowledge_catalog,
+                matching=matching_service,
+                matching_requests=matching_requests,
+                research_tasks=task_repository,
+                rollback=session.rollback,
+            )
+            agent_research_workflow = AgentResearchWorkflow(
+                bindings=conversation_repository,
+                tasks=task_service,
+                task_repository=task_repository,
+                phenomena=phenomenon_service,
+                matching=matching_application,
+            )
             document_application = ResearchDocumentApplication(
                 documents=document_service,
-                research_tasks=SqliteResearchTaskRepository(session),
+                research_tasks=task_repository,
                 mutations=SqliteResearchDocumentMutationRepository(session),
                 get_theory_plan=match_runs.get_confirmed_plan,
                 owns_match_run=matching_requests.owns,
@@ -295,6 +326,7 @@ def create_app(
                         catalog=app.state.knowledge_catalog,
                         documents=document_application,
                         proposals=proposal_service,
+                        workflow=agent_research_workflow,
                     ),
                 )
             except Exception:

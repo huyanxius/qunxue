@@ -2,11 +2,17 @@ from types import SimpleNamespace
 from uuid import UUID
 
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
+from sqlalchemy import select
 
 import qunxue_api.adapters.research_agent as agent_adapters
 from qunxue_api.adapters.research_agent.pydantic_runner import (
     PydanticAIKnowledgeRunner,
     _prepare_document_tool,
+)
+from qunxue_api.adapters.sqlite import (
+    KnowledgeEntryRevisionRow,
+    KnowledgeSourceRow,
+    KnowledgeTheoryProfileRow,
 )
 from qunxue_api.application.disciplinary_agent import DisciplinaryAgentApplication
 from qunxue_api.modules.agent_conversation import (
@@ -59,9 +65,7 @@ class MemoryProposals:
         return snapshot
 
     def list_for_document(self, document_id):
-        return tuple(
-            item for item in self.items.values() if item.document_id == document_id
-        )
+        return tuple(item for item in self.items.values() if item.document_id == document_id)
 
     def list_for_task(self, task_id):
         return tuple(item for item in self.items.values() if item.task_id == task_id)
@@ -239,6 +243,75 @@ def test_document_tool_creates_a_pending_framework_proposal_with_scoped_context(
     assert len(proposal_repository.items) == 1
 
 
+def test_research_workflow_tools_restore_cross_turn_context_and_gate_writes() -> None:
+    user_id = UUID(int=1)
+    task_id = UUID(int=2)
+    theory_plan_id = UUID(int=3)
+
+    class Workflow:
+        def __init__(self) -> None:
+            self.confirmed = []
+
+        def restore(self, *, user_id, conversation_id):
+            assert user_id == UUID(int=1)
+            assert conversation_id == UUID(int=4)
+            return {"task_id": task_id, "theory_plan_id": theory_plan_id}
+
+        def create_confirmed_task(self, **payload):
+            self.confirmed.append(payload)
+            return {"task_id": str(task_id), "status": "phenomenon_confirmed"}
+
+        def get_state(self, **_payload):
+            return {"task_id": str(task_id), "theory_plan_id": str(theory_plan_id)}
+
+        def start_matching(self, **_payload):
+            return {"match_run_id": str(UUID(int=6)), "candidates": []}
+
+        def save_theory_plan(self, **payload):
+            self.confirmed.append(payload)
+            return {"theory_plan_id": str(theory_plan_id), "status": "confirmed"}
+
+    workflow = Workflow()
+    documents = ResearchDocumentService(repository=MemoryDocuments())
+    registry = agent_adapters.ResearchDocumentToolRegistry(
+        catalog=Catalog("release-a"),
+        documents=DocumentApplication(documents, user_id),
+        proposals=ResearchDocumentProposalService(
+            repository=MemoryProposals(), documents=documents
+        ),
+        workflow=workflow,
+    )
+    registry.bind_agent_context(
+        user_id=user_id,
+        conversation_id=UUID(int=4),
+        agent_run_id=UUID(int=5),
+    )
+    registry.enable_research_document_tools()
+
+    assert registry.document_prompt_context == {
+        "task_id": str(task_id),
+        "theory_plan_id": str(theory_plan_id),
+        "document_id": None,
+        "document_version": None,
+        "section_id": None,
+    }
+    refused = registry.create_confirmed_research_task(
+        phenomenon="年轻人的情感性孤独",
+        research_intent="解释结构性来源",
+        context=None,
+        user_confirmed=False,
+    )
+    assert refused["error"] == "user_confirmation_required"
+    created = registry.create_confirmed_research_task(
+        phenomenon="年轻人的情感性孤独",
+        research_intent="解释结构性来源",
+        context=None,
+        user_confirmed=True,
+    )
+    assert created["task_id"] == str(task_id)
+    assert workflow.confirmed[-1]["user_confirmed"] is True
+
+
 def test_agent_application_binds_the_real_persisted_run_to_document_tools() -> None:
     user_id = UUID(int=1)
 
@@ -308,6 +381,125 @@ def test_agent_bootstrap_uses_the_persisted_document_tool_registry(client) -> No
         tools = application._tools_factory()
 
     assert isinstance(tools, registry_type)
+
+
+def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
+    registered = client.post(
+        "/api/session/register",
+        json={"email": "agent-workflow@example.com", "password": "research-pass-123"},
+        headers={"Idempotency-Key": "register-agent-workflow"},
+    )
+    assert registered.status_code == 201
+    user_id = UUID(registered.json()["user"]["user_id"])
+    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    with client.app.state.database.session() as session:
+        rows = list(
+            session.scalars(
+                select(KnowledgeEntryRevisionRow)
+                .where(KnowledgeEntryRevisionRow.knowledge_release_id == release_id)
+                .order_by(KnowledgeEntryRevisionRow.knowledge_id)
+                .limit(3)
+            )
+        )
+        assert len(rows) == 3
+        for index, row in enumerate(rows, start=1):
+            source_id = f"source:{row.knowledge_id}"
+            source = session.get(KnowledgeSourceRow, (release_id, source_id))
+            assert source is not None
+            source.verification_status = "verified"
+            row.review_status = "reviewed"
+            row.match_eligible = True
+            row.review_record_ids = [f"agent-workflow-review-{index}"]
+            session.add(
+                KnowledgeTheoryProfileRow(
+                    knowledge_release_id=release_id,
+                    theory_id=f"agent-workflow-theory-{index}",
+                    related_knowledge_ids=[row.knowledge_id],
+                    title=f"理论 {index}",
+                    core_propositions=[f"命题 {index}"],
+                    applicable_phenomena=["社区互动"],
+                    analysis_levels=["关系"],
+                    prerequisites=["存在互动"],
+                    exclusion_signals=["没有互动"],
+                    observable_evidence=["互动频率"],
+                    competing_or_complementary_theory_ids=[],
+                    source_ids=[source_id],
+                    content_version=1,
+                    review_status="reviewed",
+                    match_eligible=True,
+                )
+            )
+    with client.app.state.disciplinary_agent_scope() as application:
+        turn = application.run_turn(
+            user_id=user_id,
+            conversation_id=None,
+            prompt="建立关于社区互助的研究",
+            idempotency_key="create-agent-research-conversation",
+            workspace="research",
+        )
+        tools = application._tools_factory()
+        tools.enable_research_document_tools()
+        tools.bind_agent_context(
+            user_id=user_id,
+            conversation_id=turn.conversation.conversation_id,
+            agent_run_id=turn.run_id,
+        )
+        created = tools.create_confirmed_research_task(
+            phenomenon="社区成员流动正在改变邻里互助",
+            research_intent="解释互助关系变化的机制",
+            context="城市社区",
+            user_confirmed=True,
+        )
+        matched = tools.start_theory_matching()
+        decisions = [
+            {
+                "candidate_id": item["candidate_id"],
+                "action": "adopt" if index == 0 else "exclude",
+                "reason": "用户确认主理论" if index == 0 else "暂不采用",
+                "related_source_ids": item["source_ids"],
+            }
+            for index, item in enumerate(matched["candidates"])
+        ]
+        plan = tools.save_confirmed_theory_plan(
+            decisions=decisions,
+            use_assignments=[
+                {
+                    "candidate_id": matched["candidates"][0]["candidate_id"],
+                    "role_code": "primary",
+                    "responsibility": "解释社区流动与互助变化的主要机制",
+                }
+            ],
+            relations=[],
+            user_confirmed=True,
+        )
+        proposal = tools.propose_document_creation(
+            title="社区互助研究框架",
+            sections=[
+                {
+                    "section_id": "research_question",
+                    "key": "research_question",
+                    "title": "研究问题",
+                    "content": "社区成员流动如何改变邻里互助？",
+                }
+            ],
+            rationale="依据用户确认的理论方案生成",
+        )
+
+    with client.app.state.disciplinary_agent_scope() as application:
+        restored = application._tools_factory()
+        restored.enable_research_document_tools()
+        restored.bind_agent_context(
+            user_id=user_id,
+            conversation_id=turn.conversation.conversation_id,
+            agent_run_id=UUID(int=99),
+        )
+
+    assert created["status"] == "phenomenon_confirmed"
+    assert matched["status"] == "awaiting_decision"
+    assert plan["status"] == "confirmed"
+    assert proposal["status"] == "pending"
+    assert restored.document_prompt_context["task_id"] == created["task_id"]
+    assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
 
 
 def test_real_runner_emits_read_and_pending_revision_tool_trace() -> None:

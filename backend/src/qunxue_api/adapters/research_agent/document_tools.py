@@ -19,6 +19,18 @@ class ResearchDocumentReader(Protocol):
     ) -> ResearchDocumentSnapshot: ...
 
 
+class ResearchWorkflowCoordinator(Protocol):
+    def restore(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]: ...
+
+    def create_confirmed_task(self, **payload: object) -> dict[str, object]: ...
+
+    def get_state(self, **payload: object) -> dict[str, object]: ...
+
+    def start_matching(self, **payload: object) -> dict[str, object]: ...
+
+    def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
+
+
 class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     """Adds approval-gated research-document capabilities to the knowledge tools."""
 
@@ -28,10 +40,12 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         catalog,
         documents: ResearchDocumentReader,
         proposals: ResearchDocumentProposalService,
+        workflow: ResearchWorkflowCoordinator | None = None,
     ) -> None:
         super().__init__(catalog)
         self._documents = documents
         self._proposals = proposals
+        self._workflow = workflow
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
         self._agent_run_id: UUID | None = None
@@ -40,6 +54,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._section_id: str | None = None
         self._document_version: int | None = None
         self._theory_plan_id: UUID | None = None
+        self._theory_plan_release_id: str | None = None
         self.research_document_tools_enabled = False
 
     def enable_research_document_tools(self) -> None:
@@ -77,6 +92,95 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._section_id = section_id
         self._document_version = document_version
         self._theory_plan_id = theory_plan_id
+        if self._workflow is not None and task_id is None:
+            restored = self._workflow.restore(user_id=user_id, conversation_id=conversation_id)
+            restored_task_id = restored.get("task_id")
+            restored_theory_plan_id = restored.get("theory_plan_id")
+            restored_release_id = restored.get("knowledge_release_id")
+            self._task_id = (
+                restored_task_id
+                if isinstance(restored_task_id, UUID)
+                else UUID(str(restored_task_id))
+                if restored_task_id
+                else None
+            )
+            self._theory_plan_id = (
+                restored_theory_plan_id
+                if isinstance(restored_theory_plan_id, UUID)
+                else UUID(str(restored_theory_plan_id))
+                if restored_theory_plan_id
+                else None
+            )
+            self._theory_plan_release_id = str(restored_release_id) if restored_release_id else None
+
+    def create_confirmed_research_task(
+        self,
+        *,
+        phenomenon: str,
+        research_intent: str | None,
+        context: str | None,
+        user_confirmed: bool,
+    ) -> dict[str, object]:
+        user_id, conversation_id, _ = self._context()
+        if not user_confirmed:
+            return {
+                "error": "user_confirmation_required",
+                "message": "创建研究任务会正式写入，必须先获得用户明确确认。",
+            }
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        result = self._workflow.create_confirmed_task(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            phenomenon=phenomenon,
+            research_intent=research_intent,
+            context=context,
+            user_confirmed=user_confirmed,
+        )
+        if result.get("task_id"):
+            self._task_id = UUID(str(result["task_id"]))
+        return result
+
+    def get_research_workflow_state(self) -> dict[str, object]:
+        user_id, conversation_id, _ = self._context()
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        return self._workflow.get_state(user_id=user_id, conversation_id=conversation_id)
+
+    def start_theory_matching(self) -> dict[str, object]:
+        user_id, conversation_id, _ = self._context()
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        return self._workflow.start_matching(user_id=user_id, conversation_id=conversation_id)
+
+    def save_confirmed_theory_plan(
+        self,
+        *,
+        decisions: list[dict[str, object]],
+        use_assignments: list[dict[str, object]],
+        relations: list[dict[str, object]],
+        user_confirmed: bool,
+    ) -> dict[str, object]:
+        user_id, conversation_id, _ = self._context()
+        if not user_confirmed:
+            return {
+                "error": "user_confirmation_required",
+                "message": "保存理论决定会正式写入，必须先获得用户明确确认。",
+            }
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        result = self._workflow.save_theory_plan(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            decisions=decisions,
+            use_assignments=use_assignments,
+            relations=relations,
+            user_confirmed=user_confirmed,
+        )
+        if result.get("theory_plan_id"):
+            self._theory_plan_id = UUID(str(result["theory_plan_id"]))
+            self._theory_plan_release_id = str(result["knowledge_release_id"])
+        return result
 
     def read_research_document(self, document_id: str) -> dict[str, object]:
         user_id, _, _ = self._context()
@@ -215,7 +319,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 agent_run_id=agent_run_id,
                 task_id=self._task_id,
                 theory_plan_id=self._theory_plan_id,
-                knowledge_release_id=self.release.knowledge_release_id,
+                knowledge_release_id=(
+                    self._theory_plan_release_id or self.release.knowledge_release_id
+                ),
                 title=title,
                 sections=parsed_sections,
                 rationale=rationale,
