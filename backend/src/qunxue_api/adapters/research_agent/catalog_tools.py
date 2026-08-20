@@ -19,7 +19,10 @@ class KnowledgeToolRegistry:
 
     def __init__(self, catalog: KnowledgeCatalog) -> None:
         self._catalog = catalog
-        self.release = catalog.current_release(purpose=KnowledgeUsePurpose.RAG)
+        # Agent runs pin the release used by M4/M5 provenance. MATCH selects a
+        # reviewed final release when one exists, while retaining the honest
+        # preview fallback when the catalog has not published one yet.
+        self.release = catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
         self.evidence: dict[str, KnowledgeEvidence] = {}
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False
