@@ -1,6 +1,10 @@
+from datetime import UTC, datetime
+
 from fastapi.testclient import TestClient
 
 from qunxue_api.adapters.sqlite import KnowledgeEntryRevisionRow, KnowledgeRelationRow
+from qunxue_api.adapters.sqlite.knowledge_catalog_model import KnowledgeReleaseRow
+from qunxue_api.modules.knowledge_catalog import KnowledgeReleaseLevel, KnowledgeUsePurpose
 
 
 def test_current_knowledge_release_is_a_stable_markdown_preview(client: TestClient) -> None:
@@ -13,6 +17,34 @@ def test_current_knowledge_release_is_a_stable_markdown_preview(client: TestClie
     assert first.json()["knowledge_release_id"].startswith("knowledge-preview-")
     assert first.json()["level"] == "preview"
     assert first.json()["content_hash"].startswith("sha256:")
+
+
+def test_match_uses_latest_final_release_even_when_browse_preview_is_current(
+    client: TestClient,
+) -> None:
+    preview = client.app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.BROWSE
+    )
+    with client.app.state.database.session() as session:
+        session.add(
+            KnowledgeReleaseRow(
+                knowledge_release_id="knowledge-final-reviewed-v1",
+                level=KnowledgeReleaseLevel.FINAL.value,
+                content_hash="sha256:knowledge-final-reviewed-v1",
+                build_config_version="reviewed-publication-v1",
+                manifest={"theory_ids": ["theory:example"]},
+                is_current=False,
+                built_at=datetime.now(UTC),
+            )
+        )
+
+    match = client.app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.MATCH
+    )
+
+    assert preview.level is KnowledgeReleaseLevel.PREVIEW
+    assert match.knowledge_release_id == "knowledge-final-reviewed-v1"
+    assert match.level is KnowledgeReleaseLevel.FINAL
 
 
 def test_knowledge_browse_keeps_search_and_detail_on_one_release(
