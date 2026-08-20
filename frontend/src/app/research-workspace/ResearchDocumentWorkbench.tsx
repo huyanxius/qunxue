@@ -21,14 +21,7 @@ import {
   restoreResearchDocument,
   rejectResearchDocumentProposal,
   updateResearchDocument,
-  type ResearchDocumentProposalResponse,
-  type ResearchDocumentResponse,
-  type ResearchTaskNavigationResponse,
-  type MatchRunResponse,
-  type TheoryDecisionSetResponse,
-  type TheoryDecisionAction,
-} from '../../api/generated'
-import { apiClient } from '../../api/client'
+} from '../../api/researchWorkspace'
 import { streamAgentTurn, type AgentEvent, type AgentToolStep } from '../../modules/research-agent'
 import './research-document-workbench.css'
 
@@ -57,6 +50,12 @@ const M5_SECTIONS = [
 
 type SectionKey = string
 type AgentState = 'idle' | 'thinking' | 'retrieving' | 'answering' | 'error'
+type ResearchDocumentProposalResponse = NonNullable<Awaited<ReturnType<typeof listResearchTaskDocumentProposals>>['data']>['items'][number]
+type ResearchDocumentResponse = NonNullable<Awaited<ReturnType<typeof listResearchDocuments>>['data']>['items'][number]
+type ResearchTaskNavigationResponse = NonNullable<Awaited<ReturnType<typeof getResearchTaskNavigation>>['data']>
+type MatchRunResponse = NonNullable<Awaited<ReturnType<typeof getMatchRun>>['data']>
+type TheoryDecisionSetResponse = NonNullable<Awaited<ReturnType<typeof listTheoryDecisions>>['data']>['decision_sets'][number]
+type TheoryDecisionAction = TheoryDecisionSetResponse['decisions'][number]['action']
 
 function key() {
   return globalThis.crypto?.randomUUID?.() ?? `m4-m5-${Date.now()}`
@@ -134,16 +133,16 @@ export function ResearchDocumentWorkbench() {
     let disposed = false
     setLoadState('loading')
     Promise.all([
-      Promise.resolve().then(() => getResearchTaskNavigation({ client: apiClient, path: { task_id: taskId } })),
-      Promise.resolve().then(() => listResearchDocuments({ client: apiClient, path: { task_id: taskId } })),
+      Promise.resolve().then(() => getResearchTaskNavigation({ path: { task_id: taskId } })),
+      Promise.resolve().then(() => listResearchDocuments({ path: { task_id: taskId } })),
     ]).then(async ([nav, docs]) => {
       if (disposed) return
       if (!nav.data || !docs.data) throw new Error('研究工作区暂时无法加载。')
       setNavigation(nav.data)
       if (mode === 'match' && nav.data.current_match_run_id) {
-        const match = await getMatchRun({ client: apiClient, path: { match_run_id: nav.data.current_match_run_id } })
+        const match = await getMatchRun({ path: { match_run_id: nav.data.current_match_run_id } })
         if (match.data) setMatchRun(match.data)
-        const decisions = await listTheoryDecisions({ client: apiClient, path: { match_run_id: nav.data.current_match_run_id } })
+        const decisions = await listTheoryDecisions({ path: { match_run_id: nav.data.current_match_run_id } })
         if (decisions.data?.decision_sets.length) {
           const restoredDecisionSet = decisions.data.decision_sets[0]
           setDecisionSet(restoredDecisionSet)
@@ -153,10 +152,10 @@ export function ResearchDocumentWorkbench() {
       const current = selectCurrentDocument(docs.data.items, nav.data, mode)
       setDocument(current)
       setLoadState('ready')
-      const taskProposals = await listResearchTaskDocumentProposals({ client: apiClient, path: { task_id: taskId } })
+      const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
       if (taskProposals.data) setProposals(taskProposals.data.items)
       if (current) {
-        listResearchDocumentVersions({ client: apiClient, path: { document_id: current.document_id } })
+        listResearchDocumentVersions({ path: { document_id: current.document_id } })
           .then((result) => result.data && setVersions(result.data.items))
           .catch(() => undefined)
       }
@@ -172,18 +171,18 @@ export function ResearchDocumentWorkbench() {
   const refreshDocumentState = useCallback(async () => {
     if (!taskId) return
     const [navigationResult, result] = await Promise.all([
-      getResearchTaskNavigation({ client: apiClient, path: { task_id: taskId } }),
-      listResearchDocuments({ client: apiClient, path: { task_id: taskId } }),
+      getResearchTaskNavigation({ path: { task_id: taskId } }),
+      listResearchDocuments({ path: { task_id: taskId } }),
     ])
     if (navigationResult.data) setNavigation(navigationResult.data)
     if (!result.data) return
     const currentId = mode === 'framework' ? navigation?.current_framework_id : navigation?.current_theory_plan_id
     const current = (currentId ? result.data.items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? result.data.items[0] ?? null
     setDocument(current)
-    const taskProposals = await listResearchTaskDocumentProposals({ client: apiClient, path: { task_id: taskId } })
+    const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
     if (taskProposals.data) setProposals(taskProposals.data.items)
     if (current) {
-      const versionsResult = await listResearchDocumentVersions({ client: apiClient, path: { document_id: current.document_id } })
+      const versionsResult = await listResearchDocumentVersions({ path: { document_id: current.document_id } })
       if (versionsResult.data) setVersions(versionsResult.data.items)
     }
   }, [mode, navigation, taskId])
@@ -196,7 +195,6 @@ export function ResearchDocumentWorkbench() {
       ? { ...section, content }
       : section)
     const result = await updateResearchDocument({
-      client: apiClient,
       path: { document_id: document.document_id },
       headers: { 'Idempotency-Key': key() },
       body: { expected_version: document.version, sections: nextSections, change_summary: '用户直接编辑正文', source: 'user_edit' },
@@ -258,7 +256,6 @@ export function ResearchDocumentWorkbench() {
     if (proposal.status !== 'pending') return
     if (proposal.kind !== 'create' && !document) return
     const result = await acceptResearchDocumentProposal({
-      client: apiClient,
       path: { proposal_id: proposal.proposal_id },
       headers: { 'Idempotency-Key': key() },
       body: { expected_document_version: proposal.kind === 'create' ? null : document!.version },
@@ -273,7 +270,6 @@ export function ResearchDocumentWorkbench() {
   async function rejectProposal(proposal: ResearchDocumentProposalResponse) {
     if (proposal.status !== 'pending') return
     const result = await rejectResearchDocumentProposal({
-      client: apiClient,
       path: { proposal_id: proposal.proposal_id },
       headers: { 'Idempotency-Key': key() },
       body: { reason: '用户拒绝本次局部修改建议。' },
@@ -283,14 +279,13 @@ export function ResearchDocumentWorkbench() {
 
   async function confirmDocument() {
     if (!document) return
-    const result = await confirmResearchDocument({ client: apiClient, path: { document_id: document.document_id }, headers: { 'Idempotency-Key': key() }, body: { expected_version: document.version } })
+    const result = await confirmResearchDocument({ path: { document_id: document.document_id }, headers: { 'Idempotency-Key': key() }, body: { expected_version: document.version } })
     if (result.data) setDocument(result.data)
   }
 
   async function restoreVersion(version: number) {
     if (!document || version === document.version) return
     const result = await restoreResearchDocument({
-      client: apiClient,
       path: { document_id: document.document_id },
       headers: { 'Idempotency-Key': key() },
       body: { source_version: version, expected_version: document.version, reason: `恢复到第 ${version} 版` },
@@ -314,7 +309,6 @@ export function ResearchDocumentWorkbench() {
     let expectedMatchVersion = matchRun.version
     if (matchRun.failed_candidate_ids.length && !matchRun.partial_completion_acknowledged) {
       const acknowledged = await acknowledgePartialMatch({
-        client: apiClient,
         path: { match_run_id: matchRun.match_run_id },
         headers: { 'Idempotency-Key': key() },
         body: {
@@ -329,7 +323,6 @@ export function ResearchDocumentWorkbench() {
       expectedMatchVersion = acknowledged.data.version
     }
     const result = await createTheoryDecisions({
-      client: apiClient,
       path: { match_run_id: matchRun.match_run_id },
       headers: { 'Idempotency-Key': key() },
       body: {
@@ -343,7 +336,7 @@ export function ResearchDocumentWorkbench() {
     if (result.data) {
       setDecisionSet(result.data)
       setPendingTheoryDecisions(Object.fromEntries(result.data.decisions.map((decision) => [decision.candidate_id, { candidate_version: decision.candidate_version, action: decision.action }])))
-      const refreshed = await getMatchRun({ client: apiClient, path: { match_run_id: matchRun.match_run_id } })
+      const refreshed = await getMatchRun({ path: { match_run_id: matchRun.match_run_id } })
       if (refreshed.data) setMatchRun(refreshed.data)
     }
   }
@@ -351,7 +344,6 @@ export function ResearchDocumentWorkbench() {
   async function confirmTheoryPlanChoice() {
     if (!decisionSet) return
     const result = await confirmTheoryPlan({
-      client: apiClient,
       path: { decision_set_id: decisionSet.decision_set_id },
       headers: { 'Idempotency-Key': key() },
       body: { expected_decision_set_version: decisionSet.version },
@@ -361,7 +353,7 @@ export function ResearchDocumentWorkbench() {
 
   async function downloadDocument() {
     if (!document) return
-    const result = await exportResearchDocument({ client: apiClient, path: { document_id: document.document_id }, query: { version: document.version } })
+    const result = await exportResearchDocument({ path: { document_id: document.document_id }, query: { version: document.version } })
     if (!result.data) return
     const blob = new Blob([result.data.markdown], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
