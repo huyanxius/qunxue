@@ -5,6 +5,16 @@ export type ClientOptions = {
 };
 
 /**
+ * AcceptResearchDocumentProposalRequest
+ */
+export type AcceptResearchDocumentProposalRequest = {
+    /**
+     * Expected Document Version
+     */
+    expected_document_version?: number | null;
+};
+
+/**
  * AcknowledgePartialMatchRequest
  */
 export type AcknowledgePartialMatchRequest = {
@@ -199,9 +209,29 @@ export type AgentTurnRequest = {
      */
     conversation_id?: string | null;
     /**
+     * Document Id
+     */
+    document_id?: string | null;
+    /**
+     * Document Version
+     */
+    document_version?: number | null;
+    /**
      * Message
      */
     message: string;
+    /**
+     * Section Id
+     */
+    section_id?: string | null;
+    /**
+     * Task Id
+     */
+    task_id?: string | null;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id?: string | null;
     /**
      * Workspace
      */
@@ -471,6 +501,16 @@ export type ConfirmPhenomenonCandidateRequest = {
 };
 
 /**
+ * ConfirmResearchDocumentRequest
+ */
+export type ConfirmResearchDocumentRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
  * ConfirmTheoryPlanRequest
  */
 export type ConfirmTheoryPlanRequest = {
@@ -654,6 +694,24 @@ export type CreateMatchRunRequest = {
      * Phenomenon Version
      */
     phenomenon_version: number;
+};
+
+/**
+ * CreateResearchDocumentRequest
+ */
+export type CreateResearchDocumentRequest = {
+    /**
+     * Sections
+     */
+    sections: Array<ResearchDocumentSectionContract>;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -1750,6 +1808,10 @@ export type MatchRunResponse = {
      */
     failed_candidate_count: number;
     /**
+     * Failed Candidate Ids
+     */
+    failed_candidate_ids: Array<string>;
+    /**
      * Knowledge Release Id
      */
     knowledge_release_id: string;
@@ -2254,6 +2316,16 @@ export type RegisterSessionRequest = {
 };
 
 /**
+ * RejectResearchDocumentProposalRequest
+ */
+export type RejectResearchDocumentProposalRequest = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * RelatedTheoryResponse
  */
 export type RelatedTheoryResponse = {
@@ -2368,9 +2440,319 @@ export type RelationCandidateResponse = {
 };
 
 /**
+ * ResearchDocumentEvidenceRefContract
+ */
+export type ResearchDocumentEvidenceRefContract = {
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Source Id
+     */
+    source_id: string;
+};
+
+/**
+ * ResearchDocumentExportResponse
+ */
+export type ResearchDocumentExportResponse = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Markdown
+     */
+    markdown: string;
+    /**
+     * Media Type
+     */
+    media_type: 'text/markdown';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ResearchDocumentListResponse
+ */
+export type ResearchDocumentListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchDocumentResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
+ * ResearchDocumentProposalAcceptanceResponse
+ */
+export type ResearchDocumentProposalAcceptanceResponse = {
+    document: ResearchDocumentResponse;
+    proposal: ResearchDocumentProposalResponse;
+};
+
+/**
+ * ResearchDocumentProposalKind
+ */
+export type ResearchDocumentProposalKind = 'create' | 'revise_section';
+
+/**
+ * ResearchDocumentProposalListResponse
+ */
+export type ResearchDocumentProposalListResponse = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Items
+     */
+    items: Array<ResearchDocumentProposalResponse>;
+};
+
+/**
+ * ResearchDocumentProposalResponse
+ */
+export type ResearchDocumentProposalResponse = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * Base Document Version
+     */
+    base_document_version: number | null;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Document Id
+     */
+    document_id: string | null;
+    kind: ResearchDocumentProposalKind;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string;
+    /**
+     * Proposed Sections
+     */
+    proposed_sections: Array<ResearchDocumentSectionContract>;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Requires User Approval
+     */
+    requires_user_approval: boolean;
+    /**
+     * Result Document Id
+     */
+    result_document_id: string | null;
+    /**
+     * Result Document Version
+     */
+    result_document_version: number | null;
+    status: ResearchDocumentProposalStatus;
+    /**
+     * Target Section Id
+     */
+    target_section_id: string | null;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * ResearchDocumentProposalStatus
+ */
+export type ResearchDocumentProposalStatus = 'pending' | 'accepted' | 'rejected';
+
+/**
+ * ResearchDocumentResponse
+ */
+export type ResearchDocumentResponse = {
+    /**
+     * Actor
+     */
+    actor: string;
+    /**
+     * Change Summary
+     */
+    change_summary: string;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Restored From Version
+     */
+    restored_from_version: number | null;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Sections
+     */
+    sections: Array<ResearchDocumentSectionContract>;
+    status: ResearchDocumentStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ResearchDocumentSectionContract
+ */
+export type ResearchDocumentSectionContract = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs?: Array<ResearchDocumentEvidenceRefContract>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Section Id
+     */
+    section_id: string;
+    status: ResearchDocumentSectionStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ResearchDocumentSectionStatus
+ */
+export type ResearchDocumentSectionStatus = 'draft' | 'reviewed' | 'evidence_gap' | 'needs_user_decision' | 'confirmed';
+
+/**
+ * ResearchDocumentStatus
+ */
+export type ResearchDocumentStatus = 'draft' | 'confirmed';
+
+/**
+ * ResearchDocumentVersionListResponse
+ */
+export type ResearchDocumentVersionListResponse = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Items
+     */
+    items: Array<ResearchDocumentResponse>;
+};
+
+/**
  * ResearchTaskAction
  */
 export type ResearchTaskAction = 'submit_phenomenon';
+
+/**
+ * ResearchTaskDocumentProposalListResponse
+ */
+export type ResearchTaskDocumentProposalListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchDocumentProposalResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
 
 /**
  * ResearchTaskLifecycleStatus
@@ -2417,6 +2799,10 @@ export type ResearchTaskNavigationResponse = {
      */
     current_phenomenon_candidate_id: string | null;
     current_stage: ResearchTaskStage;
+    /**
+     * Current Theory Plan Id
+     */
+    current_theory_plan_id: string | null;
     entry_type: EntryType;
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | null;
     /**
@@ -2522,7 +2908,7 @@ export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' |
 /**
  * ResearchTaskStatus
  */
-export type ResearchTaskStatus = 'draft' | 'phenomenon_confirmed' | 'match_generating' | 'decisions_recorded' | 'framework_draft' | 'framework_confirmed';
+export type ResearchTaskStatus = 'draft' | 'phenomenon_confirmed' | 'match_generating' | 'decisions_recorded' | 'theory_plan_confirmed' | 'framework_draft' | 'framework_confirmed';
 
 /**
  * ResearchTraceActor
@@ -2588,6 +2974,24 @@ export type ResearchTraceResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * RestoreResearchDocumentRequest
+ */
+export type RestoreResearchDocumentRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Source Version
+     */
+    source_version: number;
 };
 
 /**
@@ -3323,6 +3727,28 @@ export type UpdatePhenomenonCandidateRequest = {
     research_intent?: string | null;
 };
 
+/**
+ * UpdateResearchDocumentRequest
+ */
+export type UpdateResearchDocumentRequest = {
+    /**
+     * Change Summary
+     */
+    change_summary: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Sections
+     */
+    sections: Array<ResearchDocumentSectionContract>;
+    /**
+     * Source
+     */
+    source: 'user_edit';
+};
+
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -3499,13 +3925,13 @@ export type GetFrameworkErrors = {
      */
     404: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetFrameworkError = GetFrameworkErrors[keyof GetFrameworkErrors];
@@ -3543,13 +3969,13 @@ export type UpdateFrameworkErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type UpdateFrameworkError = UpdateFrameworkErrors[keyof UpdateFrameworkErrors];
@@ -3587,13 +4013,13 @@ export type SubmitAuditResolutionsErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type SubmitAuditResolutionsError = SubmitAuditResolutionsErrors[keyof SubmitAuditResolutionsErrors];
@@ -3631,13 +4057,13 @@ export type ConfirmFrameworkErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type ConfirmFrameworkError = ConfirmFrameworkErrors[keyof ConfirmFrameworkErrors];
@@ -3669,13 +4095,13 @@ export type ExportConfirmedFrameworkErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type ExportConfirmedFrameworkError = ExportConfirmedFrameworkErrors[keyof ExportConfirmedFrameworkErrors];
@@ -3713,13 +4139,13 @@ export type StartFrameworkReviewErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type StartFrameworkReviewError = StartFrameworkReviewErrors[keyof StartFrameworkReviewErrors];
@@ -3755,13 +4181,13 @@ export type GetFrameworkReviewErrors = {
      */
     404: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type GetFrameworkReviewError = GetFrameworkReviewErrors[keyof GetFrameworkReviewErrors];
@@ -3807,13 +4233,13 @@ export type RetryFrameworkReviewErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type RetryFrameworkReviewError = RetryFrameworkReviewErrors[keyof RetryFrameworkReviewErrors];
@@ -4360,13 +4786,13 @@ export type ListTheoryDecisionsErrors = {
      */
     404: ErrorResponse;
     /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type ListTheoryDecisionsError = ListTheoryDecisionsErrors[keyof ListTheoryDecisionsErrors];
@@ -4565,6 +4991,410 @@ export type ListPhenomenonExamplesResponses = {
 };
 
 export type ListPhenomenonExamplesResponse = ListPhenomenonExamplesResponses[keyof ListPhenomenonExamplesResponses];
+
+export type GetResearchDocumentProposalData = {
+    body?: never;
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/research-document-proposals/{proposal_id}';
+};
+
+export type GetResearchDocumentProposalErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchDocumentProposalError = GetResearchDocumentProposalErrors[keyof GetResearchDocumentProposalErrors];
+
+export type GetResearchDocumentProposalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentProposalResponse;
+};
+
+export type GetResearchDocumentProposalResponse = GetResearchDocumentProposalResponses[keyof GetResearchDocumentProposalResponses];
+
+export type AcceptResearchDocumentProposalData = {
+    body: AcceptResearchDocumentProposalRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/research-document-proposals/{proposal_id}/accept';
+};
+
+export type AcceptResearchDocumentProposalErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type AcceptResearchDocumentProposalError = AcceptResearchDocumentProposalErrors[keyof AcceptResearchDocumentProposalErrors];
+
+export type AcceptResearchDocumentProposalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentProposalAcceptanceResponse;
+};
+
+export type AcceptResearchDocumentProposalResponse = AcceptResearchDocumentProposalResponses[keyof AcceptResearchDocumentProposalResponses];
+
+export type RejectResearchDocumentProposalData = {
+    body: RejectResearchDocumentProposalRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/research-document-proposals/{proposal_id}/reject';
+};
+
+export type RejectResearchDocumentProposalErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type RejectResearchDocumentProposalError = RejectResearchDocumentProposalErrors[keyof RejectResearchDocumentProposalErrors];
+
+export type RejectResearchDocumentProposalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentProposalResponse;
+};
+
+export type RejectResearchDocumentProposalResponse = RejectResearchDocumentProposalResponses[keyof RejectResearchDocumentProposalResponses];
+
+export type GetResearchDocumentData = {
+    body?: never;
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/api/research-documents/{document_id}';
+};
+
+export type GetResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchDocumentError = GetResearchDocumentErrors[keyof GetResearchDocumentErrors];
+
+export type GetResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentResponse;
+};
+
+export type GetResearchDocumentResponse = GetResearchDocumentResponses[keyof GetResearchDocumentResponses];
+
+export type UpdateResearchDocumentData = {
+    body: UpdateResearchDocumentRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}';
+};
+
+export type UpdateResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateResearchDocumentError = UpdateResearchDocumentErrors[keyof UpdateResearchDocumentErrors];
+
+export type UpdateResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentResponse;
+};
+
+export type UpdateResearchDocumentResponse = UpdateResearchDocumentResponses[keyof UpdateResearchDocumentResponses];
+
+export type ConfirmResearchDocumentData = {
+    body: ConfirmResearchDocumentRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}/confirm';
+};
+
+export type ConfirmResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ConfirmResearchDocumentError = ConfirmResearchDocumentErrors[keyof ConfirmResearchDocumentErrors];
+
+export type ConfirmResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentResponse;
+};
+
+export type ConfirmResearchDocumentResponse = ConfirmResearchDocumentResponses[keyof ConfirmResearchDocumentResponses];
+
+export type ExportResearchDocumentData = {
+    body?: never;
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/api/research-documents/{document_id}/export';
+};
+
+export type ExportResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ExportResearchDocumentError = ExportResearchDocumentErrors[keyof ExportResearchDocumentErrors];
+
+export type ExportResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentExportResponse;
+};
+
+export type ExportResearchDocumentResponse = ExportResearchDocumentResponses[keyof ExportResearchDocumentResponses];
+
+export type ListResearchDocumentProposalsData = {
+    body?: never;
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}/proposals';
+};
+
+export type ListResearchDocumentProposalsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchDocumentProposalsError = ListResearchDocumentProposalsErrors[keyof ListResearchDocumentProposalsErrors];
+
+export type ListResearchDocumentProposalsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentProposalListResponse;
+};
+
+export type ListResearchDocumentProposalsResponse = ListResearchDocumentProposalsResponses[keyof ListResearchDocumentProposalsResponses];
+
+export type RestoreResearchDocumentData = {
+    body: RestoreResearchDocumentRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}/restore';
+};
+
+export type RestoreResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type RestoreResearchDocumentError = RestoreResearchDocumentErrors[keyof RestoreResearchDocumentErrors];
+
+export type RestoreResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentResponse;
+};
+
+export type RestoreResearchDocumentResponse = RestoreResearchDocumentResponses[keyof RestoreResearchDocumentResponses];
+
+export type ListResearchDocumentVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}/versions';
+};
+
+export type ListResearchDocumentVersionsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchDocumentVersionsError = ListResearchDocumentVersionsErrors[keyof ListResearchDocumentVersionsErrors];
+
+export type ListResearchDocumentVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentVersionListResponse;
+};
+
+export type ListResearchDocumentVersionsResponse = ListResearchDocumentVersionsResponses[keyof ListResearchDocumentVersionsResponses];
 
 export type ListResearchTasksData = {
     body?: never;
@@ -4783,13 +5613,13 @@ export type CreateFrameworkErrors = {
      */
     409: ErrorResponse;
     /**
+     * Gone
+     */
+    410: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
-    /**
-     * Not Implemented
-     */
-    501: ErrorResponse;
 };
 
 export type CreateFrameworkError = CreateFrameworkErrors[keyof CreateFrameworkErrors];
@@ -5247,6 +6077,118 @@ export type ListPhenomenonSnapshotsResponses = {
 
 export type ListPhenomenonSnapshotsResponse = ListPhenomenonSnapshotsResponses[keyof ListPhenomenonSnapshotsResponses];
 
+export type ListResearchTaskDocumentProposalsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/research-document-proposals';
+};
+
+export type ListResearchTaskDocumentProposalsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchTaskDocumentProposalsError = ListResearchTaskDocumentProposalsErrors[keyof ListResearchTaskDocumentProposalsErrors];
+
+export type ListResearchTaskDocumentProposalsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTaskDocumentProposalListResponse;
+};
+
+export type ListResearchTaskDocumentProposalsResponse = ListResearchTaskDocumentProposalsResponses[keyof ListResearchTaskDocumentProposalsResponses];
+
+export type ListResearchDocumentsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/research-documents';
+};
+
+export type ListResearchDocumentsErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchDocumentsError = ListResearchDocumentsErrors[keyof ListResearchDocumentsErrors];
+
+export type ListResearchDocumentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentListResponse;
+};
+
+export type ListResearchDocumentsResponse = ListResearchDocumentsResponses[keyof ListResearchDocumentsResponses];
+
+export type CreateResearchDocumentData = {
+    body: CreateResearchDocumentRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/research-documents';
+};
+
+export type CreateResearchDocumentErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type CreateResearchDocumentError = CreateResearchDocumentErrors[keyof CreateResearchDocumentErrors];
+
+export type CreateResearchDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    201: ResearchDocumentResponse;
+};
+
+export type CreateResearchDocumentResponse = CreateResearchDocumentResponses[keyof CreateResearchDocumentResponses];
+
 export type GetResearchTraceData = {
     body?: never;
     path: {
@@ -5443,3 +6385,37 @@ export type RegisterSessionResponses = {
 };
 
 export type RegisterSessionResponse = RegisterSessionResponses[keyof RegisterSessionResponses];
+
+export type GetConfirmedTheoryPlanData = {
+    body?: never;
+    path: {
+        /**
+         * Theory Plan Id
+         */
+        theory_plan_id: string;
+    };
+    query?: never;
+    url: '/api/theory-plans/{theory_plan_id}';
+};
+
+export type GetConfirmedTheoryPlanErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetConfirmedTheoryPlanError = GetConfirmedTheoryPlanErrors[keyof GetConfirmedTheoryPlanErrors];
+
+export type GetConfirmedTheoryPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmedTheoryPlanResponse;
+};
+
+export type GetConfirmedTheoryPlanResponse = GetConfirmedTheoryPlanResponses[keyof GetConfirmedTheoryPlanResponses];

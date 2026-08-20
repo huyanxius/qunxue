@@ -55,6 +55,7 @@ class ResearchTaskRow(Base):
         nullable=True,
     )
     current_match_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    current_theory_plan_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_framework_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

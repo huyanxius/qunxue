@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
@@ -91,6 +91,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 current_match_run_id=(
                     str(task.current_match_run_id) if task.current_match_run_id else None
                 ),
+                current_theory_plan_id=(
+                    str(task.current_theory_plan_id)
+                    if task.current_theory_plan_id
+                    else None
+                ),
                 current_framework_id=(
                     str(task.current_framework_id) if task.current_framework_id else None
                 ),
@@ -112,43 +117,64 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
         return self._to_domain(row)
 
     def save_progress(self, task: ResearchTask) -> ResearchTask | None:
-        row = self._session.scalar(
-            select(ResearchTaskRow).where(
+        result = self._session.execute(
+            update(ResearchTaskRow)
+            .where(
                 ResearchTaskRow.task_id == str(task.task_id),
                 ResearchTaskRow.user_id == str(task.user_id),
+                or_(
+                    ResearchTaskRow.version == task.version - 1,
+                    (
+                        # Legacy projection writers persisted an initial task
+                        # snapshot with an externally supplied version and
+                        # timestamp. Only an untouched DRAFT row can use this
+                        # compatibility path; real transitions increment the
+                        # version and update the timestamp together.
+                        (ResearchTaskRow.version == 1)
+                        & (ResearchTaskRow.status == ResearchTaskStatus.DRAFT.value)
+                        & (ResearchTaskRow.created_at == ResearchTaskRow.updated_at)
+                    ),
+                ),
+            )
+            .values(
+                status=task.status.value,
+                version=task.version,
+                updated_at=task.updated_at,
+                phenomenon_query_id=(
+                    str(task.phenomenon_query_id) if task.phenomenon_query_id else None
+                ),
+                phenomenon_version=task.phenomenon_version,
+                phenomenon_summary=task.phenomenon_summary,
+                phenomenon_research_intent=task.phenomenon_research_intent,
+                adopted_theory_count=task.adopted_theory_count,
+                current_phenomenon_candidate_id=(
+                    str(task.current_phenomenon_candidate_id)
+                    if task.current_phenomenon_candidate_id
+                    else None
+                ),
+                current_material_intake_run_id=(
+                    str(task.current_material_intake_run_id)
+                    if task.current_material_intake_run_id
+                    else None
+                ),
+                current_match_run_id=(
+                    str(task.current_match_run_id) if task.current_match_run_id else None
+                ),
+                current_theory_plan_id=(
+                    str(task.current_theory_plan_id)
+                    if task.current_theory_plan_id
+                    else None
+                ),
+                current_framework_id=(
+                    str(task.current_framework_id) if task.current_framework_id else None
+                ),
             )
         )
-        if row is None:
+        if result.rowcount != 1:
             return None
-
-        row.status = task.status.value
-        row.version = task.version
-        row.updated_at = task.updated_at
-        row.phenomenon_query_id = (
-            str(task.phenomenon_query_id) if task.phenomenon_query_id else None
-        )
-        row.phenomenon_version = task.phenomenon_version
-        row.phenomenon_summary = task.phenomenon_summary
-        row.phenomenon_research_intent = task.phenomenon_research_intent
-        row.adopted_theory_count = task.adopted_theory_count
-        row.current_phenomenon_candidate_id = (
-            str(task.current_phenomenon_candidate_id)
-            if task.current_phenomenon_candidate_id
-            else None
-        )
-        row.current_material_intake_run_id = (
-            str(task.current_material_intake_run_id)
-            if task.current_material_intake_run_id
-            else None
-        )
-        row.current_match_run_id = (
-            str(task.current_match_run_id) if task.current_match_run_id else None
-        )
-        row.current_framework_id = (
-            str(task.current_framework_id) if task.current_framework_id else None
-        )
-        self._session.flush()
-        return self._to_domain(row)
+        self._session.expire_all()
+        persisted = self._session.get(ResearchTaskRow, str(task.task_id))
+        return self._to_domain(persisted) if persisted is not None else None
 
     @staticmethod
     def _to_domain(row: ResearchTaskRow) -> ResearchTask:
@@ -184,6 +210,9 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             ),
             current_match_run_id=(
                 UUID(row.current_match_run_id) if row.current_match_run_id else None
+            ),
+            current_theory_plan_id=(
+                UUID(row.current_theory_plan_id) if row.current_theory_plan_id else None
             ),
             current_framework_id=(
                 UUID(row.current_framework_id) if row.current_framework_id else None

@@ -4,6 +4,7 @@ export type ResearchTaskStatus =
   | 'phenomenon_confirmed'
   | 'match_generating'
   | 'decisions_recorded'
+  | 'theory_plan_confirmed'
   | 'framework_draft'
   | 'framework_confirmed'
 export type ResearchTaskAction = 'submit_phenomenon'

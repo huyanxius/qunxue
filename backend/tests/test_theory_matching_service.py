@@ -18,10 +18,14 @@ from qunxue_api.modules.knowledge_catalog import (
 from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
 from qunxue_api.modules.theory_matching import (
     CandidateContentStatus,
+    CandidateJudgementRunStatus,
     CandidateOrigin,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchCompletionBasis,
     MatchRunStatus,
+    TheoryJudgementBatchItemResult,
+    TheoryJudgementBatchResult,
     TheoryMatchingService,
 )
 
@@ -189,3 +193,46 @@ def test_fewer_than_three_profiles_persist_empty_without_invoking_the_judge() ->
     assert run.stable_candidate_order == ()
     assert run.model is None
     assert recorder.list_all() == ()
+
+
+class _JudgeThatOmitsOneCandidate:
+    def judge_and_rerank(self, *, input):
+        first = input.items[0]
+        input_ids = tuple(item.candidate_id for item in input.items)
+        return TheoryJudgementBatchResult(
+            results=(
+                TheoryJudgementBatchItemResult(
+                    candidate_id=first.candidate_id,
+                    candidate_version=first.candidate_version,
+                    status=CandidateJudgementRunStatus.FAILED,
+                    judgement=None,
+                    failure_code="model_timeout",
+                    trace_id=UUID(int=900),
+                    request_id=UUID(int=901),
+                    contract_version="matching.v1",
+                ),
+            ),
+            input_candidate_order=input_ids,
+            ranked_candidate_order=(first.candidate_id,),
+            completion_basis=MatchCompletionBasis.PARTIAL,
+            retryable_candidate_ids=(first.candidate_id,),
+        )
+
+
+def test_partial_run_marks_every_non_successful_input_candidate_as_failed() -> None:
+    repository = _MatchRunRepository()
+    service = TheoryMatchingService(
+        evidence_source=_EvidenceSource(_bundle(3)),
+        judge=_JudgeThatOmitsOneCandidate(),
+        repository=repository,
+        provider="test",
+        model_version="test",
+        capability="base",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.PARTIAL_FAILURE
+    assert len(run.failed_candidate_ids) == 3

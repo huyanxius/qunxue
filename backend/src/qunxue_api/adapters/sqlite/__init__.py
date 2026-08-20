@@ -17,6 +17,20 @@ from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeTheoryProfileRow,
 )
 from qunxue_api.adapters.sqlite.model_invocation_model import ModelInvocationRow
+from qunxue_api.adapters.sqlite.research_document import SqliteResearchDocumentRepository
+from qunxue_api.adapters.sqlite.research_document_model import (
+    ResearchDocumentMutationRequestRow,
+    ResearchDocumentVersionRow,
+)
+from qunxue_api.adapters.sqlite.research_document_mutation import (
+    SqliteResearchDocumentMutationRepository,
+)
+from qunxue_api.adapters.sqlite.research_document_proposal import (
+    SqliteResearchDocumentProposalRepository,
+)
+from qunxue_api.adapters.sqlite.research_document_proposal_model import (
+    ResearchDocumentProposalRow,
+)
 from qunxue_api.adapters.sqlite.research_intake_model import (
     MaterialIntakeRunRow,
     PhenomenonCandidateVersionRow,
@@ -25,12 +39,15 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
     ResearchTaskRow,
 )
 from qunxue_api.adapters.sqlite.theory_matching_model import (
+    ConfirmedTheoryPlanRow,
     MatchRunRow,
+    TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
 )
 
 __all__ = [
     "Base",
+    "ConfirmedTheoryPlanRow",
     "AgentConversationRow",
     "AgentMessageRow",
     "AgentRunRow",
@@ -48,7 +65,14 @@ __all__ = [
     "PhenomenonExampleRow",
     "PhenomenonStateRow",
     "ResearchTaskRow",
+    "ResearchDocumentVersionRow",
+    "ResearchDocumentMutationRequestRow",
+    "SqliteResearchDocumentMutationRepository",
+    "SqliteResearchDocumentRepository",
+    "ResearchDocumentProposalRow",
+    "SqliteResearchDocumentProposalRepository",
     "TheoryMatchingRequestRow",
+    "TheoryDecisionSetRow",
     "UserRow",
     "UserSessionRow",
 ]

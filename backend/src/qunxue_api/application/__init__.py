@@ -4,6 +4,10 @@ from qunxue_api.application.disciplinary_agent import (
     AgentTurnExecution,
     DisciplinaryAgentApplication,
 )
+from qunxue_api.application.research_document_proposals import (
+    ResearchDocumentProposalApplication,
+)
+from qunxue_api.application.research_documents import ResearchDocumentApplication
 from qunxue_api.application.research_journey import (
     ResearchJourney,
     ResearchJourneyConfigurationError,
@@ -17,6 +21,8 @@ from qunxue_api.application.theory_matching import (
 
 __all__ = [
     "ResearchJourney",
+    "ResearchDocumentApplication",
+    "ResearchDocumentProposalApplication",
     "ResearchJourneyConfigurationError",
     "ResearchJourneyDependencies",
     "MatchingRequestConflict",

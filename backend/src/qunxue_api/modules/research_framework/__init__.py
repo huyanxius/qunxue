@@ -1,5 +1,24 @@
 """Research-framework drafting, audit handling, and final user confirmation."""
 
+from qunxue_api.modules.research_framework.document import (
+    REQUIRED_FRAMEWORK_SECTION_KEYS,
+    ResearchDocumentEvidenceRef,
+    ResearchDocumentMarkdownExport,
+    ResearchDocumentRepository,
+    ResearchDocumentSection,
+    ResearchDocumentSectionStatus,
+    ResearchDocumentService,
+    ResearchDocumentSnapshot,
+    ResearchDocumentStatus,
+)
+from qunxue_api.modules.research_framework.proposals import (
+    ResearchDocumentProposalAcceptance,
+    ResearchDocumentProposalKind,
+    ResearchDocumentProposalRepository,
+    ResearchDocumentProposalService,
+    ResearchDocumentProposalSnapshot,
+    ResearchDocumentProposalStatus,
+)
 from qunxue_api.modules.research_framework.public import (
     AuditFindingDraft,
     AuditFindingSeverity,
@@ -29,6 +48,21 @@ from qunxue_api.modules.research_framework.public import (
 )
 
 __all__ = [
+    "REQUIRED_FRAMEWORK_SECTION_KEYS",
+    "ResearchDocumentEvidenceRef",
+    "ResearchDocumentMarkdownExport",
+    "ResearchDocumentRepository",
+    "ResearchDocumentSection",
+    "ResearchDocumentSectionStatus",
+    "ResearchDocumentService",
+    "ResearchDocumentSnapshot",
+    "ResearchDocumentStatus",
+    "ResearchDocumentProposalAcceptance",
+    "ResearchDocumentProposalKind",
+    "ResearchDocumentProposalRepository",
+    "ResearchDocumentProposalService",
+    "ResearchDocumentProposalSnapshot",
+    "ResearchDocumentProposalStatus",
     "AuditFindingDraft",
     "AuditFindingSeverity",
     "AuditFindingSnapshot",

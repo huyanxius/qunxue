@@ -30,9 +30,7 @@ class MatchRunRow(Base):
     model_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model_capability: Mapped[str | None] = mapped_column(String(32), nullable=True)
     model_degraded: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    model_knowledge_release_id: Mapped[str | None] = mapped_column(
-        String(128), nullable=True
-    )
+    model_knowledge_release_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     request_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     contract_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -61,3 +59,42 @@ class TheoryMatchingRequestRow(Base):
         unique=True,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TheoryDecisionSetRow(Base):
+    __tablename__ = "theory_decision_sets"
+    __table_args__ = (
+        UniqueConstraint("match_run_id", name="uq_theory_decision_sets_match_run"),
+    )
+
+    decision_set_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    request_hash: Mapped[str | None] = mapped_column(String(72), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ConfirmedTheoryPlanRow(Base):
+    __tablename__ = "confirmed_theory_plans"
+
+    theory_plan_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), nullable=False
+    )
+    decision_set_id: Mapped[str] = mapped_column(
+        ForeignKey("theory_decision_sets.decision_set_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    adopted_candidate_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    request_hash: Mapped[str | None] = mapped_column(String(72), nullable=True)
