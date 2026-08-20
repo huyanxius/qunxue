@@ -168,12 +168,20 @@ class AgentResearchWorkflow:
             return {"status": "not_started", **restored}
         task = self._tasks.get(task_id, user_id=user_id)
         progress = self._phenomena.progress(task.task_id)
+        match_status = None
+        workflow_status = task.status.value
+        if task.current_match_run_id is not None:
+            match = self._matching.get(task.current_match_run_id, user_id=user_id)
+            match_status = match.status.value
+            if match.status is MatchRunStatus.NO_RELIABLE_CANDIDATE:
+                workflow_status = "no_reliable_candidate"
         return {
             "task_id": str(task.task_id),
-            "status": task.status.value,
+            "status": workflow_status,
             "task_version": task.version,
             "phenomenon": progress.confirmed.phenomenon if progress.confirmed else None,
             "match_run_id": str(task.current_match_run_id) if task.current_match_run_id else None,
+            "match_status": match_status,
             "theory_plan_id": (
                 str(task.current_theory_plan_id) if task.current_theory_plan_id else None
             ),
@@ -227,6 +235,24 @@ class AgentResearchWorkflow:
         if task.current_match_run_id is None:
             return {"error": "match_run_missing"}
         match_run = self._matching.get(task.current_match_run_id, user_id=user_id)
+        if match_run.status is MatchRunStatus.NO_RELIABLE_CANDIDATE:
+            return {
+                "error": "no_reliable_candidate",
+                "message": (
+                    "当前固定知识发布没有可正式采用的理论候选。请更新到已审校的知识发布，"
+                    "或收窄/调整研究现象后重新匹配；未生成理论方案，也不会生成正式 M5 文档。"
+                ),
+                "match_run_id": str(match_run.match_run_id),
+                "knowledge_release_id": match_run.knowledge_release.knowledge_release_id,
+                "next_action": "update_knowledge_release_or_refine_phenomenon",
+            }
+        if match_run.status is not MatchRunStatus.AWAITING_DECISION:
+            return {
+                "error": "match_run_not_ready",
+                "message": "理论匹配尚未进入可保存用户决定的状态。",
+                "match_run_id": str(match_run.match_run_id),
+                "status": match_run.status.value,
+            }
         if (
             match_run.status is MatchRunStatus.PARTIAL_FAILURE
             and not match_run.partial_completion_acknowledged

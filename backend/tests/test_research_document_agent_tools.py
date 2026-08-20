@@ -502,6 +502,52 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
     assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
 
 
+def test_agent_workflow_reports_no_reliable_candidate_before_theory_write(client) -> None:
+    registered = client.post(
+        "/api/session/register",
+        json={"email": "agent-no-candidate@example.com", "password": "research-pass-123"},
+        headers={"Idempotency-Key": "register-agent-no-candidate"},
+    )
+    assert registered.status_code == 201
+    user_id = UUID(registered.json()["user"]["user_id"])
+    with client.app.state.disciplinary_agent_scope() as application:
+        turn = application.run_turn(
+            user_id=user_id,
+            conversation_id=None,
+            prompt="建立一个研究",
+            idempotency_key="create-agent-no-candidate-conversation",
+            workspace="research",
+        )
+        tools = application._tools_factory()
+        tools.enable_research_document_tools()
+        tools.bind_agent_context(
+            user_id=user_id,
+            conversation_id=turn.conversation.conversation_id,
+            agent_run_id=turn.run_id,
+        )
+        created = tools.create_confirmed_research_task(
+            phenomenon="一个没有匹配理论的测试现象",
+            research_intent="验证无候选边界",
+            context=None,
+            user_confirmed=True,
+        )
+        matched = tools.start_theory_matching()
+        result = tools.save_confirmed_theory_plan(
+            decisions=[
+                {"theory": "preview-only-resource", "action": "adopt", "reason": "用户确认"}
+            ],
+            use_assignments=[],
+            relations=[],
+            user_confirmed=True,
+        )
+
+    assert created["status"] == "phenomenon_confirmed"
+    assert matched["status"] == "no_reliable_candidate"
+    assert result["error"] == "no_reliable_candidate"
+    assert result["match_run_id"] == matched["match_run_id"]
+    assert result["next_action"] == "update_knowledge_release_or_refine_phenomenon"
+
+
 def test_real_runner_emits_read_and_pending_revision_tool_trace() -> None:
     class Tools:
         release = SimpleNamespace(knowledge_release_id="release-a")
