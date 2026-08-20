@@ -117,6 +117,20 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     .order_by(KnowledgeReleaseRow.built_at.desc())
                 )
             if row is None:
+                # A MATCH lookup is read-only when the existing current
+                # preview is already materialized. Re-publishing it here can
+                # hold SQLite's write lock while another Agent scope is still
+                # reading the same catalog.
+                row = session.scalar(
+                    select(KnowledgeReleaseRow)
+                    .where(
+                        KnowledgeReleaseRow.is_current.is_(True),
+                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.PREVIEW.value,
+                        KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
+                    )
+                    .order_by(KnowledgeReleaseRow.built_at.desc())
+                )
+            if row is None:
                 row = self._publish_preview(session)
             return _release_ref(row)
 
