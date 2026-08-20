@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
+from threading import Lock
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, status
@@ -20,8 +21,8 @@ from qunxue_api.adapters.model import (
 )
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
-    KnowledgeToolRegistry,
     PydanticAIKnowledgeRunner,
+    ResearchDocumentToolRegistry,
 )
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
@@ -29,6 +30,15 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
+from qunxue_api.adapters.sqlite.research_document import (
+    SqliteResearchDocumentRepository,
+)
+from qunxue_api.adapters.sqlite.research_document_mutation import (
+    SqliteResearchDocumentMutationRepository,
+)
+from qunxue_api.adapters.sqlite.research_document_proposal import (
+    SqliteResearchDocumentProposalRepository,
+)
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -46,10 +56,13 @@ from qunxue_api.api.routes.matching import router as matching_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
+from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
+    ResearchDocumentApplication,
+    ResearchDocumentProposalApplication,
     ResearchJourney,
     ResearchJourneyDependencies,
     TheoryMatchingApplication,
@@ -61,6 +74,10 @@ from qunxue_api.modules.identity import (
     IdentityService,
     InvalidEmail,
     Unauthenticated,
+)
+from qunxue_api.modules.research_framework import (
+    ResearchDocumentProposalService,
+    ResearchDocumentService,
 )
 from qunxue_api.modules.research_intake import (
     PhenomenonService,
@@ -90,10 +107,11 @@ def create_app(
         CORSMiddleware,
         allow_origins=list(resolved_settings.cors_allowed_origins),
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
         allow_headers=["Accept", "Content-Type", "Idempotency-Key"],
     )
     app.state.settings = resolved_settings
+    app.state.matching_start_lock = Lock()
     app.state.database = resolved_database
     app.state.knowledge_catalog = SqliteKnowledgeCatalog(
         resolved_database,
@@ -143,7 +161,9 @@ def create_app(
 
     @contextmanager
     def theory_matching_application_scope() -> Iterator[TheoryMatchingApplication]:
-        with resolved_database.session() as session:
+        # Hold the process lock until the transaction commits. Cross-process
+        # writers are rejected by the task repository's version CAS.
+        with app.state.matching_start_lock, resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
             matching = TheoryMatchingService(
                 evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
@@ -159,6 +179,7 @@ def create_app(
                 matching=matching,
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
+                rollback=session.rollback,
             )
 
     app.state.research_task_service_scope = research_task_service_scope
@@ -166,15 +187,81 @@ def create_app(
     app.state.theory_matching_application_scope = theory_matching_application_scope
 
     @contextmanager
+    def research_document_application_scope() -> Iterator[ResearchDocumentApplication]:
+        with resolved_database.session() as session:
+            match_runs = SqliteMatchRunRepository(session)
+            matching_requests = SqliteMatchingRequestRepository(session)
+            yield ResearchDocumentApplication(
+                documents=ResearchDocumentService(
+                    repository=SqliteResearchDocumentRepository(session)
+                ),
+                research_tasks=SqliteResearchTaskRepository(session),
+                mutations=SqliteResearchDocumentMutationRepository(session),
+                get_theory_plan=match_runs.get_confirmed_plan,
+                owns_match_run=matching_requests.owns,
+            )
+
+    app.state.research_document_application_scope = research_document_application_scope
+
+    @contextmanager
+    def research_document_proposal_application_scope() -> Iterator[
+        ResearchDocumentProposalApplication
+    ]:
+        with resolved_database.session() as session:
+            documents = ResearchDocumentService(
+                repository=SqliteResearchDocumentRepository(session)
+            )
+            match_runs = SqliteMatchRunRepository(session)
+            matching_requests = SqliteMatchingRequestRepository(session)
+            document_application = ResearchDocumentApplication(
+                documents=documents,
+                research_tasks=SqliteResearchTaskRepository(session),
+                mutations=SqliteResearchDocumentMutationRepository(session),
+                get_theory_plan=match_runs.get_confirmed_plan,
+                owns_match_run=matching_requests.owns,
+            )
+            yield ResearchDocumentProposalApplication(
+                ResearchDocumentProposalService(
+                    repository=SqliteResearchDocumentProposalRepository(session),
+                    documents=documents,
+                    atomic=session.begin_nested,
+                    validate_proposal=document_application.validate_proposal,
+                ),
+                research_tasks=SqliteResearchTaskRepository(session),
+                mutations=SqliteResearchDocumentMutationRepository(session),
+            )
+
+    app.state.research_document_proposal_application_scope = (
+        research_document_proposal_application_scope
+    )
+
+    @contextmanager
     def disciplinary_agent_scope() -> Iterator[DisciplinaryAgentApplication]:
         with resolved_database.session() as session:
             conversations = ConversationService(SqliteConversationRepository(session))
+            document_service = ResearchDocumentService(
+                repository=SqliteResearchDocumentRepository(session)
+            )
+            match_runs = SqliteMatchRunRepository(session)
+            matching_requests = SqliteMatchingRequestRepository(session)
+            document_application = ResearchDocumentApplication(
+                documents=document_service,
+                research_tasks=SqliteResearchTaskRepository(session),
+                mutations=SqliteResearchDocumentMutationRepository(session),
+                get_theory_plan=match_runs.get_confirmed_plan,
+                owns_match_run=matching_requests.owns,
+            )
+            proposal_service = ResearchDocumentProposalService(
+                repository=SqliteResearchDocumentProposalRepository(session),
+                documents=document_service,
+                atomic=session.begin_nested,
+                validate_proposal=document_application.validate_proposal,
+            )
             # A key in the local .env opts the independent Agent into a real
             # OpenAI-compatible runtime while keeping the deterministic runner
             # as the zero-config development default.
             use_real_agent = (
-                resolved_settings.runtime_mode != "mock"
-                or resolved_settings.has_model_api_key
+                resolved_settings.runtime_mode != "mock" or resolved_settings.has_model_api_key
             )
             model_base_url = resolved_settings.model_base_url or (
                 "https://api.deepseek.com" if resolved_settings.has_model_api_key else None
@@ -204,7 +291,11 @@ def create_app(
                 yield DisciplinaryAgentApplication(
                     conversations=conversations,
                     runner=runner,
-                    tools_factory=lambda: KnowledgeToolRegistry(app.state.knowledge_catalog),
+                    tools_factory=lambda: ResearchDocumentToolRegistry(
+                        catalog=app.state.knowledge_catalog,
+                        documents=document_application,
+                        proposals=proposal_service,
+                    ),
                 )
             except Exception:
                 # A failed model turn is an auditable run that must survive the
@@ -217,6 +308,7 @@ def create_app(
     app.include_router(health_router)
     app.include_router(session_router)
     app.include_router(research_tasks_router)
+    app.include_router(research_documents_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)
     app.include_router(material_intakes_router)

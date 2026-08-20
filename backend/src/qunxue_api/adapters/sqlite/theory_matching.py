@@ -1,11 +1,15 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
+from sqlalchemy.dialects.sqlite import insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite.theory_matching_model import (
+    ConfirmedTheoryPlanRow,
     MatchRunRow,
+    TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
 )
 from qunxue_api.modules.knowledge_catalog import (
@@ -25,6 +29,7 @@ from qunxue_api.modules.theory_matching import (
     CandidateContentStatus,
     CandidateJudgementRunStatus,
     CandidateOrigin,
+    ConfirmedTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
     MatchCompletionBasis,
@@ -33,8 +38,13 @@ from qunxue_api.modules.theory_matching import (
     MatchRunStatus,
     TheoryCandidateContentSnapshot,
     TheoryCandidateSnapshot,
+    TheoryDecisionAction,
+    TheoryDecisionRecord,
+    TheoryDecisionSetSnapshot,
     TheoryJudgementDraft,
     TheoryJudgementVerdict,
+    TheoryRelationSnapshot,
+    TheoryUseAssignment,
 )
 
 
@@ -71,6 +81,168 @@ class SqliteMatchRunRepository:
         row = self._session.get(MatchRunRow, str(match_run_id))
         return _snapshot_from_row(row) if row is not None else None
 
+    def delete(self, match_run_id: UUID) -> None:
+        self._session.execute(
+            delete(MatchRunRow).where(MatchRunRow.match_run_id == str(match_run_id))
+        )
+
+    def save(self, snapshot: MatchRunSnapshot) -> MatchRunSnapshot:
+        result = self._session.execute(
+            update(MatchRunRow)
+            .where(
+                MatchRunRow.match_run_id == str(snapshot.match_run_id),
+                MatchRunRow.version == snapshot.version - 1,
+            )
+            .values(
+                version=snapshot.version,
+                status=snapshot.status.value,
+                snapshot=_snapshot_payload(snapshot),
+            )
+        )
+        if result.rowcount == 1:
+            return snapshot
+        row = self._session.scalar(
+            select(MatchRunRow)
+            .where(MatchRunRow.match_run_id == str(snapshot.match_run_id))
+            .execution_options(populate_existing=True)
+        )
+        if row is None:
+            raise LookupError(snapshot.match_run_id)
+        return _snapshot_from_row(row)
+
+    def add_decision_set(self, snapshot: TheoryDecisionSetSnapshot) -> TheoryDecisionSetSnapshot:
+        self._session.execute(
+            insert(TheoryDecisionSetRow)
+            .values(
+                decision_set_id=str(snapshot.decision_set_id),
+                match_run_id=str(snapshot.match_run_id),
+                version=snapshot.version,
+                snapshot=_decision_set_payload(snapshot),
+                idempotency_key=snapshot.idempotency_key,
+                request_hash=snapshot.request_hash,
+                created_at=snapshot.recorded_at,
+            )
+            .on_conflict_do_nothing(index_elements=["match_run_id"])
+        )
+        row = self._session.scalar(
+            select(TheoryDecisionSetRow).where(
+                TheoryDecisionSetRow.match_run_id == str(snapshot.match_run_id)
+            )
+        )
+        persisted = _decision_set_from_row(row)
+        if persisted is None:
+            raise RuntimeError("theory decision set was not persisted")
+        if (
+            persisted.idempotency_key != snapshot.idempotency_key
+            or persisted.request_hash != snapshot.request_hash
+        ):
+            raise ValueError("theory decisions were already recorded for this match run")
+        return persisted
+
+    def get_decision_set(self, decision_set_id: UUID) -> TheoryDecisionSetSnapshot | None:
+        row = self._session.get(TheoryDecisionSetRow, str(decision_set_id))
+        return _decision_set_from_row(row) if row is not None else None
+
+    def get_decision_set_for_match_run(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionSetSnapshot | None:
+        row = self._session.scalar(
+            select(TheoryDecisionSetRow).where(
+                TheoryDecisionSetRow.match_run_id == str(match_run_id)
+            )
+        )
+        return _decision_set_from_row(row)
+
+    def list_decision_sets(
+        self, match_run_id: UUID
+    ) -> tuple[TheoryDecisionSetSnapshot, ...]:
+        rows = self._session.scalars(
+            select(TheoryDecisionSetRow)
+            .where(TheoryDecisionSetRow.match_run_id == str(match_run_id))
+            .order_by(TheoryDecisionSetRow.created_at.desc())
+        )
+        return tuple(
+            item for row in rows if (item := _decision_set_from_row(row)) is not None
+        )
+
+    def add_confirmed_plan(
+        self, snapshot: ConfirmedTheoryPlanSnapshot
+    ) -> ConfirmedTheoryPlanSnapshot:
+        self._session.execute(
+            insert(ConfirmedTheoryPlanRow).values(
+                theory_plan_id=str(snapshot.theory_plan_id),
+                task_id=str(snapshot.task_id),
+                match_run_id=str(snapshot.match_run_id),
+                decision_set_id=str(snapshot.decision_set_id),
+                version=snapshot.version,
+                adopted_candidate_ids=[
+                    str(candidate.candidate_id) for candidate in snapshot.candidates
+                ],
+                confirmed_at=snapshot.confirmed_at,
+                idempotency_key=snapshot.idempotency_key,
+                request_hash=snapshot.request_hash,
+            )
+            .on_conflict_do_nothing(index_elements=["decision_set_id"])
+        )
+        row = self._session.scalar(
+            select(ConfirmedTheoryPlanRow).where(
+                ConfirmedTheoryPlanRow.decision_set_id == str(snapshot.decision_set_id)
+            )
+        )
+        persisted = self._confirmed_plan_from_row(row)
+        if persisted is None:
+            raise RuntimeError("confirmed theory plan was not persisted")
+        if persisted.request_hash != snapshot.request_hash:
+            raise ValueError("theory plan was already confirmed with another request")
+        return persisted
+
+    def get_confirmed_plan(self, theory_plan_id: UUID) -> ConfirmedTheoryPlanSnapshot | None:
+        return self._confirmed_plan_from_row(
+            self._session.get(ConfirmedTheoryPlanRow, str(theory_plan_id))
+        )
+
+    def get_confirmed_plan_for_decision_set(
+        self, decision_set_id: UUID
+    ) -> ConfirmedTheoryPlanSnapshot | None:
+        row = self._session.scalar(
+            select(ConfirmedTheoryPlanRow).where(
+                ConfirmedTheoryPlanRow.decision_set_id == str(decision_set_id)
+            )
+        )
+        return self._confirmed_plan_from_row(row)
+
+    def _confirmed_plan_from_row(
+        self, row: ConfirmedTheoryPlanRow | None
+    ) -> ConfirmedTheoryPlanSnapshot | None:
+        if row is None:
+            return None
+        match_run = self.get(UUID(row.match_run_id))
+        decision_set = self.get_decision_set(UUID(row.decision_set_id))
+        if match_run is None or decision_set is None:
+            raise RuntimeError("confirmed theory plan references missing snapshots")
+        adopted_ids = {UUID(value) for value in row.adopted_candidate_ids}
+        return ConfirmedTheoryPlanSnapshot(
+            theory_plan_id=UUID(row.theory_plan_id),
+            task_id=UUID(row.task_id),
+            match_run_id=UUID(row.match_run_id),
+            decision_set_id=UUID(row.decision_set_id),
+            version=row.version,
+            phenomenon=match_run.phenomenon,
+            knowledge_release=match_run.knowledge_release,
+            evidence_bundle=match_run.evidence_bundle,
+            candidates=tuple(
+                candidate
+                for candidate in match_run.candidates
+                if candidate.candidate_id in adopted_ids
+            ),
+            decisions=decision_set.decisions,
+            use_assignments=decision_set.use_assignments,
+            relations=decision_set.relations,
+            confirmed_at=_as_utc(row.confirmed_at),
+            idempotency_key=row.idempotency_key,
+            request_hash=row.request_hash,
+        )
+
 
 class SqliteMatchingRequestRepository:
     def __init__(self, session: Session) -> None:
@@ -100,17 +272,23 @@ class SqliteMatchingRequestRepository:
         match_run_id: UUID,
         created_at: datetime,
     ) -> None:
-        self._session.add(
-            TheoryMatchingRequestRow(
-                request_record_id=str(request_record_id),
-                user_id=str(user_id),
-                idempotency_key=idempotency_key,
-                request_hash=request_hash,
-                match_run_id=str(match_run_id),
-                created_at=created_at,
-            )
-        )
-        self._session.flush()
+        try:
+            with self._session.begin_nested():
+                self._session.add(
+                    TheoryMatchingRequestRow(
+                        request_record_id=str(request_record_id),
+                        user_id=str(user_id),
+                        idempotency_key=idempotency_key,
+                        request_hash=request_hash,
+                        match_run_id=str(match_run_id),
+                        created_at=created_at,
+                    )
+                )
+                self._session.flush()
+        except IntegrityError:
+            # A concurrent request may have claimed the same key. Keep the
+            # outer transaction usable so the caller can replay that row.
+            return
 
     def owns(self, *, user_id: UUID, match_run_id: UUID) -> bool:
         row = self._session.scalar(
@@ -155,8 +333,7 @@ def _snapshot_payload(snapshot: MatchRunSnapshot) -> dict[str, object]:
             "version": snapshot.evidence_bundle.version,
             "content_hash": snapshot.evidence_bundle.content_hash,
             "theory_profiles": [
-                _profile_payload(profile)
-                for profile in snapshot.evidence_bundle.theory_profiles
+                _profile_payload(profile) for profile in snapshot.evidence_bundle.theory_profiles
             ],
             "evidence_items": [
                 _evidence_payload(item) for item in snapshot.evidence_bundle.evidence_items
@@ -165,9 +342,127 @@ def _snapshot_payload(snapshot: MatchRunSnapshot) -> dict[str, object]:
         "candidates": [_candidate_payload(candidate) for candidate in snapshot.candidates],
         "completion_basis": snapshot.completion_basis.value,
         "partial_completion_acknowledged": snapshot.partial_completion_acknowledged,
+        "failed_candidate_ids": [str(value) for value in snapshot.failed_candidate_ids],
+        "partial_completion_acknowledgement_reason": (
+            snapshot.partial_completion_acknowledgement_reason
+        ),
+        "partial_completion_acknowledged_at": (
+            snapshot.partial_completion_acknowledged_at.isoformat()
+            if snapshot.partial_completion_acknowledged_at is not None
+            else None
+        ),
+        "partial_completion_idempotency_key": snapshot.partial_completion_idempotency_key,
+        "partial_completion_request_hash": snapshot.partial_completion_request_hash,
         "stable_candidate_order": [str(value) for value in snapshot.stable_candidate_order],
         "next_cursor": snapshot.next_cursor,
     }
+
+
+def _decision_set_payload(snapshot: TheoryDecisionSetSnapshot) -> dict[str, object]:
+    return {
+        "decision_set_id": str(snapshot.decision_set_id),
+        "match_run_id": str(snapshot.match_run_id),
+        "version": snapshot.version,
+        "recorded_at": snapshot.recorded_at.isoformat(),
+        "decisions": [
+            {
+                "decision_id": str(item.decision_id),
+                "candidate_id": str(item.candidate_id),
+                "candidate_version": item.candidate_version,
+                "action": item.action.value,
+                "reason": item.reason,
+                "related_source_ids": list(item.related_source_ids),
+                "revised_applicability": item.revised_applicability,
+                "related_candidate_ids": [str(value) for value in item.related_candidate_ids],
+                "recorded_at": item.recorded_at.isoformat(),
+            }
+            for item in snapshot.decisions
+        ],
+        "use_assignments": [
+            {
+                "candidate_id": str(item.candidate_id),
+                "role_code": item.role_code,
+                "responsibility": item.responsibility,
+            }
+            for item in snapshot.use_assignments
+        ],
+        "relations": [
+            {
+                "relation_id": str(item.relation_id),
+                "candidate_ids": [str(value) for value in item.candidate_ids],
+                "relation_kind": item.relation_kind,
+                "explanation": item.explanation,
+                "premise_compatibility": item.premise_compatibility,
+                "supporting_evidence": list(item.supporting_evidence),
+                "excluding_evidence": list(item.excluding_evidence),
+                "distinguishing_evidence": list(item.distinguishing_evidence),
+            }
+            for item in snapshot.relations
+        ],
+    }
+
+
+def _decision_set_from_row(row: TheoryDecisionSetRow | None) -> TheoryDecisionSetSnapshot | None:
+    if row is None:
+        return None
+    payload = row.snapshot
+    return TheoryDecisionSetSnapshot(
+        decision_set_id=UUID(row.decision_set_id),
+        match_run_id=UUID(row.match_run_id),
+        version=row.version,
+        decisions=tuple(
+            TheoryDecisionRecord(
+                decision_id=UUID(str(item["decision_id"])),
+                candidate_id=UUID(str(item["candidate_id"])),
+                candidate_version=int(item["candidate_version"]),
+                action=TheoryDecisionAction(str(item["action"])),
+                reason=str(item["reason"]),
+                related_source_ids=tuple(
+                    str(value) for value in item.get("related_source_ids", [])
+                ),
+                revised_applicability=(
+                    None
+                    if item.get("revised_applicability") is None
+                    else str(item["revised_applicability"])
+                ),
+                related_candidate_ids=tuple(
+                    UUID(str(value)) for value in item.get("related_candidate_ids", [])
+                ),
+                recorded_at=datetime.fromisoformat(str(item["recorded_at"])),
+            )
+            for item in payload.get("decisions", [])
+        ),
+        use_assignments=tuple(
+            TheoryUseAssignment(
+                candidate_id=UUID(str(item["candidate_id"])),
+                role_code=str(item["role_code"]),
+                responsibility=str(item["responsibility"]),
+            )
+            for item in payload.get("use_assignments", [])
+        ),
+        relations=tuple(
+            TheoryRelationSnapshot(
+                relation_id=UUID(str(item["relation_id"])),
+                candidate_ids=tuple(UUID(str(value)) for value in item.get("candidate_ids", [])),
+                relation_kind=str(item["relation_kind"]),
+                explanation=str(item["explanation"]),
+                premise_compatibility=str(item["premise_compatibility"]),
+                supporting_evidence=tuple(
+                    str(value) for value in item.get("supporting_evidence", [])
+                ),
+                excluding_evidence=tuple(
+                    str(value) for value in item.get("excluding_evidence", [])
+                ),
+                distinguishing_evidence=tuple(
+                    str(value) for value in item.get("distinguishing_evidence", [])
+                ),
+            )
+            for item in payload.get("relations", [])
+        ),
+        recorded_at=datetime.fromisoformat(str(payload["recorded_at"])),
+        idempotency_key=row.idempotency_key,
+        request_hash=row.request_hash,
+    )
 
 
 def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
@@ -206,9 +501,7 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
         level=KnowledgeReleaseLevel(str(release_payload["level"])),
         content_hash=str(release_payload["content_hash"]),
     )
-    profiles = tuple(
-        _profile_from_payload(item) for item in bundle_payload["theory_profiles"]
-    )
+    profiles = tuple(_profile_from_payload(item) for item in bundle_payload["theory_profiles"])
     evidence_items = tuple(
         _evidence_from_payload(item) for item in bundle_payload["evidence_items"]
     )
@@ -235,6 +528,23 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
         candidates=candidates,
         completion_basis=MatchCompletionBasis(str(payload["completion_basis"])),
         partial_completion_acknowledged=bool(payload["partial_completion_acknowledged"]),
+        failed_candidate_ids=tuple(
+            UUID(str(value)) for value in payload.get("failed_candidate_ids", [])
+        ),
+        partial_completion_acknowledgement_reason=_optional_text(
+            payload.get("partial_completion_acknowledgement_reason")
+        ),
+        partial_completion_acknowledged_at=(
+            datetime.fromisoformat(str(payload["partial_completion_acknowledged_at"]))
+            if payload.get("partial_completion_acknowledged_at") is not None
+            else None
+        ),
+        partial_completion_idempotency_key=_optional_text(
+            payload.get("partial_completion_idempotency_key")
+        ),
+        partial_completion_request_hash=_optional_text(
+            payload.get("partial_completion_request_hash")
+        ),
         stable_candidate_order=tuple(
             UUID(str(value)) for value in payload["stable_candidate_order"]
         ),
@@ -272,6 +582,10 @@ def _model_from_row(row: MatchRunRow) -> MatchRunModelSnapshot | None:
 
 def _optional_text(value: object) -> str | None:
     return None if value is None else str(value)
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def _profile_payload(profile: TheoryProfileSnapshot) -> dict[str, object]:
@@ -342,9 +656,7 @@ def _source_from_payload(payload: dict[str, object]) -> SourceRecordSnapshot:
         publication=_optional_text(payload.get("publication")),
         locator=_optional_text(payload.get("locator")),
         url=_optional_text(payload.get("url")),
-        verification_status=SourceVerificationStatus(
-            str(payload["verification_status"])
-        ),
+        verification_status=SourceVerificationStatus(str(payload["verification_status"])),
         use_boundary=str(payload["use_boundary"]),
     )
 
@@ -368,12 +680,8 @@ def _evidence_from_payload(payload: dict[str, object]) -> EvidenceItemSnapshot:
         claim=str(payload["claim"]),
         excerpt=_optional_text(payload.get("excerpt")),
         locator=_optional_text(payload.get("locator")),
-        source=(
-            _source_from_payload(raw_source) if isinstance(raw_source, dict) else None
-        ),
-        verification_status=SourceVerificationStatus(
-            str(payload["verification_status"])
-        ),
+        source=(_source_from_payload(raw_source) if isinstance(raw_source, dict) else None),
+        verification_status=SourceVerificationStatus(str(payload["verification_status"])),
         use_boundary=str(payload["use_boundary"]),
     )
 
@@ -393,9 +701,7 @@ def _candidate_payload(candidate: TheoryCandidateSnapshot) -> dict[str, object]:
             "analysis_levels": list(content.analysis_levels),
             "source_ids": list(content.source_ids),
             "reviewed_profile_theory_id": (
-                content.reviewed_profile.theory_id
-                if content.reviewed_profile is not None
-                else None
+                content.reviewed_profile.theory_id if content.reviewed_profile is not None else None
             ),
             "formal_adoption_eligible": content.formal_adoption_eligible,
             "adoption_blockers": list(content.adoption_blockers),
@@ -454,9 +760,7 @@ def _candidate_from_payload(
         limitations=_text_tuple(judgement_payload["limitations"]),
         material_requirements=_text_tuple(judgement_payload["material_requirements"]),
         evidence_gaps=_text_tuple(judgement_payload["evidence_gaps"]),
-        alternative_explanations=_text_tuple(
-            judgement_payload["alternative_explanations"]
-        ),
+        alternative_explanations=_text_tuple(judgement_payload["alternative_explanations"]),
         evidence_ref_ids=_text_tuple(judgement_payload["evidence_ref_ids"]),
     )
     return TheoryCandidateSnapshot(
@@ -467,9 +771,7 @@ def _candidate_from_payload(
         trace_id=UUID(str(payload["trace_id"])),
         request_id=UUID(str(payload["request_id"])),
         contract_version=str(payload["contract_version"]),
-        judgement_run_status=CandidateJudgementRunStatus(
-            str(payload["judgement_run_status"])
-        ),
+        judgement_run_status=CandidateJudgementRunStatus(str(payload["judgement_run_status"])),
     )
 
 

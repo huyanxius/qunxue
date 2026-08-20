@@ -19,6 +19,7 @@ class ResearchTaskStatus(StrEnum):
     PHENOMENON_CONFIRMED = "phenomenon_confirmed"
     MATCH_GENERATING = "match_generating"
     DECISIONS_RECORDED = "decisions_recorded"
+    THEORY_PLAN_CONFIRMED = "theory_plan_confirmed"
     FRAMEWORK_DRAFT = "framework_draft"
     FRAMEWORK_CONFIRMED = "framework_confirmed"
 
@@ -174,6 +175,7 @@ class ResearchTask:
     current_phenomenon_candidate_id: UUID | None = None
     current_material_intake_run_id: UUID | None = None
     current_match_run_id: UUID | None = None
+    current_theory_plan_id: UUID | None = None
     current_framework_id: UUID | None = None
 
     @property

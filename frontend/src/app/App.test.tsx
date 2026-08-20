@@ -356,15 +356,16 @@ describe('App routes', () => {
   })
 
   it.each([
-    ['/research/task-1/match', '比较理论', '理论比较尚未开放'],
-    ['/research/task-1/framework', '形成框架', '研究框架尚未开放'],
-  ])('shows %s as an honest research-stage state', async (path, stage, message) => {
+    ['/research/task-1/match', '理论判断文档'],
+    ['/research/task-1/framework', '研究框架文档'],
+  ])('shows %s as an honest research-stage workbench', async (path, title) => {
     renderRoute(path, { status: 'authenticated' })
 
-    expect(await screen.findByRole('heading', { name: message })).toBeVisible()
-    expect(screen.getByText(stage).closest('li')).toHaveAttribute('aria-current', 'step')
-    expect(screen.getByRole('region', { name: '当前研究任务' })).toBeVisible()
-    expect(screen.getByRole('link', { name: '返回我的研究' })).toHaveAttribute('href', '/my')
+    expect(await screen.findByRole('heading', { name: title })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '研究章节' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: title }).closest('main')).toHaveClass(
+      'research-document-workbench',
+    )
   })
 
   it('renders my research as a compact task library inside the shared app shell', async () => {
@@ -416,8 +417,8 @@ describe('App routes', () => {
     ['/agent', '你想研究什么？'],
     ['/research/new', '从一个社会学问题开始'],
     ['/research/task-1/phenomenon', '确认现象'],
-    ['/research/task-1/match', '理论比较尚未开放'],
-    ['/research/task-1/framework', '研究框架尚未开放'],
+    ['/research/task-1/match', '理论判断文档'],
+    ['/research/task-1/framework', '研究框架文档'],
     ['/my', '我的研究'],
   ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
     renderRoute(path, { status: 'authenticated' })
@@ -1038,7 +1039,7 @@ describe('App routes', () => {
     fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'research-passphrase' } })
     fireEvent.click(screen.getByRole('button', { name: '登录并继续' }))
 
-    expect(await screen.findByRole('heading', { name: '研究框架尚未开放' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '研究框架文档' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent(destination)
   })
 
@@ -1137,7 +1138,7 @@ describe('App routes', () => {
     expect(await screen.findByText('一段真实条目正文。')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '返回研究任务' }))
 
-    expect(await screen.findByRole('heading', { name: '理论比较尚未开放' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '理论判断文档' })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
   })
 

@@ -1,6 +1,7 @@
 """Independent Agent runtime and knowledge-only tool registry."""
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
+from qunxue_api.adapters.research_agent.document_tools import ResearchDocumentToolRegistry
 from qunxue_api.adapters.research_agent.embedding import (
     EmbeddingProviderError,
     OpenAICompatibleEmbeddingProvider,
@@ -18,5 +19,6 @@ __all__ = [
     "KnowledgeToolRegistry",
     "OpenAICompatibleEmbeddingProvider",
     "PydanticAIKnowledgeRunner",
+    "ResearchDocumentToolRegistry",
     "SubjectAgentRunner",
 ]

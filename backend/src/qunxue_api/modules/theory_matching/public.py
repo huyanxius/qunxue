@@ -196,9 +196,7 @@ class TheoryCandidateSnapshot:
     trace_id: UUID
     request_id: UUID
     contract_version: str
-    judgement_run_status: CandidateJudgementRunStatus = (
-        CandidateJudgementRunStatus.SUCCEEDED
-    )
+    judgement_run_status: CandidateJudgementRunStatus = CandidateJudgementRunStatus.SUCCEEDED
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +211,11 @@ class MatchRunSnapshot:
     candidates: tuple[TheoryCandidateSnapshot, ...]
     completion_basis: MatchCompletionBasis = MatchCompletionBasis.COMPLETE
     partial_completion_acknowledged: bool = False
+    failed_candidate_ids: tuple[UUID, ...] = ()
+    partial_completion_acknowledgement_reason: str | None = None
+    partial_completion_acknowledged_at: datetime | None = None
+    partial_completion_idempotency_key: str | None = None
+    partial_completion_request_hash: str | None = None
     stable_candidate_order: tuple[UUID, ...] = ()
     next_cursor: str | None = None
     model: MatchRunModelSnapshot | None = None
@@ -285,6 +288,8 @@ class TheoryDecisionSetSnapshot:
     use_assignments: tuple[TheoryUseAssignment, ...]
     relations: tuple[TheoryRelationSnapshot, ...]
     recorded_at: datetime
+    idempotency_key: str | None = None
+    request_hash: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -313,6 +318,8 @@ class ConfirmedTheoryPlanSnapshot:
     use_assignments: tuple[TheoryUseAssignment, ...]
     relations: tuple[TheoryRelationSnapshot, ...]
     confirmed_at: datetime
+    idempotency_key: str | None = None
+    request_hash: str | None = None
 
 
 class TheoryPlanGateViolation(ValueError):
@@ -339,6 +346,34 @@ class MatchRunRepository(Protocol):
 
     def get(self, match_run_id: UUID) -> MatchRunSnapshot | None: ...
 
+    def delete(self, match_run_id: UUID) -> None: ...
+
+    def save(self, snapshot: MatchRunSnapshot) -> MatchRunSnapshot: ...
+
+    def add_decision_set(
+        self, snapshot: TheoryDecisionSetSnapshot
+    ) -> TheoryDecisionSetSnapshot: ...
+
+    def get_decision_set(self, decision_set_id: UUID) -> TheoryDecisionSetSnapshot | None: ...
+
+    def get_decision_set_for_match_run(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionSetSnapshot | None: ...
+
+    def list_decision_sets(
+        self, match_run_id: UUID
+    ) -> tuple[TheoryDecisionSetSnapshot, ...]: ...
+
+    def add_confirmed_plan(
+        self, snapshot: ConfirmedTheoryPlanSnapshot
+    ) -> ConfirmedTheoryPlanSnapshot: ...
+
+    def get_confirmed_plan(self, theory_plan_id: UUID) -> ConfirmedTheoryPlanSnapshot | None: ...
+
+    def get_confirmed_plan_for_decision_set(
+        self, decision_set_id: UUID
+    ) -> ConfirmedTheoryPlanSnapshot | None: ...
+
 
 class TheoryCandidateJudge(Protocol):
     """批量判断并稳定重排；提供方路由留在 adapter。"""
@@ -360,12 +395,24 @@ class TheoryMatching(Protocol):
 
     def get(self, match_run_id: UUID) -> MatchRunSnapshot: ...
 
+    def discard(self, match_run_id: UUID) -> None: ...
+
     def retry_candidate(
         self,
         *,
         match_run_id: UUID,
         candidate_id: UUID,
         expected_version: int,
+    ) -> MatchRunSnapshot: ...
+
+    def acknowledge_partial_completion(
+        self,
+        *,
+        match_run_id: UUID,
+        expected_version: int,
+        acknowledged_candidate_ids: tuple[UUID, ...],
+        failed_candidate_ids: tuple[UUID, ...],
+        reason: str,
     ) -> MatchRunSnapshot: ...
 
     def record_decisions(
@@ -376,13 +423,26 @@ class TheoryMatching(Protocol):
         decisions: tuple[TheoryDecisionCommand, ...],
         use_assignments: tuple[TheoryUseAssignment, ...],
         relations: tuple[TheoryRelationCommand, ...],
+        completion_basis: MatchCompletionBasis | None = None,
+        idempotency_key: str | None = None,
+        request_hash: str | None = None,
     ) -> TheoryDecisionSetSnapshot: ...
+
+    def get_decision_set(self, decision_set_id: UUID) -> TheoryDecisionSetSnapshot: ...
+
+    def get_decision_set_for_match_run(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionSetSnapshot | None: ...
+
+    def get_confirmed_plan(self, theory_plan_id: UUID) -> ConfirmedTheoryPlanSnapshot: ...
 
     def confirm_plan(
         self,
         *,
         decision_set_id: UUID,
         expected_version: int,
+        idempotency_key: str | None = None,
+        request_hash: str | None = None,
     ) -> ConfirmedTheoryPlanSnapshot: ...
 
     def defer_plan(

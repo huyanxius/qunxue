@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcknowledgePartialMatchData, AcknowledgePartialMatchErrors, AcknowledgePartialMatchResponses, ConfirmFrameworkData, ConfirmFrameworkErrors, ConfirmFrameworkResponses, ConfirmPhenomenonCandidateData, ConfirmPhenomenonCandidateErrors, ConfirmPhenomenonCandidateResponses, ConfirmTheoryPlanData, ConfirmTheoryPlanErrors, ConfirmTheoryPlanResponses, CreateFrameworkData, CreateFrameworkErrors, CreateFrameworkResponses, CreateMatchRunData, CreateMatchRunErrors, CreateMatchRunResponses, CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, CreateTheoryDecisionsData, CreateTheoryDecisionsErrors, CreateTheoryDecisionsResponses, DeferTheoryPlanData, DeferTheoryPlanErrors, DeferTheoryPlanResponses, DeleteResearchTaskData, DeleteResearchTaskErrors, DeleteResearchTaskResponses, ExportConfirmedFrameworkData, ExportConfirmedFrameworkErrors, ExportConfirmedFrameworkResponses, ExportResearchTraceData, ExportResearchTraceErrors, ExportResearchTraceResponses, ExtractPhenomenonCandidatesData, ExtractPhenomenonCandidatesErrors, ExtractPhenomenonCandidatesResponses, GetAgentConversationData, GetAgentConversationErrors, GetAgentConversationResponses, GetCurrentKnowledgeReleaseData, GetCurrentKnowledgeReleaseErrors, GetCurrentKnowledgeReleaseResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetFrameworkData, GetFrameworkErrors, GetFrameworkResponses, GetFrameworkReviewData, GetFrameworkReviewErrors, GetFrameworkReviewResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetKnowledgeDirectoryData, GetKnowledgeDirectoryErrors, GetKnowledgeDirectoryResponses, GetKnowledgeEntryData, GetKnowledgeEntryErrors, GetKnowledgeEntryResponses, GetMatchRunData, GetMatchRunErrors, GetMatchRunResponses, GetMaterialIntakeRunData, GetMaterialIntakeRunErrors, GetMaterialIntakeRunResponses, GetPhenomenonCandidateData, GetPhenomenonCandidateErrors, GetPhenomenonCandidateResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskNavigationData, GetResearchTaskNavigationErrors, GetResearchTaskNavigationResponses, GetResearchTaskResponses, GetResearchTraceData, GetResearchTraceErrors, GetResearchTraceResponses, ListAgentConversationsData, ListAgentConversationsErrors, ListAgentConversationsResponses, ListBuiltinCasesData, ListBuiltinCasesErrors, ListBuiltinCasesResponses, ListKnowledgeConnectionsData, ListKnowledgeConnectionsErrors, ListKnowledgeConnectionsResponses, ListKnowledgeEntriesData, ListKnowledgeEntriesErrors, ListKnowledgeEntriesResponses, ListKnowledgeRelationCandidatesData, ListKnowledgeRelationCandidatesErrors, ListKnowledgeRelationCandidatesResponses, ListKnowledgeRelationsData, ListKnowledgeRelationsErrors, ListKnowledgeRelationsResponses, ListMatchCandidatesData, ListMatchCandidatesErrors, ListMatchCandidatesResponses, ListPhenomenonExamplesData, ListPhenomenonExamplesResponses, ListPhenomenonSnapshotsData, ListPhenomenonSnapshotsErrors, ListPhenomenonSnapshotsResponses, ListResearchTasksData, ListResearchTasksErrors, ListResearchTasksResponses, ListTheoryDecisionsData, ListTheoryDecisionsErrors, ListTheoryDecisionsResponses, LoginSessionData, LoginSessionErrors, LoginSessionResponses, LogoutSessionData, LogoutSessionErrors, LogoutSessionResponses, RegisterSessionData, RegisterSessionErrors, RegisterSessionResponses, RetryFrameworkReviewData, RetryFrameworkReviewErrors, RetryFrameworkReviewResponses, RetryMatchCandidateData, RetryMatchCandidateErrors, RetryMatchCandidateResponses, StartFrameworkReviewData, StartFrameworkReviewErrors, StartFrameworkReviewResponses, StreamAgentTurnData, StreamAgentTurnErrors, StreamAgentTurnResponse, StreamAgentTurnResponses, SubmitAuditResolutionsData, SubmitAuditResolutionsErrors, SubmitAuditResolutionsResponses, SubmitDirectInputData, SubmitDirectInputErrors, SubmitDirectInputResponses, SubmitMaterialInputData, SubmitMaterialInputErrors, SubmitMaterialInputResponses, SubmitMaterialIntakeData, SubmitMaterialIntakeErrors, SubmitMaterialIntakeResponses, UpdateFrameworkData, UpdateFrameworkErrors, UpdateFrameworkResponses, UpdatePhenomenonCandidateData, UpdatePhenomenonCandidateErrors, UpdatePhenomenonCandidateResponses } from './types.gen';
+import type { AcceptResearchDocumentProposalData, AcceptResearchDocumentProposalErrors, AcceptResearchDocumentProposalResponses, AcknowledgePartialMatchData, AcknowledgePartialMatchErrors, AcknowledgePartialMatchResponses, ConfirmFrameworkData, ConfirmFrameworkErrors, ConfirmFrameworkResponses, ConfirmPhenomenonCandidateData, ConfirmPhenomenonCandidateErrors, ConfirmPhenomenonCandidateResponses, ConfirmResearchDocumentData, ConfirmResearchDocumentErrors, ConfirmResearchDocumentResponses, ConfirmTheoryPlanData, ConfirmTheoryPlanErrors, ConfirmTheoryPlanResponses, CreateFrameworkData, CreateFrameworkErrors, CreateFrameworkResponses, CreateMatchRunData, CreateMatchRunErrors, CreateMatchRunResponses, CreateResearchDocumentData, CreateResearchDocumentErrors, CreateResearchDocumentResponses, CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, CreateTheoryDecisionsData, CreateTheoryDecisionsErrors, CreateTheoryDecisionsResponses, DeferTheoryPlanData, DeferTheoryPlanErrors, DeferTheoryPlanResponses, DeleteResearchTaskData, DeleteResearchTaskErrors, DeleteResearchTaskResponses, ExportConfirmedFrameworkData, ExportConfirmedFrameworkErrors, ExportConfirmedFrameworkResponses, ExportResearchDocumentData, ExportResearchDocumentErrors, ExportResearchDocumentResponses, ExportResearchTraceData, ExportResearchTraceErrors, ExportResearchTraceResponses, ExtractPhenomenonCandidatesData, ExtractPhenomenonCandidatesErrors, ExtractPhenomenonCandidatesResponses, GetAgentConversationData, GetAgentConversationErrors, GetAgentConversationResponses, GetConfirmedTheoryPlanData, GetConfirmedTheoryPlanErrors, GetConfirmedTheoryPlanResponses, GetCurrentKnowledgeReleaseData, GetCurrentKnowledgeReleaseErrors, GetCurrentKnowledgeReleaseResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetFrameworkData, GetFrameworkErrors, GetFrameworkResponses, GetFrameworkReviewData, GetFrameworkReviewErrors, GetFrameworkReviewResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetKnowledgeDirectoryData, GetKnowledgeDirectoryErrors, GetKnowledgeDirectoryResponses, GetKnowledgeEntryData, GetKnowledgeEntryErrors, GetKnowledgeEntryResponses, GetMatchRunData, GetMatchRunErrors, GetMatchRunResponses, GetMaterialIntakeRunData, GetMaterialIntakeRunErrors, GetMaterialIntakeRunResponses, GetPhenomenonCandidateData, GetPhenomenonCandidateErrors, GetPhenomenonCandidateResponses, GetResearchDocumentData, GetResearchDocumentErrors, GetResearchDocumentProposalData, GetResearchDocumentProposalErrors, GetResearchDocumentProposalResponses, GetResearchDocumentResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskNavigationData, GetResearchTaskNavigationErrors, GetResearchTaskNavigationResponses, GetResearchTaskResponses, GetResearchTraceData, GetResearchTraceErrors, GetResearchTraceResponses, ListAgentConversationsData, ListAgentConversationsErrors, ListAgentConversationsResponses, ListBuiltinCasesData, ListBuiltinCasesErrors, ListBuiltinCasesResponses, ListKnowledgeConnectionsData, ListKnowledgeConnectionsErrors, ListKnowledgeConnectionsResponses, ListKnowledgeEntriesData, ListKnowledgeEntriesErrors, ListKnowledgeEntriesResponses, ListKnowledgeRelationCandidatesData, ListKnowledgeRelationCandidatesErrors, ListKnowledgeRelationCandidatesResponses, ListKnowledgeRelationsData, ListKnowledgeRelationsErrors, ListKnowledgeRelationsResponses, ListMatchCandidatesData, ListMatchCandidatesErrors, ListMatchCandidatesResponses, ListPhenomenonExamplesData, ListPhenomenonExamplesResponses, ListPhenomenonSnapshotsData, ListPhenomenonSnapshotsErrors, ListPhenomenonSnapshotsResponses, ListResearchDocumentProposalsData, ListResearchDocumentProposalsErrors, ListResearchDocumentProposalsResponses, ListResearchDocumentsData, ListResearchDocumentsErrors, ListResearchDocumentsResponses, ListResearchDocumentVersionsData, ListResearchDocumentVersionsErrors, ListResearchDocumentVersionsResponses, ListResearchTaskDocumentProposalsData, ListResearchTaskDocumentProposalsErrors, ListResearchTaskDocumentProposalsResponses, ListResearchTasksData, ListResearchTasksErrors, ListResearchTasksResponses, ListTheoryDecisionsData, ListTheoryDecisionsErrors, ListTheoryDecisionsResponses, LoginSessionData, LoginSessionErrors, LoginSessionResponses, LogoutSessionData, LogoutSessionErrors, LogoutSessionResponses, RegisterSessionData, RegisterSessionErrors, RegisterSessionResponses, RejectResearchDocumentProposalData, RejectResearchDocumentProposalErrors, RejectResearchDocumentProposalResponses, RestoreResearchDocumentData, RestoreResearchDocumentErrors, RestoreResearchDocumentResponses, RetryFrameworkReviewData, RetryFrameworkReviewErrors, RetryFrameworkReviewResponses, RetryMatchCandidateData, RetryMatchCandidateErrors, RetryMatchCandidateResponses, StartFrameworkReviewData, StartFrameworkReviewErrors, StartFrameworkReviewResponses, StreamAgentTurnData, StreamAgentTurnErrors, StreamAgentTurnResponse, StreamAgentTurnResponses, SubmitAuditResolutionsData, SubmitAuditResolutionsErrors, SubmitAuditResolutionsResponses, SubmitDirectInputData, SubmitDirectInputErrors, SubmitDirectInputResponses, SubmitMaterialInputData, SubmitMaterialInputErrors, SubmitMaterialInputResponses, SubmitMaterialIntakeData, SubmitMaterialIntakeErrors, SubmitMaterialIntakeResponses, UpdateFrameworkData, UpdateFrameworkErrors, UpdateFrameworkResponses, UpdatePhenomenonCandidateData, UpdatePhenomenonCandidateErrors, UpdatePhenomenonCandidateResponses, UpdateResearchDocumentData, UpdateResearchDocumentErrors, UpdateResearchDocumentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -54,11 +54,15 @@ export const confirmTheoryPlan = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Get Framework
+ *
+ * @deprecated
  */
 export const getFramework = <ThrowOnError extends boolean = false>(options: Options<GetFrameworkData, ThrowOnError>): RequestResult<GetFrameworkResponses, GetFrameworkErrors, ThrowOnError> => (options.client ?? client).get<GetFrameworkResponses, GetFrameworkErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}', ...options });
 
 /**
  * Update Framework
+ *
+ * @deprecated
  */
 export const updateFramework = <ThrowOnError extends boolean = false>(options: Options<UpdateFrameworkData, ThrowOnError>): RequestResult<UpdateFrameworkResponses, UpdateFrameworkErrors, ThrowOnError> => (options.client ?? client).patch<UpdateFrameworkResponses, UpdateFrameworkErrors, ThrowOnError>({
     url: '/api/frameworks/{framework_id}',
@@ -71,6 +75,8 @@ export const updateFramework = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Submit Audit Resolutions
+ *
+ * @deprecated
  */
 export const submitAuditResolutions = <ThrowOnError extends boolean = false>(options: Options<SubmitAuditResolutionsData, ThrowOnError>): RequestResult<SubmitAuditResolutionsResponses, SubmitAuditResolutionsErrors, ThrowOnError> => (options.client ?? client).post<SubmitAuditResolutionsResponses, SubmitAuditResolutionsErrors, ThrowOnError>({
     url: '/api/frameworks/{framework_id}/audit-resolutions',
@@ -83,6 +89,8 @@ export const submitAuditResolutions = <ThrowOnError extends boolean = false>(opt
 
 /**
  * Confirm Framework
+ *
+ * @deprecated
  */
 export const confirmFramework = <ThrowOnError extends boolean = false>(options: Options<ConfirmFrameworkData, ThrowOnError>): RequestResult<ConfirmFrameworkResponses, ConfirmFrameworkErrors, ThrowOnError> => (options.client ?? client).post<ConfirmFrameworkResponses, ConfirmFrameworkErrors, ThrowOnError>({
     url: '/api/frameworks/{framework_id}/confirm',
@@ -95,11 +103,15 @@ export const confirmFramework = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Export Confirmed Framework
+ *
+ * @deprecated
  */
 export const exportConfirmedFramework = <ThrowOnError extends boolean = false>(options: Options<ExportConfirmedFrameworkData, ThrowOnError>): RequestResult<ExportConfirmedFrameworkResponses, ExportConfirmedFrameworkErrors, ThrowOnError> => (options.client ?? client).get<ExportConfirmedFrameworkResponses, ExportConfirmedFrameworkErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}/export', ...options });
 
 /**
  * Start Framework Review
+ *
+ * @deprecated
  */
 export const startFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<StartFrameworkReviewData, ThrowOnError>): RequestResult<StartFrameworkReviewResponses, StartFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).post<StartFrameworkReviewResponses, StartFrameworkReviewErrors, ThrowOnError>({
     url: '/api/frameworks/{framework_id}/reviews',
@@ -112,11 +124,15 @@ export const startFrameworkReview = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Get Framework Review
+ *
+ * @deprecated
  */
 export const getFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<GetFrameworkReviewData, ThrowOnError>): RequestResult<GetFrameworkReviewResponses, GetFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).get<GetFrameworkReviewResponses, GetFrameworkReviewErrors, ThrowOnError>({ url: '/api/frameworks/{framework_id}/reviews/{review_run_id}', ...options });
 
 /**
  * Retry Framework Review
+ *
+ * @deprecated
  */
 export const retryFrameworkReview = <ThrowOnError extends boolean = false>(options: Options<RetryFrameworkReviewData, ThrowOnError>): RequestResult<RetryFrameworkReviewResponses, RetryFrameworkReviewErrors, ThrowOnError> => (options.client ?? client).post<RetryFrameworkReviewResponses, RetryFrameworkReviewErrors, ThrowOnError>({
     url: '/api/frameworks/{framework_id}/reviews/{review_run_id}/retry',
@@ -246,6 +262,91 @@ export const getMaterialIntakeRun = <ThrowOnError extends boolean = false>(optio
 export const listPhenomenonExamples = <ThrowOnError extends boolean = false>(options?: Options<ListPhenomenonExamplesData, ThrowOnError>): RequestResult<ListPhenomenonExamplesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListPhenomenonExamplesResponses, unknown, ThrowOnError>({ url: '/api/phenomenon-examples', ...options });
 
 /**
+ * Get Research Document Proposal
+ */
+export const getResearchDocumentProposal = <ThrowOnError extends boolean = false>(options: Options<GetResearchDocumentProposalData, ThrowOnError>): RequestResult<GetResearchDocumentProposalResponses, GetResearchDocumentProposalErrors, ThrowOnError> => (options.client ?? client).get<GetResearchDocumentProposalResponses, GetResearchDocumentProposalErrors, ThrowOnError>({ url: '/api/research-document-proposals/{proposal_id}', ...options });
+
+/**
+ * Accept Research Document Proposal
+ */
+export const acceptResearchDocumentProposal = <ThrowOnError extends boolean = false>(options: Options<AcceptResearchDocumentProposalData, ThrowOnError>): RequestResult<AcceptResearchDocumentProposalResponses, AcceptResearchDocumentProposalErrors, ThrowOnError> => (options.client ?? client).post<AcceptResearchDocumentProposalResponses, AcceptResearchDocumentProposalErrors, ThrowOnError>({
+    url: '/api/research-document-proposals/{proposal_id}/accept',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject Research Document Proposal
+ */
+export const rejectResearchDocumentProposal = <ThrowOnError extends boolean = false>(options: Options<RejectResearchDocumentProposalData, ThrowOnError>): RequestResult<RejectResearchDocumentProposalResponses, RejectResearchDocumentProposalErrors, ThrowOnError> => (options.client ?? client).post<RejectResearchDocumentProposalResponses, RejectResearchDocumentProposalErrors, ThrowOnError>({
+    url: '/api/research-document-proposals/{proposal_id}/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Research Document
+ */
+export const getResearchDocument = <ThrowOnError extends boolean = false>(options: Options<GetResearchDocumentData, ThrowOnError>): RequestResult<GetResearchDocumentResponses, GetResearchDocumentErrors, ThrowOnError> => (options.client ?? client).get<GetResearchDocumentResponses, GetResearchDocumentErrors, ThrowOnError>({ url: '/api/research-documents/{document_id}', ...options });
+
+/**
+ * Update Research Document
+ */
+export const updateResearchDocument = <ThrowOnError extends boolean = false>(options: Options<UpdateResearchDocumentData, ThrowOnError>): RequestResult<UpdateResearchDocumentResponses, UpdateResearchDocumentErrors, ThrowOnError> => (options.client ?? client).patch<UpdateResearchDocumentResponses, UpdateResearchDocumentErrors, ThrowOnError>({
+    url: '/api/research-documents/{document_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm Research Document
+ */
+export const confirmResearchDocument = <ThrowOnError extends boolean = false>(options: Options<ConfirmResearchDocumentData, ThrowOnError>): RequestResult<ConfirmResearchDocumentResponses, ConfirmResearchDocumentErrors, ThrowOnError> => (options.client ?? client).post<ConfirmResearchDocumentResponses, ConfirmResearchDocumentErrors, ThrowOnError>({
+    url: '/api/research-documents/{document_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Export Research Document
+ */
+export const exportResearchDocument = <ThrowOnError extends boolean = false>(options: Options<ExportResearchDocumentData, ThrowOnError>): RequestResult<ExportResearchDocumentResponses, ExportResearchDocumentErrors, ThrowOnError> => (options.client ?? client).get<ExportResearchDocumentResponses, ExportResearchDocumentErrors, ThrowOnError>({ url: '/api/research-documents/{document_id}/export', ...options });
+
+/**
+ * List Research Document Proposals
+ */
+export const listResearchDocumentProposals = <ThrowOnError extends boolean = false>(options: Options<ListResearchDocumentProposalsData, ThrowOnError>): RequestResult<ListResearchDocumentProposalsResponses, ListResearchDocumentProposalsErrors, ThrowOnError> => (options.client ?? client).get<ListResearchDocumentProposalsResponses, ListResearchDocumentProposalsErrors, ThrowOnError>({ url: '/api/research-documents/{document_id}/proposals', ...options });
+
+/**
+ * Restore Research Document
+ */
+export const restoreResearchDocument = <ThrowOnError extends boolean = false>(options: Options<RestoreResearchDocumentData, ThrowOnError>): RequestResult<RestoreResearchDocumentResponses, RestoreResearchDocumentErrors, ThrowOnError> => (options.client ?? client).post<RestoreResearchDocumentResponses, RestoreResearchDocumentErrors, ThrowOnError>({
+    url: '/api/research-documents/{document_id}/restore',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Research Document Versions
+ */
+export const listResearchDocumentVersions = <ThrowOnError extends boolean = false>(options: Options<ListResearchDocumentVersionsData, ThrowOnError>): RequestResult<ListResearchDocumentVersionsResponses, ListResearchDocumentVersionsErrors, ThrowOnError> => (options.client ?? client).get<ListResearchDocumentVersionsResponses, ListResearchDocumentVersionsErrors, ThrowOnError>({ url: '/api/research-documents/{document_id}/versions', ...options });
+
+/**
  * List Research Tasks
  */
 export const listResearchTasks = <ThrowOnError extends boolean = false>(options?: Options<ListResearchTasksData, ThrowOnError>): RequestResult<ListResearchTasksResponses, ListResearchTasksErrors, ThrowOnError> => (options?.client ?? client).get<ListResearchTasksResponses, ListResearchTasksErrors, ThrowOnError>({ url: '/api/research-tasks', ...options });
@@ -279,6 +380,8 @@ export const exportResearchTrace = <ThrowOnError extends boolean = false>(option
 
 /**
  * Create Framework
+ *
+ * @deprecated
  */
 export const createFramework = <ThrowOnError extends boolean = false>(options: Options<CreateFrameworkData, ThrowOnError>): RequestResult<CreateFrameworkResponses, CreateFrameworkErrors, ThrowOnError> => (options.client ?? client).post<CreateFrameworkResponses, CreateFrameworkErrors, ThrowOnError>({
     url: '/api/research-tasks/{task_id}/frameworks',
@@ -389,6 +492,28 @@ export const confirmPhenomenonCandidate = <ThrowOnError extends boolean = false>
 export const listPhenomenonSnapshots = <ThrowOnError extends boolean = false>(options: Options<ListPhenomenonSnapshotsData, ThrowOnError>): RequestResult<ListPhenomenonSnapshotsResponses, ListPhenomenonSnapshotsErrors, ThrowOnError> => (options.client ?? client).get<ListPhenomenonSnapshotsResponses, ListPhenomenonSnapshotsErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/phenomenon-snapshots', ...options });
 
 /**
+ * List Research Task Document Proposals
+ */
+export const listResearchTaskDocumentProposals = <ThrowOnError extends boolean = false>(options: Options<ListResearchTaskDocumentProposalsData, ThrowOnError>): RequestResult<ListResearchTaskDocumentProposalsResponses, ListResearchTaskDocumentProposalsErrors, ThrowOnError> => (options.client ?? client).get<ListResearchTaskDocumentProposalsResponses, ListResearchTaskDocumentProposalsErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/research-document-proposals', ...options });
+
+/**
+ * List Research Documents
+ */
+export const listResearchDocuments = <ThrowOnError extends boolean = false>(options: Options<ListResearchDocumentsData, ThrowOnError>): RequestResult<ListResearchDocumentsResponses, ListResearchDocumentsErrors, ThrowOnError> => (options.client ?? client).get<ListResearchDocumentsResponses, ListResearchDocumentsErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/research-documents', ...options });
+
+/**
+ * Create Research Document
+ */
+export const createResearchDocument = <ThrowOnError extends boolean = false>(options: Options<CreateResearchDocumentData, ThrowOnError>): RequestResult<CreateResearchDocumentResponses, CreateResearchDocumentErrors, ThrowOnError> => (options.client ?? client).post<CreateResearchDocumentResponses, CreateResearchDocumentErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/research-documents',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Get Research Trace
  */
 export const getResearchTrace = <ThrowOnError extends boolean = false>(options: Options<GetResearchTraceData, ThrowOnError>): RequestResult<GetResearchTraceResponses, GetResearchTraceErrors, ThrowOnError> => (options.client ?? client).get<GetResearchTraceResponses, GetResearchTraceErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/trace', ...options });
@@ -426,3 +551,8 @@ export const registerSession = <ThrowOnError extends boolean = false>(options: O
         ...options.headers
     }
 });
+
+/**
+ * Get Confirmed Theory Plan
+ */
+export const getConfirmedTheoryPlan = <ThrowOnError extends boolean = false>(options: Options<GetConfirmedTheoryPlanData, ThrowOnError>): RequestResult<GetConfirmedTheoryPlanResponses, GetConfirmedTheoryPlanErrors, ThrowOnError> => (options.client ?? client).get<GetConfirmedTheoryPlanResponses, GetConfirmedTheoryPlanErrors, ThrowOnError>({ url: '/api/theory-plans/{theory_plan_id}', ...options });

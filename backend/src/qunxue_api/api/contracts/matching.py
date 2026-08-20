@@ -111,6 +111,7 @@ class MatchRunResponse(BaseModel):
     total_candidate_count: int
     completed_candidate_count: int
     failed_candidate_count: int
+    failed_candidate_ids: list[UUID]
     phenomenon_query_id: UUID
     phenomenon_version: int
     knowledge_release_id: str

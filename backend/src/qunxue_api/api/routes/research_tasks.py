@@ -206,6 +206,11 @@ def _navigation_response(
             ResearchTaskStage.THEORY_DECISION,
             ResearchTaskNavigationAction.CONFIRM_THEORY_PLAN,
         ),
+        ResearchTaskStatus.THEORY_PLAN_CONFIRMED: (
+            ResearchTaskLifecycleStatus.IN_PROGRESS,
+            ResearchTaskStage.FRAMEWORK_DRAFTING,
+            ResearchTaskNavigationAction.CREATE_FRAMEWORK,
+        ),
         ResearchTaskStatus.FRAMEWORK_DRAFT: (
             ResearchTaskLifecycleStatus.IN_PROGRESS,
             ResearchTaskStage.FRAMEWORK_DRAFTING,
@@ -252,6 +257,7 @@ def _navigation_response(
         ),
         current_material_intake_run_id=task.current_material_intake_run_id,
         current_match_run_id=task.current_match_run_id,
+        current_theory_plan_id=task.current_theory_plan_id,
         current_framework_id=task.current_framework_id,
         created_at=task.created_at,
         updated_at=task.updated_at,

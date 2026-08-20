@@ -66,6 +66,11 @@ class DisciplinaryAgentApplication:
         prompt: str,
         idempotency_key: str,
         workspace: Literal["agent", "research"] = "agent",
+        task_id: UUID | None = None,
+        document_id: UUID | None = None,
+        section_id: str | None = None,
+        document_version: int | None = None,
+        theory_plan_id: UUID | None = None,
         on_run_started: Callable[[UUID, UUID, bool], None] | None = None,
         on_delta: Callable[[str], None] | None = None,
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
@@ -121,7 +126,24 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             conversation_id=conversation.conversation_id,
         )
+        bind_agent_context = getattr(tools, "bind_agent_context", None)
+        if callable(bind_agent_context):
+            bind_agent_context(
+                user_id=user_id,
+                conversation_id=run.conversation_id,
+                agent_run_id=run.run_id,
+                task_id=task_id,
+                document_id=document_id,
+                section_id=section_id,
+                document_version=document_version,
+                theory_plan_id=theory_plan_id,
+            )
         if workspace == "research":
+            enable_research_document_tools = getattr(
+                tools, "enable_research_document_tools", None
+            )
+            if callable(enable_research_document_tools):
+                enable_research_document_tools()
             enable_research_map = getattr(tools, "enable_research_map", None)
             if not callable(enable_research_map):
                 raise RuntimeError("research workspace tools are unavailable")

@@ -1,3 +1,5 @@
+from dataclasses import replace
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
@@ -18,6 +20,7 @@ from qunxue_api.modules.theory_matching import (
     CandidateOrigin,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchCompletionBasis,
     MatchRunModelSnapshot,
     MatchRunSnapshot,
     MatchRunStatus,
@@ -168,3 +171,55 @@ def test_repository_restores_the_complete_match_run_in_a_new_session(
         restored = SqliteMatchRunRepository(session).get(snapshot.match_run_id)
 
     assert restored == snapshot
+
+
+def test_repository_does_not_overwrite_a_concurrent_match_run_update(
+    client: TestClient,
+) -> None:
+    registered = client.post(
+        "/api/session/register",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "matching-cas@example.com", "password": "research-passphrase"},
+    )
+    assert registered.status_code == 201
+    created = client.post(
+        "/api/research-tasks",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"entry_type": "direct_input"},
+    )
+    assert created.status_code == 201
+    base = replace(
+        _persistable_run(UUID(created.json()["task_id"])),
+        status=MatchRunStatus.PARTIAL_FAILURE,
+        completion_basis=MatchCompletionBasis.PARTIAL,
+        partial_completion_acknowledged=False,
+    )
+    now = datetime.now(UTC)
+    first = replace(
+        base,
+        version=2,
+        status=MatchRunStatus.AWAITING_DECISION,
+        completion_basis=MatchCompletionBasis.PARTIAL_WITH_USER_ACK,
+        partial_completion_acknowledged=True,
+        partial_completion_acknowledgement_reason="first acknowledgement",
+        partial_completion_acknowledged_at=now,
+        partial_completion_idempotency_key="first-key",
+        partial_completion_request_hash="sha256:first",
+    )
+    stale_second = replace(
+        first,
+        partial_completion_acknowledgement_reason="stale acknowledgement",
+        partial_completion_idempotency_key="second-key",
+        partial_completion_request_hash="sha256:second",
+    )
+
+    with client.app.state.database.session() as session:
+        SqliteMatchRunRepository(session).add(base)
+    with client.app.state.database.session() as session:
+        assert SqliteMatchRunRepository(session).save(first) == first
+    with client.app.state.database.session() as session:
+        persisted = SqliteMatchRunRepository(session).save(stale_second)
+
+    assert persisted == first
+    with client.app.state.database.session() as session:
+        assert SqliteMatchRunRepository(session).get(base.match_run_id) == first

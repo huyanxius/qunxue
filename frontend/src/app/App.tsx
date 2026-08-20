@@ -32,6 +32,7 @@ import {
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
+import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import {
@@ -283,47 +284,6 @@ function MyResearchRoute() {
   )
 }
 
-function UnavailableResearchStageRoute({
-  stage,
-}: {
-  stage: 'theory' | 'framework'
-}) {
-  const { task_id: taskId } = useParams<{ task_id: string }>()
-  const isTheory = stage === 'theory'
-  const title = isTheory ? '理论比较尚未开放' : '研究框架尚未开放'
-
-  return (
-    <PageShell wide>
-      <ResearchWorkspaceShell
-        currentStage={stage}
-        eyebrow="研究任务"
-        title={title}
-        lede={isTheory
-          ? '当前版本尚未接入理论匹配运行与候选审阅能力，因此不会展示预设候选或虚构结果。'
-          : '当前版本尚未接入框架生成、审校与确认能力，因此不会提前展示框架草稿。'}
-        taskLabel={taskId ? `任务 ${taskId}` : undefined}
-        context={(
-          <>
-            <p>当前能力状态</p>
-            <h2>保留真实边界</h2>
-            <p>页面保留稳定入口和研究阶段，但只有后端返回的真实结果才会进入工作区。</p>
-            <ul>
-              <li>不会用示例数据冒充研究结果</li>
-              <li>已有任务与现象快照仍然保留</li>
-              <li>能力接入后可从同一路径继续</li>
-            </ul>
-          </>
-        )}
-      >
-        <section className="research-unavailable">
-          <p>这一步需要对应的后端运行与审核能力，目前尚未开放。</p>
-          <a href="/my">返回我的研究</a>
-        </section>
-      </ResearchWorkspaceShell>
-    </PageShell>
-  )
-}
-
 function NewResearchRoute() {
   return <NewResearchWorkspacePage />
 }
@@ -406,8 +366,8 @@ export function AppRoutes({
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
       <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
-      <Route path="/research/:task_id/match" element={protectedRoute(<UnavailableResearchStageRoute stage="theory" />)} />
-      <Route path="/research/:task_id/framework" element={protectedRoute(<UnavailableResearchStageRoute stage="framework" />)} />
+      <Route path="/research/:task_id/match" element={protectedRoute(<ResearchDocumentWorkbench />)} />
+      <Route path="/research/:task_id/framework" element={protectedRoute(<ResearchDocumentWorkbench />)} />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />

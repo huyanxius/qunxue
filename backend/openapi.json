@@ -1,6 +1,24 @@
 {
   "components": {
     "schemas": {
+      "AcceptResearchDocumentProposalRequest": {
+        "properties": {
+          "expected_document_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Document Version"
+          }
+        },
+        "title": "AcceptResearchDocumentProposalRequest",
+        "type": "object"
+      },
       "AcknowledgePartialMatchRequest": {
         "properties": {
           "acknowledged_candidate_ids": {
@@ -318,11 +336,69 @@
             ],
             "title": "Conversation Id"
           },
+          "document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "document_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Version"
+          },
           "message": {
             "maxLength": 12000,
             "minLength": 1,
             "title": "Message",
             "type": "string"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "theory_plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Id"
           },
           "workspace": {
             "default": "agent",
@@ -784,6 +860,20 @@
         "title": "ConfirmPhenomenonCandidateRequest",
         "type": "object"
       },
+      "ConfirmResearchDocumentRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ConfirmResearchDocumentRequest",
+        "type": "object"
+      },
       "ConfirmTheoryPlanRequest": {
         "properties": {
           "expected_decision_set_version": {
@@ -1092,6 +1182,37 @@
           "phenomenon_version"
         ],
         "title": "CreateMatchRunRequest",
+        "type": "object"
+      },
+      "CreateResearchDocumentRequest": {
+        "properties": {
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentSectionContract"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theory_plan_id",
+          "title",
+          "sections"
+        ],
+        "title": "CreateResearchDocumentRequest",
         "type": "object"
       },
       "CreateResearchTaskRequest": {
@@ -2968,6 +3089,14 @@
             "title": "Failed Candidate Count",
             "type": "integer"
           },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -3028,6 +3157,7 @@
           "total_candidate_count",
           "completed_candidate_count",
           "failed_candidate_count",
+          "failed_candidate_ids",
           "phenomenon_query_id",
           "phenomenon_version",
           "knowledge_release_id",
@@ -3901,6 +4031,21 @@
         "title": "RegisterSessionRequest",
         "type": "object"
       },
+      "RejectResearchDocumentProposalRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "RejectResearchDocumentProposalRequest",
+        "type": "object"
+      },
       "RelatedTheoryResponse": {
         "properties": {
           "relation_explanation": {
@@ -4073,12 +4218,553 @@
         "title": "RelationCandidateResponse",
         "type": "object"
       },
+      "ResearchDocumentEvidenceRefContract": {
+        "properties": {
+          "evidence_ref_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Evidence Ref Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_ref_id",
+          "source_id",
+          "knowledge_release_id"
+        ],
+        "title": "ResearchDocumentEvidenceRefContract",
+        "type": "object"
+      },
+      "ResearchDocumentExportResponse": {
+        "properties": {
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "media_type": {
+            "const": "text/markdown",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document_id",
+          "task_id",
+          "theory_plan_id",
+          "knowledge_release_id",
+          "version",
+          "filename",
+          "media_type",
+          "markdown"
+        ],
+        "title": "ResearchDocumentExportResponse",
+        "type": "object"
+      },
+      "ResearchDocumentListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "items"
+        ],
+        "title": "ResearchDocumentListResponse",
+        "type": "object"
+      },
+      "ResearchDocumentProposalAcceptanceResponse": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/ResearchDocumentResponse"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/ResearchDocumentProposalResponse"
+          }
+        },
+        "required": [
+          "proposal",
+          "document"
+        ],
+        "title": "ResearchDocumentProposalAcceptanceResponse",
+        "type": "object"
+      },
+      "ResearchDocumentProposalKind": {
+        "enum": [
+          "create",
+          "revise_section"
+        ],
+        "title": "ResearchDocumentProposalKind",
+        "type": "string"
+      },
+      "ResearchDocumentProposalListResponse": {
+        "properties": {
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentProposalResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "items"
+        ],
+        "title": "ResearchDocumentProposalListResponse",
+        "type": "object"
+      },
+      "ResearchDocumentProposalResponse": {
+        "properties": {
+          "agent_run_id": {
+            "format": "uuid",
+            "title": "Agent Run Id",
+            "type": "string"
+          },
+          "base_document_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Document Version"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResearchDocumentProposalKind"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "proposal_id": {
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "proposed_sections": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentSectionContract"
+            },
+            "title": "Proposed Sections",
+            "type": "array"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "requires_user_approval": {
+            "title": "Requires User Approval",
+            "type": "boolean"
+          },
+          "result_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Document Id"
+          },
+          "result_document_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Document Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResearchDocumentProposalStatus"
+          },
+          "target_section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Section Id"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "kind",
+          "status",
+          "user_id",
+          "conversation_id",
+          "agent_run_id",
+          "task_id",
+          "theory_plan_id",
+          "knowledge_release_id",
+          "title",
+          "proposed_sections",
+          "rationale",
+          "document_id",
+          "base_document_version",
+          "target_section_id",
+          "decision_reason",
+          "result_document_id",
+          "result_document_version",
+          "requires_user_approval",
+          "created_at",
+          "decided_at"
+        ],
+        "title": "ResearchDocumentProposalResponse",
+        "type": "object"
+      },
+      "ResearchDocumentProposalStatus": {
+        "enum": [
+          "pending",
+          "accepted",
+          "rejected"
+        ],
+        "title": "ResearchDocumentProposalStatus",
+        "type": "string"
+      },
+      "ResearchDocumentResponse": {
+        "properties": {
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "change_summary": {
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "restored_from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored From Version"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentSectionContract"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResearchDocumentStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document_id",
+          "task_id",
+          "theory_plan_id",
+          "knowledge_release_id",
+          "revision_id",
+          "version",
+          "title",
+          "sections",
+          "status",
+          "change_summary",
+          "actor",
+          "restored_from_version",
+          "created_at",
+          "confirmed_at"
+        ],
+        "title": "ResearchDocumentResponse",
+        "type": "object"
+      },
+      "ResearchDocumentSectionContract": {
+        "properties": {
+          "content": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentEvidenceRefContract"
+            },
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "section_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Section Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResearchDocumentSectionStatus"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_id",
+          "key",
+          "title",
+          "content",
+          "status"
+        ],
+        "title": "ResearchDocumentSectionContract",
+        "type": "object"
+      },
+      "ResearchDocumentSectionStatus": {
+        "enum": [
+          "draft",
+          "reviewed",
+          "evidence_gap",
+          "needs_user_decision",
+          "confirmed"
+        ],
+        "title": "ResearchDocumentSectionStatus",
+        "type": "string"
+      },
+      "ResearchDocumentStatus": {
+        "enum": [
+          "draft",
+          "confirmed"
+        ],
+        "title": "ResearchDocumentStatus",
+        "type": "string"
+      },
+      "ResearchDocumentVersionListResponse": {
+        "properties": {
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "items"
+        ],
+        "title": "ResearchDocumentVersionListResponse",
+        "type": "object"
+      },
       "ResearchTaskAction": {
         "enum": [
           "submit_phenomenon"
         ],
         "title": "ResearchTaskAction",
         "type": "string"
+      },
+      "ResearchTaskDocumentProposalListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentProposalResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "items"
+        ],
+        "title": "ResearchTaskDocumentProposalListResponse",
+        "type": "object"
       },
       "ResearchTaskLifecycleStatus": {
         "enum": [
@@ -4174,6 +4860,18 @@
           "current_stage": {
             "$ref": "#/components/schemas/ResearchTaskStage"
           },
+          "current_theory_plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Theory Plan Id"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
           },
@@ -4241,6 +4939,7 @@
           "current_phenomenon_candidate_id",
           "current_material_intake_run_id",
           "current_match_run_id",
+          "current_theory_plan_id",
           "current_framework_id",
           "created_at",
           "updated_at"
@@ -4402,6 +5101,7 @@
           "phenomenon_confirmed",
           "match_generating",
           "decisions_recorded",
+          "theory_plan_confirmed",
           "framework_draft",
           "framework_confirmed"
         ],
@@ -4513,6 +5213,33 @@
           "contract_version"
         ],
         "title": "ResearchTraceResponse",
+        "type": "object"
+      },
+      "RestoreResearchDocumentRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "source_version": {
+            "minimum": 1.0,
+            "title": "Source Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_version",
+          "expected_version",
+          "reason"
+        ],
+        "title": "RestoreResearchDocumentRequest",
         "type": "object"
       },
       "RetryFrameworkReviewRequest": {
@@ -5775,6 +6502,43 @@
         ],
         "title": "UpdatePhenomenonCandidateRequest",
         "type": "object"
+      },
+      "UpdateResearchDocumentRequest": {
+        "properties": {
+          "change_summary": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentSectionContract"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          },
+          "source": {
+            "const": "user_edit",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "sections",
+          "change_summary",
+          "source"
+        ],
+        "title": "UpdateResearchDocumentRequest",
+        "type": "object"
       }
     }
   },
@@ -6069,6 +6833,7 @@
     },
     "/api/frameworks/{framework_id}": {
       "get": {
+        "deprecated": true,
         "operationId": "get_framework",
         "parameters": [
           {
@@ -6103,6 +6868,16 @@
             },
             "description": "Not Found"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6112,16 +6887,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Get Framework",
@@ -6130,6 +6895,7 @@
         ]
       },
       "patch": {
+        "deprecated": true,
         "operationId": "update_framework",
         "parameters": [
           {
@@ -6185,6 +6951,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6194,16 +6970,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Update Framework",
@@ -6214,6 +6980,7 @@
     },
     "/api/frameworks/{framework_id}/audit-resolutions": {
       "post": {
+        "deprecated": true,
         "operationId": "submit_audit_resolutions",
         "parameters": [
           {
@@ -6269,6 +7036,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6278,16 +7055,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Submit Audit Resolutions",
@@ -6298,6 +7065,7 @@
     },
     "/api/frameworks/{framework_id}/confirm": {
       "post": {
+        "deprecated": true,
         "operationId": "confirm_framework",
         "parameters": [
           {
@@ -6353,6 +7121,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6362,16 +7140,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Confirm Framework",
@@ -6382,6 +7150,7 @@
     },
     "/api/frameworks/{framework_id}/export": {
       "get": {
+        "deprecated": true,
         "operationId": "export_confirmed_framework",
         "parameters": [
           {
@@ -6416,6 +7185,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6425,16 +7204,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Export Confirmed Framework",
@@ -6445,6 +7214,7 @@
     },
     "/api/frameworks/{framework_id}/reviews": {
       "post": {
+        "deprecated": true,
         "operationId": "start_framework_review",
         "parameters": [
           {
@@ -6500,6 +7270,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6509,16 +7289,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Start Framework Review",
@@ -6529,6 +7299,7 @@
     },
     "/api/frameworks/{framework_id}/reviews/{review_run_id}": {
       "get": {
+        "deprecated": true,
         "operationId": "get_framework_review",
         "parameters": [
           {
@@ -6573,6 +7344,16 @@
             },
             "description": "Not Found"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6582,16 +7363,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Get Framework Review",
@@ -6602,6 +7373,7 @@
     },
     "/api/frameworks/{framework_id}/reviews/{review_run_id}/retry": {
       "post": {
+        "deprecated": true,
         "operationId": "retry_framework_review",
         "parameters": [
           {
@@ -6677,6 +7449,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6686,16 +7468,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Retry Framework Review",
@@ -7782,6 +8554,16 @@
             },
             "description": "Not Found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -7791,16 +8573,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "List Theory Decisions",
@@ -8143,6 +8915,733 @@
         ]
       }
     },
+    "/api/research-document-proposals/{proposal_id}": {
+      "get": {
+        "operationId": "get_research_document_proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentProposalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Document Proposal",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-document-proposals/{proposal_id}/accept": {
+      "post": {
+        "operationId": "accept_research_document_proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptResearchDocumentProposalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentProposalAcceptanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Accept Research Document Proposal",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-document-proposals/{proposal_id}/reject": {
+      "post": {
+        "operationId": "reject_research_document_proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectResearchDocumentProposalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentProposalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Reject Research Document Proposal",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}": {
+      "get": {
+        "operationId": "get_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      },
+      "patch": {
+        "operationId": "update_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResearchDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/confirm": {
+      "post": {
+        "operationId": "confirm_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmResearchDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Confirm Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/export": {
+      "get": {
+        "operationId": "export_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Export Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/proposals": {
+      "get": {
+        "operationId": "list_research_document_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentProposalListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Document Proposals",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/restore": {
+      "post": {
+        "operationId": "restore_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreResearchDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Restore Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/versions": {
+      "get": {
+        "operationId": "list_research_document_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentVersionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Document Versions",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
     "/api/research-tasks": {
       "get": {
         "operationId": "list_research_tasks",
@@ -8476,6 +9975,7 @@
     },
     "/api/research-tasks/{task_id}/frameworks": {
       "post": {
+        "deprecated": true,
         "operationId": "create_framework",
         "parameters": [
           {
@@ -8531,6 +10031,16 @@
             },
             "description": "Conflict"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -8540,16 +10050,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Implemented"
           }
         },
         "summary": "Create Framework",
@@ -9398,6 +10898,194 @@
         ]
       }
     },
+    "/api/research-tasks/{task_id}/research-document-proposals": {
+      "get": {
+        "operationId": "list_research_task_document_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchTaskDocumentProposalListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Task Document Proposals",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/research-documents": {
+      "get": {
+        "operationId": "list_research_documents",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Documents",
+        "tags": [
+          "research-documents"
+        ]
+      },
+      "post": {
+        "operationId": "create_research_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResearchDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
     "/api/research-tasks/{task_id}/trace": {
       "get": {
         "operationId": "get_research_trace",
@@ -9749,6 +11437,59 @@
         "summary": "Register Session",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/theory-plans/{theory_plan_id}": {
+      "get": {
+        "operationId": "get_confirmed_theory_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "theory_plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Theory Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedTheoryPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Confirmed Theory Plan",
+        "tags": [
+          "matching"
         ]
       }
     }

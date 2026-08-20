@@ -102,6 +102,7 @@ class ResearchTaskNavigationResponse(BaseModel):
     current_phenomenon_candidate_id: UUID | None
     current_material_intake_run_id: UUID | None
     current_match_run_id: UUID | None
+    current_theory_plan_id: UUID | None
     current_framework_id: UUID | None
     created_at: datetime
     updated_at: datetime
