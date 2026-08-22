@@ -19,6 +19,7 @@ export const defaultBoundaryPolicy = Object.freeze({
   }),
   generatedApiAdapters: Object.freeze([
     'api/client.ts',
+    'api/m5ResearchDelivery.ts',
     'api/researchWorkspace.ts',
     'api/system.ts',
     'modules/account/accountApi.ts',
@@ -36,7 +37,11 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-agent/researchAgentApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
-  appApiAdapters: Object.freeze(['api/researchWorkspace.ts', 'api/system.ts']),
+  appApiAdapters: Object.freeze([
+    'api/m5ResearchDelivery.ts',
+    'api/researchWorkspace.ts',
+    'api/system.ts',
+  ]),
   httpRuntimeAdapters: Object.freeze(['api/client.ts', 'modules/research-agent/researchAgentApi.ts']),
 })
 

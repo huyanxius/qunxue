@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, delete, or_, select, update
+from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite.agent_conversation_model import (
@@ -9,6 +10,7 @@ from qunxue_api.adapters.sqlite.agent_conversation_model import (
     AgentRunRow,
 )
 from qunxue_api.adapters.sqlite.research_document_proposal_model import (
+    ResearchDocumentHandoffRow,
     ResearchDocumentProposalRow,
 )
 from qunxue_api.adapters.sqlite.research_intake_model import ResearchTaskRow
@@ -27,9 +29,80 @@ class SqliteResearchDocumentProposalRepository:
         self._session = session
 
     def add(self, snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumentProposalSnapshot:
-        self._session.add(_row(snapshot))
-        self._session.flush()
-        return snapshot
+        if snapshot.kind is ResearchDocumentProposalKind.CREATE:
+            self._session.execute(
+                insert(ResearchDocumentHandoffRow)
+                .values(
+                    user_id=str(snapshot.user_id),
+                    task_id=str(snapshot.task_id),
+                    theory_plan_id=str(snapshot.theory_plan_id),
+                    proposal_id=str(snapshot.proposal_id),
+                )
+                .on_conflict_do_nothing(
+                    index_elements=["user_id", "task_id", "theory_plan_id"]
+                )
+            )
+            handoff = self._session.scalar(
+                select(ResearchDocumentHandoffRow)
+                .where(
+                    ResearchDocumentHandoffRow.user_id == str(snapshot.user_id),
+                    ResearchDocumentHandoffRow.task_id == str(snapshot.task_id),
+                    ResearchDocumentHandoffRow.theory_plan_id
+                    == str(snapshot.theory_plan_id),
+                )
+                .execution_options(populate_existing=True)
+            )
+            if handoff is None:
+                raise RuntimeError("research document handoff was not persisted")
+            if handoff.proposal_id != str(snapshot.proposal_id):
+                persisted = self.get(UUID(handoff.proposal_id))
+                if persisted is None:
+                    raise RuntimeError("research document handoff has no proposal")
+                return persisted
+        row = _row(snapshot)
+        statement = insert(ResearchDocumentProposalRow).values(
+            **{
+                column.name: getattr(row, column.name)
+                for column in ResearchDocumentProposalRow.__table__.columns
+            }
+        )
+        if snapshot.kind is ResearchDocumentProposalKind.CREATE:
+            statement = statement.on_conflict_do_nothing(index_elements=["proposal_id"])
+        else:
+            statement = statement.on_conflict_do_nothing(
+                index_elements=[
+                    "agent_run_id",
+                    "document_id",
+                    "base_document_version",
+                    "target_section_id",
+                ]
+            )
+        self._session.execute(
+            statement
+        )
+        persisted = _snapshot(
+            self._session.get(ResearchDocumentProposalRow, str(snapshot.proposal_id))
+        )
+        if persisted is None and snapshot.kind is ResearchDocumentProposalKind.CREATE:
+            persisted = self.find_create_for_theory_plan(
+                user_id=snapshot.user_id,
+                task_id=snapshot.task_id,
+                theory_plan_id=snapshot.theory_plan_id,
+            )
+        if persisted is None and (
+            snapshot.document_id is not None
+            and snapshot.base_document_version is not None
+            and snapshot.target_section_id is not None
+        ):
+            persisted = self.find_revision_for_agent_target(
+                agent_run_id=snapshot.agent_run_id,
+                document_id=snapshot.document_id,
+                base_document_version=snapshot.base_document_version,
+                target_section_id=snapshot.target_section_id,
+            )
+        if persisted is None:
+            raise RuntimeError("research document proposal was not persisted")
+        return persisted
 
     def get(self, proposal_id: UUID) -> ResearchDocumentProposalSnapshot | None:
         return _snapshot(self._session.get(ResearchDocumentProposalRow, str(proposal_id)))
@@ -50,9 +123,24 @@ class SqliteResearchDocumentProposalRepository:
                     str(snapshot.result_document_id) if snapshot.result_document_id else None
                 ),
                 result_document_version=snapshot.result_document_version,
+                document_id=(str(snapshot.document_id) if snapshot.document_id else None),
             )
         )
         if result.rowcount == 1:
+            if (
+                snapshot.kind is ResearchDocumentProposalKind.CREATE
+                and snapshot.status
+                in {
+                    ResearchDocumentProposalStatus.REJECTED,
+                    ResearchDocumentProposalStatus.ABORTED,
+                }
+            ):
+                self._session.execute(
+                    delete(ResearchDocumentHandoffRow).where(
+                        ResearchDocumentHandoffRow.proposal_id
+                        == str(snapshot.proposal_id)
+                    )
+                )
             return snapshot
         row = self._session.scalar(
             select(ResearchDocumentProposalRow)
@@ -82,6 +170,42 @@ class SqliteResearchDocumentProposalRepository:
         rows = self._session.scalars(
             select(ResearchDocumentProposalRow)
             .where(ResearchDocumentProposalRow.task_id == str(task_id))
+            .order_by(ResearchDocumentProposalRow.created_at.desc())
+        )
+        return tuple(item for row in rows if (item := _snapshot(row)) is not None)
+
+    def list_actionable_for_task(
+        self, task_id: UUID
+    ) -> tuple[ResearchDocumentProposalSnapshot, ...]:
+        current_document_id = self._session.scalar(
+            select(ResearchTaskRow.current_framework_id).where(
+                ResearchTaskRow.task_id == str(task_id)
+            )
+        )
+        canonical_create_ids = select(ResearchDocumentHandoffRow.proposal_id).where(
+            ResearchDocumentHandoffRow.task_id == str(task_id)
+        )
+        rows = self._session.scalars(
+            select(ResearchDocumentProposalRow)
+            .where(
+                ResearchDocumentProposalRow.task_id == str(task_id),
+                ResearchDocumentProposalRow.status
+                == ResearchDocumentProposalStatus.PENDING.value,
+                or_(
+                    and_(
+                        ResearchDocumentProposalRow.kind
+                        == ResearchDocumentProposalKind.CREATE.value,
+                        ResearchDocumentProposalRow.proposal_id.in_(
+                            canonical_create_ids
+                        ),
+                    ),
+                    and_(
+                        ResearchDocumentProposalRow.kind
+                        == ResearchDocumentProposalKind.REVISE_SECTION.value,
+                        ResearchDocumentProposalRow.document_id == current_document_id,
+                    ),
+                ),
+            )
             .order_by(ResearchDocumentProposalRow.created_at.desc())
         )
         return tuple(item for row in rows if (item := _snapshot(row)) is not None)
@@ -127,6 +251,44 @@ class SqliteResearchDocumentProposalRepository:
         )
         return _snapshot(row)
 
+    def find_create_for_theory_plan(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        theory_plan_id: UUID,
+    ) -> ResearchDocumentProposalSnapshot | None:
+        proposal_id = self._session.scalar(
+            select(ResearchDocumentHandoffRow.proposal_id)
+            .where(
+                ResearchDocumentHandoffRow.user_id == str(user_id),
+                ResearchDocumentHandoffRow.task_id == str(task_id),
+                ResearchDocumentHandoffRow.theory_plan_id == str(theory_plan_id),
+            )
+        )
+        if proposal_id is None:
+            return None
+        snapshot = self.get(UUID(proposal_id))
+        if snapshot is None or snapshot.status not in {
+            ResearchDocumentProposalStatus.PENDING,
+            ResearchDocumentProposalStatus.ACCEPTED,
+        }:
+            return None
+        return snapshot
+
+    def agent_run_status(self, agent_run_id: UUID) -> str | None:
+        return self._session.scalar(
+            select(AgentRunRow.status).where(AgentRunRow.run_id == str(agent_run_id))
+        )
+
+    def agent_run_model(self, agent_run_id: UUID) -> tuple[str, str] | None:
+        row = self._session.execute(
+            select(AgentRunRow.provider, AgentRunRow.model).where(
+                AgentRunRow.run_id == str(agent_run_id)
+            )
+        ).one_or_none()
+        return (row.provider, row.model) if row is not None else None
+
 
 def _row(snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumentProposalRow:
     return ResearchDocumentProposalRow(
@@ -143,6 +305,8 @@ def _row(snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumentProposal
         proposed_sections=[_section_payload(item) for item in snapshot.proposed_sections],
         rationale=snapshot.rationale,
         request_hash=snapshot.request_hash,
+        model_provider=snapshot.model_provider,
+        model_name=snapshot.model_name,
         document_id=str(snapshot.document_id) if snapshot.document_id else None,
         base_document_version=snapshot.base_document_version,
         target_section_id=snapshot.target_section_id,
@@ -218,6 +382,8 @@ def _snapshot(
         result_document_id=(UUID(row.result_document_id) if row.result_document_id else None),
         result_document_version=row.result_document_version,
         request_hash=row.request_hash,
+        model_provider=row.model_provider,
+        model_name=row.model_name,
     )
 
 

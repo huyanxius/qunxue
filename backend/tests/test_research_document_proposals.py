@@ -42,6 +42,8 @@ class MemoryProposals:
     def __init__(self) -> None:
         self.items: dict[UUID, object] = {}
         self.agent_context_valid = True
+        self.run_statuses: dict[UUID, str] = {}
+        self.run_models: dict[UUID, tuple[str, str]] = {}
 
     def add(self, snapshot):
         self.items[snapshot.proposal_id] = snapshot
@@ -61,6 +63,14 @@ class MemoryProposals:
 
     def list_for_task(self, task_id):
         return tuple(item for item in self.items.values() if item.task_id == task_id)
+
+    def list_actionable_for_task(self, task_id):
+        return tuple(
+            item
+            for item in self.items.values()
+            if item.task_id == task_id
+            and item.status is framework.ResearchDocumentProposalStatus.PENDING
+        )
 
     def validate_agent_context(self, **_kwargs):
         return self.agent_context_valid
@@ -84,6 +94,30 @@ class MemoryProposals:
             ),
             None,
         )
+
+    def find_create_for_theory_plan(self, *, user_id, task_id, theory_plan_id):
+        return next(
+            (
+                item
+                for item in self.items.values()
+                if item.user_id == user_id
+                and item.task_id == task_id
+                and item.theory_plan_id == theory_plan_id
+                and item.kind is framework.ResearchDocumentProposalKind.CREATE
+                and item.status
+                in {
+                    framework.ResearchDocumentProposalStatus.PENDING,
+                    framework.ResearchDocumentProposalStatus.ACCEPTED,
+                }
+            ),
+            None,
+        )
+
+    def agent_run_status(self, agent_run_id):
+        return self.run_statuses.get(agent_run_id, "completed")
+
+    def agent_run_model(self, agent_run_id):
+        return self.run_models.get(agent_run_id, ("test-provider", "test-model"))
 
 
 class ConflictMemoryProposals(MemoryProposals):
@@ -187,6 +221,8 @@ def test_agent_revision_stays_pending_until_the_user_accepts_it() -> None:
     )
 
     assert proposed.status.value == "pending"
+    assert proposed.model_provider == "test-provider"
+    assert proposed.model_name == "test-model"
     assert documents.get(created.document_id).version == 1
     assert documents.get(created.document_id).sections[0].content == "原始研究问题"
 
@@ -296,6 +332,75 @@ def test_agent_can_propose_a_complete_framework_without_creating_it() -> None:
     assert accepted.document.knowledge_release_id == "release-final-1"
 
 
+def test_create_proposal_is_replayed_by_confirmed_plan_across_agent_retries() -> None:
+    document_repository = MemoryDocuments()
+    documents = document_service(document_repository)
+    proposal_repository = MemoryProposals()
+    proposals = proposal_service(documents, proposal_repository)
+    arguments = {
+        "user_id": UUID(int=3),
+        "conversation_id": UUID(int=4),
+        "task_id": UUID(int=1),
+        "theory_plan_id": UUID(int=2),
+        "knowledge_release_id": "release-final-1",
+        "title": "社区互助研究框架",
+        "sections": (section("Agent 提议的问题"),),
+        "rationale": "依据已确认理论方案生成草稿",
+    }
+
+    first = proposals.propose_create(agent_run_id=UUID(int=5), **arguments)
+    replayed = proposals.propose_create(
+        agent_run_id=UUID(int=6),
+        conversation_id=UUID(int=7),
+        **{key: value for key, value in arguments.items() if key != "conversation_id"},
+    )
+
+    assert replayed.proposal_id == first.proposal_id
+    assert len(proposal_repository.items) == 1
+
+    with pytest.raises(ValueError, match="already has an active M5 proposal"):
+        proposals.propose_create(
+            agent_run_id=UUID(int=8),
+            conversation_id=UUID(int=9),
+            **{
+                **{key: value for key, value in arguments.items() if key != "conversation_id"},
+                "sections": (section("另一份不一致的框架"),),
+            },
+        )
+
+
+def test_failed_generation_is_archived_before_retrying_the_same_handoff() -> None:
+    documents = document_service(MemoryDocuments())
+    proposal_repository = MemoryProposals()
+    proposals = proposal_service(documents, proposal_repository)
+    arguments = {
+        "user_id": UUID(int=3),
+        "conversation_id": UUID(int=4),
+        "task_id": UUID(int=1),
+        "theory_plan_id": UUID(int=2),
+        "knowledge_release_id": "release-final-1",
+        "title": "社区互助研究框架",
+        "sections": (section("Agent 提议的问题"),),
+        "rationale": "依据已确认理论方案生成草稿",
+    }
+    first = proposals.propose_create(agent_run_id=UUID(int=5), **arguments)
+    proposal_repository.run_statuses[first.agent_run_id] = "failed"
+
+    retried = proposals.propose_create(
+        agent_run_id=UUID(int=6),
+        conversation_id=UUID(int=7),
+        **{key: value for key, value in arguments.items() if key != "conversation_id"},
+    )
+
+    assert retried.proposal_id != first.proposal_id
+    assert retried.status.value == "pending"
+    assert proposal_repository.items[first.proposal_id].status.value == "aborted"
+    assert "Agent 运行未完成" in (
+        proposal_repository.items[first.proposal_id].decision_reason or ""
+    )
+    assert sum(item.status.value == "pending" for item in proposal_repository.items.values()) == 1
+
+
 def test_agent_cannot_create_an_unactionable_proposal_for_a_confirmed_document() -> None:
     document_repository = MemoryDocuments()
     documents = document_service(document_repository)
@@ -313,6 +418,14 @@ def test_agent_cannot_create_an_unactionable_proposal_for_a_confirmed_document()
         "limitations",
         "evidence_gaps",
     )
+    provenance_keys = {
+        "theoretical_perspective",
+        "core_concepts",
+        "mechanisms",
+        "questions_or_hypotheses",
+        "methodology",
+        "analysis_steps",
+    }
     created = documents.create(
         task_id=UUID(int=1),
         theory_plan_id=UUID(int=2),
@@ -325,7 +438,17 @@ def test_agent_cannot_create_an_unactionable_proposal_for_a_confirmed_document()
                 title=key,
                 content=f"{key} 正文",
                 status=framework.ResearchDocumentSectionStatus.REVIEWED,
-                evidence_refs=(),
+                evidence_refs=(
+                    (
+                        framework.ResearchDocumentEvidenceRef(
+                            evidence_ref_id="evidence-1",
+                            source_id="source-1",
+                            knowledge_release_id="release-final-1",
+                        ),
+                    )
+                    if key in provenance_keys
+                    else ()
+                ),
             )
             for key in section_keys
         ),

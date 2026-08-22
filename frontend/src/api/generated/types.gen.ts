@@ -2487,6 +2487,58 @@ export type RelationCandidateResponse = {
 };
 
 /**
+ * ResearchDocumentCompletionCheckResponse
+ */
+export type ResearchDocumentCompletionCheckResponse = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Passed
+     */
+    passed: boolean;
+};
+
+/**
+ * ResearchDocumentCompletionGateResponse
+ */
+export type ResearchDocumentCompletionGateResponse = {
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Checks
+     */
+    checks: Array<ResearchDocumentCompletionCheckResponse>;
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Pending Proposal Count
+     */
+    pending_proposal_count: number;
+    /**
+     * Ready
+     */
+    ready: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ResearchDocumentEvidenceRefContract
  */
 export type ResearchDocumentEvidenceRefContract = {
@@ -2505,6 +2557,84 @@ export type ResearchDocumentEvidenceRefContract = {
 };
 
 /**
+ * ResearchDocumentExportManifest
+ *
+ * Versioned, machine-readable audit package for one formal M5 delivery.
+ */
+export type ResearchDocumentExportManifest = {
+    /**
+     * Agent Proposals
+     */
+    agent_proposals: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Document Versions
+     */
+    document_versions: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Evidence
+     */
+    evidence: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Formal Document
+     */
+    formal_document: {
+        [key: string]: unknown;
+    };
+    /**
+     * Knowledge Release
+     */
+    knowledge_release: {
+        [key: string]: unknown;
+    };
+    /**
+     * Model
+     */
+    model: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Phenomenon
+     */
+    phenomenon: {
+        [key: string]: unknown;
+    };
+    /**
+     * Schema Version
+     */
+    schema_version: 'research-delivery-v1';
+    /**
+     * Theory Assignments
+     */
+    theory_assignments: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Theory Candidates
+     */
+    theory_candidates: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Theory Decisions
+     */
+    theory_decisions: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Theory Relations
+     */
+    theory_relations: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
  * ResearchDocumentExportResponse
  */
 export type ResearchDocumentExportResponse = {
@@ -2520,6 +2650,7 @@ export type ResearchDocumentExportResponse = {
      * Knowledge Release Id
      */
     knowledge_release_id: string;
+    manifest: ResearchDocumentExportManifest;
     /**
      * Markdown
      */
@@ -2621,6 +2752,14 @@ export type ResearchDocumentProposalResponse = {
      */
     knowledge_release_id: string;
     /**
+     * Model Name
+     */
+    model_name: string | null;
+    /**
+     * Model Provider
+     */
+    model_provider: string | null;
+    /**
      * Proposal Id
      */
     proposal_id: string;
@@ -2670,7 +2809,7 @@ export type ResearchDocumentProposalResponse = {
 /**
  * ResearchDocumentProposalStatus
  */
-export type ResearchDocumentProposalStatus = 'pending' | 'accepted' | 'rejected';
+export type ResearchDocumentProposalStatus = 'pending' | 'accepted' | 'rejected' | 'aborted';
 
 /**
  * ResearchDocumentResponse
@@ -5448,6 +5587,44 @@ export type UpdateResearchDocumentResponses = {
 };
 
 export type UpdateResearchDocumentResponse = UpdateResearchDocumentResponses[keyof UpdateResearchDocumentResponses];
+
+export type GetResearchDocumentCompletionGateData = {
+    body?: never;
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/research-documents/{document_id}/completion-gate';
+};
+
+export type GetResearchDocumentCompletionGateErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchDocumentCompletionGateError = GetResearchDocumentCompletionGateErrors[keyof GetResearchDocumentCompletionGateErrors];
+
+export type GetResearchDocumentCompletionGateResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchDocumentCompletionGateResponse;
+};
+
+export type GetResearchDocumentCompletionGateResponse = GetResearchDocumentCompletionGateResponses[keyof GetResearchDocumentCompletionGateResponses];
 
 export type ConfirmResearchDocumentData = {
     body: ConfirmResearchDocumentRequest;
