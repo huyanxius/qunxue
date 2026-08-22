@@ -46,6 +46,8 @@ from qunxue_api.adapters.sqlite.research_start_proposal import (
 from qunxue_api.adapters.sqlite.theory_matching_model import (
     ConfirmedTheoryPlanRow,
     MatchRunRow,
+    TheoryDecisionDraftRequestRow,
+    TheoryDecisionDraftRow,
     TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
 )
@@ -80,6 +82,8 @@ __all__ = [
     "SqliteResearchStartProposalRepository",
     "SqliteResearchDocumentProposalRepository",
     "TheoryMatchingRequestRow",
+    "TheoryDecisionDraftRow",
+    "TheoryDecisionDraftRequestRow",
     "TheoryDecisionSetRow",
     "UserRow",
     "UserSessionRow",

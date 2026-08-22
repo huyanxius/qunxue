@@ -1,0 +1,184 @@
+{
+  "schema_version": "pre-reviewed-theory-release/v1",
+  "release_key": "first-match-theories-pre-reviewed-2026-08",
+  "base_release_id": "knowledge-preview-f9d907026722bccefb080a4a9b01c46579f1ff568e91fc12038e1fd88141e5d1",
+  "profiles": [
+    {
+      "theory_id": "theory:historical-materialism",
+      "related_knowledge_ids": ["D1:C001"],
+      "title": "历史唯物主义",
+      "core_propositions": [
+        "历史解释应从现实个人、物质生活条件、生产活动与社会交往出发。",
+        "生产方式和既有社会关系构成行动者所处的历史条件，但不能被简化成经济因素对结果的单线决定。"
+      ],
+      "applicable_phenomena": [
+        "物质生产、制度安排与观念形态共同变化的历史过程",
+        "劳动组织、技术基础设施与权力关系的长期重组"
+      ],
+      "analysis_levels": ["历史结构", "制度", "群体"],
+      "prerequisites": [
+        "研究材料能够连接行动者处境、生产或再生产条件与制度关系",
+        "研究设计包含时间变化或可比较的历史条件"
+      ],
+      "exclusion_signals": [
+        "只有个体即时态度，无法观察其物质或制度条件",
+        "把经济变量预设为唯一原因，且不检验政治、法律或文化机制",
+        "宏观历史命题不能替代具体机制识别",
+        "短时段、纯心理现象通常不足以支持该理论判断",
+        "不得把历史唯物主义写成经济决定论",
+        "不得只凭研究主题涉及劳动或阶级就判定适用"
+      ],
+      "observable_evidence": [
+        "生产和再生产安排的变化记录",
+        "制度、法律与观念形态随物质关系变化的时序证据",
+        "行动者在既有条件中形成和改变实践的材料"
+      ],
+      "competing_or_complementary_theory_ids": ["theory:class-struggle", "theory:alienated-labour"],
+      "source_ids": ["source:marx-engels:german-ideology:first-premises"],
+      "content_version": 1,
+      "sources": [{
+        "source_id": "source:marx-engels:german-ideology:first-premises",
+        "source_type": "primary_text",
+        "title": "The German Ideology, Part I: Feuerbach",
+        "authors_or_institution": ["Karl Marx", "Friedrich Engels"],
+        "year": 1845,
+        "publication": "Marx/Engels Internet Archive transcription",
+        "locator": "Part I, A. Idealism and Materialism, ‘First Premises of Materialist Method’",
+        "url": "https://www.marxists.org/archive/marx/works/1845/german-ideology/ch01a.htm",
+        "verification_status": "verified",
+        "use_boundary": "只支持从现实个人、物质活动和生活条件出发的基本前提；不单独证明任何具体经验因果。"
+      }],
+      "review": {
+        "review_record_id": "pre-review:historical-materialism:v1",
+        "review_status": "pre_review_completed",
+        "reviewer_id": "human-pre-review:existing-review-team",
+        "reviewer_display_name": "既有真实人员初审组（用户确认）",
+        "reviewer_credentials": "未提供个人姓名或专家终审资质；本记录仅确认真实人员完成初步审核",
+        "review_completed_at": null,
+        "recorded_at": "2026-08-22T14:23:25+08:00",
+        "subject_hash": "sha256:0adc408bbee76a877d385735be4b5fa5656ecfb00b448d27bd54f2110db65107",
+        "decision": "approved_for_internal_match",
+        "notes": "用户确认这批理论数据已由真实人员完成初步审核。实际初审完成时刻未单独登记；recorded_at 是本状态进入发布审计记录的时间。",
+        "attestation": "预审核完成，仅用于内测匹配；不代表专家终审或全面审核，后续仍可继续深度复核。"
+      }
+    },
+    {
+      "theory_id": "theory:class-struggle",
+      "related_knowledge_ids": ["D1:C002"],
+      "title": "阶级斗争",
+      "core_propositions": [
+        "生产关系和资源控制中的结构位置会形成具有冲突潜势的阶级利益。",
+        "阶级从结构位置转化为集体行动，需要组织、代表、共同认知与具体政治条件。"
+      ],
+      "applicable_phenomena": [
+        "围绕劳动控制、资源分配或制度权利展开的持续群体冲突",
+        "结构位置如何经由组织和政治过程形成集体行动"
+      ],
+      "analysis_levels": ["阶级结构", "组织", "集体行动"],
+      "prerequisites": [
+        "能够识别群体在生产、占有或权威关系中的不同位置",
+        "存在可观察的利益冲突、组织化或政治代表过程"
+      ],
+      "exclusion_signals": [
+        "差异只体现为收入分布，缺少关系位置和集体形成证据",
+        "冲突由短期人际矛盾引起，无法连接资源或权威结构",
+        "阶级并非所有冲突的唯一轴线，需与身份、性别、族群及制度机制比较",
+        "结构位置不能直接推出一致的阶级意识或行动",
+        "不得把任意群体差异都称为阶级斗争",
+        "不得以理论标签代替对组织化过程和反例的调查"
+      ],
+      "observable_evidence": [
+        "劳动控制与收益分配资料",
+        "组织动员、联盟、代表与抗争记录",
+        "参与者对共同利益和对立关系的陈述"
+      ],
+      "competing_or_complementary_theory_ids": ["theory:historical-materialism", "theory:alienated-labour"],
+      "source_ids": ["source:marx-engels:communist-manifesto:section-1"],
+      "content_version": 1,
+      "sources": [{
+        "source_id": "source:marx-engels:communist-manifesto:section-1",
+        "source_type": "primary_text",
+        "title": "Manifesto of the Communist Party",
+        "authors_or_institution": ["Karl Marx", "Friedrich Engels"],
+        "year": 1848,
+        "publication": "Marx/Engels Internet Archive transcription",
+        "locator": "Chapter I, “Bourgeois and Proletarians”, opening paragraphs through the two great hostile camps",
+        "url": "https://www.marxists.org/archive/marx/works/1848/communist-manifesto/ch01.htm",
+        "verification_status": "verified",
+        "use_boundary": "支持阶级对立在历史叙述中的核心位置；关于阶级形成条件的扩展命题仍需审校者补充来源。"
+      }],
+      "review": {
+        "review_record_id": "pre-review:class-struggle:v1",
+        "review_status": "pre_review_completed",
+        "reviewer_id": "human-pre-review:existing-review-team",
+        "reviewer_display_name": "既有真实人员初审组（用户确认）",
+        "reviewer_credentials": "未提供个人姓名或专家终审资质；本记录仅确认真实人员完成初步审核",
+        "review_completed_at": null,
+        "recorded_at": "2026-08-22T14:23:25+08:00",
+        "subject_hash": "sha256:ed5264d7d8bc47512ca94308561b024203ecccc6f5b0ce256ae8036203bbdd5b",
+        "decision": "approved_for_internal_match",
+        "notes": "用户确认这批理论数据已由真实人员完成初步审核。实际初审完成时刻未单独登记；recorded_at 是本状态进入发布审计记录的时间。",
+        "attestation": "预审核完成，仅用于内测匹配；不代表专家终审或全面审核，后续仍可继续深度复核。"
+      }
+    },
+    {
+      "theory_id": "theory:alienated-labour",
+      "related_knowledge_ids": ["D1:C003"],
+      "title": "异化劳动",
+      "core_propositions": [
+        "在特定劳动关系中，劳动产品、劳动活动、人的类能力与他人都可能作为异己力量同劳动者相对立。",
+        "异化不是一般的不满意，而是劳动者与其活动及社会关系之间的结构性分离。"
+      ],
+      "applicable_phenomena": [
+        "劳动者失去对产品、过程、目的或协作关系控制的组织现象",
+        "平台化、标准化或强制性劳动中主体能力被压缩的过程"
+      ],
+      "analysis_levels": ["劳动过程", "组织", "主体经验"],
+      "prerequisites": [
+        "研究材料同时包含劳动安排和劳动者对活动、产品或关系的经验",
+        "能够区分制度性控制与一般工作压力或短期不满"
+      ],
+      "exclusion_signals": [
+        "只有情绪量表，缺少劳动过程和控制关系材料",
+        "参与者不满主要来自可逆的个别事件，且活动自主性未受结构性限制",
+        "规范性批判需要与可观察的组织机制分开陈述",
+        "主观疏离感与马克思意义上的异化劳动不能直接等同",
+        "不得把所有负面工作体验都归为异化",
+        "不得脱离所有权、控制和劳动过程只使用心理化解释"
+      ],
+      "observable_evidence": [
+        "产品归属、任务控制与绩效制度资料",
+        "劳动者对活动意义、自主性和社会关系的叙述",
+        "劳动过程与人的能力发展之间的具体张力"
+      ],
+      "competing_or_complementary_theory_ids": ["theory:historical-materialism", "theory:class-struggle"],
+      "source_ids": ["source:marx:1844-manuscripts:estranged-labour"],
+      "content_version": 1,
+      "sources": [{
+        "source_id": "source:marx:1844-manuscripts:estranged-labour",
+        "source_type": "primary_text",
+        "title": "Economic and Philosophic Manuscripts of 1844: Estranged Labour",
+        "authors_or_institution": ["Karl Marx"],
+        "year": 1844,
+        "publication": "Marxists Internet Archive transcription",
+        "locator": "First Manuscript, ‘Estranged Labour’, from ‘Till now we have been considering…’ through consequence (4), estrangement of man from man",
+        "url": "https://www.marxists.org/archive/marx/works/1844/manuscripts/labour.htm",
+        "verification_status": "verified",
+        "use_boundary": "支持异化劳动的产品、活动、类存在和人与人关系维度；当代平台劳动适用性需独立经验材料。"
+      }],
+      "review": {
+        "review_record_id": "pre-review:alienated-labour:v1",
+        "review_status": "pre_review_completed",
+        "reviewer_id": "human-pre-review:existing-review-team",
+        "reviewer_display_name": "既有真实人员初审组（用户确认）",
+        "reviewer_credentials": "未提供个人姓名或专家终审资质；本记录仅确认真实人员完成初步审核",
+        "review_completed_at": null,
+        "recorded_at": "2026-08-22T14:23:25+08:00",
+        "subject_hash": "sha256:2c5383de1dea06d5f26a3d78fd12e4c7a08a22a832a3dd121456ef232ee61073",
+        "decision": "approved_for_internal_match",
+        "notes": "用户确认这批理论数据已由真实人员完成初步审核。实际初审完成时刻未单独登记；recorded_at 是本状态进入发布审计记录的时间。",
+        "attestation": "预审核完成，仅用于内测匹配；不代表专家终审或全面审核，后续仍可继续深度复核。"
+      }
+    }
+  ]
+}

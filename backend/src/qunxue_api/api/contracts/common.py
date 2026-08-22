@@ -16,6 +16,7 @@ class ErrorCode(StrEnum):
     RESEARCH_START_SOURCE_INCOMPLETE = "research_start_source_incomplete"
     VALIDATION_ERROR = "validation_error"
     PHENOMENON_UNCONFIRMED = "phenomenon_unconfirmed"
+    CATALOG_NOT_READY = "catalog_not_ready"
     NO_ADOPTED_THEORY = "no_adopted_theory"
     CANDIDATE_INELIGIBLE = "candidate_ineligible"
     EXTERNAL_CANDIDATE_ADOPTION_BLOCKED = "external_candidate_adoption_blocked"

@@ -19,6 +19,7 @@ from qunxue_api.application.research_start import (
     ResearchStartJourneyState,
 )
 from qunxue_api.application.theory_matching import (
+    MatchingCatalogNotReady,
     MatchingRequestConflict,
     MatchingSnapshotConflict,
     TheoryMatchingApplication,
@@ -34,6 +35,7 @@ __all__ = [
     "ResearchStartConfirmationResult",
     "ResearchStartJourneyState",
     "MatchingRequestConflict",
+    "MatchingCatalogNotReady",
     "MatchingSnapshotConflict",
     "TheoryMatchingApplication",
     "AgentTurnExecution",

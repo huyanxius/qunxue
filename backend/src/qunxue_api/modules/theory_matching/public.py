@@ -23,6 +23,7 @@ class MatchRunStatus(StrEnum):
 
 
 class CandidateOrigin(StrEnum):
+    PRE_REVIEWED_KNOWLEDGE = "pre_reviewed_knowledge"
     REVIEWED_KNOWLEDGE = "reviewed_knowledge"
     MODEL_EXPLORATION = "model_exploration"
     EXTERNAL_UNREVIEWED = "external_unreviewed"
@@ -56,6 +57,7 @@ class CandidateJudgementRunStatus(StrEnum):
 
 
 class CandidateContentStatus(StrEnum):
+    PRE_REVIEW_COMPLETED = "pre_review_completed"
     REVIEWED = "reviewed"
     MODEL_GENERATED = "model_generated"
     EXTERNAL_UNREVIEWED = "external_unreviewed"
@@ -147,6 +149,8 @@ class TheoryJudgementDraft:
     evidence_gaps: tuple[str, ...]
     alternative_explanations: tuple[str, ...]
     evidence_ref_ids: tuple[str, ...]
+    supporting_evidence_ref_ids: tuple[str, ...] = ()
+    conflicting_evidence_ref_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,6 +204,33 @@ class TheoryCandidateSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class TheoryCandidateFailureSnapshot:
+    """One failed judgement keeps the exact reviewed candidate and retry provenance."""
+
+    candidate_id: UUID
+    candidate_version: int
+    content: TheoryCandidateContentSnapshot
+    judgement_run_status: CandidateJudgementRunStatus
+    failure_code: str
+    retryable: bool
+    trace_id: UUID
+    request_id: UUID
+    contract_version: str
+    attempt: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class TheoryCandidateRetryRecord:
+    """Persisted operation identity keeps retry clicks idempotent across refreshes."""
+
+    candidate_id: UUID
+    expected_candidate_version: int
+    idempotency_key: str
+    request_hash: str
+    resulting_match_run_version: int
+
+
+@dataclass(frozen=True, slots=True)
 class MatchRunSnapshot:
     match_run_id: UUID
     task_id: UUID
@@ -212,6 +243,8 @@ class MatchRunSnapshot:
     completion_basis: MatchCompletionBasis = MatchCompletionBasis.COMPLETE
     partial_completion_acknowledged: bool = False
     failed_candidate_ids: tuple[UUID, ...] = ()
+    candidate_failures: tuple[TheoryCandidateFailureSnapshot, ...] = ()
+    candidate_retry_records: tuple[TheoryCandidateRetryRecord, ...] = ()
     partial_completion_acknowledgement_reason: str | None = None
     partial_completion_acknowledged_at: datetime | None = None
     partial_completion_idempotency_key: str | None = None
@@ -225,7 +258,9 @@ class MatchRunSnapshot:
 class TheoryDecisionCommand:
     candidate_id: UUID
     candidate_version: int
-    action: TheoryDecisionAction
+    # Draft autosave must preserve the interval before the user chooses an action.
+    # Final decision-set creation rejects this nullable state.
+    action: TheoryDecisionAction | None
     reason: str
     related_source_ids: tuple[str, ...] = ()
     revised_applicability: str | None = None
@@ -278,6 +313,24 @@ class TheoryRelationSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class TheoryDecisionDraftSnapshot:
+    """Recoverable user-authored M4 state; version zero means no draft exists yet."""
+
+    draft_id: UUID
+    match_run_id: UUID
+    version: int
+    expected_match_run_version: int
+    completion_basis: MatchCompletionBasis
+    decisions: tuple[TheoryDecisionCommand, ...]
+    use_assignments: tuple[TheoryUseAssignment, ...]
+    relations: tuple[TheoryRelationCommand, ...]
+    acknowledged_candidate_ids: tuple[UUID, ...]
+    failed_candidate_ids: tuple[UUID, ...]
+    partial_completion_acknowledgement_reason: str | None
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class TheoryDecisionSetSnapshot:
     """用户决定先被记录；记录本身不会自动升级成已确认理论方案。"""
 
@@ -288,6 +341,7 @@ class TheoryDecisionSetSnapshot:
     use_assignments: tuple[TheoryUseAssignment, ...]
     relations: tuple[TheoryRelationSnapshot, ...]
     recorded_at: datetime
+    draft_version: int = 0
     idempotency_key: str | None = None
     request_hash: str | None = None
 
@@ -350,6 +404,27 @@ class MatchRunRepository(Protocol):
 
     def save(self, snapshot: MatchRunSnapshot) -> MatchRunSnapshot: ...
 
+    def get_decision_draft(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionDraftSnapshot | None: ...
+
+    def get_decision_draft_replay(
+        self,
+        *,
+        match_run_id: UUID,
+        idempotency_key: str,
+    ) -> tuple[str, TheoryDecisionDraftSnapshot] | None: ...
+
+    def save_decision_draft(
+        self,
+        snapshot: TheoryDecisionDraftSnapshot,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+        request_hash: str,
+        request_record_id: UUID,
+    ) -> TheoryDecisionDraftSnapshot: ...
+
     def add_decision_set(
         self, snapshot: TheoryDecisionSetSnapshot
     ) -> TheoryDecisionSetSnapshot: ...
@@ -357,7 +432,7 @@ class MatchRunRepository(Protocol):
     def get_decision_set(self, decision_set_id: UUID) -> TheoryDecisionSetSnapshot | None: ...
 
     def get_decision_set_for_match_run(
-        self, match_run_id: UUID
+        self, match_run_id: UUID, draft_version: int | None = None
     ) -> TheoryDecisionSetSnapshot | None: ...
 
     def list_decision_sets(
@@ -372,6 +447,10 @@ class MatchRunRepository(Protocol):
 
     def get_confirmed_plan_for_decision_set(
         self, decision_set_id: UUID
+    ) -> ConfirmedTheoryPlanSnapshot | None: ...
+
+    def get_confirmed_plan_for_task(
+        self, task_id: UUID
     ) -> ConfirmedTheoryPlanSnapshot | None: ...
 
 
@@ -403,6 +482,9 @@ class TheoryMatching(Protocol):
         match_run_id: UUID,
         candidate_id: UUID,
         expected_version: int,
+        expected_candidate_version: int,
+        idempotency_key: str | None = None,
+        request_hash: str | None = None,
     ) -> MatchRunSnapshot: ...
 
     def acknowledge_partial_completion(
@@ -414,6 +496,37 @@ class TheoryMatching(Protocol):
         failed_candidate_ids: tuple[UUID, ...],
         reason: str,
     ) -> MatchRunSnapshot: ...
+
+    def get_decision_draft(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionDraftSnapshot | None: ...
+
+    def save_decision_draft(
+        self,
+        *,
+        match_run_id: UUID,
+        expected_match_run_version: int,
+        expected_draft_version: int,
+        completion_basis: MatchCompletionBasis,
+        decisions: tuple[TheoryDecisionCommand, ...],
+        use_assignments: tuple[TheoryUseAssignment, ...],
+        relations: tuple[TheoryRelationCommand, ...],
+        acknowledged_candidate_ids: tuple[UUID, ...],
+        failed_candidate_ids: tuple[UUID, ...],
+        partial_completion_acknowledgement_reason: str | None,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> TheoryDecisionDraftSnapshot: ...
+
+    def finalize_decision_draft(
+        self,
+        *,
+        match_run_id: UUID,
+        expected_match_run_version: int,
+        expected_draft_version: int,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> TheoryDecisionSetSnapshot: ...
 
     def record_decisions(
         self,

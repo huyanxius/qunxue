@@ -1,16 +1,15 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from dataclasses import replace
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from test_pre_reviewed_theory_release import _write_bundle
 
-import qunxue_api.adapters.sqlite as sqlite_adapters
-import qunxue_api.modules.research_framework as research_framework
 from qunxue_api.adapters.sqlite import (
-    KnowledgeEntryRevisionRow,
-    KnowledgeSourceRow,
-    KnowledgeTheoryProfileRow,
     MatchRunRow,
     TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
@@ -18,47 +17,26 @@ from qunxue_api.adapters.sqlite import (
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.theory_matching import SqliteMatchRunRepository
 from qunxue_api.bootstrap import create_app
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
+from qunxue_api.modules.theory_matching import (
+    CandidateJudgementRunStatus,
+    MatchCompletionBasis,
+)
 
 
 def _idempotency_headers(value: str | None = None) -> dict[str, str]:
     return {"Idempotency-Key": value or str(uuid4())}
 
 
-def _persist_agent_run(
-    session,
-    *,
-    user_id: UUID,
-    conversation_id: UUID,
-    run_id: UUID,
-    knowledge_release_id: str,
-) -> None:
-    now = datetime.now(UTC)
-    session.add(
-        sqlite_adapters.AgentConversationRow(
-            conversation_id=str(conversation_id),
-            user_id=str(user_id),
-            title="研究文档协作",
-            version=1,
-            created_at=now,
-            updated_at=now,
+def _install_pre_reviewed_release(client: TestClient) -> str:
+    catalog = client.app.state.knowledge_catalog
+    preview = catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
+    with TemporaryDirectory(prefix="qunxue-pre-reviewed-test-") as directory:
+        bundle = _write_bundle(
+            Path(directory) / "pre-reviewed-theories.json",
+            base_release_id=preview.knowledge_release_id,
         )
-    )
-    session.add(
-        sqlite_adapters.AgentRunRow(
-            run_id=str(run_id),
-            conversation_id=str(conversation_id),
-            user_id=str(user_id),
-            idempotency_key=f"proposal-{run_id}",
-            status="completed",
-            provider="test",
-            model="test",
-            knowledge_release_id=knowledge_release_id,
-            usage={},
-            tool_summary=[],
-            started_at=now,
-            completed_at=now,
-        )
-    )
+        return catalog.install_pre_reviewed_bundle(bundle).release.knowledge_release_id
 
 
 def _create_confirmed_task(client: TestClient) -> tuple[dict[str, object], dict[str, object]]:
@@ -124,7 +102,78 @@ def _start_payload(
     }
 
 
-def test_current_release_without_profiles_persists_an_honest_empty_match_run(
+def _patch_first_match_as_partial(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gateway = client.app.state.model_gateway
+    original = gateway.judge_and_rerank
+    first_batch = True
+
+    def judge_and_rerank(*, input):
+        nonlocal first_batch
+        result = original(input=input)
+        if not first_batch:
+            return result
+        first_batch = False
+        assert len(result.results) == 3
+        succeeded = result.results[0]
+        failed = tuple(
+            replace(
+                item,
+                status=CandidateJudgementRunStatus.TIMED_OUT,
+                judgement=None,
+                failure_code="model_timeout",
+            )
+            for item in result.results[1:]
+        )
+        return replace(
+            result,
+            results=(succeeded, *failed),
+            ranked_candidate_order=(succeeded.candidate_id,),
+            completion_basis=MatchCompletionBasis.PARTIAL,
+            retryable_candidate_ids=tuple(item.candidate_id for item in failed),
+        )
+
+    monkeypatch.setattr(gateway, "judge_and_rerank", judge_and_rerank)
+
+
+def _patch_all_matches_as_failure(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    failure_code: str,
+    status: CandidateJudgementRunStatus,
+    retryable: bool,
+) -> None:
+    gateway = client.app.state.model_gateway
+    original = gateway.judge_and_rerank
+
+    def judge_and_rerank(*, input):
+        result = original(input=input)
+        failed = tuple(
+            replace(
+                item,
+                status=status,
+                judgement=None,
+                failure_code=failure_code,
+            )
+            for item in result.results
+        )
+        return replace(
+            result,
+            results=failed,
+            ranked_candidate_order=(),
+            completion_basis=MatchCompletionBasis.PARTIAL,
+            retryable_candidate_ids=(
+                tuple(item.candidate_id for item in failed) if retryable else ()
+            ),
+        )
+
+    monkeypatch.setattr(gateway, "judge_and_rerank", judge_and_rerank)
+
+
+def test_missing_final_release_returns_an_explicit_catalog_not_ready_conflict(
     client: TestClient,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
@@ -140,49 +189,26 @@ def test_current_release_without_profiles_persists_an_honest_empty_match_run(
         ),
     )
 
-    assert started.status_code == 200
-    body = started.json()
-    assert body["status"] == "no_reliable_candidate"
-    assert body["knowledge_release_id"] == release["knowledge_release_id"]
-    assert body["total_candidate_count"] == 0
-    assert body["candidate_page"]["candidates"] == []
-    assert body["model"] is None
+    assert started.status_code == 409
+    assert started.json()["error"]["code"] == "catalog_not_ready"
     assert [
         record.capability.value
         for record in client.app.state.model_invocation_recorder.list_for_task(
             UUID(str(navigation["task_id"]))
         )
     ] == ["phenomenon_extraction"]
-
-    restored = client.get(f"/api/match-runs/{body['match_run_id']}")
-    assert restored.status_code == 200
-    assert restored.json() == body
-    navigation = client.get(f"/api/research-tasks/{navigation['task_id']}/navigation")
-    assert navigation.status_code == 200
-    assert navigation.json()["blocker"] == {
-        "code": "no_reliable_candidate",
-        "message": "固定知识发布中没有可正式采用的理论候选，请调整研究现象后重试。",
-        "recoverable": True,
-        "action": "start_matching",
-    }
-    assert navigation.json()["retry"] == {
-        "method": "POST",
-        "href": f"/api/research-tasks/{navigation.json()['task_id']}/match-runs",
-        "action": "start_matching",
-        "label": "重新匹配",
-    }
+    with client.app.state.database.session() as session:
+        assert len(list(session.scalars(select(MatchRunRow)))) == 0
 
 
 def test_stale_task_version_is_rejected_before_creating_a_match_run(
     client: TestClient,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    payload = _start_payload(
-        navigation,
-        phenomenon,
-        knowledge_release_id=release_id,
-    )
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+    payload = _start_payload(navigation, phenomenon, knowledge_release_id=release_id)
     payload["expected_task_version"] = int(navigation["version"]) - 1
 
     response = client.post(
@@ -195,16 +221,12 @@ def test_stale_task_version_is_rejected_before_creating_a_match_run(
     assert response.json()["error"]["code"] == "validation_error"
 
 
-def test_wrong_confirmed_phenomenon_snapshot_is_rejected(
-    client: TestClient,
-) -> None:
+def test_wrong_confirmed_phenomenon_snapshot_is_rejected(client: TestClient) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    payload = _start_payload(
-        navigation,
-        phenomenon,
-        knowledge_release_id=release_id,
-    )
+    release_id = client.get("/api/knowledge/releases/current").json()[
+        "knowledge_release_id"
+    ]
+    payload = _start_payload(navigation, phenomenon, knowledge_release_id=release_id)
     payload["phenomenon_query_id"] = str(uuid4())
 
     response = client.post(
@@ -219,15 +241,11 @@ def test_wrong_confirmed_phenomenon_snapshot_is_rejected(
 
 def test_match_run_is_not_visible_to_another_user(client: TestClient) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    release_id = _install_pre_reviewed_release(client)
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=_idempotency_headers(),
-        json=_start_payload(
-            navigation,
-            phenomenon,
-            knowledge_release_id=release_id,
-        ),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
     )
     assert started.status_code == 200
 
@@ -241,7 +259,6 @@ def test_match_run_is_not_visible_to_another_user(client: TestClient) -> None:
         },
     )
     assert registered.status_code == 201
-
     hidden = client.get(f"/api/match-runs/{started.json()['match_run_id']}")
 
     assert hidden.status_code == 404
@@ -250,15 +267,11 @@ def test_match_run_is_not_visible_to_another_user(client: TestClient) -> None:
 
 def test_match_run_is_restored_after_application_restart(client: TestClient) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    release_id = _install_pre_reviewed_release(client)
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=_idempotency_headers(),
-        json=_start_payload(
-            navigation,
-            phenomenon,
-            knowledge_release_id=release_id,
-        ),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
     )
     assert started.status_code == 200
     settings = client.app.state.settings
@@ -271,781 +284,522 @@ def test_match_run_is_restored_after_application_restart(client: TestClient) -> 
         with TestClient(restarted_app) as restarted:
             restarted.cookies.set(settings.session_cookie_name, cookie_value)
             restored = restarted.get(f"/api/match-runs/{started.json()['match_run_id']}")
-
             assert restored.status_code == 200
             assert restored.json() == started.json()
     finally:
         restarted_database.engine.dispose()
 
 
-def test_replaying_the_same_matching_request_does_not_create_another_run(
+def test_matching_request_is_idempotent_and_rejects_changed_payload(
     client: TestClient,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    release_id = _install_pre_reviewed_release(client)
     headers = _idempotency_headers()
-    payload = _start_payload(
-        navigation,
-        phenomenon,
-        knowledge_release_id=release_id,
-    )
+    payload = _start_payload(navigation, phenomenon, knowledge_release_id=release_id)
 
     first = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=headers,
         json=payload,
     )
-    second = client.post(
+    replayed = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=headers,
         json=payload,
     )
+    changed = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=headers,
+        json={**payload, "knowledge_release_id": "another-release"},
+    )
 
     assert first.status_code == 200
-    assert second.status_code == 200
-    assert second.json()["match_run_id"] == first.json()["match_run_id"]
-
-    projected = client.get(f"/api/research-tasks/{navigation['task_id']}/navigation").json()
-    assert projected["current_match_run_id"] == first.json()["match_run_id"]
-    assert projected["version"] == navigation["version"] + 1
-    assert projected["current_stage"] == "theory_matching"
+    assert replayed.status_code == 200
+    assert replayed.json() == first.json()
+    assert changed.status_code == 409
     with client.app.state.database.session() as session:
         assert len(list(session.scalars(select(MatchRunRow)))) == 1
         assert len(list(session.scalars(select(TheoryMatchingRequestRow)))) == 1
 
 
-def test_reusing_an_idempotency_key_for_another_payload_is_rejected(
-    client: TestClient,
-) -> None:
-    navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    headers = _idempotency_headers()
-    payload = _start_payload(
-        navigation,
-        phenomenon,
-        knowledge_release_id=release_id,
-    )
-    first = client.post(
-        f"/api/research-tasks/{navigation['task_id']}/match-runs",
-        headers=headers,
-        json=payload,
-    )
-    assert first.status_code == 200
-    changed_payload = {**payload, "knowledge_release_id": "another-release"}
-
-    conflict = client.post(
-        f"/api/research-tasks/{navigation['task_id']}/match-runs",
-        headers=headers,
-        json=changed_payload,
-    )
-
-    assert conflict.status_code == 409
-    assert conflict.json()["error"]["code"] == "validation_error"
-    with client.app.state.database.session() as session:
-        assert len(list(session.scalars(select(MatchRunRow)))) == 1
-
-
 def test_partial_match_acknowledgement_is_persisted_and_idempotent(
     client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    release_id = _install_pre_reviewed_release(client)
+    _patch_first_match_as_partial(client, monkeypatch)
+
+    response = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=_idempotency_headers(),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
+    )
+    assert response.status_code == 200
+    started = response.json()
+    assert started["status"] == "partial_failure"
+    assert started["completed_candidate_count"] == 1
+    assert started["failed_candidate_count"] == 2
+    assert all(
+        item["failure_code"] == "model_timeout"
+        and item["retryable"] is True
+        and item["attempt"] == 1
+        for item in started["failed_candidates"]
+    )
+
+    acknowledgement_reason = (
+        "先以成功候选继续，并保留两条模型超时记录等待后续核验。"
+    )
+    acknowledged_candidate_ids = [
+        item["candidate_id"] for item in started["candidate_page"]["candidates"]
+    ]
+    draft_url = f"/api/match-runs/{started['match_run_id']}/decision-draft"
+    incomplete_draft = client.put(
+        draft_url,
+        headers=_idempotency_headers("partial-draft-before-ack"),
+        json={
+            "expected_match_run_version": started["version"],
+            "expected_draft_version": 0,
+            "completion_basis": "partial",
+            "decisions": [
+                {
+                    "candidate_id": acknowledged_candidate_ids[0],
+                    "candidate_version": started["candidate_page"]["candidates"][0][
+                        "version"
+                    ],
+                    "action": None,
+                    "reason": "",
+                    "related_source_ids": [],
+                    "related_candidate_ids": [],
+                    "revised_applicability": None,
+                }
+            ],
+            "use_assignments": [
+                {
+                    "candidate_id": acknowledged_candidate_ids[0],
+                    "role_code": "",
+                    "responsibility": "",
+                }
+            ],
+            "relations": [],
+            "acknowledged_candidate_ids": acknowledged_candidate_ids,
+            "failed_candidate_ids": started["failed_candidate_ids"],
+            "partial_completion_acknowledgement_reason": acknowledgement_reason,
+        },
+    )
+    assert incomplete_draft.status_code == 200
+    assert incomplete_draft.json()["decisions"][0]["action"] is None
+    assert incomplete_draft.json()["decisions"][0]["reason"] == ""
+    assert incomplete_draft.json()["use_assignments"][0]["role_code"] == ""
+
+    headers = _idempotency_headers()
+    payload = {
+        "expected_version": started["version"],
+        "acknowledged_candidate_ids": acknowledged_candidate_ids,
+        "failed_candidate_ids": started["failed_candidate_ids"],
+        "reason": acknowledgement_reason,
+    }
+    url = f"/api/match-runs/{started['match_run_id']}/partial-completion-acknowledgements"
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        acknowledged, replayed = list(
+            executor.map(
+                lambda _: client.post(url, headers=headers, json=payload),
+                range(2),
+            )
+        )
+
+    assert acknowledged.status_code == 200
+    assert replayed.status_code == 200
+    assert replayed.json() == acknowledged.json()
+    assert acknowledged.json()["status"] == "awaiting_decision"
+    assert acknowledged.json()["completion_basis"] == "partial_with_user_ack"
+    assert acknowledged.json()["partial_completion_acknowledged"] is True
+    restored_draft = client.get(draft_url)
+    assert restored_draft.status_code == 200
+    assert restored_draft.json()["version"] == incomplete_draft.json()["version"] + 1
+    assert (
+        restored_draft.json()["expected_match_run_version"]
+        == acknowledged.json()["version"]
+    )
+    assert restored_draft.json()["completion_basis"] == "partial_with_user_ack"
+    assert (
+        restored_draft.json()["partial_completion_acknowledgement_reason"]
+        == acknowledgement_reason
+    )
+    conflicting = client.post(url, headers=_idempotency_headers(), json=payload)
+    assert conflicting.status_code == 409
+    restored = client.get(f"/api/match-runs/{started['match_run_id']}")
+    assert restored.json() == acknowledged.json()
+
+
+def test_retry_recovers_each_failed_candidate_without_losing_provenance(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+    _patch_first_match_as_partial(client, monkeypatch)
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=_idempotency_headers(),
         json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
     ).json()
-    failed_candidate_id = uuid4()
-    with client.app.state.database.session() as session:
-        row = session.get(MatchRunRow, started["match_run_id"])
-        assert row is not None
-        snapshot = dict(row.snapshot)
-        snapshot["completion_basis"] = "partial"
-        snapshot["partial_completion_acknowledged"] = False
-        snapshot["failed_candidate_ids"] = [str(failed_candidate_id)]
-        row.snapshot = snapshot
-        row.status = "partial_failure"
 
-    partial = client.get(f"/api/match-runs/{started['match_run_id']}")
-    assert partial.status_code == 200
-    assert partial.json()["failed_candidate_ids"] == [str(failed_candidate_id)]
-    assert "acknowledge_partial_completion" in partial.json()["allowed_actions"]
-
-    headers = _idempotency_headers()
-    payload = {
-        "expected_version": started["version"],
-        "acknowledged_candidate_ids": [],
-        "failed_candidate_ids": [str(failed_candidate_id)],
-        "reason": "确认当前没有成功候选，并保留失败记录",
-    }
-    acknowledgement_url = (
-        f"/api/match-runs/{started['match_run_id']}/partial-completion-acknowledgements"
-    )
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        responses = list(
-            executor.map(
-                lambda _: client.post(
-                    acknowledgement_url,
-                    headers=headers,
-                    json=payload,
-                ),
-                range(2),
-            )
+    current = started
+    retry_keys: list[str] = []
+    for index, failure in enumerate(list(started["failed_candidates"])):
+        retry_key = f"retry-failed-candidate-{index}"
+        retry_keys.append(retry_key)
+        retried = client.post(
+            (
+                f"/api/match-runs/{started['match_run_id']}/candidates/"
+                f"{failure['candidate_id']}/retry"
+            ),
+            headers=_idempotency_headers(retry_key),
+            json={
+                "expected_match_run_version": current["version"],
+                "expected_candidate_version": failure["version"],
+            },
         )
-    acknowledged, replayed = responses
+        assert retried.status_code == 200
+        current = retried.json()
 
-    assert acknowledged.status_code == 200
-    assert replayed.status_code == 200
-    assert replayed.json() == acknowledged.json()
-    assert acknowledged.json()["version"] == started["version"] + 1
-    assert acknowledged.json()["completion_basis"] == "partial_with_user_ack"
-    assert acknowledged.json()["partial_completion_acknowledged"] is True
-    conflicting = client.post(
-        acknowledgement_url,
-        headers=_idempotency_headers(),
-        json=payload,
+    assert current["status"] == "awaiting_decision"
+    assert current["completion_basis"] == "complete"
+    assert current["failed_candidates"] == []
+    assert current["completed_candidate_count"] == 3
+    assert {
+        item["knowledge_id"] for item in current["candidate_page"]["candidates"]
+    } == {"D1:C001", "D1:C002", "D1:C003"}
+    replayed = client.post(
+        (
+            f"/api/match-runs/{started['match_run_id']}/candidates/"
+            f"{started['failed_candidates'][0]['candidate_id']}/retry"
+        ),
+        headers=_idempotency_headers(retry_keys[0]),
+        json={
+            "expected_match_run_version": started["version"],
+            "expected_candidate_version": started["failed_candidates"][0]["version"],
+        },
     )
-    assert conflicting.status_code == 409
-    restored = client.get(f"/api/match-runs/{started['match_run_id']}")
-    assert restored.status_code == 200
-    assert restored.json() == acknowledged.json()
+    assert replayed.status_code == 200
+    assert replayed.json() == current
+    changed_replay = client.post(
+        (
+            f"/api/match-runs/{started['match_run_id']}/candidates/"
+            f"{started['failed_candidates'][0]['candidate_id']}/retry"
+        ),
+        headers=_idempotency_headers(retry_keys[0]),
+        json={
+            "expected_match_run_version": current["version"],
+            "expected_candidate_version": started["failed_candidates"][0]["version"],
+        },
+    )
+    assert changed_replay.status_code == 409
 
 
-def test_reviewed_fixture_profiles_return_three_traceable_candidates(
+def test_no_reliable_candidate_and_transient_model_failure_have_distinct_exits(
     client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    with client.app.state.database.session() as session:
-        rows = list(
-            session.scalars(
-                select(KnowledgeEntryRevisionRow)
-                .where(KnowledgeEntryRevisionRow.knowledge_release_id == release_id)
-                .order_by(KnowledgeEntryRevisionRow.knowledge_id)
-                .limit(3)
-            )
-        )
-        assert len(rows) == 3
-        expected_knowledge_ids = [row.knowledge_id for row in rows]
-        for index, row in enumerate(rows, start=1):
-            source_id = f"source:{row.knowledge_id}"
-            source = session.get(KnowledgeSourceRow, (release_id, source_id))
-            assert source is not None
-            source.verification_status = "verified"
-            source.use_boundary = "测试中的人类审校 fixture，仅验证匹配链。"
-            row.review_status = "reviewed"
-            row.match_eligible = True
-            row.review_record_ids = [f"review-{index}"]
-            session.add(
-                KnowledgeTheoryProfileRow(
-                    knowledge_release_id=release_id,
-                    theory_id=f"theory-{index}",
-                    related_knowledge_ids=[row.knowledge_id],
-                    title=f"理论 {index}",
-                    core_propositions=[f"理论 {index} 的已审校命题"],
-                    applicable_phenomena=["社区互动"],
-                    analysis_levels=["关系"],
-                    prerequisites=["存在持续互动"],
-                    exclusion_signals=["没有互动记录"],
-                    observable_evidence=["互动频率"],
-                    competing_or_complementary_theory_ids=[],
-                    source_ids=[source_id],
-                    content_version=1,
-                    review_status="reviewed",
-                    match_eligible=True,
-                )
-            )
+    release_id = _install_pre_reviewed_release(client)
+    _patch_all_matches_as_failure(
+        client,
+        monkeypatch,
+        failure_code="no_reliable_candidate",
+        status=CandidateJudgementRunStatus.INSUFFICIENT_SOURCES,
+        retryable=False,
+    )
+    no_candidate = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=_idempotency_headers(),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
+    )
 
+    assert no_candidate.status_code == 200
+    assert no_candidate.json()["status"] == "no_reliable_candidate"
+    assert no_candidate.json()["candidate_page"]["candidates"] == []
+    assert "create_decision" not in no_candidate.json()["allowed_actions"]
+    assert "retry_candidate" not in no_candidate.json()["allowed_actions"]
+
+
+def test_transient_model_failure_remains_retryable_with_attempt_provenance(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+    _patch_all_matches_as_failure(
+        client,
+        monkeypatch,
+        failure_code="model_timeout",
+        status=CandidateJudgementRunStatus.TIMED_OUT,
+        retryable=True,
+    )
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=_idempotency_headers(),
-        json=_start_payload(
-            navigation,
-            phenomenon,
-            knowledge_release_id=release_id,
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
+    ).json()
+    failure = started["failed_candidates"][0]
+
+    retried = client.post(
+        (
+            f"/api/match-runs/{started['match_run_id']}/candidates/"
+            f"{failure['candidate_id']}/retry"
         ),
+        headers=_idempotency_headers(),
+        json={
+            "expected_match_run_version": started["version"],
+            "expected_candidate_version": failure["version"],
+        },
+    )
+
+    assert retried.status_code == 200
+    body = retried.json()
+    assert body["status"] == "failed"
+    updated = next(
+        item
+        for item in body["failed_candidates"]
+        if item["candidate_id"] == failure["candidate_id"]
+    )
+    assert updated["version"] == failure["version"] + 1
+    assert updated["attempt"] == 2
+    assert updated["failure_code"] == "model_timeout"
+    assert updated["retryable"] is True
+
+
+def test_pre_reviewed_fixture_profiles_return_three_traceable_candidates(
+    client: TestClient,
+) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+    started = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=_idempotency_headers(),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
     )
 
     assert started.status_code == 200
     body = started.json()
+    candidates = body["candidate_page"]["candidates"]
     assert body["status"] == "awaiting_decision"
     assert body["total_candidate_count"] == 3
-    assert [
-        candidate["knowledge_id"] for candidate in body["candidate_page"]["candidates"]
-    ] == expected_knowledge_ids
-    assert all(
-        candidate["origin"] == "reviewed_knowledge"
-        and candidate["content_status"] == "reviewed"
-        and candidate["formal_adoption_eligible"] is True
-        and candidate["supporting_evidence"][0]["source"]["verification_status"] == "verified"
-        for candidate in body["candidate_page"]["candidates"]
-    )
-
+    assert [item["knowledge_id"] for item in candidates] == [
+        "D1:C001",
+        "D1:C002",
+        "D1:C003",
+    ]
+    for item in candidates:
+        assert item["origin"] == "pre_reviewed_knowledge"
+        assert item["content_status"] == "pre_review_completed"
+        assert item["formal_adoption_eligible"] is True
+        assert item["prerequisites"]
+        assert item["supporting_evidence"]
+        source_types = {
+            evidence["source"]["source_type"]
+            for evidence in item["supporting_evidence"]
+            if evidence["source"] is not None
+        }
+        assert "confirmed_phenomenon_evidence" in source_types
+        assert "book" in source_types
+        sources = client.app.state.knowledge_catalog.get_sources(
+            source_ids=tuple(item["source_ids"]),
+            release_id=release_id,
+        )
+        assert sources
+        assert all(source.verification_status.value == "verified" for source in sources)
+        assert all(source.locator for source in sources)
+        assert item["missing_evidence"]
+        assert item["limitations"]
+        assert item["misuse_boundaries"]
+        assert item["competing_theories"]
     restored = client.get(f"/api/match-runs/{body['match_run_id']}")
-    assert restored.status_code == 200
     assert restored.json() == body
 
 
-def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
+def test_decision_draft_can_be_restored_edited_and_confirmed_once(
     client: TestClient,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    with client.app.state.database.session() as session:
-        rows = list(
-            session.scalars(
-                select(KnowledgeEntryRevisionRow)
-                .where(KnowledgeEntryRevisionRow.knowledge_release_id == release_id)
-                .order_by(KnowledgeEntryRevisionRow.knowledge_id)
-                .limit(3)
-            )
-        )
-        for index, row in enumerate(rows, start=1):
-            source_id = f"source:{row.knowledge_id}"
-            source = session.get(KnowledgeSourceRow, (release_id, source_id))
-            assert source is not None
-            source.verification_status = "verified"
-            row.review_status = "reviewed"
-            row.match_eligible = True
-            row.review_record_ids = [f"review-{index}"]
-            session.add(
-                KnowledgeTheoryProfileRow(
-                    knowledge_release_id=release_id,
-                    theory_id=f"theory-{index}",
-                    related_knowledge_ids=[row.knowledge_id],
-                    title=f"理论 {index}",
-                    core_propositions=[f"命题 {index}"],
-                    applicable_phenomena=["社区互动"],
-                    analysis_levels=["关系"],
-                    prerequisites=["存在互动"],
-                    exclusion_signals=["没有互动"],
-                    observable_evidence=["互动频率"],
-                    competing_or_complementary_theory_ids=[],
-                    source_ids=[source_id],
-                    content_version=1,
-                    review_status="reviewed",
-                    match_eligible=True,
-                )
-            )
+    release_id = _install_pre_reviewed_release(client)
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
         headers=_idempotency_headers(),
         json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
     ).json()
     candidates = started["candidate_page"]["candidates"]
-    decisions = [
-        {
-            "candidate_id": candidate["candidate_id"],
-            "candidate_version": candidate["version"],
-            "action": "adopt" if index == 0 else "exclude",
-            "reason": "用户比较证据后决定",
-            "related_source_ids": candidate["source_ids"],
-            "related_candidate_ids": [],
-        }
-        for index, candidate in enumerate(candidates)
-    ]
-    decision_payload = {
-        "expected_match_run_version": started["version"],
-        "completion_basis": started["completion_basis"],
-        "decisions": decisions,
-        "use_assignments": [
+
+    def decision_items(primary_reason: str) -> list[dict[str, object]]:
+        return [
             {
-                "candidate_id": candidates[0]["candidate_id"],
-                "role_code": "primary",
-                "responsibility": "解释社区互动变化",
+                "candidate_id": candidate["candidate_id"],
+                "candidate_version": candidate["version"],
+                "action": "adopt" if index == 0 else "exclude",
+                "reason": (
+                    primary_reason
+                    if index == 0
+                    else "其分析层级与当前社区互动材料不一致，暂不纳入。"
+                ),
+                "related_source_ids": candidate["source_ids"],
+                "related_candidate_ids": [],
             }
-        ],
+            for index, candidate in enumerate(candidates)
+        ]
+
+    def draft_payload(version: int, reason: str) -> dict[str, object]:
+        return {
+            "expected_match_run_version": started["version"],
+            "expected_draft_version": version,
+            "completion_basis": started["completion_basis"],
+            "decisions": decision_items(reason),
+            "use_assignments": [
+                {
+                    "candidate_id": candidates[0]["candidate_id"],
+                    "role_code": "primary",
+                    "responsibility": "解释成员流动如何削弱持续互动与互助关系。",
+                }
+            ],
+            "relations": [],
+            "acknowledged_candidate_ids": [],
+            "failed_candidate_ids": [],
+            "partial_completion_acknowledgement_reason": None,
+        }
+
+    draft_url = f"/api/match-runs/{started['match_run_id']}/decision-draft"
+    first_reason = "该理论能连接持续互动前提与互助减少现象，但需保留制度解释。"
+    first = client.put(
+        draft_url,
+        headers=_idempotency_headers("draft-initial"),
+        json=draft_payload(0, first_reason),
+    )
+    assert first.status_code == 200
+    assert first.json()["version"] == 1
+    assert client.get(draft_url).json() == first.json()
+
+    revised_reason = "采用该理论作为主解释，同时把资源与制度变化列为竞争解释。"
+    revised_payload = draft_payload(1, revised_reason)
+    revised = client.put(
+        draft_url,
+        headers=_idempotency_headers("draft-revised"),
+        json=revised_payload,
+    )
+    assert revised.status_code == 200
+    assert revised.json()["version"] == 2
+    assert revised.json()["decisions"][0]["reason"] == revised_reason
+    assert client.get(draft_url).json() == revised.json()
+    stale = client.put(
+        draft_url,
+        headers=_idempotency_headers(),
+        json={**revised_payload, "decisions": decision_items("过期覆盖")},
+    )
+    assert stale.status_code == 409
+
+    decision_url = f"/api/match-runs/{started['match_run_id']}/decisions"
+    finalize_payload = {
+        "expected_match_run_version": started["version"],
+        "expected_draft_version": 2,
+        "completion_basis": started["completion_basis"],
+        "decisions": decision_items(revised_reason),
+        "use_assignments": revised_payload["use_assignments"],
         "relations": [],
     }
-    decision_headers = _idempotency_headers()
-    decision_url = f"/api/match-runs/{started['match_run_id']}/decisions"
+    decision_headers = _idempotency_headers("finalize-draft-v2")
     with ThreadPoolExecutor(max_workers=2) as executor:
-        decision_responses = list(
+        responses = list(
             executor.map(
                 lambda _: client.post(
                     decision_url,
                     headers=decision_headers,
-                    json=decision_payload,
+                    json=finalize_payload,
                 ),
                 range(2),
             )
         )
-    saved = decision_responses[0]
-    assert saved.status_code == 200
-    assert [response.status_code for response in decision_responses] == [200, 200]
-    assert {response.json()["decision_set_id"] for response in decision_responses} == {
-        saved.json()["decision_set_id"]
+    assert [response.status_code for response in responses] == [200, 200]
+    old_decision_set = responses[0].json()
+    assert {response.json()["decision_set_id"] for response in responses} == {
+        old_decision_set["decision_set_id"]
     }
-    assert saved.json()["knowledge_release_id"] == release_id
-    replayed_decision = client.post(
-        f"/api/match-runs/{started['match_run_id']}/decisions",
-        headers=decision_headers,
-        json=decision_payload,
+    assert old_decision_set["draft_version"] == 2
+
+    final_reason = "补充核对来源定位后采用；制度变化仍作为必须检验的竞争解释。"
+    final_draft = client.put(
+        draft_url,
+        headers=_idempotency_headers("draft-final"),
+        json=draft_payload(2, final_reason),
     )
-    changed_decision = client.post(
-        f"/api/match-runs/{started['match_run_id']}/decisions",
-        headers=decision_headers,
+    assert final_draft.status_code == 200
+    assert final_draft.json()["version"] == 3
+    invalid_old_confirmation = client.post(
+        f"/api/decision-sets/{old_decision_set['decision_set_id']}/confirm",
+        headers=_idempotency_headers(),
+        json={"expected_decision_set_version": old_decision_set["version"]},
+    )
+    assert invalid_old_confirmation.status_code == 409
+
+    final_decision = client.post(
+        decision_url,
+        headers=_idempotency_headers("finalize-draft-v3"),
         json={
-            **decision_payload,
-            "decisions": [{**decisions[0], "reason": "改变后的决定理由"}],
+            **finalize_payload,
+            "expected_draft_version": 3,
+            "decisions": decision_items(final_reason),
         },
     )
-    second_submission = client.post(
-        f"/api/match-runs/{started['match_run_id']}/decisions",
-        headers=_idempotency_headers(),
-        json=decision_payload,
-    )
-    assert replayed_decision.status_code == 200
-    assert replayed_decision.json()["decision_set_id"] == saved.json()["decision_set_id"]
-    assert changed_decision.status_code == 409
-    assert second_submission.status_code == 409
+    assert final_decision.status_code == 200
+    saved = final_decision.json()
+    assert saved["draft_version"] == 3
+    assert saved["decision_set_id"] != old_decision_set["decision_set_id"]
     with client.app.state.database.session() as session:
-        assert len(list(session.scalars(select(TheoryDecisionSetRow)))) == 1
+        assert len(list(session.scalars(select(TheoryDecisionSetRow)))) == 2
 
-    confirmed = client.post(
-        f"/api/decision-sets/{saved.json()['decision_set_id']}/confirm",
-        headers=_idempotency_headers(),
-        json={"expected_decision_set_version": saved.json()["version"]},
-    )
-    assert confirmed.status_code == 200
-    assert confirmed.json()["adopted_candidate_ids"] == [candidates[0]["candidate_id"]]
-    assert confirmed.json()["knowledge_release_id"] == release_id
-    restored_decisions = client.get(
-        f"/api/match-runs/{started['match_run_id']}/decisions"
-    )
-    assert restored_decisions.status_code == 200
-    assert [item["decision_set_id"] for item in restored_decisions.json()["decision_sets"]] == [
-        saved.json()["decision_set_id"]
-    ]
-    restored_plan = client.get(f"/api/theory-plans/{confirmed.json()['theory_plan_id']}")
-    assert restored_plan.status_code == 200
-    assert restored_plan.json() == confirmed.json()
+    confirmation_url = f"/api/decision-sets/{saved['decision_set_id']}/confirm"
     with ThreadPoolExecutor(max_workers=2) as executor:
-        concurrent_confirmations = list(
+        confirmations = list(
             executor.map(
-                lambda value: client.post(
-                    f"/api/decision-sets/{saved.json()['decision_set_id']}/confirm",
-                    headers=_idempotency_headers(value),
-                    json={"expected_decision_set_version": saved.json()["version"]},
+                lambda key: client.post(
+                    confirmation_url,
+                    headers=_idempotency_headers(key),
+                    json={"expected_decision_set_version": saved["version"]},
                 ),
                 ("confirm-plan-a", "confirm-plan-b"),
             )
         )
-    assert [response.status_code for response in concurrent_confirmations] == [200, 200]
-    assert {
-        response.json()["theory_plan_id"] for response in concurrent_confirmations
-    } == {confirmed.json()["theory_plan_id"]}
-    after_theory_confirmation = client.get(
-        f"/api/research-tasks/{navigation['task_id']}/navigation"
-    ).json()
-    assert after_theory_confirmation["current_stage"] == "framework_drafting"
-    assert after_theory_confirmation["adopted_theory_count"] == 1
-    assert (
-        after_theory_confirmation["current_theory_plan_id"]
-        == confirmed.json()["theory_plan_id"]
-    )
-    assert after_theory_confirmation["allowed_actions"] == ["create_framework"]
-
-    section_titles = (
-        ("research_question", "研究问题"),
-        ("research_object_and_field", "研究对象与场域"),
-        ("theoretical_perspective", "理论视角"),
-        ("core_concepts", "核心概念"),
-        ("mechanisms", "作用机制"),
-        ("questions_or_hypotheses", "研究假设与质性问题"),
-        ("methodology", "研究方法"),
-        ("sample_and_sources", "样本与资料来源"),
-        ("analysis_steps", "分析步骤"),
-        ("ethics", "伦理风险"),
-        ("limitations", "局限"),
-        ("evidence_gaps", "证据缺口"),
-    )
-    sections = [
-        {
-            "section_id": key,
-            "key": key,
-            "title": title,
-            "content": f"{title}的用户可编辑正文。",
-            "status": "reviewed",
-            "evidence_refs": [],
-        }
-        for key, title in section_titles
-    ]
-    forged_sections = [dict(item) for item in sections]
-    forged_sections[0] = {
-        **forged_sections[0],
-        "evidence_refs": [
-            {
-                "evidence_ref_id": "evidence-forged",
-                "source_id": "source-forged",
-                "knowledge_release_id": release_id,
-            }
-        ],
+    assert [response.status_code for response in confirmations] == [200, 200]
+    confirmed = confirmations[0].json()
+    assert {response.json()["theory_plan_id"] for response in confirmations} == {
+        confirmed["theory_plan_id"]
     }
-    forged_document = client.post(
-        f"/api/research-tasks/{navigation['task_id']}/research-documents",
-        headers=_idempotency_headers(),
-        json={
-            "theory_plan_id": confirmed.json()["theory_plan_id"],
-            "title": "伪造证据的研究框架",
-            "sections": forged_sections,
-        },
+    assert confirmed["knowledge_release_id"] == release_id
+    assert confirmed["adopted_candidate_ids"] == [candidates[0]["candidate_id"]]
+    assert confirmed["decisions"][0]["reason"] == final_reason
+    assert client.get(f"/api/theory-plans/{confirmed['theory_plan_id']}").json() == confirmed
+    task = client.get(f"/api/research-tasks/{navigation['task_id']}")
+    assert task.status_code == 200
+    assert task.json()["status"] == "theory_plan_confirmed"
+    post_confirmation_edit = client.put(
+        draft_url,
+        headers=_idempotency_headers("draft-after-confirmation"),
+        json=draft_payload(3, "确认后不允许再改写理论方案依据。"),
     )
-    assert forged_document.status_code == 409
-
-    create_url = f"/api/research-tasks/{navigation['task_id']}/research-documents"
-    create_headers = _idempotency_headers()
-    create_payload = {
-        "theory_plan_id": confirmed.json()["theory_plan_id"],
-        "title": "社区互助研究框架",
-        "sections": sections,
-    }
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        created_responses = list(
-            executor.map(
-                lambda _: client.post(
-                    create_url,
-                    headers=create_headers,
-                    json=create_payload,
-                ),
-                range(2),
-            )
-        )
-    created_document = created_responses[0]
-    assert created_document.status_code == 201
-    document_id = created_document.json()["document_id"]
-    assert [response.status_code for response in created_responses] == [201, 201]
-    assert {response.json()["document_id"] for response in created_responses} == {
-        document_id
-    }
-    assert created_document.json()["knowledge_release_id"] == release_id
-    changed_create = client.post(
-        create_url,
-        headers=create_headers,
-        json={**create_payload, "title": "同键下的另一份框架"},
-    )
-    assert changed_create.status_code == 409
-    task_documents = client.get(
-        f"/api/research-tasks/{navigation['task_id']}/research-documents"
-    )
-    assert task_documents.status_code == 200
-    assert [item["document_id"] for item in task_documents.json()["items"]] == [document_id]
-    after_document_creation = client.get(
-        f"/api/research-tasks/{navigation['task_id']}/navigation"
-    ).json()
-    assert after_document_creation["current_framework_id"] == document_id
-    assert after_document_creation["current_stage"] == "framework_drafting"
-
-    revised_sections = [dict(item) for item in sections]
-    revised_sections[0] = {
-        **revised_sections[0],
-        "content": "成员流动如何影响社区互助的持续性？",
-    }
-    revise_headers = _idempotency_headers()
-    revise_payload = {
-        "expected_version": 1,
-        "sections": revised_sections,
-        "change_summary": "收窄研究问题",
-        "source": "user_edit",
-    }
-    revised_document = client.patch(
-        f"/api/research-documents/{document_id}",
-        headers=revise_headers,
-        json=revise_payload,
-    )
-    assert revised_document.status_code == 200
-    assert revised_document.json()["version"] == 2
-    replayed_revision = client.patch(
-        f"/api/research-documents/{document_id}",
-        headers=revise_headers,
-        json=revise_payload,
-    )
-    assert replayed_revision.status_code == 200
-    assert replayed_revision.json()["revision_id"] == revised_document.json()["revision_id"]
-
-    versions = client.get(f"/api/research-documents/{document_id}/versions")
-    assert versions.status_code == 200
-    assert [item["version"] for item in versions.json()["items"]] == [2, 1]
-
-    restore_headers = _idempotency_headers()
-    restore_payload = {
-        "source_version": 1,
-        "expected_version": 2,
-        "reason": "恢复首次草稿",
-    }
-    restored_document = client.post(
-        f"/api/research-documents/{document_id}/restore",
-        headers=restore_headers,
-        json=restore_payload,
-    )
-    assert restored_document.status_code == 200
-    assert restored_document.json()["version"] == 3
-    assert restored_document.json()["sections"][0]["content"] == sections[0]["content"]
-    replayed_restore = client.post(
-        f"/api/research-documents/{document_id}/restore",
-        headers=restore_headers,
-        json=restore_payload,
-    )
-    assert replayed_restore.status_code == 200
-    assert replayed_restore.json()["revision_id"] == restored_document.json()["revision_id"]
-
-    confirm_headers = _idempotency_headers()
-    confirm_payload = {"expected_version": 3}
-    confirmed_document = client.post(
-        f"/api/research-documents/{document_id}/confirm",
-        headers=confirm_headers,
-        json=confirm_payload,
-    )
-    assert confirmed_document.status_code == 200
-    assert confirmed_document.json()["version"] == 4
-    assert confirmed_document.json()["status"] == "confirmed"
-    replayed_confirmation = client.post(
-        f"/api/research-documents/{document_id}/confirm",
-        headers=confirm_headers,
-        json=confirm_payload,
-    )
-    assert replayed_confirmation.status_code == 200
-    assert (
-        replayed_confirmation.json()["revision_id"]
-        == confirmed_document.json()["revision_id"]
-    )
-
-    exported_document = client.get(f"/api/research-documents/{document_id}/export?version=4")
-    assert exported_document.status_code == 200
-    assert exported_document.json()["version"] == 4
-    assert exported_document.json()["knowledge_release_id"] == release_id
-    assert "研究问题的用户可编辑正文。" in exported_document.json()["markdown"]
+    assert post_confirmation_edit.status_code == 409
+    assert "confirmed theory plan" in post_confirmation_edit.json()["error"]["message"]
 
     restarted_database = Database(client.app.state.settings.database_url)
-    user_id = UUID(client.get("/api/session").json()["user"]["user_id"])
     try:
         with restarted_database.session() as session:
             restored = SqliteMatchRunRepository(session).get_confirmed_plan(
-                UUID(confirmed.json()["theory_plan_id"])
+                UUID(confirmed["theory_plan_id"])
             )
             assert restored is not None
-            assert str(restored.theory_plan_id) == confirmed.json()["theory_plan_id"]
+            assert str(restored.theory_plan_id) == confirmed["theory_plan_id"]
             assert restored.knowledge_release.knowledge_release_id == release_id
             assert [str(item.candidate_id) for item in restored.candidates] == [
                 candidates[0]["candidate_id"]
             ]
-            repository_type = sqlite_adapters.SqliteResearchDocumentRepository
-            persisted_document = repository_type(session).get_version(UUID(document_id), 4)
-            assert persisted_document is not None
-            assert persisted_document.status.value == "confirmed"
-            assert persisted_document.knowledge_release_id == release_id
+            assert restored.decisions[0].reason == final_reason
     finally:
         restarted_database.engine.dispose()
-
-    reopened_document = client.post(
-        f"/api/research-documents/{document_id}/restore",
-        headers=_idempotency_headers(),
-        json={
-            "source_version": 4,
-            "expected_version": 4,
-            "reason": "继续审阅正式框架",
-        },
-    )
-    assert reopened_document.status_code == 200
-    assert reopened_document.json()["version"] == 5
-
-    approval_database = Database(client.app.state.settings.database_url)
-    approval_proposal_id: UUID | None = None
-    try:
-        with approval_database.session() as session:
-            _persist_agent_run(
-                session,
-                user_id=user_id,
-                conversation_id=UUID(int=903),
-                run_id=UUID(int=904),
-                knowledge_release_id=release_id,
-            )
-            repository_type = sqlite_adapters.SqliteResearchDocumentRepository
-            proposal_repository_type = sqlite_adapters.SqliteResearchDocumentProposalRepository
-            documents = research_framework.ResearchDocumentService(
-                repository=repository_type(session)
-            )
-            proposals = research_framework.ResearchDocumentProposalService(
-                repository=proposal_repository_type(session),
-                documents=documents,
-            )
-            proposal = proposals.propose_revision(
-                user_id=user_id,
-                conversation_id=UUID(int=903),
-                agent_run_id=UUID(int=904),
-                document_id=UUID(document_id),
-                expected_version=5,
-                section=research_framework.ResearchDocumentSection(
-                    section_id="research_question",
-                    key="research_question",
-                    title="研究问题",
-                    content="成员流动在什么时间范围内改变社区互助的持续性？",
-                    status=research_framework.ResearchDocumentSectionStatus.REVIEWED,
-                    evidence_refs=(),
-                ),
-                rationale="补充可观察的时间边界",
-            )
-            approval_proposal_id = proposal.proposal_id
-    finally:
-        approval_database.engine.dispose()
-
-    assert approval_proposal_id is not None
-    pending_proposal = client.get(f"/api/research-document-proposals/{approval_proposal_id}")
-    assert pending_proposal.status_code == 200
-    assert pending_proposal.json()["status"] == "pending"
-    assert pending_proposal.json()["requires_user_approval"] is True
-    restored_proposals = client.get(
-        f"/api/research-documents/{document_id}/proposals"
-    )
-    assert restored_proposals.status_code == 200
-    assert [item["proposal_id"] for item in restored_proposals.json()["items"]] == [
-        str(approval_proposal_id)
-    ]
-
-    acceptance_headers = _idempotency_headers("accept-document-proposal")
-    accepted_proposal = client.post(
-        f"/api/research-document-proposals/{approval_proposal_id}/accept",
-        headers=acceptance_headers,
-        json={"expected_document_version": 5},
-    )
-    assert accepted_proposal.status_code == 200
-    assert accepted_proposal.json()["proposal"]["status"] == "accepted"
-    assert accepted_proposal.json()["document"]["version"] == 6
-    assert (
-        accepted_proposal.json()["document"]["sections"][0]["content"]
-        == "成员流动在什么时间范围内改变社区互助的持续性？"
-    )
-
-    replayed_acceptance = client.post(
-        f"/api/research-document-proposals/{approval_proposal_id}/accept",
-        headers=acceptance_headers,
-        json={"expected_document_version": 5},
-    )
-    assert replayed_acceptance.status_code == 200
-    assert (
-        replayed_acceptance.json()["document"]["revision_id"]
-        == accepted_proposal.json()["document"]["revision_id"]
-    )
-    changed_acceptance = client.post(
-        f"/api/research-document-proposals/{approval_proposal_id}/accept",
-        headers=acceptance_headers,
-        json={"expected_document_version": 6},
-    )
-    assert changed_acceptance.status_code == 409
-
-    rejection_database = Database(client.app.state.settings.database_url)
-    rejection_proposal_id: UUID | None = None
-    try:
-        with rejection_database.session() as session:
-            _persist_agent_run(
-                session,
-                user_id=user_id,
-                conversation_id=UUID(int=905),
-                run_id=UUID(int=906),
-                knowledge_release_id=release_id,
-            )
-            repository_type = sqlite_adapters.SqliteResearchDocumentRepository
-            proposal_repository_type = sqlite_adapters.SqliteResearchDocumentProposalRepository
-            documents = research_framework.ResearchDocumentService(
-                repository=repository_type(session)
-            )
-            proposals = research_framework.ResearchDocumentProposalService(
-                repository=proposal_repository_type(session),
-                documents=documents,
-            )
-            proposal = proposals.propose_revision(
-                user_id=user_id,
-                conversation_id=UUID(int=905),
-                agent_run_id=UUID(int=906),
-                document_id=UUID(document_id),
-                expected_version=6,
-                section=research_framework.ResearchDocumentSection(
-                    section_id="research_question",
-                    key="research_question",
-                    title="研究问题",
-                    content="不应写入的 Agent 建议",
-                    status=research_framework.ResearchDocumentSectionStatus.REVIEWED,
-                    evidence_refs=(),
-                ),
-                rationale="用户将拒绝这条建议",
-            )
-            rejection_proposal_id = proposal.proposal_id
-    finally:
-        rejection_database.engine.dispose()
-
-    assert rejection_proposal_id is not None
-    rejection_headers = _idempotency_headers()
-    rejected_proposal = client.post(
-        f"/api/research-document-proposals/{rejection_proposal_id}/reject",
-        headers=rejection_headers,
-        json={"reason": "保留已经确认的时间边界"},
-    )
-    assert rejected_proposal.status_code == 200
-    assert rejected_proposal.json()["status"] == "rejected"
-    assert rejected_proposal.json()["requires_user_approval"] is False
-    replayed_rejection = client.post(
-        f"/api/research-document-proposals/{rejection_proposal_id}/reject",
-        headers=rejection_headers,
-        json={"reason": "保留已经确认的时间边界"},
-    )
-    assert replayed_rejection.status_code == 200
-    assert replayed_rejection.json()["decided_at"] == rejected_proposal.json()["decided_at"]
-    changed_rejection = client.post(
-        f"/api/research-document-proposals/{rejection_proposal_id}/reject",
-        headers=rejection_headers,
-        json={"reason": "同一请求键下改变拒绝理由"},
-    )
-    assert changed_rejection.status_code == 409
-
-    rejected_acceptance = client.post(
-        f"/api/research-document-proposals/{rejection_proposal_id}/accept",
-        headers=_idempotency_headers(),
-        json={"expected_document_version": 6},
-    )
-    assert rejected_acceptance.status_code == 409
-    unchanged_document = client.get(f"/api/research-documents/{document_id}")
-    assert unchanged_document.status_code == 200
-    assert unchanged_document.json()["version"] == 6
-
-    concurrent_revision_payload = {
-        "expected_version": 6,
-        "sections": [
-            {
-                **item,
-                "content": "两个不同请求不会同时写入同一个文档版本。"
-                if item["section_id"] == "research_question"
-                else item["content"],
-            }
-            for item in sections
-        ],
-        "change_summary": "并发版本竞争测试",
-        "source": "user_edit",
-    }
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        concurrent_revisions = list(
-            executor.map(
-                lambda value: client.patch(
-                    f"/api/research-documents/{document_id}",
-                    headers=_idempotency_headers(value),
-                    json=concurrent_revision_payload,
-                ),
-                ("concurrent-a", "concurrent-b"),
-            )
-        )
-    assert sorted(response.status_code for response in concurrent_revisions) == [200, 409]
-    current_after_race = client.get(f"/api/research-documents/{document_id}")
-    assert current_after_race.status_code == 200
-    assert current_after_race.json()["version"] == 7
-
-    final_confirmation = client.post(
-        f"/api/research-documents/{document_id}/confirm",
-        headers=_idempotency_headers("confirm-final"),
-        json={"expected_version": 7},
-    )
-    assert final_confirmation.status_code == 200
-    duplicate_confirmation = client.post(
-        f"/api/research-documents/{document_id}/confirm",
-        headers=_idempotency_headers("confirm-again"),
-        json={"expected_version": 8},
-    )
-    assert duplicate_confirmation.status_code == 409

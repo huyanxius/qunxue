@@ -738,6 +738,7 @@
       },
       "CandidateContentStatus": {
         "enum": [
+          "pre_review_completed",
           "reviewed",
           "model_generated",
           "external_unreviewed",
@@ -760,6 +761,7 @@
       },
       "CandidateOrigin": {
         "enum": [
+          "pre_reviewed_knowledge",
           "reviewed_knowledge",
           "model_exploration",
           "external_unreviewed",
@@ -1251,6 +1253,18 @@
             "title": "Decisions",
             "type": "array"
           },
+          "expected_draft_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Draft Version"
+          },
           "expected_match_run_version": {
             "minimum": 1.0,
             "title": "Expected Match Run Version",
@@ -1550,6 +1564,7 @@
           "research_task_not_found",
           "validation_error",
           "phenomenon_unconfirmed",
+          "catalog_not_ready",
           "no_adopted_theory",
           "candidate_ineligible",
           "external_candidate_adoption_blocked",
@@ -1691,6 +1706,62 @@
           "expected_task_version"
         ],
         "title": "ExtractPhenomenonCandidatesRequest",
+        "type": "object"
+      },
+      "FailedTheoryCandidateResponse": {
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "failure_code": {
+            "title": "Failure Code",
+            "type": "string"
+          },
+          "judgement_run_status": {
+            "$ref": "#/components/schemas/CandidateJudgementRunStatus"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trace_id": {
+            "format": "uuid",
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "version",
+          "title",
+          "judgement_run_status",
+          "failure_code",
+          "retryable",
+          "attempt",
+          "trace_id",
+          "request_id"
+        ],
+        "title": "FailedTheoryCandidateResponse",
         "type": "object"
       },
       "FormalFrameworkExportResponse": {
@@ -2843,6 +2914,7 @@
         "enum": [
           "draft",
           "pending",
+          "pre_review_completed",
           "reviewed",
           "retired"
         ],
@@ -3097,6 +3169,13 @@
             "title": "Failed Candidate Ids",
             "type": "array"
           },
+          "failed_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/FailedTheoryCandidateResponse"
+            },
+            "title": "Failed Candidates",
+            "type": "array"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -3158,6 +3237,7 @@
           "completed_candidate_count",
           "failed_candidate_count",
           "failed_candidate_ids",
+          "failed_candidates",
           "phenomenon_query_id",
           "phenomenon_version",
           "knowledge_release_id",
@@ -5282,6 +5362,79 @@
         "title": "RetryMatchCandidateRequest",
         "type": "object"
       },
+      "SaveTheoryDecisionDraftRequest": {
+        "properties": {
+          "acknowledged_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Acknowledged Candidate Ids",
+            "type": "array"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionDraftInput"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "expected_draft_version": {
+            "minimum": 0.0,
+            "title": "Expected Draft Version",
+            "type": "integer"
+          },
+          "expected_match_run_version": {
+            "minimum": 1.0,
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
+          "partial_completion_acknowledgement_reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partial Completion Acknowledgement Reason"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_match_run_version",
+          "expected_draft_version",
+          "completion_basis"
+        ],
+        "title": "SaveTheoryDecisionDraftRequest",
+        "type": "object"
+      },
       "SessionAction": {
         "enum": [
           "logout"
@@ -5861,6 +6014,163 @@
         "title": "TheoryDecisionAction",
         "type": "string"
       },
+      "TheoryDecisionDraftInput": {
+        "description": "Incomplete user-authored state; finalization still uses TheoryDecisionInput.",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TheoryDecisionAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_version": {
+            "minimum": 1.0,
+            "title": "Candidate Version",
+            "type": "integer"
+          },
+          "reason": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Reason",
+            "type": "string"
+          },
+          "related_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Related Candidate Ids",
+            "type": "array"
+          },
+          "related_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Source Ids",
+            "type": "array"
+          },
+          "revised_applicability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Applicability"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "candidate_version"
+        ],
+        "title": "TheoryDecisionDraftInput",
+        "type": "object"
+      },
+      "TheoryDecisionDraftResponse": {
+        "properties": {
+          "acknowledged_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Acknowledged Candidate Ids",
+            "type": "array"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionDraftInput"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "draft_id": {
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "expected_match_run_version": {
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "partial_completion_acknowledgement_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partial Completion Acknowledgement Reason"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "draft_id",
+          "match_run_id",
+          "version",
+          "expected_match_run_version",
+          "completion_basis",
+          "decisions",
+          "use_assignments",
+          "relations",
+          "acknowledged_candidate_ids",
+          "failed_candidate_ids",
+          "partial_completion_acknowledgement_reason",
+          "updated_at"
+        ],
+        "title": "TheoryDecisionDraftResponse",
+        "type": "object"
+      },
       "TheoryDecisionInput": {
         "properties": {
           "action": {
@@ -6072,6 +6382,10 @@
             "title": "Decisions",
             "type": "array"
           },
+          "draft_version": {
+            "title": "Draft Version",
+            "type": "integer"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -6104,6 +6418,7 @@
           "decision_set_id",
           "match_run_id",
           "version",
+          "draft_version",
           "allowed_actions",
           "knowledge_release_id",
           "completion_basis",
@@ -8437,7 +8752,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TheoryCandidateResponse"
+                  "$ref": "#/components/schemas/MatchRunResponse"
                 }
               }
             },
@@ -8485,6 +8800,141 @@
           }
         },
         "summary": "Retry Match Candidate",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/decision-draft": {
+      "get": {
+        "operationId": "get_theory_decision_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Theory Decision Draft",
+        "tags": [
+          "matching"
+        ]
+      },
+      "put": {
+        "operationId": "save_theory_decision_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTheoryDecisionDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Save Theory Decision Draft",
         "tags": [
           "matching"
         ]
