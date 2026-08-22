@@ -12,11 +12,15 @@ from qunxue_api.adapters.research_agent.catalog_tools import (
     _query_candidates,
 )
 from qunxue_api.adapters.research_agent.pydantic_runner import (
+    DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
     _compose_agent_prompt,
 )
 from qunxue_api.adapters.sqlite.agent_conversation_model import AgentRunRow
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
+from qunxue_api.adapters.sqlite.research_document_proposal import (
+    SqliteResearchDocumentProposalRepository,
+)
 from qunxue_api.api.routes.agent import _effective_agent_runtime_mode
 from qunxue_api.application.disciplinary_agent import DisciplinaryAgentApplication
 from qunxue_api.bootstrap import create_app
@@ -86,6 +90,21 @@ class _CountingRunner:
             release_id="release-a",
             provider="fake",
             model="fake",
+        )
+
+
+class _PreReturnIdentityProbeRunner:
+    def __init__(self, *, delegate, provider: str, model: str, probe) -> None:
+        self._delegate = delegate
+        self.runtime_identity = SimpleNamespace(provider=provider, model=model)
+        self._probe = probe
+
+    def run(self, *, prompt, conversation, tools) -> AgentRunResult:
+        self._probe()
+        return self._delegate.run(
+            prompt=prompt,
+            conversation=conversation,
+            tools=tools,
         )
 
 
@@ -299,6 +318,7 @@ def test_agent_idempotency_replays_its_own_turn_after_later_turns() -> None:
     assert replay.result.answer == "answer-1"
     assert replay.turn is not None
     assert replay.turn.turn_id == first.turn.turn_id
+    assert (replay.result.provider, replay.result.model) == ("fake", "fake")
     assert runner.calls == 2
 
 
@@ -400,6 +420,44 @@ def test_sqlite_failed_key_reset_does_not_bypass_a_concurrent_active_run() -> No
 
     with pytest.raises(RunAlreadyActive):
         repository.start_run(run)
+
+
+def test_sqlite_failed_key_retry_refreshes_pre_run_identity() -> None:
+    conversation_id = UUID("00000000-0000-0000-0000-000000000017")
+    user_id = UUID("00000000-0000-0000-0000-000000000018")
+    failed = AgentRunRow(
+        run_id="00000000-0000-0000-0000-000000000019",
+        conversation_id=str(conversation_id),
+        user_id=str(user_id),
+        idempotency_key="retry-identity-key",
+        status="failed",
+        provider="pydantic-ai",
+        model="knowledge-agent",
+        knowledge_release_id="release-old",
+        usage={},
+        tool_summary=[],
+        started_at=datetime.now(UTC),
+    )
+    session = Mock()
+    session.scalar.side_effect = [failed, None]
+    repository = SqliteConversationRepository(session)
+
+    retried = repository.start_run(
+        AgentRun(
+            run_id=UUID("00000000-0000-0000-0000-000000000020"),
+            conversation_id=conversation_id,
+            user_id=user_id,
+            idempotency_key="retry-identity-key",
+            status="running",
+            provider="deterministic-knowledge",
+            model="local",
+            knowledge_release_id="release-new",
+        )
+    )
+
+    assert retried.run_id == UUID(failed.run_id)
+    assert (failed.provider, failed.model) == ("deterministic-knowledge", "local")
+    assert failed.knowledge_release_id == "release-new"
 
 
 def test_sqlite_insert_race_does_not_return_the_other_running_run() -> None:
@@ -647,6 +705,109 @@ def test_sqlite_application_persists_failed_run_before_outer_rollback(client) ->
     with client.app.state.database.session() as session:
         failed = session.query(AgentRunRow).filter_by(idempotency_key="sqlite-failure-1").one()
         assert failed.status == "failed"
+
+
+def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
+    client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": "agent-provenance@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": "register-agent-provenance"},
+    )
+    user_id = UUID(registered.json()["user"]["user_id"])
+    configured_runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    monkeypatch.setattr(
+        configured_runner._agent,
+        "run_sync",
+        lambda *args, **kwargs: SimpleNamespace(output="已配置模型的回答。"),
+    )
+
+    observed_before_result: dict[str, tuple[str, str] | None] = {}
+    for key, delegate, expected_identity in (
+        (
+            "provenance-deterministic",
+            DeterministicKnowledgeRunner(),
+            ("deterministic-knowledge", "local"),
+        ),
+        (
+            "provenance-configured",
+            configured_runner,
+            ("pydantic-ai", "deepseek-v4-flash"),
+        ),
+    ):
+        with client.app.state.database.session() as session:
+            proposal_repository = SqliteResearchDocumentProposalRepository(session)
+
+            def probe(
+                *,
+                idempotency_key: str = key,
+                repository: SqliteResearchDocumentProposalRepository = proposal_repository,
+            ) -> None:
+                row = session.query(AgentRunRow).filter_by(
+                    idempotency_key=idempotency_key
+                ).one()
+                observed_before_result[idempotency_key] = repository.agent_run_model(
+                    UUID(row.run_id)
+                )
+
+            runner = _PreReturnIdentityProbeRunner(
+                delegate=delegate,
+                provider=expected_identity[0],
+                model=expected_identity[1],
+                probe=probe,
+            )
+            application = DisciplinaryAgentApplication(
+                conversations=ConversationService(SqliteConversationRepository(session)),
+                runner=runner,
+                tools_factory=_FakeAgentTools,
+            )
+            application.run_turn(
+                user_id=user_id,
+                conversation_id=None,
+                prompt="解释一个社会学现象",
+                idempotency_key=key,
+            )
+
+    assert observed_before_result == {
+        "provenance-deterministic": ("deterministic-knowledge", "local"),
+        "provenance-configured": ("pydantic-ai", "deepseek-v4-flash"),
+    }
+
+    with client.app.state.database.session() as session:
+        deterministic = session.query(AgentRunRow).filter_by(
+            idempotency_key="provenance-deterministic"
+        ).one()
+        configured = session.query(AgentRunRow).filter_by(
+            idempotency_key="provenance-configured"
+        ).one()
+        assert (deterministic.provider, deterministic.model) == (
+            "deterministic-knowledge",
+            "local",
+        )
+        assert (configured.provider, configured.model) == (
+            "pydantic-ai",
+            "deepseek-v4-flash",
+        )
+        proposal_repository = SqliteResearchDocumentProposalRepository(session)
+        assert proposal_repository.agent_run_model(UUID(deterministic.run_id)) == (
+            "deterministic-knowledge",
+            "local",
+        )
+        assert proposal_repository.agent_run_model(UUID(configured.run_id)) == (
+            "pydantic-ai",
+            "deepseek-v4-flash",
+        )
 
 
 def test_sqlite_application_persists_tool_summary_for_interrupted_run(client) -> None:

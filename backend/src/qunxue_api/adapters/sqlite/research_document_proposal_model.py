@@ -53,6 +53,8 @@ class ResearchDocumentProposalRow(Base):
     proposed_sections: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
     request_hash: Mapped[str] = mapped_column(String(72), nullable=False)
+    model_provider: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     document_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     base_document_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     target_section_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -61,3 +63,27 @@ class ResearchDocumentProposalRow(Base):
     result_document_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ResearchDocumentHandoffRow(Base):
+    """Canonical create proposal for one confirmed-plan to M5 handoff."""
+
+    __tablename__ = "research_document_handoffs"
+    __table_args__ = (
+        UniqueConstraint(
+            "proposal_id",
+            name="uq_research_document_handoff_proposal",
+        ),
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), primary_key=True
+    )
+    theory_plan_id: Mapped[str] = mapped_column(
+        ForeignKey("confirmed_theory_plans.theory_plan_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    proposal_id: Mapped[str] = mapped_column(String(36), nullable=False)

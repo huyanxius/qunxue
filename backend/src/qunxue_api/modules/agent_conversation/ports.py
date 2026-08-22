@@ -16,6 +16,14 @@ class AgentRelease(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
+class AgentRuntimeIdentity:
+    """Stable provider/model identity available before a runner invokes tools."""
+
+    provider: str
+    model: str
+
+
+@dataclass(frozen=True, slots=True)
 class AgentEvidence:
     citation_id: str
     label: str
@@ -68,6 +76,8 @@ class AgentToolContext(Protocol):
 
 
 class SubjectAgentRunner(Protocol):
+    runtime_identity: AgentRuntimeIdentity
+
     def run(
         self,
         *,
@@ -117,4 +127,7 @@ class ConversationRepository(Protocol):
         status: str,
         error: str | None = None,
         turn_id: UUID | None = None,
+        tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None: ...

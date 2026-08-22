@@ -9,6 +9,8 @@ from qunxue_api.api.contracts.research_documents import (
     ConfirmResearchDocumentRequest,
     CreateResearchDocumentRequest,
     RejectResearchDocumentProposalRequest,
+    ResearchDocumentCompletionCheckResponse,
+    ResearchDocumentCompletionGateResponse,
     ResearchDocumentExportResponse,
     ResearchDocumentListResponse,
     ResearchDocumentProposalAcceptanceResponse,
@@ -140,6 +142,44 @@ def list_research_document_versions(
     return ResearchDocumentVersionListResponse(
         document_id=document_id,
         items=[_response(item) for item in versions],
+    )
+
+
+@router.get(
+    "/api/research-documents/{document_id}/completion-gate",
+    operation_id="get_research_document_completion_gate",
+    response_model=ResearchDocumentCompletionGateResponse,
+    responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+def get_research_document_completion_gate(
+    document_id: UUID,
+    current: CurrentSessionDependency,
+    application: ResearchDocumentApplicationDependency,
+) -> ResearchDocumentCompletionGateResponse | JSONResponse:
+    try:
+        gate = application.completion_gate(
+            user_id=current.user.user_id,
+            document_id=document_id,
+        )
+    except LookupError:
+        return _error(404, ErrorCode.NOT_FOUND, "Research document was not found.")
+    except ValueError as error:
+        return _error(409, ErrorCode.VALIDATION_ERROR, str(error))
+    return ResearchDocumentCompletionGateResponse(
+        document_id=gate.document_id,
+        version=gate.version,
+        ready=gate.ready,
+        pending_proposal_count=gate.pending_proposal_count,
+        blockers=list(gate.blockers),
+        checks=[
+            ResearchDocumentCompletionCheckResponse(
+                code=check.code,
+                label=check.label,
+                passed=check.passed,
+                detail=check.detail,
+            )
+            for check in gate.checks
+        ],
     )
 
 
@@ -398,6 +438,7 @@ def export_research_document(
         filename=exported.filename,
         media_type="text/markdown",
         markdown=exported.markdown,
+        manifest=exported.manifest,
     )
 
 
@@ -465,6 +506,8 @@ def _proposal_response(
         user_id=snapshot.user_id,
         conversation_id=snapshot.conversation_id,
         agent_run_id=snapshot.agent_run_id,
+        model_provider=snapshot.model_provider,
+        model_name=snapshot.model_name,
         task_id=snapshot.task_id,
         theory_plan_id=snapshot.theory_plan_id,
         knowledge_release_id=snapshot.knowledge_release_id,
