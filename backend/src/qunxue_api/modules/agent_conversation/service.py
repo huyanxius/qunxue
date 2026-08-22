@@ -210,6 +210,7 @@ class ConversationService:
         assistant_content: str,
         citations: tuple[AgentCitation, ...],
         evidence_ids: frozenset[str] | None = None,
+        turn_id: UUID | None = None,
     ) -> AgentTurn | IdempotentTurn:
         conversation = self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         turn = AgentTurn.create(
@@ -222,6 +223,7 @@ class ConversationService:
                 else frozenset(c.citation_id for c in citations)
             ),
             sequence=len(conversation.turns) * 2,
+            turn_id=turn_id,
         )
         return self._repository.append_turn(
             conversation=conversation,

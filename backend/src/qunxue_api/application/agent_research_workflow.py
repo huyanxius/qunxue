@@ -1,14 +1,11 @@
 from typing import Protocol
 from uuid import UUID
 
+from qunxue_api.application.research_start import ResearchStartApplication
 from qunxue_api.application.theory_matching import TheoryMatchingApplication
 from qunxue_api.modules.research_intake import (
-    EntryType,
-    PhenomenonCandidateDraft,
-    PhenomenonEvidenceRefSnapshot,
-    PhenomenonEvidenceVerificationStatus,
-    PhenomenonModelSnapshot,
     PhenomenonService,
+    ResearchStartProposal,
     ResearchTaskRepository,
     ResearchTaskService,
 )
@@ -22,8 +19,6 @@ from qunxue_api.modules.theory_matching import (
 
 
 class ConversationResearchBinding(Protocol):
-    def commit(self) -> None: ...
-
     def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None: ...
 
     def link_research_task(
@@ -42,12 +37,14 @@ class AgentResearchWorkflow:
         task_repository: ResearchTaskRepository,
         phenomena: PhenomenonService,
         matching: TheoryMatchingApplication,
+        research_start: ResearchStartApplication,
     ) -> None:
         self._bindings = bindings
         self._tasks = tasks
         self._task_repository = task_repository
         self._phenomena = phenomena
         self._matching = matching
+        self._research_start = research_start
 
     def restore(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]:
         task_id = self._bindings.get_research_task_id(
@@ -67,99 +64,33 @@ class AgentResearchWorkflow:
             "knowledge_release_id": release_id,
         }
 
-    def create_confirmed_task(
+    def prepare_start_proposal(
         self,
         *,
         user_id: UUID,
         conversation_id: UUID,
+        source_run_id: UUID,
+        source_turn_id: UUID,
+        knowledge_release_id: str,
         phenomenon: str,
         research_intent: str | None,
         context: str | None,
-        user_confirmed: bool,
-    ) -> dict[str, object]:
-        if not user_confirmed:
-            return {"error": "user_confirmation_required"}
-        existing = self._bindings.get_research_task_id(
-            user_id=user_id, conversation_id=conversation_id
-        )
-        if existing is not None:
-            return self.get_state(user_id=user_id, conversation_id=conversation_id)
-        task = self._tasks.create(
+    ) -> ResearchStartProposal:
+        return self._research_start.prepare_proposal(
             user_id=user_id,
-            entry_type=EntryType.DIRECT_INPUT,
-            idempotency_key=f"agent-research:{conversation_id}",
-        )
-        direct = self._phenomena.submit_direct(
-            task_id=task.task_id,
+            conversation_id=conversation_id,
+            source_run_id=source_run_id,
+            source_turn_id=source_turn_id,
+            knowledge_release_id=knowledge_release_id,
             phenomenon=phenomenon,
             research_intent=research_intent,
             context=context,
         )
-        candidate = self._phenomena.save_candidate(
-            task_id=task.task_id,
-            task=task,
-            draft=PhenomenonCandidateDraft(
-                phenomenon=direct.phenomenon,
-                research_intent=direct.research_intent,
-                context=direct.context,
-                source_ref_ids=("input:direct",),
-            ),
-            evidence_refs=(
-                PhenomenonEvidenceRefSnapshot(
-                    evidence_ref_id="input:direct",
-                    excerpt=direct.phenomenon,
-                    source_ref_id="input:direct",
-                    source_description="用户在研究 Agent 中确认的直接输入",
-                    locator=None,
-                    verification_status=PhenomenonEvidenceVerificationStatus.USER_ATTESTED,
-                    use_boundary="仅代表用户确认的研究现象，尚未经外部来源核验。",
-                ),
-            ),
-            model=PhenomenonModelSnapshot(
-                provider="user-confirmed-input",
-                model_version="1",
-                capability="user_attested",
-                degraded=False,
-                knowledge_release_id=None,
-                trace_id=conversation_id,
-                request_id=candidate_request_id(conversation_id),
-                contract_version="agent-research-v1",
-            ),
-        )
-        current_task = self._tasks.get(task.task_id, user_id=user_id)
-        confirmed = self._phenomena.confirm_candidate(
-            task_id=task.task_id,
-            candidate_id=candidate.candidate_id,
-            expected_version=candidate.version,
-            task=current_task,
-        )
-        if confirmed is None:
-            raise RuntimeError("confirmed Agent phenomenon could not be persisted")
-        self._bindings.link_research_task(
-            user_id=user_id,
-            conversation_id=conversation_id,
-            task_id=task.task_id,
-        )
-        # The existing model invocation recorder owns a separate SQLite session.
-        # Commit the user-confirmed M3 boundary before M4 invokes that recorder,
-        # otherwise SQLite correctly rejects two concurrent writers.
-        self._bindings.commit()
-        snapshot, _ = confirmed
-        return {
-            "task_id": str(task.task_id),
-            "status": "phenomenon_confirmed",
-            "phenomenon_query_id": str(snapshot.phenomenon_query_id),
-            "phenomenon_version": snapshot.version,
-            "phenomenon": snapshot.phenomenon,
-            "evidence_refs": [
-                {
-                    "evidence_ref_id": item.evidence_ref_id,
-                    "source_ref_id": item.source_ref_id,
-                    "verification_status": item.verification_status.value,
-                }
-                for item in snapshot.evidence_refs
-            ],
-        }
+
+    def persist_completed_turn_proposal(
+        self, proposal: ResearchStartProposal
+    ) -> ResearchStartProposal:
+        return self._research_start.persist_completed_turn_proposal(proposal)
 
     def get_state(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]:
         restored = self.restore(user_id=user_id, conversation_id=conversation_id)
@@ -198,7 +129,12 @@ class AgentResearchWorkflow:
         phenomenon = self._phenomena.progress(task.task_id).confirmed
         if phenomenon is None:
             return {"error": "phenomenon_unconfirmed"}
-        if task.current_match_run_id is None:
+        current_match = (
+            self._matching.get(task.current_match_run_id, user_id=user_id)
+            if task.current_match_run_id is not None
+            else None
+        )
+        if current_match is None or current_match.status is MatchRunStatus.NO_RELIABLE_CANDIDATE:
             match_run = self._matching.start(
                 user_id=user_id,
                 task=task,
@@ -207,10 +143,10 @@ class AgentResearchWorkflow:
                 expected_task_version=task.version,
                 phenomenon_query_id=phenomenon.phenomenon_query_id,
                 phenomenon_version=phenomenon.version,
-                requested_knowledge_release_id=None,
+                requested_knowledge_release_id=task.knowledge_release_id,
             )
         else:
-            match_run = self._matching.get(task.current_match_run_id, user_id=user_id)
+            match_run = current_match
         return _match_result(match_run)
 
     def save_theory_plan(
@@ -337,10 +273,6 @@ class AgentResearchWorkflow:
                 for item in plan.candidates
             ],
         }
-
-
-def candidate_request_id(conversation_id: UUID) -> UUID:
-    return UUID(int=conversation_id.int ^ 1)
 
 
 def _match_result(match_run) -> dict[str, object]:

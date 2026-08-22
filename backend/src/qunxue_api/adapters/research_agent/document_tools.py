@@ -9,6 +9,7 @@ from qunxue_api.modules.research_framework import (
     ResearchDocumentSectionStatus,
     ResearchDocumentSnapshot,
 )
+from qunxue_api.modules.research_intake import ResearchStartProposal
 
 from .catalog_tools import KnowledgeToolRegistry
 
@@ -22,7 +23,11 @@ class ResearchDocumentReader(Protocol):
 class ResearchWorkflowCoordinator(Protocol):
     def restore(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]: ...
 
-    def create_confirmed_task(self, **payload: object) -> dict[str, object]: ...
+    def prepare_start_proposal(self, **payload: object) -> ResearchStartProposal: ...
+
+    def persist_completed_turn_proposal(
+        self, proposal: ResearchStartProposal
+    ) -> ResearchStartProposal: ...
 
     def get_state(self, **payload: object) -> dict[str, object]: ...
 
@@ -49,12 +54,14 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
         self._agent_run_id: UUID | None = None
+        self._agent_turn_id: UUID | None = None
         self._task_id: UUID | None = None
         self._document_id: UUID | None = None
         self._section_id: str | None = None
         self._document_version: int | None = None
         self._theory_plan_id: UUID | None = None
         self._theory_plan_release_id: str | None = None
+        self._pending_start_proposal: ResearchStartProposal | None = None
         self.research_document_tools_enabled = False
 
     def enable_research_document_tools(self) -> None:
@@ -78,6 +85,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         user_id: UUID,
         conversation_id: UUID,
         agent_run_id: UUID,
+        agent_turn_id: UUID | None = None,
         task_id: UUID | None = None,
         document_id: UUID | None = None,
         section_id: str | None = None,
@@ -87,6 +95,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._user_id = user_id
         self._conversation_id = conversation_id
         self._agent_run_id = agent_run_id
+        self._agent_turn_id = agent_turn_id
         self._task_id = task_id
         self._document_id = document_id
         self._section_id = section_id
@@ -113,33 +122,57 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             )
             self._theory_plan_release_id = str(restored_release_id) if restored_release_id else None
 
-    def create_confirmed_research_task(
+    def propose_start_research(
         self,
         *,
         phenomenon: str,
         research_intent: str | None,
         context: str | None,
-        user_confirmed: bool,
     ) -> dict[str, object]:
-        user_id, conversation_id, _ = self._context()
-        if not user_confirmed:
-            return {
-                "error": "user_confirmation_required",
-                "message": "创建研究任务会正式写入，必须先获得用户明确确认。",
-            }
+        user_id, conversation_id, agent_run_id = self._context()
         if self._workflow is None:
             return {"error": "research_workflow_unavailable"}
-        result = self._workflow.create_confirmed_task(
+        if self._task_id is not None:
+            return {
+                "error": "research_task_already_bound",
+                "task_id": str(self._task_id),
+                "message": "这段对话已经绑定研究任务，请从现有研究继续。",
+            }
+        if self._agent_turn_id is None:
+            return {
+                "error": "research_start_turn_unavailable",
+                "message": "研究起点只能绑定到当前即将完成的 Agent turn。",
+            }
+        proposal = self._workflow.prepare_start_proposal(
             user_id=user_id,
             conversation_id=conversation_id,
+            source_run_id=agent_run_id,
+            source_turn_id=self._agent_turn_id,
+            knowledge_release_id=self.release.knowledge_release_id,
             phenomenon=phenomenon,
             research_intent=research_intent,
             context=context,
-            user_confirmed=user_confirmed,
         )
-        if result.get("task_id"):
-            self._task_id = UUID(str(result["task_id"]))
-        return result
+        if self._pending_start_proposal is not None:
+            if _start_proposal_content(self._pending_start_proposal) != _start_proposal_content(
+                proposal
+            ):
+                return {
+                    "error": "research_start_proposal_already_prepared",
+                    "message": "当前回答已经提出另一份研究起点，请先完成本轮对话。",
+                }
+            proposal = self._pending_start_proposal
+        else:
+            self._pending_start_proposal = proposal
+        return _start_proposal_result(proposal)
+
+    def finalize_agent_turn(self, *, source_turn_id: UUID) -> None:
+        proposal = self._pending_start_proposal
+        if proposal is None:
+            return
+        if proposal.source_turn_id != source_turn_id:
+            raise RuntimeError("research-start proposal belongs to another Agent turn")
+        self._pending_start_proposal = self._workflow.persist_completed_turn_proposal(proposal)
 
     def get_research_workflow_state(self) -> dict[str, object]:
         user_id, conversation_id, _ = self._context()
@@ -375,3 +408,32 @@ def _section_from_payload(payload: dict[str, object]) -> ResearchDocumentSection
             if isinstance(item, dict)
         ),
     )
+
+
+def _start_proposal_result(proposal: ResearchStartProposal) -> dict[str, object]:
+    return {
+        "proposal_id": str(proposal.proposal_id),
+        "conversation_id": str(proposal.conversation_id),
+        "source_run_id": str(proposal.source_run_id),
+        "source_turn_id": str(proposal.source_turn_id),
+        "knowledge_release_id": proposal.knowledge_release_id,
+        "phenomenon": proposal.phenomenon,
+        "research_intent": proposal.research_intent,
+        "context": proposal.context,
+        "version": proposal.version,
+        "status": proposal.status.value,
+        "requires_user_confirmation": True,
+        "confirmed_task_id": (
+            str(proposal.confirmed_task_id) if proposal.confirmed_task_id else None
+        ),
+        "created_at": _json_datetime(proposal.created_at),
+        "confirmed_at": _json_datetime(proposal.confirmed_at) if proposal.confirmed_at else None,
+    }
+
+
+def _start_proposal_content(proposal: ResearchStartProposal) -> tuple[object, ...]:
+    return proposal.phenomenon, proposal.research_intent, proposal.context
+
+
+def _json_datetime(value) -> str:
+    return value.isoformat().replace("+00:00", "Z")

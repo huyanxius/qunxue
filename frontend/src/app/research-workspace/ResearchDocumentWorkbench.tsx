@@ -3,7 +3,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from '@tiptap/markdown'
 import { CheckCircleIcon, CircleNotchIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 
 import {
   acceptResearchDocumentProposal,
@@ -11,6 +11,7 @@ import {
   createTheoryDecisions,
   confirmTheoryPlan,
   confirmResearchDocument,
+  createMatchRun,
   exportResearchDocument,
   getMatchRun,
   getResearchTaskNavigation,
@@ -20,6 +21,7 @@ import {
   listTheoryDecisions,
   restoreResearchDocument,
   rejectResearchDocumentProposal,
+  readResearchTaskNavigationViaApi,
   updateResearchDocument,
 } from '../../api/researchWorkspace'
 import { streamAgentTurn, type AgentEvent, type AgentToolStep } from '../../modules/research-agent'
@@ -81,6 +83,7 @@ function selectCurrentDocument(items: ResearchDocumentResponse[], navigation: Re
 export function ResearchDocumentWorkbench() {
   const { task_id: taskId, stage: stageParam } = useParams<{ task_id: string; stage?: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const stage = stageParam ?? (location.pathname.endsWith('/framework') ? 'framework' : 'match')
   const mode = stage === 'framework' ? 'framework' : 'match'
   const [navigation, setNavigation] = useState<ResearchTaskNavigationResponse | null>(null)
@@ -99,11 +102,15 @@ export function ResearchDocumentWorkbench() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [runtimeMode, setRuntimeMode] = useState<'mock' | 'base' | 'sft' | null>(null)
   const [matchRun, setMatchRun] = useState<MatchRunResponse | null>(null)
+  const [matchingActionState, setMatchingActionState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [matchingActionError, setMatchingActionError] = useState<string | null>(null)
   const [pendingTheoryDecisions, setPendingTheoryDecisions] = useState<Record<string, { candidate_version: number; action: TheoryDecisionAction }>>({})
   const [decisionSet, setDecisionSet] = useState<TheoryDecisionSetResponse | null>(null)
   const [relationDraft, setRelationDraft] = useState({ explanation: '', premise: '', supporting: '', excluding: '', distinguishing: '' })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved')
   const abortRef = useRef<AbortController | null>(null)
+  const matchingAttemptKeyRef = useRef<string | null>(null)
+  const matchingInFlightRef = useRef(false)
 
   const sections = document?.sections.length ? document.sections : sectionFallback(mode)
   const activeSection = sections.find((section) => section.section_id === activeSectionId) ?? sections[0]
@@ -176,7 +183,8 @@ export function ResearchDocumentWorkbench() {
     ])
     if (navigationResult.data) setNavigation(navigationResult.data)
     if (!result.data) return
-    const currentId = mode === 'framework' ? navigation?.current_framework_id : navigation?.current_theory_plan_id
+    const latestNavigation = navigationResult.data ?? navigation
+    const currentId = mode === 'framework' ? latestNavigation?.current_framework_id : latestNavigation?.current_theory_plan_id
     const current = (currentId ? result.data.items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? result.data.items[0] ?? null
     setDocument(current)
     const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
@@ -186,6 +194,15 @@ export function ResearchDocumentWorkbench() {
       if (versionsResult.data) setVersions(versionsResult.data.items)
     }
   }, [mode, navigation, taskId])
+
+  const resumeFromServer = useCallback(async () => {
+    if (!taskId) return
+    const latest = await readResearchTaskNavigationViaApi(taskId)
+    setNavigation(latest)
+    if (latest.resume_path !== location.pathname) {
+      navigate(latest.resume_path, { replace: true })
+    }
+  }, [location.pathname, navigate, taskId])
 
   const saveSection = useCallback(async () => {
     if (!editor || !document || !activeSection) return
@@ -252,6 +269,62 @@ export function ResearchDocumentWorkbench() {
     }
   }
 
+  async function startMatching() {
+    const phenomenon = navigation?.phenomenon_summary
+    if (
+      !taskId
+      || mode !== 'match'
+      || matchingInFlightRef.current
+      || !navigation?.allowed_actions?.includes('start_matching')
+      || !phenomenon
+      || !navigation.knowledge_release_id
+    ) return
+    const idempotencyKey = matchingAttemptKeyRef.current ?? key()
+    matchingAttemptKeyRef.current = idempotencyKey
+    matchingInFlightRef.current = true
+    setMatchingActionState('loading')
+    setMatchingActionError(null)
+    try {
+      const result = await createMatchRun({
+        path: { task_id: taskId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+        body: {
+          expected_task_version: navigation.version,
+          phenomenon_query_id: phenomenon.phenomenon_query_id,
+          phenomenon_version: phenomenon.version,
+          knowledge_release_id: navigation.knowledge_release_id,
+        },
+      })
+      if (!result.data) throw new Error('理论匹配暂时未能启动。')
+      matchingAttemptKeyRef.current = null
+      setMatchRun(result.data)
+      setNavigation((current) => current
+        ? {
+            ...current,
+            version: current.version === navigation.version ? current.version + 1 : current.version,
+            current_match_run_id: result.data!.match_run_id,
+          }
+        : current)
+      const latest = await getResearchTaskNavigation({ path: { task_id: taskId } })
+      if (latest.data) {
+        setNavigation(latest.data)
+        setMatchingActionState('idle')
+      } else {
+        setMatchingActionState('error')
+        setMatchingActionError('匹配结果已保存，但进度刷新失败。刷新页面即可从服务端恢复。')
+      }
+    } catch (reason: unknown) {
+      setMatchingActionState('error')
+      setMatchingActionError(
+        reason instanceof Error
+          ? reason.message
+          : '理论匹配暂时未能启动，研究状态和固定知识发布均已保留。',
+      )
+    } finally {
+      matchingInFlightRef.current = false
+    }
+  }
+
   async function acceptProposal(proposal: ResearchDocumentProposalResponse) {
     if (proposal.status !== 'pending') return
     if (proposal.kind !== 'create' && !document) return
@@ -264,6 +337,7 @@ export function ResearchDocumentWorkbench() {
       setDocument(result.data.document)
       setProposals((current) => current.map((item) => item.proposal_id === proposal.proposal_id ? result.data!.proposal : item))
       await refreshDocumentState()
+      await resumeFromServer()
     }
   }
 
@@ -280,7 +354,10 @@ export function ResearchDocumentWorkbench() {
   async function confirmDocument() {
     if (!document) return
     const result = await confirmResearchDocument({ path: { document_id: document.document_id }, headers: { 'Idempotency-Key': key() }, body: { expected_version: document.version } })
-    if (result.data) setDocument(result.data)
+    if (result.data) {
+      setDocument(result.data)
+      await resumeFromServer()
+    }
   }
 
   async function restoreVersion(version: number) {
@@ -338,6 +415,7 @@ export function ResearchDocumentWorkbench() {
       setPendingTheoryDecisions(Object.fromEntries(result.data.decisions.map((decision) => [decision.candidate_id, { candidate_version: decision.candidate_version, action: decision.action }])))
       const refreshed = await getMatchRun({ path: { match_run_id: matchRun.match_run_id } })
       if (refreshed.data) setMatchRun(refreshed.data)
+      await resumeFromServer()
     }
   }
 
@@ -348,7 +426,10 @@ export function ResearchDocumentWorkbench() {
       headers: { 'Idempotency-Key': key() },
       body: { expected_decision_set_version: decisionSet.version },
     })
-    if (result.data) setDecisionSet(null)
+    if (result.data) {
+      setDecisionSet(null)
+      await resumeFromServer()
+    }
   }
 
   async function downloadDocument() {
@@ -398,7 +479,7 @@ export function ResearchDocumentWorkbench() {
           </ol>
           <div className="chapter-footer">
             <span>知识发布</span>
-            <code>{document?.knowledge_release_id ?? '未绑定'}</code>
+            <code>{navigation?.knowledge_release_id ?? document?.knowledge_release_id ?? matchRun?.knowledge_release_id ?? '未绑定'}</code>
           </div>
         </nav>
 
@@ -409,7 +490,20 @@ export function ResearchDocumentWorkbench() {
               <>
                 <h2 id="research-document-heading" aria-label="研究文档正文">{activeSection?.title ?? '研究文档正文'}</h2>
                 {runtimeBoundary && <div className="document-boundary"><WarningCircleIcon /> {error ?? '当前 Agent 运行环境未连接；不会把静态示例当作真实研究结果。'}</div>}
-                {mode === 'match' && matchRun ? <section className="theory-candidates" aria-label="候选理论">
+                {mode === 'match' && navigation?.allowed_actions?.includes('start_matching') && (!matchRun || matchRun.status === 'no_reliable_candidate') ? (
+                  <section className="document-boundary document-boundary--action" aria-label="理论匹配操作" aria-busy={matchingActionState === 'loading'}>
+                    <WarningCircleIcon />
+                    <div>
+                      <strong>{navigation.blocker?.message ?? '现象已确认，可以开始理论匹配。'}</strong>
+                      <p>匹配将使用任务固定的知识发布 {navigation.knowledge_release_id ?? '未绑定'}，不会切换到其他版本。</p>
+                      {matchingActionError ? <p role="alert">{matchingActionError}</p> : null}
+                      <button type="button" disabled={matchingActionState === 'loading'} onClick={() => void startMatching()}>
+                        {matchingActionState === 'loading' ? <><CircleNotchIcon className="spin" /> 正在匹配…</> : navigation.retry?.label ?? (matchRun?.status === 'no_reliable_candidate' ? '重新匹配' : '开始理论匹配')}
+                      </button>
+                    </div>
+                  </section>
+                ) : null}
+                {mode === 'match' && matchRun && matchRun.status !== 'no_reliable_candidate' ? <section className="theory-candidates" aria-label="候选理论">
                   <div className="theory-candidates__heading"><span>候选理论</span><small>{matchRun.candidate_page.candidates.length} 个候选 · release {matchRun.knowledge_release_id}</small></div>
                   {matchRun.candidate_page.candidates.map((candidate) => <article key={candidate.candidate_id} className="theory-candidate">
                     <div><h3>{candidate.title}</h3><p>{candidate.applicability_rationale}</p></div>

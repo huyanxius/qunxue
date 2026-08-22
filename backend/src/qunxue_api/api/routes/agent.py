@@ -15,11 +15,16 @@ from qunxue_api.api.contracts.agent import (
     AgentConversationResponse,
     AgentConversationSummaryResponse,
     AgentMessageResponse,
+    AgentResearchJourneyResponse,
     AgentTurnRequest,
     AgentTurnResponse,
+    ConfirmResearchStartRequest,
+    ConfirmResearchStartResponse,
+    ResearchStartProposalResponse,
 )
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.dependencies import CurrentSessionDependency
+from qunxue_api.api.routes.research_tasks import _match_status, _navigation_response
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.agent_conversation import (
     AgentInterrupted,
@@ -27,6 +32,7 @@ from qunxue_api.modules.agent_conversation import (
     ConversationNotFound,
     RunAlreadyActive,
 )
+from qunxue_api.modules.research_intake import ResearchStartProposalStatus
 
 router = APIRouter(
     prefix="/api/agent",
@@ -91,6 +97,104 @@ def get_agent_conversation(
                 user_id=current.user.user_id,
                 conversation_id=conversation_id,
             ),
+        )
+
+
+@router.get(
+    "/conversations/{conversation_id}/research-start-proposal",
+    response_model=ResearchStartProposalResponse,
+    operation_id="get_agent_research_start_proposal",
+)
+def get_agent_research_start_proposal(
+    conversation_id: UUID,
+    request: Request,
+    current: CurrentSessionDependency,
+) -> ResearchStartProposalResponse:
+    with request.app.state.research_start_application_scope() as application:
+        proposal = application.get_conversation_proposal(
+            user_id=current.user.user_id,
+            conversation_id=conversation_id,
+        )
+        return ResearchStartProposalResponse.from_domain(proposal)
+
+
+@router.get(
+    "/conversations/{conversation_id}/journey",
+    response_model=AgentResearchJourneyResponse,
+    operation_id="get_agent_research_journey",
+)
+def get_agent_research_journey(
+    conversation_id: UUID,
+    request: Request,
+    current: CurrentSessionDependency,
+) -> AgentResearchJourneyResponse:
+    with request.app.state.research_start_application_scope() as application:
+        journey = application.get_journey(
+            user_id=current.user.user_id,
+            conversation_id=conversation_id,
+        )
+        match_status = None
+        if journey.task is not None:
+            with request.app.state.research_navigation_match_reader_scope() as matches:
+                match_status = _match_status(matches, journey.task)
+        return AgentResearchJourneyResponse(
+            conversation_id=journey.conversation_id,
+            status=(
+                "task_bound"
+                if journey.task is not None
+                else "proposal_pending"
+                if journey.proposal is not None
+                and journey.proposal.status is ResearchStartProposalStatus.PENDING_CONFIRMATION
+                else "collecting"
+            ),
+            task_id=journey.task.task_id if journey.task is not None else None,
+            proposal=(
+                ResearchStartProposalResponse.from_domain(journey.proposal)
+                if journey.proposal is not None
+                else None
+            ),
+            navigation=(
+                _navigation_response(
+                    journey.task,
+                    journey.progress,
+                    match_status=match_status,
+                )
+                if journey.task is not None and journey.progress is not None
+                else None
+            ),
+        )
+
+
+@router.post(
+    "/research-start-proposals/{proposal_id}/confirm",
+    response_model=ConfirmResearchStartResponse,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="confirm_agent_research_start",
+    responses={409: {"model": ErrorResponse}},
+)
+def confirm_agent_research_start(
+    proposal_id: UUID,
+    payload: ConfirmResearchStartRequest,
+    request: Request,
+    current: CurrentSessionDependency,
+    idempotency_key: IdempotencyKey,
+) -> ConfirmResearchStartResponse:
+    with request.app.state.research_start_application_scope() as application:
+        result = application.confirm(
+            user_id=current.user.user_id,
+            proposal_id=proposal_id,
+            idempotency_key=idempotency_key,
+            expected_version=payload.expected_version,
+            phenomenon=payload.phenomenon,
+            research_intent=payload.research_intent,
+            context=payload.context,
+        )
+        return ConfirmResearchStartResponse(
+            conversation_id=result.proposal.conversation_id,
+            status="task_bound",
+            task_id=result.task.task_id,
+            proposal=ResearchStartProposalResponse.from_domain(result.proposal),
+            navigation=_navigation_response(result.task, result.progress),
         )
 
 

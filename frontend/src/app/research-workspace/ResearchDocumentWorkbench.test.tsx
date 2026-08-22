@@ -1,10 +1,15 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import * as researchApi from '../../api/researchWorkspace'
 import { ResearchDocumentWorkbench } from './ResearchDocumentWorkbench'
 
 vi.mock('../../api/client', () => ({ apiClient: {} }))
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('ResearchDocumentWorkbench', () => {
   it('renders a document-first three-column research workspace for a real task', async () => {
@@ -34,5 +39,238 @@ describe('ResearchDocumentWorkbench', () => {
 
     expect(await screen.findByText(/当前 Agent 运行环境未连接/)).toBeInTheDocument()
     expect(screen.getAllByText(/不会把静态示例当作真实研究结果/).length).toBeGreaterThan(0)
+  })
+
+  it('starts M4 matching from the server navigation snapshot', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      version: 3,
+      allowed_actions: ['start_matching'],
+      blocker: null,
+      retry: null,
+      current_match_run_id: null,
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-pinned-1',
+      phenomenon_summary: {
+        phenomenon: '社区互助为何减少？',
+        phenomenon_query_id: 'phenomenon-1',
+        research_intent: '解释互助变化机制',
+        version: 2,
+      },
+      resume_path: '/research/task-1/match',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    const createMatchRun = vi.spyOn(researchApi, 'createMatchRun').mockResolvedValue({
+      data: {
+        match_run_id: 'match-1',
+        status: 'awaiting_decision',
+        knowledge_release_id: 'release-pinned-1',
+        candidate_page: {
+          candidates: [{
+            candidate_id: 'candidate-1',
+            version: 1,
+            title: '社会资本理论',
+            applicability_rationale: '可解释稳定关系如何支持互助。',
+          }],
+        },
+        failed_candidate_ids: [],
+      },
+    } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
+
+    expect(await screen.findByText('社会资本理论')).toBeVisible()
+    expect(createMatchRun).toHaveBeenCalledWith({
+      path: { task_id: 'task-1' },
+      headers: { 'Idempotency-Key': expect.any(String) },
+      body: {
+        expected_task_version: 3,
+        phenomenon_query_id: 'phenomenon-1',
+        phenomenon_version: 2,
+        knowledge_release_id: 'release-pinned-1',
+      },
+    })
+  })
+
+  it('executes the server retry contract after an empty matching run', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      version: 4,
+      allowed_actions: ['start_matching'],
+      blocker: {
+        code: 'no_reliable_candidate',
+        message: '固定知识发布中没有可正式采用的理论候选，请调整研究现象后重试。',
+        recoverable: true,
+        action: 'start_matching',
+      },
+      retry: {
+        method: 'POST',
+        href: '/api/research-tasks/task-1/match-runs',
+        action: 'start_matching',
+        label: '重新匹配',
+      },
+      current_match_run_id: 'match-empty',
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-pinned-1',
+      phenomenon_summary: {
+        phenomenon: '社区互助为何减少？',
+        phenomenon_query_id: 'phenomenon-1',
+        research_intent: null,
+        version: 2,
+      },
+      resume_path: '/research/task-1/match',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listTheoryDecisions').mockResolvedValue({ data: { decision_sets: [] } } as never)
+    vi.spyOn(researchApi, 'getMatchRun').mockResolvedValue({
+      data: {
+        match_run_id: 'match-empty',
+        status: 'no_reliable_candidate',
+        knowledge_release_id: 'release-pinned-1',
+        candidate_page: { candidates: [] },
+        failed_candidate_ids: [],
+      },
+    } as never)
+    const createMatchRun = vi.spyOn(researchApi, 'createMatchRun').mockResolvedValue({
+      data: {
+        match_run_id: 'match-retry',
+        status: 'no_reliable_candidate',
+        knowledge_release_id: 'release-pinned-1',
+        candidate_page: { candidates: [] },
+        failed_candidate_ids: [],
+      },
+    } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '重新匹配' }))
+
+    await waitFor(() => expect(createMatchRun).toHaveBeenCalledTimes(1))
+    expect(createMatchRun.mock.calls[0]?.[0].body.expected_task_version).toBe(4)
+  })
+
+  it('reuses one matching idempotency key after a network failure', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      version: 3,
+      allowed_actions: ['start_matching'],
+      blocker: null,
+      retry: null,
+      current_match_run_id: null,
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-pinned-1',
+      phenomenon_summary: {
+        phenomenon: '社区互助为何减少？',
+        phenomenon_query_id: 'phenomenon-1',
+        research_intent: null,
+        version: 2,
+      },
+      resume_path: '/research/task-1/match',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    const createMatchRun = vi.spyOn(researchApi, 'createMatchRun')
+      .mockRejectedValueOnce(new Error('网络连接中断'))
+      .mockResolvedValueOnce({
+        data: {
+          match_run_id: 'match-after-retry',
+          status: 'awaiting_decision',
+          knowledge_release_id: 'release-pinned-1',
+          candidate_page: { candidates: [] },
+          failed_candidate_ids: [],
+        },
+      } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('网络连接中断')
+    fireEvent.click(screen.getByRole('button', { name: '开始理论匹配' }))
+
+    await waitFor(() => expect(createMatchRun).toHaveBeenCalledTimes(2))
+    expect(createMatchRun.mock.calls.map(([options]) => options.headers['Idempotency-Key'])).toEqual([
+      createMatchRun.mock.calls[0]?.[0].headers['Idempotency-Key'],
+      createMatchRun.mock.calls[0]?.[0].headers['Idempotency-Key'],
+    ])
+  })
+
+  it('enters M5 only through the latest server resume path after theory-plan confirmation', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      current_match_run_id: 'match-1',
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-formal-1',
+      phenomenon_summary: { phenomenon: '社区互助为何减少？' },
+      resume_path: '/research/task-1/match',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'getMatchRun').mockResolvedValue({
+      data: {
+        match_run_id: 'match-1',
+        knowledge_release_id: 'release-formal-1',
+        candidate_page: { candidates: [] },
+      },
+    } as never)
+    vi.spyOn(researchApi, 'listTheoryDecisions').mockResolvedValue({
+      data: {
+        decision_sets: [{
+          decision_set_id: 'decision-set-1',
+          version: 1,
+          allowed_actions: ['confirm_theory_plan'],
+          decisions: [],
+        }],
+      },
+    } as never)
+    vi.spyOn(researchApi, 'confirmTheoryPlan').mockResolvedValue({ data: { theory_plan_id: 'plan-1' } } as never)
+    vi.spyOn(researchApi, 'readResearchTaskNavigationViaApi').mockResolvedValue({
+      ...navigation,
+      resume_path: '/research/task-1/framework',
+    } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+          <Route path="/research/:task_id/framework" element={<h1>M5 服务端恢复目标</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('release-formal-1')).toBeVisible()
+    fireEvent.click(await screen.findByRole('button', { name: '确认理论方案，进入 M5' }))
+
+    expect(await screen.findByRole('heading', { name: 'M5 服务端恢复目标' })).toBeVisible()
+    await waitFor(() => expect(researchApi.readResearchTaskNavigationViaApi).toHaveBeenCalledWith('task-1'))
   })
 })

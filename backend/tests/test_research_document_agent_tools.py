@@ -257,10 +257,6 @@ def test_research_workflow_tools_restore_cross_turn_context_and_gate_writes() ->
             assert conversation_id == UUID(int=4)
             return {"task_id": task_id, "theory_plan_id": theory_plan_id}
 
-        def create_confirmed_task(self, **payload):
-            self.confirmed.append(payload)
-            return {"task_id": str(task_id), "status": "phenomenon_confirmed"}
-
         def get_state(self, **_payload):
             return {"task_id": str(task_id), "theory_plan_id": str(theory_plan_id)}
 
@@ -295,21 +291,16 @@ def test_research_workflow_tools_restore_cross_turn_context_and_gate_writes() ->
         "document_version": None,
         "section_id": None,
     }
-    refused = registry.create_confirmed_research_task(
+    refused = registry.propose_start_research(
         phenomenon="年轻人的情感性孤独",
         research_intent="解释结构性来源",
         context=None,
-        user_confirmed=False,
     )
-    assert refused["error"] == "user_confirmation_required"
-    created = registry.create_confirmed_research_task(
-        phenomenon="年轻人的情感性孤独",
-        research_intent="解释结构性来源",
-        context=None,
-        user_confirmed=True,
-    )
-    assert created["task_id"] == str(task_id)
-    assert workflow.confirmed[-1]["user_confirmed"] is True
+    assert refused == {
+        "error": "research_task_already_bound",
+        "task_id": str(task_id),
+        "message": "这段对话已经绑定研究任务，请从现有研究继续。",
+    }
 
 
 def test_agent_application_binds_the_real_persisted_run_to_document_tools() -> None:
@@ -443,12 +434,35 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
             user_id=user_id,
             conversation_id=turn.conversation.conversation_id,
             agent_run_id=turn.run_id,
+            agent_turn_id=turn.turn.turn_id,
         )
-        created = tools.create_confirmed_research_task(
+        start_proposal = tools.propose_start_research(
             phenomenon="社区成员流动正在改变邻里互助",
             research_intent="解释互助关系变化的机制",
             context="城市社区",
-            user_confirmed=True,
+        )
+        tools.finalize_agent_turn(source_turn_id=turn.turn.turn_id)
+
+    confirmation = client.post(
+        f"/api/agent/research-start-proposals/{start_proposal['proposal_id']}/confirm",
+        headers={"Idempotency-Key": "confirm-agent-research-conversation"},
+        json={
+            "expected_version": start_proposal["version"],
+            "phenomenon": start_proposal["phenomenon"],
+            "research_intent": start_proposal["research_intent"],
+            "context": start_proposal["context"],
+        },
+    )
+    assert confirmation.status_code == 201
+    created = confirmation.json()["navigation"]
+
+    with client.app.state.disciplinary_agent_scope() as application:
+        tools = application._tools_factory()
+        tools.enable_research_document_tools()
+        tools.bind_agent_context(
+            user_id=user_id,
+            conversation_id=turn.conversation.conversation_id,
+            agent_run_id=turn.run_id,
         )
         matched = tools.start_theory_matching()
         decisions = [
@@ -494,7 +508,7 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
             agent_run_id=UUID(int=99),
         )
 
-    assert created["status"] == "phenomenon_confirmed"
+    assert created["current_stage"] == "theory_matching"
     assert matched["status"] == "awaiting_decision"
     assert plan["status"] == "confirmed"
     assert proposal["status"] == "pending"
@@ -524,12 +538,35 @@ def test_agent_workflow_reports_no_reliable_candidate_before_theory_write(client
             user_id=user_id,
             conversation_id=turn.conversation.conversation_id,
             agent_run_id=turn.run_id,
+            agent_turn_id=turn.turn.turn_id,
         )
-        created = tools.create_confirmed_research_task(
+        start_proposal = tools.propose_start_research(
             phenomenon="一个没有匹配理论的测试现象",
             research_intent="验证无候选边界",
             context=None,
-            user_confirmed=True,
+        )
+        tools.finalize_agent_turn(source_turn_id=turn.turn.turn_id)
+
+    confirmation = client.post(
+        f"/api/agent/research-start-proposals/{start_proposal['proposal_id']}/confirm",
+        headers={"Idempotency-Key": "confirm-agent-no-candidate"},
+        json={
+            "expected_version": start_proposal["version"],
+            "phenomenon": start_proposal["phenomenon"],
+            "research_intent": start_proposal["research_intent"],
+            "context": start_proposal["context"],
+        },
+    )
+    assert confirmation.status_code == 201
+    created = confirmation.json()["navigation"]
+
+    with client.app.state.disciplinary_agent_scope() as application:
+        tools = application._tools_factory()
+        tools.enable_research_document_tools()
+        tools.bind_agent_context(
+            user_id=user_id,
+            conversation_id=turn.conversation.conversation_id,
+            agent_run_id=UUID(int=99),
         )
         matched = tools.start_theory_matching()
         result = tools.save_confirmed_theory_plan(
@@ -541,7 +578,7 @@ def test_agent_workflow_reports_no_reliable_candidate_before_theory_write(client
             user_confirmed=True,
         )
 
-    assert created["status"] == "phenomenon_confirmed"
+    assert created["current_stage"] == "theory_matching"
     assert matched["status"] == "no_reliable_candidate"
     assert result["error"] == "no_reliable_candidate"
     assert result["match_run_id"] == matched["match_run_id"]

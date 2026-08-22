@@ -53,6 +53,20 @@ class ResearchTaskNavigationAction(StrEnum):
     EXPORT = "export"
 
 
+class ResearchTaskNavigationBlockerResponse(BaseModel):
+    code: str
+    message: str
+    recoverable: bool
+    action: ResearchTaskNavigationAction | None = None
+
+
+class ResearchTaskNavigationRetryResponse(BaseModel):
+    method: Literal["GET", "POST", "PATCH"]
+    href: str
+    action: ResearchTaskNavigationAction
+    label: str
+
+
 class ResearchTaskResponse(BaseModel):
     task_id: UUID
     entry_type: EntryType
@@ -93,8 +107,10 @@ class ResearchTaskNavigationResponse(BaseModel):
     entry_type: EntryType
     status: ResearchTaskLifecycleStatus
     current_stage: ResearchTaskStage
+    stage_label: str
     version: int
     allowed_actions: list[ResearchTaskNavigationAction]
+    next_action_label: str
     seed_theory_id: str | None
     seed_theory_name: str | None
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | None
@@ -104,6 +120,13 @@ class ResearchTaskNavigationResponse(BaseModel):
     current_match_run_id: UUID | None
     current_theory_plan_id: UUID | None
     current_framework_id: UUID | None
+    resume_path: str
+    blocker: ResearchTaskNavigationBlockerResponse | None
+    retry: ResearchTaskNavigationRetryResponse | None
+    knowledge_release_id: str | None
+    conversation_id: UUID | None
+    source_turn_id: UUID | None
+    source_run_id: UUID | None
     created_at: datetime
     updated_at: datetime
 

@@ -207,13 +207,14 @@ class PydanticAIKnowledgeRunner:
                 "凡是声称来自知识库的内容，citation_id 必须来自本轮工具实际返回的闭集。"
                 "只有在研究工作区启用时，才可以调用研究流程、研究文档和 update_research_map 工具。"
                 "研究地图不是 M4/M5 的正式状态，不得用地图节点代替研究任务、理论决定或文档。"
-                "用户要求建立研究且已经明确确认研究现象时，调用 create_confirmed_research_task；"
-                "随后调用 start_theory_matching 获取真实候选。未完成 M4 时不得调用文档创建工具。"
+                "当研究现象已经足够明确时，只能调用 propose_start_research 提出待确认研究起点；"
+                "该工具不会创建任务。必须等用户在界面明确确认并由 REST API 完成事务后，"
+                "才能调用 start_theory_matching。未完成 M4 时不得调用文档创建工具。"
                 "当用户明确确认候选取舍时，立即调用 save_confirmed_theory_plan，"
                 "不能要求用户重复确认；"
                 "取得 theory_plan_id 后才能调用 propose_document_creation 生成待审批的 M5 草案。"
-                "写入工具的 user_confirmed 只能来自用户本轮或历史对话中的明确确认，"
-                "不能自行设为 true。研究工作区每轮最多调用 3 次 search_knowledge、"
+                "不得调用任何模型工具直接创建 ResearchTask。"
+                "研究工作区每轮最多调用 3 次 search_knowledge、"
                 "5 次读取类工具；已有足够材料后停止检索。"
                 "研究地图只记录问题、理论、主张、证据、缺口和综合，以及 explains、supports、"
                 "challenges、derives、refines 关系；不要把工具调用、聊天记录或未核验猜测写成节点。"
@@ -464,22 +465,20 @@ class PydanticAIKnowledgeRunner:
             return result
 
         @self._agent.tool(prepare=_prepare_document_tool)
-        def create_confirmed_research_task(
+        def propose_start_research(
             ctx: RunContext[KnowledgeToolRegistry],
             phenomenon: str,
-            user_confirmed: bool,
             research_intent: str | None = None,
             context: str | None = None,
         ) -> dict[str, object]:
-            """在用户明确确认后建立研究任务并固化 M3 现象；这是正式写入工具。"""
+            """提出待用户在界面确认的研究起点；不会创建任务或确认现象。"""
             payload = {
                 "phenomenon": phenomenon,
                 "research_intent": research_intent,
                 "context": context,
-                "user_confirmed": user_confirmed,
             }
             return self._run_research_workflow_tool(
-                ctx, "create_confirmed_research_task", payload, "正在建立研究任务"
+                ctx, "propose_start_research", payload, "正在整理待确认的研究起点"
             )
 
         @self._agent.tool(prepare=_prepare_document_tool)

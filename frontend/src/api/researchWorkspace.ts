@@ -1,9 +1,11 @@
 import { apiClient } from './client'
+import { ApiRequestError } from './error'
 import {
   acceptResearchDocumentProposal as acceptResearchDocumentProposalRequest,
   acknowledgePartialMatch as acknowledgePartialMatchRequest,
   confirmResearchDocument as confirmResearchDocumentRequest,
   confirmTheoryPlan as confirmTheoryPlanRequest,
+  createMatchRun as createMatchRunRequest,
   createTheoryDecisions as createTheoryDecisionsRequest,
   exportResearchDocument as exportResearchDocumentRequest,
   getMatchRun as getMatchRunRequest,
@@ -45,6 +47,12 @@ export async function confirmTheoryPlan(
   return await confirmTheoryPlanRequest(withClient(options))
 }
 
+export async function createMatchRun(
+  options: Parameters<typeof createMatchRunRequest>[0],
+) {
+  return await createMatchRunRequest(withClient(options))
+}
+
 export async function createTheoryDecisions(
   options: Parameters<typeof createTheoryDecisionsRequest>[0],
 ) {
@@ -65,6 +73,19 @@ export async function getResearchTaskNavigation(
   options: Parameters<typeof getResearchTaskNavigationRequest>[0],
 ) {
   return await getResearchTaskNavigationRequest(withClient(options))
+}
+
+export async function readResearchTaskNavigationViaApi(
+  taskId: string,
+) {
+  const { data, response } = await getResearchTaskNavigationRequest({
+    client: apiClient,
+    path: { task_id: taskId },
+  })
+  if (!data) {
+    throw new ApiRequestError('研究进度读取失败。', response?.status)
+  }
+  return data
 }
 
 export async function listResearchDocuments(

@@ -28,6 +28,11 @@ class ResearchTaskAction(StrEnum):
     SUBMIT_PHENOMENON = "submit_phenomenon"
 
 
+class ResearchStartProposalStatus(StrEnum):
+    PENDING_CONFIRMATION = "pending_confirmation"
+    CONFIRMED = "confirmed"
+
+
 class PhenomenonEvidenceVerificationStatus(StrEnum):
     VERIFIED = "verified"
     USER_ATTESTED = "user_attested"
@@ -177,6 +182,10 @@ class ResearchTask:
     current_match_run_id: UUID | None = None
     current_theory_plan_id: UUID | None = None
     current_framework_id: UUID | None = None
+    knowledge_release_id: str | None = None
+    conversation_id: UUID | None = None
+    source_turn_id: UUID | None = None
+    source_agent_run_id: UUID | None = None
 
     @property
     def allowed_actions(self) -> tuple[ResearchTaskAction, ...]:
@@ -195,6 +204,10 @@ class ResearchTask:
         seed_theory_id: str | None,
         seed_theory_name: str | None,
         now: datetime,
+        knowledge_release_id: str | None = None,
+        conversation_id: UUID | None = None,
+        source_turn_id: UUID | None = None,
+        source_agent_run_id: UUID | None = None,
     ) -> "ResearchTask":
         if now.tzinfo is None:
             now = now.replace(tzinfo=UTC)
@@ -209,4 +222,37 @@ class ResearchTask:
             seed_theory_name=seed_theory_name,
             created_at=now,
             updated_at=now,
+            knowledge_release_id=knowledge_release_id,
+            conversation_id=conversation_id,
+            source_turn_id=source_turn_id,
+            source_agent_run_id=source_agent_run_id,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchStartProposal:
+    proposal_id: UUID
+    user_id: UUID
+    conversation_id: UUID
+    source_run_id: UUID
+    source_turn_id: UUID
+    knowledge_release_id: str
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    version: int
+    status: ResearchStartProposalStatus
+    created_at: datetime
+    confirmed_task_id: UUID | None = None
+    confirmed_request_hash: str | None = None
+    confirmed_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchStartConfirmation:
+    user_id: UUID
+    idempotency_key: str
+    proposal_id: UUID
+    request_hash: str
+    task_id: UUID
+    created_at: datetime

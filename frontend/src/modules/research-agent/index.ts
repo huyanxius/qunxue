@@ -1,5 +1,7 @@
 export {
+  confirmResearchStartProposal,
   getAgentConversation,
+  getResearchStartJourney,
   listAgentConversations,
   streamAgentTurn,
 } from './researchAgentGateway'
@@ -21,3 +23,7 @@ export type {
   AgentToolTrace,
   AgentTurn,
 } from './model'
+export type {
+  ResearchStartJourney,
+  ResearchStartProposal,
+} from './researchStart'

@@ -159,7 +159,14 @@ export function MyResearchPage() {
                   <span className="research-row__stage">{item.stageLabel}</span>
                 </div>
                 <span className="research-row__next" role="cell">
-                  下一步：{item.nextActionLabel}
+                  {item.blocker ? (
+                    <>
+                      <span>{item.blocker.message}</span>{' '}
+                      {item.retry
+                        ? <a href={item.retry.method === 'GET' ? item.retry.href : item.entryPath}>{item.retry.label}</a>
+                        : <span>{item.nextActionLabel}</span>}
+                    </>
+                  ) : <>下一步：{item.nextActionLabel}</>}
                 </span>
                 <time role="cell" dateTime={item.updatedAt}>
                   {formattedDate(item.updatedAt)}
