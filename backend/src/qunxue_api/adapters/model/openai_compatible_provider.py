@@ -73,6 +73,8 @@ class _JudgementOutput(_StrictResponse):
     evidence_gaps: list[str]
     alternative_explanations: list[str]
     evidence_ref_ids: list[str]
+    supporting_evidence_ref_ids: list[str] = Field(default_factory=list)
+    conflicting_evidence_ref_ids: list[str] = Field(default_factory=list)
 
 
 class _JudgementResponse(_StrictResponse):
@@ -278,11 +280,27 @@ class OpenAICompatibleModelProvider:
             knowledge_release_id=knowledge_release_id,
         )
         assert isinstance(response, _JudgementResponse)
-        if not set(response.output.evidence_ref_ids) <= set(
-            allowed["evidence_ref_ids"]
-        ):
-            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
         output = response.output
+        referenced_evidence_ids = {
+            *output.evidence_ref_ids,
+            *output.supporting_evidence_ref_ids,
+            *output.conflicting_evidence_ref_ids,
+        }
+        if not referenced_evidence_ids <= set(allowed["evidence_ref_ids"]):
+            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+        supporting_evidence_ref_ids = tuple(
+            output.supporting_evidence_ref_ids or output.evidence_ref_ids
+        )
+        conflicting_evidence_ref_ids = tuple(output.conflicting_evidence_ref_ids)
+        evidence_ref_ids = tuple(
+            dict.fromkeys(
+                (
+                    *output.evidence_ref_ids,
+                    *supporting_evidence_ref_ids,
+                    *conflicting_evidence_ref_ids,
+                )
+            )
+        )
         return ModelProviderResult(
             output=TheoryJudgementDraft(
                 verdict=output.verdict,
@@ -292,7 +310,9 @@ class OpenAICompatibleModelProvider:
                 material_requirements=tuple(output.material_requirements),
                 evidence_gaps=tuple(output.evidence_gaps),
                 alternative_explanations=tuple(output.alternative_explanations),
-                evidence_ref_ids=tuple(output.evidence_ref_ids),
+                evidence_ref_ids=evidence_ref_ids,
+                supporting_evidence_ref_ids=supporting_evidence_ref_ids,
+                conflicting_evidence_ref_ids=conflicting_evidence_ref_ids,
             ),
             knowledge_release_id=knowledge_release_id,
         )
@@ -467,6 +487,14 @@ class OpenAICompatibleModelProvider:
             },
             "input": _to_jsonable(input_payload),
         }
+        judgement_instruction = (
+            " For candidate judgement, classify allowed evidence references into "
+            "supporting_evidence_ref_ids and conflicting_evidence_ref_ids. Theory-source "
+            "claims establish the theory; confirmed phenomenon evidence tests its fit. "
+            "Leave a list empty when the input has no evidence for that direction."
+            if capability is ModelCapabilityName.CANDIDATE_JUDGEMENT_AND_RERANK
+            else ""
+        )
         request_body = json.dumps(
             {
                 "model": self._model,
@@ -476,7 +504,7 @@ class OpenAICompatibleModelProvider:
                         "content": (
                             "Return one JSON object matching response_contract. "
                             "Use only IDs in allowed_references and never make "
-                            "a user decision."
+                            f"a user decision.{judgement_instruction}"
                         ),
                     },
                     {

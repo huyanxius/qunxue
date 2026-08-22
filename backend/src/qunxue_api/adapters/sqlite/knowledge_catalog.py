@@ -2,12 +2,15 @@
 
 import json
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from sqlalchemy import func, or_, select, text, update
+from sqlalchemy.exc import IntegrityError
 
 from qunxue_api.adapters.knowledge_markdown import (
     ParsedKnowledgeEntry,
@@ -23,6 +26,7 @@ from qunxue_api.adapters.knowledge_relations import (
 )
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
+    KnowledgeEntryReviewRow,
     KnowledgeEntryRevisionRow,
     KnowledgeRelationCandidateRow,
     KnowledgeRelationRow,
@@ -67,6 +71,22 @@ _DIMENSION_DIRECTORIES = (
     "学科史",
 )
 _PREVIEW_SOURCE_BOUNDARY = "仓库 Markdown 导入溯源；不是已核验的学术来源。"
+_PRE_REVIEWED_BUNDLE_SCHEMA = "pre-reviewed-theory-release/v1"
+_PRE_REVIEWED_BUILD_CONFIG_VERSION = _PRE_REVIEWED_BUNDLE_SCHEMA
+_PROFILE_FIELDS = (
+    "theory_id",
+    "related_knowledge_ids",
+    "title",
+    "core_propositions",
+    "applicable_phenomena",
+    "analysis_levels",
+    "prerequisites",
+    "exclusion_signals",
+    "observable_evidence",
+    "competing_or_complementary_theory_ids",
+    "source_ids",
+    "content_version",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +95,14 @@ class _ImportedEntry:
     source_path: str
     source_hash: str
     content_hash: str
+
+
+@dataclass(frozen=True, slots=True)
+class _PreReviewedProfile:
+    profile: dict[str, object]
+    sources: tuple[dict[str, object], ...]
+    review: dict[str, object]
+    recorded_at: datetime
 
 
 class SqliteKnowledgeCatalog(KnowledgeCatalog):
@@ -88,48 +116,30 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         purpose: KnowledgeUsePurpose,
     ) -> KnowledgeReleaseRef:
         with self._database.session() as session:
-            # Matching must stay on an explicitly published final release even
-            # when the browse surface has moved its current pointer to a newer
-            # markdown preview. A preview is useful for exploration, but it has
-            # no reviewed theory profiles and cannot silently become M4 input.
             if purpose is KnowledgeUsePurpose.MATCH:
                 row = session.scalar(
                     select(KnowledgeReleaseRow)
-                    .where(KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value)
-                    .order_by(KnowledgeReleaseRow.built_at.desc())
-                )
-            else:
-                row = session.scalar(
-                    select(KnowledgeReleaseRow)
                     .where(
                         KnowledgeReleaseRow.is_current.is_(True),
-                        KnowledgeReleaseRow.level.in_(
-                            [
-                                KnowledgeReleaseLevel.PREVIEW.value,
-                                KnowledgeReleaseLevel.FINAL.value,
-                            ]
-                        ),
-                        or_(
-                            KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value,
-                            KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
-                        ),
+                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value,
+                        KnowledgeReleaseRow.build_config_version
+                        == _PRE_REVIEWED_BUILD_CONFIG_VERSION,
                     )
                     .order_by(KnowledgeReleaseRow.built_at.desc())
                 )
-            if row is None:
-                # A MATCH lookup is read-only when the existing current
-                # preview is already materialized. Re-publishing it here can
-                # hold SQLite's write lock while another Agent scope is still
-                # reading the same catalog.
-                row = session.scalar(
-                    select(KnowledgeReleaseRow)
-                    .where(
-                        KnowledgeReleaseRow.is_current.is_(True),
-                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.PREVIEW.value,
-                        KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
-                    )
-                    .order_by(KnowledgeReleaseRow.built_at.desc())
+                if row is None:
+                    raise LookupError("final MATCH knowledge release is not available")
+                return _release_ref(row)
+
+            row = session.scalar(
+                select(KnowledgeReleaseRow)
+                .where(
+                    KnowledgeReleaseRow.is_current.is_(True),
+                    KnowledgeReleaseRow.level == KnowledgeReleaseLevel.PREVIEW.value,
+                    KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
                 )
+                .order_by(KnowledgeReleaseRow.built_at.desc())
+            )
             if row is None:
                 row = self._publish_preview(session)
             return _release_ref(row)
@@ -305,12 +315,6 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             )
             if row is None:
                 raise LookupError(knowledge_id)
-            source_rows = session.scalars(
-                select(KnowledgeSourceRow)
-                .where(KnowledgeSourceRow.knowledge_release_id == release_id)
-                .where(KnowledgeSourceRow.source_id == f"source:{knowledge_id}")
-                .order_by(KnowledgeSourceRow.source_id)
-            )
             relation_rows = session.scalars(
                 select(KnowledgeRelationRow)
                 .where(KnowledgeRelationRow.knowledge_release_id == release_id)
@@ -328,6 +332,17 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     KnowledgeTheoryProfileRow.knowledge_release_id == release_id,
                     KnowledgeTheoryProfileRow.related_knowledge_ids.contains([knowledge_id]),
                 )
+            )
+            source_ids = (
+                tuple(theory_row.source_ids)
+                if theory_row is not None and theory_row.match_eligible
+                else (f"source:{knowledge_id}",)
+            )
+            source_rows = session.scalars(
+                select(KnowledgeSourceRow)
+                .where(KnowledgeSourceRow.knowledge_release_id == release_id)
+                .where(KnowledgeSourceRow.source_id.in_(source_ids))
+                .order_by(KnowledgeSourceRow.source_id)
             )
             return KnowledgeEntryDetail(
                 release=_release_ref(release),
@@ -374,6 +389,134 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 .order_by(KnowledgeSourceRow.source_id)
             )
             return tuple(_source_snapshot(row) for row in rows)
+
+    def list_match_profiles(
+        self,
+        *,
+        release_id: str,
+    ) -> tuple[TheoryProfileSnapshot, ...]:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            if (
+                release.level != KnowledgeReleaseLevel.FINAL.value
+                or release.build_config_version != _PRE_REVIEWED_BUILD_CONFIG_VERSION
+            ):
+                raise ValueError(
+                    "MATCH profiles require a pre-reviewed internal final knowledge release"
+                )
+
+            manifest_theory_ids = tuple(release.manifest.get("theory_ids", ()))
+            manifest_review_ids = tuple(release.manifest.get("review_record_ids", ()))
+            if not 3 <= len(manifest_theory_ids) <= 5:
+                raise ValueError("final MATCH release must contain three to five theories")
+
+            profile_rows = tuple(
+                session.scalars(
+                    select(KnowledgeTheoryProfileRow)
+                    .where(KnowledgeTheoryProfileRow.knowledge_release_id == release_id)
+                    .order_by(KnowledgeTheoryProfileRow.theory_id)
+                )
+            )
+            profile_by_id = {row.theory_id: row for row in profile_rows}
+            if set(profile_by_id) != set(manifest_theory_ids) or len(profile_rows) != len(
+                manifest_theory_ids
+            ):
+                raise ValueError("final MATCH manifest does not match persisted theory profiles")
+
+            review_rows = tuple(
+                session.scalars(
+                    select(KnowledgeEntryReviewRow).where(
+                        KnowledgeEntryReviewRow.knowledge_release_id == release_id
+                    )
+                )
+            )
+            review_by_theory: dict[str, KnowledgeEntryReviewRow] = {}
+            for review in review_rows:
+                if review.theory_id is None or review.theory_id in review_by_theory:
+                    raise ValueError("final MATCH release has an ambiguous theory review")
+                review_by_theory[review.theory_id] = review
+            if {row.review_record_id for row in review_rows} != set(manifest_review_ids):
+                raise ValueError("final MATCH manifest does not match persisted review records")
+
+            snapshots = []
+            known_theory_ids = set(manifest_theory_ids)
+            for theory_id in manifest_theory_ids:
+                row = profile_by_id[theory_id]
+                review = review_by_theory.get(theory_id)
+                if review is None:
+                    raise ValueError(f"theory profile has no human pre-review: {theory_id}")
+                if (
+                    row.review_status
+                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    or not row.match_eligible
+                    or review.review_status
+                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    or review.decision != "approved_for_internal_match"
+                    or not _nonblank(review.reviewer_id)
+                    or not _nonblank(review.reviewer_display_name)
+                    or not _nonblank(review.reviewer_credentials)
+                    or not _nonblank(review.review_notes)
+                    or not _nonblank(review.attestation)
+                ):
+                    raise ValueError(
+                        f"theory profile has not completed the human pre-review gate: {theory_id}"
+                    )
+                profile_payload = _profile_payload_from_row(row)
+                if review.reviewed_subject_hash != _object_hash(profile_payload):
+                    raise ValueError(f"theory review subject hash is stale: {theory_id}")
+                if not row.related_knowledge_ids or review.knowledge_id not in set(
+                    row.related_knowledge_ids
+                ):
+                    raise ValueError(f"theory review is not bound to its knowledge: {theory_id}")
+                if any(
+                    competitor == theory_id or competitor not in known_theory_ids
+                    for competitor in row.competing_or_complementary_theory_ids
+                ):
+                    raise ValueError(f"theory competition reference is invalid: {theory_id}")
+
+                entry_rows = tuple(
+                    session.scalars(
+                        select(KnowledgeEntryRevisionRow).where(
+                            KnowledgeEntryRevisionRow.knowledge_release_id == release_id,
+                            KnowledgeEntryRevisionRow.knowledge_id.in_(
+                                tuple(row.related_knowledge_ids)
+                            ),
+                        )
+                    )
+                )
+                if len(entry_rows) != len(set(row.related_knowledge_ids)) or any(
+                    entry.review_status
+                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    or not entry.match_eligible
+                    or entry.content_version != row.content_version
+                    or review.review_record_id not in entry.review_record_ids
+                    for entry in entry_rows
+                ):
+                    raise ValueError(f"theory profile knowledge is not review-bound: {theory_id}")
+
+                source_rows = tuple(
+                    session.scalars(
+                        select(KnowledgeSourceRow).where(
+                            KnowledgeSourceRow.knowledge_release_id == release_id,
+                            KnowledgeSourceRow.source_id.in_(tuple(row.source_ids)),
+                        )
+                    )
+                )
+                source_by_id = {source.source_id: source for source in source_rows}
+                if (
+                    not row.source_ids
+                    or len(source_by_id) != len(set(row.source_ids))
+                    or any(
+                        source_id not in source_by_id
+                        or source_by_id[source_id].verification_status
+                        != SourceVerificationStatus.VERIFIED.value
+                        or not _nonblank(source_by_id[source_id].locator)
+                        for source_id in row.source_ids
+                    )
+                ):
+                    raise ValueError(f"theory profile source is not traceable: {theory_id}")
+                snapshots.append(_theory_profile_snapshot(row))
+            return tuple(snapshots)
 
     def list_connections(
         self,
@@ -516,6 +659,286 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
     def get_manifest(self, release_id: str) -> KnowledgeReleaseManifest:
         with self._database.session() as session:
             return _manifest(_require_release(session, release_id))
+
+    def install_pre_reviewed_bundle(
+        self, bundle_path: Path
+    ) -> KnowledgeReleaseManifest:
+        """Install a recorded human pre-review packet for internal MATCH use.
+
+        FINAL means the release bytes are immutable and pinned; it does not claim expert
+        final review. The packet records that real people completed an initial review,
+        while explicitly retaining the boundary that deeper review may continue.
+        """
+
+        try:
+            payload = json.loads(bundle_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError("pre-reviewed theory bundle must be readable JSON") from error
+        bundle = _validate_pre_reviewed_bundle(payload)
+        canonical_payload = {
+            "schema_version": payload["schema_version"],
+            "release_key": payload["release_key"],
+            "base_release_id": payload["base_release_id"],
+            "profiles": payload["profiles"],
+        }
+        content_hash = _object_hash(canonical_payload)
+        release_id = f"knowledge-final-{content_hash.removeprefix('sha256:')}"
+
+        with self._database.session() as session:
+            existing = session.scalar(
+                select(KnowledgeReleaseRow).where(
+                    KnowledgeReleaseRow.content_hash == content_hash
+                )
+            )
+            if existing is not None:
+                if (
+                    existing.knowledge_release_id != release_id
+                    or existing.level != KnowledgeReleaseLevel.FINAL.value
+                    or existing.build_config_version
+                    != _PRE_REVIEWED_BUILD_CONFIG_VERSION
+                ):
+                    raise ValueError(
+                        "pre-reviewed bundle content hash conflicts with another release"
+                    )
+                return _manifest(existing)
+
+            base_release_id = str(payload["base_release_id"])
+            base_release = _require_release(session, base_release_id)
+            if base_release.level != KnowledgeReleaseLevel.PREVIEW.value:
+                raise ValueError("pre-reviewed theory bundle base release must be preview")
+
+            base_entries = tuple(
+                session.scalars(
+                    select(KnowledgeEntryRevisionRow)
+                    .where(
+                        KnowledgeEntryRevisionRow.knowledge_release_id == base_release_id
+                    )
+                    .order_by(KnowledgeEntryRevisionRow.knowledge_id)
+                )
+            )
+            base_entry_by_id = {entry.knowledge_id: entry for entry in base_entries}
+            review_ids_by_knowledge: dict[str, list[str]] = {}
+            source_ids: set[str] = set()
+            review_record_ids: list[str] = []
+            theory_ids: list[str] = []
+            for reviewed in bundle:
+                profile = reviewed.profile
+                theory_id = str(profile["theory_id"])
+                theory_ids.append(theory_id)
+                review_record_id = str(reviewed.review["review_record_id"])
+                review_record_ids.append(review_record_id)
+                for knowledge_id in profile["related_knowledge_ids"]:
+                    entry = base_entry_by_id.get(str(knowledge_id))
+                    if entry is None:
+                        raise ValueError(
+                            "pre-reviewed profile references unknown base knowledge: "
+                            f"{knowledge_id}"
+                        )
+                    if entry.content_version != profile["content_version"]:
+                        raise ValueError(
+                            f"pre-reviewed profile content version is stale: {knowledge_id}"
+                        )
+                    review_ids_by_knowledge.setdefault(str(knowledge_id), []).append(
+                        review_record_id
+                    )
+                source_ids.update(str(source["source_id"]) for source in reviewed.sources)
+
+            base_sources = tuple(
+                session.scalars(
+                    select(KnowledgeSourceRow)
+                    .where(KnowledgeSourceRow.knowledge_release_id == base_release_id)
+                    .order_by(KnowledgeSourceRow.source_id)
+                )
+            )
+            base_source_ids = {source.source_id for source in base_sources}
+            collisions = base_source_ids & source_ids
+            if collisions:
+                raise ValueError(
+                    "pre-reviewed source id conflicts with the base release: "
+                    + ", ".join(sorted(collisions))
+                )
+
+            base_candidates = tuple(
+                session.scalars(
+                    select(KnowledgeRelationCandidateRow)
+                    .where(
+                        KnowledgeRelationCandidateRow.knowledge_release_id
+                        == base_release_id
+                    )
+                    .order_by(KnowledgeRelationCandidateRow.candidate_id)
+                )
+            )
+            base_relations = tuple(
+                session.scalars(
+                    select(KnowledgeRelationRow)
+                    .where(KnowledgeRelationRow.knowledge_release_id == base_release_id)
+                    .order_by(KnowledgeRelationRow.relation_id)
+                )
+            )
+            structural_connection_count = len(
+                build_structural_connections(tuple(_structural_input(row) for row in base_entries))
+            )
+            built_at = max(reviewed.recorded_at for reviewed in bundle)
+            manifest = {
+                "knowledge_ids": [entry.knowledge_id for entry in base_entries],
+                "relation_candidate_ids": [
+                    candidate.candidate_id for candidate in base_candidates
+                ],
+                "relation_ids": [relation.relation_id for relation in base_relations],
+                "structural_connection_count": structural_connection_count,
+                "theory_ids": theory_ids,
+                "source_ids": [
+                    *[source.source_id for source in base_sources],
+                    *sorted(source_ids),
+                ],
+                "review_record_ids": review_record_ids,
+                "artifact_hashes": [
+                    ["base_release", base_release.content_hash],
+                    ["pre_review_bundle", content_hash],
+                    ["pre_review_schema", _PRE_REVIEWED_BUNDLE_SCHEMA],
+                ],
+            }
+            session.execute(
+                update(KnowledgeReleaseRow)
+                .where(KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value)
+                .values(is_current=False)
+            )
+            release = KnowledgeReleaseRow(
+                knowledge_release_id=release_id,
+                level=KnowledgeReleaseLevel.FINAL.value,
+                content_hash=content_hash,
+                build_config_version=_PRE_REVIEWED_BUILD_CONFIG_VERSION,
+                manifest=manifest,
+                is_current=True,
+                built_at=built_at,
+            )
+            session.add(release)
+            try:
+                session.flush()
+            except IntegrityError as error:
+                # Concurrent byte-identical installs converge on the immutable row.
+                # Rolling back also restores the current-release flags changed above.
+                session.rollback()
+                concurrent = session.scalar(
+                    select(KnowledgeReleaseRow).where(
+                        KnowledgeReleaseRow.content_hash == content_hash
+                    )
+                )
+                if (
+                    concurrent is None
+                    or concurrent.knowledge_release_id != release_id
+                    or concurrent.level != KnowledgeReleaseLevel.FINAL.value
+                    or concurrent.build_config_version
+                    != _PRE_REVIEWED_BUILD_CONFIG_VERSION
+                ):
+                    raise ValueError(
+                        "pre-reviewed bundle conflicted with another release"
+                    ) from error
+                return _manifest(concurrent)
+
+            for entry in base_entries:
+                entry_review_ids = sorted(review_ids_by_knowledge.get(entry.knowledge_id, ()))
+                pre_reviewed = bool(entry_review_ids)
+                session.add(
+                    KnowledgeEntryRevisionRow(
+                        knowledge_release_id=release_id,
+                        knowledge_id=entry.knowledge_id,
+                        content_version=entry.content_version,
+                        content_hash=entry.content_hash,
+                        title=entry.title,
+                        category_id=entry.category_id,
+                        category=entry.category,
+                        dimension_id=entry.dimension_id,
+                        dimension=entry.dimension,
+                        directory_path=list(entry.directory_path),
+                        review_status=(
+                            KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                            if pre_reviewed
+                            else entry.review_status
+                        ),
+                        browse_eligible=entry.browse_eligible,
+                        rag_eligible=False,
+                        training_candidate_eligible=False,
+                        match_eligible=pre_reviewed,
+                        review_record_ids=entry_review_ids,
+                        aliases=list(entry.aliases),
+                        content=entry.content,
+                        source_path=entry.source_path,
+                        source_hash=entry.source_hash,
+                    )
+                )
+
+            for source in base_sources:
+                session.add(_copy_source(source, release_id=release_id))
+            for reviewed in bundle:
+                for source in reviewed.sources:
+                    session.add(_source_row(source, release_id=release_id))
+                profile = reviewed.profile
+                session.add(
+                    KnowledgeTheoryProfileRow(
+                        knowledge_release_id=release_id,
+                        theory_id=profile["theory_id"],
+                        related_knowledge_ids=list(profile["related_knowledge_ids"]),
+                        title=profile["title"],
+                        core_propositions=list(profile["core_propositions"]),
+                        applicable_phenomena=list(profile["applicable_phenomena"]),
+                        analysis_levels=list(profile["analysis_levels"]),
+                        prerequisites=list(profile["prerequisites"]),
+                        exclusion_signals=list(profile["exclusion_signals"]),
+                        observable_evidence=list(profile["observable_evidence"]),
+                        competing_or_complementary_theory_ids=list(
+                            profile["competing_or_complementary_theory_ids"]
+                        ),
+                        source_ids=list(profile["source_ids"]),
+                        content_version=profile["content_version"],
+                        review_status=KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value,
+                        match_eligible=True,
+                    )
+                )
+                review = reviewed.review
+                session.add(
+                    KnowledgeEntryReviewRow(
+                        knowledge_release_id=release_id,
+                        review_record_id=review["review_record_id"],
+                        knowledge_id=profile["related_knowledge_ids"][0],
+                        review_status=KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value,
+                        recorded_at=reviewed.recorded_at,
+                        theory_id=profile["theory_id"],
+                        reviewer_id=review["reviewer_id"],
+                        reviewer_display_name=review["reviewer_display_name"],
+                        reviewer_credentials=review["reviewer_credentials"],
+                        reviewed_subject_hash=review["subject_hash"],
+                        decision=review["decision"],
+                        review_notes=review["notes"],
+                        attestation=review["attestation"],
+                    )
+                )
+
+            for candidate in base_candidates:
+                session.add(_copy_candidate(candidate, release_id=release_id))
+            for relation in base_relations:
+                session.add(_copy_relation(relation, release_id=release_id))
+            session.flush()
+            session.execute(
+                text(
+                    "INSERT INTO knowledge_search_fts "
+                    "(knowledge_release_id, knowledge_id, title, content, category, dimension) "
+                    "VALUES (:knowledge_release_id, :knowledge_id, :title, :content, "
+                    ":category, :dimension)"
+                ),
+                [
+                    {
+                        "knowledge_release_id": release_id,
+                        "knowledge_id": entry.knowledge_id,
+                        "title": entry.title,
+                        "content": entry.content,
+                        "category": entry.category or entry.dimension,
+                        "dimension": entry.dimension,
+                    }
+                    for entry in base_entries
+                ],
+            )
+            return _manifest(release)
 
     def _publish_preview(self, session: object) -> KnowledgeReleaseRow:
         imported_entries = _imported_entries(self._knowledge_root)
@@ -700,6 +1123,395 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             ],
         )
         return release
+
+
+def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile, ...]:
+    bundle = _mapping(payload, "pre-reviewed theory bundle")
+    if set(bundle) != {"schema_version", "release_key", "base_release_id", "profiles"}:
+        raise ValueError("pre-reviewed theory bundle has unsupported fields")
+    if bundle.get("schema_version") != _PRE_REVIEWED_BUNDLE_SCHEMA:
+        raise ValueError("pre-reviewed theory bundle schema is unsupported")
+    _required_string(bundle.get("release_key"), "pre-reviewed release key")
+    _required_string(bundle.get("base_release_id"), "base release id")
+    raw_profiles = bundle.get("profiles")
+    if not isinstance(raw_profiles, list) or not 3 <= len(raw_profiles) <= 5:
+        raise ValueError("pre-reviewed theory bundle must contain three to five profiles")
+
+    validated: list[_PreReviewedProfile] = []
+    theory_ids: set[str] = set()
+    review_ids: set[str] = set()
+    source_ids: set[str] = set()
+    expected_profile_fields = {*_PROFILE_FIELDS, "sources", "review"}
+    for raw_profile in raw_profiles:
+        profile_record = _mapping(raw_profile, "pre-reviewed theory profile")
+        if set(profile_record) != expected_profile_fields:
+            raise ValueError("pre-reviewed theory profile has unsupported fields")
+        profile: dict[str, object] = {
+            "theory_id": _required_string(profile_record.get("theory_id"), "theory id"),
+            "related_knowledge_ids": _required_string_list(
+                profile_record.get("related_knowledge_ids"),
+                "related knowledge ids",
+            ),
+            "title": _required_string(profile_record.get("title"), "theory title"),
+            "core_propositions": _required_string_list(
+                profile_record.get("core_propositions"),
+                "theory core propositions",
+            ),
+            "applicable_phenomena": _required_string_list(
+                profile_record.get("applicable_phenomena"),
+                "applicable phenomena",
+            ),
+            "analysis_levels": _required_string_list(
+                profile_record.get("analysis_levels"),
+                "analysis levels",
+            ),
+            "prerequisites": _required_string_list(
+                profile_record.get("prerequisites"),
+                "theory prerequisites",
+            ),
+            "exclusion_signals": _required_string_list(
+                profile_record.get("exclusion_signals"),
+                "theory exclusion signals",
+            ),
+            "observable_evidence": _required_string_list(
+                profile_record.get("observable_evidence"),
+                "observable evidence",
+            ),
+            "competing_or_complementary_theory_ids": _string_list(
+                profile_record.get("competing_or_complementary_theory_ids"),
+                "competing theory ids",
+            ),
+            "source_ids": _required_string_list(
+                profile_record.get("source_ids"),
+                "theory source ids",
+            ),
+            "content_version": _positive_integer(
+                profile_record.get("content_version"),
+                "theory content version",
+            ),
+        }
+        theory_id = str(profile["theory_id"])
+        if theory_id in theory_ids:
+            raise ValueError(f"duplicate pre-reviewed theory id: {theory_id}")
+        theory_ids.add(theory_id)
+        if len(set(profile["related_knowledge_ids"])) != len(
+            profile["related_knowledge_ids"]
+        ):
+            raise ValueError(f"duplicate related knowledge id: {theory_id}")
+        if len(set(profile["source_ids"])) != len(profile["source_ids"]):
+            raise ValueError(f"duplicate theory source id: {theory_id}")
+
+        raw_sources = profile_record.get("sources")
+        if not isinstance(raw_sources, list) or not raw_sources:
+            raise ValueError(f"pre-reviewed theory profile has no sources: {theory_id}")
+        sources = tuple(_validated_source(raw_source) for raw_source in raw_sources)
+        nested_source_ids = tuple(str(source["source_id"]) for source in sources)
+        if tuple(profile["source_ids"]) != nested_source_ids:
+            raise ValueError(f"theory source ids do not match source records: {theory_id}")
+        for source_id in nested_source_ids:
+            if source_id in source_ids:
+                raise ValueError(f"duplicate pre-reviewed source id: {source_id}")
+            source_ids.add(source_id)
+
+        review_record = _mapping(profile_record.get("review"), "human review record")
+        expected_review_fields = {
+            "review_record_id",
+            "review_status",
+            "reviewer_id",
+            "reviewer_display_name",
+            "reviewer_credentials",
+            "review_completed_at",
+            "recorded_at",
+            "subject_hash",
+            "decision",
+            "notes",
+            "attestation",
+        }
+        if set(review_record) != expected_review_fields:
+            raise ValueError("human review record has unsupported fields")
+        review: dict[str, object] = {
+            "review_record_id": _required_string(
+                review_record.get("review_record_id"), "human review record id"
+            ),
+            "review_status": _required_string(
+                review_record.get("review_status"), "human pre-review status"
+            ),
+            "reviewer_id": _required_string(
+                review_record.get("reviewer_id"), "human reviewer id"
+            ),
+            "reviewer_display_name": _required_string(
+                review_record.get("reviewer_display_name"), "human reviewer display name"
+            ),
+            "reviewer_credentials": _required_string(
+                review_record.get("reviewer_credentials"), "human reviewer credentials"
+            ),
+            "review_completed_at": review_record.get("review_completed_at"),
+            "recorded_at": _required_string(
+                review_record.get("recorded_at"), "human pre-review record timestamp"
+            ),
+            "subject_hash": _required_string(
+                review_record.get("subject_hash"), "pre-review subject hash"
+            ),
+            "decision": _required_string(
+                review_record.get("decision"), "human review decision"
+            ),
+            "notes": _required_string(review_record.get("notes"), "human review notes"),
+            "attestation": _required_string(
+                review_record.get("attestation"), "human review attestation"
+            ),
+        }
+        if review["review_status"] != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value:
+            raise ValueError("human pre-review status must be pre_review_completed")
+        if review["decision"] != "approved_for_internal_match":
+            raise ValueError(
+                "human pre-review decision must be approved_for_internal_match"
+            )
+        if review["subject_hash"] != _object_hash(profile):
+            raise ValueError(f"pre-review subject hash does not match profile: {theory_id}")
+        review_record_id = str(review["review_record_id"])
+        if review_record_id in review_ids:
+            raise ValueError(f"duplicate human review record id: {review_record_id}")
+        review_ids.add(review_record_id)
+        try:
+            recorded_at = datetime.fromisoformat(str(review["recorded_at"]))
+        except ValueError as error:
+            raise ValueError("human pre-review record timestamp must be ISO 8601") from error
+        if recorded_at.tzinfo is None or recorded_at.utcoffset() is None:
+            raise ValueError("human pre-review record timestamp must include a timezone")
+        completed_at = review["review_completed_at"]
+        if completed_at is not None:
+            if not _nonblank(completed_at):
+                raise ValueError("human pre-review completion timestamp cannot be blank")
+            try:
+                parsed_completed_at = datetime.fromisoformat(str(completed_at))
+            except ValueError as error:
+                raise ValueError(
+                    "human pre-review completion timestamp must be ISO 8601 or null"
+                ) from error
+            if (
+                parsed_completed_at.tzinfo is None
+                or parsed_completed_at.utcoffset() is None
+            ):
+                raise ValueError(
+                    "human pre-review completion timestamp must include a timezone"
+                )
+        validated.append(
+            _PreReviewedProfile(
+                profile=profile,
+                sources=sources,
+                review=review,
+                recorded_at=recorded_at.astimezone(UTC),
+            )
+        )
+
+    for reviewed in validated:
+        theory_id = str(reviewed.profile["theory_id"])
+        competitors = reviewed.profile["competing_or_complementary_theory_ids"]
+        if any(
+            competitor == theory_id or competitor not in theory_ids
+            for competitor in competitors
+        ):
+            raise ValueError(f"competing theory reference is not in this release: {theory_id}")
+    return tuple(validated)
+
+
+def _validated_source(value: object) -> dict[str, object]:
+    source = _mapping(value, "pre-reviewed source")
+    expected_fields = {
+        "source_id",
+        "source_type",
+        "title",
+        "authors_or_institution",
+        "year",
+        "publication",
+        "locator",
+        "url",
+        "verification_status",
+        "use_boundary",
+    }
+    if set(source) != expected_fields:
+        raise ValueError("pre-reviewed source has unsupported fields")
+    locator = source.get("locator")
+    if not _nonblank(locator):
+        raise ValueError("pre-reviewed source locator is required")
+    if source.get("verification_status") != SourceVerificationStatus.VERIFIED.value:
+        raise ValueError("pre-reviewed source verification status must be verified")
+    year = source.get("year")
+    if year is not None and (isinstance(year, bool) or not isinstance(year, int)):
+        raise ValueError("pre-reviewed source year must be an integer")
+    publication = source.get("publication")
+    if publication is not None and not _nonblank(publication):
+        raise ValueError("pre-reviewed source publication cannot be blank")
+    url = source.get("url")
+    if not _nonblank(url):
+        raise ValueError("pre-reviewed source URL is required")
+    parsed_url = urlsplit(str(url).strip())
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+        raise ValueError("pre-reviewed source URL must use http or https with a hostname")
+    return {
+        "source_id": _required_string(source.get("source_id"), "pre-reviewed source id"),
+        "source_type": _required_string(
+            source.get("source_type"), "pre-reviewed source type"
+        ),
+        "title": _required_string(source.get("title"), "pre-reviewed source title"),
+        "authors_or_institution": _required_string_list(
+            source.get("authors_or_institution"), "pre-reviewed source authors"
+        ),
+        "year": year,
+        "publication": publication,
+        "locator": str(locator).strip(),
+        "url": str(url).strip(),
+        "verification_status": SourceVerificationStatus.VERIFIED.value,
+        "use_boundary": _required_string(
+            source.get("use_boundary"), "pre-reviewed source use boundary"
+        ),
+    }
+
+
+def _mapping(value: object, label: str) -> Mapping[str, object]:
+    if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
+        raise ValueError(f"{label} must be an object")
+    return value
+
+
+def _required_string(value: object, label: str) -> str:
+    if not _nonblank(value):
+        raise ValueError(f"{label} is required")
+    return str(value).strip()
+
+
+def _nonblank(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _string_list(value: object, label: str) -> list[str]:
+    if not isinstance(value, list) or any(not _nonblank(item) for item in value):
+        raise ValueError(f"{label} must be a list of non-blank strings")
+    return [str(item).strip() for item in value]
+
+
+def _required_string_list(value: object, label: str) -> list[str]:
+    result = _string_list(value, label)
+    if not result:
+        raise ValueError(f"{label} cannot be empty")
+    return result
+
+
+def _positive_integer(value: object, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{label} must be a positive integer")
+    return value
+
+
+def _source_row(
+    source: Mapping[str, object],
+    *,
+    release_id: str,
+) -> KnowledgeSourceRow:
+    return KnowledgeSourceRow(
+        knowledge_release_id=release_id,
+        source_id=str(source["source_id"]),
+        source_type=str(source["source_type"]),
+        title=str(source["title"]),
+        authors_or_institution=list(source["authors_or_institution"]),
+        year=source["year"],
+        publication=source["publication"],
+        locator=str(source["locator"]),
+        url=source["url"],
+        verification_status=str(source["verification_status"]),
+        use_boundary=str(source["use_boundary"]),
+    )
+
+
+def _copy_source(source: KnowledgeSourceRow, *, release_id: str) -> KnowledgeSourceRow:
+    return KnowledgeSourceRow(
+        knowledge_release_id=release_id,
+        source_id=source.source_id,
+        source_type=source.source_type,
+        title=source.title,
+        authors_or_institution=list(source.authors_or_institution),
+        year=source.year,
+        publication=source.publication,
+        locator=source.locator,
+        url=source.url,
+        verification_status=source.verification_status,
+        use_boundary=source.use_boundary,
+    )
+
+
+def _copy_candidate(
+    candidate: KnowledgeRelationCandidateRow,
+    *,
+    release_id: str,
+) -> KnowledgeRelationCandidateRow:
+    return KnowledgeRelationCandidateRow(
+        knowledge_release_id=release_id,
+        candidate_id=candidate.candidate_id,
+        source_knowledge_id=candidate.source_knowledge_id,
+        target_knowledge_id=candidate.target_knowledge_id,
+        suggested_relation_type=candidate.suggested_relation_type,
+        direction=candidate.direction,
+        evidence_excerpt=candidate.evidence_excerpt,
+        evidence_locator=candidate.evidence_locator,
+        evidence_source_id=candidate.evidence_source_id,
+        source_content_version=candidate.source_content_version,
+        target_content_version=candidate.target_content_version,
+        producer=candidate.producer,
+        producer_config_version=candidate.producer_config_version,
+        score=candidate.score,
+        trigger_reason=candidate.trigger_reason,
+        review_status=candidate.review_status,
+        review_record_id=candidate.review_record_id,
+    )
+
+
+def _copy_relation(
+    relation: KnowledgeRelationRow,
+    *,
+    release_id: str,
+) -> KnowledgeRelationRow:
+    return KnowledgeRelationRow(
+        knowledge_release_id=release_id,
+        relation_id=relation.relation_id,
+        source_knowledge_id=relation.source_knowledge_id,
+        target_knowledge_id=relation.target_knowledge_id,
+        relation_type=relation.relation_type,
+        direction=relation.direction,
+        description=relation.description,
+        evidence_source_ids=list(relation.evidence_source_ids),
+        evidence_grade=relation.evidence_grade,
+        content_version=relation.content_version,
+        review_status=relation.review_status,
+    )
+
+
+def _profile_payload_from_row(row: KnowledgeTheoryProfileRow) -> dict[str, object]:
+    return {
+        "theory_id": row.theory_id,
+        "related_knowledge_ids": list(row.related_knowledge_ids),
+        "title": row.title,
+        "core_propositions": list(row.core_propositions),
+        "applicable_phenomena": list(row.applicable_phenomena),
+        "analysis_levels": list(row.analysis_levels),
+        "prerequisites": list(row.prerequisites),
+        "exclusion_signals": list(row.exclusion_signals),
+        "observable_evidence": list(row.observable_evidence),
+        "competing_or_complementary_theory_ids": list(
+            row.competing_or_complementary_theory_ids
+        ),
+        "source_ids": list(row.source_ids),
+        "content_version": row.content_version,
+    }
+
+
+def _object_hash(value: object) -> str:
+    serialized = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return _hash(serialized)
 
 
 def _imported_entries(knowledge_root: Path) -> tuple[_ImportedEntry, ...]:

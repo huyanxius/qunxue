@@ -227,6 +227,40 @@ def test_confirmation_rejects_stale_decision_set_version() -> None:
         service.confirm_plan(decision_set_id=decision_set.decision_set_id, expected_version=2)
 
 
+def test_confirmation_rejects_an_empty_adopted_theory_assignment() -> None:
+    repository = MemoryRuns()
+    repository.add(_run())
+    service = TheoryMatchingService(
+        evidence_source=NoopEvidence(),
+        judge=NoopJudge(),
+        repository=repository,
+        provider="provider",
+        model_version="model",
+        capability="base",
+        contract_version="v1",
+    )
+    decision_set = service.record_decisions(
+        match_run_id=UUID(int=12),
+        expected_version=1,
+        decisions=(
+            TheoryDecisionCommand(
+                UUID(int=1),
+                1,
+                TheoryDecisionAction.ADOPT,
+                "采用",
+            ),
+        ),
+        use_assignments=(TheoryUseAssignment(UUID(int=1), "", ""),),
+        relations=(),
+    )
+
+    with pytest.raises(ValueError, match="non-empty role and responsibility"):
+        service.confirm_plan(
+            decision_set_id=decision_set.decision_set_id,
+            expected_version=1,
+        )
+
+
 def test_decision_rejects_sources_outside_the_candidate_evidence_closure() -> None:
     repository = MemoryRuns()
     match_run = _run()

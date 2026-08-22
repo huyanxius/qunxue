@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from pathlib import Path
 from typing import Protocol
 
 
@@ -13,6 +14,7 @@ class KnowledgeReleaseLevel(StrEnum):
 class KnowledgeReviewStatus(StrEnum):
     DRAFT = "draft"
     PENDING = "pending"
+    PRE_REVIEW_COMPLETED = "pre_review_completed"
     REVIEWED = "reviewed"
     RETIRED = "retired"
 
@@ -235,19 +237,6 @@ class KnowledgeEntryDetail:
     theory_profile: TheoryProfileSnapshot | None
 
 
-@dataclass(frozen=True, slots=True)
-class KnowledgePublicationRequest:
-    """发布器只接收已审核对象清单，不替代审核或补写缺失内容。"""
-
-    level: KnowledgeReleaseLevel
-    knowledge_ids: tuple[str, ...]
-    relation_ids: tuple[str, ...]
-    theory_ids: tuple[str, ...]
-    source_ids: tuple[str, ...]
-    review_record_ids: tuple[str, ...]
-    build_config_version: str
-
-
 class KnowledgeCatalog(Protocol):
     """浏览与下游消费知识时唯一可见的版本化只读接口。"""
 
@@ -292,6 +281,14 @@ class KnowledgeCatalog(Protocol):
         release_id: str,
     ) -> tuple[SourceRecordSnapshot, ...]: ...
 
+    def list_match_profiles(
+        self,
+        *,
+        release_id: str,
+    ) -> tuple[TheoryProfileSnapshot, ...]:
+        """Return only fully audited profiles from one immutable final release."""
+        ...
+
     def list_connections(
         self,
         *,
@@ -321,12 +318,10 @@ class KnowledgeCatalog(Protocol):
 
 
 class KnowledgeReleasePublisher(Protocol):
-    """写侧发布能力与用户浏览分离；适配器负责持久化和产物构建。"""
+    """Install an externally pre-reviewed artifact; never manufacture review state."""
 
-    def publish(
-        self,
-        *,
-        request: KnowledgePublicationRequest,
+    def install_pre_reviewed_bundle(
+        self, bundle_path: Path
     ) -> KnowledgeReleaseManifest: ...
 
     def get_manifest(self, release_id: str) -> KnowledgeReleaseManifest: ...

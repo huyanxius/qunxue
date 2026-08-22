@@ -87,10 +87,25 @@ def validate_theory_plan_confirmation(
                 "every adopted theory needs an applicable or conditional judgement"
             )
 
-    assigned = {assignment.candidate_id for assignment in decision_set.use_assignments}
-    missing_assignments = set(adopted) - assigned
+    assignment_by_candidate = {}
+    for assignment in decision_set.use_assignments:
+        if assignment.candidate_id in assignment_by_candidate:
+            violations.append("each theory may have only one use assignment")
+        assignment_by_candidate[assignment.candidate_id] = assignment
+    if set(assignment_by_candidate) - set(candidate_by_id):
+        violations.append("theory use assignments must belong to matched candidates")
+    missing_assignments = set(adopted) - set(assignment_by_candidate)
     if missing_assignments:
         violations.append("every adopted theory must have a role and responsibility")
+    if any(
+        not assignment_by_candidate[candidate_id].role_code.strip()
+        or not assignment_by_candidate[candidate_id].responsibility.strip()
+        for candidate_id in adopted
+        if candidate_id in assignment_by_candidate
+    ):
+        violations.append(
+            "every adopted theory needs a non-empty role and responsibility"
+        )
 
     if len(adopted) > 1:
         graph = {candidate_id: set() for candidate_id in adopted}

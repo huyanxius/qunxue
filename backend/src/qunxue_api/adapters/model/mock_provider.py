@@ -79,6 +79,12 @@ class DeterministicMockModelProvider:
             knowledge_release_id=input.knowledge_release.knowledge_release_id,
         )
         evidence_ids = tuple(item.evidence_ref_id for item in input.evidence_items)
+        phenomenon_evidence_ids = tuple(
+            item.evidence_ref_id
+            for item in input.evidence_items
+            if item.source is not None
+            and item.source.source_type == "confirmed_phenomenon_evidence"
+        )
         title = input.candidate.title
         return ModelProviderResult(
             output=TheoryJudgementDraft(
@@ -92,6 +98,8 @@ class DeterministicMockModelProvider:
                 evidence_gaps=("尚缺少时间顺序与竞争解释的区分材料",),
                 alternative_explanations=("资源供给变化", "组织规则调整"),
                 evidence_ref_ids=evidence_ids,
+                supporting_evidence_ref_ids=phenomenon_evidence_ids or evidence_ids,
+                conflicting_evidence_ref_ids=(),
             ),
             knowledge_release_id=input.knowledge_release.knowledge_release_id,
             degraded=False,

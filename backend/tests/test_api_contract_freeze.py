@@ -371,11 +371,16 @@ def test_phenomenon_candidates_embed_displayable_evidence_references(
 
 def test_match_candidates_are_dynamic_ordered_and_retryable(client: TestClient) -> None:
     schema = client.app.openapi()
+    schemas = schema["components"]["schemas"]
     operation = schema["paths"]["/api/match-runs/{match_run_id}/candidates"]["get"]
     parameters = {parameter["name"]: parameter for parameter in operation["parameters"]}
     limit_schema = parameters["limit"]["schema"]
-    candidate = schema["components"]["schemas"]["TheoryCandidateResponse"]
-    match_run = schema["components"]["schemas"]["MatchRunResponse"]
+    candidate = schemas["TheoryCandidateResponse"]
+    match_run = schemas["MatchRunResponse"]
+
+    assert "pre_review_completed" in schemas["KnowledgeReviewStatus"]["enum"]
+    assert "pre_review_completed" in schemas["CandidateContentStatus"]["enum"]
+    assert "pre_reviewed_knowledge" in schemas["CandidateOrigin"]["enum"]
 
     assert limit_schema["default"] == 4
     assert limit_schema["minimum"] == 1
@@ -421,7 +426,7 @@ def test_match_candidates_are_dynamic_ordered_and_retryable(client: TestClient) 
         "knowledge_release_id",
         "adopted_candidate_ids",
     } <= set(
-        schema["components"]["schemas"]["ConfirmedTheoryPlanResponse"]["required"]
+        schemas["ConfirmedTheoryPlanResponse"]["required"]
     )
 
     _authenticate(client)
