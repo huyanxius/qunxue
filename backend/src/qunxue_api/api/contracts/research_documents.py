@@ -92,6 +92,8 @@ class ResearchDocumentProposalResponse(BaseModel):
     user_id: UUID
     conversation_id: UUID
     agent_run_id: UUID
+    model_provider: str | None
+    model_name: str | None
     task_id: UUID
     theory_plan_id: UUID
     knowledge_release_id: str
@@ -124,6 +126,39 @@ class ResearchTaskDocumentProposalListResponse(BaseModel):
     items: list[ResearchDocumentProposalResponse]
 
 
+class ResearchDocumentCompletionCheckResponse(BaseModel):
+    code: str
+    label: str
+    passed: bool
+    detail: str
+
+
+class ResearchDocumentCompletionGateResponse(BaseModel):
+    document_id: UUID
+    version: int
+    ready: bool
+    pending_proposal_count: int
+    blockers: list[str]
+    checks: list[ResearchDocumentCompletionCheckResponse]
+
+
+class ResearchDocumentExportManifest(BaseModel):
+    """Versioned, machine-readable audit package for one formal M5 delivery."""
+
+    schema_version: Literal["research-delivery-v1"]
+    phenomenon: dict[str, object]
+    knowledge_release: dict[str, object]
+    model: dict[str, object] | None
+    theory_candidates: list[dict[str, object]]
+    theory_decisions: list[dict[str, object]]
+    theory_assignments: list[dict[str, object]]
+    theory_relations: list[dict[str, object]]
+    evidence: list[dict[str, object]]
+    agent_proposals: list[dict[str, object]]
+    document_versions: list[dict[str, object]]
+    formal_document: dict[str, object]
+
+
 class ResearchDocumentExportResponse(BaseModel):
     document_id: UUID
     task_id: UUID
@@ -133,3 +168,4 @@ class ResearchDocumentExportResponse(BaseModel):
     filename: str
     media_type: Literal["text/markdown"]
     markdown: str
+    manifest: ResearchDocumentExportManifest

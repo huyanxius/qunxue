@@ -118,6 +118,8 @@ class _MemoryRepository:
                 user_id=run.user_id,
                 idempotency_key=run.idempotency_key,
                 status="running",
+                provider=run.provider,
+                model=run.model,
                 knowledge_release_id=run.knowledge_release_id,
                 turn_id=None,
                 tool_summary=(),
@@ -148,6 +150,8 @@ class _MemoryRepository:
         error: str | None = None,
         turn_id: UUID | None = None,
         tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None:
         del error
         current = self.runs[run_id]
@@ -157,6 +161,8 @@ class _MemoryRepository:
             user_id=current.user_id,
             idempotency_key=current.idempotency_key,
             status=status,  # type: ignore[arg-type]
+            provider=provider or current.provider,
+            model=model or current.model,
             knowledge_release_id=current.knowledge_release_id,
             turn_id=current.turn_id if turn_id is None else turn_id,
             tool_summary=tool_summary,
@@ -236,8 +242,14 @@ class ConversationService:
         conversation_id: UUID,
         idempotency_key: str,
         knowledge_release_id: str,
+        provider: str = "pydantic-ai",
+        model: str = "knowledge-agent",
     ) -> AgentRun:
         self.get_conversation(user_id=user_id, conversation_id=conversation_id)
+        normalized_provider = provider.strip()
+        normalized_model = model.strip()
+        if not normalized_provider or not normalized_model:
+            raise ValueError("Agent runtime provider and model must not be empty")
         return self._repository.start_run(
             AgentRun(
                 run_id=uuid4(),
@@ -245,6 +257,8 @@ class ConversationService:
                 user_id=user_id,
                 idempotency_key=idempotency_key,
                 status="running",
+                provider=normalized_provider,
+                model=normalized_model,
                 knowledge_release_id=knowledge_release_id,
             )
         )
@@ -260,6 +274,8 @@ class ConversationService:
         error: str | None = None,
         turn_id: UUID | None = None,
         tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None:
         self._repository.finish_run(
             run_id=run_id,
@@ -267,4 +283,6 @@ class ConversationService:
             error=error,
             turn_id=turn_id,
             tool_summary=tool_summary,
+            provider=provider,
+            model=model,
         )

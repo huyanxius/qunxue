@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -36,8 +37,34 @@ class MemoryDocumentRepository:
     def list_versions(self, document_id):
         return tuple(self.versions.get(document_id, []))
 
+    def list_for_task(self, task_id):
+        return tuple(
+            items[-1]
+            for items in self.versions.values()
+            if items and items[-1].task_id == task_id
+        )
 
-def section(key: str, title: str, content: str, *, status: str = "reviewed"):
+    def find_for_task_and_plan(self, task_id, theory_plan_id):
+        return next(
+            (
+                items[-1]
+                for items in self.versions.values()
+                if items
+                and items[-1].task_id == task_id
+                and items[-1].theory_plan_id == theory_plan_id
+            ),
+            None,
+        )
+
+
+def section(
+    key: str,
+    title: str,
+    content: str,
+    *,
+    status: str = "reviewed",
+    with_evidence: bool = False,
+):
     section_type = framework.ResearchDocumentSection
     status_type = framework.ResearchDocumentSectionStatus
     return section_type(
@@ -46,7 +73,17 @@ def section(key: str, title: str, content: str, *, status: str = "reviewed"):
         title=title,
         content=content,
         status=status_type(status),
-        evidence_refs=(),
+        evidence_refs=(
+            (
+                framework.ResearchDocumentEvidenceRef(
+                    evidence_ref_id="evidence-1",
+                    source_id="source-1",
+                    knowledge_release_id="release-final-1",
+                ),
+            )
+            if with_evidence
+            else ()
+        ),
     )
 
 
@@ -65,7 +102,23 @@ def required_sections():
         ("limitations", "局限"),
         ("evidence_gaps", "证据缺口"),
     )
-    return tuple(section(key, title, f"{title}的可编辑正文。") for key, title in values)
+    return tuple(
+        section(
+            key,
+            title,
+            f"{title}的可编辑正文。",
+            with_evidence=key
+            in {
+                "theoretical_perspective",
+                "core_concepts",
+                "mechanisms",
+                "questions_or_hypotheses",
+                "methodology",
+                "analysis_steps",
+            },
+        )
+        for key, title in values
+    )
 
 
 def service(repository: MemoryDocumentRepository):
@@ -243,3 +296,120 @@ def test_confirmation_requires_every_framework_section_and_no_pending_user_decis
     )
     with pytest.raises(ValueError, match="user decisions"):
         another_workflow.confirm(document_id=pending.document_id, expected_version=1)
+
+
+def test_one_confirmed_theory_plan_can_create_only_one_research_document() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    first = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=required_sections(),
+    )
+
+    replayed = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=required_sections(),
+    )
+
+    assert replayed.document_id == first.document_id
+    assert replayed.revision_id == first.revision_id
+    assert len(repository.versions) == 1
+
+
+def test_completion_gate_explains_unreviewed_sections_and_pending_agent_suggestions() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    draft_sections = list(required_sections())
+    draft_sections[6] = section(
+        "methodology",
+        "研究方法",
+        "方法仍待审阅。",
+        status="draft",
+        with_evidence=True,
+    )
+    created = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=tuple(draft_sections),
+    )
+
+    gate = workflow.completion_gate(
+        document_id=created.document_id,
+        pending_proposal_count=2,
+    )
+
+    checks = {check.code: check for check in gate.checks}
+    assert gate.ready is False
+    assert checks["required_sections"].passed is True
+    assert checks["section_review"].passed is False
+    assert checks["pending_proposals"].passed is False
+    assert checks["evidence_gaps_disclosed"].passed is True
+    assert checks["exportable"].passed is False
+    assert gate.blockers == (
+        "章节“研究方法”仍待审阅。",
+        "还有 2 条 Agent 建议待处理。",
+    )
+
+    with pytest.raises(ValueError, match="completion gate"):
+        workflow.confirm(
+            document_id=created.document_id,
+            expected_version=created.version,
+            pending_proposal_count=2,
+        )
+
+
+def test_completion_gate_requires_provenance_or_an_explicit_gap_for_key_judgments() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    created = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=tuple(
+            replace(item, evidence_refs=()) for item in required_sections()
+        ),
+    )
+
+    gate = workflow.completion_gate(document_id=created.document_id)
+
+    provenance = next(check for check in gate.checks if check.code == "critical_provenance")
+    assert provenance.passed is False
+    assert "理论视角" in provenance.detail
+    assert any("需要引用" in blocker for blocker in gate.blockers)
+
+
+def test_restoring_a_formal_version_revokes_its_latest_export_status() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    created = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=required_sections(),
+    )
+    confirmed = workflow.confirm(
+        document_id=created.document_id,
+        expected_version=created.version,
+    )
+    workflow.restore(
+        document_id=created.document_id,
+        source_version=confirmed.version,
+        expected_version=confirmed.version,
+        reason="继续修改正式框架",
+    )
+
+    with pytest.raises(ValueError, match="latest confirmed"):
+        workflow.export_markdown(
+            document_id=confirmed.document_id,
+            version=confirmed.version,
+        )

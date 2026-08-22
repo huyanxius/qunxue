@@ -8,6 +8,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
     AgentInterrupted,
     AgentRunResult,
+    AgentRuntimeIdentity,
     AgentToolContext,
     AgentToolEvent,
     AgentTurn,
@@ -101,6 +102,8 @@ class DisciplinaryAgentApplication:
                     result=_result_from_turn(
                         replayed_turn,
                         release_id=existing_run.knowledge_release_id or "",
+                        provider=existing_run.provider,
+                        model=existing_run.model,
                     ),
                     turn=replayed_turn,
                     replayed=True,
@@ -111,16 +114,28 @@ class DisciplinaryAgentApplication:
             elif conversation_id != existing_run.conversation_id:
                 raise ValueError("idempotency key belongs to another conversation")
         tools = self._tools_factory()
+        if workspace == "research":
+            prepare_research_context = getattr(tools, "prepare_research_context", None)
+            if callable(prepare_research_context):
+                prepare_research_context(
+                    user_id=user_id,
+                    task_id=task_id,
+                    document_id=document_id,
+                    theory_plan_id=theory_plan_id,
+                )
         conversation = (
             self._conversations.create_conversation(user_id=user_id, title=prompt)
             if conversation_id is None
             else self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         )
+        runtime_identity = _runner_identity(self._runner)
         run = self._conversations.start_run(
             user_id=user_id,
             conversation_id=conversation.conversation_id,
             idempotency_key=idempotency_key,
             knowledge_release_id=tools.release.knowledge_release_id,
+            provider=runtime_identity.provider,
+            model=runtime_identity.model,
         )
         current = self.get_conversation(
             user_id=user_id,
@@ -160,6 +175,8 @@ class DisciplinaryAgentApplication:
                 result=_result_from_turn(
                     completed_turn,
                     release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
+                    provider=run.provider,
+                    model=run.model,
                 ),
                 turn=completed_turn,
                 replayed=True,
@@ -223,6 +240,8 @@ class DisciplinaryAgentApplication:
                 status="completed",
                 turn_id=turn_result.turn_id if isinstance(turn_result, AgentTurn) else None,
                 tool_summary=tuple(_tool_summary(item) for item in tool_events),
+                provider=result.provider,
+                model=result.model,
             )
         except AgentInterrupted:
             self._conversations.finish_run(
@@ -255,6 +274,8 @@ class DisciplinaryAgentApplication:
                 result=_result_from_turn(
                     replayed_turn,
                     release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
+                    provider=run.provider,
+                    model=run.model,
                 ),
                 turn=replayed_turn,
                 replayed=True,
@@ -289,14 +310,29 @@ def _find_turn(conversation: Conversation, turn_id: UUID) -> AgentTurn | None:
     return next((turn for turn in conversation.turns if turn.turn_id == turn_id), None)
 
 
-def _result_from_turn(turn: AgentTurn, *, release_id: str) -> AgentRunResult:
+def _result_from_turn(
+    turn: AgentTurn,
+    *,
+    release_id: str,
+    provider: str,
+    model: str,
+) -> AgentRunResult:
     return AgentRunResult(
         answer=turn.assistant_message.content,
         citations=tuple(_evidence_from_citation(item) for item in turn.assistant_message.citations),
         release_id=release_id,
-        provider="pydantic-ai",
-        model="knowledge-agent",
+        provider=provider,
+        model=model,
     )
+
+
+def _runner_identity(runner: SubjectAgentRunner) -> AgentRuntimeIdentity:
+    identity = getattr(runner, "runtime_identity", None)
+    provider = str(getattr(identity, "provider", "pydantic-ai")).strip()
+    model = str(getattr(identity, "model", "knowledge-agent")).strip()
+    if not provider or not model:
+        raise ValueError("Agent runtime provider and model must not be empty")
+    return AgentRuntimeIdentity(provider=provider, model=model)
 
 
 def _evidence_from_citation(item):

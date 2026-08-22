@@ -1,10 +1,14 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from qunxue_api.adapters.sqlite.research_document_model import ResearchDocumentVersionRow
+from qunxue_api.adapters.sqlite.research_document_model import (
+    ResearchDocumentIdentityRow,
+    ResearchDocumentVersionRow,
+)
 from qunxue_api.modules.research_framework import (
     ResearchDocumentEvidenceRef,
     ResearchDocumentSection,
@@ -19,6 +23,34 @@ class SqliteResearchDocumentRepository:
         self._session = session
 
     def add(self, snapshot: ResearchDocumentSnapshot) -> ResearchDocumentSnapshot:
+        if snapshot.version == 1:
+            self._session.execute(
+                insert(ResearchDocumentIdentityRow)
+                .values(
+                    task_id=str(snapshot.task_id),
+                    theory_plan_id=str(snapshot.theory_plan_id),
+                    document_id=str(snapshot.document_id),
+                )
+                .on_conflict_do_nothing(
+                    index_elements=["task_id", "theory_plan_id"]
+                )
+            )
+            identity = self._session.scalar(
+                select(ResearchDocumentIdentityRow)
+                .where(
+                    ResearchDocumentIdentityRow.task_id == str(snapshot.task_id),
+                    ResearchDocumentIdentityRow.theory_plan_id
+                    == str(snapshot.theory_plan_id),
+                )
+                .execution_options(populate_existing=True)
+            )
+            if identity is None:
+                raise RuntimeError("research document identity was not persisted")
+            if identity.document_id != str(snapshot.document_id):
+                persisted = self.latest(UUID(identity.document_id))
+                if persisted is None:
+                    raise RuntimeError("research document identity has no document")
+                return persisted
         self._session.execute(
             insert(ResearchDocumentVersionRow).values(
                 document_id=str(snapshot.document_id),
@@ -44,10 +76,27 @@ class SqliteResearchDocumentRepository:
         )
         persisted = _snapshot(row)
         if persisted is None:
+            persisted = self.find_for_task_and_plan(
+                task_id=snapshot.task_id,
+                theory_plan_id=snapshot.theory_plan_id,
+            )
+        if persisted is None:
             raise RuntimeError("research document version was not persisted")
         if persisted.revision_id != snapshot.revision_id:
             return persisted
         return snapshot
+
+    def find_for_task_and_plan(
+        self, *, task_id: UUID, theory_plan_id: UUID
+    ) -> ResearchDocumentSnapshot | None:
+        document_id = self._session.scalar(
+            select(ResearchDocumentIdentityRow.document_id)
+            .where(
+                ResearchDocumentIdentityRow.task_id == str(task_id),
+                ResearchDocumentIdentityRow.theory_plan_id == str(theory_plan_id),
+            )
+        )
+        return self.latest(UUID(document_id)) if document_id is not None else None
 
     def latest(self, document_id: UUID) -> ResearchDocumentSnapshot | None:
         row = self._session.scalar(
@@ -70,9 +119,18 @@ class SqliteResearchDocumentRepository:
         return tuple(item for row in rows if (item := _snapshot(row)) is not None)
 
     def list_for_task(self, task_id: UUID) -> tuple[ResearchDocumentSnapshot, ...]:
+        document_ids = tuple(
+            self._session.scalars(
+                select(ResearchDocumentIdentityRow.document_id).where(
+                    ResearchDocumentIdentityRow.task_id == str(task_id)
+                )
+            )
+        )
+        if not document_ids:
+            return ()
         rows = self._session.scalars(
             select(ResearchDocumentVersionRow)
-            .where(ResearchDocumentVersionRow.task_id == str(task_id))
+            .where(ResearchDocumentVersionRow.document_id.in_(document_ids))
             .order_by(
                 ResearchDocumentVersionRow.document_id,
                 ResearchDocumentVersionRow.version.desc(),
@@ -140,7 +198,11 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
         status=ResearchDocumentStatus(row.status),
         change_summary=row.change_summary,
         actor=row.actor,
-        created_at=row.created_at,
+        created_at=_utc(row.created_at),
         restored_from_version=row.restored_from_version,
-        confirmed_at=row.confirmed_at,
+        confirmed_at=_utc(row.confirmed_at) if row.confirmed_at is not None else None,
     )
+
+
+def _utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)

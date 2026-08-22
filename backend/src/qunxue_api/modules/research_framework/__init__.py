@@ -2,6 +2,8 @@
 
 from qunxue_api.modules.research_framework.document import (
     REQUIRED_FRAMEWORK_SECTION_KEYS,
+    ResearchDocumentCompletionCheck,
+    ResearchDocumentCompletionGate,
     ResearchDocumentEvidenceRef,
     ResearchDocumentMarkdownExport,
     ResearchDocumentRepository,
@@ -49,6 +51,8 @@ from qunxue_api.modules.research_framework.public import (
 
 __all__ = [
     "REQUIRED_FRAMEWORK_SECTION_KEYS",
+    "ResearchDocumentCompletionCheck",
+    "ResearchDocumentCompletionGate",
     "ResearchDocumentEvidenceRef",
     "ResearchDocumentMarkdownExport",
     "ResearchDocumentRepository",

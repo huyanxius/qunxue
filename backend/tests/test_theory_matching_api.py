@@ -606,6 +606,22 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     restored_plan = client.get(f"/api/theory-plans/{confirmed.json()['theory_plan_id']}")
     assert restored_plan.status_code == 200
     assert restored_plan.json() == confirmed.json()
+    owner_id = UUID(client.get("/api/session").json()["user"]["user_id"])
+    with client.app.state.research_document_application_scope() as document_application:
+        agent_plan = document_application.get_theory_plan_for_agent(
+            user_id=owner_id,
+            theory_plan_id=UUID(confirmed.json()["theory_plan_id"]),
+        )
+        assert agent_plan.phenomenon.phenomenon == phenomenon["phenomenon"]
+        try:
+            document_application.get_theory_plan_for_agent(
+                user_id=uuid4(),
+                theory_plan_id=UUID(confirmed.json()["theory_plan_id"]),
+            )
+        except LookupError:
+            pass
+        else:
+            raise AssertionError("another user must not read the confirmed-plan handoff")
     with ThreadPoolExecutor(max_workers=2) as executor:
         concurrent_confirmations = list(
             executor.map(
@@ -646,6 +662,15 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
         ("limitations", "局限"),
         ("evidence_gaps", "证据缺口"),
     )
+    provenance_required = {
+        "theoretical_perspective",
+        "core_concepts",
+        "mechanisms",
+        "questions_or_hypotheses",
+        "methodology",
+        "analysis_steps",
+    }
+    supporting_evidence = candidates[0]["supporting_evidence"][0]
     sections = [
         {
             "section_id": key,
@@ -653,7 +678,17 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
             "title": title,
             "content": f"{title}的用户可编辑正文。",
             "status": "reviewed",
-            "evidence_refs": [],
+            "evidence_refs": (
+                [
+                    {
+                        "evidence_ref_id": supporting_evidence["evidence_ref_id"],
+                        "source_id": supporting_evidence["source"]["source_id"],
+                        "knowledge_release_id": release_id,
+                    }
+                ]
+                if key in provenance_required
+                else []
+            ),
         }
         for key, title in section_titles
     ]
@@ -680,7 +715,8 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     assert forged_document.status_code == 409
 
     create_url = f"/api/research-tasks/{navigation['task_id']}/research-documents"
-    create_headers = _idempotency_headers()
+    create_headers = _idempotency_headers("concurrent-create-a")
+    competing_create_headers = _idempotency_headers("concurrent-create-b")
     create_payload = {
         "theory_plan_id": confirmed.json()["theory_plan_id"],
         "title": "社区互助研究框架",
@@ -689,12 +725,12 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     with ThreadPoolExecutor(max_workers=2) as executor:
         created_responses = list(
             executor.map(
-                lambda _: client.post(
+                lambda headers: client.post(
                     create_url,
-                    headers=create_headers,
+                    headers=headers,
                     json=create_payload,
                 ),
-                range(2),
+                (create_headers, competing_create_headers),
             )
         )
     created_document = created_responses[0]
@@ -716,11 +752,63 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     )
     assert task_documents.status_code == 200
     assert [item["document_id"] for item in task_documents.json()["items"]] == [document_id]
+    replayed_with_a_new_key = client.post(
+        create_url,
+        headers=_idempotency_headers("create-framework-after-lost-response"),
+        json=create_payload,
+    )
+    assert replayed_with_a_new_key.status_code == 201
+    assert replayed_with_a_new_key.json()["document_id"] == document_id
+    assert len(client.get(create_url).json()["items"]) == 1
     after_document_creation = client.get(
         f"/api/research-tasks/{navigation['task_id']}/navigation"
     ).json()
     assert after_document_creation["current_framework_id"] == document_id
     assert after_document_creation["current_stage"] == "framework_drafting"
+
+    with client.app.state.database.session() as session:
+        task_row = session.get(
+            sqlite_adapters.ResearchTaskRow,
+            str(navigation["task_id"]),
+        )
+        assert task_row is not None
+        task_row.current_framework_id = str(uuid4())
+
+    non_current_revision = client.patch(
+        f"/api/research-documents/{document_id}",
+        headers=_idempotency_headers("non-current-revision"),
+        json={
+            "expected_version": 1,
+            "sections": sections,
+            "change_summary": "不应写入非当前文档",
+            "source": "user_edit",
+        },
+    )
+    non_current_restore = client.post(
+        f"/api/research-documents/{document_id}/restore",
+        headers=_idempotency_headers("non-current-restore"),
+        json={
+            "source_version": 1,
+            "expected_version": 1,
+            "reason": "不应恢复非当前文档",
+        },
+    )
+    non_current_confirmation = client.post(
+        f"/api/research-documents/{document_id}/confirm",
+        headers=_idempotency_headers("non-current-confirm"),
+        json={"expected_version": 1},
+    )
+    assert non_current_revision.status_code == 409
+    assert non_current_restore.status_code == 409
+    assert non_current_confirmation.status_code == 409
+
+    with client.app.state.database.session() as session:
+        task_row = session.get(
+            sqlite_adapters.ResearchTaskRow,
+            str(navigation["task_id"]),
+        )
+        assert task_row is not None
+        task_row.current_framework_id = document_id
 
     revised_sections = [dict(item) for item in sections]
     revised_sections[0] = {
@@ -834,6 +922,10 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     )
     assert reopened_document.status_code == 200
     assert reopened_document.json()["version"] == 5
+    superseded_export = client.get(
+        f"/api/research-documents/{document_id}/export?version=4"
+    )
+    assert superseded_export.status_code == 409
 
     approval_database = Database(client.app.state.settings.database_url)
     approval_proposal_id: UUID | None = None
@@ -880,6 +972,8 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     assert pending_proposal.status_code == 200
     assert pending_proposal.json()["status"] == "pending"
     assert pending_proposal.json()["requires_user_approval"] is True
+    assert pending_proposal.json()["model_provider"] == "test"
+    assert pending_proposal.json()["model_name"] == "test"
     restored_proposals = client.get(
         f"/api/research-documents/{document_id}/proposals"
     )
@@ -887,6 +981,19 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
     assert [item["proposal_id"] for item in restored_proposals.json()["items"]] == [
         str(approval_proposal_id)
     ]
+    blocked_gate = client.get(
+        f"/api/research-documents/{document_id}/completion-gate"
+    )
+    assert blocked_gate.status_code == 200
+    assert blocked_gate.json()["ready"] is False
+    assert blocked_gate.json()["pending_proposal_count"] == 1
+    blocked_confirmation = client.post(
+        f"/api/research-documents/{document_id}/confirm",
+        headers=_idempotency_headers("confirm-with-pending-proposal"),
+        json={"expected_version": 5},
+    )
+    assert blocked_confirmation.status_code == 409
+    assert "Agent" in blocked_confirmation.json()["error"]["message"]
 
     acceptance_headers = _idempotency_headers("accept-document-proposal")
     accepted_proposal = client.post(
@@ -1029,9 +1136,112 @@ def test_user_decision_is_persisted_and_can_be_confirmed_for_m5(
         json={"expected_version": 7},
     )
     assert final_confirmation.status_code == 200
+    replayed_create_after_completion = client.post(
+        create_url,
+        headers=_idempotency_headers("create-framework-after-completion"),
+        json=create_payload,
+    )
+    assert replayed_create_after_completion.status_code == 201
+    assert replayed_create_after_completion.json()["document_id"] == document_id
+    assert replayed_create_after_completion.json()["version"] == 8
+    navigation_after_create_replay = client.get(
+        f"/api/research-tasks/{navigation['task_id']}/navigation"
+    ).json()
+    assert navigation_after_create_replay["current_stage"] == "completed"
+    assert navigation_after_create_replay["current_framework_id"] == document_id
     duplicate_confirmation = client.post(
         f"/api/research-documents/{document_id}/confirm",
         headers=_idempotency_headers("confirm-again"),
         json={"expected_version": 8},
     )
     assert duplicate_confirmation.status_code == 409
+    final_export = client.get(
+        f"/api/research-documents/{document_id}/export?version=8"
+    )
+    assert final_export.status_code == 200
+    export_body = final_export.json()
+    manifest = export_body["manifest"]
+    assert manifest["phenomenon"]["phenomenon"] == phenomenon["phenomenon"]
+    assert manifest["knowledge_release"]["knowledge_release_id"] == release_id
+    assert manifest["model"]["provider"] == started["model"]["provider"]
+    assert manifest["model"]["model_version"] == started["model"]["model_version"]
+    assert {item["title"] for item in manifest["theory_candidates"]} == {
+        item["title"] for item in candidates
+    }
+    assert {item["action"] for item in manifest["theory_decisions"]} == {
+        "adopt",
+        "exclude",
+    }
+    assert {item["status"] for item in manifest["agent_proposals"]} == {
+        "accepted",
+        "rejected",
+    }
+    assert all(
+        item["model_provider"] == "test" and item["model_name"] == "test"
+        for item in manifest["agent_proposals"]
+    )
+    assert manifest["theory_assignments"] == [
+        {
+            "candidate_id": candidates[0]["candidate_id"],
+            "candidate_title": candidates[0]["title"],
+            "role_code": "primary",
+            "responsibility": "解释社区互动变化",
+        }
+    ]
+    assert manifest["theory_relations"] == []
+    assert manifest["evidence"]
+    assert all(
+        item["source"]["title"]
+        and item["verification_status"] == "verified"
+        and item["use_boundary"]
+        for item in manifest["evidence"]
+        if item["source"] is not None
+    )
+    assert [item["version"] for item in manifest["document_versions"]] == list(
+        range(8, 0, -1)
+    )
+    assert manifest["formal_document"]["version"] == 8
+    assert {item["key"] for item in manifest["formal_document"]["sections"]} == {
+        key for key, _title in section_titles
+    }
+    assert "## 研究过程与来源" in export_body["markdown"]
+    assert "## 正式研究框架" in export_body["markdown"]
+
+    logged_out = client.post(
+        "/api/session/logout",
+        headers=_idempotency_headers("m5-owner-logout"),
+    )
+    assert logged_out.status_code == 200
+    other_user = client.post(
+        "/api/session/register",
+        headers=_idempotency_headers("m5-other-user-register"),
+        json={
+            "email": f"{uuid4()}@example.com",
+            "password": "research-passphrase",
+        },
+    )
+    assert other_user.status_code == 201
+    assert client.get(f"/api/research-documents/{document_id}").status_code == 404
+    assert (
+        client.get(f"/api/research-documents/{document_id}/versions").status_code
+        == 404
+    )
+    assert (
+        client.get(f"/api/research-documents/{document_id}/completion-gate").status_code
+        == 404
+    )
+    assert (
+        client.get(f"/api/research-documents/{document_id}/export").status_code
+        == 404
+    )
+    assert client.get(create_url).status_code == 404
+    assert (
+        client.get(
+            f"/api/research-tasks/{navigation['task_id']}/research-document-proposals"
+        ).status_code
+        == 404
+    )
+    assert (
+        client.get(f"/api/research-document-proposals/{approval_proposal_id}").status_code
+        == 404
+    )

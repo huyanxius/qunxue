@@ -4218,6 +4218,79 @@
         "title": "RelationCandidateResponse",
         "type": "object"
       },
+      "ResearchDocumentCompletionCheckResponse": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "passed",
+          "detail"
+        ],
+        "title": "ResearchDocumentCompletionCheckResponse",
+        "type": "object"
+      },
+      "ResearchDocumentCompletionGateResponse": {
+        "properties": {
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentCompletionCheckResponse"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "pending_proposal_count": {
+            "title": "Pending Proposal Count",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document_id",
+          "version",
+          "ready",
+          "pending_proposal_count",
+          "blockers",
+          "checks"
+        ],
+        "title": "ResearchDocumentCompletionGateResponse",
+        "type": "object"
+      },
       "ResearchDocumentEvidenceRefContract": {
         "properties": {
           "evidence_ref_id": {
@@ -4247,6 +4320,115 @@
         "title": "ResearchDocumentEvidenceRefContract",
         "type": "object"
       },
+      "ResearchDocumentExportManifest": {
+        "description": "Versioned, machine-readable audit package for one formal M5 delivery.",
+        "properties": {
+          "agent_proposals": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Agent Proposals",
+            "type": "array"
+          },
+          "document_versions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Document Versions",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "formal_document": {
+            "additionalProperties": true,
+            "title": "Formal Document",
+            "type": "object"
+          },
+          "knowledge_release": {
+            "additionalProperties": true,
+            "title": "Knowledge Release",
+            "type": "object"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "phenomenon": {
+            "additionalProperties": true,
+            "title": "Phenomenon",
+            "type": "object"
+          },
+          "schema_version": {
+            "const": "research-delivery-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "theory_assignments": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Assignments",
+            "type": "array"
+          },
+          "theory_candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Candidates",
+            "type": "array"
+          },
+          "theory_decisions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Decisions",
+            "type": "array"
+          },
+          "theory_relations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Relations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "phenomenon",
+          "knowledge_release",
+          "model",
+          "theory_candidates",
+          "theory_decisions",
+          "theory_assignments",
+          "theory_relations",
+          "evidence",
+          "agent_proposals",
+          "document_versions",
+          "formal_document"
+        ],
+        "title": "ResearchDocumentExportManifest",
+        "type": "object"
+      },
       "ResearchDocumentExportResponse": {
         "properties": {
           "document_id": {
@@ -4261,6 +4443,9 @@
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ResearchDocumentExportManifest"
           },
           "markdown": {
             "title": "Markdown",
@@ -4294,7 +4479,8 @@
           "version",
           "filename",
           "media_type",
-          "markdown"
+          "markdown",
+          "manifest"
         ],
         "title": "ResearchDocumentExportResponse",
         "type": "object"
@@ -4437,6 +4623,28 @@
             "title": "Knowledge Release Id",
             "type": "string"
           },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "model_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Provider"
+          },
           "proposal_id": {
             "format": "uuid",
             "title": "Proposal Id",
@@ -4521,6 +4729,8 @@
           "user_id",
           "conversation_id",
           "agent_run_id",
+          "model_provider",
+          "model_name",
           "task_id",
           "theory_plan_id",
           "knowledge_release_id",
@@ -4544,7 +4754,8 @@
         "enum": [
           "pending",
           "accepted",
-          "rejected"
+          "rejected",
+          "aborted"
         ],
         "title": "ResearchDocumentProposalStatus",
         "type": "string"
@@ -9283,6 +9494,69 @@
           }
         },
         "summary": "Update Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/completion-gate": {
+      "get": {
+        "operationId": "get_research_document_completion_gate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentCompletionGateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Document Completion Gate",
         "tags": [
           "research-documents"
         ]
