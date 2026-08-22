@@ -5,7 +5,9 @@ const buildUrl = vi.hoisted(() => vi.fn())
 vi.mock('../../api/client', () => ({ apiClient: { buildUrl } }))
 
 import {
+  confirmResearchStartProposal,
   getAgentConversation,
+  getResearchStartJourney,
   listAgentConversations,
   parseAgentEventStream,
   streamAgentTurn,
@@ -207,5 +209,114 @@ describe('research agent SSE adapter', () => {
       { conversation_id: null, message: '超长问题', idempotencyKey: 'invalid-1' },
       () => undefined,
     )).rejects.toThrow('问题长度或格式不符合要求')
+  })
+
+  it('loads and confirms the conversation-owned research start through the shared client', async () => {
+    const journey = {
+      conversation_id: 'conversation/1',
+      status: 'proposal_pending',
+      proposal: {
+        proposal_id: 'proposal-1',
+        version: 3,
+        status: 'pending_confirmation',
+        phenomenon: '社区互助正在减少',
+        research_intent: '理解互助衰退的机制',
+        context: '大城市老旧小区',
+        knowledge_release_id: 'release-formal-1',
+        source_turn_id: 'turn-1',
+        source_run_id: 'run-1',
+      },
+      task_id: null,
+      navigation: null,
+    }
+    const confirmed = {
+      ...journey,
+      status: 'task_bound',
+      proposal: { ...journey.proposal, status: 'confirmed' },
+      task_id: 'task-1',
+      navigation: {
+        task_id: 'task-1',
+        status: 'in_progress',
+        current_stage: 'theory_matching',
+        current_framework_id: null,
+        allowed_actions: ['start_matching'],
+        resume_path: '/research/task-1/match',
+        blocker: null,
+        retry: null,
+      },
+    }
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      void input
+      return new Response(JSON.stringify(init?.method === 'POST' ? confirmed : journey), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    await expect(getResearchStartJourney('conversation/1')).resolves.toEqual({
+      conversationId: 'conversation/1',
+      status: 'proposal_pending',
+      taskId: null,
+      proposal: {
+        proposalId: 'proposal-1',
+        phenomenon: '社区互助正在减少',
+        researchIntent: '理解互助衰退的机制',
+        context: '大城市老旧小区',
+        version: 3,
+        status: 'pending_confirmation',
+      },
+      resumePath: null,
+    })
+    await expect(confirmResearchStartProposal({
+      proposalId: 'proposal-1',
+      expectedVersion: 3,
+      phenomenon: '社区互助正在减少',
+      researchIntent: '理解互助衰退的机制',
+      context: '大城市老旧小区',
+      idempotencyKey: 'research-start:proposal-1',
+    })).resolves.toEqual({
+      conversationId: 'conversation/1',
+      status: 'task_bound',
+      taskId: 'task-1',
+      proposal: {
+        proposalId: 'proposal-1',
+        phenomenon: '社区互助正在减少',
+        researchIntent: '理解互助衰退的机制',
+        context: '大城市老旧小区',
+        version: 3,
+        status: 'confirmed',
+      },
+      resumePath: '/research/task-1/match',
+    })
+
+    expect(buildUrl.mock.calls.map(([options]) => options)).toEqual([
+      {
+        url: '/api/agent/conversations/{conversation_id}/journey',
+        path: { conversation_id: 'conversation/1' },
+      },
+      {
+        url: '/api/agent/research-start-proposals/{proposal_id}/confirm',
+        path: { proposal_id: 'proposal-1' },
+      },
+    ])
+    expect(fetch).toHaveBeenNthCalledWith(1, 'https://api.qunxue.test/api/agent/conversations/conversation%2F1/journey', {
+      credentials: 'include',
+      signal: undefined,
+    })
+    expect(fetch).toHaveBeenNthCalledWith(2, 'https://api.qunxue.test/api/agent/research-start-proposals/proposal-1/confirm', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'research-start:proposal-1',
+      },
+      body: JSON.stringify({
+        expected_version: 3,
+        phenomenon: '社区互助正在减少',
+        research_intent: '理解互助衰退的机制',
+        context: '大城市老旧小区',
+      }),
+      signal: undefined,
+    })
   })
 })

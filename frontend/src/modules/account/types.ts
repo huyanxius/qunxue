@@ -22,6 +22,18 @@ export type MyResearchItem = {
   stageLabel: string
   nextActionLabel: string
   entryPath: string
+  blocker: {
+    action: string | null
+    code: string
+    message: string
+    recoverable: boolean
+  } | null
+  retry: {
+    action: string
+    method: 'GET' | 'POST' | 'PATCH'
+    href: string
+    label: string
+  } | null
   phenomenonSummary: string
   adoptedTheoryCount: number
   createdAt: string

@@ -157,6 +157,20 @@ def test_current_release_without_profiles_persists_an_honest_empty_match_run(
     restored = client.get(f"/api/match-runs/{body['match_run_id']}")
     assert restored.status_code == 200
     assert restored.json() == body
+    navigation = client.get(f"/api/research-tasks/{navigation['task_id']}/navigation")
+    assert navigation.status_code == 200
+    assert navigation.json()["blocker"] == {
+        "code": "no_reliable_candidate",
+        "message": "固定知识发布中没有可正式采用的理论候选，请调整研究现象后重试。",
+        "recoverable": True,
+        "action": "start_matching",
+    }
+    assert navigation.json()["retry"] == {
+        "method": "POST",
+        "href": f"/api/research-tasks/{navigation.json()['task_id']}/match-runs",
+        "action": "start_matching",
+        "label": "重新匹配",
+    }
 
 
 def test_stale_task_version_is_rejected_before_creating_a_match_run(

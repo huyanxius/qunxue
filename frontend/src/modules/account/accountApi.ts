@@ -9,47 +9,8 @@ import {
   logoutSession,
   registerSession,
   type SessionResponse,
-  type ResearchTaskNavigationAction,
-  type ResearchTaskNavigationResponse,
 } from '../../api/generated'
 import type { AccountSession, MyResearchItem } from './types'
-
-const stagePresentation = {
-  phenomenon_input: 'phenomenon',
-  phenomenon_confirmation: 'phenomenon',
-  theory_matching: 'match',
-  theory_decision: 'match',
-  framework_drafting: 'framework',
-  framework_review: 'framework',
-  completed: 'framework',
-} satisfies Record<
-  ResearchTaskNavigationResponse['current_stage'],
-  string
->
-
-const stageLabelByAction = {
-  submit_phenomenon: '草稿',
-  confirm_phenomenon: '现象待确认',
-  start_matching: '现象已确认',
-  review_theory_candidates: '匹配生成中',
-  confirm_theory_plan: '已有决策',
-  create_framework: '已有决策',
-  review_framework: '框架草稿',
-  confirm_framework: '框架草稿',
-  export: '框架已确认',
-} satisfies Record<ResearchTaskNavigationAction, string>
-
-const actionLabels = {
-  submit_phenomenon: '补充材料',
-  confirm_phenomenon: '确认现象',
-  start_matching: '开始理论匹配',
-  review_theory_candidates: '查看候选理论',
-  confirm_theory_plan: '确认理论选择',
-  create_framework: '形成研究框架',
-  review_framework: '审校研究框架',
-  confirm_framework: '确认研究框架',
-  export: '导出研究记录',
-} satisfies Record<ResearchTaskNavigationAction, string>
 
 export function watchSessionRejection(listener: () => void) {
   return subscribeToSessionRejected(listener)
@@ -126,13 +87,27 @@ export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
   })
   if (!data) throw new ApiRequestError('研究列表读取失败。', response?.status)
   return data.items.map((item) => {
-    const route = stagePresentation[item.current_stage]
-    const action = item.allowed_actions[0]!
     return {
       taskId: item.task_id,
-      stageLabel: stageLabelByAction[action],
-      nextActionLabel: actionLabels[action],
-      entryPath: `/research/${item.task_id}/${route}`,
+      stageLabel: item.stage_label,
+      nextActionLabel: item.next_action_label,
+      entryPath: item.resume_path,
+      blocker: item.blocker
+        ? {
+            action: item.blocker.action ?? null,
+            code: item.blocker.code,
+            message: item.blocker.message,
+            recoverable: item.blocker.recoverable,
+          }
+        : null,
+      retry: item.retry
+        ? {
+            action: item.retry.action,
+            method: item.retry.method,
+            href: item.retry.href,
+            label: item.retry.label,
+          }
+        : null,
       phenomenonSummary: item.phenomenon_summary?.phenomenon ?? '尚未确认现象',
       adoptedTheoryCount: item.adopted_theory_count,
       createdAt: item.created_at,

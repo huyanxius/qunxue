@@ -20,13 +20,15 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { useLocation, useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchContextRail, ToolDetailDisclosure, type ResearchActivity, type ResearchCitation } from '../research-workspace/ResearchContextRail'
 import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
 import {
+  confirmResearchStartProposal,
   getAgentConversation,
+  getResearchStartJourney,
   listAgentConversations,
   streamAgentTurn,
   type AgentCitation,
@@ -36,6 +38,8 @@ import {
   type AgentRuntimeMode,
   type AgentToolStep,
   type AgentToolTrace,
+  type ResearchStartJourney,
+  type ResearchStartProposal,
 } from '../../modules/research-agent'
 import {
   projectResearchCanvas,
@@ -65,12 +69,86 @@ type ResearchToolStep = AgentToolStep & { interrupted?: boolean }
 
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.research.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.research.agent-runtime.v1'
+const RESEARCH_DRAFT_STORAGE_KEY = 'qunxue.research.composer-draft.v1'
+const PENDING_TURN_STORAGE_KEY = 'qunxue.research.pending-turn.v1'
 const knowledgeTools = new Set(['search_knowledge', 'read_knowledge_entry', 'read_sources', 'browse_knowledge_directory'])
 
-function readStoredKnowledgeReleases(): Record<string, string> {
+type PendingTurnAttempt = {
+  question: string
+  idempotencyKey: string
+  conversationId: string | null
+}
+
+function scopedSessionKey(base: string, userId: string | null) {
+  return userId ? `${base}.${userId}` : null
+}
+
+function readStoredDraft(userId: string | null) {
+  if (typeof window === 'undefined') return ''
+  try {
+    const storageKey = scopedSessionKey(RESEARCH_DRAFT_STORAGE_KEY, userId)
+    return storageKey ? window.sessionStorage.getItem(storageKey)?.slice(0, MAX_AGENT_MESSAGE_LENGTH) ?? '' : ''
+  } catch {
+    return ''
+  }
+}
+
+function persistDraft(userId: string | null, value: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const storageKey = scopedSessionKey(RESEARCH_DRAFT_STORAGE_KEY, userId)
+    if (!storageKey) return
+    if (value) window.sessionStorage.setItem(storageKey, value)
+    else window.sessionStorage.removeItem(storageKey)
+  } catch {
+    // A disabled storage area only removes refresh recovery; the controlled input still works.
+  }
+}
+
+function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
+    if (!storageKey) return null
+    const raw = window.sessionStorage.getItem(storageKey)
+    if (!raw) return null
+    const value = JSON.parse(raw) as Partial<PendingTurnAttempt>
+    if (
+      typeof value.question !== 'string'
+      || !value.question.trim()
+      || value.question.length > MAX_AGENT_MESSAGE_LENGTH
+      || typeof value.idempotencyKey !== 'string'
+      || !value.idempotencyKey
+      || (value.conversationId !== null && typeof value.conversationId !== 'string')
+    ) return null
+    return {
+      question: value.question,
+      idempotencyKey: value.idempotencyKey,
+      conversationId: value.conversationId ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function persistPendingTurnAttempt(userId: string | null, value: PendingTurnAttempt | null) {
+  if (typeof window === 'undefined') return
+  try {
+    const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
+    if (!storageKey) return
+    if (value) window.sessionStorage.setItem(storageKey, JSON.stringify(value))
+    else window.sessionStorage.removeItem(storageKey)
+  } catch {
+    // The server idempotency key still protects an in-process retry when storage is unavailable.
+  }
+}
+
+function readStoredKnowledgeReleases(userId: string | null): Record<string, string> {
   if (typeof window === 'undefined') return {}
   try {
-    const raw = window.sessionStorage.getItem(KNOWLEDGE_RELEASE_STORAGE_KEY)
+    const storageKey = scopedSessionKey(KNOWLEDGE_RELEASE_STORAGE_KEY, userId)
+    if (!storageKey) return {}
+    const raw = window.sessionStorage.getItem(storageKey)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
@@ -83,19 +161,23 @@ function readStoredKnowledgeReleases(): Record<string, string> {
   }
 }
 
-function persistKnowledgeReleases(releases: Record<string, string>) {
+function persistKnowledgeReleases(userId: string | null, releases: Record<string, string>) {
   if (typeof window === 'undefined') return
   try {
-    window.sessionStorage.setItem(KNOWLEDGE_RELEASE_STORAGE_KEY, JSON.stringify(releases))
+    const storageKey = scopedSessionKey(KNOWLEDGE_RELEASE_STORAGE_KEY, userId)
+    if (!storageKey) return
+    window.sessionStorage.setItem(storageKey, JSON.stringify(releases))
   } catch {
     // Storage can be disabled by the browser; the URL/query state remains authoritative for this view.
   }
 }
 
-function readStoredAgentRuntimeModes(): Record<string, AgentRuntimeMode> {
+function readStoredAgentRuntimeModes(userId: string | null): Record<string, AgentRuntimeMode> {
   if (typeof window === 'undefined') return {}
   try {
-    const raw = window.sessionStorage.getItem(AGENT_RUNTIME_STORAGE_KEY)
+    const storageKey = scopedSessionKey(AGENT_RUNTIME_STORAGE_KEY, userId)
+    if (!storageKey) return {}
+    const raw = window.sessionStorage.getItem(storageKey)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
@@ -108,10 +190,12 @@ function readStoredAgentRuntimeModes(): Record<string, AgentRuntimeMode> {
   }
 }
 
-function persistAgentRuntimeModes(modes: Record<string, AgentRuntimeMode>) {
+function persistAgentRuntimeModes(userId: string | null, modes: Record<string, AgentRuntimeMode>) {
   if (typeof window === 'undefined') return
   try {
-    window.sessionStorage.setItem(AGENT_RUNTIME_STORAGE_KEY, JSON.stringify(modes))
+    const storageKey = scopedSessionKey(AGENT_RUNTIME_STORAGE_KEY, userId)
+    if (!storageKey) return
+    window.sessionStorage.setItem(storageKey, JSON.stringify(modes))
   } catch {
     // The visible badge can fall back to the current SSE event when storage is unavailable.
   }
@@ -463,7 +547,7 @@ function AssistantTurn({
         {!answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />Agent 正在组织问题与证据…</p> : null}
         {interrupted ? <p className="new-research__turn-note is-interrupted"><WarningCircleIcon size={14} />本轮已停止，未保存未完成的回答。</p> : null}
         {failure ? <p className="new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
-        {failure && onRegenerate ? <div className="new-research__assistant-actions"><button type="button" aria-label="重试本轮" onClick={onRegenerate}><ArrowClockwiseIcon size={14} />从本轮问题重试</button></div> : null}
+        {(failure || interrupted) && onRegenerate ? <div className="new-research__assistant-actions"><button type="button" aria-label="重试本轮" onClick={onRegenerate}><ArrowClockwiseIcon size={14} />从本轮问题重试</button></div> : null}
         {!streaming && answer && !citations.length ? <p className="new-research__provenance-note"><WarningCircleIcon size={14} />{hasKnowledgeActivity(toolSteps) ? '本轮调用过知识库，但未返回可展示的来源，请谨慎使用。' : '未调用知识库：这是基于 Agent 推理的工作假设，请要求检索或补充材料后再核验。'}</p> : null}
         <SourcePills citations={citations} onSelect={onSelectCitation} />
         {!streaming && answer && onRegenerate ? <AssistantActions content={answer} onRegenerate={onRegenerate} /> : null}
@@ -472,8 +556,69 @@ function AssistantTurn({
   )
 }
 
-export function NewResearchWorkspacePage() {
+function ResearchStartProposalCard({
+  proposal,
+  busy = false,
+  error,
+  onConfirm,
+  onContinue,
+}: {
+  proposal: ResearchStartProposal
+  busy?: boolean
+  error?: string | null
+  onConfirm: () => void
+  onContinue: () => void
+}) {
+  return (
+    <section className="new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
+      <header>
+        <span>建立研究</span>
+        <strong>请确认 Agent 理解的研究起点</strong>
+      </header>
+      <dl>
+        <div><dt>现象</dt><dd>{proposal.phenomenon}</dd></div>
+        <div><dt>意图</dt><dd>{proposal.researchIntent || '还需要通过对话补充研究意图'}</dd></div>
+        <div><dt>情境</dt><dd>{proposal.context || '还需要通过对话补充具体情境'}</dd></div>
+      </dl>
+      {error ? <p className="new-research__start-error" role="alert"><WarningCircleIcon size={14} />{error}</p> : null}
+      <div className="new-research__start-actions">
+        <button type="button" className={`is-primary${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onConfirm}>
+          {busy ? <><CircleNotchIcon size={14} />正在建立研究…</> : <>{error ? '重试建立研究' : '确认并进入理论匹配'}<ArrowUpIcon size={14} /></>}
+        </button>
+        <button type="button" disabled={busy} onClick={onContinue}>{error ? '返回继续修改' : '继续修改'}</button>
+      </div>
+    </section>
+  )
+}
+
+function ResearchStartRecoveryError({
+  message,
+  busy,
+  onRetry,
+  onContinue,
+}: {
+  message: string
+  busy: boolean
+  onRetry: () => void
+  onContinue: () => void
+}) {
+  return (
+    <section className="new-research__start-recovery" role="alert" aria-label="研究状态恢复失败">
+      <div><WarningCircleIcon size={15} /><strong>研究状态暂时无法恢复</strong></div>
+      <p><span>对话已保留</span>。{message}</p>
+      <div className="new-research__start-actions">
+        <button type="button" className={`is-primary${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onRetry}>
+          {busy ? <><CircleNotchIcon size={14} />正在恢复…</> : '重试恢复研究状态'}
+        </button>
+        <button type="button" disabled={busy} onClick={onContinue}>返回继续对话</button>
+      </div>
+    </section>
+  )
+}
+
+export function NewResearchWorkspacePage({ userId }: { userId: string | null }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = searchParams.get('knowledge_release_id')
@@ -483,18 +628,23 @@ export function NewResearchWorkspacePage() {
       ? (location.state as { seedTheoryName: string }).seedTheoryName
       : undefined
   )
-  const [draft, setDraft] = useState('')
+  const restoredPendingTurn = useRef<PendingTurnAttempt | null>(readPendingTurnAttempt(userId))
+  const [draft, setDraft] = useState(() => readStoredDraft(userId) || restoredPendingTurn.current?.question || '')
   const [conversations, setConversations] = useState<AgentConversationSummary[]>([])
   const [activeConversation, setActiveConversation] = useState<AgentConversation | null>(null)
   const [knowledgeReleaseByConversationId, setKnowledgeReleaseByConversationId] = useState<Record<string, string>>(() => (
     requestedConversationId && requestedKnowledgeReleaseId
-      ? { ...readStoredKnowledgeReleases(), [requestedConversationId]: requestedKnowledgeReleaseId }
-      : readStoredKnowledgeReleases()
+      ? { ...readStoredKnowledgeReleases(userId), [requestedConversationId]: requestedKnowledgeReleaseId }
+      : readStoredKnowledgeReleases(userId)
   ))
-  const [agentRuntimeModeByConversationId, setAgentRuntimeModeByConversationId] = useState<Record<string, AgentRuntimeMode>>(() => readStoredAgentRuntimeModes())
+  const [agentRuntimeModeByConversationId, setAgentRuntimeModeByConversationId] = useState<Record<string, AgentRuntimeMode>>(() => readStoredAgentRuntimeModes(userId))
   const [agentRuntimeMode, setAgentRuntimeMode] = useState<AgentRuntimeMode | null>(() => (
-    requestedConversationId ? readStoredAgentRuntimeModes()[requestedConversationId] ?? null : null
+    requestedConversationId ? readStoredAgentRuntimeModes(userId)[requestedConversationId] ?? null : null
   ))
+  const [researchStartJourney, setResearchStartJourney] = useState<ResearchStartJourney | null>(null)
+  const [researchStartLoading, setResearchStartLoading] = useState(false)
+  const [researchStartError, setResearchStartError] = useState<string | null>(null)
+  const [researchStartConfirming, setResearchStartConfirming] = useState(false)
   const [streamingTurn, setStreamingTurn] = useState<ResearchCanvasStreamingTurn | null>(null)
   const [toolStepsByTurnId, setToolStepsByTurnId] = useState<Record<string, ResearchToolStep[]>>({})
   const [status, setStatus] = useState<AgentPageStatus>('idle')
@@ -509,34 +659,44 @@ export function NewResearchWorkspacePage() {
   const streamGeneration = useRef(0)
   const conversationLoadAbortController = useRef<AbortController | null>(null)
   const conversationLoadGeneration = useRef(0)
+  const researchStartConfirmAbortController = useRef<AbortController | null>(null)
+  const researchStartLoadAbortController = useRef<AbortController | null>(null)
   const pendingToolSteps = useRef<ResearchToolStep[]>([])
-  const pendingConversationId = useRef<string | null>(requestedConversationId)
+  const failedTurnAttempt = useRef<PendingTurnAttempt | null>(restoredPendingTurn.current)
+  const activeTurnAttempt = useRef<PendingTurnAttempt | null>(null)
+  const pendingConversationId = useRef<string | null>(requestedConversationId ?? restoredPendingTurn.current?.conversationId ?? null)
   const loadedConversationId = useRef<string | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
 
   const closeHistory = useCallback(() => setHistoryOpen(false), [])
 
+  function updateDraft(value: string) {
+    setDraft(value)
+    persistDraft(userId, value)
+  }
+
   const rememberKnowledgeRelease = useCallback((conversationId: string, releaseId: string) => {
     if (!conversationId || !releaseId) return
     setKnowledgeReleaseByConversationId((current) => {
       const next = { ...current, [conversationId]: releaseId }
-      persistKnowledgeReleases(next)
+      persistKnowledgeReleases(userId, next)
       return next
     })
-  }, [])
+  }, [userId])
 
   const rememberAgentRuntimeMode = useCallback((conversationId: string, mode: AgentRuntimeMode) => {
     if (!conversationId) return
     setAgentRuntimeModeByConversationId((current) => {
       const next = { ...current, [conversationId]: mode }
-      persistAgentRuntimeModes(next)
+      persistAgentRuntimeModes(userId, next)
       return next
     })
-  }, [])
+  }, [userId])
 
   const turns = activeConversation?.turns ?? []
-  const isBusy = status === 'loading' || status === 'thinking' || status === 'retrieving' || status === 'answering'
+  const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
+  const isBusy = researchStartConfirming || status === 'loading' || canStopGeneration
   const canSubmit = draft.trim().length > 0 && !isBusy
   const projection = useMemo(() => projectResearchCanvas({ conversation: activeConversation, streamingTurn }), [activeConversation, streamingTurn])
 
@@ -549,9 +709,17 @@ export function NewResearchWorkspacePage() {
     conversationLoadGeneration.current = requestGeneration
     setError(null)
     setStatus('loading')
+    setResearchStartJourney(null)
+    setResearchStartLoading(true)
+    setResearchStartError(null)
     try {
-      const conversation = await getAgentConversation(conversationId, controller.signal)
+      const [conversationResult, journeyResult] = await Promise.allSettled([
+        getAgentConversation(conversationId, controller.signal),
+        getResearchStartJourney(conversationId, controller.signal),
+      ])
       if (controller.signal.aborted || requestGeneration !== conversationLoadGeneration.current) return
+      if (conversationResult.status === 'rejected') throw conversationResult.reason
+      const conversation = conversationResult.value
       const persistedConversationReleaseId = [...conversation.turns]
         .reverse()
         .map((turn) => turn.knowledge_release_id?.trim() || null)
@@ -562,6 +730,18 @@ export function NewResearchWorkspacePage() {
       setActiveConversation(conversation)
       setAgentRuntimeMode(agentRuntimeModeByConversationId[conversationId] ?? null)
       loadedConversationId.current = conversationId
+      if (journeyResult.status === 'fulfilled') {
+        setResearchStartJourney(journeyResult.value)
+        const resumePath = journeyResult.value.taskId
+          ? journeyResult.value.resumePath?.trim()
+          : ''
+        if (resumePath) {
+          navigate(resumePath, { replace: true })
+          return
+        }
+      } else if ((journeyResult.reason as { name?: string } | null)?.name !== 'AbortError') {
+        setResearchStartError('研究建立状态暂时无法恢复。对话已保留，请稍后重试。')
+      }
       if (releaseId) {
         rememberKnowledgeRelease(conversationId, releaseId)
       }
@@ -577,9 +757,10 @@ export function NewResearchWorkspacePage() {
       setError('这段研究记录暂时无法打开。你可以从一个新问题继续。')
     } finally {
       if (requestGeneration === conversationLoadGeneration.current && !controller.signal.aborted) setStatus('idle')
+      if (requestGeneration === conversationLoadGeneration.current && !controller.signal.aborted) setResearchStartLoading(false)
       if (conversationLoadAbortController.current === controller) conversationLoadAbortController.current = null
     }
-  }, [activeConversation?.conversation_id, agentRuntimeModeByConversationId, knowledgeReleaseByConversationId, rememberKnowledgeRelease, requestedConversationId, requestedKnowledgeReleaseId, setSearchParams])
+  }, [activeConversation?.conversation_id, agentRuntimeModeByConversationId, knowledgeReleaseByConversationId, navigate, rememberKnowledgeRelease, requestedConversationId, requestedKnowledgeReleaseId, setSearchParams])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -611,6 +792,9 @@ export function NewResearchWorkspacePage() {
     streamAbortController.current?.abort()
     streamAbortController.current = null
     pendingToolSteps.current = []
+    failedTurnAttempt.current = null
+    activeTurnAttempt.current = null
+    persistPendingTurnAttempt(userId, null)
     setStreamingTurn(null)
   }
 
@@ -621,6 +805,14 @@ export function NewResearchWorkspacePage() {
     loadedConversationId.current = null
     pendingConversationId.current = null
     setActiveConversation(null)
+    setResearchStartJourney(null)
+    setResearchStartLoading(false)
+    setResearchStartError(null)
+    researchStartConfirmAbortController.current?.abort()
+    researchStartConfirmAbortController.current = null
+    researchStartLoadAbortController.current?.abort()
+    researchStartLoadAbortController.current = null
+    setResearchStartConfirming(false)
     setAgentRuntimeMode(null)
     setToolStepsByTurnId({})
     setSelectedCitationId(null)
@@ -632,12 +824,17 @@ export function NewResearchWorkspacePage() {
   function openConversation(summary: AgentConversationSummary) {
     prepareConversationSwitch()
     setHistoryOpen(false)
-    void loadConversation(summary.conversation_id)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('conversation_id', summary.conversation_id)
+      next.delete('knowledge_release_id')
+      return next
+    }, { replace: true })
   }
 
   function newConversation() {
     prepareConversationSwitch()
-    setDraft('')
+    updateDraft('')
     setError(null)
     setStatus('idle')
     setHistoryOpen(false)
@@ -649,10 +846,92 @@ export function NewResearchWorkspacePage() {
     }, { replace: true })
   }
 
-  async function submitQuestion(rawQuestion: string) {
+  function continueEditingResearchStart() {
+    setResearchStartError(null)
+    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+  }
+
+  async function retryResearchStartRecovery() {
+    const conversationId = activeConversation?.conversation_id
+    if (!conversationId || researchStartLoading) return
+    const controller = new AbortController()
+    researchStartLoadAbortController.current?.abort()
+    researchStartLoadAbortController.current = controller
+    setResearchStartLoading(true)
+    setResearchStartError(null)
+    try {
+      const journey = await getResearchStartJourney(conversationId, controller.signal)
+      if (controller.signal.aborted || activeConversation?.conversation_id !== journey.conversationId) return
+      setResearchStartJourney(journey)
+      const resumePath = journey.taskId ? journey.resumePath?.trim() : ''
+      if (resumePath) navigate(resumePath, { replace: true })
+    } catch (cause: unknown) {
+      if (controller.signal.aborted) return
+      setResearchStartError(cause instanceof Error
+        ? cause.message
+        : '研究建立状态暂时无法恢复。')
+    } finally {
+      if (researchStartLoadAbortController.current === controller) {
+        researchStartLoadAbortController.current = null
+        setResearchStartLoading(false)
+      }
+    }
+  }
+
+  async function confirmResearchStart() {
+    const proposal = researchStartJourney?.proposal
+    if (!proposal || proposal.status !== 'pending_confirmation' || researchStartConfirming) return
+    const controller = new AbortController()
+    researchStartConfirmAbortController.current?.abort()
+    researchStartConfirmAbortController.current = controller
+    setResearchStartConfirming(true)
+    setResearchStartError(null)
+    try {
+      const journey = await confirmResearchStartProposal({
+        proposalId: proposal.proposalId,
+        expectedVersion: proposal.version,
+        phenomenon: proposal.phenomenon,
+        researchIntent: proposal.researchIntent,
+        context: proposal.context,
+        idempotencyKey: `research-start:${proposal.proposalId}`,
+      }, controller.signal)
+      if (controller.signal.aborted) return
+      setResearchStartJourney(journey)
+      const resumePath = journey.resumePath?.trim()
+      if (!journey.taskId || !resumePath) {
+        setResearchStartError('研究已提交，但服务端尚未返回可恢复的下一步。请重试建立研究。')
+        return
+      }
+      updateDraft('')
+      navigate(resumePath, { replace: true })
+    } catch (cause: unknown) {
+      if (controller.signal.aborted) return
+      setResearchStartError(cause instanceof Error
+        ? cause.message
+        : '研究暂时未能建立，你的内容已保留。')
+    } finally {
+      if (researchStartConfirmAbortController.current === controller) {
+        researchStartConfirmAbortController.current = null
+        setResearchStartConfirming(false)
+      }
+    }
+  }
+
+  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string) {
     const question = rawQuestion.trim()
     if (!question || isBusy) return
-    setDraft('')
+    const turnIdempotencyKey = retryIdempotencyKey
+      ?? globalThis.crypto?.randomUUID?.()
+      ?? `research-${Date.now()}`
+    const turnAttempt: PendingTurnAttempt = {
+      question,
+      idempotencyKey: turnIdempotencyKey,
+      conversationId: activeConversation?.conversation_id ?? pendingConversationId.current,
+    }
+    activeTurnAttempt.current = turnAttempt
+    persistPendingTurnAttempt(userId, turnAttempt)
+    failedTurnAttempt.current = null
+    updateDraft('')
     setError(null)
     setStatus('thinking')
     pendingToolSteps.current = []
@@ -666,13 +945,19 @@ export function NewResearchWorkspacePage() {
         {
           conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
           message: question,
-          idempotencyKey: globalThis.crypto?.randomUUID?.() ?? `research-${Date.now()}`,
+          idempotencyKey: turnIdempotencyKey,
           workspace: 'research',
         },
         (event: AgentEvent) => {
           if (streamGeneration.current !== runGeneration) return
           if (event.type === 'turn_started') {
             pendingConversationId.current = event.conversation_id
+            const startedAttempt = {
+              ...turnAttempt,
+              conversationId: event.conversation_id,
+            }
+            activeTurnAttempt.current = startedAttempt
+            persistPendingTurnAttempt(userId, startedAttempt)
             if (event.runtime_mode) {
               setAgentRuntimeMode(event.runtime_mode)
               rememberAgentRuntimeMode(event.conversation_id, event.runtime_mode)
@@ -695,6 +980,10 @@ export function NewResearchWorkspacePage() {
               ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] }
               : current)
           } else if (event.type === 'turn_completed') {
+            failedTurnAttempt.current = null
+            activeTurnAttempt.current = null
+            persistPendingTurnAttempt(userId, null)
+            persistDraft(userId, '')
             const localToolSteps = pendingToolSteps.current
             const completedConversation = attachLocalToolSteps(event.conversation, localToolSteps)
             const completedTurn = completedConversation.turns.at(-1)
@@ -715,6 +1004,24 @@ export function NewResearchWorkspacePage() {
             ])
             setStreamingTurn(null)
             setStatus('idle')
+            setResearchStartJourney(null)
+            setResearchStartError(null)
+            setResearchStartLoading(true)
+            void getResearchStartJourney(completedConversation.conversation_id, abortController.signal)
+              .then((journey) => {
+                if (streamGeneration.current !== runGeneration || pendingConversationId.current !== journey.conversationId) return
+                setResearchStartJourney(journey)
+                const resumePath = journey.taskId ? journey.resumePath?.trim() : ''
+                if (resumePath) navigate(resumePath, { replace: true })
+              })
+              .catch((cause: unknown) => {
+                if (abortController.signal.aborted || streamGeneration.current !== runGeneration) return
+                if ((cause as { name?: string } | null)?.name === 'AbortError') return
+                setResearchStartError('对话已保存，但研究建立状态暂时无法加载。请稍后重试。')
+              })
+              .finally(() => {
+                if (streamGeneration.current === runGeneration) setResearchStartLoading(false)
+              })
             setSearchParams((current) => {
               const next = new URLSearchParams(current)
               next.set('conversation_id', completedConversation.conversation_id)
@@ -724,6 +1031,11 @@ export function NewResearchWorkspacePage() {
           } else if (event.type === 'turn_interrupted') {
             settleInterruptedTurn()
           } else if (event.type === 'turn_failed') {
+            const failedAttempt = activeTurnAttempt.current ?? turnAttempt
+            failedTurnAttempt.current = failedAttempt
+            activeTurnAttempt.current = null
+            persistPendingTurnAttempt(userId, failedAttempt)
+            updateDraft(question)
             setStreamingTurn((current) => current ? { ...current, failure: event.message } : current)
             setError(event.message)
             setStatus('error')
@@ -739,6 +1051,11 @@ export function NewResearchWorkspacePage() {
           : causeMessage && causeMessage !== 'Agent 暂时无法连接'
             ? causeMessage
             : 'Agent 暂时无法连接。请检查模型服务后重试，这一轮不会伪造回答。'
+        const failedAttempt = activeTurnAttempt.current ?? turnAttempt
+        failedTurnAttempt.current = failedAttempt
+        activeTurnAttempt.current = null
+        persistPendingTurnAttempt(userId, failedAttempt)
+        updateDraft(question)
         setStreamingTurn((current) => current ? { ...current, failure: message } : current)
         setError(message)
         setStatus('error')
@@ -749,10 +1066,27 @@ export function NewResearchWorkspacePage() {
   }
 
   function submitDraft() {
-    void submitQuestion(draft)
+    const attempt = failedTurnAttempt.current
+    const normalizedDraft = draft.trim()
+    void submitQuestion(
+      normalizedDraft,
+      attempt?.question === normalizedDraft ? attempt.idempotencyKey : undefined,
+    )
+  }
+
+  function retryFailedTurn(question: string) {
+    const attempt = failedTurnAttempt.current
+    void submitQuestion(question, attempt?.question === question ? attempt.idempotencyKey : undefined)
   }
 
   function settleInterruptedTurn() {
+    const attempt = activeTurnAttempt.current
+    if (attempt) {
+      failedTurnAttempt.current = attempt
+      activeTurnAttempt.current = null
+      persistPendingTurnAttempt(userId, attempt)
+      updateDraft(attempt.question)
+    }
     const next = interruptedSteps(pendingToolSteps.current)
     pendingToolSteps.current = next
     setStreamingTurn((current) => current ? { ...current, interrupted: true, toolSteps: next, failure: undefined } : current)
@@ -856,7 +1190,7 @@ export function NewResearchWorkspacePage() {
             : node.kind === 'gap'
               ? `请优先补齐这个证据缺口；需要时调用知识库工具：${subject}`
               : `请从这个阶段综合中找出最脆弱的推理，并继续推进：${subject}`
-    setDraft(prompt)
+    updateDraft(prompt)
     globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
   }
 
@@ -921,12 +1255,28 @@ export function NewResearchWorkspacePage() {
                         toolSteps={streamingTurn.toolSteps}
                         interrupted={streamingTurn.interrupted}
                         failure={streamingTurn.failure}
-                        streaming
+                        streaming={canStopGeneration && !streamingTurn.interrupted && !streamingTurn.failure}
                         onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                         onSelectCitation={openCitation}
-                        onRegenerate={() => { void submitQuestion(streamingTurn.question) }}
+                        onRegenerate={() => retryFailedTurn(streamingTurn.question)}
                       />
                     ) : null}
+                    {researchStartJourney?.proposal?.status === 'pending_confirmation' ? (
+                      <ResearchStartProposalCard
+                        proposal={researchStartJourney.proposal}
+                        busy={researchStartConfirming}
+                        error={researchStartError}
+                        onConfirm={() => { void confirmResearchStart() }}
+                        onContinue={continueEditingResearchStart}
+                      />
+                    ) : researchStartError ? (
+                      <ResearchStartRecoveryError
+                        message={researchStartError}
+                        busy={researchStartLoading}
+                        onRetry={() => { void retryResearchStartRecovery() }}
+                        onContinue={continueEditingResearchStart}
+                      />
+                    ) : researchStartLoading ? <p className="new-research__start-loading" role="status"><CircleNotchIcon size={14} />正在恢复研究建立状态…</p> : null}
                     <div ref={transcriptEndRef} />
                   </div>
                 )}
@@ -936,8 +1286,8 @@ export function NewResearchWorkspacePage() {
                 {error ? <div className="new-research__error" role="alert"><WarningCircleIcon size={16} /><span>{error}</span><button type="button" aria-label="关闭错误提示" onClick={() => setError(null)}><XIcon size={14} /></button></div> : null}
                 <form onSubmit={handleSubmit} className="new-research__composer-form">
                   <div className="new-research__composer">
-                    <textarea ref={composerInputRef} aria-label="和 Agent 讨论你的研究" disabled={isBusy} maxLength={MAX_AGENT_MESSAGE_LENGTH} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleKeyDown} placeholder="描述一个现象，或告诉 Agent 你想理解什么" rows={3} />
-                    <div className="new-research__composer-footer"><span><BookOpenTextIcon size={13} />知识库按需调用 · Enter 发送 · Shift + Enter 换行</span><small className="new-research__composer-count">{draft.length}/{MAX_AGENT_MESSAGE_LENGTH}</small><button type={isBusy ? 'button' : 'submit'} aria-label={isBusy ? '停止生成' : '发送给研究 Agent'} className={isBusy ? 'is-stop' : ''} disabled={!isBusy && !canSubmit} onClick={isBusy ? stopGeneration : undefined}>{isBusy ? <StopIcon size={15} weight="fill" /> : <ArrowUpIcon size={18} />}</button></div>
+                    <textarea ref={composerInputRef} aria-label="和 Agent 讨论你的研究" disabled={isBusy} maxLength={MAX_AGENT_MESSAGE_LENGTH} value={draft} onChange={(event) => updateDraft(event.target.value)} onKeyDown={handleKeyDown} placeholder="描述一个现象，或告诉 Agent 你想理解什么" rows={3} />
+                    <div className="new-research__composer-footer"><span><BookOpenTextIcon size={13} />知识库按需调用 · Enter 发送 · Shift + Enter 换行</span><small className="new-research__composer-count">{draft.length}/{MAX_AGENT_MESSAGE_LENGTH}</small><button type={canStopGeneration ? 'button' : 'submit'} aria-label={canStopGeneration ? '停止生成' : isBusy ? '研究状态处理中' : '发送给研究 Agent'} className={canStopGeneration ? 'is-stop' : ''} disabled={isBusy ? !canStopGeneration : !canSubmit} onClick={canStopGeneration ? stopGeneration : undefined}>{canStopGeneration ? <StopIcon size={15} weight="fill" /> : <ArrowUpIcon size={18} />}</button></div>
                   </div>
                 </form>
               </footer>

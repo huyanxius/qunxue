@@ -13,6 +13,8 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     PreparedPhenomenonCandidate,
+    ResearchStartConfirmation,
+    ResearchStartProposal,
     ResearchTask,
 )
 
@@ -43,6 +45,38 @@ class ResearchTaskRepository(Protocol):
     def add_or_get_by_idempotency_key(self, task: ResearchTask) -> ResearchTask: ...
 
     def save_progress(self, task: ResearchTask) -> ResearchTask | None: ...
+
+
+@runtime_checkable
+class ResearchStartProposalRepository(Protocol):
+    def assert_source_completed(self, proposal: ResearchStartProposal) -> None: ...
+
+    def add_from_completed_run(self, proposal: ResearchStartProposal) -> ResearchStartProposal: ...
+
+    def get(self, *, user_id: UUID, proposal_id: UUID) -> ResearchStartProposal | None: ...
+
+    def latest_for_conversation(
+        self, *, user_id: UUID, conversation_id: UUID
+    ) -> ResearchStartProposal | None: ...
+
+    def get_confirmation(
+        self, *, user_id: UUID, idempotency_key: str
+    ) -> ResearchStartConfirmation | None: ...
+
+    def add_confirmation(
+        self, confirmation: ResearchStartConfirmation
+    ) -> ResearchStartConfirmation: ...
+
+    def mark_confirmed(
+        self,
+        *,
+        user_id: UUID,
+        proposal_id: UUID,
+        expected_version: int,
+        task_id: UUID,
+        request_hash: str,
+        confirmed_at: datetime,
+    ) -> ResearchStartProposal | None: ...
 
 
 @runtime_checkable

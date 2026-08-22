@@ -57,6 +57,17 @@ class ResearchTaskRow(Base):
     current_match_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_theory_plan_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_framework_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    knowledge_release_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("agent_conversations.conversation_id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
+    source_turn_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    source_agent_run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("agent_runs.run_id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -161,3 +172,66 @@ class MaterialIntakeRunRow(Base):
     processing_policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
     candidate_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ResearchStartProposalRow(Base):
+    __tablename__ = "research_start_proposals"
+    __table_args__ = (
+        UniqueConstraint("source_run_id", name="uq_research_start_proposal_source_run"),
+        Index(
+            "ix_research_start_proposals_conversation_created",
+            "conversation_id",
+            "created_at",
+        ),
+    )
+
+    proposal_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("agent_conversations.conversation_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    source_run_id: Mapped[str] = mapped_column(
+        ForeignKey("agent_runs.run_id", ondelete="CASCADE"), nullable=False
+    )
+    source_turn_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    knowledge_release_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    phenomenon: Mapped[str] = mapped_column(String(10000), nullable=False)
+    research_intent: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    context: Mapped[str | None] = mapped_column(String(10000), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    confirmed_task_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="SET NULL"), nullable=True, unique=True
+    )
+    confirmed_request_hash: Mapped[str | None] = mapped_column(String(71), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ResearchStartConfirmationRow(Base):
+    __tablename__ = "research_start_confirmations"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "idempotency_key",
+            name="uq_research_start_confirmation_user_request",
+        ),
+    )
+
+    confirmation_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    proposal_id: Mapped[str] = mapped_column(
+        ForeignKey("research_start_proposals.proposal_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    request_hash: Mapped[str] = mapped_column(String(71), nullable=False)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
