@@ -4,6 +4,7 @@
 export type KnowledgeReviewStatus =
   | 'draft'
   | 'pending'
+  | 'pre_review_completed'
   | 'reviewed'
   | 'retired'
 

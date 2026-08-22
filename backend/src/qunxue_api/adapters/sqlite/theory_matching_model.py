@@ -64,7 +64,11 @@ class TheoryMatchingRequestRow(Base):
 class TheoryDecisionSetRow(Base):
     __tablename__ = "theory_decision_sets"
     __table_args__ = (
-        UniqueConstraint("match_run_id", name="uq_theory_decision_sets_match_run"),
+        UniqueConstraint(
+            "match_run_id",
+            "draft_version",
+            name="uq_theory_decision_sets_match_run_draft",
+        ),
     )
 
     decision_set_id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -72,6 +76,11 @@ class TheoryDecisionSetRow(Base):
         ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), nullable=False
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
+    draft_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0",
+    )
     snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     request_hash: Mapped[str | None] = mapped_column(String(72), nullable=True)
@@ -80,6 +89,9 @@ class TheoryDecisionSetRow(Base):
 
 class ConfirmedTheoryPlanRow(Base):
     __tablename__ = "confirmed_theory_plans"
+    __table_args__ = (
+        UniqueConstraint("task_id", name="uq_confirmed_theory_plans_task"),
+    )
 
     theory_plan_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     task_id: Mapped[str] = mapped_column(
@@ -98,3 +110,38 @@ class ConfirmedTheoryPlanRow(Base):
     confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     request_hash: Mapped[str | None] = mapped_column(String(72), nullable=True)
+
+
+class TheoryDecisionDraftRow(Base):
+    __tablename__ = "theory_decision_drafts"
+
+    draft_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TheoryDecisionDraftRequestRow(Base):
+    __tablename__ = "theory_decision_draft_requests"
+    __table_args__ = (
+        UniqueConstraint(
+            "match_run_id",
+            "idempotency_key",
+            name="uq_theory_decision_draft_request",
+        ),
+    )
+
+    request_record_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    match_run_id: Mapped[str] = mapped_column(
+        ForeignKey("match_runs.match_run_id", ondelete="CASCADE"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(72), nullable=False)
+    resulting_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -288,6 +288,8 @@ def _judgement_response() -> dict[str, Any]:
             "evidence_gaps": ["缺少时间顺序材料"],
             "alternative_explanations": ["资源供给变化"],
             "evidence_ref_ids": [EVIDENCE.evidence_ref_id],
+            "supporting_evidence_ref_ids": [EVIDENCE.evidence_ref_id],
+            "conflicting_evidence_ref_ids": [],
         },
     }
 
@@ -413,6 +415,8 @@ def test_one_provider_maps_four_capabilities_over_real_local_http() -> None:
     assert phenomenon.output.phenomenon == "成员流动削弱社区重复互动"
     assert judgement.output.verdict is TheoryJudgementVerdict.CONDITIONAL
     assert judgement.output.evidence_ref_ids == (EVIDENCE.evidence_ref_id,)
+    assert judgement.output.supporting_evidence_ref_ids == (EVIDENCE.evidence_ref_id,)
+    assert judgement.output.conflicting_evidence_ref_ids == ()
     assert framework.output.concept_mappings[0].candidate_id == CANDIDATE.candidate_id
     assert audit.output.overall_status is AuditOverallStatus.REVISE
     assert audit.output.findings[0].finding_type is AuditFindingType.EVIDENCE
@@ -707,10 +711,23 @@ def test_interrupted_http_response_is_recorded_as_provider_unavailable(
         lambda response: response["output"].update(
             evidence_ref_ids=["evidence-outside-input"]
         ),
+        lambda response: response["output"].update(
+            supporting_evidence_ref_ids=["evidence-outside-input"]
+        ),
+        lambda response: response["output"].update(
+            conflicting_evidence_ref_ids=["evidence-outside-input"]
+        ),
         lambda response: response.update(theory_ids=["theory-outside-input"]),
         lambda response: response.update(knowledge_release_id="release-outside-input"),
     ],
-    ids=["invalid-enum", "unknown-evidence", "unknown-theory", "unknown-release"],
+    ids=[
+        "invalid-enum",
+        "unknown-evidence",
+        "unknown-supporting-evidence",
+        "unknown-conflicting-evidence",
+        "unknown-theory",
+        "unknown-release",
+    ],
 )
 def test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned(
     mutate,

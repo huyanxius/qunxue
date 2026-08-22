@@ -100,6 +100,18 @@ class MatchCandidatePageResponse(BaseModel):
     next_cursor: str | None
 
 
+class FailedTheoryCandidateResponse(BaseModel):
+    candidate_id: UUID
+    version: int
+    title: str
+    judgement_run_status: CandidateJudgementRunStatus
+    failure_code: str
+    retryable: bool
+    attempt: int = Field(ge=1)
+    trace_id: UUID
+    request_id: UUID
+
+
 class MatchRunResponse(BaseModel):
     match_run_id: UUID
     task_id: UUID
@@ -112,6 +124,7 @@ class MatchRunResponse(BaseModel):
     completed_candidate_count: int
     failed_candidate_count: int
     failed_candidate_ids: list[UUID]
+    failed_candidates: list[FailedTheoryCandidateResponse]
     phenomenon_query_id: UUID
     phenomenon_version: int
     knowledge_release_id: str
@@ -145,6 +158,18 @@ class TheoryDecisionInput(BaseModel):
     reason: str = Field(min_length=1, max_length=4_000)
     related_source_ids: list[str] = Field(default_factory=list)
     related_candidate_ids: list[UUID]
+    revised_applicability: str | None = None
+
+
+class TheoryDecisionDraftInput(BaseModel):
+    """Incomplete user-authored state; finalization still uses TheoryDecisionInput."""
+
+    candidate_id: UUID
+    candidate_version: int = Field(ge=1)
+    action: TheoryDecisionAction | None = None
+    reason: str = Field(default="", max_length=4_000)
+    related_source_ids: list[str] = Field(default_factory=list)
+    related_candidate_ids: list[UUID] = Field(default_factory=list)
     revised_applicability: str | None = None
 
 
@@ -183,6 +208,7 @@ class TheoryRelationResponse(BaseModel):
 
 class CreateTheoryDecisionsRequest(BaseModel):
     expected_match_run_version: int = Field(ge=1)
+    expected_draft_version: int | None = Field(default=None, ge=1)
     completion_basis: MatchCompletionBasis
     decisions: list[TheoryDecisionInput] = Field(min_length=1)
     use_assignments: list[TheoryUseAssignmentInput]
@@ -205,12 +231,43 @@ class TheoryDecisionSetResponse(BaseModel):
     decision_set_id: UUID
     match_run_id: UUID
     version: int
+    draft_version: int
     allowed_actions: list[TheoryDecisionSetAction]
     knowledge_release_id: str
     completion_basis: MatchCompletionBasis
     decisions: list[TheoryDecisionRecordResponse]
     use_assignments: list[TheoryUseAssignmentResponse]
     relations: list[TheoryRelationResponse]
+
+
+class SaveTheoryDecisionDraftRequest(BaseModel):
+    expected_match_run_version: int = Field(ge=1)
+    expected_draft_version: int = Field(ge=0)
+    completion_basis: MatchCompletionBasis
+    decisions: list[TheoryDecisionDraftInput] = Field(default_factory=list)
+    use_assignments: list[TheoryUseAssignmentInput] = Field(default_factory=list)
+    relations: list[TheoryRelationInput] = Field(default_factory=list)
+    acknowledged_candidate_ids: list[UUID] = Field(default_factory=list)
+    failed_candidate_ids: list[UUID] = Field(default_factory=list)
+    partial_completion_acknowledgement_reason: str | None = Field(
+        default=None,
+        max_length=2_000,
+    )
+
+
+class TheoryDecisionDraftResponse(BaseModel):
+    draft_id: UUID
+    match_run_id: UUID
+    version: int
+    expected_match_run_version: int
+    completion_basis: MatchCompletionBasis
+    decisions: list[TheoryDecisionDraftInput]
+    use_assignments: list[TheoryUseAssignmentInput]
+    relations: list[TheoryRelationInput]
+    acknowledged_candidate_ids: list[UUID]
+    failed_candidate_ids: list[UUID]
+    partial_completion_acknowledgement_reason: str | None
+    updated_at: datetime
 
 
 class TheoryDecisionPageResponse(BaseModel):

@@ -18,6 +18,7 @@ import './knowledge-preview.css'
 const reviewLabels: Record<KnowledgeReviewStatus, string> = {
   draft: '草稿',
   pending: '待核验',
+  pre_review_completed: '预审核完成',
   reviewed: '已审核',
   retired: '已停用',
 }

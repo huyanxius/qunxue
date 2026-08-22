@@ -26,13 +26,15 @@ from qunxue_api.modules.theory_matching import (
     MatchRunStatus,
     TheoryJudgementBatchItemResult,
     TheoryJudgementBatchResult,
+    TheoryJudgementDraft,
+    TheoryJudgementVerdict,
     TheoryMatchingService,
 )
 
 RELEASE = KnowledgeReleaseRef(
-    knowledge_release_id="release-reviewed-v1",
+    knowledge_release_id="release-pre-reviewed-v1",
     level=KnowledgeReleaseLevel.PREVIEW,
-    content_hash="sha256:reviewed-release",
+    content_hash="sha256:pre-reviewed-release",
 )
 PHENOMENON = ConfirmedPhenomenonSnapshot(
     task_id=UUID(int=100),
@@ -71,6 +73,10 @@ class _MatchRunRepository:
     def get(self, match_run_id: UUID) -> object | None:
         return self.items.get(match_run_id)
 
+    def save(self, snapshot: object) -> object:
+        self.items[snapshot.match_run_id] = snapshot
+        return snapshot
+
 
 def _ids(start: int = 1):
     values = count(start)
@@ -83,7 +89,7 @@ def _bundle(profile_count: int) -> EvidenceBundleSnapshot:
     for index in range(1, profile_count + 1):
         source = SourceRecordSnapshot(
             source_id=f"source-{index}",
-            source_type="reviewed_publication",
+            source_type="pre_reviewed_publication",
             title=f"理论 {index} 来源",
             authors_or_institution=("作者",),
             year=2020 + index,
@@ -106,7 +112,7 @@ def _bundle(profile_count: int) -> EvidenceBundleSnapshot:
             competing_or_complementary_theory_ids=(),
             source_ids=(source.source_id,),
             content_version=1,
-            review_status=KnowledgeReviewStatus.REVIEWED,
+            review_status=KnowledgeReviewStatus.PRE_REVIEW_COMPLETED,
             match_eligible=True,
         )
         profiles.append(profile)
@@ -154,7 +160,7 @@ def _service(
     return service, recorder
 
 
-def test_three_reviewed_profiles_become_stably_ordered_judged_candidates() -> None:
+def test_three_pre_reviewed_profiles_become_stably_ordered_judged_candidates() -> None:
     service, recorder = _service(_bundle(3))
 
     run = service.start(phenomenon=PHENOMENON, release=RELEASE)
@@ -169,8 +175,9 @@ def test_three_reviewed_profiles_become_stably_ordered_judged_candidates() -> No
         candidate.candidate_id for candidate in run.candidates
     )
     assert all(
-        candidate.content.origin is CandidateOrigin.REVIEWED_KNOWLEDGE
-        and candidate.content.content_status is CandidateContentStatus.REVIEWED
+        candidate.content.origin is CandidateOrigin.PRE_REVIEWED_KNOWLEDGE
+        and candidate.content.content_status
+        is CandidateContentStatus.PRE_REVIEW_COMPLETED
         and candidate.content.formal_adoption_eligible
         for candidate in run.candidates
     )
@@ -219,7 +226,7 @@ class _JudgeThatOmitsOneCandidate:
         )
 
 
-def test_partial_run_marks_every_non_successful_input_candidate_as_failed() -> None:
+def test_all_missing_or_failed_results_do_not_enter_partial_decision() -> None:
     repository = _MatchRunRepository()
     service = TheoryMatchingService(
         evidence_source=_EvidenceSource(_bundle(3)),
@@ -234,5 +241,191 @@ def test_partial_run_marks_every_non_successful_input_candidate_as_failed() -> N
 
     run = service.start(phenomenon=PHENOMENON, release=RELEASE)
 
-    assert run.status is MatchRunStatus.PARTIAL_FAILURE
+    assert run.status is MatchRunStatus.FAILED
     assert len(run.failed_candidate_ids) == 3
+    assert len(run.candidate_failures) == 3
+
+
+def _judgement(title: str) -> TheoryJudgementDraft:
+    return TheoryJudgementDraft(
+        verdict=TheoryJudgementVerdict.CONDITIONAL,
+        match_rationale=f"{title} 有条件适用",
+        applicable_conditions=("存在持续互动",),
+        limitations=("仍需比较材料",),
+        material_requirements=("互动记录",),
+        evidence_gaps=("缺少时间顺序",),
+        alternative_explanations=("资源供给变化",),
+        evidence_ref_ids=(),
+    )
+
+
+class _OneFailureThenSuccessJudge:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def judge_and_rerank(self, *, input):
+        self.calls += 1
+        if self.calls == 1:
+            results = []
+            failed_id = input.items[-1].candidate_id
+            for item in input.items:
+                failed = item.candidate_id == failed_id
+                results.append(
+                    TheoryJudgementBatchItemResult(
+                        candidate_id=item.candidate_id,
+                        candidate_version=item.candidate_version,
+                        status=(
+                            CandidateJudgementRunStatus.TIMED_OUT
+                            if failed
+                            else CandidateJudgementRunStatus.SUCCEEDED
+                        ),
+                        judgement=(
+                            None
+                            if failed
+                            else _judgement(item.judgement_input.candidate.title)
+                        ),
+                        failure_code="model_timeout" if failed else None,
+                        trace_id=UUID(int=700 + len(results)),
+                        request_id=UUID(int=800 + len(results)),
+                        contract_version="matching.v1",
+                    )
+                )
+            return TheoryJudgementBatchResult(
+                results=tuple(results),
+                input_candidate_order=tuple(item.candidate_id for item in input.items),
+                ranked_candidate_order=tuple(item.candidate_id for item in input.items),
+                completion_basis=MatchCompletionBasis.PARTIAL,
+                retryable_candidate_ids=(failed_id,),
+            )
+
+        item = next(
+            item for item in input.items if item.candidate_id in input.target_candidate_ids
+        )
+        return TheoryJudgementBatchResult(
+            results=(
+                TheoryJudgementBatchItemResult(
+                    candidate_id=item.candidate_id,
+                    candidate_version=item.candidate_version,
+                    status=CandidateJudgementRunStatus.SUCCEEDED,
+                    judgement=_judgement(item.judgement_input.candidate.title),
+                    failure_code=None,
+                    trace_id=UUID(int=900),
+                    request_id=UUID(int=901),
+                    contract_version="matching.v1",
+                ),
+            ),
+            input_candidate_order=tuple(value.candidate_id for value in input.items),
+            ranked_candidate_order=tuple(value.candidate_id for value in input.items),
+            completion_basis=MatchCompletionBasis.COMPLETE,
+            retryable_candidate_ids=(),
+        )
+
+
+def test_partial_failure_keeps_reason_and_content_then_retry_recovers() -> None:
+    repository = _MatchRunRepository()
+    judge = _OneFailureThenSuccessJudge()
+    service = TheoryMatchingService(
+        evidence_source=_EvidenceSource(_bundle(3)),
+        judge=judge,
+        repository=repository,
+        provider="test",
+        model_version="test",
+        capability="base",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.PARTIAL_FAILURE
+    assert len(run.candidates) == 2
+    assert len(run.candidate_failures) == 1
+    failure = run.candidate_failures[0]
+    assert failure.content.title == "理论 3"
+    assert failure.failure_code == "model_timeout"
+    assert failure.retryable is True
+
+    recovered = service.retry_candidate(
+        match_run_id=run.match_run_id,
+        candidate_id=failure.candidate_id,
+        expected_version=run.version,
+        expected_candidate_version=failure.candidate_version,
+    )
+
+    assert recovered.version == 2
+    assert recovered.status is MatchRunStatus.AWAITING_DECISION
+    assert recovered.candidate_failures == ()
+    assert len(recovered.candidates) == 3
+    assert next(
+        item for item in recovered.candidates if item.candidate_id == failure.candidate_id
+    ).candidate_version == 2
+
+
+class _AllFailuresJudge:
+    def __init__(self, failure_code: str, retryable: bool) -> None:
+        self.failure_code = failure_code
+        self.retryable = retryable
+
+    def judge_and_rerank(self, *, input):
+        results = tuple(
+            TheoryJudgementBatchItemResult(
+                candidate_id=item.candidate_id,
+                candidate_version=item.candidate_version,
+                status=CandidateJudgementRunStatus.FAILED,
+                judgement=None,
+                failure_code=self.failure_code,
+                trace_id=UUID(int=950 + index),
+                request_id=UUID(int=960 + index),
+                contract_version="matching.v1",
+            )
+            for index, item in enumerate(input.items)
+        )
+        ids = tuple(item.candidate_id for item in input.items)
+        return TheoryJudgementBatchResult(
+            results=results,
+            input_candidate_order=ids,
+            ranked_candidate_order=ids,
+            completion_basis=MatchCompletionBasis.PARTIAL,
+            retryable_candidate_ids=ids if self.retryable else (),
+        )
+
+
+def test_all_no_reliable_results_have_a_truthful_terminal_state() -> None:
+    repository = _MatchRunRepository()
+    service = TheoryMatchingService(
+        evidence_source=_EvidenceSource(_bundle(3)),
+        judge=_AllFailuresJudge("no_reliable_candidate", retryable=False),
+        repository=repository,
+        provider="test",
+        model_version="test",
+        capability="base",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.NO_RELIABLE_CANDIDATE
+    assert len(run.candidate_failures) == 3
+    assert all(not item.retryable for item in run.candidate_failures)
+
+
+def test_all_transient_failures_stay_retryable_without_entering_decision() -> None:
+    repository = _MatchRunRepository()
+    service = TheoryMatchingService(
+        evidence_source=_EvidenceSource(_bundle(3)),
+        judge=_AllFailuresJudge("model_unavailable", retryable=True),
+        repository=repository,
+        provider="test",
+        model_version="test",
+        capability="base",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+
+    run = service.start(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert run.status is MatchRunStatus.FAILED
+    assert run.candidates == ()
+    assert len(run.candidate_failures) == 3
+    assert all(item.retryable for item in run.candidate_failures)

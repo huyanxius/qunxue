@@ -14,6 +14,7 @@ from qunxue_api.application.research_journey import (
     ResearchJourneyDependencies,
 )
 from qunxue_api.application.theory_matching import (
+    MatchingCatalogNotReady,
     MatchingRequestConflict,
     MatchingSnapshotConflict,
     TheoryMatchingApplication,
@@ -26,6 +27,7 @@ __all__ = [
     "ResearchJourneyConfigurationError",
     "ResearchJourneyDependencies",
     "MatchingRequestConflict",
+    "MatchingCatalogNotReady",
     "MatchingSnapshotConflict",
     "TheoryMatchingApplication",
     "AgentTurnExecution",
