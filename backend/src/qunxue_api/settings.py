@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 60 * 60 * 24 * 7
     session_cookie_secure: bool = False
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+    account_initial_admin_email: str = "huyanxius@gmail.com"
+    account_initial_admin_password: SecretStr | None = None
     cors_allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5178",

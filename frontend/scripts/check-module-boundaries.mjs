@@ -31,6 +31,7 @@ export const defaultBoundaryPolicy = Object.freeze({
   ]),
   moduleApiAdapters: Object.freeze([
     'modules/account/accountApi.ts',
+    'modules/account/accountManagementApi.ts',
     'modules/knowledge-graph/knowledgeGraphApi.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/m4-theory-judgment/m4TheoryJudgmentApi.ts',

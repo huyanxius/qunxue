@@ -1,6 +1,8 @@
 """用户身份、密码验证与服务端会话边界。"""
 
 from qunxue_api.modules.identity.domain import (
+    AccountRole,
+    AccountStatus,
     AuthenticatedSession,
     SessionGrant,
     User,
@@ -17,6 +19,8 @@ from qunxue_api.modules.identity.ports import IdentityRepository, PasswordHasher
 from qunxue_api.modules.identity.service import IdentityService
 
 __all__ = [
+    "AccountRole",
+    "AccountStatus",
     "AuthenticatedSession",
     "EmailAlreadyRegistered",
     "IdentityError",
