@@ -52,8 +52,31 @@ function demonstrationReply(input: string) {
 }
 
 export function FoundationQuestionFlow() {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') {
+      setActive(true)
+      return
+    }
+
+    const root = rootRef.current
+    if (!root) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setActive(entry?.isIntersecting ?? false),
+      { rootMargin: '180px 0px', threshold: 0.01 },
+    )
+    observer.observe(root)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div className="foundation-question-flow" aria-label="合成社会科学研究提问流">
+    <div
+      className={`foundation-question-flow${active ? ' is-active' : ''}`}
+      aria-label="合成社会科学研究提问流"
+      ref={rootRef}
+    >
       <p>背景为合成研究提问样本，不是真实用户记录。</p>
       <div aria-hidden="true">
         {questionFlow.map((questions, laneIndex) => (

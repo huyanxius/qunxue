@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode } from 'react'
 
 import brandMark from '../../assets/qunxue-brand-mark.svg'
 import { isLoginServiceFailure } from './accountApi'
+import { AccountPaperShader } from './AccountPaperShader'
 import './account.css'
 
 type LoginPageProps = {
@@ -35,6 +36,9 @@ function AccountPortal({
 }) {
   return (
     <section className={`account-portal account-portal--${kind}`} aria-labelledby={`account-${kind}-title`}>
+      <div className="account-paper-field" aria-hidden="true">
+        <AccountPaperShader />
+      </div>
       <div className="account-portal__story">
         <img className="account-portal__brand-echo" src={brandMark} alt="" aria-hidden="true" />
         <a className="account-portal__brand" href="/" aria-label="返回群学致知首页">
@@ -54,7 +58,10 @@ function AccountPortal({
 
       <div className="account-portal__entry">
         <div className="account-portal__entry-inner">
-          <p className="account-portal__form-label">{formLabel}</p>
+          <div className="account-portal__form-heading">
+            <img src={brandMark} alt="" aria-hidden="true" />
+            <p className="account-portal__form-label">{formLabel}</p>
+          </div>
           {children}
           {switcher}
         </div>

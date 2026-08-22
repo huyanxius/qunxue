@@ -295,6 +295,263 @@
   gap: 16px;
 }
 
+/* Editorial account portal: restrained, quiet, and materially related to the
+   public page without repeating its hero composition. */
+.account-portal {
+  background: #f5f6f4;
+  color: #1f292c;
+}
+
+.account-portal__story {
+  color: #f5f7f5;
+  background:
+    radial-gradient(circle at 74% 24%, rgb(174 188 180 / 28%), transparent 34%),
+    linear-gradient(145deg, #243536 0%, #36484a 54%, #1c282a 100%);
+}
+
+.account-portal__story::after {
+  position: absolute;
+  right: -18%;
+  bottom: -28%;
+  width: 72%;
+  aspect-ratio: 1;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, rgb(255 255 255 / 18%), transparent 56%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%), 0 34px 90px rgb(0 0 0 / 18%);
+  content: '';
+  pointer-events: none;
+}
+
+.account-portal__brand-mark {
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 16%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 24px 56px rgb(0 0 0 / 18%);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+}
+
+.account-portal__entry {
+  background: #f5f6f4;
+}
+
+.account-portal__entry-inner {
+  padding: clamp(30px, 5vw, 56px);
+  border: 1px solid rgb(31 41 44 / 10%);
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 92%), rgb(255 255 255 / 66%)),
+    rgb(255 255 255 / 72%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 96%),
+    0 28px 80px rgb(31 45 48 / 10%);
+  backdrop-filter: blur(20px) saturate(1.04);
+  -webkit-backdrop-filter: blur(20px) saturate(1.04);
+}
+
+.account-portal__form-label {
+  margin-bottom: 30px;
+  color: #1f292c;
+  letter-spacing: -0.03em;
+}
+
+.account-form label,
+.account-field {
+  color: #47575a;
+}
+
+.account-form input {
+  border-color: rgb(31 41 44 / 12%);
+  border-radius: 16px;
+  background: rgb(239 242 239 / 78%);
+  color: #1f292c;
+}
+
+.account-form input:focus-visible {
+  border-color: #7e9a8c;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 0 0 4px rgb(126 154 140 / 14%), 0 18px 46px rgb(33 64 83 / 8%);
+}
+
+.account-primary {
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 16px;
+  background: #26383a;
+  box-shadow: 0 16px 32px rgb(38 56 58 / 16%);
+}
+
+.account-primary:hover:not(:disabled) {
+  background: #1d2e30;
+  box-shadow: 0 20px 42px rgb(38 56 58 / 22%);
+}
+
+.account-switch a {
+  color: #476e5e;
+}
+
+/* Match the public page palette exactly: ink, muted graphite, paper and amber. */
+.account-portal,
+.account-portal__entry {
+  background: #f6f7f7;
+}
+
+.account-portal__brand,
+.account-portal__brand-copy strong,
+.account-portal__form-label {
+  color: #151515;
+}
+
+.account-portal__brand-copy small,
+.account-form label,
+.account-field,
+.account-switch {
+  color: #686b67;
+}
+
+.account-portal__form-heading > img {
+  opacity: 1;
+}
+
+.account-form input {
+  border-color: rgb(21 21 21 / 16%);
+  background: #fff;
+  color: #151515;
+}
+
+.account-form input:focus-visible {
+  border-color: #65451d;
+  box-shadow: 0 0 0 4px rgb(101 69 29 / 12%), 0 18px 46px rgb(21 21 21 / 8%);
+}
+
+.account-primary {
+  color: #fff;
+  background: #151515;
+  box-shadow: 0 16px 32px rgb(21 21 21 / 14%);
+}
+
+.account-primary:hover:not(:disabled) {
+  color: #fff;
+  background: #23241f;
+  box-shadow: 0 20px 42px rgb(21 21 21 / 20%);
+}
+
+.account-switch a {
+  color: #65451d;
+}
+
+/* Single-column sign-in: one calm surface, one action, no split-screen story. */
+.account-portal {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  overflow: auto;
+  background: #f5f6f4;
+}
+
+.account-portal__story {
+  min-height: 0;
+  display: block;
+  padding: 28px clamp(24px, 5vw, 72px);
+  color: #1f292c;
+  background: transparent;
+}
+
+.account-portal__story::after,
+.account-portal__brand-echo,
+.account-portal__story h1,
+.account-portal__axis {
+  display: none;
+}
+
+.account-portal__brand {
+  color: #1f292c;
+}
+
+.account-portal__brand-mark {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.account-portal__brand-mark img {
+  width: 38px;
+  height: 38px;
+}
+
+.account-portal__brand-copy strong {
+  font-size: 0.94rem;
+}
+
+.account-portal__brand-copy small {
+  color: #87908d;
+}
+
+.account-portal__entry {
+  display: grid;
+  place-items: start center;
+  padding: clamp(48px, 9vh, 112px) 24px 80px;
+  background: transparent;
+}
+
+.account-portal__entry-inner {
+  width: min(100%, 420px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.account-portal__form-heading {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.account-portal__form-heading > img {
+  width: 34px;
+  height: 34px;
+  opacity: 0.86;
+}
+
+.account-portal__form-label {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  text-align: center;
+}
+
+.account-form {
+  gap: 18px;
+}
+
+.account-form input {
+  min-height: 54px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(31 45 48 / 5%);
+}
+
+.account-primary {
+  min-height: 54px;
+  margin-top: 8px;
+  border-radius: 12px;
+}
+
+.account-switch {
+  margin-top: 22px;
+  text-align: center;
+}
+
 .my-research-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -419,5 +676,122 @@
 
   .my-research-actions {
     justify-content: flex-start;
+  }
+}
+
+/* Account entry is the public site's quiet paper afterimage: graphite, warm
+   fibre and one restrained Paper Texture field across sign-in and sign-up. */
+.account-portal {
+  position: relative;
+  isolation: isolate;
+  background: #f6f7f3;
+}
+
+.account-paper-field {
+  position: fixed;
+  z-index: -2;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 68% 42%, rgb(116 118 111 / 8%), transparent 42%),
+    #f6f7f3;
+  pointer-events: none;
+}
+
+.account-paper-field::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 34%), transparent 32% 72%, rgb(255 255 255 / 18%)),
+    repeating-linear-gradient(0deg, rgb(21 21 21 / 1.2%) 0 1px, transparent 1px 4px);
+  content: '';
+  opacity: 0.38;
+}
+
+.account-paper-field__paper {
+  opacity: 0.68;
+  filter: saturate(0.72) contrast(0.94);
+}
+
+.account-paper-field__flow {
+  opacity: 0.52;
+  filter: saturate(0.5) contrast(0.96);
+  mix-blend-mode: multiply;
+}
+
+.account-portal .account-portal__story,
+.account-portal .account-portal__entry {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.account-portal .account-portal__brand img,
+.account-portal .account-portal__form-heading > img {
+  filter: grayscale(1) contrast(0.72) brightness(0.68);
+}
+
+.account-portal .account-portal__brand-copy small {
+  color: #777972;
+}
+
+.account-portal .account-portal__entry-inner {
+  position: relative;
+}
+
+.account-portal .account-portal__entry-inner::before {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  width: 38px;
+  height: 1px;
+  background: #745a35;
+  content: '';
+  opacity: 0.72;
+  transform: translateX(-50%);
+}
+
+.account-portal .account-form input {
+  border-color: rgb(21 21 21 / 14%);
+  color: #151515;
+  background: rgb(250 250 246 / 82%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 72%), 0 10px 30px rgb(21 21 21 / 4%);
+  caret-color: #65451d;
+}
+
+.account-portal .account-form input:focus-visible {
+  border-color: #745a35;
+  background: rgb(255 255 252 / 94%);
+  box-shadow: 0 0 0 4px rgb(116 90 53 / 10%), 0 18px 46px rgb(21 21 21 / 7%);
+}
+
+.account-portal .account-form input:-webkit-autofill,
+.account-portal .account-form input:-webkit-autofill:hover,
+.account-portal .account-form input:-webkit-autofill:focus {
+  border-color: rgb(21 21 21 / 14%);
+  -webkit-text-fill-color: #151515;
+  box-shadow: inset 0 0 0 1000px #f7f6ef, 0 10px 30px rgb(21 21 21 / 4%);
+  caret-color: #65451d;
+}
+
+.account-portal .account-primary {
+  border-color: #151515;
+  color: #f7f7f3;
+  background: #151515;
+  box-shadow: 0 16px 36px rgb(21 21 21 / 14%);
+}
+
+.account-portal .account-primary:hover:not(:disabled) {
+  background: #2b2c28;
+  box-shadow: 0 20px 44px rgb(21 21 21 / 19%);
+}
+
+.account-portal .account-switch a {
+  color: #65451d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-portal .account-paper-field__flow {
+    display: none;
   }
 }

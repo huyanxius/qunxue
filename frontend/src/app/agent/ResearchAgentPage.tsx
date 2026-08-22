@@ -4,6 +4,9 @@ import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router'
 
 import { PageContent, PageShell } from '../ui/PageShell'
+import { ResearchAgentBot } from './ResearchAgentBot'
+import { ResearchAgentShader } from './ResearchAgentShader'
+import { ResearchPromptCarousel } from './ResearchPromptCarousel'
 import {
   getAgentConversation,
   listAgentConversations,
@@ -16,12 +19,6 @@ import {
   type AgentToolTrace,
 } from '../../modules/research-agent'
 import './research-agent-page.css'
-
-const starterQuestions = [
-  '为什么同一社区里的互助正在减少？',
-  '平台算法如何改变年轻人的职业选择？',
-  '为什么越来越多人选择独居？',
-]
 
 type StreamingTurn = {
   question: string
@@ -286,6 +283,7 @@ export function ResearchAgentPage() {
   const [historyLoading, setHistoryLoading] = useState(true)
   const streamAbortController = useRef<AbortController | null>(null)
   const pendingToolSteps = useRef<AgentToolStep[]>([])
+  const composerRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -422,6 +420,11 @@ export function ResearchAgentPage() {
     void submitDraft()
   }
 
+  function selectSuggestedTopic(topic: string) {
+    setDraft(topic)
+    window.requestAnimationFrame(() => composerRef.current?.focus())
+  }
+
   return (
     <PageShell
       railContent={(
@@ -436,6 +439,7 @@ export function ResearchAgentPage() {
     >
       <PageContent>
         <section className="research-agent-page" aria-label="社会学 Agent 对话">
+          {!turns.length && !streamingTurn ? <ResearchAgentShader /> : null}
           {turns.length || streamingTurn ? (
             <header className="research-agent-page__conversation-heading">
               <p className="research-agent-page__conversation-label">学科对话</p>
@@ -486,17 +490,8 @@ export function ResearchAgentPage() {
             ) : (
               <div className="research-agent-page__empty-state">
                 <div className="research-agent-page__empty-copy">
-                  <p className="research-agent-page__eyebrow">社会学 Agent</p>
-                  <h1 id="research-agent-title">你想研究什么？</h1>
-                  <p className="research-agent-page__lede">和社会学 Agent 一起解释现象、梳理概念、打开思路。</p>
-                </div>
-                <div className="research-agent-page__starters" aria-label="问题示例">
-                  <span>可以从这里开始</span>
-                  <div>
-                    {starterQuestions.map((question) => (
-                      <button key={question} type="button" onClick={() => setDraft(question)}>{question}</button>
-                    ))}
-                  </div>
+                  <ResearchAgentBot />
+                  <ResearchPromptCarousel onSelect={selectSuggestedTopic} />
                 </div>
               </div>
             )}
@@ -518,6 +513,7 @@ export function ResearchAgentPage() {
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="问一个问题，或描述你正在理解的现象"
+                  ref={composerRef}
                   rows={2}
                   value={draft}
                 />

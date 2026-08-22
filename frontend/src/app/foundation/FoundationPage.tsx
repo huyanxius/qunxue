@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router'
 
 import { KnowledgePreview, KnowledgeTicker } from '../../modules/knowledge-explorer'
 import { KnowledgeGraphPreview } from '../../modules/knowledge-graph'
-import { ResearchDemoPreview } from '../../modules/socio-match-workspace'
 import brandMark from '../../assets/qunxue-brand-mark.svg'
 import { RouterLinkAdapter } from '../ui/RouterLinkAdapter'
+import { FoundationAgentReveal } from './FoundationAgentReveal'
+import { FoundationLightPaperShader } from './FoundationLightPaperShader'
 import { FoundationModelDemo, FoundationQuestionFlow } from './FoundationModelDemo'
 import './foundation.css'
 
@@ -58,10 +59,20 @@ function ResearchOriginLine() {
     return () => window.clearTimeout(timer)
   }, [origin, phase, visibleLength])
 
-  const visibleOrigin = Array.from(origin).slice(0, visibleLength).join('')
+  const visibleOrigin = Array.from(origin).slice(0, visibleLength)
   return (
     <span className="foundation-origin" data-phase={phase} aria-hidden="true">
-      <span key={`${originIndex}:${visibleLength}`}>{visibleOrigin || '\u00A0'}</span>
+      <span className="foundation-origin__word">
+        {visibleOrigin.length > 0 ? visibleOrigin.map((character, index) => (
+          <span
+            className="foundation-origin__glyph"
+            key={`${originIndex}:${index}`}
+            style={{ animationDelay: `${index * 24}ms` }}
+          >
+            {character}
+          </span>
+        )) : '\u00A0'}
+      </span>
       <i />
     </span>
   )
@@ -166,7 +177,20 @@ function DeferredGraphPreview() {
   const navigate = useNavigate()
   const boundaryRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
+  const [nearby, setNearby] = useState(true)
   const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    const boundary = boundaryRef.current
+    if (!boundary) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setNearby(entry?.isIntersecting ?? false),
+      { rootMargin: '480px 0px', threshold: 0.01 },
+    )
+    observer.observe(boundary)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') {
@@ -211,7 +235,7 @@ function DeferredGraphPreview() {
       className={`foundation-graph__preview${revealed ? ' is-visible' : ''}`}
       ref={boundaryRef}
     >
-      {ready ? (
+      {ready && nearby ? (
         <KnowledgeGraphPreview
           onSelectKnowledge={(knowledgeId) => {
             navigate(`/knowledge/${encodeURIComponent(knowledgeId)}`)
@@ -224,6 +248,73 @@ function DeferredGraphPreview() {
       )}
     </div>
   )
+}
+
+function FoundationDarkFieldController() {
+  useEffect(() => {
+    let frame = 0
+    let darkFieldFixed = false
+    let lightFieldFixed = false
+    let lastPaperEdge = Number.NaN
+    let transitionStart = window.innerHeight
+    const page = document.querySelector('.public-site')
+    const method = document.querySelector<HTMLElement>('#method')
+    const knowledge = document.querySelector<HTMLElement>('#knowledge-preview')
+    const paperField = document.querySelector<HTMLElement>('.foundation-knowledge__paper-field')
+
+    const updateGeometry = () => {
+      transitionStart = knowledge
+        ? knowledge.getBoundingClientRect().top + window.scrollY
+        : (method?.getBoundingClientRect().bottom ?? window.innerHeight) + window.scrollY
+    }
+
+    const update = () => {
+      frame = 0
+      const paperEdge = Math.round(Math.max(-340, Math.min(
+        window.innerHeight + 340,
+        transitionStart - window.scrollY,
+      )))
+      if (paperEdge !== lastPaperEdge) {
+        lastPaperEdge = paperEdge
+        paperField?.style.setProperty('--foundation-paper-edge', `${paperEdge}px`)
+      }
+
+      const nextDarkFixed = window.scrollY >= window.innerHeight * 0.62
+        && window.scrollY < transitionStart + 340
+      if (nextDarkFixed !== darkFieldFixed) {
+        darkFieldFixed = nextDarkFixed
+        page?.classList.toggle('is-dark-backdrop-active', nextDarkFixed)
+      }
+
+      const nextLightFixed = window.scrollY >= transitionStart + 340
+      if (nextLightFixed !== lightFieldFixed) {
+        lightFieldFixed = nextLightFixed
+        page?.classList.toggle('is-light-backdrop-active', nextLightFixed)
+      }
+    }
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    const onResize = () => {
+      updateGeometry()
+      schedule()
+    }
+
+    updateGeometry()
+    update()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', onResize)
+      page?.classList.remove('is-dark-backdrop-active')
+      page?.classList.remove('is-light-backdrop-active')
+      paperField?.style.removeProperty('--foundation-paper-edge')
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  return null
 }
 
 export function FoundationPage({ authenticated = false }: { authenticated?: boolean }) {
@@ -256,6 +347,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
 
   return (
     <div className="public-site">
+      <FoundationDarkFieldController />
       <header className="public-header">
         <div className="public-header__inner">
           <Link className="public-wordmark" to="/welcome" aria-label="群学致知介绍页">
@@ -284,11 +376,11 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
               <p className="foundation-kicker"><span>01</span> 社会学理论发现与研究设计</p>
               <h1
                 id="foundation-title"
-                aria-label="从真实困惑、未完成的研究或已有理论框架中，找到可研究的问题。"
+                aria-label="从真实困惑、未完成的研究或已有理论框架，找到可研究的问题。"
               >
                 <span className="foundation-origin-prefix" aria-hidden="true">从</span>
                 <ResearchOriginLine />
-                <span className="foundation-origin-suffix" aria-hidden="true">中，</span><br />
+                <span className="foundation-origin-suffix" aria-hidden="true">，</span><br />
                 <span className="foundation-outcome" aria-hidden="true">
                   找到<span>可研究的<br className="foundation-mobile-break" />问题。</span>
                 </span>
@@ -300,7 +392,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
                 {authenticated ? (
                   <Link className="public-action public-action--primary" to="/app">进入工作台</Link>
                 ) : (
-                  <a className="public-action public-action--primary" href="#research-demo">体验研究流程</a>
+                  <a className="public-action public-action--primary" href="#research-agent">体验研究流程</a>
                 )}
                 {authenticated ? (
                   <Link className="public-action public-action--text" to="/knowledge">浏览知识库</Link>
@@ -310,8 +402,8 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
               </div>
             </div>
 
-            <div className="foundation-hero__demo" id="research-demo">
-              <ResearchDemoPreview />
+            <div className="foundation-hero__demo" id="research-agent">
+              <FoundationAgentReveal />
             </div>
           </div>
           <a className="foundation-hero__scroll" href="#method">
@@ -322,7 +414,6 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
 
         <section className="foundation-method" id="method" aria-labelledby="method-title" data-reveal>
           <div className="foundation-section-heading foundation-section-heading--split">
-            <p className="foundation-kicker"><span>02</span> 研究不是一次生成</p>
             <div>
               <h2 id="method-title">把模糊的“为什么”，拆成可以核对的研究路径。</h2>
               <p>每一步都留下你的确认。系统提供候选、差异与证据线索，但不会替你选定理论或写下结论。</p>
@@ -352,6 +443,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
         </section>
 
         <section className="foundation-knowledge" id="knowledge-preview" aria-labelledby="knowledge-preview-title" data-reveal>
+          <FoundationLightPaperShader />
           <KnowledgeTicker LinkComponent={RouterLinkAdapter} />
           <div className="foundation-section-heading">
             <p className="foundation-kicker"><span>03</span> 真实理论知识</p>

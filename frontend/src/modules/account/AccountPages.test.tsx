@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loginViaApi } from './accountApi'
 import { LoginPage, RegisterPage } from './AccountPages'
 
+vi.mock('@paper-design/shaders-react', () => ({
+  GrainGradient: ({ className }: { className?: string }) => <div className={className} />,
+  PaperTexture: ({ className }: { className?: string }) => <div className={className} />,
+}))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
