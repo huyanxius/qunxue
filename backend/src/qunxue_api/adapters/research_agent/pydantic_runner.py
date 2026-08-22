@@ -205,11 +205,16 @@ class PydanticAIKnowledgeRunner:
                 "同一问题的检索返回空结果后不要反复改写同义词重试，也不要猜测 knowledge_id；"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
                 "凡是声称来自知识库的内容，citation_id 必须来自本轮工具实际返回的闭集。"
-                "只有在研究工作区启用时，才可以调用 update_research_map。研究工作区启用后，"
-                "每一轮都必须在给出最终回答前调用一次 update_research_map：首轮至少建立问题、"
-                "理论或主张；后续轮次增补、修正或删除已有结构。"
-                "研究工作区每轮最多调用 3 次 search_knowledge、5 次读取类工具，必须为"
-                "update_research_map 预留调用额度；已有足够材料后立即停止检索。"
+                "只有在研究工作区启用时，才可以调用研究流程、研究文档和 update_research_map 工具。"
+                "研究地图不是 M4/M5 的正式状态，不得用地图节点代替研究任务、理论决定或文档。"
+                "用户要求建立研究且已经明确确认研究现象时，调用 create_confirmed_research_task；"
+                "随后调用 start_theory_matching 获取真实候选。未完成 M4 时不得调用文档创建工具。"
+                "当用户明确确认候选取舍时，立即调用 save_confirmed_theory_plan，"
+                "不能要求用户重复确认；"
+                "取得 theory_plan_id 后才能调用 propose_document_creation 生成待审批的 M5 草案。"
+                "写入工具的 user_confirmed 只能来自用户本轮或历史对话中的明确确认，"
+                "不能自行设为 true。研究工作区每轮最多调用 3 次 search_knowledge、"
+                "5 次读取类工具；已有足够材料后停止检索。"
                 "研究地图只记录问题、理论、主张、证据、缺口和综合，以及 explains、supports、"
                 "challenges、derives、refines 关系；不要把工具调用、聊天记录或未核验猜测写成节点。"
                 "默认用清晰但克制的篇幅回答，除非用户明确要求长文。"
@@ -457,6 +462,62 @@ class PydanticAIKnowledgeRunner:
                 )
             )
             return result
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def create_confirmed_research_task(
+            ctx: RunContext[KnowledgeToolRegistry],
+            phenomenon: str,
+            user_confirmed: bool,
+            research_intent: str | None = None,
+            context: str | None = None,
+        ) -> dict[str, object]:
+            """在用户明确确认后建立研究任务并固化 M3 现象；这是正式写入工具。"""
+            payload = {
+                "phenomenon": phenomenon,
+                "research_intent": research_intent,
+                "context": context,
+                "user_confirmed": user_confirmed,
+            }
+            return self._run_research_workflow_tool(
+                ctx, "create_confirmed_research_task", payload, "正在建立研究任务"
+            )
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def get_research_workflow_state(
+            ctx: RunContext[KnowledgeToolRegistry],
+        ) -> dict[str, object]:
+            """读取当前对话绑定的研究任务、M4 与 M5 状态，不产生写入。"""
+            return self._run_research_workflow_tool(
+                ctx, "get_research_workflow_state", {}, "正在读取研究流程状态"
+            )
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def start_theory_matching(
+            ctx: RunContext[KnowledgeToolRegistry],
+        ) -> dict[str, object]:
+            """基于已确认现象和固定知识发布执行真实理论匹配，返回候选与证据。"""
+            return self._run_research_workflow_tool(
+                ctx, "start_theory_matching", {}, "正在执行理论匹配"
+            )
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def save_confirmed_theory_plan(
+            ctx: RunContext[KnowledgeToolRegistry],
+            decisions: list[dict[str, object]],
+            use_assignments: list[dict[str, object]],
+            relations: list[dict[str, object]],
+            user_confirmed: bool,
+        ) -> dict[str, object]:
+            """在用户明确确认后保存所有候选决定并确认理论方案；这是正式写入工具。"""
+            payload = {
+                "decisions": decisions,
+                "use_assignments": use_assignments,
+                "relations": relations,
+                "user_confirmed": user_confirmed,
+            }
+            return self._run_research_workflow_tool(
+                ctx, "save_confirmed_theory_plan", payload, "正在保存理论决定"
+            )
 
         @self._agent.tool(prepare=_prepare_document_tool)
         def read_research_document(
@@ -715,6 +776,40 @@ class PydanticAIKnowledgeRunner:
                 )
             )
             return result
+
+    def _run_research_workflow_tool(
+        self,
+        ctx: RunContext[KnowledgeToolRegistry],
+        tool_name: str,
+        payload: dict[str, object],
+        detail: str,
+    ) -> dict[str, object]:
+        call_id = _tool_call_id(ctx, tool_name)
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool=tool_name,
+                phase="started",
+                call_id=call_id,
+                input=payload,
+                detail=detail,
+            )
+        )
+        try:
+            result = getattr(ctx.deps, tool_name)(**payload)
+        except Exception as error:
+            result = {"error": "research_workflow_failed", "message": str(error)}
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool=tool_name,
+                phase="failed" if result.get("error") else "finished",
+                call_id=call_id,
+                input=payload,
+                output=result,
+                detail=str(result.get("message") or "研究流程状态已更新"),
+                error=str(result["error"]) if result.get("error") else None,
+            )
+        )
+        return result
 
     def _emit_tool_event(self, event: AgentToolEvent) -> None:
         callback = self._active_tool_event.get()

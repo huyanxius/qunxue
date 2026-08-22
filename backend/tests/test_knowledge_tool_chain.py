@@ -32,3 +32,17 @@ def test_read_knowledge_entry_returns_source_ids_for_the_next_tool_call() -> Non
     result = KnowledgeToolRegistry(Catalog()).read_knowledge_entry("D1:C001")
 
     assert result["source_ids"] == ["source:a", "source:b"]
+
+
+def test_agent_registry_pins_matching_release_for_research_provenance() -> None:
+    release = SimpleNamespace(knowledge_release_id="release-final")
+    purposes = []
+
+    class Catalog:
+        def current_release(self, *, purpose):
+            purposes.append(purpose)
+            return release
+
+    KnowledgeToolRegistry(Catalog())
+
+    assert purposes == ["match"]

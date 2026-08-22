@@ -87,22 +87,49 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         *,
         purpose: KnowledgeUsePurpose,
     ) -> KnowledgeReleaseRef:
-        del purpose
         with self._database.session() as session:
-            row = session.scalar(
-                select(KnowledgeReleaseRow)
-                .where(
-                    KnowledgeReleaseRow.is_current.is_(True),
-                    KnowledgeReleaseRow.level.in_(
-                        [KnowledgeReleaseLevel.PREVIEW.value, KnowledgeReleaseLevel.FINAL.value]
-                    ),
-                    or_(
-                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value,
-                        KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
-                    ),
+            # Matching must stay on an explicitly published final release even
+            # when the browse surface has moved its current pointer to a newer
+            # markdown preview. A preview is useful for exploration, but it has
+            # no reviewed theory profiles and cannot silently become M4 input.
+            if purpose is KnowledgeUsePurpose.MATCH:
+                row = session.scalar(
+                    select(KnowledgeReleaseRow)
+                    .where(KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value)
+                    .order_by(KnowledgeReleaseRow.built_at.desc())
                 )
-                .order_by(KnowledgeReleaseRow.built_at.desc())
-            )
+            else:
+                row = session.scalar(
+                    select(KnowledgeReleaseRow)
+                    .where(
+                        KnowledgeReleaseRow.is_current.is_(True),
+                        KnowledgeReleaseRow.level.in_(
+                            [
+                                KnowledgeReleaseLevel.PREVIEW.value,
+                                KnowledgeReleaseLevel.FINAL.value,
+                            ]
+                        ),
+                        or_(
+                            KnowledgeReleaseRow.level == KnowledgeReleaseLevel.FINAL.value,
+                            KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
+                        ),
+                    )
+                    .order_by(KnowledgeReleaseRow.built_at.desc())
+                )
+            if row is None:
+                # A MATCH lookup is read-only when the existing current
+                # preview is already materialized. Re-publishing it here can
+                # hold SQLite's write lock while another Agent scope is still
+                # reading the same catalog.
+                row = session.scalar(
+                    select(KnowledgeReleaseRow)
+                    .where(
+                        KnowledgeReleaseRow.is_current.is_(True),
+                        KnowledgeReleaseRow.level == KnowledgeReleaseLevel.PREVIEW.value,
+                        KnowledgeReleaseRow.build_config_version == _BUILD_CONFIG_VERSION,
+                    )
+                    .order_by(KnowledgeReleaseRow.built_at.desc())
+                )
             if row is None:
                 row = self._publish_preview(session)
             return _release_ref(row)
