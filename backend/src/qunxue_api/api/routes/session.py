@@ -40,6 +40,8 @@ def register_session(
         email=payload.email,
         password=payload.password,
         display_name=payload.display_name,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
     )
     _set_session_cookie(response, request, grant)
     return _session_response(grant.authenticated)
@@ -58,7 +60,12 @@ def login_session(
     request: Request,
     service: IdentityServiceDependency,
 ) -> SessionResponse:
-    grant = service.login(email=payload.email, password=payload.password)
+    grant = service.login(
+        email=payload.email,
+        password=payload.password,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
     _set_session_cookie(response, request, grant)
     return _session_response(grant.authenticated)
 
