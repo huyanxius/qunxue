@@ -90,11 +90,21 @@ export function RecentResearchPanel({
 
   return (
     <section className="recent-research recent-research--ready">
-      <LinkComponent className="recent-research__task" href={latest.entryPath}>
+      <LinkComponent
+        className="recent-research__task"
+        href={latest.retry?.method === 'GET' ? latest.retry.href : latest.entryPath}
+      >
         <span className="recent-research__task-main">
           <span className="recent-research__stage">{latest.stageLabel}</span>
           <strong>{latest.phenomenonSummary}</strong>
-          <span className="recent-research__next">下一步：{latest.nextActionLabel}</span>
+          <span className="recent-research__next">
+            {latest.blocker ? (
+              <>
+                <span>{latest.blocker.message}</span>{' '}
+                <span>{latest.nextActionLabel}</span>
+              </>
+            ) : <>下一步：{latest.nextActionLabel}</>}
+          </span>
         </span>
         <span className="recent-research__task-meta">
           {relativeUpdate(latest.updatedAt)}

@@ -1,11 +1,34 @@
 import { apiClient } from '../../api/client'
 import type {
+  AgentResearchJourneyResponse,
+} from '../../api/generated'
+import type {
   AgentCitation,
   AgentConversation,
   AgentConversationSummary,
   AgentEvent,
   AgentResearchMapPatch,
 } from './model'
+import type { ResearchStartJourney } from './researchStart'
+
+function toResearchStartJourney(response: AgentResearchJourneyResponse): ResearchStartJourney {
+  return {
+    conversationId: response.conversation_id,
+    status: response.status,
+    taskId: response.task_id,
+    proposal: response.proposal
+      ? {
+          proposalId: response.proposal.proposal_id,
+          phenomenon: response.proposal.phenomenon,
+          researchIntent: response.proposal.research_intent,
+          context: response.proposal.context,
+          version: response.proposal.version,
+          status: response.proposal.status,
+        }
+      : null,
+    resumePath: response.navigation?.resume_path ?? null,
+  }
+}
 
 export function parseAgentEventStream(stream: string): AgentEvent[] {
   const events: AgentEvent[] = []
@@ -118,6 +141,57 @@ export async function getAgentConversation(
   })
   if (!response.ok) throw new Error('无法加载这段对话')
   return await response.json() as AgentConversation
+}
+
+export async function getResearchStartJourney(
+  conversationId: string,
+  signal?: AbortSignal,
+): Promise<ResearchStartJourney> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/conversations/{conversation_id}/journey',
+    path: { conversation_id: conversationId },
+  }), {
+    credentials: 'include',
+    signal,
+  })
+  if (!response.ok) throw new Error(response.status === 404
+    ? '这段研究对话不存在或无权访问。'
+    : '无法恢复这次研究的建立状态')
+  return toResearchStartJourney(await response.json() as AgentResearchJourneyResponse)
+}
+
+export async function confirmResearchStartProposal(
+  request: {
+    proposalId: string
+    expectedVersion: number
+    phenomenon: string
+    researchIntent: string | null
+    context: string | null
+    idempotencyKey: string
+  },
+  signal?: AbortSignal,
+): Promise<ResearchStartJourney> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/research-start-proposals/{proposal_id}/confirm',
+    path: { proposal_id: request.proposalId },
+  }), {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': request.idempotencyKey,
+    },
+    body: JSON.stringify({
+      expected_version: request.expectedVersion,
+      phenomenon: request.phenomenon,
+      research_intent: request.researchIntent,
+      context: request.context,
+    }),
+    signal,
+  })
+  if (response.ok) return toResearchStartJourney(await response.json() as AgentResearchJourneyResponse)
+  if (response.status === 409) throw new Error('研究状态已更新，请重新加载后继续。')
+  throw new Error('研究暂时未能建立，你的内容已保留。')
 }
 
 export async function streamAgentTurn(

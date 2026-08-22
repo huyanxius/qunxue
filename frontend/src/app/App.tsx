@@ -30,6 +30,7 @@ import {
   type FullscreenKnowledgeGraphState,
 } from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
+import { ResearchTaskNavigationRoute } from './ResearchTaskNavigationRoute'
 import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
@@ -284,8 +285,8 @@ function MyResearchRoute() {
   )
 }
 
-function NewResearchRoute() {
-  return <NewResearchWorkspacePage />
+function NewResearchRoute({ userId }: { userId: string | null }) {
+  return <NewResearchWorkspacePage userId={userId} />
 }
 
 function PhenomenonRoute() {
@@ -343,6 +344,9 @@ export function AppRoutes({
 }: AppRoutesProps) {
   const account = useAccount()
   const resolvedSessionState: SessionState = sessionState ?? account.sessionState
+  const authenticatedUserId = account.sessionState.status === 'authenticated'
+    ? account.sessionState.session.user.userId
+    : null
   const protectedRoute = (element: ReactNode) => (
     <ProtectedRoute sessionState={resolvedSessionState}>{element}</ProtectedRoute>
   )
@@ -364,10 +368,29 @@ export function AppRoutes({
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
-      <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
-      <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
-      <Route path="/research/:task_id/match" element={protectedRoute(<ResearchDocumentWorkbench />)} />
-      <Route path="/research/:task_id/framework" element={protectedRoute(<ResearchDocumentWorkbench />)} />
+      <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
+      <Route
+        path="/research/:task_id"
+        element={protectedRoute(<ResearchTaskNavigationRoute>{null}</ResearchTaskNavigationRoute>)}
+      />
+      <Route
+        path="/research/:task_id/phenomenon"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><PhenomenonRoute /></ResearchTaskNavigationRoute>,
+        )}
+      />
+      <Route
+        path="/research/:task_id/match"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench /></ResearchTaskNavigationRoute>,
+        )}
+      />
+      <Route
+        path="/research/:task_id/framework"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench /></ResearchTaskNavigationRoute>,
+        )}
+      />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />

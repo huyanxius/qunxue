@@ -36,7 +36,12 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
     PhenomenonCandidateVersionRow,
     PhenomenonExampleRow,
     PhenomenonStateRow,
+    ResearchStartConfirmationRow,
+    ResearchStartProposalRow,
     ResearchTaskRow,
+)
+from qunxue_api.adapters.sqlite.research_start_proposal import (
+    SqliteResearchStartProposalRepository,
 )
 from qunxue_api.adapters.sqlite.theory_matching_model import (
     ConfirmedTheoryPlanRow,
@@ -70,6 +75,9 @@ __all__ = [
     "SqliteResearchDocumentMutationRepository",
     "SqliteResearchDocumentRepository",
     "ResearchDocumentProposalRow",
+    "ResearchStartConfirmationRow",
+    "ResearchStartProposalRow",
+    "SqliteResearchStartProposalRepository",
     "SqliteResearchDocumentProposalRepository",
     "TheoryMatchingRequestRow",
     "TheoryDecisionSetRow",

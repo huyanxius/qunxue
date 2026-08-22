@@ -11,7 +11,9 @@ from qunxue_api.api.contracts.research_tasks import (
     MarkdownExportResponse,
     ResearchTaskLifecycleStatus,
     ResearchTaskNavigationAction,
+    ResearchTaskNavigationBlockerResponse,
     ResearchTaskNavigationResponse,
+    ResearchTaskNavigationRetryResponse,
     ResearchTaskPageResponse,
     ResearchTaskPhenomenonSummaryResponse,
     ResearchTaskResponse,
@@ -100,6 +102,7 @@ def get_research_task(
     responses={401: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
 def list_research_tasks(
+    request: Request,
     service: ResearchTaskServiceDependency,
     phenomenon_service: PhenomenonServiceDependency,
     current: CurrentSessionDependency,
@@ -107,13 +110,18 @@ def list_research_tasks(
     limit: int = Query(default=20, ge=1, le=100),
 ) -> ResearchTaskPageResponse:
     tasks = service.list_for_user(current.user.user_id, limit=limit)
-    return ResearchTaskPageResponse(
-        items=[
-            _navigation_response(task, phenomenon_service.progress(task.task_id))
-            for task in tasks
-        ],
-        next_cursor=None,
-    )
+    with request.app.state.research_navigation_match_reader_scope() as matches:
+        return ResearchTaskPageResponse(
+            items=[
+                _navigation_response(
+                    task,
+                    phenomenon_service.progress(task.task_id),
+                    match_status=_match_status(matches, task),
+                )
+                for task in tasks
+            ],
+            next_cursor=None,
+        )
 
 
 @router.get(
@@ -124,12 +132,18 @@ def list_research_tasks(
 )
 def get_research_task_navigation(
     task_id: UUID,
+    request: Request,
     owned_task: OwnedResearchTaskDependency,
     phenomenon_service: PhenomenonServiceDependency,
 ) -> ResearchTaskNavigationResponse:
     if owned_task.task_id != task_id:
         raise RuntimeError("owned task dependency returned a different task")
-    return _navigation_response(owned_task, phenomenon_service.progress(task_id))
+    with request.app.state.research_navigation_match_reader_scope() as matches:
+        return _navigation_response(
+            owned_task,
+            phenomenon_service.progress(task_id),
+            match_status=_match_status(matches, owned_task),
+        )
 
 
 @router.delete(
@@ -184,6 +198,8 @@ def export_research_trace(
 def _navigation_response(
     task: ResearchTask,
     progress: PhenomenonProgress,
+    *,
+    match_status: str | None = None,
 ) -> ResearchTaskNavigationResponse:
     navigation_by_status = {
         ResearchTaskStatus.DRAFT: (
@@ -227,6 +243,28 @@ def _navigation_response(
         lifecycle_status = ResearchTaskLifecycleStatus.IN_PROGRESS
         current_stage = ResearchTaskStage.PHENOMENON_CONFIRMATION
         action = ResearchTaskNavigationAction.CONFIRM_PHENOMENON
+    if match_status == "no_reliable_candidate":
+        action = ResearchTaskNavigationAction.START_MATCHING
+    stage_label = {
+        ResearchTaskStage.PHENOMENON_INPUT: "现象输入",
+        ResearchTaskStage.PHENOMENON_CONFIRMATION: "现象确认",
+        ResearchTaskStage.THEORY_MATCHING: "理论匹配",
+        ResearchTaskStage.THEORY_DECISION: "理论决策",
+        ResearchTaskStage.FRAMEWORK_DRAFTING: "研究方案",
+        ResearchTaskStage.FRAMEWORK_REVIEW: "方案确认",
+        ResearchTaskStage.COMPLETED: "已完成",
+    }[current_stage]
+    next_action_label = {
+        ResearchTaskNavigationAction.SUBMIT_PHENOMENON: "补充研究现象",
+        ResearchTaskNavigationAction.CONFIRM_PHENOMENON: "确认研究现象",
+        ResearchTaskNavigationAction.START_MATCHING: "开始理论匹配",
+        ResearchTaskNavigationAction.REVIEW_THEORY_CANDIDATES: "审阅理论候选",
+        ResearchTaskNavigationAction.CONFIRM_THEORY_PLAN: "确认理论方案",
+        ResearchTaskNavigationAction.CREATE_FRAMEWORK: "生成研究方案",
+        ResearchTaskNavigationAction.REVIEW_FRAMEWORK: "审阅研究方案",
+        ResearchTaskNavigationAction.CONFIRM_FRAMEWORK: "确认研究方案",
+        ResearchTaskNavigationAction.EXPORT: "查看并导出成果",
+    }[action]
     phenomenon_summary = None
     if (
         task.phenomenon_query_id is not None
@@ -239,14 +277,43 @@ def _navigation_response(
             phenomenon=task.phenomenon_summary,
             research_intent=task.phenomenon_research_intent,
         )
+    resume_path = (
+        f"/research/{task.task_id}/phenomenon"
+        if task.status is ResearchTaskStatus.DRAFT
+        else f"/research/{task.task_id}/match"
+        if task.status
+        in {
+            ResearchTaskStatus.PHENOMENON_CONFIRMED,
+            ResearchTaskStatus.MATCH_GENERATING,
+            ResearchTaskStatus.DECISIONS_RECORDED,
+        }
+        else f"/research/{task.task_id}/framework"
+    )
+    blocker = None
+    retry = None
+    if match_status == "no_reliable_candidate":
+        blocker = ResearchTaskNavigationBlockerResponse(
+            code="no_reliable_candidate",
+            message="固定知识发布中没有可正式采用的理论候选，请调整研究现象后重试。",
+            recoverable=True,
+            action=ResearchTaskNavigationAction.START_MATCHING,
+        )
+        retry = ResearchTaskNavigationRetryResponse(
+            method="POST",
+            href=f"/api/research-tasks/{task.task_id}/match-runs",
+            action=ResearchTaskNavigationAction.START_MATCHING,
+            label="重新匹配",
+        )
 
     return ResearchTaskNavigationResponse(
         task_id=task.task_id,
         entry_type=task.entry_type,
         status=lifecycle_status,
         current_stage=current_stage,
+        stage_label=stage_label,
         version=task.version,
         allowed_actions=[action],
+        next_action_label=next_action_label,
         seed_theory_id=task.seed_theory_id,
         seed_theory_name=task.seed_theory_name,
         phenomenon_summary=phenomenon_summary,
@@ -259,6 +326,20 @@ def _navigation_response(
         current_match_run_id=task.current_match_run_id,
         current_theory_plan_id=task.current_theory_plan_id,
         current_framework_id=task.current_framework_id,
+        resume_path=resume_path,
+        blocker=blocker,
+        retry=retry,
+        knowledge_release_id=task.knowledge_release_id,
+        conversation_id=task.conversation_id,
+        source_turn_id=task.source_turn_id,
+        source_run_id=task.source_agent_run_id,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )
+
+
+def _match_status(matches, task: ResearchTask) -> str | None:
+    if task.current_match_run_id is None:
+        return None
+    snapshot = matches.get(task.current_match_run_id)
+    return snapshot.status.value if snapshot is not None else None

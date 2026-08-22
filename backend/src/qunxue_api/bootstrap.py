@@ -39,6 +39,9 @@ from qunxue_api.adapters.sqlite.research_document_mutation import (
 from qunxue_api.adapters.sqlite.research_document_proposal import (
     SqliteResearchDocumentProposalRepository,
 )
+from qunxue_api.adapters.sqlite.research_start_proposal import (
+    SqliteResearchStartProposalRepository,
+)
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
@@ -65,6 +68,7 @@ from qunxue_api.application import (
     ResearchDocumentProposalApplication,
     ResearchJourney,
     ResearchJourneyDependencies,
+    ResearchStartApplication,
     TheoryMatchingApplication,
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
@@ -82,6 +86,10 @@ from qunxue_api.modules.research_framework import (
 )
 from qunxue_api.modules.research_intake import (
     PhenomenonService,
+    ResearchStartIdempotencyConflict,
+    ResearchStartProposalConflict,
+    ResearchStartProposalNotFound,
+    ResearchStartSourceIncomplete,
     ResearchTaskNotFound,
     ResearchTaskService,
 )
@@ -113,6 +121,7 @@ def create_app(
     )
     app.state.settings = resolved_settings
     app.state.matching_start_lock = Lock()
+    app.state.research_start_lock = Lock()
     app.state.database = resolved_database
     app.state.knowledge_catalog = SqliteKnowledgeCatalog(
         resolved_database,
@@ -186,6 +195,28 @@ def create_app(
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
+
+    @contextmanager
+    def research_navigation_match_reader_scope() -> Iterator[SqliteMatchRunRepository]:
+        with resolved_database.session() as session:
+            yield SqliteMatchRunRepository(session)
+
+    app.state.research_navigation_match_reader_scope = research_navigation_match_reader_scope
+
+    @contextmanager
+    def research_start_application_scope() -> Iterator[ResearchStartApplication]:
+        # Keep the in-process read/create/link sequence contiguous; database
+        # uniqueness remains the cross-process duplicate-task backstop.
+        with app.state.research_start_lock, resolved_database.session() as session:
+            task_repository = SqliteResearchTaskRepository(session)
+            yield ResearchStartApplication(
+                proposals=SqliteResearchStartProposalRepository(session),
+                bindings=SqliteConversationRepository(session),
+                tasks=ResearchTaskService(task_repository),
+                phenomena=PhenomenonService(SqlitePhenomenonRepository(session), task_repository),
+            )
+
+    app.state.research_start_application_scope = research_start_application_scope
 
     @contextmanager
     def research_document_application_scope() -> Iterator[ResearchDocumentApplication]:
@@ -268,12 +299,19 @@ def create_app(
                 research_tasks=task_repository,
                 rollback=session.rollback,
             )
+            research_start_application = ResearchStartApplication(
+                proposals=SqliteResearchStartProposalRepository(session),
+                bindings=conversation_repository,
+                tasks=task_service,
+                phenomena=phenomenon_service,
+            )
             agent_research_workflow = AgentResearchWorkflow(
                 bindings=conversation_repository,
                 tasks=task_service,
                 task_repository=task_repository,
                 phenomena=phenomenon_service,
                 matching=matching_application,
+                research_start=research_start_application,
             )
             document_application = ResearchDocumentApplication(
                 documents=document_service,
@@ -363,6 +401,43 @@ def create_app(
         )
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(ResearchStartProposalNotFound)
+    async def handle_research_start_proposal_not_found(
+        _request: Request,
+        error: ResearchStartProposalNotFound,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.RESEARCH_START_PROPOSAL_NOT_FOUND,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(ResearchStartIdempotencyConflict)
+    @app.exception_handler(ResearchStartProposalConflict)
+    @app.exception_handler(ResearchStartSourceIncomplete)
+    async def handle_research_start_conflict(
+        _request: Request,
+        error: Exception,
+    ) -> JSONResponse:
+        code = {
+            ResearchStartIdempotencyConflict: ErrorCode.RESEARCH_START_IDEMPOTENCY_CONFLICT,
+            ResearchStartProposalConflict: ErrorCode.RESEARCH_START_PROPOSAL_CONFLICT,
+            ResearchStartSourceIncomplete: ErrorCode.RESEARCH_START_SOURCE_INCOMPLETE,
+        }[type(error)]
+        body = ErrorResponse(
+            error=ErrorDetail(code=code, message=str(error), trace_id=str(uuid4()))
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
             content=body.model_dump(mode="json"),
         )
 

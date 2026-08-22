@@ -170,6 +170,62 @@ function requestUrl(input: RequestInfo | URL) {
   return new URL(input.url)
 }
 
+function researchNavigationFixture(resumePath: string) {
+  const stage = resumePath.endsWith('/phenomenon')
+    ? 'phenomenon_confirmation'
+    : resumePath.endsWith('/framework')
+      ? 'framework_drafting'
+      : 'theory_matching'
+  return {
+    adopted_theory_count: 0,
+    allowed_actions: stage === 'phenomenon_confirmation'
+      ? ['confirm_phenomenon']
+      : stage === 'framework_drafting'
+        ? ['review_framework']
+        : ['review_theory_candidates'],
+    blocker: null,
+    conversation_id: 'conversation-1',
+    created_at: '2026-08-21T08:00:00Z',
+    current_framework_id: null,
+    current_match_run_id: null,
+    current_material_intake_run_id: null,
+    current_phenomenon_candidate_id: null,
+    current_stage: stage,
+    current_theory_plan_id: null,
+    entry_type: 'direct_input',
+    knowledge_release_id: 'release-formal-1',
+    next_action_label: stage === 'phenomenon_confirmation'
+      ? '确认现象'
+      : stage === 'framework_drafting'
+        ? '审校研究框架'
+        : '查看候选理论',
+    phenomenon_summary: null,
+    resume_path: resumePath,
+    retry: null,
+    seed_theory_id: null,
+    seed_theory_name: null,
+    source_run_id: 'run-1',
+    source_turn_id: 'turn-1',
+    stage_label: stage === 'phenomenon_confirmation'
+      ? '现象待确认'
+      : stage === 'framework_drafting'
+        ? '框架草稿'
+        : '匹配生成中',
+    status: 'in_progress',
+    task_id: 'task-1',
+    updated_at: '2026-08-21T09:00:00Z',
+    version: 3,
+  }
+}
+
+function researchWorkspaceResponse(input: RequestInfo | URL, resumePath: string) {
+  const request = requestUrl(input)
+  if (request.pathname.endsWith('/navigation')) return json(researchNavigationFixture(resumePath))
+  if (request.pathname.endsWith('/research-documents')) return json({ items: [] })
+  if (request.pathname.endsWith('/document-proposals')) return json({ items: [] })
+  return json({}, 404)
+}
+
 function agentConversationFixture(prompt = '为什么同一社区里的互助正在减少？') {
   return {
     conversation_id: 'agent-conversation-1',
@@ -355,10 +411,24 @@ describe('App routes', () => {
     expect(screen.queryByRole('heading', { name: '从现象到框架' })).not.toBeInTheDocument()
   })
 
+  it('resumes a task-only research entry from the server navigation path', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/match')
+    }))
+
+    renderRoute('/research/task-1', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { name: '理论判断文档' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
   it.each([
     ['/research/task-1/match', '理论判断文档'],
     ['/research/task-1/framework', '研究框架文档'],
   ])('shows %s as an honest research-stage workbench', async (path, title) => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, path)
+    }))
     renderRoute(path, { status: 'authenticated' })
 
     expect(await screen.findByRole('heading', { name: title })).toBeVisible()
@@ -421,6 +491,11 @@ describe('App routes', () => {
     ['/research/task-1/framework', '研究框架文档'],
     ['/my', '我的研究'],
   ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
+    if (path.startsWith('/research/task-1/')) {
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+        return researchWorkspaceResponse(input, path)
+      }))
+    }
     renderRoute(path, { status: 'authenticated' })
 
     expect(
@@ -851,6 +926,7 @@ describe('App routes', () => {
       items: [{
         adopted_theory_count: 0,
         allowed_actions: ['confirm_phenomenon'],
+        blocker: null,
         created_at: '2026-08-08T08:00:00Z',
         current_framework_id: null,
         current_match_run_id: null,
@@ -858,12 +934,16 @@ describe('App routes', () => {
         current_phenomenon_candidate_id: 'candidate-1',
         current_stage: 'phenomenon_confirmation',
         entry_type: 'direct',
+        next_action_label: '确认现象',
         phenomenon_summary: {
           phenomenon: '同一社区中的互助为何逐渐减少？',
           research_intent: '比较关系持续性与制度规范的解释',
         },
         seed_theory_id: null,
         seed_theory_name: null,
+        resume_path: '/research/task-1/phenomenon',
+        retry: null,
+        stage_label: '现象待确认',
         status: 'active',
         task_id: 'task-1',
         updated_at: '2026-08-09T08:00:00Z',
@@ -943,6 +1023,9 @@ describe('App routes', () => {
   })
 
   it('keeps an authenticated visitor on a protected route', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/phenomenon')
+    }))
     renderRoute('/research/task-1/phenomenon', { status: 'authenticated' })
 
     expect(
@@ -1005,11 +1088,15 @@ describe('App routes', () => {
     const destination = '/research/task-1/framework?from=my#methods'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = input as Request
-      if (request.method === 'GET') {
+      const url = requestUrl(input)
+      if (request.method === 'GET' && url.pathname === '/api/session') {
         return new Response(
           JSON.stringify({ error: { code: 'unauthenticated', message: '请先登录。', trace_id: 'trace-1' } }),
           { status: 401, headers: { 'Content-Type': 'application/json' } },
         )
+      }
+      if (request.method === 'GET') {
+        return researchWorkspaceResponse(input, '/research/task-1/framework')
       }
       return new Response(JSON.stringify({
         session_id: '25b191bb-2d85-4a88-8863-2cabf506a7a8',
@@ -1126,7 +1213,13 @@ describe('App routes', () => {
   })
 
   it('opens a release-pinned detail and returns to the supplied research task', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgeDetail())))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      if (request.pathname.startsWith('/api/research-tasks/')) {
+        return researchWorkspaceResponse(input, '/research/task-1/match')
+      }
+      return json(knowledgeDetail())
+    }))
     renderRoute(
       '/knowledge/D1%3AC001?knowledge_release_id=release-a&return_to=%2Fresearch%2Ftask-1%2Fmatch',
       { status: 'authenticated' },

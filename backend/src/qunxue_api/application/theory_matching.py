@@ -139,12 +139,34 @@ class TheoryMatchingApplication:
         ):
             raise MatchingSnapshotConflict("Confirmed phenomenon snapshot does not match request.")
 
-        release = self._catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
-        if (
-            requested_knowledge_release_id is not None
-            and requested_knowledge_release_id != release.knowledge_release_id
-        ):
-            raise MatchingSnapshotConflict("Knowledge release is not the current match release.")
+        if current_task.knowledge_release_id is not None:
+            if (
+                requested_knowledge_release_id is not None
+                and requested_knowledge_release_id != current_task.knowledge_release_id
+            ):
+                raise MatchingSnapshotConflict(
+                    "Knowledge release does not match the release pinned to this research task."
+                )
+            get_manifest = getattr(self._catalog, "get_manifest", None)
+            if not callable(get_manifest):
+                raise MatchingSnapshotConflict(
+                    "The pinned knowledge release cannot be resolved by this catalog."
+                )
+            try:
+                release = get_manifest(current_task.knowledge_release_id).release
+            except LookupError as error:
+                raise MatchingSnapshotConflict(
+                    "The knowledge release pinned to this research task is unavailable."
+                ) from error
+        else:
+            release = self._catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
+            if (
+                requested_knowledge_release_id is not None
+                and requested_knowledge_release_id != release.knowledge_release_id
+            ):
+                raise MatchingSnapshotConflict(
+                    "Knowledge release is not the current match release."
+                )
 
         match_run = self._matching.start(phenomenon=phenomenon, release=release)
         now = self._clock()

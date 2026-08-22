@@ -13,6 +13,11 @@ from qunxue_api.application.research_journey import (
     ResearchJourneyConfigurationError,
     ResearchJourneyDependencies,
 )
+from qunxue_api.application.research_start import (
+    ResearchStartApplication,
+    ResearchStartConfirmationResult,
+    ResearchStartJourneyState,
+)
 from qunxue_api.application.theory_matching import (
     MatchingRequestConflict,
     MatchingSnapshotConflict,
@@ -25,6 +30,9 @@ __all__ = [
     "ResearchDocumentProposalApplication",
     "ResearchJourneyConfigurationError",
     "ResearchJourneyDependencies",
+    "ResearchStartApplication",
+    "ResearchStartConfirmationResult",
+    "ResearchStartJourneyState",
     "MatchingRequestConflict",
     "MatchingSnapshotConflict",
     "TheoryMatchingApplication",

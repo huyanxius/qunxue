@@ -47,6 +47,10 @@ class ResearchTaskService:
         idempotency_key: str,
         seed_theory_id: str | None = None,
         seed_theory_name: str | None = None,
+        knowledge_release_id: str | None = None,
+        conversation_id: UUID | None = None,
+        source_turn_id: UUID | None = None,
+        source_agent_run_id: UUID | None = None,
     ) -> ResearchTask:
         task = ResearchTask.create(
             task_id=self._id_factory(),
@@ -56,6 +60,10 @@ class ResearchTaskService:
             seed_theory_id=seed_theory_id,
             seed_theory_name=seed_theory_name,
             now=self._clock(),
+            knowledge_release_id=knowledge_release_id,
+            conversation_id=conversation_id,
+            source_turn_id=source_turn_id,
+            source_agent_run_id=source_agent_run_id,
         )
         return self._repository.add_or_get_by_idempotency_key(task)
 

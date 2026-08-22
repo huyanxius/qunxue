@@ -4,6 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from qunxue_api.api.contracts.research_tasks import ResearchTaskNavigationResponse
+from qunxue_api.modules.research_intake import ResearchStartProposal
+
 
 class AgentCitationResponse(BaseModel):
     citation_id: str
@@ -68,3 +71,64 @@ class AgentTurnRequest(BaseModel):
     section_id: str | None = None
     document_version: int | None = None
     theory_plan_id: UUID | None = None
+
+
+class ResearchStartProposalResponse(BaseModel):
+    proposal_id: UUID
+    conversation_id: UUID
+    source_run_id: UUID
+    source_turn_id: UUID
+    knowledge_release_id: str
+    phenomenon: str
+    research_intent: str | None
+    context: str | None
+    version: int
+    status: Literal["pending_confirmation", "confirmed"]
+    requires_user_confirmation: bool
+    confirmed_task_id: UUID | None
+    created_at: datetime
+    confirmed_at: datetime | None
+
+    @classmethod
+    def from_domain(
+        cls, proposal: ResearchStartProposal
+    ) -> "ResearchStartProposalResponse":
+        return cls(
+            proposal_id=proposal.proposal_id,
+            conversation_id=proposal.conversation_id,
+            source_run_id=proposal.source_run_id,
+            source_turn_id=proposal.source_turn_id,
+            knowledge_release_id=proposal.knowledge_release_id,
+            phenomenon=proposal.phenomenon,
+            research_intent=proposal.research_intent,
+            context=proposal.context,
+            version=proposal.version,
+            status=proposal.status.value,
+            requires_user_confirmation=proposal.confirmed_task_id is None,
+            confirmed_task_id=proposal.confirmed_task_id,
+            created_at=proposal.created_at,
+            confirmed_at=proposal.confirmed_at,
+        )
+
+
+class ConfirmResearchStartRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+    phenomenon: str = Field(min_length=1, max_length=10000)
+    research_intent: str | None = Field(default=None, max_length=4000)
+    context: str | None = Field(default=None, max_length=10000)
+
+
+class ConfirmResearchStartResponse(BaseModel):
+    conversation_id: UUID
+    status: Literal["task_bound"]
+    task_id: UUID
+    proposal: ResearchStartProposalResponse
+    navigation: ResearchTaskNavigationResponse
+
+
+class AgentResearchJourneyResponse(BaseModel):
+    conversation_id: UUID
+    status: Literal["collecting", "proposal_pending", "task_bound"]
+    task_id: UUID | None
+    proposal: ResearchStartProposalResponse | None
+    navigation: ResearchTaskNavigationResponse | None

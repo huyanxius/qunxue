@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from qunxue_api.modules.agent_conversation import (
     AgentCitation,
@@ -126,12 +126,14 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             conversation_id=conversation.conversation_id,
         )
+        planned_turn_id = uuid4()
         bind_agent_context = getattr(tools, "bind_agent_context", None)
         if callable(bind_agent_context):
             bind_agent_context(
                 user_id=user_id,
                 conversation_id=run.conversation_id,
                 agent_run_id=run.run_id,
+                agent_turn_id=planned_turn_id,
                 task_id=task_id,
                 document_id=document_id,
                 section_id=section_id,
@@ -217,6 +219,7 @@ class DisciplinaryAgentApplication:
                 assistant_content=result.answer,
                 citations=citations,
                 evidence_ids=evidence_ids,
+                turn_id=planned_turn_id,
             )
             self._conversations.finish_run(
                 run_id=run.run_id,
@@ -224,6 +227,10 @@ class DisciplinaryAgentApplication:
                 turn_id=turn_result.turn_id if isinstance(turn_result, AgentTurn) else None,
                 tool_summary=tuple(_tool_summary(item) for item in tool_events),
             )
+            if isinstance(turn_result, AgentTurn):
+                finalize_agent_turn = getattr(tools, "finalize_agent_turn", None)
+                if callable(finalize_agent_turn):
+                    finalize_agent_turn(source_turn_id=turn_result.turn_id)
         except AgentInterrupted:
             self._conversations.finish_run(
                 run_id=run.run_id,

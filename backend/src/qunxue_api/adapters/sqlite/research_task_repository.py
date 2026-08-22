@@ -99,6 +99,12 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 current_framework_id=(
                     str(task.current_framework_id) if task.current_framework_id else None
                 ),
+                knowledge_release_id=task.knowledge_release_id,
+                conversation_id=(str(task.conversation_id) if task.conversation_id else None),
+                source_turn_id=(str(task.source_turn_id) if task.source_turn_id else None),
+                source_agent_run_id=(
+                    str(task.source_agent_run_id) if task.source_agent_run_id else None
+                ),
                 created_at=task.created_at,
                 updated_at=task.updated_at,
             )
@@ -168,6 +174,12 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 current_framework_id=(
                     str(task.current_framework_id) if task.current_framework_id else None
                 ),
+                knowledge_release_id=task.knowledge_release_id,
+                conversation_id=(str(task.conversation_id) if task.conversation_id else None),
+                source_turn_id=(str(task.source_turn_id) if task.source_turn_id else None),
+                source_agent_run_id=(
+                    str(task.source_agent_run_id) if task.source_agent_run_id else None
+                ),
             )
         )
         if result.rowcount != 1:
@@ -216,5 +228,11 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             ),
             current_framework_id=(
                 UUID(row.current_framework_id) if row.current_framework_id else None
+            ),
+            knowledge_release_id=row.knowledge_release_id,
+            conversation_id=UUID(row.conversation_id) if row.conversation_id else None,
+            source_turn_id=UUID(row.source_turn_id) if row.source_turn_id else None,
+            source_agent_run_id=(
+                UUID(row.source_agent_run_id) if row.source_agent_run_id else None
             ),
         )
