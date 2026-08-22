@@ -1,0 +1,256 @@
+.research-agent-bot {
+  width: clamp(48px, 4.6vw, 56px);
+  aspect-ratio: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--app-ink) 84%, transparent);
+  animation: research-agent-bot-presence 5.6s ease-in-out infinite;
+}
+
+.research-agent-bot svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes research-agent-bot-presence {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  28% {
+    transform: translate3d(0, -1.4px, 0) rotate(-0.45deg);
+  }
+  58% {
+    transform: translate3d(0, 0.35px, 0) rotate(0.35deg);
+  }
+  78% {
+    transform: translate3d(0, -0.75px, 0) rotate(0deg);
+  }
+}
+
+/* One restrained loop extends Windup's left/right/up gaze into twelve beats:
+   neutral, left, right, up, down, focus, two curious tilts, surprise,
+   soft eyes, left wink, right wink. The square face and rectangular eyes stay intact. */
+@keyframes research-agent-bot-face-suite {
+  0%,
+  7% {
+    transform: translate(0, 0);
+  }
+  8.333%,
+  23.9% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25%,
+  31.8% {
+    transform: translate(0, -0.35px) rotate(-2deg);
+  }
+  33.333%,
+  39.9% {
+    transform: translate(0, -0.35px) rotate(2deg);
+  }
+  41.667%,
+  47.9% {
+    transform: translate(0, 0.25px) rotate(0deg);
+  }
+  50%,
+  56.8% {
+    transform: translate(0, -0.65px) rotate(-4deg);
+  }
+  58.333%,
+  64.9% {
+    transform: translate(0, -0.65px) rotate(4deg);
+  }
+  66.667%,
+  73.4% {
+    transform: translate(0, -0.9px) rotate(0deg);
+  }
+  75%,
+  81.7% {
+    transform: translate(0, 0.25px) rotate(0deg);
+  }
+  83.333%,
+  89.9% {
+    transform: translate(-0.3px, 0) rotate(-2deg);
+  }
+  91.667%,
+  98.5% {
+    transform: translate(0.3px, 0) rotate(2deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes research-agent-bot-gaze-suite {
+  0%,
+  7% {
+    transform: translate(0, 0);
+  }
+  8.333%,
+  15.1% {
+    transform: translate(-2px, 0);
+  }
+  16.667%,
+  23.4% {
+    transform: translate(2px, 0);
+  }
+  25%,
+  31.8% {
+    transform: translate(0, -2px);
+  }
+  33.333%,
+  39.9% {
+    transform: translate(0, 1.3px);
+  }
+  41.667%,
+  48.4% {
+    transform: translate(0, 0.45px) scaleX(0.88);
+  }
+  50%,
+  56.8% {
+    transform: translate(-1.15px, -0.8px);
+  }
+  58.333%,
+  64.9% {
+    transform: translate(1.15px, -0.8px);
+  }
+  66.667%,
+  73.4% {
+    transform: translate(0, -0.25px) scale(1.15);
+  }
+  75%,
+  81.7% {
+    transform: translate(0, 0.55px) scaleX(1.04);
+  }
+  83.333%,
+  89.9% {
+    transform: translate(-0.55px, 0);
+  }
+  91.667%,
+  98.5% {
+    transform: translate(0.55px, 0);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes research-agent-bot-frame-suite {
+  0%,
+  39.9% {
+    transform: scale(1);
+  }
+  41.667%,
+  47.9% {
+    transform: scale(0.985, 1.025);
+  }
+  50%,
+  64.9% {
+    transform: scale(1);
+  }
+  65.9% {
+    transform: scale(0.97, 1.035);
+  }
+  66.667% {
+    transform: scale(1.055, 0.965);
+  }
+  68.1% {
+    transform: scale(0.99, 1.015);
+  }
+  70%,
+  73.4% {
+    transform: scale(1);
+  }
+  75%,
+  81.7% {
+    transform: scale(1.015, 0.99);
+  }
+  83.333%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes research-agent-bot-blink {
+  0%,
+  92% {
+    transform: scaleY(1);
+  }
+  94.5% {
+    transform: scaleY(0.15);
+  }
+  97%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.research-agent-bot__face,
+.research-agent-bot__gaze,
+.research-agent-bot__frame {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.research-agent-bot__face {
+  animation: research-agent-bot-face-suite 28s cubic-bezier(0.5, 0, 0.15, 1) infinite;
+}
+
+.research-agent-bot__gaze {
+  animation: research-agent-bot-gaze-suite 28s cubic-bezier(0.5, 0, 0.15, 1) infinite;
+}
+
+.research-agent-bot__frame {
+  animation: research-agent-bot-frame-suite 28s cubic-bezier(0.5, 0, 0.15, 1) infinite;
+}
+
+.research-agent-bot__blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: research-agent-bot-blink 4300ms cubic-bezier(0.4, 0, 0.55, 1) infinite;
+}
+
+.research-agent-bot__eye {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes research-agent-bot-left-eye-suite {
+  0%, 48.4% { transform: scale(1); }
+  50%, 56.8% { transform: scale(1.18, 1.08); }
+  58.333%, 73.4% { transform: scale(1); }
+  75%, 81.7% { transform: scale(1, 0.42); }
+  83.333%, 89.9% { transform: scale(1, 0.14); }
+  91.667%, 100% { transform: scale(1); }
+}
+
+@keyframes research-agent-bot-right-eye-suite {
+  0%, 48.4% { transform: scale(1); }
+  50%, 56.8% { transform: scale(1); }
+  58.333%, 64.9% { transform: scale(1.18, 1.08); }
+  66.667%, 73.4% { transform: scale(1); }
+  75%, 81.7% { transform: scale(1, 0.42); }
+  83.333%, 89.9% { transform: scale(1); }
+  91.667%, 98.5% { transform: scale(1, 0.14); }
+  100% { transform: scale(1); }
+}
+
+.research-agent-bot__eye--left {
+  animation: research-agent-bot-left-eye-suite 28s cubic-bezier(0.5, 0, 0.15, 1) infinite;
+}
+
+.research-agent-bot__eye--right {
+  animation: research-agent-bot-right-eye-suite 28s cubic-bezier(0.5, 0, 0.15, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-agent-bot,
+  .research-agent-bot__face,
+  .research-agent-bot__gaze,
+  .research-agent-bot__frame,
+  .research-agent-bot__blink,
+  .research-agent-bot__eye {
+    animation: none;
+    transform: none;
+  }
+}

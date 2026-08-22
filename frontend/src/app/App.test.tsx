@@ -505,7 +505,6 @@ describe('App routes', () => {
     expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
 
     const agentConversation = screen.getByRole('region', { name: '社会学 Agent 对话' })
-    expect(within(agentConversation).getByText('和社会学 Agent 一起解释现象、梳理概念、打开思路。')).toBeVisible()
     expect(within(agentConversation).queryByText('从知识库出发，和你的学科 Agent 直接聊。')).not.toBeInTheDocument()
     const textbox = within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })
     const sendButton = within(agentConversation).getByRole('button', {
@@ -517,9 +516,7 @@ describe('App routes', () => {
     expect(within(agentConversation).queryByText('交互预览 · 未连接模型')).not.toBeInTheDocument()
     expect(within(agentConversation).queryByText(/^Agent$/)).not.toBeInTheDocument()
 
-    fireEvent.click(within(agentConversation).getByRole('button', {
-      name: '为什么同一社区里的互助正在减少？',
-    }))
+    fireEvent.change(textbox, { target: { value: '为什么同一社区里的互助正在减少？' } })
     expect(textbox).toHaveValue('为什么同一社区里的互助正在减少？')
     expect(sendButton).toBeEnabled()
 

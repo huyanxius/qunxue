@@ -14,6 +14,11 @@ const cytoscapeMock = vi.hoisted(() => vi.fn(() => ({
 
 vi.mock('cytoscape', () => ({ default: cytoscapeMock }))
 
+vi.mock('@paper-design/shaders-react', () => ({
+  GrainGradient: ({ className }: { className?: string }) => <div className={className} data-testid="paper-shader" />,
+  ShaderMount: ({ className }: { className?: string }) => <div className={className} data-testid="agent-shader" />,
+}))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -41,7 +46,7 @@ function json(body: unknown, status = 200) {
 }
 
 describe('FoundationPage', () => {
-  it('leads with user value and an explicitly marked research demo', async () => {
+  it('leads with user value and expands into a focused research Agent scene', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ error: { code: 'offline' } }, 503)))
 
     const { container } = renderPage()
@@ -53,19 +58,21 @@ describe('FoundationPage', () => {
     ).toBeVisible()
     expect(screen.getByRole('link', { name: '体验研究流程' })).toHaveAttribute(
       'href',
-      '#research-demo',
+      '#research-agent',
     )
     expect(container.querySelector('header.public-header')).toBeInTheDocument()
+    expect(container.querySelector('.foundation-origin-suffix')).toHaveTextContent('，')
+    expect(container.querySelector('.foundation-origin-suffix')).not.toHaveTextContent('中')
     expect(container.querySelector('.app-frame')).not.toBeInTheDocument()
-    expect(screen.getByText('可交互演示')).toBeVisible()
+    expect(screen.getByRole('region', { name: '群学研究 Agent 演示' })).toBeVisible()
+    expect(container.querySelectorAll('[data-testid="agent-shader"]')).toHaveLength(1)
+    expect(screen.queryByText('研究 Agent')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: '输入你的研究困惑' })).toBeVisible()
+    expect(screen.queryByText('可交互演示')).not.toBeInTheDocument()
     expect(screen.queryByText('运行模式')).not.toBeInTheDocument()
     expect(screen.queryByText('契约版本')).not.toBeInTheDocument()
     expect(screen.queryByText('知识发布')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3)
-
-    fireEvent.click(screen.getByRole('tab', { name: /比较候选/ }))
-    expect(screen.getAllByText('解释重点')).toHaveLength(2)
-    expect(screen.getByText(/选择仍由你完成/)).toBeVisible()
+    expect(screen.queryAllByRole('tabpanel', { hidden: true })).toHaveLength(0)
   })
 
   it('renders real knowledge entries without exposing release identifiers', async () => {

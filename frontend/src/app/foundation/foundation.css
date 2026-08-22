@@ -439,6 +439,11 @@
 
 .foundation-knowledge {
   position: relative;
+  background: #f6f7f7;
+}
+
+.foundation-knowledge::before {
+  background: transparent;
 }
 
 .foundation-knowledge .foundation-section-heading {
@@ -1123,6 +1128,1050 @@
   text-decoration: none;
 }
 
+/*
+ * Editorial marketing skin.
+ * The page keeps its original research narrative and motion choreography;
+ * this layer only remaps composition, type hierarchy and surface colour.
+ */
+.public-site {
+  --public-width: 1240px;
+  --public-gutter: clamp(24px, 4.8vw, 72px);
+  --foundation-ink: #151515;
+  --foundation-graphite: #23241f;
+  --foundation-muted: #686b67;
+  --foundation-rule: rgb(21 21 21 / 16%);
+  --foundation-bone: #e5e6e1;
+  --foundation-sage: #d3e5e9;
+  --foundation-lavender: #bbb2ce;
+  --foundation-rose: #cb9da2;
+  --foundation-violet: #453b60;
+  --foundation-amber: #65451d;
+  color: var(--foundation-ink);
+  background: #fff;
+}
+
+.public-header__inner {
+  min-height: 76px;
+}
+
+.public-wordmark,
+.public-navigation a {
+  color: var(--foundation-ink);
+}
+
+.public-wordmark img {
+  width: 34px;
+  height: 34px;
+  filter: grayscale(1) contrast(1.25);
+}
+
+.public-wordmark strong {
+  font-size: 0.84rem;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+}
+
+.public-wordmark small,
+.public-navigation {
+  color: var(--foundation-muted);
+}
+
+.public-navigation {
+  font-size: 0.7rem;
+}
+
+.public-navigation a:hover {
+  color: var(--foundation-amber);
+}
+
+.public-navigation__account {
+  min-height: 36px;
+  padding: 0 17px;
+  border-radius: 999px;
+  color: #fff !important;
+  background: var(--foundation-ink);
+}
+
+.public-navigation__account::before {
+  content: none;
+}
+
+.foundation-hero {
+  min-height: auto;
+  padding-top: clamp(132px, 14vw, 184px);
+  padding-bottom: clamp(88px, 10vw, 132px);
+}
+
+.foundation-hero__inner {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(56px, 7vw, 84px);
+}
+
+.foundation-hero__copy {
+  max-width: 920px;
+  justify-self: center;
+  padding-left: 0;
+  text-align: center;
+}
+
+.foundation-kicker {
+  justify-content: center;
+  color: var(--foundation-amber);
+  font-size: 0.62rem;
+  font-weight: 680;
+  letter-spacing: 0.13em;
+}
+
+.foundation-kicker span {
+  color: var(--foundation-muted);
+}
+
+.foundation-hero h1 {
+  max-width: 920px;
+  margin-top: 24px;
+  color: var(--foundation-ink);
+  font-family: var(--serif);
+  font-size: clamp(4rem, 6.1vw, 6.35rem);
+  font-weight: 570;
+  line-height: 0.98;
+  letter-spacing: -0.068em;
+}
+
+.foundation-origin,
+.foundation-outcome > span {
+  color: var(--foundation-ink);
+  font-weight: 570;
+}
+
+.foundation-origin i {
+  background: var(--foundation-amber);
+}
+
+.foundation-origin > .foundation-origin__word {
+  display: inline-flex;
+  min-width: 4.1em;
+  animation: none;
+}
+
+.foundation-origin__glyph {
+  display: inline-block;
+  animation: origin-glyph-resolve 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.foundation-origin[data-phase='deleting'] .foundation-origin__glyph {
+  animation: none;
+}
+
+.foundation-hero__lede {
+  max-width: 610px;
+  margin: 28px auto 0;
+  color: var(--foundation-muted);
+  font-size: 0.94rem;
+  line-height: 1.8;
+}
+
+.foundation-hero__actions {
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.public-action--primary {
+  min-width: 154px;
+  min-height: 46px;
+  padding: 0 23px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--foundation-ink);
+  box-shadow: none;
+}
+
+.public-action--primary:hover {
+  color: #fff;
+  background: var(--foundation-graphite);
+  box-shadow: 0 10px 26px rgb(21 21 21 / 14%);
+}
+
+.public-action--text,
+.foundation-text-link,
+.graph-preview-state button {
+  color: var(--foundation-ink);
+}
+
+.foundation-hero__demo {
+  width: min(1030px, 100%);
+  justify-self: center;
+}
+
+.foundation-hero__scroll {
+  bottom: 26px;
+  color: var(--foundation-muted);
+}
+
+.foundation-method,
+.foundation-knowledge,
+.foundation-graph {
+  border-top: 1px solid var(--foundation-rule);
+}
+
+.foundation-method::before {
+  color: rgb(101 69 29 / 9%);
+}
+
+.foundation-section-heading h2,
+.foundation-graph__copy h2,
+.foundation-trust h2,
+.foundation-closing h2 {
+  color: var(--foundation-ink);
+  font-family: var(--serif);
+  font-weight: 570;
+  letter-spacing: -0.058em;
+}
+
+.foundation-section-heading > p:last-child,
+.foundation-section-heading--split div > p,
+.foundation-graph__details p {
+  color: var(--foundation-muted);
+}
+
+.foundation-method__steps {
+  border: 1px solid var(--foundation-rule);
+  border-radius: 28px;
+  background: var(--foundation-bone);
+}
+
+.foundation-method__steps li + li {
+  border-left: 1px solid rgb(21 21 21 / 12%);
+}
+
+.foundation-method__steps span {
+  color: var(--foundation-amber);
+  opacity: 0.72;
+}
+
+.foundation-method__steps h3 {
+  color: var(--foundation-ink);
+}
+
+.foundation-method__steps p {
+  color: #5d605c;
+}
+
+.foundation-knowledge::before {
+  background: rgb(211 229 233 / 50%);
+}
+
+.foundation-graph__copy {
+  text-shadow:
+    0 2px 18px #fff,
+    0 2px 34px #fff;
+}
+
+.foundation-graph__placeholder,
+.graph-preview-state {
+  color: var(--foundation-muted);
+}
+
+.foundation-trust {
+  color: #f7f7f3;
+  background: var(--foundation-graphite);
+}
+
+.foundation-question-flow__lane {
+  color: rgb(229 230 225 / 76%);
+}
+
+.foundation-question-flow__group span > i,
+.foundation-question-flow > p {
+  color: rgb(229 230 225 / 44%);
+}
+
+.foundation-trust .foundation-kicker {
+  color: #e4b976;
+}
+
+.foundation-trust .foundation-kicker span {
+  color: rgb(229 230 225 / 50%);
+}
+
+.foundation-trust h2 {
+  color: #fff;
+}
+
+.foundation-trust__lede,
+.foundation-trust__capabilities {
+  color: rgb(229 230 225 / 76%);
+}
+
+.foundation-trust__capabilities li::before {
+  background: #e4b976;
+}
+
+.foundation-model__field {
+  border-color: rgb(229 230 225 / 72%);
+  background: #fff;
+  box-shadow: 0 28px 76px rgb(0 0 0 / 28%);
+}
+
+.foundation-model__field:focus-within {
+  border-color: #e4b976;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgb(228 185 118 / 12%),
+    0 32px 84px rgb(0 0 0 / 32%);
+}
+
+.foundation-model__field textarea {
+  color: var(--foundation-ink);
+}
+
+.foundation-model__field textarea::placeholder {
+  color: #767972;
+}
+
+.foundation-model__field button,
+.foundation-model__field button:hover:not(:disabled) {
+  color: #fff;
+  background: var(--foundation-ink);
+}
+
+.foundation-model__field button:disabled {
+  color: rgb(255 255 255 / 70%);
+  background: #74766f;
+}
+
+.foundation-closing {
+  color: #f7f7f3;
+  background: var(--foundation-ink);
+}
+
+.foundation-closing .foundation-kicker {
+  color: #e4b976;
+}
+
+.foundation-closing .foundation-kicker span,
+.foundation-closing__actions > span,
+.foundation-closing__signature > p {
+  color: rgb(229 230 225 / 58%);
+}
+
+.foundation-closing h2,
+.foundation-closing__signature-word {
+  color: #fff;
+}
+
+.foundation-closing__lede {
+  color: rgb(229 230 225 / 72%);
+}
+
+.foundation-closing__caret {
+  background: #e4b976;
+}
+
+.foundation-closing .public-action--primary {
+  color: var(--foundation-ink);
+  background: #fff;
+  box-shadow: none;
+}
+
+.foundation-closing .public-action--primary:hover {
+  color: var(--foundation-ink);
+  background: var(--foundation-bone);
+}
+
+.foundation-closing__signature-word--observe {
+  color: transparent;
+  -webkit-text-stroke-color: rgb(229 230 225 / 44%);
+}
+
+.foundation-closing__signature-word--compare {
+  color: var(--foundation-lavender);
+}
+
+.public-footer {
+  color: rgb(229 230 225 / 58%);
+  background: var(--foundation-ink);
+  border-top: 1px solid rgb(229 230 225 / 16%);
+}
+
+.public-footer .public-wordmark small,
+.public-footer a {
+  color: rgb(229 230 225 / 68%);
+}
+
+/* Existing interactive product proof, recoloured without changing its states. */
+.foundation-hero .research-demo {
+  border: 1px solid var(--foundation-rule);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgb(21 21 21 / 12%);
+  backdrop-filter: none;
+}
+
+.foundation-hero .research-demo:hover {
+  box-shadow: 0 34px 92px rgb(21 21 21 / 15%);
+}
+
+.foundation-hero .research-demo__live,
+.foundation-hero .research-demo__scene small,
+.foundation-hero .research-demo__scene > span,
+.foundation-hero .research-demo__scene > p:first-child,
+.foundation-hero .research-demo__field-note > span,
+.foundation-hero .research-demo__signals > p,
+.foundation-hero .research-demo__tension > span,
+.foundation-hero .research-demo__discriminator > span,
+.foundation-hero .research-demo__framework-question > span,
+.foundation-hero .research-demo__validation-paths li > span {
+  color: var(--foundation-amber);
+}
+
+.foundation-hero .research-demo__live i,
+.foundation-hero .research-demo__stages button::after,
+.foundation-hero .research-demo__validation-paths li::before {
+  background: var(--foundation-violet);
+}
+
+.foundation-hero .research-demo__header > span,
+.foundation-hero .research-demo__stages button span,
+.foundation-hero .research-demo__signals li span,
+.foundation-hero .research-demo__footer {
+  color: #777a74;
+}
+
+.foundation-hero .research-demo__stages {
+  border: 1px solid rgb(21 21 21 / 9%);
+  background: var(--foundation-bone);
+}
+
+.foundation-hero .research-demo__stages button {
+  color: #5f625d;
+}
+
+.foundation-hero .research-demo__stages button:hover,
+.foundation-hero .research-demo__stages button[aria-selected='true'] {
+  color: var(--foundation-violet);
+}
+
+.foundation-hero .research-demo__stages button[aria-selected='true'] {
+  background: #fff;
+  box-shadow: 0 6px 16px rgb(21 21 21 / 8%);
+}
+
+.foundation-hero .research-demo__body {
+  border: 1px solid rgb(21 21 21 / 8%);
+  background: #f5f5f2;
+}
+
+.foundation-hero .research-demo__trace-base {
+  stroke: rgb(69 59 96 / 15%);
+}
+
+.foundation-hero .research-demo__trace-flow {
+  stroke: var(--foundation-violet);
+}
+
+.foundation-hero .research-demo__field-note {
+  color: #fff;
+  background: var(--foundation-graphite);
+  box-shadow: 0 18px 44px rgb(21 21 21 / 16%);
+}
+
+.foundation-hero .research-demo__field-note > span,
+.foundation-hero .research-demo__field-note small,
+.foundation-hero .research-demo__discriminator > span {
+  color: rgb(255 255 255 / 68%);
+}
+
+.foundation-hero .research-demo__signals li {
+  border-left-color: rgb(69 59 96 / 28%);
+}
+
+.foundation-hero .research-demo__tension p,
+.foundation-hero .research-demo__note,
+.foundation-hero .research-demo__theory-mechanism,
+.foundation-hero .research-demo__validation-paths p,
+.foundation-hero .research-demo__boundary,
+.foundation-hero .research-demo__footer button {
+  color: #666963;
+}
+
+.foundation-hero .research-demo__theory {
+  border: 1px solid rgb(21 21 21 / 10%);
+  color: var(--foundation-ink);
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(21 21 21 / 7%);
+}
+
+.foundation-hero .research-demo__theory[aria-pressed='true'] {
+  border-color: rgb(69 59 96 / 42%);
+  box-shadow: 0 20px 46px rgb(69 59 96 / 14%);
+}
+
+.foundation-hero .research-demo__theory-heading small,
+.foundation-hero .research-demo__theory-prediction small,
+.foundation-hero .research-demo__footer > span:last-child,
+.foundation-hero .research-demo__footer button i {
+  color: var(--foundation-violet);
+}
+
+.foundation-hero .research-demo__discriminator {
+  color: #fff;
+  background: var(--foundation-violet);
+  box-shadow: 0 18px 44px rgb(69 59 96 / 24%);
+}
+
+.foundation-hero .research-demo__validation-paths li::after {
+  background: rgb(69 59 96 / 22%);
+}
+
+/* Knowledge ticker and journey retain their motion, with semantic paper colours. */
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.foundation-knowledge .knowledge-ticker {
+  color: var(--foundation-ink);
+  background: var(--foundation-bone);
+  border-top: 1px solid var(--foundation-rule);
+  border-bottom: 1px solid var(--foundation-rule);
+}
+
+.foundation-knowledge .knowledge-ticker__term,
+.foundation-knowledge .knowledge-ticker__term--1,
+.foundation-knowledge .knowledge-ticker__term--2,
+.foundation-knowledge .knowledge-ticker__term--3 {
+  color: var(--foundation-ink);
+}
+
+.foundation-knowledge .knowledge-ticker__term i {
+  background: var(--foundation-amber);
+}
+
+.foundation-knowledge .knowledge-ticker__term:hover,
+.foundation-knowledge .knowledge-ticker__term:focus-visible {
+  color: var(--foundation-violet);
+  background: rgb(255 255 255 / 64%);
+}
+
+.foundation-knowledge .knowledge-ticker__card {
+  border: 1px solid var(--foundation-rule);
+  color: var(--foundation-ink);
+  background: #fff;
+  box-shadow: 0 22px 58px rgb(21 21 21 / 14%);
+}
+
+.foundation-knowledge .knowledge-ticker__card-kicker,
+.foundation-knowledge .knowledge-ticker__card-link,
+.foundation-knowledge .knowledge-journey__meta,
+.foundation-knowledge .knowledge-journey__card-head b,
+.foundation-knowledge .knowledge-journey__card-foot i {
+  color: var(--foundation-amber);
+}
+
+.foundation-knowledge .knowledge-ticker__card-path,
+.foundation-knowledge .knowledge-ticker__card-copy,
+.foundation-knowledge .knowledge-journey__meta p,
+.foundation-knowledge .knowledge-journey__card-surface > p,
+.foundation-knowledge .knowledge-journey__card-foot {
+  color: var(--foundation-muted);
+}
+
+.foundation-knowledge .knowledge-journey__card-surface {
+  border: 1px solid var(--foundation-rule);
+  background: #fff;
+  box-shadow: 0 18px 48px rgb(21 21 21 / 9%);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n + 1) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, var(--foundation-sage) 44%, white);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n + 2) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, var(--foundation-lavender) 32%, white);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, var(--foundation-rose) 28%, white);
+}
+
+.foundation-knowledge .knowledge-journey__card.is-active .knowledge-journey__card-surface {
+  background: #fff;
+  box-shadow: 0 34px 86px rgb(21 21 21 / 18%);
+}
+
+.foundation-graph .obsidian-knowledge-graph {
+  background:
+    radial-gradient(circle at 50% 46%, rgb(69 59 96 / 7%), transparent 38%),
+    radial-gradient(circle, rgb(21 21 21 / 9%) 1px, transparent 1px),
+    #fff;
+  background-size: auto, 24px 24px, auto;
+}
+
+.foundation-graph .obsidian-knowledge-graph__tour-status i {
+  background: var(--foundation-violet);
+}
+
+.foundation-graph .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__hover {
+  border: 1px solid var(--foundation-rule);
+  color: var(--foundation-ink);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 14px 38px rgb(21 21 21 / 10%);
+}
+
+/* Scroll-led Agent reveal using the real Paper Grain Gradient and Gem Smoke shaders. */
+.foundation-hero__demo {
+  width: min(1160px, 100%);
+}
+
+.foundation-agent {
+  position: relative;
+  min-height: clamp(720px, 76vw, 880px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgb(21 21 21 / 18%);
+  border-radius: 42px;
+  background: #20211e;
+  box-shadow: 0 34px 100px rgb(21 21 21 / 15%);
+  isolation: isolate;
+  transform-origin: center top;
+}
+
+.foundation-agent__field,
+.foundation-agent__grain,
+.foundation-agent__ambient {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.foundation-agent__field {
+  z-index: -3;
+  overflow: hidden;
+  background: #20211e;
+}
+
+.foundation-agent__grain {
+  opacity: 0.92;
+  filter: saturate(0.68) contrast(1.05);
+}
+
+.foundation-agent__ambient {
+  z-index: -2;
+  background:
+    radial-gradient(circle at 50% 44%, rgb(255 255 255 / 5%), transparent 44%),
+    linear-gradient(180deg, rgb(21 21 21 / 7%), rgb(21 21 21 / 42%));
+  box-shadow: inset 0 0 160px rgb(0 0 0 / 28%);
+}
+
+.foundation-agent__dialog {
+  position: relative;
+  width: min(840px, calc(100% - 64px));
+  min-height: 530px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 32px;
+  background: rgb(235 236 232 / 12%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 32%),
+    inset 0 -1px 0 rgb(255 255 255 / 8%),
+    0 44px 110px rgb(0 0 0 / 36%);
+  backdrop-filter: blur(34px) saturate(1.18);
+  -webkit-backdrop-filter: blur(34px) saturate(1.18);
+  isolation: isolate;
+}
+
+.foundation-agent__dialog::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 20%), transparent 34%),
+    radial-gradient(circle at 76% 14%, rgb(187 178 206 / 20%), transparent 38%);
+  pointer-events: none;
+  content: '';
+}
+
+.foundation-agent__glass {
+  position: absolute;
+  z-index: 0;
+  inset: -22%;
+  width: 144%;
+  height: 144%;
+  opacity: 0.74;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.foundation-agent__chrome {
+  position: relative;
+  z-index: 2;
+  min-height: 530px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  color: #f7f7f3;
+}
+
+.foundation-agent__header,
+.foundation-agent__footer {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 25px;
+}
+
+.foundation-agent__header {
+  border-bottom: 1px solid rgb(255 255 255 / 14%);
+}
+
+.foundation-agent__identity {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.foundation-agent__identity > span,
+.foundation-agent__answer-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 50%;
+  color: #e4b976;
+  background: rgb(255 255 255 / 10%);
+}
+
+.foundation-agent__identity svg,
+.foundation-agent__answer-mark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.foundation-agent__identity > div {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.foundation-agent__identity strong {
+  font-size: 0.78rem;
+  font-weight: 680;
+}
+
+.foundation-agent__identity small {
+  color: rgb(247 247 243 / 54%);
+  font-size: 0.56rem;
+  letter-spacing: 0.035em;
+}
+
+.foundation-agent__status {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: rgb(247 247 243 / 68%);
+  font-size: 0.6rem;
+}
+
+.foundation-agent__status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e4b976;
+  box-shadow: 0 0 0 5px rgb(228 185 118 / 10%);
+}
+
+.foundation-agent__conversation {
+  display: grid;
+  align-content: center;
+  gap: 34px;
+  padding: 42px clamp(28px, 6vw, 64px) 46px;
+}
+
+.foundation-agent__prompt {
+  max-width: 580px;
+  justify-self: end;
+  margin: 0;
+  padding: 15px 19px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 18px 18px 4px 18px;
+  color: rgb(247 247 243 / 84%);
+  background: rgb(21 21 21 / 28%);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.foundation-agent__answer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.foundation-agent__answer-label {
+  margin: 1px 0 0;
+  color: #e4b976;
+  font-size: 0.58rem;
+  font-weight: 680;
+  letter-spacing: 0.1em;
+}
+
+.foundation-agent__answer h2 {
+  max-width: 610px;
+  margin: 12px 0 0;
+  color: #fff;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  font-weight: 560;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+
+.foundation-agent__answer-copy {
+  max-width: 610px;
+  margin: 19px 0 0;
+  color: rgb(247 247 243 / 68%);
+  font-size: 0.76rem;
+  line-height: 1.82;
+}
+
+.foundation-agent__evidence {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 26px 0 0;
+  border-top: 1px solid rgb(255 255 255 / 14%);
+}
+
+.foundation-agent__evidence > div {
+  min-width: 0;
+  padding: 17px 16px 0 0;
+}
+
+.foundation-agent__evidence > div + div {
+  padding-left: 16px;
+  border-left: 1px solid rgb(255 255 255 / 14%);
+}
+
+.foundation-agent__evidence dt {
+  color: rgb(247 247 243 / 42%);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+}
+
+.foundation-agent__evidence dd {
+  overflow: hidden;
+  margin: 7px 0 0;
+  color: rgb(247 247 243 / 78%);
+  font-size: 0.63rem;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+}
+
+.foundation-agent__footer {
+  border-top: 1px solid rgb(255 255 255 / 14%);
+  background: rgb(21 21 21 / 13%);
+}
+
+.foundation-agent__progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  color: rgb(247 247 243 / 48%);
+  font-size: 0.54rem;
+}
+
+.foundation-agent__progress span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.foundation-agent__progress svg {
+  width: 12px;
+  height: 12px;
+  color: #e4b976;
+}
+
+.foundation-agent__continue {
+  min-height: 42px;
+  display: inline-flex;
+  flex: none;
+  gap: 11px;
+  align-items: center;
+  padding: 0 10px 0 17px;
+  border-radius: 999px;
+  color: #151515;
+  background: rgb(255 255 255 / 92%);
+  font-size: 0.64rem;
+  font-weight: 680;
+  text-decoration: none;
+  transition: background-color 180ms ease, transform 220ms var(--ease);
+}
+
+.foundation-agent__continue:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.foundation-agent__continue svg {
+  width: 25px;
+  height: 25px;
+  padding: 7px;
+  border-radius: 50%;
+  color: #fff;
+  background: #151515;
+  transform: rotate(45deg);
+}
+
+.foundation-agent__caption {
+  position: absolute;
+  right: 28px;
+  bottom: 22px;
+  margin: 0;
+  color: rgb(247 247 243 / 34%);
+  font-size: 0.48rem;
+  letter-spacing: 0.12em;
+}
+
+@supports (animation-timeline: view()) {
+  .foundation-agent {
+    animation: foundation-agent-stage linear both;
+    animation-range: entry 0% entry 92%;
+    animation-timeline: view();
+  }
+
+  .foundation-agent__dialog {
+    animation: foundation-agent-dialog linear both;
+    animation-range: entry 22% entry 100%;
+    animation-timeline: view();
+  }
+}
+
+@keyframes foundation-agent-stage {
+  from {
+    border-radius: 72px;
+    clip-path: inset(12% 9% 8% round 72px);
+    filter: brightness(1.24) saturate(0.42);
+    transform: scale(0.94);
+  }
+  to {
+    border-radius: 42px;
+    clip-path: inset(0 round 42px);
+    filter: brightness(1) saturate(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes foundation-agent-dialog {
+  from {
+    opacity: 0;
+    filter: blur(18px);
+    transform: translate3d(0, 54px, 0) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* The two later narrative chapters stay luminous; only the Agent reveal darkens. */
+.foundation-trust {
+  color: var(--foundation-ink);
+  background: var(--foundation-sage);
+}
+
+.foundation-question-flow__lane {
+  color: rgb(58 68 68 / 56%);
+}
+
+.foundation-question-flow__group span > i,
+.foundation-question-flow > p {
+  color: rgb(58 68 68 / 42%);
+}
+
+.foundation-trust .foundation-kicker,
+.foundation-trust .foundation-kicker span {
+  color: var(--foundation-amber);
+}
+
+.foundation-trust h2 {
+  color: var(--foundation-ink);
+}
+
+.foundation-trust__lede,
+.foundation-trust__capabilities {
+  color: rgb(21 21 21 / 68%);
+}
+
+.foundation-trust__capabilities li::before {
+  background: var(--foundation-amber);
+}
+
+.foundation-closing {
+  color: var(--foundation-ink);
+  background: var(--foundation-bone);
+}
+
+.foundation-closing .foundation-kicker,
+.foundation-closing .foundation-kicker span {
+  color: var(--foundation-amber);
+}
+
+.foundation-closing h2,
+.foundation-closing__signature-word {
+  color: var(--foundation-ink);
+}
+
+.foundation-closing__lede,
+.foundation-closing__actions > span,
+.foundation-closing__signature > p {
+  color: rgb(21 21 21 / 58%);
+}
+
+.foundation-closing__caret {
+  background: var(--foundation-amber);
+}
+
+.foundation-closing .public-action--primary {
+  color: #fff;
+  background: var(--foundation-ink);
+}
+
+.foundation-closing .public-action--primary:hover {
+  color: #fff;
+  background: var(--foundation-graphite);
+}
+
+.foundation-closing__signature-word--observe {
+  color: transparent;
+  -webkit-text-stroke-color: rgb(21 21 21 / 34%);
+}
+
+.foundation-closing__signature-word--compare {
+  color: var(--foundation-violet);
+}
+
+.public-footer {
+  color: rgb(21 21 21 / 56%);
+  background: var(--foundation-bone);
+  border-top-color: rgb(21 21 21 / 14%);
+}
+
+.public-footer .public-wordmark {
+  color: var(--foundation-ink);
+}
+
+.public-footer .public-wordmark img {
+  filter: grayscale(1) contrast(1.25);
+}
+
+.public-footer .public-wordmark small,
+.public-footer a {
+  color: rgb(21 21 21 / 64%);
+}
+
 @keyframes foundation-in {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1191,6 +2240,11 @@
 @media (prefers-reduced-motion: no-preference) {
   .foundation-question-flow__track {
     animation: foundation-question-stream 28s linear infinite;
+    animation-play-state: paused;
+  }
+
+  .foundation-question-flow.is-active .foundation-question-flow__track {
+    animation-play-state: running;
   }
 
   .foundation-question-flow__lane--1 .foundation-question-flow__track {
@@ -1598,6 +2652,31 @@
   }
 }
 
+/* Once the Agent visually fills the viewport, keep its original canvas alive
+   and pin that exact node behind the method chapter. */
+.public-site.is-dark-backdrop-active .foundation-agent {
+  overflow: visible;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+  contain: none;
+  will-change: auto;
+}
+
+.public-site.is-dark-backdrop-active .foundation-agent__field {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  opacity: 1;
+}
+
+.public-site.is-dark-backdrop-active .foundation-agent__dialog {
+  z-index: 2;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .foundation-question-flow__track {
     animation: none;
@@ -1640,4 +2719,1610 @@
     transition: none;
   }
 
+}
+
+@media (max-width: 760px) {
+  .foundation-agent {
+    min-height: 720px;
+    border-radius: 26px;
+  }
+
+  .foundation-agent__dialog {
+    width: calc(100% - 24px);
+    min-height: 620px;
+    border-radius: 24px;
+  }
+
+  .foundation-agent__chrome {
+    min-height: 620px;
+  }
+
+  .foundation-agent__header,
+  .foundation-agent__footer {
+    padding: 17px 18px;
+  }
+
+  .foundation-agent__status,
+  .foundation-agent__identity small,
+  .foundation-agent__caption {
+    display: none;
+  }
+
+  .foundation-agent__conversation {
+    gap: 26px;
+    padding: 30px 20px 34px;
+  }
+
+  .foundation-agent__prompt {
+    max-width: 88%;
+    font-size: 0.7rem;
+  }
+
+  .foundation-agent__answer {
+    grid-template-columns: 1fr;
+  }
+
+  .foundation-agent__answer h2 {
+    font-size: clamp(1.8rem, 9vw, 2.45rem);
+  }
+
+  .foundation-agent__answer-copy {
+    font-size: 0.7rem;
+  }
+
+  .foundation-agent__evidence {
+    grid-template-columns: 1fr;
+  }
+
+  .foundation-agent__evidence > div,
+  .foundation-agent__evidence > div + div {
+    padding: 11px 0;
+    border-left: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 12%);
+  }
+
+  .foundation-agent__progress span:nth-child(2),
+  .foundation-agent__progress span:nth-child(3),
+  .foundation-agent__continue span {
+    display: none;
+  }
+
+  .foundation-agent__continue {
+    width: 42px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-agent,
+  .foundation-agent__dialog {
+    animation: none !important;
+    clip-path: none;
+    filter: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.foundation-agent__shader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Final Agent composition: one full-screen field and one mapped glass input. */
+.foundation-hero__demo {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+}
+
+.foundation-agent {
+  width: 100vw;
+  min-height: 100svh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.foundation-agent__field {
+  background: #151515;
+  opacity: 0;
+}
+
+.foundation-agent__grain {
+  opacity: 1;
+  filter: saturate(0.7) contrast(1.02);
+}
+
+.foundation-agent__dialog {
+  width: min(760px, calc(100% - clamp(96px, 18vw, 220px)));
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 32%);
+  border-radius: 28px;
+  background: rgb(255 255 255 / 7%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    inset 0 -1px 0 rgb(255 255 255 / 10%),
+    0 28px 70px rgb(0 0 0 / 24%);
+  backdrop-filter: blur(18px) saturate(0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(0.88);
+}
+
+.foundation-agent__dialog::before {
+  z-index: 1;
+  border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgb(255 255 255 / 19%), transparent 26% 72%, rgb(255 255 255 / 10%)),
+    linear-gradient(180deg, rgb(255 255 255 / 8%), transparent 52%);
+}
+
+.foundation-agent__glass-map {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  opacity: 0.58;
+  filter: blur(7px) contrast(1.06) brightness(1.1);
+}
+
+.foundation-agent__glass-map::after {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 7%);
+  content: '';
+}
+
+.foundation-agent__glass-grain {
+  pointer-events: none;
+}
+
+.foundation-agent__composer {
+  position: relative;
+  z-index: 2;
+  min-height: 102px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 17px 18px 17px 28px;
+}
+
+.foundation-agent__composer > span {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  text-align: left;
+}
+
+.foundation-agent__composer small {
+  color: rgb(255 255 255 / 56%);
+  font-size: 0.54rem;
+  font-weight: 680;
+  letter-spacing: 0.12em;
+}
+
+.foundation-agent__composer strong {
+  overflow: hidden;
+  color: rgb(255 255 255 / 92%);
+  font-size: clamp(0.9rem, 1.4vw, 1.08rem);
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foundation-agent__composer > a {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 34%);
+  border-radius: 50%;
+  color: #151515;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
+  transition: background-color 180ms ease, transform 220ms var(--ease);
+}
+
+.foundation-agent__composer > a:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.foundation-agent__composer svg {
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+}
+
+@supports (animation-timeline: view()) {
+  .foundation-agent {
+    animation-name: foundation-agent-fullscreen;
+    animation-range: entry 0% entry 100%;
+  }
+
+  .foundation-agent__dialog {
+    animation-name: foundation-agent-input;
+    animation-range: entry 56% entry 100%;
+  }
+}
+
+@keyframes foundation-agent-fullscreen {
+  from {
+    border-radius: 64px;
+    clip-path: inset(12% 10% round 64px);
+    filter: brightness(1.18) saturate(0.55);
+    transform: scale(0.93);
+  }
+  to {
+    border-radius: 0;
+    clip-path: inset(0 round 0);
+    filter: brightness(1) saturate(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes foundation-agent-input {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+    transform: translate3d(0, 34px, 0) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .foundation-agent__dialog {
+    width: calc(100% - 28px);
+    border-radius: 24px;
+  }
+
+  .foundation-agent__composer {
+    min-height: 88px;
+    padding: 14px 14px 14px 20px;
+  }
+
+  .foundation-agent__composer > a {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-agent,
+  .foundation-agent__dialog {
+    animation: none !important;
+    clip-path: none;
+    filter: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The WebGL field is the only glass layer; DOM content stays optically neutral. */
+.foundation-agent__dialog {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.foundation-agent__dialog::before {
+  content: none;
+}
+
+/* One continuous animated canvas sits behind the full promotional narrative. */
+.foundation-page-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #151515;
+}
+
+.foundation-page-backdrop {
+  display: block;
+}
+
+.foundation-page-backdrop .foundation-agent__background-shader {
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+}
+
+.public-site > main,
+.public-site > footer {
+  position: relative;
+  z-index: 1;
+}
+
+.public-site > main > .foundation-method,
+.public-site > main > .foundation-knowledge,
+.public-site > main > .foundation-graph {
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.public-site > main > .foundation-trust {
+  background: rgb(35 36 31 / 92%);
+}
+
+.public-site > main > .foundation-closing {
+  background: rgb(21 21 21 / 92%);
+}
+
+.public-footer {
+  background: rgb(255 255 255 / 88%);
+}
+
+.foundation-hero__copy,
+.foundation-hero__copy .foundation-kicker,
+.foundation-hero__copy h1,
+.foundation-hero__copy .foundation-origin,
+.foundation-hero__copy .foundation-outcome > span,
+.foundation-hero__copy .foundation-hero__lede {
+  color: #f5f5f0;
+}
+
+.foundation-hero__copy .foundation-kicker span,
+.foundation-hero__copy .foundation-hero__lede {
+  color: rgb(245 245 240 / 68%);
+}
+
+.foundation-hero__copy .foundation-origin i {
+  background: #e4b976;
+}
+
+.foundation-hero__copy .public-action--primary {
+  color: #151515;
+  background: #f5f5f0;
+}
+
+.foundation-hero__copy .public-action--primary:hover {
+  color: #151515;
+  background: #fff;
+}
+
+.foundation-hero__copy .public-action--text {
+  color: rgb(245 245 240 / 82%);
+}
+
+.public-header .public-wordmark,
+.public-header .public-navigation a {
+  color: #f5f5f0;
+}
+
+.public-header .public-wordmark small,
+.public-header .public-navigation {
+  color: rgb(245 245 240 / 62%);
+}
+
+/* The opening frame is a white editorial page; the Agent begins as a dock. */
+.foundation-page-backdrop {
+  display: none;
+}
+
+.public-site.is-agent-expanded .foundation-page-backdrop,
+.public-site.is-dark-backdrop-active .foundation-page-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  background: #151515;
+}
+
+.public-site.is-agent-expanded .foundation-page-backdrop .foundation-agent__background-shader {
+  width: 100%;
+  height: 100%;
+  opacity: 0.84;
+}
+
+.public-site.is-agent-expanded .foundation-agent,
+.public-site.is-dark-backdrop-active .foundation-agent {
+  background: #151515;
+}
+
+.public-site.is-agent-expanded .foundation-agent__field,
+.public-site.is-dark-backdrop-active .foundation-agent__field {
+  opacity: 1;
+}
+
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-graph {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.public-site.is-agent-expanded > main > .foundation-trust,
+.public-site.is-agent-expanded > main > .foundation-closing,
+.public-site.is-agent-expanded > footer {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.foundation-agent {
+  width: min(1030px, 100%);
+  min-height: 300px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgb(21 21 21 / 16%);
+  border-radius: 34px;
+  background: #151515;
+  box-shadow: 0 30px 90px rgb(21 21 21 / 18%);
+}
+
+.foundation-agent__field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.foundation-agent__dialog {
+  width: min(760px, calc(100% - 40px));
+}
+
+@supports (animation-timeline: view()) {
+  .foundation-agent {
+    animation: foundation-agent-dock-expand linear both;
+    animation-range: entry 0% entry 100%;
+    animation-timeline: view();
+  }
+
+  .foundation-agent__dialog {
+    width: calc(100% - 32px);
+  }
+}
+
+/* The section itself supplies an opaque surface, so full-section and card
+   backdrop blurs only force costly recomposition while scrolling. */
+.public-site > main > .foundation-method,
+.public-site > main > .foundation-knowledge,
+.public-site > main > .foundation-graph,
+.public-site.is-agent-expanded .foundation-method__steps,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker__card,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-journey__card-surface,
+.public-site.is-agent-expanded .foundation-graph .obsidian-knowledge-graph,
+.public-site.is-agent-expanded .foundation-model__field,
+.public-site.is-agent-expanded .foundation-hero .research-demo {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@keyframes foundation-agent-dock-expand {
+  from {
+    width: min(1030px, 100%);
+    min-height: 300px;
+    border-radius: 34px;
+    clip-path: inset(0 round 34px);
+  }
+  to {
+    width: 100vw;
+    min-height: 100svh;
+    border-radius: 0;
+    clip-path: inset(0 round 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-agent {
+    width: min(1030px, 100%);
+    min-height: 300px;
+    border-radius: 34px;
+    clip-path: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-page-backdrop .foundation-agent__background-shader {
+    opacity: 0.82;
+  }
+}
+
+/* Opening sequence: a quiet white editorial frame, then one dock that grows into
+   the research field. Keep this block last so it is the single source of truth
+   after the earlier visual experiments in this stylesheet. */
+.public-site {
+  overflow-x: clip;
+  background: #f6f7f7;
+}
+
+.public-header .public-wordmark,
+.public-header .public-navigation a {
+  color: #24343e;
+}
+
+.public-header .public-wordmark small,
+.public-header .public-navigation {
+  color: #7c8991;
+}
+
+.foundation-page-backdrop {
+  display: none;
+}
+
+.foundation-hero {
+  min-height: 100svh;
+  display: flex;
+  align-items: stretch;
+  padding-top: 112px;
+  padding-bottom: 34px;
+}
+
+.foundation-hero__inner {
+  width: min(var(--public-width), 100%);
+  min-height: calc(100svh - 146px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: 34px;
+  align-items: center;
+}
+
+.foundation-hero__copy {
+  align-self: center;
+  max-width: 920px;
+  color: var(--foundation-ink);
+}
+
+.foundation-hero__copy,
+.foundation-hero__copy .foundation-kicker,
+.foundation-hero__copy h1,
+.foundation-hero__copy .foundation-origin,
+.foundation-hero__copy .foundation-outcome > span,
+.foundation-hero__copy .foundation-hero__lede {
+  color: var(--foundation-ink);
+}
+
+.foundation-hero__copy .foundation-kicker span,
+.foundation-hero__copy .foundation-hero__lede {
+  color: var(--foundation-muted);
+}
+
+.foundation-hero__copy .foundation-origin i {
+  background: var(--foundation-amber);
+}
+
+.foundation-hero__copy .public-action--primary {
+  color: #fff;
+  background: var(--foundation-ink);
+}
+
+.foundation-hero__copy .public-action--primary:hover {
+  color: #fff;
+  background: var(--foundation-graphite);
+}
+
+.foundation-hero__copy .public-action--text {
+  color: var(--foundation-ink);
+}
+
+.foundation-hero__demo {
+  width: min(1030px, 100%);
+  max-width: 100%;
+  margin: 0 auto;
+  justify-self: center;
+}
+
+.foundation-agent {
+  position: relative;
+  --agent-progress: 0;
+  --agent-collapsed-height: 300px;
+  --agent-inline-inset: 0px;
+  --agent-side-clip: calc(var(--agent-inline-inset) * (1 - var(--agent-progress)));
+  --agent-bottom-clip: calc(
+    (100svh - var(--agent-collapsed-height)) * (1 - var(--agent-progress))
+  );
+  width: 100vw;
+  height: 100svh;
+  min-height: 0;
+  margin: 0 0 0 calc(50% - 50vw);
+  overflow: hidden;
+  border: 1px solid rgb(21 21 21 / 16%);
+  border-radius: calc(34px * (1 - var(--agent-progress)));
+  background: #151515;
+  box-shadow: 0 30px 90px rgb(21 21 21 / 18%);
+  animation: none !important;
+  clip-path: inset(
+    0 var(--agent-side-clip) var(--agent-bottom-clip)
+    round calc(34px * (1 - var(--agent-progress)))
+  );
+  transform: none;
+  will-change: clip-path;
+  contain: paint;
+}
+
+.foundation-agent__field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.foundation-agent__dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(760px, calc(100% - 40px));
+  animation: none !important;
+  transform: translate3d(
+    -50%,
+    calc(
+      -50% - ((100svh - var(--agent-collapsed-height)) / 2) * (1 - var(--agent-progress))
+    ),
+    0
+  );
+  will-change: transform;
+}
+
+@media (max-width: 760px) {
+  .foundation-hero {
+    padding-top: 96px;
+    padding-bottom: 22px;
+  }
+
+  .foundation-hero__inner {
+    min-height: calc(100svh - 118px);
+    gap: 24px;
+  }
+
+  .foundation-agent {
+    --agent-collapsed-height: 260px;
+    border-radius: calc(26px * (1 - var(--agent-progress)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-agent {
+    width: 100%;
+    height: var(--agent-collapsed-height);
+    margin-left: 0;
+    border-radius: 34px;
+    clip-path: none;
+    transition: none;
+  }
+
+  .foundation-agent__dialog {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+  }
+}
+
+/* Once the field opens, cards become quiet glass surfaces. The animated canvas
+   remains the only large background; these surfaces only separate local content. */
+.public-site.is-agent-expanded .foundation-method__steps,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker__card,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-journey__card-surface,
+.public-site.is-agent-expanded .foundation-graph .obsidian-knowledge-graph,
+.public-site.is-agent-expanded .foundation-model__field,
+.public-site.is-agent-expanded .foundation-hero .research-demo {
+  border: 1px solid rgb(255 255 255 / 28%);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 22%), rgb(255 255 255 / 8%)),
+    rgb(25 29 29 / 24%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 30%),
+    0 24px 68px rgb(0 0 0 / 14%);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.public-site.is-agent-expanded .foundation-method__steps h3,
+.public-site.is-agent-expanded .foundation-section-heading h2,
+.public-site.is-agent-expanded .foundation-graph__copy h2,
+.public-site.is-agent-expanded .foundation-section-heading > p:last-child,
+.public-site.is-agent-expanded .foundation-section-heading--split div > p,
+.public-site.is-agent-expanded .foundation-graph__details p {
+  color: rgb(255 255 255 / 92%);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 34%);
+}
+
+.public-site.is-agent-expanded .foundation-method__steps p,
+.public-site.is-agent-expanded .foundation-section-heading > p:last-child,
+.public-site.is-agent-expanded .foundation-section-heading--split div > p,
+.public-site.is-agent-expanded .foundation-graph__details p {
+  color: rgb(255 255 255 / 76%);
+}
+
+/* The opened field is a transition moment; the rest of the narrative returns
+   to the light editorial surface so the research story stays easy to read. */
+.public-site.is-agent-expanded .foundation-page-backdrop {
+  display: none;
+}
+
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-graph,
+.public-site.is-agent-expanded > main > .foundation-trust,
+.public-site.is-agent-expanded > main > .foundation-closing,
+.public-site.is-agent-expanded > footer {
+  color: var(--foundation-ink);
+  background: #f6f7f7;
+}
+
+.public-site.is-agent-expanded .foundation-method__steps,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker__card,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-journey__card-surface,
+.public-site.is-agent-expanded .foundation-graph .obsidian-knowledge-graph,
+.public-site.is-agent-expanded .foundation-model__field,
+.public-site.is-agent-expanded .foundation-hero .research-demo {
+  border-color: rgb(21 21 21 / 12%);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 90%), rgb(255 255 255 / 62%)),
+    rgb(255 255 255 / 72%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 92%),
+    0 22px 58px rgb(32 48 56 / 11%);
+  backdrop-filter: blur(18px) saturate(1.03);
+  -webkit-backdrop-filter: blur(18px) saturate(1.03);
+}
+
+.public-site.is-agent-expanded .foundation-method__steps h3,
+.public-site.is-agent-expanded .foundation-method__steps p,
+.public-site.is-agent-expanded .foundation-section-heading h2,
+.public-site.is-agent-expanded .foundation-graph__copy h2,
+.public-site.is-agent-expanded .foundation-section-heading > p:last-child,
+.public-site.is-agent-expanded .foundation-section-heading--split div > p,
+.public-site.is-agent-expanded .foundation-graph__details p {
+  color: var(--foundation-ink);
+  text-shadow: none;
+}
+
+.public-site.is-agent-expanded .foundation-method__steps p,
+.public-site.is-agent-expanded .foundation-section-heading > p:last-child,
+.public-site.is-agent-expanded .foundation-section-heading--split div > p,
+.public-site.is-agent-expanded .foundation-graph__details p {
+  color: var(--foundation-muted);
+}
+
+.public-site.is-agent-expanded .foundation-trust,
+.public-site.is-agent-expanded .foundation-closing {
+  color: var(--foundation-ink);
+}
+
+.public-site.is-agent-expanded .foundation-trust h2,
+.public-site.is-agent-expanded .foundation-closing h2,
+.public-site.is-agent-expanded .foundation-closing__signature-word {
+  color: var(--foundation-ink);
+}
+
+/* The navigation is a persistent layer, not part of the scrolling story. */
+.public-header {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  right: 0;
+  left: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.public-header__inner {
+  min-height: 84px;
+}
+
+.public-site.is-agent-scrolling .public-header {
+  background: transparent;
+}
+
+.public-site.is-agent-header-inverted .public-header .public-wordmark,
+.public-site.is-agent-header-inverted .public-header .public-navigation a:not(.public-navigation__account) {
+  color: #f5f5f0;
+}
+
+.public-site.is-agent-header-inverted .public-header .public-wordmark small,
+.public-site.is-agent-header-inverted .public-header .public-navigation {
+  color: rgb(245 245 240 / 66%);
+}
+
+.public-site.is-agent-header-inverted .public-header .public-navigation__account {
+  color: #151515 !important;
+  background: rgb(245 245 240 / 94%);
+}
+
+/* Keep the original scroll narrative alive after the visual reframe. */
+@supports (animation-timeline: view()) {
+  .public-site [data-reveal] {
+    animation: foundation-section-in linear both;
+    animation-range: entry 4% entry 32%;
+    animation-timeline: view();
+  }
+
+  .foundation-method::before {
+    animation: ghost-word-drift linear both;
+    animation-range: entry 0% exit 100%;
+    animation-timeline: view();
+  }
+
+  .foundation-model {
+    animation: foundation-model-console-in linear both;
+    animation-range: entry 2% entry 28%;
+    animation-timeline: view();
+  }
+}
+
+/* Cross-fade the field instead of swapping layers at a scroll threshold. */
+.foundation-page-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: #151515;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 700ms;
+}
+
+.foundation-page-backdrop .foundation-agent__background-shader {
+  width: 100%;
+  height: 100%;
+  opacity: 0.84;
+}
+
+.public-site.is-agent-scrolling .foundation-page-backdrop {
+  visibility: visible;
+  opacity: 0.72;
+  transition-delay: 0s;
+}
+
+.public-site.is-agent-expanded .foundation-page-backdrop {
+  visibility: visible;
+  display: block;
+  opacity: 0.84;
+  transition: none;
+}
+
+/* Do not tint the page during the partial Dock travel. The color change is
+   reserved for the moment the field has actually reached the viewport edges. */
+.public-site.is-agent-scrolling:not(.is-agent-expanded) .foundation-page-backdrop {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.public-site:not(.is-agent-expanded) .foundation-page-backdrop {
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 700ms;
+}
+
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-graph,
+.public-site.is-agent-expanded > main > .foundation-trust,
+.public-site.is-agent-expanded > main > .foundation-closing,
+.public-site.is-agent-expanded > footer {
+  background: transparent;
+}
+
+/* The field ends before the editorial narrative begins. A light paper surface
+   takes over the whole viewport; no gray shader leaks into the later sections. */
+.public-site.is-agent-expanded .foundation-page-backdrop {
+  visibility: visible;
+  opacity: 1;
+  transition: none;
+}
+
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-graph,
+.public-site.is-agent-expanded > main > .foundation-trust,
+.public-site.is-agent-expanded > main > .foundation-closing,
+.public-site.is-agent-expanded > footer {
+  background: #f6f7f7;
+}
+
+.foundation-method {
+  isolation: isolate;
+}
+
+.foundation-method::after {
+  position: absolute;
+  z-index: -2;
+  inset: 0 calc(50% - 50vw);
+  border-radius: 44px 44px 0 0;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 96%), #f6f7f7 18%),
+    #f6f7f7;
+  box-shadow: 0 -34px 90px rgb(8 12 13 / 16%);
+  content: '';
+}
+
+@supports (animation-timeline: view()) {
+  .foundation-method::after {
+    animation: foundation-paper-rise linear both;
+    animation-range: entry 0% entry 34%;
+    animation-timeline: view();
+  }
+}
+
+@keyframes foundation-paper-rise {
+  from {
+    border-radius: 64px 64px 0 0;
+    filter: brightness(0.88);
+    transform: translate3d(0, 18vh, 0) scale(0.96);
+  }
+
+  to {
+    border-radius: 0;
+    filter: brightness(1);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.foundation-knowledge {
+  position: relative;
+}
+
+/* Quick Start-inspired kinetic copy for the Agent dock. The real input remains
+   in the document flow; the mirrored glyphs provide the staggered motion. */
+.foundation-agent__copy {
+  min-width: 0;
+  display: block;
+  flex: 1;
+  text-align: left;
+}
+
+.foundation-agent__question-field {
+  position: relative;
+  min-width: 0;
+  height: clamp(46px, 4.5vw, 54px);
+  display: block;
+  overflow: hidden;
+}
+
+.foundation-agent__question-field input,
+.foundation-agent__question-field strong {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 2.35vw, 1.55rem);
+  font-weight: 560;
+  letter-spacing: -0.035em;
+  line-height: 1.72;
+  white-space: nowrap;
+}
+
+.foundation-agent__question-field input {
+  z-index: 2;
+  color: transparent;
+  caret-color: rgb(255 255 255 / 92%);
+  outline: 0;
+  background: transparent;
+}
+
+.foundation-agent__question-field input::selection {
+  color: transparent;
+  background: rgb(255 255 255 / 22%);
+}
+
+.foundation-agent__question-field strong {
+  z-index: 1;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  color: rgb(255 255 255 / 92%);
+  text-overflow: clip;
+}
+
+.foundation-agent__glyph {
+  display: inline-block;
+  backface-visibility: hidden;
+}
+
+.foundation-agent__question-field strong[data-copy-phase='entering'] .foundation-agent__glyph {
+  opacity: 0;
+  transform: translate3d(
+    calc(var(--foundation-glyph-drift-x) * -0.45),
+    var(--foundation-glyph-drift-y),
+    0
+  ) rotate(calc(var(--foundation-glyph-rotate) * -1));
+  animation: foundation-agent-glyph-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: min(calc(80ms + var(--foundation-glyph-index) * 24ms), 420ms);
+  will-change: opacity, transform;
+}
+
+.foundation-agent__question-field strong[data-copy-phase='resting'] .foundation-agent__glyph {
+  opacity: 1;
+  transform: none;
+}
+
+.foundation-agent__question-field strong[data-copy-phase='exiting'] .foundation-agent__glyph {
+  opacity: 1;
+  animation: foundation-agent-glyph-exit 300ms cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  animation-delay: min(calc(var(--foundation-glyph-reverse-index) * 10ms), 140ms);
+  will-change: opacity, transform;
+}
+
+@keyframes foundation-agent-glyph-enter {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0);
+  }
+}
+
+@keyframes foundation-agent-glyph-exit {
+  to {
+    opacity: 0;
+    transform: translate3d(
+      var(--foundation-glyph-drift-x),
+      calc(var(--foundation-glyph-drift-y) * -1),
+      0
+    ) rotate(var(--foundation-glyph-rotate));
+  }
+}
+
+@media (max-width: 760px) {
+  .foundation-agent__question-field[data-copy-mode='questions'] {
+    height: 3.25em;
+  }
+
+  .foundation-agent__question-field input,
+  .foundation-agent__question-field strong {
+    font-size: 1.08rem;
+  }
+
+  .foundation-agent__question-field[data-copy-mode='questions'] strong {
+    line-height: 1.35;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-agent__question-field strong .foundation-agent__glyph {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* Keep the dock visibly separate from the field on compact desktop widths. */
+.foundation-agent__dialog {
+  width: min(760px, calc(100% - clamp(96px, 18vw, 220px)));
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 7%), transparent 42%),
+    rgb(12 14 14 / 82%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 14%),
+    0 18px 48px rgb(0 0 0 / 22%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* These surfaces already paint opaque backgrounds. Avoid recompositing the
+   whole viewport through a backdrop blur during scroll. */
+.public-site > main > .foundation-method,
+.public-site > main > .foundation-knowledge,
+.public-site > main > .foundation-graph,
+.public-site.is-agent-expanded .foundation-method__steps,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker__card,
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-journey__card-surface,
+.public-site.is-agent-expanded .foundation-graph .obsidian-knowledge-graph,
+.public-site.is-agent-expanded .foundation-model__field,
+.public-site.is-agent-expanded .foundation-hero .research-demo {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (max-width: 760px) {
+  .foundation-agent__dialog {
+    width: calc(100% - 32px);
+  }
+}
+
+.public-site.is-agent-scrolling:not(.is-agent-header-inverted) .public-header {
+  border-bottom: 1px solid rgb(21 21 21 / 8%);
+  background: rgb(246 247 247 / 96%);
+  box-shadow: 0 8px 24px rgb(32 48 56 / 5%);
+}
+
+/* The dark research field continues through the complete method chapter.
+   Knowledge begins the light-paper half of the page. */
+.public-site > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-dark-backdrop-active > main > .foundation-method {
+  position: relative;
+  isolation: isolate;
+  color: #f5f5f0;
+  background: #151515;
+}
+
+.foundation-method__shader {
+  position: absolute;
+  z-index: -3;
+  inset: 0 calc(50% - 50vw);
+  overflow: hidden;
+  pointer-events: none;
+  background: #151515;
+}
+
+.foundation-method__shader .foundation-agent__background-shader {
+  width: 100%;
+  height: 100%;
+  opacity: 0.92;
+}
+
+.foundation-method::after {
+  content: none;
+  animation: none;
+}
+
+.foundation-method > :not(.foundation-method__shader) {
+  position: relative;
+  z-index: 1;
+}
+
+.foundation-method .foundation-kicker,
+.foundation-method .foundation-kicker span {
+  color: rgb(245 245 240 / 68%);
+}
+
+.foundation-method .foundation-kicker span,
+.foundation-method__steps span {
+  color: #e4b976;
+}
+
+.public-site.is-agent-expanded .foundation-method .foundation-section-heading h2,
+.foundation-method .foundation-section-heading h2,
+.public-site.is-agent-expanded .foundation-method__steps h3,
+.foundation-method__steps h3 {
+  color: #f5f5f0;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 24%);
+}
+
+.public-site.is-agent-expanded .foundation-method .foundation-section-heading > div > p,
+.foundation-method .foundation-section-heading > div > p,
+.public-site.is-agent-expanded .foundation-method__steps p,
+.foundation-method__steps p {
+  color: rgb(245 245 240 / 70%);
+}
+
+.public-site.is-agent-expanded .foundation-method__steps,
+.foundation-method__steps {
+  border-color: rgb(255 255 255 / 18%);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 3%)),
+    rgb(8 10 10 / 54%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 14%),
+    0 24px 72px rgb(0 0 0 / 18%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.foundation-method__steps li + li {
+  border-left-color: rgb(255 255 255 / 14%);
+}
+
+.public-site > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-knowledge {
+  color: var(--foundation-ink);
+  background: #f6f7f7;
+}
+
+.foundation-knowledge {
+  isolation: isolate;
+  overflow: visible;
+  background: transparent;
+}
+
+.foundation-knowledge::after {
+  position: absolute;
+  z-index: -2;
+  inset: 0 calc(50% - 50vw);
+  background: #f6f7f7;
+  content: '';
+}
+
+/* One fixed field carries the Agent into the method chapter without a visual
+   seam. The local Agent canvas hands off only after it reaches full screen. */
+.foundation-page-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  background: #151515;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 320ms;
+}
+
+.foundation-page-backdrop .foundation-agent__background-shader {
+  width: 100%;
+  height: 100%;
+  opacity: 0.94;
+}
+
+.public-site.is-agent-expanded .foundation-page-backdrop {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.foundation-agent__field {
+  transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.public-site.is-agent-expanded .foundation-agent {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.public-site.is-agent-expanded .foundation-agent__field {
+  opacity: 0;
+}
+
+.public-site.is-agent-expanded > main > .foundation-method {
+  background: transparent;
+}
+
+.public-site.is-agent-scrolling .foundation-hero__scroll {
+  z-index: 2;
+  color: rgb(245 245 240 / 72%);
+}
+
+.public-site.is-agent-scrolling .foundation-hero__scroll::before {
+  content: none;
+}
+
+.foundation-method::before {
+  z-index: 0;
+  color: rgb(245 245 240 / 8%);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 3%);
+}
+
+.foundation-method {
+  border-top: 0;
+}
+
+/* Editorial sequence: hierarchy comes from type, rhythm and rules instead of
+   a large rounded container. */
+.public-site.is-agent-expanded .foundation-method__steps,
+.foundation-method__steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: clamp(38px, 5vw, 66px) 0;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 22%);
+  border-bottom: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.foundation-method__steps li,
+.foundation-method__steps li:nth-child(2),
+.foundation-method__steps li:nth-child(3) {
+  min-height: 286px;
+  padding: 0 clamp(30px, 4vw, 56px);
+}
+
+.foundation-method__steps li:first-child {
+  padding-left: 0;
+}
+
+.foundation-method__steps li:last-child {
+  padding-right: 0;
+}
+
+.foundation-method__steps li + li {
+  border-left: 1px solid rgb(255 255 255 / 14%);
+}
+
+.foundation-method__steps span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  color: #d4ad73;
+  font-size: clamp(3.2rem, 4.8vw, 4.8rem);
+  font-weight: 420;
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  opacity: 0.82;
+}
+
+.foundation-method__steps h3,
+.public-site.is-agent-expanded .foundation-method__steps h3 {
+  margin: clamp(58px, 6vw, 84px) 0 0;
+  color: #f5f5f0;
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 2.5vw, 2.45rem);
+  font-weight: 540;
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  text-shadow: none;
+}
+
+.foundation-method__steps p,
+.public-site.is-agent-expanded .foundation-method__steps p {
+  max-width: 270px;
+  margin-top: 20px;
+  color: rgb(245 245 240 / 62%);
+  font-size: 0.82rem;
+  line-height: 1.9;
+}
+
+.foundation-method__steps.is-visible li:hover {
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .public-site.is-agent-expanded .foundation-method__steps,
+  .foundation-method__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .foundation-method__steps li,
+  .foundation-method__steps li:nth-child(2),
+  .foundation-method__steps li:nth-child(3) {
+    min-height: 0;
+    padding: 34px 0;
+  }
+
+  .foundation-method__steps li + li {
+    border-top: 1px solid rgb(255 255 255 / 14%);
+    border-left: 0;
+  }
+
+  .foundation-method__steps h3,
+  .public-site.is-agent-expanded .foundation-method__steps h3 {
+    margin-top: 30px;
+  }
+}
+
+/* Keep the original Agent shader alive behind the method chapter. This final
+   handoff rule intentionally wins over the retired two-canvas cross-fade. */
+.public-site.is-dark-backdrop-active .foundation-hero {
+  z-index: 0;
+}
+
+.public-site.is-dark-backdrop-active .foundation-hero__demo {
+  animation: none;
+  transform: none;
+}
+
+.public-site.is-dark-backdrop-active .foundation-agent {
+  overflow: visible;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  isolation: auto;
+  clip-path: none;
+  contain: none;
+  will-change: auto;
+}
+
+.public-site.is-dark-backdrop-active .foundation-agent__field,
+.public-site.is-agent-expanded.is-dark-backdrop-active .foundation-agent__field {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  opacity: 1;
+}
+
+.public-site.is-dark-backdrop-active > main > .foundation-method,
+.public-site.is-agent-expanded.is-dark-backdrop-active > main > .foundation-method {
+  z-index: 1;
+  background: transparent;
+}
+
+/* The knowledge chapter rises out of the dark field as warm paper. The
+   spatial gradient keeps the transition scroll-native and avoids a JS-driven
+   full-screen cross-fade. */
+.public-site > main > .foundation-knowledge,
+.public-site.is-agent-expanded > main > .foundation-knowledge {
+  color: var(--foundation-ink);
+  background: transparent;
+}
+
+.public-site .foundation-knowledge[data-reveal] {
+  opacity: 1;
+  filter: none;
+  animation: none;
+  transform: none;
+}
+
+.foundation-knowledge {
+  isolation: isolate;
+  z-index: 1;
+  border-top: 0;
+  background: transparent;
+}
+
+.foundation-knowledge::before {
+  content: none;
+}
+
+.foundation-knowledge::after {
+  content: none;
+}
+
+.foundation-knowledge__paper-field {
+  --foundation-paper-edge: calc(100svh + 340px);
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 68% 42%, rgb(116 118 111 / 8%), transparent 42%),
+    #f6f7f3;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent var(--foundation-paper-edge),
+    rgb(0 0 0 / 8%) calc(var(--foundation-paper-edge) + 42px),
+    rgb(0 0 0 / 28%) calc(var(--foundation-paper-edge) + 112px),
+    rgb(0 0 0 / 66%) calc(var(--foundation-paper-edge) + 210px),
+    #000 calc(var(--foundation-paper-edge) + 340px)
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent var(--foundation-paper-edge),
+    rgb(0 0 0 / 8%) calc(var(--foundation-paper-edge) + 42px),
+    rgb(0 0 0 / 28%) calc(var(--foundation-paper-edge) + 112px),
+    rgb(0 0 0 / 66%) calc(var(--foundation-paper-edge) + 210px),
+    #000 calc(var(--foundation-paper-edge) + 340px)
+  );
+  pointer-events: none;
+}
+
+.foundation-knowledge__paper-field::before {
+  content: none;
+}
+
+.foundation-knowledge__paper-field::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 34%), transparent 32% 72%, rgb(255 255 255 / 18%)),
+    repeating-linear-gradient(0deg, rgb(21 21 21 / 1.2%) 0 1px, transparent 1px 4px);
+  content: '';
+  opacity: 0.34;
+}
+
+.foundation-knowledge__paper-flow {
+  z-index: 0;
+  opacity: 0.3;
+  filter: saturate(0.36) contrast(0.96);
+  mix-blend-mode: multiply;
+}
+
+.foundation-knowledge > .knowledge-ticker,
+.foundation-knowledge > .foundation-section-heading,
+.foundation-knowledge > .knowledge-preview,
+.foundation-knowledge > .foundation-text-link {
+  position: relative;
+  z-index: 1;
+}
+
+.public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
+.foundation-knowledge .knowledge-ticker {
+  border-color: rgb(101 69 29 / 18%);
+  background: rgb(247 246 239 / 62%);
+  box-shadow: 0 18px 54px rgb(21 21 21 / 8%);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n + 1) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, #ddd6c8 40%, white);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n + 2) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, #e7dfd1 34%, white);
+}
+
+.foundation-knowledge .knowledge-journey__card:nth-child(3n) .knowledge-journey__card-surface {
+  background: color-mix(in srgb, #c2b29b 24%, white);
+}
+
+/* Once the paper edge has cleared the viewport, the same fixed Shader stays
+   behind every remaining editorial chapter. Large surfaces remain translucent
+   so the moving grain is continuous instead of restarting at section seams. */
+.public-site.is-light-backdrop-active .foundation-knowledge__paper-field {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.public-site.is-light-backdrop-active > main > .foundation-knowledge,
+.public-site.is-light-backdrop-active > main > .foundation-graph,
+.public-site.is-light-backdrop-active > main > .foundation-trust,
+.public-site.is-light-backdrop-active > main > .foundation-closing,
+.public-site.is-light-backdrop-active > .public-footer {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.public-site.is-light-backdrop-active .foundation-graph .obsidian-knowledge-graph {
+  border-color: rgb(101 69 29 / 14%);
+  background:
+    radial-gradient(circle at 50% 46%, rgb(101 69 29 / 4%), transparent 40%),
+    radial-gradient(circle, rgb(21 21 21 / 7%) 1px, transparent 1px),
+    rgb(250 249 244 / 16%);
+  background-size: auto, 24px 24px, auto;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.public-site.is-light-backdrop-active .foundation-graph .obsidian-knowledge-graph__tour-status i {
+  background: var(--foundation-amber);
+}
+
+/* Keep the navigation as a full-width top rail, with the original glass
+   treatment revealing the field underneath. */
+.public-header,
+.public-site.is-agent-scrolling:not(.is-agent-header-inverted) .public-header {
+  border-bottom: 0;
+  background: rgb(246 247 247 / 28%);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(18px) saturate(0.82);
+  backdrop-filter: blur(18px) saturate(0.82);
+}
+
+.public-header__inner {
+  min-height: 84px;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.public-site.is-agent-header-inverted .public-header {
+  border-bottom: 0;
+  background: rgb(12 14 14 / 28%);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundation-knowledge__paper-flow {
+    display: none;
+  }
 }

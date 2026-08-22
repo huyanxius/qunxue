@@ -363,12 +363,15 @@
    compact right-aligned notes, while Agent turns remain readable content on
    the page instead of pretending every message is a chat bubble. */
 .research-agent-page {
+  --research-agent-page-gutter: clamp(20px, 4vw, 48px);
+  position: relative;
   height: 100dvh;
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  padding: 0 clamp(20px, 4vw, 48px);
+  padding: 0 var(--research-agent-page-gutter);
   overflow: hidden;
+  isolation: isolate;
 }
 
 .research-agent-page__heading {
@@ -391,6 +394,7 @@
 }
 
 .research-agent-page__scroll-region {
+  position: relative;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -759,5 +763,205 @@
 
   .research-agent-page__composer {
     min-height: 128px;
+  }
+}
+
+/* The empty Agent canvas has one reading focus. Chrome and controls stay sans;
+   the changing research question carries the editorial Songti voice. */
+.research-agent-page__heading-placeholder {
+  width: min(100%, 720px);
+  height: 0;
+  margin: 0 auto;
+}
+
+.research-agent-page__conversation-heading {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 18px 0 14px;
+}
+
+.research-agent-page__empty-state {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 860px);
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  padding: clamp(42px, 8vh, 84px) 0 clamp(30px, 6vh, 62px);
+}
+
+.research-agent-page__shader {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 18% 42%, rgb(148 134 154 / 24%), transparent 43%),
+    radial-gradient(ellipse at 82% 58%, rgb(137 158 163 / 20%), transparent 40%),
+    #f7f4f2;
+  pointer-events: none;
+}
+
+.app-frame:has(.research-agent-page__shader) .desktop-rail {
+  border-right-color: rgb(64 57 68 / 13%);
+  background: linear-gradient(180deg, rgb(249 247 246 / 76%), rgb(244 242 241 / 62%));
+  box-shadow:
+    inset -1px 0 rgb(255 255 255 / 58%),
+    12px 0 34px rgb(52 46 56 / 3%);
+  backdrop-filter: blur(18px) saturate(0.92);
+  -webkit-backdrop-filter: blur(18px) saturate(0.92);
+}
+
+.app-frame:has(.research-agent-page__shader) .desktop-navigation a:hover,
+.app-frame:has(.research-agent-page__shader) .desktop-navigation a[aria-current='page'],
+.app-frame:has(.research-agent-page__shader) .desktop-rail__collapse:hover,
+.app-frame:has(.research-agent-page__shader) .desktop-rail__account a:hover,
+.app-frame:has(.research-agent-page__shader) .desktop-rail__account button:hover {
+  background: rgb(255 255 255 / 46%);
+}
+
+.research-agent-page__heading-placeholder,
+.research-agent-page__conversation-heading,
+.research-agent-page__scroll-region,
+.research-agent-page__composer-dock {
+  position: relative;
+  z-index: 2;
+}
+
+.research-agent-page__shader::before,
+.research-agent-page__shader::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: '';
+}
+
+.research-agent-page__shader::before {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgb(250 249 247 / 76%) 0 16%, rgb(250 249 247 / 40%) 36%, transparent 68%),
+    linear-gradient(180deg, rgb(255 255 255 / 64%), transparent 22% 72%, rgb(255 255 255 / 78%));
+}
+
+.research-agent-page__shader::after {
+  background: radial-gradient(ellipse at 50% 52%, transparent 22%, rgb(53 48 59 / 4%) 100%);
+  opacity: 0.72;
+}
+
+.research-agent-page__shader-canvas {
+  z-index: 0;
+  opacity: 0.38;
+  filter: saturate(0.52) contrast(0.97);
+}
+
+.research-agent-page__empty-copy {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.research-agent-page__empty-copy .research-agent-bot {
+  margin-bottom: clamp(18px, 2.4vh, 26px);
+}
+
+.research-agent-prompt {
+  width: 100%;
+  min-height: clamp(92px, 10vw, 126px);
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--app-ink);
+  font-family: var(--serif);
+  font-size: clamp(36px, 4vw, 48px);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 1.28;
+}
+
+.research-agent-prompt button {
+  width: 100%;
+  min-height: inherit;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: center;
+}
+
+.research-agent-prompt button:disabled {
+  opacity: 1;
+}
+
+.research-agent-prompt button:not(:disabled) {
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.research-agent-prompt button:not(:disabled):hover {
+  color: var(--app-ink-soft);
+}
+
+.research-agent-prompt button:focus-visible {
+  outline: 1px solid var(--app-border-strong);
+  outline-offset: 9px;
+}
+
+.research-agent-prompt__copy {
+  width: 100%;
+  max-width: 100%;
+  text-wrap: balance;
+}
+
+.research-agent-prompt__prefix {
+  margin-right: 12px;
+  color: color-mix(in srgb, var(--app-ink-soft) 54%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-agent-prompt button:not(:disabled) {
+    transition: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .research-agent-page {
+    --research-agent-page-gutter: 16px;
+    height: calc(100dvh - 122px);
+    min-height: 0;
+    padding: 0 16px;
+  }
+
+  .research-agent-page__empty-state {
+    padding: 30px 0 22px;
+  }
+
+  .research-agent-prompt {
+    min-height: 4.1em;
+    font-size: clamp(30px, 9vw, 38px);
+    line-height: 1.32;
+  }
+
+  .research-agent-page__composer-dock {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .research-agent-page__composer {
+    min-height: 0;
+  }
+
+  .research-agent-page__shader-canvas {
+    opacity: 0.34;
   }
 }
