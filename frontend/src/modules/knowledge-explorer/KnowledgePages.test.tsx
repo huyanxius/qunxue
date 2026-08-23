@@ -169,6 +169,27 @@ describe('knowledge pages', () => {
     ])
   })
 
+  it('opens a category from the dimension overview', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
+    const onStateChange = vi.fn()
+
+    render(
+      <KnowledgeExplorerPage
+        state={{ releaseId: 'release-a' }}
+        onOpenEntry={vi.fn()}
+        onReleaseResolved={vi.fn()}
+        onStateChange={onStateChange}
+      />,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '浏览 I. 古典社会学奠基' }))
+
+    expect(onStateChange).toHaveBeenCalledWith(expect.objectContaining({
+      dimensionId: 'D1',
+      categoryId: 'D1:I. 古典社会学奠基',
+    }))
+  })
+
   it('keeps the graph shortcut named when its visible label is hidden on narrow screens', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
 
