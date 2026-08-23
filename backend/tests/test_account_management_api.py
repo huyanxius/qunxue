@@ -156,9 +156,9 @@ def test_registration_grants_a_visible_credit_balance_and_ledger_entry(
     assert response.status_code == 200
     payload = response.json()
     assert payload["is_unlimited"] is False
-    assert payload["balance"] == 3000
-    assert payload["credit_limit"] == 3000
-    assert payload["grant_amount"] == 3000
+    assert payload["balance"] == 10000
+    assert payload["credit_limit"] == 10000
+    assert payload["grant_amount"] == 10000
     assert payload["pricing"] == {
         "input_tokens_per_credit": 100,
         "output_tokens_per_credit": 25,
@@ -213,7 +213,7 @@ def test_credit_reservation_fallback_uses_the_current_welcome_grant(
         summary = repository.get_summary(user_id=user_id, limit=10)
 
     assert summary is not None
-    assert summary.balance == 3000
+    assert summary.balance == 10000
 
 
 def test_credit_ledger_is_returned_in_non_overlapping_pages(
@@ -264,7 +264,7 @@ def test_administrator_generates_hashed_codes_and_member_redeems_once(
 
     assert generated.status_code == 201
     payload = generated.json()
-    assert payload["points"] == 3000
+    assert payload["points"] == 10000
     assert len(payload["codes"]) == len(set(payload["codes"])) == 2
     assert all(code.startswith("QX-") and len(code) == 22 for code in payload["codes"])
 
@@ -308,12 +308,12 @@ def test_administrator_generates_hashed_codes_and_member_redeems_once(
     )
 
     assert redeemed.status_code == 200
-    assert redeemed.json() == {"redeemed_points": 3000, "balance": 3000}
+    assert redeemed.json() == {"redeemed_points": 10000, "balance": 10000}
     assert replayed_redemption.status_code == 200
-    assert replayed_redemption.json() == {"redeemed_points": 3000, "balance": 2936}
+    assert replayed_redemption.json() == {"redeemed_points": 10000, "balance": 2936}
     summary = client.get("/api/account/credits").json()
     assert summary["balance"] == 2936
-    assert summary["credit_limit"] == 3000
+    assert summary["credit_limit"] == 10000
     assert summary["entries"] == []
     with client.app.state.database.engine.connect() as connection:
         redemption_entry = connection.execute(
@@ -323,7 +323,7 @@ def test_administrator_generates_hashed_codes_and_member_redeems_once(
             ),
             {"user_id": redeemer_user_id},
         ).one()
-    assert redemption_entry == ("redemption", 3000)
+    assert redemption_entry == ("redemption", 10000)
 
     client.cookies.clear()
     register(client, "other-redeemer@example.com")
