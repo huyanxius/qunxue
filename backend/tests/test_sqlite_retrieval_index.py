@@ -85,6 +85,48 @@ def test_rebuild_is_deterministic_and_searches_only_the_pinned_release(
         )
 
 
+def test_manifest_identity_ignores_provider_float_jitter_and_ready_points_are_immutable(
+    tmp_path: Path,
+) -> None:
+    chunks = _chunks()
+    first_index = _index(tmp_path / "first.db")
+    first = first_index.rebuild(
+        knowledge_release_id="release-reviewed-v1",
+        release_content_hash="sha256:release-reviewed-v1",
+        embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="theory-profile-v1",
+        chunks=chunks,
+        vectors=((1.0, 0.0), (0.0, 1.0)),
+    )
+
+    repeated = first_index.rebuild(
+        knowledge_release_id="release-reviewed-v1",
+        release_content_hash="sha256:release-reviewed-v1",
+        embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="theory-profile-v1",
+        chunks=chunks,
+        vectors=((0.999, 0.001), (0.001, 0.999)),
+    )
+    rebuilt_elsewhere = _index(tmp_path / "second.db").rebuild(
+        knowledge_release_id="release-reviewed-v1",
+        release_content_hash="sha256:release-reviewed-v1",
+        embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="theory-profile-v1",
+        chunks=chunks,
+        vectors=((0.999, 0.001), (0.001, 0.999)),
+    )
+
+    assert repeated == first
+    assert rebuilt_elsewhere == first
+    assert first_index.search(
+        retrieval_index_id=first.retrieval_index_id,
+        knowledge_release_id="release-reviewed-v1",
+        query_vector=(1.0, 0.0),
+        document_kind="theory_profile",
+        limit=1,
+    )[0].score == 1.0
+
+
 def test_rebuild_rejects_vectors_with_inconsistent_dimensions(tmp_path: Path) -> None:
     index = _index(tmp_path / "retrieval.db")
 
