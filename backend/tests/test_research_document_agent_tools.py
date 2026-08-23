@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import UUID
 
+import pytest
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from test_pre_reviewed_theory_release import _write_bundle
 
@@ -16,7 +17,10 @@ from qunxue_api.modules.agent_conversation import (
     AgentRunResult,
     ConversationService,
 )
-from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
+from qunxue_api.modules.knowledge_catalog import (
+    KnowledgeUsePurpose,
+    RetrievalPipelineUnavailable,
+)
 from qunxue_api.modules.research_framework import (
     ResearchDocumentProposalService,
     ResearchDocumentSection,
@@ -628,64 +632,25 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
     assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
 
 
-def test_agent_workflow_reports_missing_formal_release_before_theory_write(client) -> None:
-    registered = client.post(
+def test_agent_research_turn_fails_closed_without_a_formal_release(plain_client) -> None:
+    registered = plain_client.post(
         "/api/session/register",
         json={"email": "agent-no-candidate@example.com", "password": "research-pass-123"},
         headers={"Idempotency-Key": "register-agent-no-candidate"},
     )
     assert registered.status_code == 201
     user_id = UUID(registered.json()["user"]["user_id"])
-    with client.app.state.disciplinary_agent_scope() as application:
-        turn = application.run_turn(
+    with (
+        plain_client.app.state.disciplinary_agent_scope() as application,
+        pytest.raises(RetrievalPipelineUnavailable, match="final MATCH knowledge release"),
+    ):
+        application.run_turn(
             user_id=user_id,
             conversation_id=None,
             prompt="建立一个研究",
             idempotency_key="create-agent-no-candidate-conversation",
             workspace="research",
         )
-        tools = application._tools_factory()
-        tools.enable_research_document_tools()
-        tools.bind_agent_context(
-            user_id=user_id,
-            conversation_id=turn.conversation.conversation_id,
-            agent_run_id=turn.run_id,
-            agent_turn_id=turn.turn.turn_id,
-        )
-        start_proposal = tools.propose_start_research(
-            phenomenon="一个没有匹配理论的测试现象",
-            research_intent="验证无候选边界",
-            context=None,
-        )
-        tools.finalize_agent_turn(source_turn_id=turn.turn.turn_id)
-
-    confirmation = client.post(
-        f"/api/agent/research-start-proposals/{start_proposal['proposal_id']}/confirm",
-        headers={"Idempotency-Key": "confirm-agent-no-candidate"},
-        json={
-            "expected_version": start_proposal["version"],
-            "phenomenon": start_proposal["phenomenon"],
-            "research_intent": start_proposal["research_intent"],
-            "context": start_proposal["context"],
-        },
-    )
-    assert confirmation.status_code == 201
-    created = confirmation.json()["navigation"]
-
-    with client.app.state.disciplinary_agent_scope() as application:
-        tools = application._tools_factory()
-        tools.enable_research_document_tools()
-        tools.bind_agent_context(
-            user_id=user_id,
-            conversation_id=turn.conversation.conversation_id,
-            agent_run_id=UUID(int=99),
-        )
-        matched = tools.start_theory_matching()
-
-    assert created["current_stage"] == "theory_matching"
-    assert matched["error"] == "matching_catalog_not_ready"
-    assert matched["task_id"] == created["task_id"]
-    assert matched["next_action"] == "install_pre_reviewed_release_then_start_matching"
 
 
 def test_real_runner_emits_read_and_pending_revision_tool_trace() -> None:

@@ -8,10 +8,7 @@ from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserProm
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from sqlalchemy.exc import IntegrityError
 
-from qunxue_api.adapters.research_agent.catalog_tools import (
-    KnowledgeToolRegistry,
-    _query_candidates,
-)
+from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.pydantic_runner import (
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
@@ -324,13 +321,15 @@ def test_successful_real_agent_turn_charges_actual_provider_tokens_once() -> Non
         idempotency_key="usage-turn",
     )
 
-    assert credits.charges == [{
-        "user_id": user_id,
-        "run_id": completed.run_id,
-        "input_tokens": 600,
-        "output_tokens": 800,
-        "model": "deepseek-v4-flash",
-    }]
+    assert credits.charges == [
+        {
+            "user_id": user_id,
+            "run_id": completed.run_id,
+            "input_tokens": 600,
+            "output_tokens": 800,
+            "model": "deepseek-v4-flash",
+        }
+    ]
 
 
 def test_application_rejects_runner_citations_outside_tool_evidence() -> None:
@@ -609,7 +608,7 @@ def test_agent_api_streams_and_persists_a_knowledge_turn(client) -> None:
 
     response = client.post(
         "/api/agent/turns",
-        json={"message": "请检索知识库，解释什么是符号互动？"},
+        json={"message": "请检索知识库，解释什么是历史唯物主义？"},
         headers={"Idempotency-Key": "agent-turn-1"},
     )
     assert response.status_code == 200
@@ -621,7 +620,7 @@ def test_agent_api_streams_and_persists_a_knowledge_turn(client) -> None:
 
     replay = client.post(
         "/api/agent/turns",
-        json={"message": "请检索知识库，解释什么是符号互动？"},
+        json={"message": "请检索知识库，解释什么是历史唯物主义？"},
         headers={"Idempotency-Key": "agent-turn-1"},
     )
     assert replay.status_code == 200
@@ -640,7 +639,7 @@ def test_agent_api_streams_and_persists_a_knowledge_turn(client) -> None:
         "tool": "search_knowledge",
         "phase": "started",
         "call_id": "deterministic:search_knowledge",
-        "input": {"query": "请检索知识库，解释什么是符号互动？"},
+        "input": {"query": "请检索知识库，解释什么是历史唯物主义？"},
         "output": None,
         "detail": "正在检索知识库",
         "error": None,
@@ -649,10 +648,10 @@ def test_agent_api_streams_and_persists_a_knowledge_turn(client) -> None:
     assert finished_trace["phase"] == "finished"
     assert finished_trace["output"]["result_count"] == 1
     item = finished_trace["output"]["items"][0]
-    assert item["knowledge_id"] == "D1:C077"
-    assert item["title"] == "符号互动论方法论（SI Methodological Standpoint）"
+    assert item["knowledge_id"] == "D1:C001"
+    assert item["title"] == "历史唯物主义"
     assert item["excerpt"]
-    assert "符号互动论方法论" in finished_trace["detail"]
+    assert "历史唯物主义" in finished_trace["detail"]
     with client.app.state.database.session() as session:
         run = session.query(AgentRunRow).filter_by(idempotency_key="agent-turn-1").one()
         assert run.status == "completed"
@@ -661,7 +660,7 @@ def test_agent_api_streams_and_persists_a_knowledge_turn(client) -> None:
         assert run.tool_summary[0]["phase"] == "started"
         assert run.tool_summary[1]["phase"] == "finished"
         assert run.tool_summary[1]["output"]["result_count"] == 1
-        assert run.tool_summary[1]["output"]["items"][0]["knowledge_id"] == "D1:C077"
+        assert run.tool_summary[1]["output"]["items"][0]["knowledge_id"] == "D1:C001"
 
 
 def test_agent_conversation_detail_returns_stable_not_found_error(client) -> None:
@@ -854,9 +853,7 @@ def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
                 idempotency_key: str = key,
                 repository: SqliteResearchDocumentProposalRepository = proposal_repository,
             ) -> None:
-                row = session.query(AgentRunRow).filter_by(
-                    idempotency_key=idempotency_key
-                ).one()
+                row = session.query(AgentRunRow).filter_by(idempotency_key=idempotency_key).one()
                 observed_before_result[idempotency_key] = repository.agent_run_model(
                     UUID(row.run_id)
                 )
@@ -885,12 +882,12 @@ def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
     }
 
     with client.app.state.database.session() as session:
-        deterministic = session.query(AgentRunRow).filter_by(
-            idempotency_key="provenance-deterministic"
-        ).one()
-        configured = session.query(AgentRunRow).filter_by(
-            idempotency_key="provenance-configured"
-        ).one()
+        deterministic = (
+            session.query(AgentRunRow).filter_by(idempotency_key="provenance-deterministic").one()
+        )
+        configured = (
+            session.query(AgentRunRow).filter_by(idempotency_key="provenance-configured").one()
+        )
         assert (deterministic.provider, deterministic.model) == (
             "deterministic-knowledge",
             "local",
@@ -989,9 +986,7 @@ def test_agent_runner_forwards_configured_model_headers() -> None:
         extra_headers={"X-LoRA-ID": "local-lora-test-id"},
     )
 
-    assert runner._agent.model.settings["extra_headers"] == {
-        "X-LoRA-ID": "local-lora-test-id"
-    }
+    assert runner._agent.model.settings["extra_headers"] == {"X-LoRA-ID": "local-lora-test-id"}
 
 
 def test_agent_runner_forwards_configured_reasoning_effort() -> None:
@@ -1026,7 +1021,11 @@ def test_agent_bootstrap_forwards_configured_reasoning_effort(client, monkeypatc
         model_name="gpt-5.6-luna",
         model_reasoning_effort="max",
     )
-    app = create_app(settings=settings, database=client.app.state.database)
+    app = create_app(
+        settings=settings,
+        database=client.app.state.database,
+        knowledge_retriever=client.app.state.knowledge_retriever,
+    )
 
     with app.state.disciplinary_agent_scope():
         pass
@@ -1056,7 +1055,11 @@ def test_agent_bootstrap_forwards_extension_and_sft_headers(client, monkeypatch)
         model_extra_headers={"X-Tenant": "local-tenant"},
         model_sft_resource_id="local-lora-test-id",
     )
-    app = create_app(settings=settings, database=client.app.state.database)
+    app = create_app(
+        settings=settings,
+        database=client.app.state.database,
+        knowledge_retriever=client.app.state.knowledge_retriever,
+    )
 
     with app.state.disciplinary_agent_scope():
         pass
@@ -1100,6 +1103,81 @@ def test_agent_answers_sociology_question_without_preemptive_knowledge_search(
 
     assert result.answer == "可以从社会联结、劳动节奏与城市流动三个层面理解。"
     assert result.citations == ()
+
+
+def test_formal_research_turn_preflights_evidence_before_the_model_answers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    citation_id = "retrieval:theory-profile:social-capital:v2"
+
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+        research_map_enabled = False
+
+        def __init__(self) -> None:
+            self.evidence = {}
+            self.selected_evidence_ids: tuple[str, ...] = ()
+            self.search_calls: list[str] = []
+
+        def search_knowledge(self, query: str, *, limit: int = 5):
+            assert limit == 5
+            self.search_calls.append(query)
+            self.evidence[citation_id] = AgentEvidence(
+                citation_id=citation_id,
+                label="社会资本理论",
+                kind="theory",
+                excerpt="持续关系、信任与互惠规范支持集体行动。",
+                knowledge_id="D2:P001",
+            )
+            return [
+                {
+                    "citation_id": citation_id,
+                    "knowledge_id": "D2:P001",
+                    "title": "社会资本理论",
+                    "excerpt": "持续关系、信任与互惠规范支持集体行动。",
+                    "evidence_status": "verified",
+                }
+            ]
+
+        def select_evidence(self, citation_ids):
+            self.selected_evidence_ids = tuple(citation_ids)
+            return self.selected_evidence_ids
+
+    prompt = "我要写本科生毕业论文，帮我想一个选题，我们快速研究。"
+    tools = _Tools()
+    captured: dict[str, object] = {}
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="sociology-model",
+        timeout_seconds=30,
+    )
+
+    def run_sync(user_prompt, **kwargs):
+        captured["prompt"] = user_prompt
+        return SimpleNamespace(output="可以从社区流动与互助关系变化切入。")
+
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    tool_events = []
+
+    result = runner.run_stream(
+        prompt=prompt,
+        conversation=(),
+        tools=tools,
+        on_delta=lambda _: None,
+        on_tool_event=tool_events.append,
+    )
+
+    assert tools.search_calls == [
+        prompt + "\n检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。"
+    ]
+    assert tools.selected_evidence_ids == (citation_id,)
+    assert "<required_evidence>" in str(captured["prompt"])
+    assert [(event.tool, event.phase) for event in tool_events] == [
+        ("search_knowledge", "started"),
+        ("search_knowledge", "finished"),
+    ]
+    assert [citation.citation_id for citation in result.citations] == [citation_id]
 
 
 def test_reading_an_unknown_knowledge_id_returns_a_tool_error() -> None:
@@ -1317,7 +1395,7 @@ def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
     assert result.citations == ()
 
 
-def test_agent_accepts_a_bare_knowledge_id_from_the_current_tool_evidence(
+def test_agent_does_not_infer_citations_by_scanning_a_bare_knowledge_id(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class _Tools:
@@ -1348,10 +1426,10 @@ def test_agent_accepts_a_bare_knowledge_id_from_the_current_tool_evidence(
 
     result = runner.run(prompt="解释社会行动四类型", conversation=(), tools=_Tools())
 
-    assert [citation.citation_id for citation in result.citations] == ["knowledge:D1:C029"]
+    assert result.citations == ()
 
 
-def test_agent_accepts_an_unambiguous_catalog_suffix_from_current_tool_evidence(
+def test_agent_does_not_infer_citations_by_scanning_a_catalog_suffix(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class _Tools:
@@ -1382,9 +1460,7 @@ def test_agent_accepts_an_unambiguous_catalog_suffix_from_current_tool_evidence(
 
     result = runner.run(prompt="解释年轻人的孤独", conversation=(), tools=_Tools())
 
-    assert [citation.citation_id for citation in result.citations] == [
-        "knowledge:D1:C1059"
-    ]
+    assert result.citations == ()
 
 
 def test_agent_rejects_an_ambiguous_catalog_suffix(
@@ -1431,7 +1507,14 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
 
         def __init__(self) -> None:
             self.evidence = {}
+            self.selected_evidence_ids: tuple[str, ...] = ()
             self.calls: list[tuple[str, object]] = []
+
+        def select_evidence(self, citation_ids):
+            values = tuple(citation_ids)
+            assert set(values) <= set(self.evidence)
+            self.selected_evidence_ids = values
+            return values
 
         def search_knowledge(self, query: str, *, limit: int = 5):
             self.calls.append(("search_knowledge", {"query": query, "limit": limit}))
@@ -1481,7 +1564,7 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
                 )
             }
         else:
-            yield f"可以从社会联结的结构性变化切入。{citation_id}"
+            yield "可以从社会联结的结构性变化切入。"
 
     runner = PydanticAIKnowledgeRunner(
         base_url="https://api.deepseek.com",
@@ -1493,7 +1576,7 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
     tool_events = []
     with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
         result = runner.run_stream(
-            prompt="请结合知识库解释年轻人越来越孤独。",
+            prompt="年轻人越来越孤独，可以怎么理解？",
             conversation=(),
             tools=tools,
             on_delta=deltas.append,
@@ -1517,10 +1600,11 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
     assert tool_events[1].output["result_count"] == 1
     assert tool_events[1].output["items"][0]["knowledge_id"] == "D1:C001"
     assert "".join(deltas) == result.answer
+    assert tools.selected_evidence_ids == (citation_id,)
     assert [citation.citation_id for citation in result.citations] == [citation_id]
 
 
-def test_agent_continues_with_general_knowledge_when_search_tool_is_unavailable() -> None:
+def test_agent_aborts_when_the_required_search_tool_is_unavailable() -> None:
     class _Tools:
         release = SimpleNamespace(knowledge_release_id="release-a")
         evidence = {}
@@ -1555,67 +1639,26 @@ def test_agent_continues_with_general_knowledge_when_search_tool_is_unavailable(
         timeout_seconds=30,
     )
     tool_events = []
-    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
-        result = runner.run_stream(
+    deltas: list[str] = []
+    with (
+        runner._agent.override(model=FunctionModel(stream_function=model_stream)),
+        pytest.raises(RuntimeError, match="database details"),
+    ):
+        runner.run_stream(
             prompt="请结合知识库解释年轻人越来越孤独。",
             conversation=(),
             tools=tools,
-            on_delta=lambda _: None,
+            on_delta=deltas.append,
             on_tool_event=tool_events.append,
         )
 
-    assert result.answer == "知识库暂时不可用，我先从社会联结的结构性变化来分析。"
     assert [(event.phase, event.call_id) for event in tool_events] == [
-        ("started", "call-search-failed"),
-        ("failed", "call-search-failed"),
+        ("started", "policy:search_knowledge"),
+        ("failed", "policy:search_knowledge"),
     ]
     assert tool_events[-1].error == "knowledge_search_failed"
     assert "database details" not in (tool_events[-1].detail or "")
-    assert result.citations == ()
-
-
-def test_knowledge_query_candidates_extract_terms_from_natural_language() -> None:
-    candidates = _query_candidates("请根据当前知识库回答：什么是符号互动论？")
-
-    assert candidates[0] == "请根据当前知识库回答：什么是符号互动论？"
-    assert "符号互动" in candidates
-
-
-def test_knowledge_tool_falls_back_to_fuzzy_catalog_candidates() -> None:
-    release = SimpleNamespace(knowledge_release_id="release-a")
-    item = SimpleNamespace(
-        knowledge_id="D1:C001",
-        title="符号互动论",
-        category="经典理论范式",
-        dimension="认识论",
-        eligibility=SimpleNamespace(rag_eligible=True),
-    )
-    detail = SimpleNamespace(
-        summary=item,
-        aliases=("互动论", "Symbolic Interactionism"),
-        content="符号互动论关注人如何通过互动形成自我理解。",
-        sources=(),
-    )
-
-    class _Catalog:
-        def current_release(self, *, purpose):
-            del purpose
-            return release
-
-        def browse(self, **kwargs):
-            if kwargs["query"] is None:
-                return SimpleNamespace(entries=(item,))
-            return SimpleNamespace(entries=())
-
-        def get_entry(self, **kwargs):
-            del kwargs
-            return detail
-
-    result = KnowledgeToolRegistry(_Catalog()).search_knowledge(
-        "那个研究人如何通过互动形成自我理解的理论"
-    )
-
-    assert result[0]["knowledge_id"] == "D1:C001"
+    assert deltas == []
 
 
 def test_knowledge_directory_is_bounded_and_queryable() -> None:
@@ -1659,81 +1702,8 @@ def test_knowledge_directory_is_bounded_and_queryable() -> None:
 
     assert [item["node_id"] for item in registry.browse_knowledge_directory()] == ["D1"]
     assert [
-        item["node_id"]
-        for item in registry.browse_knowledge_directory(query="符号互动论", limit=1)
+        item["node_id"] for item in registry.browse_knowledge_directory(query="符号互动论", limit=1)
     ] == ["D1:symbolic"]
-
-
-def test_knowledge_tool_does_not_force_a_generic_chat_into_irrelevant_rag_evidence() -> None:
-    release = SimpleNamespace(knowledge_release_id="release-a")
-    item = SimpleNamespace(
-        knowledge_id="D1:C001",
-        title="符号互动论",
-        category="经典理论范式",
-        dimension="认识论",
-        eligibility=SimpleNamespace(rag_eligible=True),
-    )
-    detail = SimpleNamespace(
-        summary=item,
-        aliases=("互动论",),
-        content="符号互动论关注人如何通过互动形成自我理解。",
-        sources=(),
-    )
-
-    class _Catalog:
-        def current_release(self, *, purpose):
-            del purpose
-            return release
-
-        def browse(self, **kwargs):
-            return SimpleNamespace(entries=(item,) if kwargs["query"] is None else ())
-
-        def get_entry(self, **kwargs):
-            del kwargs
-            return detail
-
-    result = KnowledgeToolRegistry(_Catalog()).search_knowledge("你好，介绍一下你自己")
-
-    assert result == []
-
-
-def test_knowledge_search_returns_preview_content_when_formal_rag_is_empty() -> None:
-    release = SimpleNamespace(knowledge_release_id="release-preview")
-    item = SimpleNamespace(
-        knowledge_id="D1:C029",
-        title="社会行动四类型",
-        category="古典社会学奠基",
-        dimension="本体论",
-        eligibility=SimpleNamespace(rag_eligible=False, browse_eligible=True),
-    )
-    detail = SimpleNamespace(
-        summary=item,
-        aliases=(),
-        content="韦伯将社会行动区分为目的合理、价值合理、情感和传统四类。",
-        sources=(),
-    )
-
-    class _Catalog:
-        def current_release(self, *, purpose):
-            del purpose
-            return release
-
-        def browse(self, **kwargs):
-            if kwargs["query"] is None:
-                return SimpleNamespace(entries=(item,), next_cursor=None)
-            return SimpleNamespace(entries=(item,), next_cursor=None)
-
-        def get_entry(self, **kwargs):
-            assert kwargs["knowledge_id"] == "D1:C029"
-            return detail
-
-    registry = KnowledgeToolRegistry(_Catalog())
-    results = registry.search_knowledge("社会行动四类型")
-
-    assert results[0]["knowledge_id"] == "D1:C029"
-    assert results[0]["evidence_status"] == "preview_unverified"
-    assert "韦伯" in results[0]["excerpt"]
-    assert registry.evidence["knowledge:D1:C029"].kind == "preview"
 
 
 def test_read_preview_entry_returns_real_content_with_explicit_status() -> None:

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from qunxue_api.adapters.research_agent.pydantic_runner import DeterministicKnowledgeRunner
+from qunxue_api.adapters.retrieval import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import AgentEvidence, AgentRunResult, AgentToolEvent
 
 
@@ -44,7 +45,42 @@ def test_deterministic_runner_answers_generic_sociology_question_without_tool() 
     assert "".join(deltas) == result.answer
 
 
-def test_deterministic_runner_does_not_use_fixed_refusal_after_empty_search() -> None:
+def test_deterministic_runner_preflights_formal_research_requests() -> None:
+    citation = AgentEvidence(
+        citation_id="retrieval:theory-profile:social-capital:v2",
+        label="社会资本理论",
+        kind="theory",
+        excerpt="持续关系、信任与互惠规范支持集体行动。",
+        knowledge_id="D2:P001",
+    )
+    search = Mock(
+        return_value=[
+            {
+                "citation_id": citation.citation_id,
+                "knowledge_id": citation.knowledge_id,
+                "title": citation.label,
+                "excerpt": citation.excerpt,
+                "evidence_status": "verified",
+            }
+        ]
+    )
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={citation.citation_id: citation},
+        search_knowledge=search,
+    )
+
+    result = DeterministicKnowledgeRunner().run(
+        prompt="我要写本科生毕业论文，帮我想一个选题，我们快速研究。",
+        conversation=(),
+        tools=tools,
+    )
+
+    search.assert_called_once()
+    assert [item.citation_id for item in result.citations] == [citation.citation_id]
+
+
+def test_deterministic_runner_reports_insufficient_evidence_after_empty_search() -> None:
     tools = SimpleNamespace(
         release=SimpleNamespace(knowledge_release_id="release-a"),
         evidence={},
@@ -57,8 +93,11 @@ def test_deterministic_runner_does_not_use_fixed_refusal_after_empty_search() ->
         tools=tools,
     )
 
-    assert "当前知识库版本中没有找到足够相关的条目" not in result.answer
-    assert "知识库" in result.answer
+    assert result.answer == (
+        "当前绑定的知识发布中没有检索到足以支持本次回答的证据。"
+        "本轮不生成正式知识结论；请补充研究情境、概念线索或材料后再试。"
+    )
+    assert result.citations == ()
 
 
 def test_search_tool_trace_includes_real_result_preview() -> None:
@@ -197,55 +236,13 @@ def test_agent_stream_does_not_invent_tool_events_for_a_direct_answer(
     ]
 
 
-def test_agent_stream_exposes_tool_failure_and_still_completes_the_answer(
-    client,
-    monkeypatch,
-) -> None:
-    class _UnavailableKnowledgeRunner:
-        def run_stream(
-            self,
-            *,
-            prompt,
-            conversation,
-            tools,
-            on_delta,
-            on_tool_event=None,
-        ) -> AgentRunResult:
-            del conversation
-            assert on_tool_event is not None
-            on_tool_event(
-                AgentToolEvent(
-                    tool="search_knowledge",
-                    phase="started",
-                    call_id="call-search-failed",
-                    input={"query": prompt},
-                    detail="正在检索知识库",
-                )
-            )
-            on_tool_event(
-                AgentToolEvent(
-                    tool="search_knowledge",
-                    phase="failed",
-                    call_id="call-search-failed",
-                    input={"query": prompt},
-                    detail="知识库检索暂时失败",
-                    error="knowledge_search_failed",
-                )
-            )
-            answer = "知识库暂时不可用，我先从社会联结的结构性变化来分析。"
-            on_delta(answer)
-            return AgentRunResult(
-                answer=answer,
-                citations=(),
-                release_id=tools.release.knowledge_release_id,
-                provider="test",
-                model="tool-failure-fallback",
-            )
+def test_agent_stream_exposes_tool_failure_and_aborts_the_turn(client) -> None:
+    class _UnavailableRetriever:
+        def search(self, **kwargs):
+            del kwargs
+            raise RetrievalPipelineUnavailable("test retrieval outage")
 
-    monkeypatch.setattr(
-        "qunxue_api.bootstrap.DeterministicKnowledgeRunner",
-        _UnavailableKnowledgeRunner,
-    )
+    client.app.state.knowledge_retriever = _UnavailableRetriever()
     registered = client.post(
         "/api/session/register",
         json={
@@ -266,14 +263,9 @@ def test_agent_stream_exposes_tool_failure_and_still_completes_the_answer(
     events = _sse_events(response.text)
     tool_events = [(name, payload) for name, payload in events if name.startswith("tool_")]
     assert [name for name, _ in tool_events] == ["tool_started", "tool_failed"]
-    assert tool_events[0][1]["call_id"] == "call-search-failed"
-    assert tool_events[1][1] == {
-        "tool": "search_knowledge",
-        "call_id": "call-search-failed",
-        "input": {"query": "请结合知识库解释年轻人越来越孤独。"},
-        "detail": "知识库检索暂时失败",
-        "message": "知识库检索暂时失败",
-        "error_code": "knowledge_search_failed",
-    }
-    assert "turn_failed" not in [name for name, _ in events]
-    assert events[-1][0] == "turn_completed"
+    assert tool_events[0][1]["call_id"] == "deterministic:search_knowledge"
+    assert tool_events[1][1]["call_id"] == "deterministic:search_knowledge"
+    assert tool_events[1][1]["error_code"] == "knowledge_search_failed"
+    assert "assistant_delta" not in [name for name, _ in events]
+    assert "turn_completed" not in [name for name, _ in events]
+    assert events[-1][0] == "turn_failed"

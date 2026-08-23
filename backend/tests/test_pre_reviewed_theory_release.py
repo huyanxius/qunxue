@@ -18,6 +18,13 @@ from qunxue_api.modules.knowledge_catalog import (
 )
 
 
+@pytest.fixture
+def client(plain_client: TestClient) -> TestClient:
+    """Pre-review safety tests must start without an installed final release."""
+
+    return plain_client
+
+
 def _hash(payload: object) -> str:
     encoded = json.dumps(
         payload,
