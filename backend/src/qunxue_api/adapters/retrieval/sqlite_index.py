@@ -87,9 +87,16 @@ class SqliteRetrievalIndex:
             embedding_model=embedding_model,
             chunk_schema_version=chunk_schema_version,
             chunks=chunk_values,
-            vectors=vector_values,
             vector_dimension=vector_dimension,
         )
+        try:
+            existing = self.get_manifest(manifest.retrieval_index_id)
+        except RetrievalIndexUnavailable:
+            pass
+        else:
+            if existing != manifest:
+                raise RetrievalIndexMismatch("ready retrieval index identity is inconsistent")
+            return existing
         with self._connect() as connection:
             connection.execute(
                 """
@@ -379,16 +386,18 @@ def _build_manifest(
     embedding_model: str,
     chunk_schema_version: str,
     chunks: tuple[RetrievalChunk, ...],
-    vectors: tuple[tuple[float, ...], ...],
     vector_dimension: int,
 ) -> RetrievalIndexManifest:
     points = [
         {
             "chunk_id": chunk.chunk_id,
+            "document_kind": chunk.document_kind,
+            "knowledge_id": chunk.knowledge_id,
+            "theory_id": chunk.theory_id,
+            "content_version": chunk.content_version,
             "content_hash": chunk.content_hash,
-            "vector_hash": f"sha256:{sha256(_pack_vector(vector)).hexdigest()}",
         }
-        for chunk, vector in zip(chunks, vectors, strict=True)
+        for chunk in chunks
     ]
     payload = json.dumps(
         {
