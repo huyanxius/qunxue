@@ -7,6 +7,7 @@ import {
   loginViaApi,
   logoutViaApi,
   registerViaApi,
+  sendRegistrationCodeViaApi,
   watchSessionRejection,
 } from './accountApi'
 import type { AccountSession, AccountSessionState } from './types'
@@ -14,7 +15,8 @@ import type { AccountSession, AccountSessionState } from './types'
 type AccountContextValue = {
   sessionState: AccountSessionState
   login(email: string, password: string): Promise<AccountSession>
-  register(email: string, password: string): Promise<AccountSession>
+  register(email: string, password: string, verificationCode: string): Promise<AccountSession>
+  sendRegistrationCode(email: string): Promise<{ resendAfterSeconds: number }>
   logout(onSucceeded?: () => void): Promise<void>
   retrySession(): void
 }
@@ -25,6 +27,9 @@ const anonymousAccount: AccountContextValue = {
     throw new Error('AccountProvider is missing.')
   },
   register: async () => {
+    throw new Error('AccountProvider is missing.')
+  },
+  sendRegistrationCode: async () => {
     throw new Error('AccountProvider is missing.')
   },
   logout: async (_onSucceeded) => undefined,
@@ -43,7 +48,8 @@ export function AccountProvider({ children }: PropsWithChildren) {
     retry: false,
   })
   const loginMutation = useMutation({ mutationFn: ({ email, password }: { email: string; password: string }) => loginViaApi(email, password) })
-  const registerMutation = useMutation({ mutationFn: ({ email, password }: { email: string; password: string }) => registerViaApi(email, password) })
+  const registerMutation = useMutation({ mutationFn: ({ email, password, verificationCode }: { email: string; password: string; verificationCode: string }) => registerViaApi(email, password, verificationCode) })
+  const registrationCodeMutation = useMutation({ mutationFn: sendRegistrationCodeViaApi })
   const logoutMutation = useMutation({ mutationFn: logoutViaApi })
 
   useEffect(() => watchSessionRejection(() => {
@@ -72,12 +78,13 @@ export function AccountProvider({ children }: PropsWithChildren) {
       queryClient.setQueryData(sessionQueryKey, session)
       return session
     },
-    async register(email, password) {
-      const session = await registerMutation.mutateAsync({ email, password })
+    async register(email, password, verificationCode) {
+      const session = await registerMutation.mutateAsync({ email, password, verificationCode })
       setExpired(false)
       queryClient.setQueryData(sessionQueryKey, session)
       return session
     },
+    sendRegistrationCode: (email) => registrationCodeMutation.mutateAsync(email),
     async logout(onSucceeded) {
       await logoutMutation.mutateAsync()
       setExpired(false)
@@ -90,6 +97,7 @@ export function AccountProvider({ children }: PropsWithChildren) {
     logoutMutation,
     queryClient,
     registerMutation,
+    registrationCodeMutation,
     setExpired,
     sessionQuery,
     sessionState,

@@ -258,6 +258,7 @@ function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
     <PageShell immersive>
       <RegisterPage
         onRegister={account.register}
+        onSendRegistrationCode={account.sendRegistrationCode}
         onAuthenticated={() => navigate(destination, { replace: true })}
         loginHref={`/login?redirect=${encodeURIComponent(destination)}`}
       />
