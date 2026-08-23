@@ -1,11 +1,19 @@
 from types import SimpleNamespace
 
-from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry, _rank_page_items
+import pytest
+
+from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.retrieval import (
     RetrievalCandidate,
     fuzzy_match_score,
     normalize_query,
     rrf_fuse,
+)
+from qunxue_api.adapters.retrieval import RetrievalChunk
+from qunxue_api.adapters.retrieval.hybrid import (
+    HybridRetrievalHit,
+    HybridRetrievalResult,
+    RetrievalPipelineUnavailable,
 )
 
 
@@ -45,36 +53,11 @@ def test_rrf_fuse_merges_lexical_and_semantic_rankings_without_score_scale_assum
     assert fused[0].sources == ("lexical", "semantic")
 
 
-def test_knowledge_search_ranks_the_full_concept_above_a_short_phrase_hit() -> None:
-    release = SimpleNamespace(knowledge_release_id="release-preview")
-    noisy = SimpleNamespace(
-        knowledge_id="D1:C138",
-        title="权力平衡",
-        category="古典社会学奠基",
-        dimension="本体论",
-        eligibility=SimpleNamespace(rag_eligible=False, browse_eligible=True),
+def test_knowledge_search_requires_the_release_bound_hybrid_retriever() -> None:
+    release = SimpleNamespace(
+        knowledge_release_id="release-reviewed-v1",
+        content_hash="sha256:release-reviewed-v1",
     )
-    target = SimpleNamespace(
-        knowledge_id="D1:C029",
-        title="社会行动四类型",
-        category="古典社会学奠基",
-        dimension="本体论",
-        eligibility=SimpleNamespace(rag_eligible=False, browse_eligible=True),
-    )
-    details = {
-        noisy.knowledge_id: SimpleNamespace(
-            summary=noisy,
-            aliases=(),
-            content="社会关系中的权力平衡与资源配置。",
-            sources=(),
-        ),
-        target.knowledge_id: SimpleNamespace(
-            summary=target,
-            aliases=(),
-            content="韦伯将社会行动区分为目的理性、价值理性、情感和传统四类。",
-            sources=(),
-        ),
-    }
 
     class Catalog:
         def current_release(self, *, purpose):
@@ -82,32 +65,126 @@ def test_knowledge_search_ranks_the_full_concept_above_a_short_phrase_hit() -> N
             return release
 
         def browse(self, **kwargs):
-            query = kwargs["query"]
-            if query is None:
-                return SimpleNamespace(entries=(noisy, target), next_cursor=None)
-            if "什么是社" in query:
-                return SimpleNamespace(entries=(noisy,), next_cursor=None)
-            if "社会行动" in query or "行动四" in query:
-                return SimpleNamespace(entries=(target,), next_cursor=None)
+            del kwargs
             return SimpleNamespace(entries=(), next_cursor=None)
 
+    with pytest.raises(RetrievalPipelineUnavailable, match="hybrid retriever"):
+        KnowledgeToolRegistry(Catalog()).search_knowledge("青年孤独的结构成因")
+
+
+def test_knowledge_registry_does_not_fall_back_to_a_preview_release() -> None:
+    calls = []
+
+    class Catalog:
+        def current_release(self, *, purpose):
+            calls.append(purpose.value)
+            if purpose.value == "match":
+                raise LookupError("no final MATCH release")
+            return SimpleNamespace(knowledge_release_id="preview-release")
+
+    with pytest.raises(RetrievalPipelineUnavailable, match="final MATCH"):
+        KnowledgeToolRegistry(Catalog(), retriever=object())
+
+    assert calls == ["match"]
+
+
+def test_knowledge_search_maps_hybrid_chunks_to_auditable_evidence() -> None:
+    release = SimpleNamespace(
+        knowledge_release_id="release-reviewed-v1",
+        content_hash="sha256:release-reviewed-v1",
+    )
+    source = SimpleNamespace(
+        source_id="source:putnam",
+        title="Bowling Alone",
+        locator="Chapter 1",
+        url="https://example.com/bowling-alone",
+        verification_status=SimpleNamespace(value="verified"),
+        use_boundary="仅支持社会资本与持续关系网络的命题。",
+    )
+    summary = SimpleNamespace(
+        knowledge_id="D2:P001",
+        content_version=2,
+        title="社会资本理论",
+        category="中层理论",
+        dimension="关系结构",
+        eligibility=SimpleNamespace(rag_eligible=True),
+    )
+    detail = SimpleNamespace(
+        summary=summary,
+        aliases=("社会资本",),
+        content="信任、互惠规范和持续关系网络支持集体行动。",
+        sources=(source,),
+    )
+    calls: list[dict[str, object]] = []
+
+    class Catalog:
+        def current_release(self, *, purpose):
+            del purpose
+            return release
+
         def get_entry(self, *, knowledge_id, release_id):
+            assert knowledge_id == summary.knowledge_id
             assert release_id == release.knowledge_release_id
-            return details[knowledge_id]
+            return detail
 
-    results = KnowledgeToolRegistry(Catalog()).search_knowledge(
-        "请检索知识库，解释什么是社会行动四类型？"
-    )
+    class Retriever:
+        def search(self, **kwargs):
+            calls.append(kwargs)
+            return HybridRetrievalResult(
+                retrieval_index_id="retrieval-index:reviewed-v1",
+                mode="hybrid_reranked",
+                embedding_model="Pro/BAAI/bge-m3",
+                reranker_model="Pro/BAAI/bge-reranker-v2-m3",
+                degraded_reason=None,
+                hits=(
+                    HybridRetrievalHit(
+                        chunk=RetrievalChunk(
+                            chunk_id="theory-profile:social-capital:v2",
+                            document_kind="theory_profile",
+                            knowledge_id=summary.knowledge_id,
+                            theory_id="social-capital",
+                            content_version=2,
+                            content_hash="sha256:social-capital-v2",
+                            title=summary.title,
+                            text="社会资本理论解释持续关系如何支持社区互助。",
+                            source_ids=(source.source_id,),
+                        ),
+                        fused_score=0.031,
+                        retrieval_sources=("lexical", "semantic"),
+                        rerank_score=0.93,
+                    ),
+                ),
+            )
 
-    assert results[0]["knowledge_id"] == "D1:C029"
+    registry = KnowledgeToolRegistry(Catalog(), retriever=Retriever())
+    results = registry.search_knowledge("成员流动后社区互助为什么减少？")
 
-
-def test_lexical_catalog_candidates_drop_zero_relevance_hits() -> None:
-    unrelated = SimpleNamespace(
-        knowledge_id="D1:unrelated",
-        title="完全无关标题",
-        category="别类",
-        dimension="本体论",
-    )
-
-    assert _rank_page_items("青年孤独", [unrelated]) == []
+    assert calls == [
+        {
+            "query": "成员流动后社区互助为什么减少？",
+            "knowledge_release_id": release.knowledge_release_id,
+            "release_content_hash": release.content_hash,
+            "document_kind": None,
+            "limit": 5,
+        }
+    ]
+    assert results == [
+        {
+            "citation_id": "retrieval:theory-profile:social-capital:v2",
+            "knowledge_id": "D2:P001",
+            "theory_id": "social-capital",
+            "chunk_id": "theory-profile:social-capital:v2",
+            "title": "社会资本理论",
+            "excerpt": "社会资本理论解释持续关系如何支持社区互助。",
+            "retrieval_index_id": "retrieval-index:reviewed-v1",
+            "retrieval_mode": "hybrid_reranked",
+            "retrieval_sources": ["lexical", "semantic"],
+            "rerank_score": 0.93,
+            "embedding_model": "Pro/BAAI/bge-m3",
+            "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+            "source_citation_ids": ["source:source:putnam"],
+            "evidence_status": "verified",
+        }
+    ]
+    assert registry.evidence["retrieval:theory-profile:social-capital:v2"].kind == "theory"
+    assert registry.evidence["source:source:putnam"].label == "Bowling Alone"

@@ -112,6 +112,15 @@ class FailedTheoryCandidateResponse(BaseModel):
     request_id: UUID
 
 
+class RetrievalProvenanceResponse(BaseModel):
+    retrieval_index_id: str | None
+    mode: str
+    embedding_model: str | None
+    reranker_model: str | None
+    degraded_reason: str | None
+    retrieved_chunk_ids: list[str]
+
+
 class MatchRunResponse(BaseModel):
     match_run_id: UUID
     task_id: UUID
@@ -128,6 +137,7 @@ class MatchRunResponse(BaseModel):
     phenomenon_query_id: UUID
     phenomenon_version: int
     knowledge_release_id: str
+    retrieval: RetrievalProvenanceResponse
     candidate_page: MatchCandidatePageResponse
     model: ModelMetadata | None
 

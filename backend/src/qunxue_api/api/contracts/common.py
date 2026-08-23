@@ -31,6 +31,7 @@ class ErrorCode(StrEnum):
     VALIDATION_ERROR = "validation_error"
     PHENOMENON_UNCONFIRMED = "phenomenon_unconfirmed"
     CATALOG_NOT_READY = "catalog_not_ready"
+    RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
     NO_ADOPTED_THEORY = "no_adopted_theory"
     CANDIDATE_INELIGIBLE = "candidate_ineligible"
     EXTERNAL_CANDIDATE_ADOPTION_BLOCKED = "external_candidate_adoption_blocked"

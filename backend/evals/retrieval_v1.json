@@ -1,0 +1,92 @@
+{
+  "suite_version": "retrieval-eval-v1",
+  "frozen_at": "2026-08-24T01:40:00+08:00",
+  "knowledge_release_id": "knowledge-final-d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "release_content_hash": "sha256:d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "chunk_schema_version": "retrieval-corpus-v1",
+  "embedding_model": "Pro/BAAI/bge-m3",
+  "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+  "parameters": {
+    "top_k": 3,
+    "rrf_rank_constant": 60,
+    "recall_limit": 30,
+    "min_lexical_score": 0.12,
+    "min_rerank_score": 0.06,
+    "max_provider_calls_per_query": 2,
+    "max_rerank_documents": 30,
+    "embedding_batch_size": 32
+  },
+  "acceptance": {
+    "min_final_top1_accuracy": 1.0,
+    "min_negative_rejection_rate": 1.0,
+    "max_p95_latency_ms": 8000
+  },
+  "queries": [
+    {
+      "case_id": "calibration-historical-materialism",
+      "split": "calibration",
+      "query": "生产方式变化如何推动社会制度与观念变迁？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "calibration-class-struggle",
+      "split": "calibration",
+      "query": "不同阶级在住房、教育与劳动资源分配中的冲突如何解释？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "calibration-alienated-labour",
+      "split": "calibration",
+      "query": "平台劳动中的加班、绩效与青年疏离感如何形成？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "calibration-generic-request",
+      "split": "calibration",
+      "query": "我要写本科生毕业论文，帮我想一个选题，我们快速研究。",
+      "expected_theory_id": null
+    },
+    {
+      "case_id": "calibration-out-of-corpus",
+      "split": "calibration",
+      "query": "符号互动论如何解释直播间身份表演？",
+      "expected_theory_id": null
+    },
+    {
+      "case_id": "test-historical-materialism",
+      "split": "test",
+      "query": "技术和生产关系的变迁为何会带来法律与意识形态的调整？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "test-class-struggle",
+      "split": "test",
+      "query": "资本与劳动围绕剩余分配和控制权的对立如何塑造制度变化？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "test-alienated-labour",
+      "split": "test",
+      "query": "外卖骑手被算法规定节奏、无法决定劳动过程，如何理解这种无力感？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "test-symbolic-interaction",
+      "split": "test",
+      "query": "短视频评论区怎样在互动中建构身份标签？",
+      "expected_theory_id": null
+    },
+    {
+      "case_id": "test-social-capital",
+      "split": "test",
+      "query": "邻里信任与互惠网络为什么会影响社区互助？",
+      "expected_theory_id": null
+    },
+    {
+      "case_id": "test-generic-request",
+      "split": "test",
+      "query": "帮我快速想一个本科论文选题。",
+      "expected_theory_id": null
+    }
+  ]
+}

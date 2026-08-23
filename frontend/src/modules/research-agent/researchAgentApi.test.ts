@@ -6,6 +6,7 @@ vi.mock('../../api/client', () => ({ apiClient: { buildUrl } }))
 
 import {
   confirmResearchStartProposal,
+  deleteAgentConversation,
   getAgentConversation,
   getResearchStartJourney,
   listAgentConversations,
@@ -32,6 +33,21 @@ afterEach(() => {
 })
 
 describe('research agent SSE adapter', () => {
+  it('sends the required idempotency key when deleting a conversation', async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetch)
+
+    await deleteAgentConversation('conversation-1')
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.qunxue.test/api/agent/conversations/conversation-1',
+      expect.objectContaining({
+        method: 'DELETE',
+        headers: { 'Idempotency-Key': 'delete-agent-conversation:conversation-1' },
+      }),
+    )
+  })
+
   it('preserves the Agent runtime mode reported by the independent runner', () => {
     expect(parseAgentEventStream(
       'event: turn_started\ndata: {"conversation_id":"conversation-1","run_id":"run-1","replayed":false,"runtime_mode":"base"}\n',
@@ -120,6 +136,41 @@ describe('research agent SSE adapter', () => {
     expect(parseAgentEventStream(
       `event: canvas_patch\ndata: ${JSON.stringify(patch)}\n`,
     )).toEqual([{ type: 'canvas_patch', patch }])
+  })
+
+  it('rejects canvas patches whose nested nodes or relations violate the contract', () => {
+    const invalidPatches = [
+      {
+        schema_version: 1,
+        nodes: [{
+          id: 'tool-step',
+          kind: 'tool',
+          title: '检索知识库',
+          status: 'running',
+          citation_ids: [],
+        }],
+        relations: [],
+        remove_node_ids: [],
+        remove_relation_ids: [],
+      },
+      {
+        schema_version: 1,
+        nodes: [],
+        relations: [{
+          id: 'relation-invalid',
+          source: 'claim-a',
+          relation: 'supports',
+        }],
+        remove_node_ids: [],
+        remove_relation_ids: [],
+      },
+    ]
+
+    for (const patch of invalidPatches) {
+      expect(parseAgentEventStream(
+        `event: canvas_patch\ndata: ${JSON.stringify(patch)}\n`,
+      )).toEqual([])
+    }
   })
 
   it('parses a failed tool call without turning it into a completed step', () => {

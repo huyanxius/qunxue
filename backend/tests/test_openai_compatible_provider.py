@@ -529,7 +529,11 @@ def test_environment_configuration_switches_bootstrap_between_base_and_sft(
         )
         base_database = Database(base_settings.database_url)
         Base.metadata.create_all(base_database.engine)
-        base_app = create_app(settings=base_settings, database=base_database)
+        base_app = create_app(
+            settings=base_settings,
+            database=base_database,
+            knowledge_retriever=object(),
+        )
 
         base_result = base_app.state.model_gateway.build(
             task_id=UUID(int=20),
@@ -548,7 +552,11 @@ def test_environment_configuration_switches_bootstrap_between_base_and_sft(
         )
         sft_database = Database(sft_settings.database_url)
         Base.metadata.create_all(sft_database.engine)
-        sft_app = create_app(settings=sft_settings, database=sft_database)
+        sft_app = create_app(
+            settings=sft_settings,
+            database=sft_database,
+            knowledge_retriever=object(),
+        )
 
         sft_result = sft_app.state.model_gateway.build(
             task_id=UUID(int=21),

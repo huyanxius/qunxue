@@ -88,12 +88,7 @@ export type AgentConversationResponse = {
      * Created At
      */
     created_at: string;
-    /**
-     * Research Map
-     */
-    research_map?: {
-        [key: string]: unknown;
-    };
+    research_map: AgentResearchMapResponse;
     /**
      * Title
      */
@@ -195,6 +190,106 @@ export type AgentResearchJourneyResponse = {
 };
 
 /**
+ * AgentResearchMapNodeResponse
+ */
+export type AgentResearchMapNodeResponse = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'question' | 'theory' | 'claim' | 'evidence' | 'gap' | 'synthesis';
+    /**
+     * Status
+     */
+    status: 'developing' | 'grounded' | 'open' | 'verified' | 'challenged' | 'complete';
+    /**
+     * Summary
+     */
+    summary?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * AgentResearchMapPatchResponse
+ */
+export type AgentResearchMapPatchResponse = {
+    /**
+     * Nodes
+     */
+    nodes: Array<AgentResearchMapNodeResponse>;
+    /**
+     * Relations
+     */
+    relations: Array<AgentResearchMapRelationResponse>;
+    /**
+     * Remove Node Ids
+     */
+    remove_node_ids: Array<string>;
+    /**
+     * Remove Relation Ids
+     */
+    remove_relation_ids: Array<string>;
+    /**
+     * Schema Version
+     */
+    schema_version: 1;
+};
+
+/**
+ * AgentResearchMapRelationResponse
+ */
+export type AgentResearchMapRelationResponse = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label?: string | null;
+    /**
+     * Relation
+     */
+    relation: 'explains' | 'supports' | 'challenges' | 'derives' | 'refines';
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Target
+     */
+    target: string;
+};
+
+/**
+ * AgentResearchMapResponse
+ */
+export type AgentResearchMapResponse = {
+    /**
+     * Nodes
+     */
+    nodes: Array<AgentResearchMapNodeResponse>;
+    /**
+     * Relations
+     */
+    relations: Array<AgentResearchMapRelationResponse>;
+    /**
+     * Schema Version
+     */
+    schema_version: 1;
+};
+
+/**
  * AgentToolTraceResponse
  */
 export type AgentToolTraceResponse = {
@@ -276,9 +371,7 @@ export type AgentTurnResponse = {
     /**
      * Canvas Patches
      */
-    canvas_patches?: Array<{
-        [key: string]: unknown;
-    }>;
+    canvas_patches?: Array<AgentResearchMapPatchResponse>;
     /**
      * Knowledge Release Id
      */
@@ -983,7 +1076,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
@@ -1951,6 +2044,7 @@ export type MatchRunResponse = {
      * Phenomenon Version
      */
     phenomenon_version: number;
+    retrieval: RetrievalProvenanceResponse;
     status: MatchRunStatus;
     /**
      * Task Id
@@ -3412,6 +3506,36 @@ export type RestoreResearchDocumentRequest = {
      * Source Version
      */
     source_version: number;
+};
+
+/**
+ * RetrievalProvenanceResponse
+ */
+export type RetrievalProvenanceResponse = {
+    /**
+     * Degraded Reason
+     */
+    degraded_reason: string | null;
+    /**
+     * Embedding Model
+     */
+    embedding_model: string | null;
+    /**
+     * Mode
+     */
+    mode: string;
+    /**
+     * Reranker Model
+     */
+    reranker_model: string | null;
+    /**
+     * Retrieval Index Id
+     */
+    retrieval_index_id: string | null;
+    /**
+     * Retrieved Chunk Ids
+     */
+    retrieved_chunk_ids: Array<string>;
 };
 
 /**

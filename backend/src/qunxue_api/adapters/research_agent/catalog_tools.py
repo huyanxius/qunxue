@@ -1,6 +1,8 @@
 import re
 from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Protocol
 
+from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
     apply_research_map_patch,
@@ -9,29 +11,62 @@ from qunxue_api.modules.agent_conversation import (
 )
 from qunxue_api.modules.knowledge_catalog import KnowledgeCatalog, KnowledgeUsePurpose
 
-from .retrieval import RetrievalCandidate, fuzzy_match_score, lexical_relevance_score
+from .retrieval import fuzzy_match_score
 
 KnowledgeEvidence = AgentEvidence
+
+if TYPE_CHECKING:
+    from qunxue_api.adapters.retrieval.hybrid import HybridRetrievalResult
+
+
+class KnowledgeRetriever(Protocol):
+    def search(
+        self,
+        *,
+        query: str,
+        knowledge_release_id: str,
+        release_content_hash: str,
+        document_kind: str | None,
+        limit: int,
+    ) -> "HybridRetrievalResult": ...
 
 
 class KnowledgeToolRegistry:
     """The only capabilities exposed to the natural-language Agent in phase one."""
 
-    def __init__(self, catalog: KnowledgeCatalog) -> None:
+    def __init__(
+        self,
+        catalog: KnowledgeCatalog,
+        *,
+        retriever: KnowledgeRetriever | None = None,
+    ) -> None:
         self._catalog = catalog
-        # Agent runs pin the release used by M4/M5 provenance. MATCH selects a
-        # reviewed final release when one exists, while retaining the honest
-        # preview fallback when the catalog has not published one yet.
+        self._retriever = retriever
+        # Agent runs share M4/M5's audited final release identity. If that
+        # release is absent, the knowledge tool is unavailable rather than
+        # silently switching to preview content.
         try:
             self.release = catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
-        except LookupError:
-            # The conversational Agent remains usable on a preview catalog;
-            # formal M4 matching still enforces a pre-reviewed final release.
-            self.release = catalog.current_release(purpose=KnowledgeUsePurpose.RAG)
+        except LookupError as error:
+            raise RetrievalPipelineUnavailable(
+                "final MATCH knowledge release is unavailable"
+            ) from error
         self.evidence: dict[str, KnowledgeEvidence] = {}
+        self.selected_evidence_ids: tuple[str, ...] = ()
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False
         self.research_map: dict[str, object] = empty_research_map()
+
+    def select_evidence(self, citation_ids: Sequence[str]) -> tuple[str, ...]:
+        """Bind this turn's source cards to a validated structured evidence set."""
+
+        selected = tuple(dict.fromkeys(str(value) for value in citation_ids))
+        if len(selected) > 8:
+            raise ValueError("an Agent answer can select at most eight evidence items")
+        if any(citation_id not in self.evidence for citation_id in selected):
+            raise ValueError("selected evidence is outside this turn's retrieved closed set")
+        self.selected_evidence_ids = selected
+        return selected
 
     def enable_research_map(self, current: Mapping[str, object] | None = None) -> None:
         """Opt this turn into the research workspace's structured-map tool set."""
@@ -74,175 +109,80 @@ class KnowledgeToolRegistry:
         return patch
 
     def search_knowledge(self, query: str, *, limit: int = 5) -> list[dict[str, object]]:
-        pages = []
-        for candidate in _query_candidates(query):
-            page = self._catalog.browse(
-                release_id=self.release.knowledge_release_id,
-                query=candidate,
-                category=None,
-                category_id=None,
-                dimension_id=None,
-                cursor=None,
-                limit=max(1, min(limit, 8)),
-            )
-            pages.append(page)
-            if any(item.eligibility.rag_eligible for item in page.entries):
-                break
-        results = self._results_from_pages(pages, query=query, limit=limit)
-        if results:
-            return results
-
-        preview_results = self._results_from_pages(
-            pages,
+        if self._retriever is None:
+            raise RetrievalPipelineUnavailable("release-bound hybrid retriever is not configured")
+        result = self._retriever.search(
             query=query,
-            limit=limit,
-            allow_preview=True,
+            knowledge_release_id=self.release.knowledge_release_id,
+            release_content_hash=self.release.content_hash,
+            document_kind=None,
+            limit=max(1, min(limit, 8)),
         )
-        if preview_results:
-            return preview_results
-
-        fuzzy_entries = self._fuzzy_candidates(query)
-        results = self._results_from_items(
-            fuzzy_entries,
-            limit=limit,
-            retrieval_source="fuzzy",
-        )
-        if results:
-            return results
-        preview_entries = self._fuzzy_candidates(query, include_preview=True)
-        return self._results_from_items(
-            preview_entries,
-            limit=limit,
-            retrieval_source="fuzzy",
-            allow_preview=True,
-        )
-
-    def _results_from_pages(
-        self,
-        pages,
-        *,
-        query: str,
-        limit: int,
-        allow_preview: bool = False,
-    ) -> list[dict[str, object]]:
-        items = _rank_page_items(query, [item for page in pages for item in page.entries])
-        return self._results_from_items(
-            items,
-            limit=limit,
-            retrieval_source="lexical",
-            allow_preview=allow_preview,
-        )
-
-    def _results_from_items(
-        self,
-        items,
-        *,
-        limit: int,
-        retrieval_source: str,
-        allow_preview: bool = False,
-    ) -> list[dict[str, object]]:
-        results: list[dict[str, object]] = []
-        seen_ids: set[str] = set()
-        for value in items:
-            if isinstance(value, tuple):
-                candidate, item = value
-            else:
-                candidate, item = None, value
-            if item.knowledge_id in seen_ids:
+        values: list[dict[str, object]] = []
+        seen_knowledge_ids: set[str] = set()
+        for hit in result.hits:
+            chunk = hit.chunk
+            if chunk.knowledge_id is None or chunk.knowledge_id in seen_knowledge_ids:
                 continue
-            seen_ids.add(item.knowledge_id)
-            if len(results) >= limit:
-                break
-            if not item.eligibility.rag_eligible and not allow_preview:
-                continue
+            seen_knowledge_ids.add(chunk.knowledge_id)
             try:
                 detail = self._catalog.get_entry(
-                    knowledge_id=item.knowledge_id,
+                    knowledge_id=chunk.knowledge_id,
                     release_id=self.release.knowledge_release_id,
                 )
-                excerpt = _excerpt(detail.content)
-                self._allowed_source_ids.update(source.source_id for source in detail.sources)
-            except LookupError:
-                detail = None
-                excerpt = item.title
-            citation_id = f"knowledge:{item.knowledge_id}"
-            evidence_status = "verified" if item.eligibility.rag_eligible else "preview_unverified"
+            except LookupError as error:
+                raise RetrievalPipelineUnavailable(
+                    "retrieval evidence cannot be restored from the pinned release"
+                ) from error
+            if detail.summary.content_version != chunk.content_version:
+                raise RetrievalPipelineUnavailable(
+                    "retrieval evidence content version does not match the pinned release"
+                )
+            sources_by_id = {source.source_id: source for source in detail.sources}
+            if any(source_id not in sources_by_id for source_id in chunk.source_ids):
+                raise RetrievalPipelineUnavailable(
+                    "retrieval evidence source cannot be restored from the pinned release"
+                )
+            source_citation_ids = []
+            for source_id in chunk.source_ids:
+                source = sources_by_id[source_id]
+                source_citation_id = f"source:{source.source_id}"
+                source_citation_ids.append(source_citation_id)
+                self._allowed_source_ids.add(source.source_id)
+                self.evidence[source_citation_id] = KnowledgeEvidence(
+                    citation_id=source_citation_id,
+                    label=source.title,
+                    kind="source",
+                    excerpt=source.use_boundary,
+                    source_id=source.source_id,
+                )
+            citation_id = f"retrieval:{chunk.chunk_id}"
             self.evidence[citation_id] = KnowledgeEvidence(
                 citation_id=citation_id,
-                label=item.title,
-                kind="entry" if item.eligibility.rag_eligible else "preview",
-                excerpt=excerpt,
-                knowledge_id=item.knowledge_id,
+                label=chunk.title,
+                kind="theory" if chunk.document_kind == "theory_profile" else "entry",
+                excerpt=chunk.text,
+                knowledge_id=chunk.knowledge_id,
             )
-            result: dict[str, object] = {
-                "citation_id": citation_id,
-                "knowledge_id": item.knowledge_id,
-                "title": item.title,
-                "category": item.category,
-                "dimension": item.dimension,
-                "excerpt": excerpt,
-                "retrieval_source": retrieval_source,
-                "evidence_status": evidence_status,
-            }
-            if isinstance(candidate, RetrievalCandidate):
-                result["retrieval_score"] = round(candidate.score, 4)
-            if detail is not None and retrieval_source == "fuzzy":
-                result["matched_aliases"] = list(detail.aliases)
-            results.append(result)
-        return results
-
-    def _fuzzy_candidates(
-        self,
-        query: str,
-        *,
-        include_preview: bool = False,
-    ) -> list[tuple[RetrievalCandidate, object]]:
-        entries = []
-        cursor = None
-        while True:
-            page = self._catalog.browse(
-                release_id=self.release.knowledge_release_id,
-                query=None,
-                category=None,
-                category_id=None,
-                dimension_id=None,
-                cursor=cursor,
-                limit=200,
+            values.append(
+                {
+                    "citation_id": citation_id,
+                    "knowledge_id": chunk.knowledge_id,
+                    "theory_id": chunk.theory_id,
+                    "chunk_id": chunk.chunk_id,
+                    "title": chunk.title,
+                    "excerpt": chunk.text,
+                    "retrieval_index_id": result.retrieval_index_id,
+                    "retrieval_mode": result.mode,
+                    "retrieval_sources": list(hit.retrieval_sources),
+                    "rerank_score": hit.rerank_score,
+                    "embedding_model": result.embedding_model,
+                    "reranker_model": result.reranker_model,
+                    "source_citation_ids": source_citation_ids,
+                    "evidence_status": "verified",
+                }
             )
-            entries.extend(page.entries)
-            cursor = getattr(page, "next_cursor", None)
-            if not cursor:
-                break
-        ranked: list[tuple[RetrievalCandidate, object]] = []
-        for item in entries:
-            if not item.eligibility.rag_eligible and not include_preview:
-                continue
-            try:
-                detail = self._catalog.get_entry(
-                    knowledge_id=item.knowledge_id,
-                    release_id=self.release.knowledge_release_id,
-                )
-            except LookupError:
-                continue
-            score = fuzzy_match_score(
-                query,
-                title=item.title,
-                aliases=tuple(detail.aliases),
-                text=detail.content,
-            )
-            if score < 0.18:
-                continue
-            ranked.append(
-                (
-                    RetrievalCandidate(
-                        citation_id=f"knowledge:{item.knowledge_id}",
-                        score=score,
-                        source="fuzzy",
-                    ),
-                    item,
-                )
-            )
-        return sorted(ranked, key=lambda pair: (-pair[0].score, pair[0].citation_id))
+        return values
 
     def read_knowledge_entry(self, knowledge_id: str) -> dict[str, object]:
         try:
@@ -394,53 +334,3 @@ def _excerpt(content: str, *, length: int = 480) -> str:
     plain = re.sub(r"\[[^\]]*\]\([^)]*\)", "", plain)
     normalized = " ".join(plain.split())
     return normalized if len(normalized) <= length else f"{normalized[:length].rstrip()}…"
-
-
-def _query_candidates(query: str) -> list[str]:
-    normalized = query.strip()
-    candidates = [normalized] if normalized else []
-    for phrase in re.findall(r"[\u4e00-\u9fff]{2,}", normalized):
-        if phrase not in candidates:
-            candidates.append(phrase)
-        for index in range(len(phrase) - 3):
-            fragment = phrase[index : index + 4]
-            if fragment not in candidates:
-                candidates.append(fragment)
-    return candidates
-
-
-def _rank_page_items(query: str, items) -> list[tuple[RetrievalCandidate, object]]:
-    """Rank FTS pages before the result limit is applied.
-
-    A catalog query may return several pages for progressively shorter query
-    fragments.  Ranking the union here prevents an early, broad fragment from
-    hiding a later exact concept.  The tuple shape is intentionally the same
-    as future dense/reranked candidates, so this remains a replaceable first
-    stage rather than a second retrieval API.
-    """
-
-    best: dict[str, tuple[RetrievalCandidate, object]] = {}
-    for item in items:
-        score = lexical_relevance_score(
-            query,
-            title=item.title,
-            text=" ".join(
-                value
-                for value in (getattr(item, "category", ""), getattr(item, "dimension", ""))
-                if value
-            ),
-        )
-        if score < 0.18:
-            continue
-        candidate = RetrievalCandidate(
-            citation_id=f"knowledge:{item.knowledge_id}",
-            score=score,
-            source="lexical",
-        )
-        current = best.get(item.knowledge_id)
-        if current is None or candidate.score > current[0].score:
-            best[item.knowledge_id] = (candidate, item)
-    return sorted(
-        best.values(),
-        key=lambda pair: (-pair[0].score, pair[0].citation_id),
-    )

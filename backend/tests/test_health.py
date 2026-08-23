@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -26,6 +28,7 @@ def test_health_reports_runtime_contract(client: TestClient) -> None:
 def test_health_reports_each_configured_runtime_mode(
     runtime_mode: str,
     client: TestClient,
+    tmp_path: Path,
 ) -> None:
     model_settings = (
         {}
@@ -39,6 +42,7 @@ def test_health_reports_each_configured_runtime_mode(
         settings=Settings(
             database_url=client.app.state.settings.database_url,
             runtime_mode=runtime_mode,
+            **(_retrieval_settings(tmp_path) if runtime_mode != "mock" else {}),
             **model_settings,
         ),
         database=client.app.state.database,
@@ -56,14 +60,30 @@ def test_health_reports_each_configured_runtime_mode(
 
 
 @pytest.mark.parametrize("runtime_mode", ["base", "sft"])
-def test_non_mock_runtime_requires_an_endpoint_and_model(runtime_mode: str) -> None:
+def test_non_mock_runtime_requires_an_endpoint_and_model(
+    runtime_mode: str,
+    tmp_path: Path,
+) -> None:
     with pytest.raises(ValueError, match="model_base_url.*model_name"):
         create_app(
             settings=Settings(
                 database_url="sqlite+pysqlite:///:memory:",
                 runtime_mode=runtime_mode,
+                **_retrieval_settings(tmp_path),
             )
         )
+
+
+def _retrieval_settings(tmp_path: Path) -> dict[str, object]:
+    return {
+        "retrieval_index_path": tmp_path / "retrieval.db",
+        "embedding_base_url": "http://127.0.0.1:9/v1",
+        "embedding_api_key": "embedding-test-key",
+        "embedding_model": "Pro/BAAI/bge-m3",
+        "reranker_base_url": "http://127.0.0.1:9/v1",
+        "reranker_api_key": "reranker-test-key",
+        "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+    }
 
 
 def test_model_credentials_are_secret_values_in_runtime_settings() -> None:

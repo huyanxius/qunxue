@@ -3,6 +3,11 @@ from uuid import UUID
 
 import pytest
 
+from qunxue_api.adapters.retrieval import RetrievalChunk, RetrievalPipelineUnavailable
+from qunxue_api.adapters.retrieval.hybrid import (
+    HybridRetrievalHit,
+    HybridRetrievalResult,
+)
 from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeEntryDetail,
@@ -205,45 +210,122 @@ def _entry(index: int, *, eligible: bool = True) -> KnowledgeEntryDetail:
     )
 
 
-def test_recall_pages_in_catalog_order_and_stops_after_five_eligible_profiles() -> None:
+def _retriever(*indices: int):
+    class Retriever:
+        def search(self, **kwargs):
+            del kwargs
+            return HybridRetrievalResult(
+                retrieval_index_id="retrieval-index:reviewed-v1",
+                mode="hybrid_reranked",
+                embedding_model="Pro/BAAI/bge-m3",
+                reranker_model="Pro/BAAI/bge-reranker-v2-m3",
+                degraded_reason=None,
+                hits=tuple(
+                    HybridRetrievalHit(
+                        chunk=RetrievalChunk(
+                            chunk_id=f"theory-profile:theory-{index}:v1",
+                            document_kind="theory_profile",
+                            knowledge_id=f"D2:P{index:03d}",
+                            theory_id=f"theory-{index}",
+                            content_version=1,
+                            content_hash=f"sha256:theory-{index}",
+                            title=f"理论 {index}",
+                            text=f"理论 {index} 的检索文本",
+                            source_ids=(f"source-{index}",),
+                        ),
+                        fused_score=0.03,
+                        retrieval_sources=("lexical", "semantic"),
+                        rerank_score=0.9,
+                    )
+                    for index in indices
+                ),
+            )
+
+    return Retriever()
+
+
+def test_recall_requires_the_release_bound_hybrid_retriever() -> None:
     catalog = _CatalogFixture(
         entries=(_entry(0, eligible=False), *(_entry(index) for index in range(1, 7)))
     )
     source = CatalogTheoryEvidenceSource(catalog)
 
-    first = source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
-    second = source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
+    with pytest.raises(RetrievalPipelineUnavailable, match="hybrid retriever is required"):
+        source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
 
-    assert [profile.theory_id for profile in first.theory_profiles] == [
-        "theory-1",
+
+def test_recall_uses_hybrid_ranking_and_records_index_provenance() -> None:
+    catalog = _CatalogFixture(entries=tuple(_entry(index) for index in range(1, 7)))
+    calls: list[str] = []
+
+    class Retriever:
+        def search(self, **kwargs):
+            calls.append(kwargs["query"])
+            assert kwargs["knowledge_release_id"] == RELEASE.knowledge_release_id
+            assert kwargs["release_content_hash"] == RELEASE.content_hash
+            assert kwargs["document_kind"] == "theory_profile"
+            return HybridRetrievalResult(
+                retrieval_index_id="retrieval-index:reviewed-v1",
+                mode="hybrid_reranked",
+                embedding_model="Pro/BAAI/bge-m3",
+                reranker_model="Pro/BAAI/bge-reranker-v2-m3",
+                degraded_reason=None,
+                hits=tuple(
+                    HybridRetrievalHit(
+                        chunk=RetrievalChunk(
+                            chunk_id=f"theory-profile:theory-{index}:v1",
+                            document_kind="theory_profile",
+                            knowledge_id=f"D2:P{index:03d}",
+                            theory_id=f"theory-{index}",
+                            content_version=1,
+                            content_hash=f"sha256:theory-{index}",
+                            title=f"理论 {index}",
+                            text=f"理论 {index} 的检索文本",
+                            source_ids=(f"source-{index}",),
+                        ),
+                        fused_score=0.03,
+                        retrieval_sources=("lexical", "semantic"),
+                        rerank_score=score,
+                    )
+                    for index, score in ((6, 0.92), (2, 0.81))
+                ),
+            )
+
+    bundle = CatalogTheoryEvidenceSource(catalog, retriever=Retriever()).retrieve(
+        phenomenon=PHENOMENON,
+        release=RELEASE,
+    )
+
+    assert calls and PHENOMENON.phenomenon in calls[0]
+    assert [profile.theory_id for profile in bundle.theory_profiles] == [
+        "theory-6",
         "theory-2",
-        "theory-3",
-        "theory-4",
-        "theory-5",
     ]
-    assert [item.source.source_id for item in first.evidence_items if item.source] == [
-        "source-1",
-        "source-2",
-        "source-3",
-        "source-4",
-        "source-5",
-        "material:interview-1",
-        "material:field-note-2",
-    ]
-    phenomenon_evidence = first.evidence_items[-2:]
-    assert [item.evidence_ref_id for item in phenomenon_evidence] == [
-        "phenomenon-evidence:interview-1",
-        "phenomenon-evidence:field-note-2",
-    ]
-    assert phenomenon_evidence[0].verification_status is SourceVerificationStatus.VERIFIED
-    assert phenomenon_evidence[1].verification_status is SourceVerificationStatus.PENDING
-    assert phenomenon_evidence[0].excerpt == "多名居民提到新成员较少参与持续互助。"
-    assert first == second
+    assert bundle.retrieval.retrieval_index_id == "retrieval-index:reviewed-v1"
+    assert bundle.retrieval.mode == "hybrid_reranked"
+    assert bundle.retrieval.retrieved_chunk_ids == (
+        "theory-profile:theory-6:v1",
+        "theory-profile:theory-2:v1",
+    )
+
+
+def test_recall_preserves_an_auditable_empty_result_for_no_reliable_candidate() -> None:
+    catalog = _CatalogFixture(entries=tuple(_entry(index) for index in range(1, 4)))
+
+    bundle = CatalogTheoryEvidenceSource(catalog, retriever=_retriever()).retrieve(
+        phenomenon=PHENOMENON,
+        release=RELEASE,
+    )
+
+    assert bundle.theory_profiles == ()
+    assert bundle.retrieval.retrieval_index_id == "retrieval-index:reviewed-v1"
+    assert bundle.retrieval.mode == "hybrid_reranked"
+    assert bundle.retrieval.retrieved_chunk_ids == ()
 
 
 def test_recall_rejects_non_final_and_keeps_a_pinned_final_release_reproducible() -> None:
     catalog = _CatalogFixture(entries=tuple(_entry(index) for index in range(1, 4)))
-    source = CatalogTheoryEvidenceSource(catalog)
+    source = CatalogTheoryEvidenceSource(catalog, retriever=_retriever(1, 2, 3))
 
     with pytest.raises(ValueError, match="final MATCH knowledge release"):
         source.retrieve(
@@ -313,7 +395,7 @@ def test_recall_rejects_untraceable_evidence_sources(
     )
 
     with pytest.raises(ValueError, match="verified source with a locator"):
-        CatalogTheoryEvidenceSource(catalog).retrieve(
+        CatalogTheoryEvidenceSource(catalog, retriever=_retriever(1)).retrieve(
             phenomenon=PHENOMENON,
             release=RELEASE,
         )

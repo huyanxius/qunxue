@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import Protocol
 
 
+class RetrievalPipelineUnavailable(RuntimeError):
+    """A required retrieval dependency failed; callers must not fabricate evidence."""
+
+
 class KnowledgeReleaseLevel(StrEnum):
     WORKING = "working"
     PREVIEW = "preview"
@@ -264,6 +268,14 @@ class KnowledgeCatalog(Protocol):
         knowledge_id: str,
         release_id: str,
     ) -> KnowledgeEntryDetail: ...
+
+    def list_rag_entries(
+        self,
+        *,
+        release_id: str,
+    ) -> tuple[KnowledgeEntryDetail, ...]:
+        """Return every RAG-eligible entry from exactly one release."""
+        ...
 
     def get_directory(self, *, release_id: str) -> KnowledgeDirectorySummary: ...
 

@@ -10,6 +10,10 @@ from qunxue_api.adapters.research_agent.pydantic_runner import (
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
 )
+from qunxue_api.adapters.research_agent.reranker import (
+    RerankerProviderError,
+    SiliconFlowRerankerProvider,
+)
 from qunxue_api.modules.agent_conversation import AgentRunResult, SubjectAgentRunner
 
 __all__ = [
@@ -20,5 +24,7 @@ __all__ = [
     "OpenAICompatibleEmbeddingProvider",
     "PydanticAIKnowledgeRunner",
     "ResearchDocumentToolRegistry",
+    "RerankerProviderError",
+    "SiliconFlowRerankerProvider",
     "SubjectAgentRunner",
 ]

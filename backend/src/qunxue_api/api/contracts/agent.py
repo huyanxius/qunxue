@@ -36,13 +36,44 @@ class AgentToolTraceResponse(BaseModel):
     error: str | None = None
 
 
+class AgentResearchMapNodeResponse(BaseModel):
+    id: str
+    kind: Literal["question", "theory", "claim", "evidence", "gap", "synthesis"]
+    title: str
+    summary: str | None = None
+    status: Literal["developing", "grounded", "open", "verified", "challenged", "complete"]
+    citation_ids: list[str]
+
+
+class AgentResearchMapRelationResponse(BaseModel):
+    id: str
+    source: str
+    target: str
+    relation: Literal["explains", "supports", "challenges", "derives", "refines"]
+    label: str | None = None
+
+
+class AgentResearchMapPatchResponse(BaseModel):
+    schema_version: Literal[1]
+    nodes: list[AgentResearchMapNodeResponse]
+    relations: list[AgentResearchMapRelationResponse]
+    remove_node_ids: list[str]
+    remove_relation_ids: list[str]
+
+
+class AgentResearchMapResponse(BaseModel):
+    schema_version: Literal[1]
+    nodes: list[AgentResearchMapNodeResponse]
+    relations: list[AgentResearchMapRelationResponse]
+
+
 class AgentTurnResponse(BaseModel):
     turn_id: UUID
     user: AgentMessageResponse
     assistant: AgentMessageResponse
     tool_traces: list[AgentToolTraceResponse] = Field(default_factory=list)
     knowledge_release_id: str | None = None
-    canvas_patches: list[dict[str, object]] = Field(default_factory=list)
+    canvas_patches: list[AgentResearchMapPatchResponse] = Field(default_factory=list)
 
 
 class AgentConversationSummaryResponse(BaseModel):
@@ -55,7 +86,7 @@ class AgentConversationSummaryResponse(BaseModel):
 class AgentConversationResponse(AgentConversationSummaryResponse):
     created_at: datetime
     turns: list[AgentTurnResponse]
-    research_map: dict[str, object] = Field(default_factory=dict)
+    research_map: AgentResearchMapResponse
 
 
 class AgentConversationListResponse(BaseModel):

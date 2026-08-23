@@ -115,8 +115,46 @@ function isResearchMapPatch(value: Record<string, unknown>): value is AgentResea
     && Array.isArray(value.relations)
     && Array.isArray(value.remove_node_ids)
     && Array.isArray(value.remove_relation_ids)
-    && value.nodes.every((node) => node && typeof node === 'object')
-    && value.relations.every((relation) => relation && typeof relation === 'object')
+    && value.nodes.every(isResearchMapNode)
+    && value.relations.every(isResearchMapRelation)
+    && value.remove_node_ids.every((id) => typeof id === 'string' && id.length > 0)
+    && value.remove_relation_ids.every((id) => typeof id === 'string' && id.length > 0)
+}
+
+const researchNodeKinds = new Set(['question', 'theory', 'claim', 'evidence', 'gap', 'synthesis'])
+const researchNodeStatuses = new Set(['developing', 'grounded', 'open', 'verified', 'challenged', 'complete'])
+const researchRelationKinds = new Set(['explains', 'supports', 'challenges', 'derives', 'refines'])
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isResearchMapNode(value: unknown): boolean {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && value.id.length > 0
+    && typeof value.kind === 'string'
+    && researchNodeKinds.has(value.kind)
+    && typeof value.title === 'string'
+    && value.title.length > 0
+    && (value.summary === undefined || value.summary === null || typeof value.summary === 'string')
+    && typeof value.status === 'string'
+    && researchNodeStatuses.has(value.status)
+    && Array.isArray(value.citation_ids)
+    && value.citation_ids.every((id) => typeof id === 'string' && id.length > 0)
+}
+
+function isResearchMapRelation(value: unknown): boolean {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && value.id.length > 0
+    && typeof value.source === 'string'
+    && value.source.length > 0
+    && typeof value.target === 'string'
+    && value.target.length > 0
+    && typeof value.relation === 'string'
+    && researchRelationKinds.has(value.relation)
+    && (value.label === undefined || value.label === null || typeof value.label === 'string')
 }
 
 export async function listAgentConversations(signal?: AbortSignal): Promise<AgentConversationSummary[]> {
@@ -167,6 +205,7 @@ export async function deleteAgentConversation(conversationId: string): Promise<v
   }), {
     method: 'DELETE',
     credentials: 'include',
+    headers: { 'Idempotency-Key': `delete-agent-conversation:${conversationId}` },
   })
   if (!response.ok) throw new Error(response.status === 404 ? '这段对话不存在或无权访问。' : '对话删除失败')
 }

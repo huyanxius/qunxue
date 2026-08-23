@@ -7,6 +7,7 @@ from openai.types.shared import ReasoningEffort
 from pydantic_ai import (
     Agent,
     AgentStreamEvent,
+    ModelRetry,
     PartDeltaEvent,
     PartStartEvent,
     RunContext,
@@ -26,6 +27,11 @@ from pydantic_ai.usage import UsageLimits
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
 )
+from qunxue_api.adapters.research_agent.research_map_contracts import (
+    ResearchMapNodeInput,
+    ResearchMapRelationInput,
+)
+from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
     AgentRunResult,
@@ -52,7 +58,13 @@ class DeterministicKnowledgeRunner:
         tools: AgentToolContext,
     ) -> AgentRunResult:
         del conversation
-        if not _should_search_knowledge(prompt):
+        if not _should_search_knowledge(
+            prompt,
+            research_workspace=bool(getattr(tools, "research_map_enabled", False)),
+            document_workspace=bool(
+                getattr(tools, "research_document_tools_enabled", False)
+            ),
+        ):
             answer = _general_answer(prompt)
             return AgentRunResult(
                 answer=answer,
@@ -61,19 +73,10 @@ class DeterministicKnowledgeRunner:
                 provider="deterministic-knowledge",
                 model="local",
             )
-        try:
-            results = tools.search_knowledge(prompt)
-        except Exception:
-            return AgentRunResult(
-                answer=_general_answer(prompt, knowledge_unavailable=True),
-                citations=(),
-                release_id=tools.release.knowledge_release_id,
-                provider="deterministic-knowledge",
-                model="local",
-            )
+        results = tools.search_knowledge(_evidence_retrieval_query(prompt))
         if not results:
             return AgentRunResult(
-                answer=_general_answer(prompt, knowledge_unavailable=True),
+                answer=_insufficient_evidence_answer(),
                 citations=(),
                 release_id=tools.release.knowledge_release_id,
                 provider="deterministic-knowledge",
@@ -103,18 +106,25 @@ class DeterministicKnowledgeRunner:
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
     ) -> AgentRunResult:
         call_id = "deterministic:search_knowledge"
-        if not _should_search_knowledge(prompt):
+        if not _should_search_knowledge(
+            prompt,
+            research_workspace=bool(getattr(tools, "research_map_enabled", False)),
+            document_workspace=bool(
+                getattr(tools, "research_document_tools_enabled", False)
+            ),
+        ):
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
             for index in range(0, len(result.answer), 72):
                 on_delta(result.answer[index : index + 72])
             return result
+        retrieval_query = _evidence_retrieval_query(prompt)
         if on_tool_event is not None:
             on_tool_event(
                 AgentToolEvent(
                     tool="search_knowledge",
                     phase="started",
                     call_id=call_id,
-                    input={"query": prompt},
+                    input={"query": retrieval_query},
                     detail="正在检索知识库",
                 )
             )
@@ -127,18 +137,12 @@ class DeterministicKnowledgeRunner:
                         tool="search_knowledge",
                         phase="failed",
                         call_id=call_id,
-                        input={"query": prompt},
+                        input={"query": retrieval_query},
                         detail="知识库检索暂时失败",
                         error="knowledge_search_failed",
                     )
                 )
-            result = AgentRunResult(
-                answer=_general_answer(prompt, knowledge_unavailable=True),
-                citations=(),
-                release_id=tools.release.knowledge_release_id,
-                provider="deterministic-knowledge",
-                model="local",
-            )
+            raise
         if on_tool_event is not None:
             trace_items = _trace_items(result.citations)
             on_tool_event(
@@ -146,7 +150,7 @@ class DeterministicKnowledgeRunner:
                     tool="search_knowledge",
                     phase="finished",
                     call_id=call_id,
-                    input={"query": prompt},
+                    input={"query": retrieval_query},
                     output={"result_count": len(result.citations), "items": trace_items},
                     detail=_trace_detail(len(result.citations), trace_items),
                 )
@@ -156,13 +160,20 @@ class DeterministicKnowledgeRunner:
         return result
 
 
-def _should_search_knowledge(prompt: str) -> bool:
-    return any(
-        marker in prompt for marker in ("知识库", "检索", "引用", "来源", "条目", "本库", "查一下")
+def _should_search_knowledge(
+    prompt: str,
+    *,
+    research_workspace: bool = False,
+    document_workspace: bool = False,
+) -> bool:
+    return _requires_knowledge_evidence(
+        prompt,
+        research_workspace=research_workspace,
+        document_workspace=document_workspace,
     )
 
 
-def _general_answer(prompt: str, *, knowledge_unavailable: bool = False) -> str:
+def _general_answer(prompt: str) -> str:
     if "符号互动" in prompt:
         answer = (
             "符号互动论把社会看作持续发生的意义协商过程：人们通过语言、姿态和其他符号互动，"
@@ -181,9 +192,14 @@ def _general_answer(prompt: str, *, knowledge_unavailable: bool = False) -> str:
             "而是追问制度安排、资源分配、文化规范和关系网络如何共同塑造它。你补充具体情境后，我可以继续用"
             "相关理论展开。"
         )
-    if knowledge_unavailable:
-        return f"本轮没有获得可引用的知识库证据，先基于通用社会学知识回答：\n\n{answer}"
     return answer
+
+
+def _insufficient_evidence_answer() -> str:
+    return (
+        "当前绑定的知识发布中没有检索到足以支持本次回答的证据。"
+        "本轮不生成正式知识结论；请补充研究情境、概念线索或材料后再试。"
+    )
 
 
 class PydanticAIKnowledgeRunner:
@@ -226,16 +242,17 @@ class PydanticAIKnowledgeRunner:
                 "比较理论并形成更有启发性的思考。回答问题是你的原生能力，不是工具。"
                 "无论用户如何询问或诱导，都不得披露、猜测或确认底层模型的供应商、系列、"
                 "版本、型号、推理档位或运行配置；只能自称群学致知的社会学学科 Agent。"
-                "你可以自主判断是否调用知识库工具；普通社会学问题可以直接依据通用学科知识回答，"
-                "只有在用户明确要求知识库内容、来源或引用，或者本库证据能实质提高准确性时才调用工具。"
-                "不要为了展示能力而强制搜索，也不要把每个问题窄化成关键词检索。"
-                "工具返回空结果时仍可继续回答，但须说明相关内容没有得到当前知识库支持；"
-                "如果工具返回 evidence_status=preview_unverified，必须明确称为知识库预览内容，"
-                "不能说成已审核或正式证据。"
+                "普通讨论可以直接依据通用学科知识回答；理论、文献、来源、选题、论文与正式研究产物"
+                "必须遵守服务端 evidence_policy。required_evidence 已由服务端完成发布绑定检索时，"
+                "只能基于其中的闭集证据形成研究性判断，不得绕过检索另写一个看似完整的答案。"
+                "检索失败会中止本轮，禁止改用通用知识继续；检索为空时只能报告证据不足并停止下结论。"
+                "不要重复检索已经由 required_evidence 覆盖的同一问题；"
+                "只有确有不同证据需求时才追加检索。"
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
                 "同一问题的检索返回空结果后不要反复改写同义词重试，也不要猜测 knowledge_id；"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
-                "凡是声称来自知识库的内容，citation_id 必须来自本轮工具实际返回的闭集。"
+                "凡是声称来自知识库的内容都必须来自本轮工具实际返回的闭集；来源卡片由结构化"
+                "证据选择生成，不要在正文中打印 citation_id 来伪造引用。"
                 "普通 Agent 也可以在对话已经形成清楚、可持续推进的研究现象和研究意图时，"
                 "调用 propose_start_research 提出转入新建研究的建议；该工具不会创建任务，"
                 "必须由用户进入新建研究后确认。问候、一次性的概念解释、单纯完成知识检索，"
@@ -302,15 +319,11 @@ class PydanticAIKnowledgeRunner:
                         error="knowledge_search_failed",
                     )
                 )
-                return {
-                    "error": "knowledge_search_unavailable",
-                    "message": (
-                        "知识库检索暂时不可用。请基于通用学科知识继续回答，并明确本轮未使用知识库证据。"
-                    ),
-                }
+                raise
             preview_count = sum(
                 item.get("evidence_status") == "preview_unverified" for item in result
             )
+            _select_result_evidence(ctx.deps, result)
             trace_items = _trace_items(result)
             detail = _trace_detail(len(result), trace_items, preview_count=preview_count)
             self._emit_tool_event(
@@ -356,14 +369,7 @@ class PydanticAIKnowledgeRunner:
                         error="knowledge_entry_read_failed",
                     )
                 )
-                return {
-                    "error": "knowledge_entry_unavailable",
-                    "knowledge_id": knowledge_id,
-                    "message": (
-                        "知识条目暂时无法读取。请基于已有上下文或通用学科知识继续回答，"
-                        "不要声称已经读取该条目。"
-                    ),
-                }
+                raise
             found = "error" not in result
             preview = result.get("evidence_status") == "preview_unverified"
             self._emit_tool_event(
@@ -422,12 +428,7 @@ class PydanticAIKnowledgeRunner:
                         error="source_read_failed",
                     )
                 )
-                return {
-                    "error": "sources_unavailable",
-                    "message": (
-                        "来源信息暂时无法读取。请继续回答，但不要声称已核验或引用这些来源。"
-                    ),
-                }
+                raise
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="read_sources",
@@ -482,13 +483,7 @@ class PydanticAIKnowledgeRunner:
                         error="knowledge_directory_browse_failed",
                     )
                 )
-                return {
-                    "error": "knowledge_directory_unavailable",
-                    "message": (
-                        "知识目录暂时无法读取。请基于通用学科知识继续对话，"
-                        "不要声称已经浏览当前目录。"
-                    ),
-                }
+                raise
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="browse_knowledge_directory",
@@ -724,11 +719,11 @@ class PydanticAIKnowledgeRunner:
             )
             return result
 
-        @self._agent.tool(prepare=_prepare_research_map_tool)
+        @self._agent.tool(prepare=_prepare_research_map_tool, retries=1)
         def update_research_map(
             ctx: RunContext[KnowledgeToolRegistry],
-            nodes: list[dict[str, object]] | None = None,
-            relations: list[dict[str, object]] | None = None,
+            nodes: list[ResearchMapNodeInput] | None = None,
+            relations: list[ResearchMapRelationInput] | None = None,
             remove_node_ids: list[str] | None = None,
             remove_relation_ids: list[str] | None = None,
             title: str | None = None,
@@ -736,17 +731,21 @@ class PydanticAIKnowledgeRunner:
         ) -> dict[str, object]:
             """在研究工作区提交一组可追溯的论证地图增量。
 
-            节点 kind 只能是 question/theory/claim/evidence/gap/synthesis；节点标题可用
-            title，兼容模型常用的 label/content。关系可用 source/target/relation，
-            也兼容 from/to/type；规范化结果始终返回统一字段。
+            节点必须提供 id/kind/title，kind 只能是
+            question/theory/claim/evidence/gap/synthesis。关系必须提供
+            source/target/relation。
             relation 只能是 explains/supports/challenges/derives/refines。
             证据节点的 citation_ids 必须来自本轮知识工具真实返回的证据。
             工具日志和回答文本不应创建节点。
             """
             call_id = _tool_call_id(ctx, "update_research_map")
+            node_payload = [node.model_dump(exclude_none=True) for node in nodes or ()]
+            relation_payload = [
+                relation.model_dump(exclude_none=True) for relation in relations or ()
+            ]
             payload = {
-                "nodes": nodes or [],
-                "relations": relations or [],
+                "nodes": node_payload,
+                "relations": relation_payload,
                 "remove_node_ids": remove_node_ids or [],
                 "remove_relation_ids": remove_relation_ids or [],
             }
@@ -764,8 +763,8 @@ class PydanticAIKnowledgeRunner:
             )
             try:
                 result = ctx.deps.update_research_map(
-                    nodes=nodes,
-                    relations=relations,
+                    nodes=node_payload,
+                    relations=relation_payload,
                     remove_node_ids=remove_node_ids,
                     remove_relation_ids=remove_relation_ids,
                 )
@@ -782,10 +781,7 @@ class PydanticAIKnowledgeRunner:
                         error="research_map_invalid_patch",
                     )
                 )
-                return {
-                    "error": "research_map_invalid_patch",
-                    "message": str(error),
-                }
+                raise ModelRetry(str(error)) from error
             except Exception:
                 self._emit_tool_event(
                     AgentToolEvent(
@@ -797,10 +793,7 @@ class PydanticAIKnowledgeRunner:
                         error="research_map_unavailable",
                     )
                 )
-                return {
-                    "error": "research_map_unavailable",
-                    "message": "研究地图暂时无法更新，请继续用对话说明你的判断。",
-                }
+                raise
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="update_research_map",
@@ -835,6 +828,18 @@ class PydanticAIKnowledgeRunner:
         )
         try:
             result = getattr(ctx.deps, tool_name)(**payload)
+        except RetrievalPipelineUnavailable:
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool=tool_name,
+                    phase="failed",
+                    call_id=call_id,
+                    input=payload,
+                    detail="检索证据链失败，本轮研究流程已中止",
+                    error="retrieval_pipeline_unavailable",
+                )
+            )
+            raise
         except Exception as error:
             result = {"error": "research_workflow_failed", "message": str(error)}
         self._emit_tool_event(
@@ -862,6 +867,13 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
+        required_evidence = _preflight_required_evidence(
+            prompt=prompt,
+            tools=tools,
+            on_tool_event=None,
+        )
+        if required_evidence == ():
+            return _insufficient_evidence_result(tools=tools, model=self._model)
         result = self._agent.run_sync(
             _compose_agent_prompt(
                 prompt=prompt,
@@ -869,6 +881,7 @@ class PydanticAIKnowledgeRunner:
                 if getattr(tools, "research_map_enabled", False)
                 else None,
                 document_context=getattr(tools, "document_prompt_context", None),
+                required_evidence=required_evidence,
             ),
             message_history=_agent_message_history(conversation),
             deps=tools,
@@ -908,6 +921,15 @@ class PydanticAIKnowledgeRunner:
                     on_delta(event.delta.content_delta)
 
         try:
+            required_evidence = _preflight_required_evidence(
+                prompt=prompt,
+                tools=tools,
+                on_tool_event=on_tool_event,
+            )
+            if required_evidence == ():
+                result = _insufficient_evidence_result(tools=tools, model=self._model)
+                on_delta(result.answer)
+                return result
             result = self._agent.run_sync(
                 _compose_agent_prompt(
                     prompt=prompt,
@@ -915,6 +937,7 @@ class PydanticAIKnowledgeRunner:
                     if getattr(tools, "research_map_enabled", False)
                     else None,
                     document_context=getattr(tools, "document_prompt_context", None),
+                    required_evidence=required_evidence,
                 ),
                 message_history=_agent_message_history(conversation),
                 deps=tools,
@@ -933,6 +956,172 @@ class PydanticAIKnowledgeRunner:
 
 def _is_deepseek_flash(*, base_url: str, model: str) -> bool:
     return "deepseek.com" in base_url.lower() and model.lower() == "deepseek-v4-flash"
+
+
+_EVIDENCE_REQUIRED_MARKERS = (
+    "知识库",
+    "检索",
+    "来源",
+    "引用",
+    "出处",
+    "文献",
+    "参考资料",
+    "证据",
+    "毕业论文",
+    "论文选题",
+    "帮我想一个选题",
+    "研究选题",
+    "研究设计",
+    "研究问题",
+    "理论框架",
+    "文献综述",
+    "开题",
+    "快速研究",
+    "正式研究",
+)
+
+_TOPIC_IDEATION_MARKERS = (
+    "选题",
+    "论文题目",
+    "研究方向",
+    "可研究的社会学方向",
+)
+
+
+_EXPLICIT_EVIDENCE_MARKERS = (
+    "知识库",
+    "检索",
+    "来源",
+    "引用",
+    "出处",
+    "文献",
+    "参考资料",
+    "证据",
+)
+
+_DOCUMENT_OPERATION_MARKERS = (
+    "修改",
+    "改得",
+    "重写",
+    "润色",
+    "调整",
+    "删除",
+    "删掉",
+    "接受",
+    "拒绝",
+    "撤销",
+)
+
+
+def _requires_knowledge_evidence(
+    prompt: str,
+    *,
+    research_workspace: bool,
+    document_workspace: bool = False,
+) -> bool:
+    normalized = " ".join(prompt.split())
+    if (
+        document_workspace
+        and any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
+        and not any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS)
+    ):
+        return False
+    if any(marker in normalized for marker in _EVIDENCE_REQUIRED_MARKERS):
+        return True
+    if re.search(r"(?:解释|比较|介绍|什么是).{0,20}(?:理论|概念|学派)", normalized):
+        return True
+    if not research_workspace:
+        return False
+    return normalized not in {
+        "好",
+        "好的",
+        "确认",
+        "继续",
+        "取消",
+        "保存",
+        "就这个",
+    }
+
+
+def _evidence_retrieval_query(prompt: str) -> str:
+    normalized = " ".join(prompt.split())
+    if any(marker in normalized for marker in _TOPIC_IDEATION_MARKERS):
+        return (
+            f"{prompt}\n"
+            "检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。"
+        )
+    return prompt
+
+
+def _preflight_required_evidence(
+    *,
+    prompt: str,
+    tools: AgentToolContext,
+    on_tool_event: Callable[[AgentToolEvent], None] | None,
+) -> tuple[Mapping[str, object], ...] | None:
+    if not _requires_knowledge_evidence(
+        prompt,
+        research_workspace=bool(getattr(tools, "research_map_enabled", False)),
+        document_workspace=bool(
+            getattr(tools, "research_document_tools_enabled", False)
+        ),
+    ):
+        return None
+    retrieval_query = _evidence_retrieval_query(prompt)
+    call_id = "policy:search_knowledge"
+    if on_tool_event is not None:
+        on_tool_event(
+            AgentToolEvent(
+                tool="search_knowledge",
+                phase="started",
+                call_id=call_id,
+                input={"query": retrieval_query},
+                detail="正式研究任务正在检索知识库",
+            )
+        )
+    try:
+        results = tools.search_knowledge(retrieval_query, limit=5)
+    except Exception:
+        if on_tool_event is not None:
+            on_tool_event(
+                AgentToolEvent(
+                    tool="search_knowledge",
+                    phase="failed",
+                    call_id=call_id,
+                    input={"query": retrieval_query},
+                    detail="知识库检索失败，本轮研究回答已中止",
+                    error="knowledge_search_failed",
+                )
+            )
+        raise
+    _select_result_evidence(tools, results)
+    trace_items = _trace_items(results)
+    if on_tool_event is not None:
+        on_tool_event(
+            AgentToolEvent(
+                tool="search_knowledge",
+                phase="finished",
+                call_id=call_id,
+                input={"query": retrieval_query},
+                output={"result_count": len(results), "items": trace_items},
+                detail=_trace_detail(len(results), trace_items),
+            )
+        )
+    return tuple(results)
+
+
+def _insufficient_evidence_result(
+    *,
+    tools: AgentToolContext,
+    model: str,
+) -> AgentRunResult:
+    return AgentRunResult(
+        answer=_insufficient_evidence_answer(),
+        citations=(),
+        release_id=tools.release.knowledge_release_id,
+        provider="pydantic-ai",
+        model=model,
+    )
 
 
 def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
@@ -1033,9 +1222,14 @@ def _compose_agent_prompt(
     prompt: str,
     research_map: Mapping[str, object] | None = None,
     document_context: Mapping[str, object] | None = None,
+    required_evidence: Sequence[Mapping[str, object]] | None = None,
 ) -> str:
     map_context = (
-        "\n\n<current_research_map>\n"
+        "\n\n<research_map_policy>"
+        "研究工作区内，只要本轮形成或修订研究问题、理论、主张、证据、缺口或综合判断，"
+        "就必须在回答完成前调用 update_research_map 提交对应增量；若结构没有变化则不要调用。"
+        "工具校验失败时根据反馈修正一次，不得把失败的结构写成已经保存。"
+        "</research_map_policy>\n<current_research_map>\n"
         f"{json.dumps(research_map, ensure_ascii=False, separators=(',', ':'))}"
         "\n</current_research_map>"
         if research_map is not None
@@ -1048,9 +1242,17 @@ def _compose_agent_prompt(
         if document_context is not None
         else ""
     )
-    return (
-        f"{prompt}{map_context}{document_context_text}"
+    evidence_context = (
+        '\n\n<evidence_policy mode="required">'
+        "本轮属于正式研究取证任务。只能依据 required_evidence 中的证据形成研究判断；"
+        "不得补写未取证事实，不得省略证据边界。"
+        "</evidence_policy>\n<required_evidence>\n"
+        f"{json.dumps(required_evidence, ensure_ascii=False, separators=(',', ':'))}"
+        "\n</required_evidence>"
+        if required_evidence is not None
+        else ""
     )
+    return f"{prompt}{map_context}{document_context_text}{evidence_context}"
 
 
 def _agent_message_history(
@@ -1111,31 +1313,12 @@ def _text_result(
     model: str,
     usage: tuple[int, int] = (0, 0),
 ) -> AgentRunResult:
-    catalog_alias_counts: dict[str, int] = {}
-    for evidence in tools.evidence.values():
-        alias = _catalog_identifier_alias(evidence.knowledge_id)
-        if alias is not None:
-            catalog_alias_counts[alias] = catalog_alias_counts.get(alias, 0) + 1
-
-    explicit_citation_ids = [
-        citation_id
-        for citation_id, evidence in tools.evidence.items()
-        if (
-            any(
-                _mentions_identifier(answer, identifier)
-                for identifier in (citation_id, evidence.knowledge_id, evidence.source_id)
-                if identifier
-            )
-            or (
-                (alias := _catalog_identifier_alias(evidence.knowledge_id)) is not None
-                and catalog_alias_counts[alias] == 1
-                and _mentions_identifier(answer, alias)
-            )
-        )
-    ]
+    selected_citation_ids = tuple(getattr(tools, "selected_evidence_ids", ()))
+    if any(citation_id not in tools.evidence for citation_id in selected_citation_ids):
+        raise ValueError("selected evidence is outside this turn's retrieved closed set")
     return AgentRunResult(
         answer=answer,
-        citations=tuple(tools.evidence[item] for item in explicit_citation_ids[:8]),
+        citations=tuple(tools.evidence[item] for item in selected_citation_ids[:8]),
         release_id=tools.release.knowledge_release_id,
         provider="pydantic-ai",
         model=model,
@@ -1163,22 +1346,19 @@ def _result_usage(result: object) -> tuple[int, int]:
     )
 
 
-def _catalog_identifier_alias(identifier: str | None) -> str | None:
-    if identifier is None or ":" not in identifier:
-        return None
-    alias = identifier.rsplit(":", maxsplit=1)[-1]
-    return alias if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", alias) else None
-
-
-def _mentions_identifier(answer: str, identifier: str) -> bool:
-    boundary = r"[A-Za-z0-9_.:-]"
-    return (
-        re.search(
-            rf"(?<!{boundary}){re.escape(identifier)}(?!{boundary})",
-            answer,
-        )
-        is not None
-    )
+def _select_result_evidence(
+    tools: AgentToolContext,
+    results: Sequence[Mapping[str, object]],
+) -> None:
+    citation_ids: list[str] = []
+    for result in results:
+        citation_id = result.get("citation_id")
+        if isinstance(citation_id, str):
+            citation_ids.append(citation_id)
+        source_ids = result.get("source_citation_ids")
+        if isinstance(source_ids, list):
+            citation_ids.extend(value for value in source_ids if isinstance(value, str))
+    tools.select_evidence(citation_ids[:8])
 
 
 def _tool_call_id(ctx: RunContext[KnowledgeToolRegistry], tool: str) -> str:

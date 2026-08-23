@@ -17,6 +17,10 @@ export {
   projectResearchCanvas,
 } from './researchCanvasProjection'
 
+export { projectFormalResearchCanvas } from './formalResearchCanvasProjection'
+
+export type { FormalResearchCanvasInput } from './formalResearchCanvasProjection'
+
 export type {
   ResearchCanvasEdge,
   ResearchCanvasNode,

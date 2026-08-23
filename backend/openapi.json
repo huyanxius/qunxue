@@ -143,9 +143,7 @@
             "type": "string"
           },
           "research_map": {
-            "additionalProperties": true,
-            "title": "Research Map",
-            "type": "object"
+            "$ref": "#/components/schemas/AgentResearchMapResponse"
           },
           "title": {
             "title": "Title",
@@ -174,7 +172,8 @@
           "updated_at",
           "turn_count",
           "created_at",
-          "turns"
+          "turns",
+          "research_map"
         ],
         "title": "AgentConversationResponse",
         "type": "object"
@@ -323,6 +322,191 @@
           "navigation"
         ],
         "title": "AgentResearchJourneyResponse",
+        "type": "object"
+      },
+      "AgentResearchMapNodeResponse": {
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "question",
+              "theory",
+              "claim",
+              "evidence",
+              "gap",
+              "synthesis"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "developing",
+              "grounded",
+              "open",
+              "verified",
+              "challenged",
+              "complete"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "status",
+          "citation_ids"
+        ],
+        "title": "AgentResearchMapNodeResponse",
+        "type": "object"
+      },
+      "AgentResearchMapPatchResponse": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/AgentResearchMapNodeResponse"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/AgentResearchMapRelationResponse"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "remove_node_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Remove Node Ids",
+            "type": "array"
+          },
+          "remove_relation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Remove Relation Ids",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "nodes",
+          "relations",
+          "remove_node_ids",
+          "remove_relation_ids"
+        ],
+        "title": "AgentResearchMapPatchResponse",
+        "type": "object"
+      },
+      "AgentResearchMapRelationResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "relation": {
+            "enum": [
+              "explains",
+              "supports",
+              "challenges",
+              "derives",
+              "refines"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target",
+          "relation"
+        ],
+        "title": "AgentResearchMapRelationResponse",
+        "type": "object"
+      },
+      "AgentResearchMapResponse": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/AgentResearchMapNodeResponse"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/AgentResearchMapRelationResponse"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "nodes",
+          "relations"
+        ],
+        "title": "AgentResearchMapResponse",
         "type": "object"
       },
       "AgentToolTraceResponse": {
@@ -497,8 +681,7 @@
           },
           "canvas_patches": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/AgentResearchMapPatchResponse"
             },
             "title": "Canvas Patches",
             "type": "array"
@@ -1736,6 +1919,7 @@
           "validation_error",
           "phenomenon_unconfirmed",
           "catalog_not_ready",
+          "retrieval_unavailable",
           "no_adopted_theory",
           "candidate_ineligible",
           "external_candidate_adoption_blocked",
@@ -3379,6 +3563,9 @@
             "title": "Phenomenon Version",
             "type": "integer"
           },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalProvenanceResponse"
+          },
           "status": {
             "$ref": "#/components/schemas/MatchRunStatus"
           },
@@ -3412,6 +3599,7 @@
           "phenomenon_query_id",
           "phenomenon_version",
           "knowledge_release_id",
+          "retrieval",
           "candidate_page",
           "model"
         ],
@@ -6021,6 +6209,75 @@
           "reason"
         ],
         "title": "RestoreResearchDocumentRequest",
+        "type": "object"
+      },
+      "RetrievalProvenanceResponse": {
+        "properties": {
+          "degraded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Reason"
+          },
+          "embedding_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "reranker_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reranker Model"
+          },
+          "retrieval_index_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Index Id"
+          },
+          "retrieved_chunk_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Retrieved Chunk Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "retrieval_index_id",
+          "mode",
+          "embedding_model",
+          "reranker_model",
+          "degraded_reason",
+          "retrieved_chunk_ids"
+        ],
+        "title": "RetrievalProvenanceResponse",
         "type": "object"
       },
       "RetryFrameworkReviewRequest": {

@@ -2,7 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from '@tiptap/markdown'
 import { CheckCircleIcon, CircleNotchIcon, DownloadSimpleIcon, WarningCircleIcon } from '@phosphor-icons/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import {
@@ -26,7 +26,7 @@ import {
 } from '../../api/researchWorkspace'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
 import { ResearchMapCanvas } from './ResearchMapCanvas'
-import { projectResearchCanvas, type ResearchCanvasProjection } from '../../modules/research-workspace'
+import { projectFormalResearchCanvas, projectResearchCanvas, type ResearchCanvasProjection } from '../../modules/research-workspace'
 import type { AgentConversation } from '../../modules/research-agent'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { M5ResearchDeliveryController } from './M5ResearchDeliveryController'
@@ -54,6 +54,35 @@ const M5_SECTIONS = [
   ['limitations', '局限'],
   ['evidence_gaps', '证据缺口'],
 ] as const
+
+const AGENT_PANEL_WIDTH_STORAGE_KEY = 'qunxue.research.agent-panel-width'
+const DEFAULT_AGENT_PANEL_WIDTH = 430
+const MIN_AGENT_PANEL_WIDTH = 320
+const MAX_AGENT_PANEL_WIDTH = 680
+const MIN_RESEARCH_CANVAS_WIDTH = 360
+const AGENT_PANEL_KEYBOARD_STEP = 24
+
+function clampAgentPanelWidth(width: number, maxWidth = MAX_AGENT_PANEL_WIDTH) {
+  return Math.round(Math.min(Math.max(width, MIN_AGENT_PANEL_WIDTH), Math.max(MIN_AGENT_PANEL_WIDTH, maxWidth)))
+}
+
+function readStoredAgentPanelWidth() {
+  if (typeof window === 'undefined') return DEFAULT_AGENT_PANEL_WIDTH
+  try {
+    const width = Number(window.localStorage.getItem(AGENT_PANEL_WIDTH_STORAGE_KEY))
+    return Number.isFinite(width) && width > 0 ? clampAgentPanelWidth(width) : DEFAULT_AGENT_PANEL_WIDTH
+  } catch {
+    return DEFAULT_AGENT_PANEL_WIDTH
+  }
+}
+
+function persistAgentPanelWidth(width: number) {
+  try {
+    window.localStorage.setItem(AGENT_PANEL_WIDTH_STORAGE_KEY, String(Math.round(width)))
+  } catch {
+    // Resizing still works for the current session when storage is unavailable.
+  }
+}
 
 type SectionKey = string
 type ResearchDocumentProposalResponse = NonNullable<Awaited<ReturnType<typeof listResearchTaskDocumentProposals>>['data']>['items'][number]
@@ -110,110 +139,29 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
   const matchingAttemptKeyRef = useRef<string | null>(null)
   const matchingInFlightRef = useRef(false)
   const saveInFlightRef = useRef<Promise<ResearchDocumentResponse | null> | null>(null)
+  const workspaceRef = useRef<HTMLDivElement | null>(null)
+  const activeResizePointer = useRef<number | null>(null)
+  const mouseResizeCleanup = useRef<(() => void) | null>(null)
+  const [agentPanelWidth, setAgentPanelWidth] = useState(readStoredAgentPanelWidth)
+  const agentPanelWidthRef = useRef(agentPanelWidth)
+  const [agentPanelMaxWidth, setAgentPanelMaxWidth] = useState(MAX_AGENT_PANEL_WIDTH)
+  const [resizingAgentPanel, setResizingAgentPanel] = useState(false)
 
   const sections = useMemo(() => document?.sections.length ? document.sections : sectionFallback(mode), [document?.sections, mode])
   const activeSection = sections.find((section) => section.section_id === activeSectionId) ?? sections[0]
   const activeContent = activeSection?.content ?? ''
   const selectedTheoryIds = Object.entries(pendingTheoryDecisions).filter(([, value]) => value.action === 'adopt' || value.action === 'combine').map(([candidateId]) => candidateId)
   const multiTheoryRelationReady = selectedTheoryIds.length < 2 || Object.values(relationDraft).every((value) => value.trim())
-  const mapProjection = useMemo<ResearchCanvasProjection>(() => {
-    const projected = projectResearchCanvas({ conversation: agentConversation })
-    const questionNode = projected.nodes.find((node) => node.kind === 'question')
-    const fallbackQuestionId = `research-question:${taskId ?? 'unknown'}`
-    const phenomenonId = `research-phenomenon:${taskId ?? 'unknown'}`
-    const nodes: ResearchCanvasProjection['nodes'] = questionNode ? [...projected.nodes] : [
-      ...projected.nodes,
-      {
-        id: fallbackQuestionId,
-        kind: 'question',
-        title: navigation?.phenomenon_summary?.phenomenon ?? '当前研究问题',
-        summary: navigation?.phenomenon_summary?.research_intent ?? '从已经确认的研究起点继续推进。',
-        excerpt: navigation?.phenomenon_summary?.research_intent ?? null,
-        status: 'grounded',
-        provenance: 'user',
-        citationIds: [],
-      },
-    ]
-    if (navigation?.phenomenon_summary) nodes.push({
-      id: phenomenonId,
-      kind: 'phenomenon',
-      title: navigation.phenomenon_summary.phenomenon,
-      summary: navigation.phenomenon_summary.research_intent ?? '已经确认并固定到当前研究任务的核心现象。',
-      excerpt: navigation.phenomenon_summary.research_intent ?? null,
-      status: 'grounded',
-      provenance: 'user',
-      citationIds: [],
-    })
-    const candidateTheoryNodes = matchRun?.candidate_page.candidates.map((candidate) => ({
-      id: `research-theory:${candidate.candidate_id}`,
-      kind: 'theory' as const,
-      title: candidate.title,
-      summary: candidate.applicability_rationale,
-      excerpt: candidate.problem_focus || candidate.applicability_rationale,
-      status: pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt' || pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine' ? 'grounded' as const : 'developing' as const,
-      provenance: 'knowledge' as const,
-      citationIds: candidate.source_ids ?? [],
-    })) ?? []
-    nodes.push(...candidateTheoryNodes)
-    const evidenceById = new Map<string, ResearchCanvasProjection['nodes'][number]>()
-    for (const candidate of matchRun?.candidate_page.candidates ?? []) {
-      for (const evidence of [...(candidate.supporting_evidence ?? []), ...(candidate.conflicting_evidence ?? [])]) {
-        const evidenceId = `research-evidence:${evidence.evidence_ref_id}`
-        evidenceById.set(evidenceId, {
-          id: evidenceId,
-          kind: 'evidence',
-          title: evidence.claim,
-          summary: evidence.excerpt ?? evidence.locator ?? '来自固定知识发布的证据。',
-          excerpt: evidence.excerpt,
-          status: 'verified',
-          provenance: 'knowledge',
-          citationIds: evidence.source_id ? [evidence.source_id] : [],
-        })
-      }
-    }
-    nodes.push(...evidenceById.values())
-    const sectionNodes = sections.map((section) => ({
-      id: `${sectionNodePrefix}${section.section_id}`,
-      kind: 'document' as const,
-      title: section.title,
-      summary: section.content.trim().replace(/[#*_`>\n]+/g, ' ').replace(/\s+/g, ' ').slice(0, 92),
-      excerpt: section.content || null,
-      status: section.status === 'confirmed' || section.status === 'reviewed' ? 'complete' as const : 'developing' as const,
-      provenance: 'user' as const,
-      citationIds: section.evidence_refs.map((reference) => reference.source_id),
-    }))
-    nodes.push(...sectionNodes)
-    const source = navigation?.phenomenon_summary ? phenomenonId : questionNode?.id ?? fallbackQuestionId
-    const stageEdges: ResearchCanvasProjection['edges'] = []
-    if (navigation?.phenomenon_summary) stageEdges.push({
-      id: `research-phenomenon-edge:${taskId ?? 'unknown'}`,
-      source: questionNode?.id ?? fallbackQuestionId,
-      target: phenomenonId,
-      relation: 'refines',
-      label: '确认现象',
-    })
-    for (const candidate of matchRun?.candidate_page.candidates ?? []) {
-      const theoryId = `research-theory:${candidate.candidate_id}`
-      stageEdges.push({ id: `research-theory-edge:${candidate.candidate_id}`, source, target: theoryId, relation: 'explains', label: '候选解释' })
-      for (const evidence of candidate.supporting_evidence ?? []) stageEdges.push({ id: `research-support:${candidate.candidate_id}:${evidence.evidence_ref_id}`, source: `research-evidence:${evidence.evidence_ref_id}`, target: theoryId, relation: 'supports', label: '支持' })
-      for (const evidence of candidate.conflicting_evidence ?? []) stageEdges.push({ id: `research-challenge:${candidate.candidate_id}:${evidence.evidence_ref_id}`, source: `research-evidence:${evidence.evidence_ref_id}`, target: theoryId, relation: 'challenges', label: '质疑' })
-    }
-    const firstLayerSize = Math.ceil(sectionNodes.length / 2)
-    const sectionEdges = sectionNodes.map((node, index) => ({
-      id: `research-section-edge:${index}:${node.id}`,
-      source: index < firstLayerSize ? source : sectionNodes[index - firstLayerSize].id,
-      target: node.id,
-      relation: 'refines' as const,
-      label: '',
-    }))
-    return {
-      ...projected,
-      status: 'ready',
-      question: navigation?.phenomenon_summary?.phenomenon ?? document?.title ?? projected.question,
-      nodes,
-      edges: [...projected.edges, ...stageEdges, ...sectionEdges],
-    }
-  }, [agentConversation, document?.title, matchRun, navigation?.phenomenon_summary, pendingTheoryDecisions, sectionNodePrefix, sections, taskId])
+  const mapProjection = useMemo<ResearchCanvasProjection>(() => projectFormalResearchCanvas({
+    taskId: taskId ?? null,
+    mode,
+    agentProjection: projectResearchCanvas({ conversation: agentConversation }),
+    navigation,
+    matchRun,
+    pendingTheoryDecisions,
+    sections,
+    documentTitle: document?.title,
+  }), [agentConversation, document?.title, matchRun, mode, navigation, pendingTheoryDecisions, sections, taskId])
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
     content: activeContent || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。',
@@ -276,6 +224,92 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
     return () => { disposed = true }
   }, [taskId])
 
+  const availableAgentPanelWidth = useCallback(() => {
+    const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width || window.innerWidth
+    return Math.max(MIN_AGENT_PANEL_WIDTH, Math.min(MAX_AGENT_PANEL_WIDTH, workspaceWidth - MIN_RESEARCH_CANVAS_WIDTH))
+  }, [])
+
+  const updateAgentPanelWidth = useCallback((width: number, persist = false) => {
+    const nextWidth = clampAgentPanelWidth(width, availableAgentPanelWidth())
+    agentPanelWidthRef.current = nextWidth
+    setAgentPanelWidth(nextWidth)
+    if (persist) persistAgentPanelWidth(nextWidth)
+  }, [availableAgentPanelWidth])
+
+  const resizeFromClientX = useCallback((clientX: number) => {
+    const workspace = workspaceRef.current?.getBoundingClientRect()
+    if (workspace?.width) updateAgentPanelWidth(workspace.right - clientX)
+  }, [updateAgentPanelWidth])
+
+  useEffect(() => {
+    const workspace = workspaceRef.current
+    if (!workspace) return
+    const syncBounds = () => {
+      const maxWidth = availableAgentPanelWidth()
+      setAgentPanelMaxWidth(maxWidth)
+      updateAgentPanelWidth(agentPanelWidthRef.current)
+    }
+    syncBounds()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncBounds)
+      return () => window.removeEventListener('resize', syncBounds)
+    }
+    const observer = new ResizeObserver(syncBounds)
+    observer.observe(workspace)
+    return () => observer.disconnect()
+  }, [availableAgentPanelWidth, updateAgentPanelWidth])
+
+  function startPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    activeResizePointer.current = event.pointerId
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setResizingAgentPanel(true)
+  }
+
+  function movePointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current === event.pointerId) resizeFromClientX(event.clientX)
+  }
+
+  function finishPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current !== event.pointerId) return
+    activeResizePointer.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    setResizingAgentPanel(false)
+    persistAgentPanelWidth(agentPanelWidthRef.current)
+  }
+
+  function startMouseResize(event: ReactMouseEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    const targetWindow = event.currentTarget.ownerDocument.defaultView
+    if (!targetWindow) return
+    setResizingAgentPanel(true)
+    const move = (moveEvent: MouseEvent) => resizeFromClientX(moveEvent.clientX)
+    const finish = () => {
+      setResizingAgentPanel(false)
+      persistAgentPanelWidth(agentPanelWidthRef.current)
+      targetWindow.removeEventListener('mousemove', move)
+      targetWindow.removeEventListener('mouseup', finish)
+      mouseResizeCleanup.current = null
+    }
+    mouseResizeCleanup.current = finish
+    targetWindow.addEventListener('mousemove', move)
+    targetWindow.addEventListener('mouseup', finish)
+  }
+
+  useEffect(() => () => mouseResizeCleanup.current?.(), [])
+
+  function handleResizeKey(event: KeyboardEvent<HTMLDivElement>) {
+    const nextWidth = event.key === 'ArrowLeft' ? agentPanelWidth + AGENT_PANEL_KEYBOARD_STEP
+      : event.key === 'ArrowRight' ? agentPanelWidth - AGENT_PANEL_KEYBOARD_STEP
+        : event.key === 'Home' ? MIN_AGENT_PANEL_WIDTH
+          : event.key === 'End' ? agentPanelMaxWidth
+            : null
+    if (nextWidth === null) return
+    event.preventDefault()
+    updateAgentPanelWidth(nextWidth, true)
+  }
+
   const refreshDocumentState = useCallback(async () => {
     if (!taskId) return
     const [navigationResult, result] = await Promise.all([
@@ -283,6 +317,31 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
       listResearchDocuments({ path: { task_id: taskId } }),
     ])
     if (navigationResult.data) setNavigation(navigationResult.data)
+    const refreshedMatchRunId = navigationResult.data?.current_match_run_id
+    if (mode === 'match' && refreshedMatchRunId) {
+      const [matchResult, decisionsResult] = await Promise.all([
+        getMatchRun({ path: { match_run_id: refreshedMatchRunId } }),
+        listTheoryDecisions({ path: { match_run_id: refreshedMatchRunId } }),
+      ])
+      if (matchResult.data) setMatchRun(matchResult.data)
+      if (decisionsResult.data?.decision_sets.length) {
+        const restoredDecisionSet = decisionsResult.data.decision_sets[0]
+        setDecisionSet(restoredDecisionSet)
+        setPendingTheoryDecisions(Object.fromEntries(
+          restoredDecisionSet.decisions.map((decision) => [
+            decision.candidate_id,
+            { candidate_version: decision.candidate_version, action: decision.action },
+          ]),
+        ))
+      } else {
+        setDecisionSet(null)
+        setPendingTheoryDecisions({})
+      }
+    } else if (mode === 'match') {
+      setMatchRun(null)
+      setDecisionSet(null)
+      setPendingTheoryDecisions({})
+    }
     if (!result.data) return
     const latestNavigation = navigationResult.data ?? navigation
     const currentId = mode === 'framework' ? latestNavigation?.current_framework_id : latestNavigation?.current_theory_plan_id
@@ -586,6 +645,13 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
             ) : null}
             {mode === 'match' && activeSection?.section_id === 'candidate_theories' && matchRun && matchRun.status !== 'no_reliable_candidate' ? <section className="theory-candidates" aria-label="候选理论">
               <div className="theory-candidates__heading"><span>候选理论</span><small>{matchRun.candidate_page.candidates.length} 个候选</small></div>
+              {matchRun.retrieval ? <dl className="theory-retrieval-provenance" role="group" aria-label="匹配发布与检索证据链">
+                <div><dt>固定发布</dt><dd><code>{matchRun.knowledge_release_id}</code></dd></div>
+                <div><dt>检索模式</dt><dd>{matchRun.retrieval.mode}</dd></div>
+                <div><dt>索引</dt><dd><code>{matchRun.retrieval.retrieval_index_id ?? '未记录'}</code></dd></div>
+                <div><dt>Embedding</dt><dd>{matchRun.retrieval.embedding_model ?? '未记录'}</dd></div>
+                <div><dt>Reranker</dt><dd>{matchRun.retrieval.reranker_model ?? '未记录'}</dd></div>
+              </dl> : null}
               {matchRun.candidate_page.candidates.map((candidate) => <article key={candidate.candidate_id} className="theory-candidate">
                 <div><h3>{candidate.title}</h3><p>{candidate.applicability_rationale}</p></div>
                 <div className="theory-candidate__actions"><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'adopt')}>采用</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'combine')}>组合</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'retain'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'retain')}>保留</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'exclude'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'exclude')}>排除</button></div>
@@ -624,7 +690,12 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
           <h1 className="research-document-workbench__title">
             {mode === 'framework' ? '研究框架文档' : '理论判断文档'}
           </h1>
-          <div className="research-document-workbench__workspace">
+          <div
+            ref={workspaceRef}
+            className="research-document-workbench__workspace"
+            data-resizing={resizingAgentPanel}
+            style={{ '--rdw-agent-width': `${agentPanelWidth}px` } as CSSProperties}
+          >
             <ResearchMapCanvas
               projection={mapProjection}
               selectedNodeId={selectedMapNodeId}
@@ -632,6 +703,23 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
               onClearSelection={() => setSelectedMapNodeId(null)}
               onContinueNode={(node) => openSectionNode(node.id)}
               expandedNodeContent={selectedMapNodeId?.startsWith(sectionNodePrefix) ? { [selectedMapNodeId]: documentNodeContent } : {}}
+            />
+
+            <div
+              className="research-document-workbench__resize-handle"
+              role="separator"
+              tabIndex={0}
+              aria-label="调整 Agent 对话栏宽度"
+              aria-orientation="vertical"
+              aria-valuemin={MIN_AGENT_PANEL_WIDTH}
+              aria-valuemax={agentPanelMaxWidth}
+              aria-valuenow={agentPanelWidth}
+              onKeyDown={handleResizeKey}
+              onMouseDown={startMouseResize}
+              onPointerDown={startPointerResize}
+              onPointerMove={movePointerResize}
+              onPointerUp={finishPointerResize}
+              onPointerCancel={finishPointerResize}
             />
 
             <ResearchAgentConversationPage
