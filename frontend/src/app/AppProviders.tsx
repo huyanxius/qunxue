@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { PropsWithChildren } from 'react'
 
 import { AccountProvider } from '../modules/account'
+import { AppLocaleProvider } from '../i18n/AppLocaleProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,7 +17,9 @@ const queryClient = new QueryClient({
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AccountProvider>{children}</AccountProvider>
+      <AppLocaleProvider>
+        <AccountProvider>{children}</AccountProvider>
+      </AppLocaleProvider>
     </QueryClientProvider>
   )
 }

@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
+from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from sqlalchemy.exc import IntegrityError
 
@@ -12,11 +13,14 @@ from qunxue_api.adapters.research_agent.catalog_tools import (
     _query_candidates,
 )
 from qunxue_api.adapters.research_agent.pydantic_runner import (
+    DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
-    _compose_agent_prompt,
 )
 from qunxue_api.adapters.sqlite.agent_conversation_model import AgentRunRow
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
+from qunxue_api.adapters.sqlite.research_document_proposal import (
+    SqliteResearchDocumentProposalRepository,
+)
 from qunxue_api.api.routes.agent import _effective_agent_runtime_mode
 from qunxue_api.application.disciplinary_agent import DisciplinaryAgentApplication
 from qunxue_api.bootstrap import create_app
@@ -86,6 +90,52 @@ class _CountingRunner:
             release_id="release-a",
             provider="fake",
             model="fake",
+        )
+
+
+class _UsageRunner(_CountingRunner):
+    def run(self, *, prompt, conversation, tools) -> AgentRunResult:
+        result = super().run(prompt=prompt, conversation=conversation, tools=tools)
+        return AgentRunResult(
+            answer=result.answer,
+            citations=result.citations,
+            release_id=result.release_id,
+            provider="pydantic-ai",
+            model="deepseek-v4-flash",
+            input_tokens=600,
+            output_tokens=800,
+        )
+
+
+class _RecordingCredits:
+    def __init__(self) -> None:
+        self.charges: list[dict[str, object]] = []
+
+    def ensure_can_start(self, *, user_id: UUID) -> None:
+        del user_id
+
+    def reserve(self, *, user_id: UUID, run_id: UUID) -> None:
+        del user_id, run_id
+
+    def release(self, *, user_id: UUID, run_id: UUID) -> None:
+        del user_id, run_id
+
+    def charge(self, **usage) -> None:
+        self.charges.append(usage)
+
+
+class _PreReturnIdentityProbeRunner:
+    def __init__(self, *, delegate, provider: str, model: str, probe) -> None:
+        self._delegate = delegate
+        self.runtime_identity = SimpleNamespace(provider=provider, model=model)
+        self._probe = probe
+
+    def run(self, *, prompt, conversation, tools) -> AgentRunResult:
+        self._probe()
+        return self._delegate.run(
+            prompt=prompt,
+            conversation=conversation,
+            tools=tools,
         )
 
 
@@ -251,6 +301,38 @@ def test_agent_turn_rejects_citations_outside_current_evidence() -> None:
         )
 
 
+def test_successful_real_agent_turn_charges_actual_provider_tokens_once() -> None:
+    credits = _RecordingCredits()
+    application = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=_UsageRunner(),
+        tools_factory=_FakeAgentTools,
+        credits=credits,
+    )
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+
+    completed = application.run_turn(
+        user_id=user_id,
+        conversation_id=None,
+        prompt="解释社会联结",
+        idempotency_key="usage-turn",
+    )
+    application.run_turn(
+        user_id=user_id,
+        conversation_id=completed.conversation.conversation_id,
+        prompt="解释社会联结",
+        idempotency_key="usage-turn",
+    )
+
+    assert credits.charges == [{
+        "user_id": user_id,
+        "run_id": completed.run_id,
+        "input_tokens": 600,
+        "output_tokens": 800,
+        "model": "deepseek-v4-flash",
+    }]
+
+
 def test_application_rejects_runner_citations_outside_tool_evidence() -> None:
     application = DisciplinaryAgentApplication(
         conversations=ConversationService.in_memory(),
@@ -299,6 +381,7 @@ def test_agent_idempotency_replays_its_own_turn_after_later_turns() -> None:
     assert replay.result.answer == "answer-1"
     assert replay.turn is not None
     assert replay.turn.turn_id == first.turn.turn_id
+    assert (replay.result.provider, replay.result.model) == ("fake", "fake")
     assert runner.calls == 2
 
 
@@ -400,6 +483,44 @@ def test_sqlite_failed_key_reset_does_not_bypass_a_concurrent_active_run() -> No
 
     with pytest.raises(RunAlreadyActive):
         repository.start_run(run)
+
+
+def test_sqlite_failed_key_retry_refreshes_pre_run_identity() -> None:
+    conversation_id = UUID("00000000-0000-0000-0000-000000000017")
+    user_id = UUID("00000000-0000-0000-0000-000000000018")
+    failed = AgentRunRow(
+        run_id="00000000-0000-0000-0000-000000000019",
+        conversation_id=str(conversation_id),
+        user_id=str(user_id),
+        idempotency_key="retry-identity-key",
+        status="failed",
+        provider="pydantic-ai",
+        model="knowledge-agent",
+        knowledge_release_id="release-old",
+        usage={},
+        tool_summary=[],
+        started_at=datetime.now(UTC),
+    )
+    session = Mock()
+    session.scalar.side_effect = [failed, None]
+    repository = SqliteConversationRepository(session)
+
+    retried = repository.start_run(
+        AgentRun(
+            run_id=UUID("00000000-0000-0000-0000-000000000020"),
+            conversation_id=conversation_id,
+            user_id=user_id,
+            idempotency_key="retry-identity-key",
+            status="running",
+            provider="deterministic-knowledge",
+            model="local",
+            knowledge_release_id="release-new",
+        )
+    )
+
+    assert retried.run_id == UUID(failed.run_id)
+    assert (failed.provider, failed.model) == ("deterministic-knowledge", "local")
+    assert failed.knowledge_release_id == "release-new"
 
 
 def test_sqlite_insert_race_does_not_return_the_other_running_run() -> None:
@@ -562,6 +683,43 @@ def test_agent_conversation_detail_returns_stable_not_found_error(client) -> Non
     assert response.json()["error"]["message"] == "对话不存在或无权访问。"
 
 
+def test_agent_conversation_can_be_renamed_and_deleted(client) -> None:
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": "agent-manage@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": "register-agent-manage"},
+    )
+    assert registered.status_code == 201
+    user_id = UUID(registered.json()["user"]["user_id"])
+    with client.app.state.database.session() as session:
+        conversation = ConversationService(
+            SqliteConversationRepository(session)
+        ).create_conversation(user_id=user_id, title="青年为什么推迟进入婚姻？")
+        conversation_id = conversation.conversation_id
+
+    renamed = client.patch(
+        f"/api/agent/conversations/{conversation_id}",
+        json={"title": "  青年婚姻研究  "},
+        headers={"Idempotency-Key": "rename-agent-conversation"},
+    )
+
+    assert renamed.status_code == 200
+    assert renamed.json()["title"] == "青年婚姻研究"
+    assert client.get("/api/agent/conversations").json()["items"][0]["title"] == "青年婚姻研究"
+
+    deleted = client.delete(
+        f"/api/agent/conversations/{conversation_id}",
+        headers={"Idempotency-Key": "delete-agent-conversation"},
+    )
+
+    assert deleted.status_code == 204
+    assert client.get(f"/api/agent/conversations/{conversation_id}").status_code == 404
+
+
 def test_agent_turn_contract_declares_server_sent_events(client) -> None:
     response = client.app.openapi()["paths"]["/api/agent/turns"]["post"]["responses"]["200"]
 
@@ -649,6 +807,109 @@ def test_sqlite_application_persists_failed_run_before_outer_rollback(client) ->
         assert failed.status == "failed"
 
 
+def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
+    client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": "agent-provenance@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": "register-agent-provenance"},
+    )
+    user_id = UUID(registered.json()["user"]["user_id"])
+    configured_runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    monkeypatch.setattr(
+        configured_runner._agent,
+        "run_sync",
+        lambda *args, **kwargs: SimpleNamespace(output="已配置模型的回答。"),
+    )
+
+    observed_before_result: dict[str, tuple[str, str] | None] = {}
+    for key, delegate, expected_identity in (
+        (
+            "provenance-deterministic",
+            DeterministicKnowledgeRunner(),
+            ("deterministic-knowledge", "local"),
+        ),
+        (
+            "provenance-configured",
+            configured_runner,
+            ("pydantic-ai", "deepseek-v4-flash"),
+        ),
+    ):
+        with client.app.state.database.session() as session:
+            proposal_repository = SqliteResearchDocumentProposalRepository(session)
+
+            def probe(
+                *,
+                idempotency_key: str = key,
+                repository: SqliteResearchDocumentProposalRepository = proposal_repository,
+            ) -> None:
+                row = session.query(AgentRunRow).filter_by(
+                    idempotency_key=idempotency_key
+                ).one()
+                observed_before_result[idempotency_key] = repository.agent_run_model(
+                    UUID(row.run_id)
+                )
+
+            runner = _PreReturnIdentityProbeRunner(
+                delegate=delegate,
+                provider=expected_identity[0],
+                model=expected_identity[1],
+                probe=probe,
+            )
+            application = DisciplinaryAgentApplication(
+                conversations=ConversationService(SqliteConversationRepository(session)),
+                runner=runner,
+                tools_factory=_FakeAgentTools,
+            )
+            application.run_turn(
+                user_id=user_id,
+                conversation_id=None,
+                prompt="解释一个社会学现象",
+                idempotency_key=key,
+            )
+
+    assert observed_before_result == {
+        "provenance-deterministic": ("deterministic-knowledge", "local"),
+        "provenance-configured": ("pydantic-ai", "deepseek-v4-flash"),
+    }
+
+    with client.app.state.database.session() as session:
+        deterministic = session.query(AgentRunRow).filter_by(
+            idempotency_key="provenance-deterministic"
+        ).one()
+        configured = session.query(AgentRunRow).filter_by(
+            idempotency_key="provenance-configured"
+        ).one()
+        assert (deterministic.provider, deterministic.model) == (
+            "deterministic-knowledge",
+            "local",
+        )
+        assert (configured.provider, configured.model) == (
+            "pydantic-ai",
+            "deepseek-v4-flash",
+        )
+        proposal_repository = SqliteResearchDocumentProposalRepository(session)
+        assert proposal_repository.agent_run_model(UUID(deterministic.run_id)) == (
+            "deterministic-knowledge",
+            "local",
+        )
+        assert proposal_repository.agent_run_model(UUID(configured.run_id)) == (
+            "pydantic-ai",
+            "deepseek-v4-flash",
+        )
+
+
 def test_sqlite_application_persists_tool_summary_for_interrupted_run(client) -> None:
     registered = client.post(
         "/api/session/register",
@@ -733,6 +994,46 @@ def test_agent_runner_forwards_configured_model_headers() -> None:
     }
 
 
+def test_agent_runner_forwards_configured_reasoning_effort() -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="gpt-5.6-luna",
+        timeout_seconds=30,
+        reasoning_effort="max",
+    )
+
+    assert runner._agent.model.settings["openai_reasoning_effort"] == "max"
+
+
+def test_agent_bootstrap_forwards_configured_reasoning_effort(client, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class _CapturedRunner(_CountingRunner):
+        def __init__(self, **kwargs) -> None:
+            super().__init__()
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "qunxue_api.bootstrap.PydanticAIKnowledgeRunner",
+        _CapturedRunner,
+    )
+    settings = Settings(
+        _env_file=None,
+        database_url=client.app.state.settings.database_url,
+        model_base_url="https://models.example.test/v1",
+        model_api_key="local-test-key",
+        model_name="gpt-5.6-luna",
+        model_reasoning_effort="max",
+    )
+    app = create_app(settings=settings, database=client.app.state.database)
+
+    with app.state.disciplinary_agent_scope():
+        pass
+
+    assert captured["reasoning_effort"] == "max"
+
+
 def test_agent_bootstrap_forwards_extension_and_sft_headers(client, monkeypatch) -> None:
     captured: dict[str, object] = {}
 
@@ -792,7 +1093,7 @@ def test_agent_answers_sociology_question_without_preemptive_knowledge_search(
 
     result = runner.run_stream(
         prompt="怎么解释年轻人越来越孤独？",
-        conversation="",
+        conversation=(),
         tools=_Tools(),
         on_delta=lambda _: None,
     )
@@ -820,15 +1121,140 @@ def test_reading_an_unknown_knowledge_id_returns_a_tool_error() -> None:
     }
 
 
-def test_agent_prompt_keeps_history_separate_without_preloaded_rag_evidence() -> None:
-    prompt = _compose_agent_prompt(
-        prompt="那它和戈夫曼的观点有什么区别？",
-        conversation="上一轮讨论了米德的自我理论。",
+def test_agent_runner_sends_previous_turns_as_role_preserving_message_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="sociology-model",
+        timeout_seconds=30,
+    )
+    captured: dict[str, object] = {}
+
+    def run_sync(user_prompt, **kwargs):
+        captured["user_prompt"] = user_prompt
+        captured["message_history"] = kwargs.get("message_history")
+        return SimpleNamespace(output="米德与戈夫曼的自我理论侧重不同。")
+
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    previous_turn = AgentTurn.create(
+        user_content="请介绍米德的自我理论。",
+        assistant_content="米德区分了主我与客我。",
+        citations=(),
+        evidence_ids=frozenset(),
     )
 
-    assert "<conversation_history>\n上一轮讨论了米德的自我理论。" in prompt
-    assert "<current_question>\n那它和戈夫曼的观点有什么区别？" in prompt
-    assert "本轮知识库检索证据" not in prompt
+    runner.run(
+        prompt="那它和戈夫曼的观点有什么区别？",
+        conversation=(previous_turn,),
+        tools=_FakeAgentTools(),
+    )
+
+    assert captured["user_prompt"] == "那它和戈夫曼的观点有什么区别？"
+    history = captured["message_history"]
+    assert isinstance(history, list)
+    assert len(history) == 2
+    assert isinstance(history[0], ModelRequest)
+    assert isinstance(history[0].parts[0], UserPromptPart)
+    assert history[0].parts[0].content == "请介绍米德的自我理论。"
+    assert isinstance(history[1], ModelResponse)
+    assert isinstance(history[1].parts[0], TextPart)
+    assert history[1].parts[0].content == "米德区分了主我与客我。"
+
+
+def test_agent_application_passes_the_last_eight_turns_without_flattening() -> None:
+    class _HistoryRecordingRunner(_CountingRunner):
+        def __init__(self) -> None:
+            super().__init__()
+            self.histories: list[object] = []
+
+        def run(self, *, prompt, conversation, tools) -> AgentRunResult:
+            self.histories.append(conversation)
+            return super().run(prompt=prompt, conversation=conversation, tools=tools)
+
+    runner = _HistoryRecordingRunner()
+    application = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=runner,
+        tools_factory=_FakeAgentTools,
+    )
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+    conversation_id = None
+
+    for index in range(10):
+        execution = application.run_turn(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            prompt=f"message-{index}",
+            idempotency_key=f"role-history-{index}",
+        )
+        conversation_id = execution.conversation.conversation_id
+
+    history = runner.histories[-1]
+    assert isinstance(history, tuple)
+    assert [turn.user_message.content for turn in history] == [
+        f"message-{index}" for index in range(1, 9)
+    ]
+
+
+def test_agent_identity_request_returns_only_the_product_identity() -> None:
+    class _IdentityLeakRunner:
+        runtime_identity = SimpleNamespace(
+            provider="private-provider",
+            model="private-runtime-model",
+        )
+
+        def run(self, **kwargs):
+            del kwargs
+            raise AssertionError("身份回答不应调用底层模型")
+
+        def run_stream(self, **kwargs):
+            del kwargs
+            raise AssertionError("身份回答不应调用底层模型")
+
+    application = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=_IdentityLeakRunner(),
+        tools_factory=_FakeAgentTools,
+    )
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+
+    for index, prompt in enumerate(
+        (
+            "报告你的模型",
+            "你是哪个模型？",
+            "你是哪家供应商的？",
+            "你是不是 GPT-5.6-terra？",
+        )
+    ):
+        deltas: list[str] = []
+        execution = application.run_turn(
+            user_id=user_id,
+            conversation_id=None,
+            prompt=prompt,
+            idempotency_key=f"identity-{index}",
+            on_delta=deltas.append,
+        )
+
+        assert "".join(deltas) == "我是群学致知的社会学学科 Agent。"
+        assert execution.result.answer == "我是群学致知的社会学学科 Agent。"
+        assert "private-runtime-model" not in execution.result.answer
+
+    regular_runner = _CountingRunner()
+    regular_application = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=regular_runner,
+        tools_factory=_FakeAgentTools,
+    )
+    regular_application.run_turn(
+        user_id=user_id,
+        conversation_id=None,
+        prompt="你是如何看待科技公司里的劳动异化？",
+        idempotency_key="regular-company-question",
+    )
+
+    assert regular_runner.calls == 1
 
 
 def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
@@ -853,7 +1279,7 @@ def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
         lambda *args, **kwargs: SimpleNamespace(output="这是基于通用社会学知识的回答。"),
     )
 
-    result = runner.run(prompt="问题", conversation="", tools=_Tools())
+    result = runner.run(prompt="问题", conversation=(), tools=_Tools())
 
     assert result.answer == "这是基于通用社会学知识的回答。"
     assert result.citations == ()
@@ -886,7 +1312,7 @@ def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
         lambda *args, **kwargs: SimpleNamespace(output="这是没有使用该候选证据的回答。"),
     )
 
-    result = runner.run(prompt="解释一个社会现象", conversation="", tools=_Tools())
+    result = runner.run(prompt="解释一个社会现象", conversation=(), tools=_Tools())
 
     assert result.citations == ()
 
@@ -920,7 +1346,7 @@ def test_agent_accepts_a_bare_knowledge_id_from_the_current_tool_evidence(
         ),
     )
 
-    result = runner.run(prompt="解释社会行动四类型", conversation="", tools=_Tools())
+    result = runner.run(prompt="解释社会行动四类型", conversation=(), tools=_Tools())
 
     assert [citation.citation_id for citation in result.citations] == ["knowledge:D1:C029"]
 
@@ -954,7 +1380,7 @@ def test_agent_accepts_an_unambiguous_catalog_suffix_from_current_tool_evidence(
         ),
     )
 
-    result = runner.run(prompt="解释年轻人的孤独", conversation="", tools=_Tools())
+    result = runner.run(prompt="解释年轻人的孤独", conversation=(), tools=_Tools())
 
     assert [citation.citation_id for citation in result.citations] == [
         "knowledge:D1:C1059"
@@ -992,7 +1418,7 @@ def test_agent_rejects_an_ambiguous_catalog_suffix(
         lambda *args, **kwargs: SimpleNamespace(output="可参考知识条目 C001。"),
     )
 
-    result = runner.run(prompt="解释社会行动", conversation="", tools=_Tools())
+    result = runner.run(prompt="解释社会行动", conversation=(), tools=_Tools())
 
     assert result.citations == ()
 
@@ -1068,7 +1494,7 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
     with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
         result = runner.run_stream(
             prompt="请结合知识库解释年轻人越来越孤独。",
-            conversation="",
+            conversation=(),
             tools=tools,
             on_delta=deltas.append,
             on_tool_event=tool_events.append,
@@ -1132,7 +1558,7 @@ def test_agent_continues_with_general_knowledge_when_search_tool_is_unavailable(
     with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
         result = runner.run_stream(
             prompt="请结合知识库解释年轻人越来越孤独。",
-            conversation="",
+            conversation=(),
             tools=tools,
             on_delta=lambda _: None,
             on_tool_event=tool_events.append,

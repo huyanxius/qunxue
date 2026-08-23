@@ -1,5 +1,6 @@
 import cytoscape, { type Core, type ElementDefinition } from 'cytoscape'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CornersOutIcon, ShuffleIcon } from '@phosphor-icons/react'
 
 import './ObsidianKnowledgeGraph.css'
 import type { KnowledgeGraphProjection } from './types'
@@ -74,12 +75,17 @@ function graphElements(
   ]
 }
 
-function layoutOptions(hasFocus: boolean, hasEdges: boolean, animate = false) {
+function layoutOptions(
+  hasFocus: boolean,
+  hasEdges: boolean,
+  animate = false,
+  animationDuration = 560,
+) {
   if (!hasFocus && !hasEdges) {
     return {
       name: 'circle',
       animate,
-      animationDuration: animate ? 1900 : 1200,
+      animationDuration: animate ? animationDuration : 1200,
       animationEasing: 'ease-out-cubic',
       fit: true,
       padding: 96,
@@ -89,7 +95,7 @@ function layoutOptions(hasFocus: boolean, hasEdges: boolean, animate = false) {
   return {
     name: 'cose',
     animate: animate ? 'end' : false,
-    animationDuration: animate ? 1900 : 1200,
+    animationDuration: animate ? animationDuration : 1200,
     animationEasing: 'ease-out-cubic',
     componentSpacing: 56,
     edgeElasticity: 120,
@@ -107,29 +113,29 @@ function layoutOptions(hasFocus: boolean, hasEdges: boolean, animate = false) {
 
 function fitView(graph: Core, focusNodeId?: string, preview = false) {
   if (!focusNodeId) {
-    if (preview) {
-      const container = graph.container()
-      const bounds = graph.nodes().boundingBox({ includeLabels: false })
-      if (!container || bounds.w <= 0 || bounds.h <= 0) return
-      const padding = 34
-      const zoom = Math.max(
-        graph.minZoom(),
-        Math.min(
-          graph.maxZoom(),
-          (container.clientWidth - padding * 2) / bounds.w,
-          (container.clientHeight - padding * 2) / bounds.h,
-        ) * 0.9,
-      )
-      graph.viewport({
-        zoom,
-        pan: {
-          x: container.clientWidth / 2 - (bounds.x1 + bounds.w / 2) * zoom,
-          y: container.clientHeight / 2 - (bounds.y1 + bounds.h / 2) * zoom,
-        },
-      })
-      return
-    }
-    graph.fit(graph.elements(), 88)
+    const container = graph.container?.()
+    const nodes = graph.nodes?.()
+    const bounds = nodes?.boundingBox?.({ includeLabels: false })
+    if (!bounds) return
+    if (!container || bounds.w <= 0 || bounds.h <= 0) return
+    const padding = preview
+      ? 34
+      : Math.min(container.clientWidth, container.clientHeight) * 0.22
+    const zoom = Math.max(
+      graph.minZoom(),
+      Math.min(
+        graph.maxZoom(),
+        (container.clientWidth - padding * 2) / bounds.w,
+        (container.clientHeight - padding * 2) / bounds.h,
+      ) * (preview ? 0.9 : 1),
+    )
+    graph.viewport({
+      zoom,
+      pan: {
+        x: container.clientWidth / 2 - (bounds.x1 + bounds.w / 2) * zoom,
+        y: container.clientHeight / 2 - (bounds.y1 + bounds.h / 2) * zoom,
+      },
+    })
     return
   }
   const focus = graph.getElementById(focusNodeId)
@@ -145,6 +151,7 @@ function fitView(graph: Core, focusNodeId?: string, preview = false) {
   const halfHeight = Math.max(position.y - bounds.y1, bounds.y2 - position.y, 1)
   const zoom = Math.max(
     graph.minZoom(),
+    0.8,
     Math.min(
       graph.maxZoom(),
       (container.clientWidth - padding * 2) / (halfWidth * 2),
@@ -412,8 +419,94 @@ const graphStyle: cytoscape.StylesheetJson = [
   },
 ]
 
+const workspaceGraphStyle: cytoscape.StylesheetJson = [
+  ...graphStyle.map((rule) => {
+    if (
+      !('style' in rule)
+      || (rule.selector !== 'node' && rule.selector !== 'edge')
+    ) return rule
+    return {
+      ...rule,
+      style: {
+        ...rule.style,
+        'transition-duration': 0,
+      },
+    }
+  }),
+  {
+    selector: 'node',
+    style: {
+      'background-color': '#8d9295',
+      'border-color': '#ffffff',
+      color: '#303030',
+      'text-background-color': '#ffffff',
+      'text-outline-color': '#ffffff',
+      'font-family': '"Songti SC", "Noto Serif CJK SC", Georgia, serif',
+    },
+  },
+  {
+    selector: 'node.node--dimension',
+    style: {
+      'background-color': '#1d1f20',
+      'border-color': '#d9dcde',
+      color: '#111111',
+      height: 20,
+      'text-margin-y': -12,
+      width: 20,
+    },
+  },
+  {
+    selector: 'node.node--category',
+    style: { 'background-color': '#6d7376' },
+  },
+  {
+    selector: 'node.node--neighbor',
+    style: { 'background-color': '#3f464b' },
+  },
+  {
+    selector: 'node.node--focus',
+    style: {
+      'background-color': '#111111',
+      'border-color': '#b9bdc0',
+      color: '#111111',
+      'underlay-color': '#81878a',
+    },
+  },
+  {
+    selector: 'node.node--context',
+    style: { opacity: 0.42, 'text-opacity': 0 },
+  },
+  {
+    selector: 'node.is-hovered, node:selected',
+    style: {
+      'background-color': '#111111',
+      'border-color': '#b9bdc0',
+      'text-opacity': 1,
+    },
+  },
+  {
+    selector: 'node.is-entering',
+    style: { opacity: 0, 'text-opacity': 0 },
+  },
+  {
+    selector: 'edge.is-entering',
+    style: { opacity: 0 },
+  },
+  {
+    selector: 'edge.edge--reviewed',
+    style: {
+      'line-color': '#3f464b',
+      'target-arrow-color': '#3f464b',
+    },
+  },
+  {
+    selector: 'edge.edge--bidirectional',
+    style: { 'source-arrow-color': '#3f464b' },
+  },
+]
+
 const previewGraphStyle: cytoscape.StylesheetJson = [
-  ...graphStyle,
+  ...workspaceGraphStyle,
   {
     selector: 'node',
     style: {
@@ -470,7 +563,7 @@ const previewGraphStyle: cytoscape.StylesheetJson = [
   {
     selector: 'edge.edge--neighbor',
     style: {
-      'line-color': '#3e7cb1',
+      'line-color': '#8a6739',
       opacity: 0.96,
       width: 2,
     },
@@ -513,6 +606,12 @@ export function ObsidianKnowledgeGraph({
   const [unavailable, setUnavailable] = useState(false)
   const [hoveredLabel, setHoveredLabel] = useState('')
   const [tourLabel, setTourLabel] = useState('')
+  const [activationPoint, setActivationPoint] = useState<{
+    key: number
+    x: number
+    y: number
+  }>()
+  const activationTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const elements = useMemo(
     () => graphElements(projection, focusNodeId),
     [focusNodeId, projection],
@@ -521,6 +620,11 @@ export function ObsidianKnowledgeGraph({
   const reduceMotion = typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const animateLayout = variant === 'preview' && !reduceMotion
+  const layoutDuration = variant === 'preview' ? 1900 : 560
+
+  useEffect(() => () => {
+    if (activationTimerRef.current) clearTimeout(activationTimerRef.current)
+  }, [])
 
   const fit = useCallback(() => {
     if (graphRef.current) fitView(graphRef.current, focusNodeId, variant === 'preview')
@@ -530,8 +634,13 @@ export function ObsidianKnowledgeGraph({
     const graph = graphRef.current
     if (!graph) return
     graph.one('layoutstop', () => fitView(graph, focusNodeId, variant === 'preview'))
-    graph.layout(layoutOptions(Boolean(focusNodeId), hasEdges)).run()
-  }, [focusNodeId, hasEdges, variant])
+    graph.layout(layoutOptions(
+      Boolean(focusNodeId),
+      hasEdges,
+      !reduceMotion,
+      layoutDuration,
+    )).run()
+  }, [focusNodeId, hasEdges, layoutDuration, reduceMotion, variant])
 
   useEffect(() => {
     if (!canvasRef.current || elements.length === 0) return
@@ -544,6 +653,7 @@ export function ObsidianKnowledgeGraph({
     let frame = 0
     let tourInterval: ReturnType<typeof setInterval> | undefined
     let tourStartTimer: ReturnType<typeof setTimeout> | undefined
+    let entryTimer: ReturnType<typeof setTimeout> | undefined
     const revealTimers: Array<ReturnType<typeof setTimeout>> = []
     let revealStarted = false
     let revealComplete = variant !== 'preview' || reduceMotion
@@ -693,21 +803,41 @@ export function ObsidianKnowledgeGraph({
         boxSelectionEnabled: false,
         container: canvas,
         elements,
-        layout: layoutOptions(Boolean(focusNodeId), hasEdges, animateLayout),
+        layout: layoutOptions(
+          Boolean(focusNodeId),
+          hasEdges,
+          animateLayout,
+          layoutDuration,
+        ),
         maxZoom: 3.2,
         minZoom: 0.16,
-        style: variant === 'preview' ? previewGraphStyle : graphStyle,
+        style: variant === 'preview' ? previewGraphStyle : workspaceGraphStyle,
         userPanningEnabled: true,
         userZoomingEnabled: variant === 'workspace',
       })
       graphRef.current = graph
       if (variant === 'preview') {
-        if (!reduceMotion) graph.elements().addClass('is-awaiting-reveal')
+        if (!reduceMotion) graph.elements().addClass?.('is-awaiting-reveal')
         graph.one('layoutstop', () => fitView(graph!, focusNodeId, true))
+      } else if (!reduceMotion) {
+        graph.elements().addClass?.('is-entering')
+        entryTimer = setTimeout(() => {
+          graph?.elements().removeClass('is-entering')
+        }, 80)
       }
       graph.on('tap', 'node', (event) => {
         const nodeType = event.target.data('nodeType') ?? 'entry'
         const nodeId = event.target.id()
+        if (!reduceMotion) {
+          const point = event.target.renderedPosition?.()
+          if (point) {
+            setActivationPoint({ key: Date.now(), x: point.x, y: point.y })
+            if (activationTimerRef.current) clearTimeout(activationTimerRef.current)
+            activationTimerRef.current = setTimeout(() => {
+              setActivationPoint(undefined)
+            }, 520)
+          }
+        }
         if (nodeType === 'entry') onSelectKnowledgeRef.current(nodeId)
         else onExpandNodeRef.current?.(nodeId)
       })
@@ -717,11 +847,13 @@ export function ObsidianKnowledgeGraph({
       })
       graph.on('mouseover', 'node', (event) => {
         const neighborhood = event.target.closedNeighborhood()
+        canvas.style.cursor = 'pointer'
         graph?.elements().addClass('is-dimmed')
         neighborhood.removeClass('is-dimmed').addClass('is-hovered')
         setHoveredLabel(event.target.data('label') ?? '')
       })
       graph.on('mouseout', 'node', () => {
+        canvas.style.cursor = ''
         graph?.elements().removeClass('is-dimmed is-hovered')
         setHoveredLabel('')
       })
@@ -759,6 +891,7 @@ export function ObsidianKnowledgeGraph({
     return () => {
       if (frame) globalThis.cancelAnimationFrame?.(frame)
       clearTourSchedule()
+      if (entryTimer) clearTimeout(entryTimer)
       revealTimers.forEach((timer) => clearTimeout(timer))
       resizeObserver?.disconnect()
       visibilityObserver?.disconnect()
@@ -768,18 +901,31 @@ export function ObsidianKnowledgeGraph({
       graphRef.current = undefined
       graph?.destroy()
     }
-  }, [animateLayout, elements, focusNodeId, hasEdges, projection, reduceMotion, variant])
+  }, [
+    animateLayout,
+    elements,
+    focusNodeId,
+    hasEdges,
+    layoutDuration,
+    projection,
+    reduceMotion,
+    variant,
+  ])
 
   const visibleLabel = hoveredLabel || tourLabel
 
   return (
     <section className={`obsidian-knowledge-graph obsidian-knowledge-graph--${variant}`} aria-label="节点式知识图谱">
       <div className="obsidian-knowledge-graph__controls">
-        <span>{projection.nodes.length} 个节点 · {projection.edges.length} 条连线</span>
+        <span>{projection.nodes.length} 节点 · {projection.edges.length} 关系</span>
         {variant === 'workspace' ? (
           <div>
-            <button type="button" onClick={fit}>适应画布</button>
-            <button type="button" onClick={relayout}>重新布局</button>
+            <button type="button" aria-label="适应画布" title="适应画布" onClick={fit}>
+              <CornersOutIcon size={15} aria-hidden="true" />
+            </button>
+            <button type="button" aria-label="重新布局" title="重新布局" onClick={relayout}>
+              <ShuffleIcon size={15} aria-hidden="true" />
+            </button>
           </div>
         ) : (
           <span className="obsidian-knowledge-graph__tour-status">
@@ -794,6 +940,14 @@ export function ObsidianKnowledgeGraph({
           {visibleLabel}
         </p>
       ) : null}
+      {variant === 'workspace' && activationPoint ? (
+        <i
+          key={activationPoint.key}
+          className="obsidian-knowledge-graph__activation"
+          style={{ left: activationPoint.x, top: activationPoint.y }}
+          aria-hidden="true"
+        />
+      ) : null}
       {unavailable ? (
         <p className="obsidian-knowledge-graph__notice" role="alert">
           {variant === 'preview'
@@ -801,10 +955,16 @@ export function ObsidianKnowledgeGraph({
             : '节点画布暂时不可用；右侧搜索、详情与证据仍可继续使用。'}
         </p>
       ) : null}
-      {!focusNodeId && !hasEdges ? (
+      {variant === 'preview' && !focusNodeId && !hasEdges ? (
         <p className="obsidian-knowledge-graph__notice" role="status">
           七维入口已就绪。搜索条目，或选择维度节点开始探索。
         </p>
+      ) : null}
+      {variant === 'workspace' && !focusNodeId && !hasEdges ? (
+        <div className="obsidian-knowledge-graph__start" role="status">
+          <strong>选择一个维度开始</strong>
+          <span>或在右侧搜索具体概念</span>
+        </div>
       ) : null}
       <div
         ref={canvasRef}

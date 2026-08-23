@@ -26,8 +26,12 @@ from qunxue_api.modules.theory_matching import (
     MatchRunStatus,
     TheoryCandidateContentSnapshot,
     TheoryCandidateSnapshot,
+    TheoryDecisionAction,
+    TheoryDecisionCommand,
+    TheoryDecisionDraftSnapshot,
     TheoryJudgementDraft,
     TheoryJudgementVerdict,
+    TheoryUseAssignment,
 )
 
 
@@ -223,3 +227,91 @@ def test_repository_does_not_overwrite_a_concurrent_match_run_update(
     assert persisted == first
     with client.app.state.database.session() as session:
         assert SqliteMatchRunRepository(session).get(base.match_run_id) == first
+
+
+def test_decision_draft_restores_and_replays_the_original_autosave_after_restart(
+    client: TestClient,
+) -> None:
+    registered = client.post(
+        "/api/session/register",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "draft-restart@example.com", "password": "research-passphrase"},
+    )
+    assert registered.status_code == 201
+    created = client.post(
+        "/api/research-tasks",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"entry_type": "direct_input"},
+    )
+    assert created.status_code == 201
+    run = _persistable_run(UUID(created.json()["task_id"]))
+    now = datetime.now(UTC)
+    first = TheoryDecisionDraftSnapshot(
+        draft_id=uuid4(),
+        match_run_id=run.match_run_id,
+        version=1,
+        expected_match_run_version=run.version,
+        completion_basis=run.completion_basis,
+        decisions=(
+            TheoryDecisionCommand(
+                candidate_id=run.candidates[0].candidate_id,
+                candidate_version=run.candidates[0].candidate_version,
+                action=TheoryDecisionAction.ADOPT,
+                reason="用户输入的可恢复理由",
+                related_source_ids=("source-1",),
+            ),
+        ),
+        use_assignments=(
+            TheoryUseAssignment(
+                candidate_id=run.candidates[0].candidate_id,
+                role_code="primary",
+                responsibility="解释互助变化",
+            ),
+        ),
+        relations=(),
+        acknowledged_candidate_ids=(),
+        failed_candidate_ids=(),
+        partial_completion_acknowledgement_reason=None,
+        updated_at=now,
+    )
+
+    with client.app.state.database.session() as session:
+        repository = SqliteMatchRunRepository(session)
+        repository.add(run)
+        assert repository.save_decision_draft(
+            first,
+            expected_version=0,
+            idempotency_key="draft-save-1",
+            request_hash="sha256:first",
+            request_record_id=uuid4(),
+        ) == first
+
+    with client.app.state.database.session() as session:
+        repository = SqliteMatchRunRepository(session)
+        assert repository.get_decision_draft(run.match_run_id) == first
+        assert repository.get_decision_draft_replay(
+            match_run_id=run.match_run_id,
+            idempotency_key="draft-save-1",
+        ) == ("sha256:first", first)
+
+        second = replace(
+            first,
+            version=2,
+            decisions=(replace(first.decisions[0], reason="修改后的用户理由"),),
+            updated_at=datetime.now(UTC),
+        )
+        assert repository.save_decision_draft(
+            second,
+            expected_version=1,
+            idempotency_key="draft-save-2",
+            request_hash="sha256:second",
+            request_record_id=uuid4(),
+        ) == second
+
+    with client.app.state.database.session() as session:
+        repository = SqliteMatchRunRepository(session)
+        assert repository.get_decision_draft(run.match_run_id) == second
+        assert repository.get_decision_draft_replay(
+            match_run_id=run.match_run_id,
+            idempotency_key="draft-save-1",
+        ) == ("sha256:first", first)

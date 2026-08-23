@@ -11,8 +11,10 @@ import {
 import { useCallback, useState, type ReactNode } from 'react'
 
 import {
+  AccountSettingsPage,
+  AdminUsersPage,
   LoginPage,
-  MyResearchPage,
+  PasswordResetPage,
   RegisterPage,
   useAccount,
 } from '../modules/account'
@@ -30,6 +32,7 @@ import {
   type FullscreenKnowledgeGraphState,
 } from '../modules/knowledge-graph'
 import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
+import { ResearchTaskNavigationRoute } from './ResearchTaskNavigationRoute'
 import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
@@ -39,8 +42,9 @@ import {
   PhenomenonWorkspace,
   ResearchWorkspaceShell,
 } from '../modules/socio-match-workspace'
-import { PageContent, PageShell } from './ui/PageShell'
+import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
+import { RouteMotionSurface } from './route-motion'
 
 export type SessionState =
   | { status: 'loading' }
@@ -261,31 +265,56 @@ function RegisterRoute({ sessionState }: { sessionState: SessionState }) {
   )
 }
 
-function MyResearchRoute() {
+function NewResearchRoute({ userId }: { userId: string | null }) {
+  return <NewResearchWorkspacePage userId={userId} />
+}
+
+function AccountSettingsRoute() {
+  const account = useAccount()
+  const navigate = useNavigate()
+  const returnToPublicHome = () => navigate('/', { replace: true, state: { loggedOut: true } })
+  const leaveAccount = () => {
+    void account.logout().then(() => {
+      window.setTimeout(returnToPublicHome, 0)
+    }).catch(() => {
+      returnToPublicHome()
+    })
+  }
   return (
-    <PageShell wide>
+    <PageShell wide shader>
       <PageContent>
-        <section className="research-library">
-          <header className="research-library__header">
-            <h1>我的研究</h1>
-            <a href="/research/new">新建研究</a>
-          </header>
-          <div className="research-library__toolbar">
-            <nav aria-label="研究库视图">
-              <span aria-current="page">全部研究</span>
-            </nav>
-          </div>
-          <section className="research-library__content" aria-label="研究任务列表">
-            <MyResearchPage />
-          </section>
-        </section>
+        <AccountSettingsPage
+          onProfileUpdated={() => account.retrySession()}
+          onSessionExpired={() => account.retrySession()}
+          onAccountDeactivated={leaveAccount}
+          onAccountDeleted={leaveAccount}
+        />
       </PageContent>
     </PageShell>
   )
 }
 
-function NewResearchRoute() {
-  return <NewResearchWorkspacePage />
+function AdminUsersRoute() {
+  const navigate = useNavigate()
+  return (
+    <PageShell wide>
+      <PageContent>
+        <AdminUsersPage
+          onForbidden={() => navigate('/settings', { replace: true })}
+          onSessionExpired={() => navigate('/login?redirect=%2Fadmin%2Fusers', { replace: true })}
+        />
+      </PageContent>
+    </PageShell>
+  )
+}
+
+function PasswordResetRoute() {
+  const { token = '' } = useParams<{ token: string }>()
+  return (
+    <PageShell immersive>
+      <PasswordResetPage token={token} loginHref="/login" />
+    </PageShell>
+  )
 }
 
 function PhenomenonRoute() {
@@ -342,7 +371,14 @@ export function AppRoutes({
   sessionState,
 }: AppRoutesProps) {
   const account = useAccount()
+  const location = useLocation()
   const resolvedSessionState: SessionState = sessionState ?? account.sessionState
+  const isLoggedOutNavigation = Boolean(
+    location.state && typeof location.state === 'object' && 'loggedOut' in location.state,
+  )
+  const authenticatedUserId = account.sessionState.status === 'authenticated'
+    ? account.sessionState.session.user.userId
+    : null
   const protectedRoute = (element: ReactNode) => (
     <ProtectedRoute sessionState={resolvedSessionState}>{element}</ProtectedRoute>
   )
@@ -351,27 +387,53 @@ export function AppRoutes({
   )
 
   return (
-    <Routes>
+    <RailStateProvider>
+      <RouteMotionSurface>
+        <Routes>
       <Route
         path="/"
-        element={resolvedSessionState.status === 'authenticated'
+        element={resolvedSessionState.status === 'authenticated' && !isLoggedOutNavigation
           ? <Navigate replace to="/app" />
           : productHome}
       />
       <Route path="/welcome" element={productHome} />
       <Route path="/app" element={protectedRoute(<AppHomePage />)} />
-      <Route path="/agent" element={protectedRoute(<ResearchAgentPage />)} />
+      <Route path="/agent" element={protectedRoute(<ResearchAgentPage userId={authenticatedUserId} />)} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
-      <Route path="/research/new" element={protectedRoute(<NewResearchRoute />)} />
-      <Route path="/research/:task_id/phenomenon" element={protectedRoute(<PhenomenonRoute />)} />
-      <Route path="/research/:task_id/match" element={protectedRoute(<ResearchDocumentWorkbench />)} />
-      <Route path="/research/:task_id/framework" element={protectedRoute(<ResearchDocumentWorkbench />)} />
+      <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
+      <Route
+        path="/research/:task_id"
+        element={protectedRoute(<ResearchTaskNavigationRoute>{null}</ResearchTaskNavigationRoute>)}
+      />
+      <Route
+        path="/research/:task_id/phenomenon"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><PhenomenonRoute /></ResearchTaskNavigationRoute>,
+        )}
+      />
+      <Route
+        path="/research/:task_id/match"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench userId={authenticatedUserId} /></ResearchTaskNavigationRoute>,
+        )}
+      />
+      <Route
+        path="/research/:task_id/framework"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench userId={authenticatedUserId} /></ResearchTaskNavigationRoute>,
+        )}
+      />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
-      <Route path="/my" element={protectedRoute(<MyResearchRoute />)} />
-    </Routes>
+      <Route path="/password-reset/:token" element={<PasswordResetRoute />} />
+      <Route path="/my" element={protectedRoute(<Navigate replace to="/app?research=all" />)} />
+      <Route path="/settings" element={protectedRoute(<AccountSettingsRoute />)} />
+      <Route path="/admin/users" element={protectedRoute(<AdminUsersRoute />)} />
+        </Routes>
+      </RouteMotionSurface>
+    </RailStateProvider>
   )
 }
 

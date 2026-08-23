@@ -14,6 +14,14 @@ const cytoscapeMock = vi.hoisted(() => vi.fn(() => ({
 })))
 
 vi.mock('cytoscape', () => ({ default: cytoscapeMock }))
+vi.mock('@paper-design/shaders-react', () => ({
+  GrainGradient: () => null,
+  MeshGradient: () => null,
+  NeuroNoise: () => null,
+  PaperTexture: () => null,
+  ShaderMount: () => null,
+  Warp: () => null,
+}))
 
 afterEach(() => {
   cleanup()
@@ -170,6 +178,62 @@ function requestUrl(input: RequestInfo | URL) {
   return new URL(input.url)
 }
 
+function researchNavigationFixture(resumePath: string) {
+  const stage = resumePath.endsWith('/phenomenon')
+    ? 'phenomenon_confirmation'
+    : resumePath.endsWith('/framework')
+      ? 'framework_drafting'
+      : 'theory_matching'
+  return {
+    adopted_theory_count: 0,
+    allowed_actions: stage === 'phenomenon_confirmation'
+      ? ['confirm_phenomenon']
+      : stage === 'framework_drafting'
+        ? ['review_framework']
+        : ['review_theory_candidates'],
+    blocker: null,
+    conversation_id: 'conversation-1',
+    created_at: '2026-08-21T08:00:00Z',
+    current_framework_id: null,
+    current_match_run_id: null,
+    current_material_intake_run_id: null,
+    current_phenomenon_candidate_id: null,
+    current_stage: stage,
+    current_theory_plan_id: null,
+    entry_type: 'direct_input',
+    knowledge_release_id: 'release-formal-1',
+    next_action_label: stage === 'phenomenon_confirmation'
+      ? '确认现象'
+      : stage === 'framework_drafting'
+        ? '审校研究框架'
+        : '查看候选理论',
+    phenomenon_summary: null,
+    resume_path: resumePath,
+    retry: null,
+    seed_theory_id: null,
+    seed_theory_name: null,
+    source_run_id: 'run-1',
+    source_turn_id: 'turn-1',
+    stage_label: stage === 'phenomenon_confirmation'
+      ? '现象待确认'
+      : stage === 'framework_drafting'
+        ? '框架草稿'
+        : '匹配生成中',
+    status: 'in_progress',
+    task_id: 'task-1',
+    updated_at: '2026-08-21T09:00:00Z',
+    version: 3,
+  }
+}
+
+function researchWorkspaceResponse(input: RequestInfo | URL, resumePath: string) {
+  const request = requestUrl(input)
+  if (request.pathname.endsWith('/navigation')) return json(researchNavigationFixture(resumePath))
+  if (request.pathname.endsWith('/research-documents')) return json({ items: [] })
+  if (request.pathname.endsWith('/document-proposals')) return json({ items: [] })
+  return json({}, 404)
+}
+
 function agentConversationFixture(prompt = '为什么同一社区里的互助正在减少？') {
   return {
     conversation_id: 'agent-conversation-1',
@@ -305,6 +369,14 @@ function pausableToolAgentStream(conversation: ReturnType<typeof agentConversati
 }
 
 describe('App routes', () => {
+  it('hosts every route inside one shared motion surface', () => {
+    renderRoute('/welcome')
+
+    expect(screen.getByTestId('route-motion-surface')).toContainElement(
+      screen.getByRole('main'),
+    )
+  })
+
   it('uses one task-oriented navigation model across desktop and mobile', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
     renderRoute('/app', { status: 'authenticated' })
@@ -323,11 +395,10 @@ describe('App routes', () => {
       '工作台',
       '研究 Agent',
       '新建研究',
-      '我的研究',
       '知识库',
       '知识图谱',
     ])
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(6)
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(5)
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',
@@ -337,6 +408,18 @@ describe('App routes', () => {
       'href',
       '/knowledge/graph',
     )
+  })
+
+  it('keeps the sidebar stationary and preserves its user-selected width across routes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+    renderRoute('/app', { status: 'authenticated' })
+
+    fireEvent.click(await screen.findByRole('button', { name: '收起侧栏' }))
+    expect(screen.getByRole('button', { name: '展开侧栏' })).toBeVisible()
+
+    fireEvent.click(screen.getByRole('link', { name: '研究 Agent' }))
+
+    expect(await screen.findByRole('button', { name: '展开侧栏' })).toBeVisible()
   })
 
   it('renders the work home as a focused research library instead of a dashboard card grid', async () => {
@@ -355,31 +438,117 @@ describe('App routes', () => {
     expect(screen.queryByRole('heading', { name: '从现象到框架' })).not.toBeInTheDocument()
   })
 
-  it.each([
-    ['/research/task-1/match', '理论判断文档'],
-    ['/research/task-1/framework', '研究框架文档'],
-  ])('shows %s as an honest research-stage workbench', async (path, title) => {
-    renderRoute(path, { status: 'authenticated' })
-
-    expect(await screen.findByRole('heading', { name: title })).toBeVisible()
-    expect(screen.getByRole('navigation', { name: '研究章节' })).toBeVisible()
-    expect(screen.getByRole('heading', { name: title }).closest('main')).toHaveClass(
-      'research-document-workbench',
-    )
-  })
-
-  it('renders my research as a compact task library inside the shared app shell', async () => {
+  it('uses the same empty research guidance in recent and complete views', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
-    renderRoute('/my', { status: 'authenticated' })
 
-    expect(await screen.findByRole('heading', { level: 1, name: '我的研究' })).toBeVisible()
-    expect(screen.getByRole('navigation', { name: '研究库视图' })).toBeVisible()
-    expect(screen.getByRole('region', { name: '研究任务列表' })).toBeVisible()
-    expect(within(screen.getByRole('main')).getByRole('link', { name: '新建研究' })).toHaveAttribute(
+    renderRoute('/app', { status: 'authenticated' })
+    const guidance = '从一个具体的社会现象开始。研究阶段、依据和下一步会保存在这里。'
+
+    expect(await screen.findByText(guidance)).toBeVisible()
+    expect(screen.getByRole('link', { name: '开始第一项研究' })).toBeVisible()
+    fireEvent.click(screen.getByRole('link', { name: '查看全部' }))
+
+    expect(await screen.findByRole('region', { name: '全部研究' })).toBeVisible()
+    expect(screen.getByText(guidance)).toBeVisible()
+    expect(screen.getByRole('link', { name: '开始第一项研究' })).toHaveAttribute(
       'href',
       '/research/new',
     )
-    expect(screen.queryByText('ACCOUNT / MY')).not.toBeInTheDocument()
+    expect(screen.queryByText('从一个具体的社会现象开始，研究过程会持续保存在这里。')).not.toBeInTheDocument()
+  })
+
+  it('switches the workbench right column to complete research management', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({
+      items: [{
+        adopted_theory_count: 2,
+        allowed_actions: ['confirm_phenomenon'],
+        blocker: null,
+        created_at: '2026-08-08T08:00:00Z',
+        current_framework_id: null,
+        current_match_run_id: null,
+        current_material_intake_run_id: null,
+        current_phenomenon_candidate_id: 'candidate-1',
+        current_stage: 'phenomenon_confirmation',
+        entry_type: 'direct',
+        next_action_label: '确认现象',
+        phenomenon_summary: {
+          phenomenon: '同一社区中的互助为何逐渐减少？',
+          research_intent: '比较关系持续性与制度规范的解释',
+        },
+        seed_theory_id: null,
+        seed_theory_name: null,
+        resume_path: '/research/task-1/phenomenon',
+        retry: null,
+        stage_label: '现象待确认',
+        status: 'active',
+        task_id: 'task-1',
+        updated_at: '2026-08-09T08:00:00Z',
+        version: 1,
+      }],
+      next_cursor: null,
+    })))
+
+    renderRoute('/app', { status: 'authenticated' })
+    fireEvent.click(await screen.findByRole('link', { name: '查看全部' }))
+
+    const researchColumn = await screen.findByRole('region', { name: '全部研究' })
+    expect(screen.getByRole('heading', { level: 1, name: '工作台' })).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: '全部研究' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '最近研究' })).not.toBeInTheDocument()
+    expect(within(researchColumn).getByText('2 个理论')).toBeVisible()
+    fireEvent.click(within(researchColumn).getByRole('button', { name: /打开研究操作/ }))
+    expect(within(researchColumn).getByRole('menuitem', { name: '删除研究' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/app?research=all')
+
+    fireEvent.click(screen.getByRole('link', { name: '最近' }))
+    expect(await screen.findByRole('region', { name: '最近研究' })).toBeVisible()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/app')
+  })
+
+  it('resumes a task-only research entry from the server navigation path', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/match')
+    }))
+
+    renderRoute('/research/task-1', { status: 'authenticated' })
+
+    expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
+    expect(document.querySelector('main.research-document-workbench[data-stage="match"]')).toBeInTheDocument()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+  })
+
+  it('keeps M4 inside the continuous document workbench on the match route', async () => {
+    const path = '/research/task-1/match'
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, path)
+    }))
+    renderRoute(path, { status: 'authenticated' })
+
+    expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
+    expect(document.querySelector('main.research-document-workbench[data-stage="match"]')).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: '研究章节' })).not.toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toBeVisible()
+  })
+
+  it('keeps the complete document workbench on the M5 framework route', async () => {
+    const path = '/research/task-1/framework'
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, path)
+    }))
+    renderRoute(path, { status: 'authenticated' })
+
+    expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
+    expect(document.querySelector('main.research-document-workbench[data-stage="framework"]')).toBeInTheDocument()
+  })
+
+  it('opens the work-home complete research column from the legacy /my address', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+    renderRoute('/my', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { level: 1, name: '工作台' })).toBeVisible()
+    expect(screen.getByRole('region', { name: '全部研究' })).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: '全部研究' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/app?research=all')
   })
 
   it('renders the graph workspace from its independent route', async () => {
@@ -389,16 +558,16 @@ describe('App routes', () => {
     expect(screen.getByRole('region', { name: '全屏知识图谱工作台' })).toBeVisible()
   })
 
-  it('opens the knowledge library with the product rail collapsed', async () => {
+  it('opens the knowledge library with the product rail expanded until the user collapses it', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeResponse(input)))
 
     renderRoute('/knowledge?knowledge_release_id=release-a')
 
     expect(await screen.findByRole('heading', { name: '本体论' })).toBeVisible()
-    const expandRail = screen.getByRole('button', { name: '展开侧栏' })
-    expect(expandRail).toBeVisible()
-    fireEvent.click(expandRail)
-    expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
+    const collapseRail = screen.getByRole('button', { name: '收起侧栏' })
+    expect(collapseRail).toBeVisible()
+    fireEvent.click(collapseRail)
+    expect(screen.getByRole('button', { name: '展开侧栏' })).toBeVisible()
   })
 
   it('keeps a knowledge entry in its own scrollable workspace', async () => {
@@ -407,7 +576,7 @@ describe('App routes', () => {
     renderRoute('/knowledge/D1%3AC001?knowledge_release_id=release-a')
 
     expect(await screen.findByRole('heading', { name: '概念' })).toBeVisible()
-    expect(screen.getByRole('button', { name: '展开侧栏' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
     expect(screen.getByRole('main')).toHaveClass('page-shell--workspace')
     expect(screen.getByRole('region', { name: '知识条目正文' })).toBeVisible()
   })
@@ -419,8 +588,12 @@ describe('App routes', () => {
     ['/research/task-1/phenomenon', '确认现象'],
     ['/research/task-1/match', '理论判断文档'],
     ['/research/task-1/framework', '研究框架文档'],
-    ['/my', '我的研究'],
   ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
+    if (path.startsWith('/research/task-1/')) {
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+        return researchWorkspaceResponse(input, path)
+      }))
+    }
     renderRoute(path, { status: 'authenticated' })
 
     expect(
@@ -433,11 +606,14 @@ describe('App routes', () => {
     renderRoute('/research/new', { status: 'authenticated' })
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    expect(screen.getByRole('button', { name: '收起侧栏' })).toBeVisible()
     expect(within(workspace).getByRole('heading', { name: '从一个社会学问题开始' })).toBeVisible()
-    expect(within(workspace).getByText('研究论证地图')).toBeVisible()
-    expect(within(workspace).getByText('等待研究问题')).toBeVisible()
+    expect(within(workspace).getByLabelText('空白研究画布')).toBeVisible()
+    expect(within(workspace).queryByText('让问题在这里形成结构')).not.toBeInTheDocument()
     expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toBeVisible()
-    expect(within(workspace).getByText('不是聊天摘要。这里仅保留 Agent 明确建立的问题、理论、主张、证据与缺口。')).toBeVisible()
+    expect(within(workspace).queryByText('研究工作区')).not.toBeInTheDocument()
+    expect(within(workspace).queryByText('不是聊天摘要。这里仅保留 Agent 明确建立的问题、理论、主张、证据与缺口。')).not.toBeInTheDocument()
+    expect(within(workspace).queryByText(/0 个节点/)).not.toBeInTheDocument()
   })
 
   it('projects a real Agent turn into research map nodes and traceable evidence', async () => {
@@ -482,7 +658,7 @@ describe('App routes', () => {
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
     expect(await within(workspace).findByText('互惠规范与社区互助')).toBeVisible()
-    expect(within(workspace).getByText('研究论证地图')).toBeVisible()
+    expect(within(workspace).queryByText('研究论证地图')).not.toBeInTheDocument()
     await waitFor(() => expect(within(workspace).getByText('互助关系的结构性变化')).toBeInTheDocument())
     expect(within(workspace).getByRole('button', { name: /查看证据/ })).toBeVisible()
   })
@@ -506,6 +682,7 @@ describe('App routes', () => {
 
     const agentConversation = screen.getByRole('region', { name: '社会学 Agent 对话' })
     expect(within(agentConversation).queryByText('从知识库出发，和你的学科 Agent 直接聊。')).not.toBeInTheDocument()
+    expect(within(agentConversation).getByRole('heading', { name: '你想研究什么？' })).toBeVisible()
     const textbox = within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })
     const sendButton = within(agentConversation).getByRole('button', {
       name: '发送给社会学 Agent',
@@ -524,17 +701,102 @@ describe('App routes', () => {
 
     const conversationPreview = within(agentConversation).getByRole('log', { name: '对话内容' })
     expect(within(conversationPreview).getByText('为什么同一社区里的互助正在减少？')).toBeInTheDocument()
-    const toolSummary = await within(conversationPreview).findByRole('button', {
-      name: /已使用 1 个工具/,
-    })
+    const toolSummary = await within(conversationPreview).findByRole('button', { name: /Agent 已完成工具调用/ })
     expect(toolSummary).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(toolSummary)
     expect(within(conversationPreview).getByText('检索知识库')).toBeVisible()
-    expect(within(conversationPreview).getByText('社区互助减少')).toBeVisible()
-    expect(within(conversationPreview).getByText('找到 1 条可引用证据')).toBeVisible()
+    expect(within(conversationPreview).getByText(/社区互助减少/)).toBeVisible()
+    expect(within(conversationPreview).getByText(/找到 1 条可引用证据/)).toBeVisible()
     expect(within(conversationPreview).queryByText(/^Agent$/)).not.toBeInTheDocument()
     expect(textbox).toHaveValue('')
     expect(within(agentConversation).getByRole('button', { name: '发送给社会学 Agent' })).toBeVisible()
+  })
+
+  it('keeps the complete research conversation surface on the independent Agent page', async () => {
+    const conversation = agentConversationFixture('平台算法如何改变年轻人的职业选择？')
+    conversation.turns[0].assistant.content = [
+      '可以先比较可见性与风险分配。',
+      '',
+      '| 机制 | 观察线索 |',
+      '| --- | --- |',
+      '| 推荐排序 | 职业可见性变化 |',
+    ].join('\n')
+    conversation.turns[0].assistant.citations = [{
+      citation_id: 'citation-agent-surface',
+      label: '平台劳动与职业选择',
+      kind: 'entry',
+      excerpt: '平台排序会改变青年看见职业机会与评估风险的方式。',
+      knowledge_id: 'D1:C213',
+      source_id: null,
+    }]
+    conversation.turns[0].tool_traces = [{
+      tool: 'search_knowledge',
+      phase: 'finished',
+      call_id: 'tool-agent-surface',
+      input: { query: '平台算法 青年 职业选择' },
+      output: {
+        items: [{
+          knowledge_id: 'D1:C213',
+          title: '平台劳动与职业选择',
+          excerpt: '平台排序改变职业机会的可见性。',
+        }],
+      },
+      detail: '找到 1 条知识库条目',
+      error: null,
+    }]
+    Object.assign(conversation.turns[0], { knowledge_release_id: 'release-a' })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      if (request.pathname === '/api/agent/conversations') {
+        return json({
+          items: [{
+            conversation_id: conversation.conversation_id,
+            title: conversation.title,
+            updated_at: conversation.updated_at,
+            turn_count: conversation.turn_count,
+          }],
+        })
+      }
+      if (request.pathname === `/api/agent/conversations/${conversation.conversation_id}`) {
+        return json(conversation)
+      }
+      return json({}, 404)
+    }))
+    renderRoute('/agent', { status: 'authenticated' })
+
+    const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
+    fireEvent.click(within(history).getAllByRole('button', { name: /平台算法如何改变年轻人的职业选择/ })[0])
+    const agentConversation = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    expect(agentConversation.querySelector('[data-role="user-message"]')).toHaveTextContent(
+      '平台算法如何改变年轻人的职业选择？',
+    )
+    expect(agentConversation.querySelector('[data-role="assistant-response"]')).toContainElement(
+      within(agentConversation).getByRole('table'),
+    )
+
+    const activityButtons = within(agentConversation).getAllByRole('button', { name: '查看活动' })
+    expect(activityButtons[0]).toBeVisible()
+    expect(within(agentConversation).getByRole('button', { name: '查看来源' })).toBeVisible()
+    expect(within(agentConversation).getByRole('button', { name: '打开研究记录' })).toBeVisible()
+    expect(await within(agentConversation).findByText('Agent 已完成工具调用')).toBeVisible()
+    expect(within(agentConversation).getByRole('table')).toBeVisible()
+    expect(within(agentConversation).getByRole('button', { name: '复制回答' })).toBeVisible()
+    expect(within(agentConversation).getByRole('button', { name: '重新生成' })).toBeVisible()
+
+    fireEvent.click(activityButtons[0])
+    const activity = await screen.findByRole('tabpanel', { name: 'Activity' })
+    expect(activity).toHaveTextContent('检索知识库')
+    expect(activity).toHaveTextContent('找到 1 条知识库条目')
+
+    fireEvent.click(within(agentConversation).getByRole('button', { name: /查看证据：平台劳动与职业选择/ }))
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /平台劳动与职业选择/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(basis).toHaveTextContent('平台排序会改变青年看见职业机会与评估风险的方式。')
+    expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
+      'href',
+      '/knowledge/D1%3AC213?knowledge_release_id=release-a&return_to=%2Fagent%3Fconversation_id%3Dagent-conversation-1%26knowledge_release_id%3Drelease-a',
+    )
   })
 
   it('answers directly without pretending that every turn searches the knowledge library', async () => {
@@ -554,7 +816,7 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    expect(await within(agentConversation).findByText('Agent 正在思考…')).toBeVisible()
+    expect(await within(agentConversation).findByText('Agent 正在组织问题与证据…')).toBeVisible()
     expect(within(agentConversation).queryByText('正在检索知识库…')).not.toBeInTheDocument()
     expect(within(agentConversation).queryByRole('region', { name: 'Agent 工作过程' })).not.toBeInTheDocument()
 
@@ -578,10 +840,9 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    const toolSummary = await within(agentConversation).findByRole('button', {
-      name: /有 1 个工具调用未完成/,
-    })
-    fireEvent.click(toolSummary)
+    const failedToolSummary = await within(agentConversation).findByRole('button', { name: /工具调用未完成/ })
+    expect(failedToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(failedToolSummary)
     expect(within(agentConversation).getByText('知识库暂时不可用')).toBeVisible()
     expect(within(agentConversation).getByText(conversation.turns[0].assistant.content)).toBeVisible()
   })
@@ -601,13 +862,12 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    const toolSummary = await within(agentConversation).findByRole('button', {
-      name: /已使用 2 个工具/,
-    })
-    fireEvent.click(toolSummary)
+    const repeatedToolSummary = await within(agentConversation).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(repeatedToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(repeatedToolSummary)
     expect(within(agentConversation).getAllByText('检索知识库')).toHaveLength(2)
-    expect(within(agentConversation).getByText('青年')).toBeVisible()
-    expect(within(agentConversation).getByText('孤独')).toBeVisible()
+    expect(within(agentConversation).getByText(/query: 青年/)).toBeVisible()
+    expect(within(agentConversation).getByText(/query: 孤独/)).toBeVisible()
   })
 
   it('settles the UI and marks an active tool unfinished when generation is stopped', async () => {
@@ -629,15 +889,15 @@ describe('App routes', () => {
     fireEvent.click(await within(agentConversation).findByRole('button', { name: '停止生成' }))
     stream.close()
 
-    expect(await within(agentConversation).findByText('已停止生成')).toBeVisible()
-    expect(within(agentConversation).queryByText('Agent 正在思考…')).not.toBeInTheDocument()
-    expect(within(agentConversation).getByRole('button', { name: /有 1 个工具调用未完成/ })).toBeVisible()
-    expect(within(agentConversation).getByText('已停止')).toBeVisible()
+    expect(await within(agentConversation).findByText('本轮已停止，未保存未完成的回答。')).toBeVisible()
+    expect(within(agentConversation).queryByText('Agent 正在组织问题与证据…')).not.toBeInTheDocument()
+    expect(within(agentConversation).getByText('工具调用已中断')).toBeVisible()
+    expect(within(agentConversation).getByText('已中断')).toBeVisible()
     expect(within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })).toBeEnabled()
     expect(within(agentConversation).getByRole('button', { name: '发送给社会学 Agent' })).toBeVisible()
   })
 
-  it('reveals citation context before opening a knowledge entry', async () => {
+  it('reveals citation context through Sources and Basis before opening a knowledge entry', async () => {
     const conversation = agentConversationFixture()
     conversation.turns[0].assistant.citations = [{
       citation_id: 'citation-1',
@@ -668,12 +928,14 @@ describe('App routes', () => {
     const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
     fireEvent.click(within(history).getByRole('button', { name: /为什么同一社区里的互助正在减少/ }))
 
-    const citation = await screen.findByRole('button', { name: /互惠规范/ })
+    const citation = await screen.findByRole('button', { name: '查看证据：互惠规范' })
     expect(screen.queryByText('互惠规范描述了持续互动中信任与回报的关系。')).not.toBeInTheDocument()
     fireEvent.click(citation)
 
-    expect(screen.getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
-    expect(screen.getByRole('button', { name: '打开知识条目' })).toBeVisible()
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(within(basis).getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
   })
 
   it('hides internal citation ids from rendered Agent prose', async () => {
@@ -800,9 +1062,9 @@ describe('App routes', () => {
     const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
     fireEvent.click(within(history).getByRole('button', { name: /社会行动四类型/ }))
     const transcript = await screen.findByRole('log', { name: '对话内容' })
-    const toolSummary = await within(transcript).findByRole('button', { name: /已使用 1 个工具/ })
-    fireEvent.click(toolSummary)
-
+    const restoredToolSummary = await within(transcript).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(restoredToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(restoredToolSummary)
     expect(within(transcript).getByText(/韦伯将社会行动区分为目的理性/)).toBeVisible()
   })
 
@@ -851,6 +1113,7 @@ describe('App routes', () => {
       items: [{
         adopted_theory_count: 0,
         allowed_actions: ['confirm_phenomenon'],
+        blocker: null,
         created_at: '2026-08-08T08:00:00Z',
         current_framework_id: null,
         current_match_run_id: null,
@@ -858,12 +1121,16 @@ describe('App routes', () => {
         current_phenomenon_candidate_id: 'candidate-1',
         current_stage: 'phenomenon_confirmation',
         entry_type: 'direct',
+        next_action_label: '确认现象',
         phenomenon_summary: {
           phenomenon: '同一社区中的互助为何逐渐减少？',
           research_intent: '比较关系持续性与制度规范的解释',
         },
         seed_theory_id: null,
         seed_theory_name: null,
+        resume_path: '/research/task-1/phenomenon',
+        retry: null,
+        stage_label: '现象待确认',
         status: 'active',
         task_id: 'task-1',
         updated_at: '2026-08-09T08:00:00Z',
@@ -919,6 +1186,7 @@ describe('App routes', () => {
   it.each([
     ['/login', '登录'],
     ['/register', '注册'],
+    ['/password-reset/reset-token-value', '重设密码'],
   ])('renders the public account route %s for an anonymous visitor', async (path, title) => {
     renderRoute(path)
 
@@ -933,6 +1201,8 @@ describe('App routes', () => {
     '/research/task-1/match',
     '/research/task-1/framework',
     '/my',
+    '/settings',
+    '/admin/users',
   ])('sends anonymous visitors to login while preserving %s', async (path) => {
     renderRoute(path)
 
@@ -943,6 +1213,9 @@ describe('App routes', () => {
   })
 
   it('keeps an authenticated visitor on a protected route', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/phenomenon')
+    }))
     renderRoute('/research/task-1/phenomenon', { status: 'authenticated' })
 
     expect(
@@ -1005,11 +1278,15 @@ describe('App routes', () => {
     const destination = '/research/task-1/framework?from=my#methods'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = input as Request
-      if (request.method === 'GET') {
+      const url = requestUrl(input)
+      if (request.method === 'GET' && url.pathname === '/api/session') {
         return new Response(
           JSON.stringify({ error: { code: 'unauthenticated', message: '请先登录。', trace_id: 'trace-1' } }),
           { status: 401, headers: { 'Content-Type': 'application/json' } },
         )
+      }
+      if (request.method === 'GET') {
+        return researchWorkspaceResponse(input, '/research/task-1/framework')
       }
       return new Response(JSON.stringify({
         session_id: '25b191bb-2d85-4a88-8863-2cabf506a7a8',
@@ -1126,7 +1403,13 @@ describe('App routes', () => {
   })
 
   it('opens a release-pinned detail and returns to the supplied research task', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(knowledgeDetail())))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const request = requestUrl(input)
+      if (request.pathname.startsWith('/api/research-tasks/')) {
+        return researchWorkspaceResponse(input, '/research/task-1/match')
+      }
+      return json(knowledgeDetail())
+    }))
     renderRoute(
       '/knowledge/D1%3AC001?knowledge_release_id=release-a&return_to=%2Fresearch%2Ftask-1%2Fmatch',
       { status: 'authenticated' },
@@ -1186,10 +1469,12 @@ describe('App routes', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '以此理论开始研究' }))
 
-    expect((await screen.findAllByText('围绕「社会资本理论」展开研究')).length).toBe(2)
-    expect(screen.getByTestId('route-location')).toHaveTextContent(
-      /^\/research\/new\?seed_theory_id=theory-social-capital$/,
-    )
+    await waitFor(() => {
+      expect(screen.getByTestId('route-location')).toHaveTextContent(
+        /^\/research\/new\?seed_theory_id=theory-social-capital$/,
+      )
+    })
+    expect(screen.queryByText('围绕「社会资本理论」展开研究')).not.toBeInTheDocument()
   })
 
   it('resolves a deep knowledge entry to one fixed release before reading its detail', async () => {

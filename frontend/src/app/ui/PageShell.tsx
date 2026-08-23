@@ -1,11 +1,9 @@
-import { useState } from 'react'
-import type { PropsWithChildren, ReactNode } from 'react'
+import { createContext, useContext, useState } from 'react'
+import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
 import {
   BooksIcon,
   ChatCircleDotsIcon,
-  ClockCounterClockwiseIcon,
-  GraphIcon,
   HouseIcon,
   PlusIcon,
   SidebarSimpleIcon,
@@ -14,9 +12,11 @@ import {
   UserCircleIcon,
 } from '@phosphor-icons/react'
 
+import brandMark from '../../assets/qunxue-brand-mark.svg'
 import { useAccount } from '../../modules/account'
+import { useAppLocale } from '../i18n/AppLocaleProvider'
+import { AppFrameShader } from './AppFrameShader'
 import { NetworkStatusNotice } from './NetworkStatusNotice'
-import { SupportCenter } from './SupportCenter'
 
 type PageTitleProps = {
   eyebrow: string
@@ -24,19 +24,27 @@ type PageTitleProps = {
   lede?: string
 }
 
-const navigationItems = [
-  { href: '/app', label: '工作台', mobileLabel: '工作台', icon: HouseIcon, end: true },
-  { href: '/agent', label: '研究 Agent', mobileLabel: 'Agent', icon: ChatCircleDotsIcon, end: true },
-  { href: '/research/new', label: '新建研究', mobileLabel: '新建', icon: PlusIcon },
-  { href: '/my', label: '我的研究', mobileLabel: '研究', icon: ClockCounterClockwiseIcon },
-  { href: '/knowledge', label: '知识库', mobileLabel: '知识', icon: BooksIcon, end: true },
-  { href: '/knowledge/graph', label: '知识图谱', mobileLabel: '图谱', icon: TreeStructureIcon },
-]
+type RailState = {
+  collapsed: boolean
+  setCollapsed: Dispatch<SetStateAction<boolean>>
+}
+
+const RailStateContext = createContext<RailState | null>(null)
+
+/** 侧栏宽度属于顶层应用状态，不随中间内容的路由切换重置。 */
+export function RailStateProvider({ children }: PropsWithChildren) {
+  const [collapsed, setCollapsed] = useState(false)
+  return (
+    <RailStateContext.Provider value={{ collapsed, setCollapsed }}>
+      {children}
+    </RailStateContext.Provider>
+  )
+}
 
 function ProductMark() {
   return (
     <span className="product-mark" aria-hidden="true">
-      <GraphIcon size={21} weight="regular" />
+      <img src={brandMark} alt="" />
     </span>
   )
 }
@@ -50,6 +58,14 @@ function PrimaryNavigation({
   label: string
   compact?: boolean
 }) {
+  const { text } = useAppLocale()
+  const navigationItems = [
+    { href: '/app', label: text('工作台', 'Workbench'), mobileLabel: text('工作台', 'Home'), icon: HouseIcon, end: true },
+    { href: '/agent', label: text('研究 Agent', 'Research Agent'), mobileLabel: 'Agent', icon: ChatCircleDotsIcon, end: true },
+    { href: '/research/new', label: text('新建研究', 'New research'), mobileLabel: text('新建', 'New'), icon: PlusIcon },
+    { href: '/knowledge', label: text('知识库', 'Knowledge base'), mobileLabel: text('知识', 'Library'), icon: BooksIcon, end: true },
+    { href: '/knowledge/graph', label: text('知识图谱', 'Knowledge graph'), mobileLabel: text('图谱', 'Graph'), icon: TreeStructureIcon },
+  ]
   return (
     <nav className={className} aria-label={label}>
       {navigationItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => (
@@ -69,25 +85,33 @@ export function PageShell({
   workspace = false,
   immersive = false,
   wide = false,
+  shader = false,
   defaultRailCollapsed = false,
   railContent,
+  railContentRef,
 }: PropsWithChildren<{
   workspace?: boolean
   immersive?: boolean
   wide?: boolean
+  shader?: boolean
   defaultRailCollapsed?: boolean
   railContent?: ReactNode
+  railContentRef?: Ref<HTMLDivElement>
 }>) {
   const account = useAccount()
+  const { text } = useAppLocale()
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
-  const [railCollapsed, setRailCollapsed] = useState(defaultRailCollapsed)
+  const sharedRailState = useContext(RailStateContext)
+  const [localRailCollapsed, setLocalRailCollapsed] = useState(defaultRailCollapsed)
+  const railCollapsed = sharedRailState?.collapsed ?? localRailCollapsed
+  const setRailCollapsed = sharedRailState?.setCollapsed ?? setLocalRailCollapsed
 
   async function logout() {
     setLogoutFailed(false)
     try {
       await account.logout(() => {
-        navigate('/', { replace: true })
+        navigate('/', { replace: true, state: { loggedOut: true } })
       })
     } catch {
       setLogoutFailed(true)
@@ -100,80 +124,86 @@ export function PageShell({
       immersive ? 'app-frame--immersive' : '',
       railCollapsed && !immersive ? 'app-frame--rail-collapsed' : '',
     ].filter(Boolean).join(' ')}>
+      {immersive ? null : (
+        <div className="app-frame__backdrop" aria-hidden="true">
+          {shader ? <AppFrameShader /> : null}
+        </div>
+      )}
       <NetworkStatusNotice />
       {immersive ? null : (
         <>
-          <a className="skip-link" href="#main-content">跳到主要内容</a>
+          <a className="skip-link" href="#main-content">{text('跳到主要内容', 'Skip to main content')}</a>
           <header className="masthead mobile-masthead">
-            <Link className="wordmark" to="/app" aria-label="群学致知工作台">
+            <Link className="wordmark" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
               <ProductMark />
               <strong>群学致知</strong>
             </Link>
-            <nav className="account-navigation" aria-label="账户导航">
+            <nav className="account-navigation" aria-label={text('账户导航', 'Account navigation')}>
               {account.sessionState.status === 'authenticated' ? (
                 <>
+                  <NavLink to="/settings">{text('账户', 'Account')}</NavLink>
                   <button className="nav-action" type="button" onClick={logout}>
-                    {logoutFailed ? '退出失败，请重试' : '退出'}
+                    {logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
                   </button>
                 </>
               ) : account.sessionState.status === 'loading' ? (
-                <span className="session-email">确认中</span>
+                <span className="session-email">{text('确认中', 'Checking…')}</span>
               ) : (
-                <NavLink to="/login">登录</NavLink>
+                <NavLink to="/login">{text('登录', 'Sign in')}</NavLink>
               )}
             </nav>
           </header>
 
-          <aside className={`desktop-rail${railCollapsed ? ' desktop-rail--collapsed' : ''}`} aria-label="群学致知功能栏">
+          <aside className={`desktop-rail${railCollapsed ? ' desktop-rail--collapsed' : ''}`} aria-label={text('群学致知功能栏', 'Qunxue Zhizhi navigation')}>
             <div className="desktop-rail__topbar">
-              <Link className="desktop-rail__brand" to="/app" aria-label="群学致知工作台">
+              <Link className="desktop-rail__brand" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
                 <ProductMark />
                 <strong>群学致知</strong>
               </Link>
               <button
                 className="desktop-rail__collapse"
                 type="button"
-                aria-label={railCollapsed ? '展开侧栏' : '收起侧栏'}
-                title={railCollapsed ? '展开侧栏' : '收起侧栏'}
+                aria-label={railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
+                title={railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
                 onClick={() => setRailCollapsed((collapsed) => !collapsed)}
               >
                 <SidebarSimpleIcon size={18} weight="regular" />
               </button>
             </div>
             <div className="desktop-rail__body">
-              <PrimaryNavigation className="desktop-navigation" label="桌面主导航" />
-              {railContent ? (
-                <div className="desktop-rail__secondary">{railContent}</div>
+              <PrimaryNavigation className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
+              {railContent || railContentRef ? (
+                <div ref={railContentRef} className="desktop-rail__secondary">{railContent}</div>
               ) : null}
             </div>
             <div className="desktop-rail__account">
               {account.sessionState.status === 'authenticated' ? (
                 <>
                   <NavLink
-                    to="/my"
-                    aria-label={`账户 ${account.sessionState.session.user.email}`}
+                    to="/settings"
+                    aria-label={text(`账户 ${account.sessionState.session.user.email}`, `Account ${account.sessionState.session.user.email}`)}
                     title={account.sessionState.session.user.email}
                   >
                     <UserCircleIcon size={18} weight="regular" />
                     <span>
-                      <strong>{account.sessionState.session.user.displayName ?? '研究者'}</strong>
+                      <strong>{account.sessionState.session.user.displayName ?? text('研究者', 'Researcher')}</strong>
                       <small>{account.sessionState.session.user.email}</small>
                     </span>
                   </NavLink>
                   <button
                     type="button"
-                    aria-label={logoutFailed ? '退出失败，请重试' : '退出'}
-                    title={logoutFailed ? '退出失败，请重试' : '退出'}
+                    aria-label={logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
+                    title={logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
                     onClick={logout}
                   >
                     <SignOutIcon size={18} weight="regular" aria-hidden="true" />
-                    <span>{logoutFailed ? '退出失败' : '退出'}</span>
+                    <span>{logoutFailed ? text('退出失败', 'Sign out failed') : text('退出', 'Sign out')}</span>
                   </button>
                 </>
               ) : account.sessionState.status === 'loading' ? (
-                <span className="desktop-rail__session" role="status" aria-label="正在确认账户" />
+                <span className="desktop-rail__session" role="status" aria-label={text('正在确认账户', 'Checking account')} />
               ) : (
-                <NavLink to="/login" aria-label="登录" title="登录">
+                <NavLink to="/login" aria-label={text('登录', 'Sign in')} title={text('登录', 'Sign in')}>
                   <UserCircleIcon size={18} weight="regular" />
                 </NavLink>
               )}
@@ -189,12 +219,7 @@ export function PageShell({
         wide ? 'page-shell--wide' : '',
       ].filter(Boolean).join(' ')} id="main-content">{children}</main>
 
-      <SupportCenter
-        accountEmail={account.sessionState.status === 'authenticated'
-          ? account.sessionState.session.user.email
-          : null}
-      />
-      {immersive ? null : <PrimaryNavigation className="mobile-navigation" label="移动主导航" compact />}
+      {immersive ? null : <PrimaryNavigation className="mobile-navigation" label={text('移动主导航', 'Mobile navigation')} compact />}
     </div>
   )
 }

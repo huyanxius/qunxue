@@ -209,6 +209,21 @@
         "title": "AgentConversationSummaryResponse",
         "type": "object"
       },
+      "AgentConversationUpdateRequest": {
+        "properties": {
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "AgentConversationUpdateRequest",
+        "type": "object"
+      },
       "AgentMessageResponse": {
         "properties": {
           "citations": {
@@ -249,6 +264,65 @@
           "created_at"
         ],
         "title": "AgentMessageResponse",
+        "type": "object"
+      },
+      "AgentResearchJourneyResponse": {
+        "properties": {
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "navigation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchTaskNavigationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchStartProposalResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "collecting",
+              "proposal_pending",
+              "task_bound"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "status",
+          "task_id",
+          "proposal",
+          "navigation"
+        ],
+        "title": "AgentResearchJourneyResponse",
         "type": "object"
       },
       "AgentToolTraceResponse": {
@@ -738,6 +812,7 @@
       },
       "CandidateContentStatus": {
         "enum": [
+          "pre_review_completed",
           "reviewed",
           "model_generated",
           "external_unreviewed",
@@ -760,6 +835,7 @@
       },
       "CandidateOrigin": {
         "enum": [
+          "pre_reviewed_knowledge",
           "reviewed_knowledge",
           "model_exploration",
           "external_unreviewed",
@@ -872,6 +948,85 @@
           "expected_version"
         ],
         "title": "ConfirmResearchDocumentRequest",
+        "type": "object"
+      },
+      "ConfirmResearchStartRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "phenomenon": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          }
+        },
+        "required": [
+          "expected_version",
+          "phenomenon"
+        ],
+        "title": "ConfirmResearchStartRequest",
+        "type": "object"
+      },
+      "ConfirmResearchStartResponse": {
+        "properties": {
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "navigation": {
+            "$ref": "#/components/schemas/ResearchTaskNavigationResponse"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/ResearchStartProposalResponse"
+          },
+          "status": {
+            "const": "task_bound",
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "status",
+          "task_id",
+          "proposal",
+          "navigation"
+        ],
+        "title": "ConfirmResearchStartResponse",
         "type": "object"
       },
       "ConfirmTheoryPlanRequest": {
@@ -1251,6 +1406,18 @@
             "title": "Decisions",
             "type": "array"
           },
+          "expected_draft_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Draft Version"
+          },
           "expected_match_run_version": {
             "minimum": 1.0,
             "title": "Expected Match Run Version",
@@ -1545,11 +1712,27 @@
         "enum": [
           "unauthenticated",
           "session_expired",
+          "forbidden",
           "not_found",
           "method_not_allowed",
+          "conflict",
+          "idempotency_conflict",
+          "reauthentication_required",
+          "account_inactive",
+          "capability_unavailable",
+          "provisioned_administrator_protected",
+          "password_reset_invalid",
+          "token_expired",
+          "credit_code_unavailable",
+          "credit_code_batch_conflict",
           "research_task_not_found",
+          "research_start_proposal_not_found",
+          "research_start_idempotency_conflict",
+          "research_start_proposal_conflict",
+          "research_start_source_incomplete",
           "validation_error",
           "phenomenon_unconfirmed",
+          "catalog_not_ready",
           "no_adopted_theory",
           "candidate_ineligible",
           "external_candidate_adoption_blocked",
@@ -1691,6 +1874,62 @@
           "expected_task_version"
         ],
         "title": "ExtractPhenomenonCandidatesRequest",
+        "type": "object"
+      },
+      "FailedTheoryCandidateResponse": {
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "failure_code": {
+            "title": "Failure Code",
+            "type": "string"
+          },
+          "judgement_run_status": {
+            "$ref": "#/components/schemas/CandidateJudgementRunStatus"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trace_id": {
+            "format": "uuid",
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "version",
+          "title",
+          "judgement_run_status",
+          "failure_code",
+          "retryable",
+          "attempt",
+          "trace_id",
+          "request_id"
+        ],
+        "title": "FailedTheoryCandidateResponse",
         "type": "object"
       },
       "FormalFrameworkExportResponse": {
@@ -2843,6 +3082,7 @@
         "enum": [
           "draft",
           "pending",
+          "pre_review_completed",
           "reviewed",
           "retired"
         ],
@@ -3097,6 +3337,13 @@
             "title": "Failed Candidate Ids",
             "type": "array"
           },
+          "failed_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/FailedTheoryCandidateResponse"
+            },
+            "title": "Failed Candidates",
+            "type": "array"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -3158,6 +3405,7 @@
           "completed_candidate_count",
           "failed_candidate_count",
           "failed_candidate_ids",
+          "failed_candidates",
           "phenomenon_query_id",
           "phenomenon_version",
           "knowledge_release_id",
@@ -4218,6 +4466,79 @@
         "title": "RelationCandidateResponse",
         "type": "object"
       },
+      "ResearchDocumentCompletionCheckResponse": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "passed",
+          "detail"
+        ],
+        "title": "ResearchDocumentCompletionCheckResponse",
+        "type": "object"
+      },
+      "ResearchDocumentCompletionGateResponse": {
+        "properties": {
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentCompletionCheckResponse"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "pending_proposal_count": {
+            "title": "Pending Proposal Count",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document_id",
+          "version",
+          "ready",
+          "pending_proposal_count",
+          "blockers",
+          "checks"
+        ],
+        "title": "ResearchDocumentCompletionGateResponse",
+        "type": "object"
+      },
       "ResearchDocumentEvidenceRefContract": {
         "properties": {
           "evidence_ref_id": {
@@ -4247,6 +4568,115 @@
         "title": "ResearchDocumentEvidenceRefContract",
         "type": "object"
       },
+      "ResearchDocumentExportManifest": {
+        "description": "Versioned, machine-readable audit package for one formal M5 delivery.",
+        "properties": {
+          "agent_proposals": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Agent Proposals",
+            "type": "array"
+          },
+          "document_versions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Document Versions",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "formal_document": {
+            "additionalProperties": true,
+            "title": "Formal Document",
+            "type": "object"
+          },
+          "knowledge_release": {
+            "additionalProperties": true,
+            "title": "Knowledge Release",
+            "type": "object"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "phenomenon": {
+            "additionalProperties": true,
+            "title": "Phenomenon",
+            "type": "object"
+          },
+          "schema_version": {
+            "const": "research-delivery-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "theory_assignments": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Assignments",
+            "type": "array"
+          },
+          "theory_candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Candidates",
+            "type": "array"
+          },
+          "theory_decisions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Decisions",
+            "type": "array"
+          },
+          "theory_relations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Theory Relations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "phenomenon",
+          "knowledge_release",
+          "model",
+          "theory_candidates",
+          "theory_decisions",
+          "theory_assignments",
+          "theory_relations",
+          "evidence",
+          "agent_proposals",
+          "document_versions",
+          "formal_document"
+        ],
+        "title": "ResearchDocumentExportManifest",
+        "type": "object"
+      },
       "ResearchDocumentExportResponse": {
         "properties": {
           "document_id": {
@@ -4261,6 +4691,9 @@
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ResearchDocumentExportManifest"
           },
           "markdown": {
             "title": "Markdown",
@@ -4294,7 +4727,8 @@
           "version",
           "filename",
           "media_type",
-          "markdown"
+          "markdown",
+          "manifest"
         ],
         "title": "ResearchDocumentExportResponse",
         "type": "object"
@@ -4437,6 +4871,28 @@
             "title": "Knowledge Release Id",
             "type": "string"
           },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "model_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Provider"
+          },
           "proposal_id": {
             "format": "uuid",
             "title": "Proposal Id",
@@ -4521,6 +4977,8 @@
           "user_id",
           "conversation_id",
           "agent_run_id",
+          "model_provider",
+          "model_name",
           "task_id",
           "theory_plan_id",
           "knowledge_release_id",
@@ -4544,7 +5002,8 @@
         "enum": [
           "pending",
           "accepted",
-          "rejected"
+          "rejected",
+          "aborted"
         ],
         "title": "ResearchDocumentProposalStatus",
         "type": "string"
@@ -4737,6 +5196,123 @@
         "title": "ResearchDocumentVersionListResponse",
         "type": "object"
       },
+      "ResearchStartProposalResponse": {
+        "properties": {
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "confirmed_task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Task Id"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "title": "Knowledge Release Id",
+            "type": "string"
+          },
+          "phenomenon": {
+            "title": "Phenomenon",
+            "type": "string"
+          },
+          "proposal_id": {
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "requires_user_confirmation": {
+            "title": "Requires User Confirmation",
+            "type": "boolean"
+          },
+          "research_intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Intent"
+          },
+          "source_run_id": {
+            "format": "uuid",
+            "title": "Source Run Id",
+            "type": "string"
+          },
+          "source_turn_id": {
+            "format": "uuid",
+            "title": "Source Turn Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending_confirmation",
+              "confirmed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "conversation_id",
+          "source_run_id",
+          "source_turn_id",
+          "knowledge_release_id",
+          "phenomenon",
+          "research_intent",
+          "context",
+          "version",
+          "status",
+          "requires_user_confirmation",
+          "confirmed_task_id",
+          "created_at",
+          "confirmed_at"
+        ],
+        "title": "ResearchStartProposalResponse",
+        "type": "object"
+      },
       "ResearchTaskAction": {
         "enum": [
           "submit_phenomenon"
@@ -4790,6 +5366,39 @@
         "title": "ResearchTaskNavigationAction",
         "type": "string"
       },
+      "ResearchTaskNavigationBlockerResponse": {
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchTaskNavigationAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recoverable": {
+            "title": "Recoverable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "recoverable"
+        ],
+        "title": "ResearchTaskNavigationBlockerResponse",
+        "type": "object"
+      },
       "ResearchTaskNavigationResponse": {
         "description": "Task-scoped aggregate used by `/my` and task-only deep links.",
         "properties": {
@@ -4803,6 +5412,28 @@
             },
             "title": "Allowed Actions",
             "type": "array"
+          },
+          "blocker": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchTaskNavigationBlockerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
           },
           "created_at": {
             "format": "date-time",
@@ -4875,10 +5506,39 @@
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
           },
+          "knowledge_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
+          },
+          "next_action_label": {
+            "title": "Next Action Label",
+            "type": "string"
+          },
           "phenomenon_summary": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ResearchTaskPhenomenonSummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resume_path": {
+            "title": "Resume Path",
+            "type": "string"
+          },
+          "retry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchTaskNavigationRetryResponse"
               },
               {
                 "type": "null"
@@ -4907,6 +5567,34 @@
             ],
             "title": "Seed Theory Name"
           },
+          "source_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Run Id"
+          },
+          "source_turn_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Turn Id"
+          },
+          "stage_label": {
+            "title": "Stage Label",
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/ResearchTaskLifecycleStatus"
           },
@@ -4930,8 +5618,10 @@
           "entry_type",
           "status",
           "current_stage",
+          "stage_label",
           "version",
           "allowed_actions",
+          "next_action_label",
           "seed_theory_id",
           "seed_theory_name",
           "phenomenon_summary",
@@ -4941,10 +5631,49 @@
           "current_match_run_id",
           "current_theory_plan_id",
           "current_framework_id",
+          "resume_path",
+          "blocker",
+          "retry",
+          "knowledge_release_id",
+          "conversation_id",
+          "source_turn_id",
+          "source_run_id",
           "created_at",
           "updated_at"
         ],
         "title": "ResearchTaskNavigationResponse",
+        "type": "object"
+      },
+      "ResearchTaskNavigationRetryResponse": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ResearchTaskNavigationAction"
+          },
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "GET",
+              "POST",
+              "PATCH"
+            ],
+            "title": "Method",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "href",
+          "action",
+          "label"
+        ],
+        "title": "ResearchTaskNavigationRetryResponse",
         "type": "object"
       },
       "ResearchTaskPageResponse": {
@@ -5280,6 +6009,79 @@
           "expected_candidate_version"
         ],
         "title": "RetryMatchCandidateRequest",
+        "type": "object"
+      },
+      "SaveTheoryDecisionDraftRequest": {
+        "properties": {
+          "acknowledged_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Acknowledged Candidate Ids",
+            "type": "array"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionDraftInput"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "expected_draft_version": {
+            "minimum": 0.0,
+            "title": "Expected Draft Version",
+            "type": "integer"
+          },
+          "expected_match_run_version": {
+            "minimum": 1.0,
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
+          "partial_completion_acknowledgement_reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partial Completion Acknowledgement Reason"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_match_run_version",
+          "expected_draft_version",
+          "completion_basis"
+        ],
+        "title": "SaveTheoryDecisionDraftRequest",
         "type": "object"
       },
       "SessionAction": {
@@ -5861,6 +6663,163 @@
         "title": "TheoryDecisionAction",
         "type": "string"
       },
+      "TheoryDecisionDraftInput": {
+        "description": "Incomplete user-authored state; finalization still uses TheoryDecisionInput.",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TheoryDecisionAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_version": {
+            "minimum": 1.0,
+            "title": "Candidate Version",
+            "type": "integer"
+          },
+          "reason": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Reason",
+            "type": "string"
+          },
+          "related_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Related Candidate Ids",
+            "type": "array"
+          },
+          "related_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Source Ids",
+            "type": "array"
+          },
+          "revised_applicability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Applicability"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "candidate_version"
+        ],
+        "title": "TheoryDecisionDraftInput",
+        "type": "object"
+      },
+      "TheoryDecisionDraftResponse": {
+        "properties": {
+          "acknowledged_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Acknowledged Candidate Ids",
+            "type": "array"
+          },
+          "completion_basis": {
+            "$ref": "#/components/schemas/MatchCompletionBasis"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryDecisionDraftInput"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "draft_id": {
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "expected_match_run_version": {
+            "title": "Expected Match Run Version",
+            "type": "integer"
+          },
+          "failed_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Failed Candidate Ids",
+            "type": "array"
+          },
+          "match_run_id": {
+            "format": "uuid",
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "partial_completion_acknowledgement_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partial Completion Acknowledgement Reason"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryRelationInput"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "use_assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TheoryUseAssignmentInput"
+            },
+            "title": "Use Assignments",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "draft_id",
+          "match_run_id",
+          "version",
+          "expected_match_run_version",
+          "completion_basis",
+          "decisions",
+          "use_assignments",
+          "relations",
+          "acknowledged_candidate_ids",
+          "failed_candidate_ids",
+          "partial_completion_acknowledgement_reason",
+          "updated_at"
+        ],
+        "title": "TheoryDecisionDraftResponse",
+        "type": "object"
+      },
       "TheoryDecisionInput": {
         "properties": {
           "action": {
@@ -6072,6 +7031,10 @@
             "title": "Decisions",
             "type": "array"
           },
+          "draft_version": {
+            "title": "Draft Version",
+            "type": "integer"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -6104,6 +7067,7 @@
           "decision_set_id",
           "match_run_id",
           "version",
+          "draft_version",
           "allowed_actions",
           "knowledge_release_id",
           "completion_basis",
@@ -6601,6 +7565,71 @@
       }
     },
     "/api/agent/conversations/{conversation_id}": {
+      "delete": {
+        "operationId": "delete_agent_conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Delete Agent Conversation",
+        "tags": [
+          "agent"
+        ]
+      },
       "get": {
         "operationId": "get_agent_conversation",
         "parameters": [
@@ -6658,6 +7687,308 @@
           }
         },
         "summary": "Get Agent Conversation",
+        "tags": [
+          "agent"
+        ]
+      },
+      "patch": {
+        "operationId": "update_agent_conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentConversationUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConversationSummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Agent Conversation",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/agent/conversations/{conversation_id}/journey": {
+      "get": {
+        "operationId": "get_agent_research_journey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResearchJourneyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Agent Research Journey",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/agent/conversations/{conversation_id}/research-start-proposal": {
+      "get": {
+        "operationId": "get_agent_research_start_proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchStartProposalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Agent Research Start Proposal",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/agent/research-start-proposals/{proposal_id}/confirm": {
+      "post": {
+        "operationId": "confirm_agent_research_start",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmResearchStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmResearchStartResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Confirm Agent Research Start",
         "tags": [
           "agent"
         ]
@@ -8437,7 +9768,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TheoryCandidateResponse"
+                  "$ref": "#/components/schemas/MatchRunResponse"
                 }
               }
             },
@@ -8485,6 +9816,141 @@
           }
         },
         "summary": "Retry Match Candidate",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/api/match-runs/{match_run_id}/decision-draft": {
+      "get": {
+        "operationId": "get_theory_decision_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Theory Decision Draft",
+        "tags": [
+          "matching"
+        ]
+      },
+      "put": {
+        "operationId": "save_theory_decision_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTheoryDecisionDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoryDecisionDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Save Theory Decision Draft",
         "tags": [
           "matching"
         ]
@@ -9283,6 +10749,69 @@
           }
         },
         "summary": "Update Research Document",
+        "tags": [
+          "research-documents"
+        ]
+      }
+    },
+    "/api/research-documents/{document_id}/completion-gate": {
+      "get": {
+        "operationId": "get_research_document_completion_gate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentCompletionGateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Document Completion Gate",
         "tags": [
           "research-documents"
         ]

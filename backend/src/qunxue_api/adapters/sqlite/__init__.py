@@ -1,11 +1,24 @@
 """SQLite adapter registry used by migrations and the composition root."""
 
+from qunxue_api.adapters.sqlite.account_management_model import (
+    AccountAuditEventRow,
+    AccountMutationRequestRow,
+    AccountPasswordResetRow,
+    AccountSystemStateRow,
+    PersonalDataExportRow,
+    UserPreferenceRow,
+)
 from qunxue_api.adapters.sqlite.agent_conversation_model import (
     AgentConversationRow,
     AgentMessageRow,
     AgentRunRow,
 )
 from qunxue_api.adapters.sqlite.base import Base
+from qunxue_api.adapters.sqlite.billing_model import (
+    CreditAccountRow,
+    CreditLedgerRow,
+    CreditRedemptionCodeRow,
+)
 from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeEntryReviewRow,
@@ -36,18 +49,32 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
     PhenomenonCandidateVersionRow,
     PhenomenonExampleRow,
     PhenomenonStateRow,
+    ResearchStartConfirmationRow,
+    ResearchStartProposalRow,
     ResearchTaskRow,
+)
+from qunxue_api.adapters.sqlite.research_start_proposal import (
+    SqliteResearchStartProposalRepository,
 )
 from qunxue_api.adapters.sqlite.theory_matching_model import (
     ConfirmedTheoryPlanRow,
     MatchRunRow,
+    TheoryDecisionDraftRequestRow,
+    TheoryDecisionDraftRow,
     TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
 )
 
 __all__ = [
     "Base",
+    "AccountAuditEventRow",
+    "AccountMutationRequestRow",
+    "AccountPasswordResetRow",
+    "AccountSystemStateRow",
     "ConfirmedTheoryPlanRow",
+    "CreditAccountRow",
+    "CreditLedgerRow",
+    "CreditRedemptionCodeRow",
     "AgentConversationRow",
     "AgentMessageRow",
     "AgentRunRow",
@@ -64,15 +91,22 @@ __all__ = [
     "PhenomenonCandidateVersionRow",
     "PhenomenonExampleRow",
     "PhenomenonStateRow",
+    "PersonalDataExportRow",
     "ResearchTaskRow",
     "ResearchDocumentVersionRow",
     "ResearchDocumentMutationRequestRow",
     "SqliteResearchDocumentMutationRepository",
     "SqliteResearchDocumentRepository",
     "ResearchDocumentProposalRow",
+    "ResearchStartConfirmationRow",
+    "ResearchStartProposalRow",
+    "SqliteResearchStartProposalRepository",
     "SqliteResearchDocumentProposalRepository",
     "TheoryMatchingRequestRow",
+    "TheoryDecisionDraftRow",
+    "TheoryDecisionDraftRequestRow",
     "TheoryDecisionSetRow",
     "UserRow",
+    "UserPreferenceRow",
     "UserSessionRow",
 ]

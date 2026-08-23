@@ -505,9 +505,25 @@
 }
 
 .foundation-graph__copy h2 {
+  position: relative;
+  isolation: isolate;
   max-width: 590px;
   margin-top: 0;
   font-size: clamp(2.8rem, 4.6vw, 4.75rem);
+}
+
+.foundation-graph__copy h2::before {
+  position: absolute;
+  z-index: -1;
+  inset: -14px -28px;
+  border-radius: 36px;
+  background: rgb(250 249 244 / 16%);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  -webkit-mask-image: radial-gradient(ellipse at 42% 50%, #000 52%, transparent 88%);
+  mask-image: radial-gradient(ellipse at 42% 50%, #000 52%, transparent 88%);
+  pointer-events: none;
+  content: '';
 }
 
 .foundation-graph__details p {
@@ -3277,7 +3293,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto;
-  gap: 34px;
+  gap: 78px;
   align-items: center;
 }
 
@@ -3332,22 +3348,22 @@
   --agent-collapsed-height: 300px;
   --agent-inline-inset: 0px;
   --agent-side-clip: calc(var(--agent-inline-inset) * (1 - var(--agent-progress)));
-  --agent-bottom-clip: calc(
-    (100svh - var(--agent-collapsed-height)) * (1 - var(--agent-progress))
-  );
+  --agent-bottom-clip: 0px;
   width: 100vw;
   height: 100svh;
   min-height: 0;
   margin: 0 0 0 calc(50% - 50vw);
   overflow: hidden;
   border: 1px solid rgb(21 21 21 / 16%);
-  border-radius: calc(34px * (1 - var(--agent-progress)));
+  border-radius: calc(34px * (1 - var(--agent-progress)))
+    calc(34px * (1 - var(--agent-progress))) 0 0;
   background: #151515;
   box-shadow: 0 30px 90px rgb(21 21 21 / 18%);
   animation: none !important;
   clip-path: inset(
     0 var(--agent-side-clip) var(--agent-bottom-clip)
     round calc(34px * (1 - var(--agent-progress)))
+      calc(34px * (1 - var(--agent-progress))) 0 0
   );
   transform: none;
   will-change: clip-path;
@@ -3398,9 +3414,9 @@
 @media (prefers-reduced-motion: reduce) {
   .foundation-agent {
     width: 100%;
-    height: var(--agent-collapsed-height);
+    height: 100svh;
     margin-left: 0;
-    border-radius: 34px;
+    border-radius: 34px 34px 0 0;
     clip-path: none;
     transition: none;
   }
@@ -4317,7 +4333,7 @@
 
 .public-site.is-agent-header-inverted .public-header {
   border-bottom: 0;
-  background: rgb(12 14 14 / 28%);
+  background: transparent;
   box-shadow: none;
 }
 

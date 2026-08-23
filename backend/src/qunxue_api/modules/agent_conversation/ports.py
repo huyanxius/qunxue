@@ -1,5 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
@@ -13,6 +14,14 @@ from qunxue_api.modules.agent_conversation.domain import (
 
 class AgentRelease(Protocol):
     knowledge_release_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class AgentRuntimeIdentity:
+    """Stable provider/model identity available before a runner invokes tools."""
+
+    provider: str
+    model: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +41,8 @@ class AgentRunResult:
     release_id: str
     provider: str
     model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,11 +79,13 @@ class AgentToolContext(Protocol):
 
 
 class SubjectAgentRunner(Protocol):
+    runtime_identity: AgentRuntimeIdentity
+
     def run(
         self,
         *,
         prompt: str,
-        conversation: str,
+        conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult: ...
 
@@ -80,7 +93,7 @@ class SubjectAgentRunner(Protocol):
         self,
         *,
         prompt: str,
-        conversation: str,
+        conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
         on_delta: Callable[[str], None],
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
@@ -95,6 +108,17 @@ class ConversationRepository(Protocol):
     def get(self, *, user_id: UUID, conversation_id: UUID) -> Conversation: ...
 
     def list(self, *, user_id: UUID) -> Sequence[Conversation]: ...
+
+    def rename(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+        updated_at: datetime,
+    ) -> Conversation: ...
+
+    def delete(self, *, user_id: UUID, conversation_id: UUID) -> None: ...
 
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]: ...
 
@@ -117,4 +141,7 @@ class ConversationRepository(Protocol):
         status: str,
         error: str | None = None,
         turn_id: UUID | None = None,
+        tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None: ...

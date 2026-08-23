@@ -20,6 +20,15 @@ def upgrade() -> None:
             ),
         )
         return
+    if op.get_bind().dialect.name == "sqlite":
+        # SQLite batch mode rebuilds the parent conversation table. Dropping
+        # that table fires the existing CASCADE paths into Agent runs and M5
+        # proposals, so add the nullable pointer in place instead.
+        op.add_column(
+            "agent_conversations",
+            sa.Column("current_research_task_id", sa.String(36), nullable=True),
+        )
+        return
     with op.batch_alter_table("agent_conversations") as batch:
         batch.add_column(sa.Column("current_research_task_id", sa.String(36), nullable=True))
         batch.create_foreign_key(
@@ -34,6 +43,10 @@ def upgrade() -> None:
 def downgrade() -> None:
     if context.is_offline_mode():
         op.drop_column("agent_conversations", "current_research_task_id")
+        return
+    if op.get_bind().dialect.name == "sqlite":
+        with op.batch_alter_table("agent_conversations") as batch:
+            batch.drop_column("current_research_task_id")
         return
     with op.batch_alter_table("agent_conversations") as batch:
         batch.drop_constraint("fk_agent_conversations_research_task", type_="foreignkey")

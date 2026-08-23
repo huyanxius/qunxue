@@ -38,7 +38,9 @@ class _MemoryRepository:
         runs_by_turn = {
             run.turn_id: run.tool_summary
             for run in self.runs.values()
-            if run.conversation_id == conversation_id and run.turn_id is not None
+            if run.conversation_id == conversation_id
+            and run.status == "completed"
+            and run.turn_id is not None
         }
         if not runs_by_turn:
             return conversation
@@ -70,11 +72,37 @@ class _MemoryRepository:
             )
         )
 
+    def rename(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+        updated_at: datetime,
+    ) -> Conversation:
+        conversation = self.get(user_id=user_id, conversation_id=conversation_id)
+        renamed = replace(conversation, title=title, updated_at=updated_at)
+        self.conversations[conversation_id] = renamed
+        return renamed
+
+    def delete(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        self.get(user_id=user_id, conversation_id=conversation_id)
+        self.conversations.pop(conversation_id)
+        self.turn_keys = {
+            key: turn_id for key, turn_id in self.turn_keys.items() if key[0] != conversation_id
+        }
+        self.runs = {
+            run_id: run
+            for run_id, run in self.runs.items()
+            if run.conversation_id != conversation_id
+        }
+
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]:
         return {
             run.turn_id: run.knowledge_release_id
             for run in self.runs.values()
             if run.conversation_id == conversation_id
+            and run.status == "completed"
             and run.turn_id is not None
             and run.knowledge_release_id is not None
         }
@@ -118,6 +146,8 @@ class _MemoryRepository:
                 user_id=run.user_id,
                 idempotency_key=run.idempotency_key,
                 status="running",
+                provider=run.provider,
+                model=run.model,
                 knowledge_release_id=run.knowledge_release_id,
                 turn_id=None,
                 tool_summary=(),
@@ -148,6 +178,8 @@ class _MemoryRepository:
         error: str | None = None,
         turn_id: UUID | None = None,
         tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None:
         del error
         current = self.runs[run_id]
@@ -157,8 +189,14 @@ class _MemoryRepository:
             user_id=current.user_id,
             idempotency_key=current.idempotency_key,
             status=status,  # type: ignore[arg-type]
+            provider=provider or current.provider,
+            model=model or current.model,
             knowledge_release_id=current.knowledge_release_id,
-            turn_id=current.turn_id if turn_id is None else turn_id,
+            turn_id=(
+                None
+                if status != "completed" and turn_id is None
+                else current.turn_id if turn_id is None else turn_id
+            ),
             tool_summary=tool_summary,
         )
 
@@ -191,6 +229,26 @@ class ConversationService:
     def list_conversations(self, *, user_id: UUID) -> Sequence[Conversation]:
         return self._repository.list(user_id=user_id)
 
+    def rename_conversation(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+    ) -> Conversation:
+        normalized_title = title.strip()
+        if not normalized_title:
+            raise ValueError("conversation title must not be empty")
+        return self._repository.rename(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            title=normalized_title[:120],
+            updated_at=datetime.now(UTC),
+        )
+
+    def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        self._repository.delete(user_id=user_id, conversation_id=conversation_id)
+
     def release_ids_by_turn(
         self,
         *,
@@ -210,6 +268,7 @@ class ConversationService:
         assistant_content: str,
         citations: tuple[AgentCitation, ...],
         evidence_ids: frozenset[str] | None = None,
+        turn_id: UUID | None = None,
     ) -> AgentTurn | IdempotentTurn:
         conversation = self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         turn = AgentTurn.create(
@@ -222,6 +281,7 @@ class ConversationService:
                 else frozenset(c.citation_id for c in citations)
             ),
             sequence=len(conversation.turns) * 2,
+            turn_id=turn_id,
         )
         return self._repository.append_turn(
             conversation=conversation,
@@ -236,8 +296,14 @@ class ConversationService:
         conversation_id: UUID,
         idempotency_key: str,
         knowledge_release_id: str,
+        provider: str = "pydantic-ai",
+        model: str = "knowledge-agent",
     ) -> AgentRun:
         self.get_conversation(user_id=user_id, conversation_id=conversation_id)
+        normalized_provider = provider.strip()
+        normalized_model = model.strip()
+        if not normalized_provider or not normalized_model:
+            raise ValueError("Agent runtime provider and model must not be empty")
         return self._repository.start_run(
             AgentRun(
                 run_id=uuid4(),
@@ -245,6 +311,8 @@ class ConversationService:
                 user_id=user_id,
                 idempotency_key=idempotency_key,
                 status="running",
+                provider=normalized_provider,
+                model=normalized_model,
                 knowledge_release_id=knowledge_release_id,
             )
         )
@@ -260,6 +328,8 @@ class ConversationService:
         error: str | None = None,
         turn_id: UUID | None = None,
         tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None:
         self._repository.finish_run(
             run_id=run_id,
@@ -267,4 +337,6 @@ class ConversationService:
             error=error,
             turn_id=turn_id,
             tool_summary=tool_summary,
+            provider=provider,
+            model=model,
         )

@@ -15,14 +15,24 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     PreparedPhenomenonCandidate,
+    ResearchStartConfirmation,
+    ResearchStartProposal,
+    ResearchStartProposalStatus,
     ResearchTask,
     ResearchTaskAction,
     ResearchTaskStatus,
 )
-from qunxue_api.modules.research_intake.errors import ResearchTaskNotFound
+from qunxue_api.modules.research_intake.errors import (
+    ResearchStartIdempotencyConflict,
+    ResearchStartProposalConflict,
+    ResearchStartProposalNotFound,
+    ResearchStartSourceIncomplete,
+    ResearchTaskNotFound,
+)
 from qunxue_api.modules.research_intake.ports import (
     PhenomenonCandidateBuilder,
     PhenomenonRepository,
+    ResearchStartProposalRepository,
     ResearchTaskRepository,
 )
 from qunxue_api.modules.research_intake.service import PhenomenonService, ResearchTaskService
@@ -43,6 +53,14 @@ __all__ = [
     "PhenomenonModelSnapshot",
     "PhenomenonProgress",
     "PreparedPhenomenonCandidate",
+    "ResearchStartConfirmation",
+    "ResearchStartIdempotencyConflict",
+    "ResearchStartProposal",
+    "ResearchStartProposalConflict",
+    "ResearchStartProposalNotFound",
+    "ResearchStartProposalRepository",
+    "ResearchStartProposalStatus",
+    "ResearchStartSourceIncomplete",
     "PhenomenonRepository",
     "PhenomenonService",
     "ResearchTask",

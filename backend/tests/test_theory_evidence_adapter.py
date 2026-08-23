@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+import pytest
+
 from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeEntryDetail,
@@ -10,15 +12,20 @@ from qunxue_api.modules.knowledge_catalog import (
     KnowledgeReleaseRef,
     KnowledgeReviewStatus,
     KnowledgeUseEligibility,
+    KnowledgeUsePurpose,
     SourceRecordSnapshot,
     SourceVerificationStatus,
     TheoryProfileSnapshot,
 )
-from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
+from qunxue_api.modules.research_intake import (
+    ConfirmedPhenomenonSnapshot,
+    PhenomenonEvidenceRefSnapshot,
+    PhenomenonEvidenceVerificationStatus,
+)
 
 RELEASE = KnowledgeReleaseRef(
     knowledge_release_id="release-reviewed-v1",
-    level=KnowledgeReleaseLevel.PREVIEW,
+    level=KnowledgeReleaseLevel.FINAL,
     content_hash="sha256:reviewed-release",
 )
 PHENOMENON = ConfirmedPhenomenonSnapshot(
@@ -29,16 +36,49 @@ PHENOMENON = ConfirmedPhenomenonSnapshot(
     research_intent="比较不同解释",
     context="社区成员持续流动",
     content_hash="phenomenon-hash",
+    evidence_refs=(
+        PhenomenonEvidenceRefSnapshot(
+            evidence_ref_id="phenomenon-evidence:interview-1",
+            excerpt="多名居民提到新成员较少参与持续互助。",
+            source_ref_id="material:interview-1",
+            source_description="去标识化访谈摘要",
+            locator="访谈摘要，第 4 段",
+            verification_status=PhenomenonEvidenceVerificationStatus.VERIFIED,
+            use_boundary="仅说明受访者报告的互助变化，不证明成员流动是唯一原因。",
+        ),
+        PhenomenonEvidenceRefSnapshot(
+            evidence_ref_id="phenomenon-evidence:field-note-2",
+            excerpt="用户记录的新成员活动参与观察。",
+            source_ref_id="material:field-note-2",
+            source_description="用户提供的观察笔记",
+            locator="观察笔记，2026-08-01",
+            verification_status=PhenomenonEvidenceVerificationStatus.USER_ATTESTED,
+            use_boundary="用户确认材料来源，但尚未经过外部核验。",
+        ),
+    ),
 )
 
 
 @dataclass
 class _CatalogFixture:
     entries: tuple[KnowledgeEntryDetail, ...]
+    current: KnowledgeReleaseRef = RELEASE
 
     def current_release(self, *, purpose: object) -> KnowledgeReleaseRef:
-        del purpose
-        return RELEASE
+        assert purpose is KnowledgeUsePurpose.MATCH
+        return self.current
+
+    def list_match_profiles(
+        self,
+        *,
+        release_id: str,
+    ) -> tuple[TheoryProfileSnapshot, ...]:
+        assert release_id == RELEASE.knowledge_release_id
+        return tuple(
+            entry.theory_profile
+            for entry in self.entries
+            if entry.theory_profile is not None
+        )
 
     def browse(
         self,
@@ -187,6 +227,93 @@ def test_recall_pages_in_catalog_order_and_stops_after_five_eligible_profiles() 
         "source-3",
         "source-4",
         "source-5",
+        "material:interview-1",
+        "material:field-note-2",
     ]
-    assert all(item.excerpt is None for item in first.evidence_items)
+    phenomenon_evidence = first.evidence_items[-2:]
+    assert [item.evidence_ref_id for item in phenomenon_evidence] == [
+        "phenomenon-evidence:interview-1",
+        "phenomenon-evidence:field-note-2",
+    ]
+    assert phenomenon_evidence[0].verification_status is SourceVerificationStatus.VERIFIED
+    assert phenomenon_evidence[1].verification_status is SourceVerificationStatus.PENDING
+    assert phenomenon_evidence[0].excerpt == "多名居民提到新成员较少参与持续互助。"
     assert first == second
+
+
+def test_recall_rejects_non_final_and_keeps_a_pinned_final_release_reproducible() -> None:
+    catalog = _CatalogFixture(entries=tuple(_entry(index) for index in range(1, 4)))
+    source = CatalogTheoryEvidenceSource(catalog)
+
+    with pytest.raises(ValueError, match="final MATCH knowledge release"):
+        source.retrieve(
+            phenomenon=PHENOMENON,
+            release=KnowledgeReleaseRef(
+                knowledge_release_id=RELEASE.knowledge_release_id,
+                level=KnowledgeReleaseLevel.PREVIEW,
+                content_hash=RELEASE.content_hash,
+            ),
+        )
+
+    catalog.current = KnowledgeReleaseRef(
+        knowledge_release_id="release-newer",
+        level=KnowledgeReleaseLevel.FINAL,
+        content_hash="sha256:newer",
+    )
+    recalled = source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert recalled.release == RELEASE
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        SourceRecordSnapshot(
+            source_id="source-1",
+            source_type="reviewed_publication",
+            title="无定位来源",
+            authors_or_institution=("作者",),
+            year=2021,
+            publication="社会学期刊",
+            locator=None,
+            url="https://example.com/source-1",
+            verification_status=SourceVerificationStatus.VERIFIED,
+            use_boundary="已核验来源。",
+        ),
+        SourceRecordSnapshot(
+            source_id="source-1",
+            source_type="reviewed_publication",
+            title="待核验来源",
+            authors_or_institution=("作者",),
+            year=2021,
+            publication="社会学期刊",
+            locator="p.1",
+            url="https://example.com/source-1",
+            verification_status=SourceVerificationStatus.PENDING,
+            use_boundary="待核验来源。",
+        ),
+    ],
+)
+def test_recall_rejects_untraceable_evidence_sources(
+    source: SourceRecordSnapshot,
+) -> None:
+    entry = _entry(1)
+    catalog = _CatalogFixture(
+        entries=(
+            KnowledgeEntryDetail(
+                release=entry.release,
+                summary=entry.summary,
+                aliases=entry.aliases,
+                content=entry.content,
+                sources=(source,),
+                relations=entry.relations,
+                theory_profile=entry.theory_profile,
+            ),
+        )
+    )
+
+    with pytest.raises(ValueError, match="verified source with a locator"):
+        CatalogTheoryEvidenceSource(catalog).retrieve(
+            phenomenon=PHENOMENON,
+            release=RELEASE,
+        )

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { KineticCopyCycle, type KineticCopyMessage } from './KineticCopyCycle'
+import { useAppLocale } from '../i18n/AppLocaleProvider'
 
 const researchTopicPresets = [
   '为什么同一课堂里有人总是沉默？',
@@ -25,22 +26,56 @@ const researchTopicPresets = [
   '为什么技术进步没有减少所有人的负担？',
 ] as const
 
+const englishResearchTopicPresets = [
+  'Why do some students stay silent in the same classroom?',
+  'Why is it so hard to stop scrolling short videos?',
+  'Why are young people increasingly afraid to ask for help?',
+  'Why does the same rule affect people differently?',
+  'Why are neighborhood ties becoming weaker?',
+  'Why is overtime interpreted as dedication?',
+  'Why do recommendation algorithms make opinions more alike?',
+  'Why do gaps between classmates widen after graduation?',
+  'Why do people keep comparing themselves despite the anxiety?',
+  'Why do strangers rarely talk in public spaces?',
+  'Why do family expectations shape career choices?',
+  'Why do online debates quickly become identity conflicts?',
+  'Why are some traditions becoming popular again in cities?',
+  'Why is care work so often overlooked?',
+  'Why does peer evaluation change self-judgment?',
+  'Why do organizational rules always have exceptions?',
+  'Why can moving to a large city feel more lonely?',
+  'Why is some knowledge easier to believe?',
+  'Why do people rationalize unfairness?',
+  'Why has technological progress not reduced everyone’s burden?',
+] as const
+
 const INTRO_PROMPT = '你想研究什么？'
-const researchPromptMessages: readonly KineticCopyMessage[] = [
-  { lines: [INTRO_PROMPT] },
-  ...researchTopicPresets.map((topic) => ({
-    prefix: '试试',
-    prefixClassName: 'research-agent-prompt__prefix',
-    lines: [topic],
-  })),
-]
 
 export function ResearchPromptCarousel({ onSelect }: { onSelect: (topic: string) => void }) {
+  const { locale } = useAppLocale()
+  const { introPrompt, presets, messages } = useMemo(() => {
+    const isEnglish = locale === 'en-US'
+    const nextIntroPrompt = isEnglish ? 'What do you want to research?' : INTRO_PROMPT
+    const nextPresets = isEnglish ? englishResearchTopicPresets : researchTopicPresets
+    const nextMessages: readonly KineticCopyMessage[] = [
+      { lines: [nextIntroPrompt] },
+      ...nextPresets.map((preset) => ({
+        prefix: isEnglish ? 'Try' : '试试',
+        prefixClassName: 'research-agent-prompt__prefix',
+        lines: [preset],
+      })),
+    ]
+    return {
+      introPrompt: nextIntroPrompt,
+      presets: nextPresets,
+      messages: nextMessages,
+    }
+  }, [locale])
   const [visibleMessageIndex, setVisibleMessageIndex] = useState(0)
   const topic = visibleMessageIndex > 0
-    ? researchTopicPresets[visibleMessageIndex - 1]
+    ? presets[visibleMessageIndex - 1]
     : null
-  const prompt = topic ?? INTRO_PROMPT
+  const prompt = topic ?? introPrompt
 
   return (
     <h1 aria-label={prompt} className="research-agent-prompt" id="research-agent-title">
@@ -56,7 +91,7 @@ export function ResearchPromptCarousel({ onSelect }: { onSelect: (topic: string)
           className="research-agent-prompt__copy"
           firstCycleMs={5_000}
           loopStartIndex={1}
-          messages={researchPromptMessages}
+          messages={messages}
           motionMode="characters"
           onMessageChange={setVisibleMessageIndex}
         />

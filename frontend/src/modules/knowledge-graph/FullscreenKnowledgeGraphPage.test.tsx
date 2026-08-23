@@ -187,6 +187,19 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
+it('does not run an internal transition in the fullscreen graph', () => {
+  renderPage()
+
+  const options = cytoscapeMock.mock.calls[0]?.[0]
+  expect(options.layout.animate).toBe(false)
+  for (const selector of ['node', 'edge']) {
+    expect(options.style.find((rule: { selector: string }) => rule.selector === selector))
+      .toEqual(expect.objectContaining({
+        style: expect.objectContaining({ 'transition-duration': 0 }),
+      }))
+  }
+})
+
 it('opens a dimension node as one bounded directory page', async () => {
   readStructuralConnectionPage.mockResolvedValueOnce({
     connections: [pathConnection],

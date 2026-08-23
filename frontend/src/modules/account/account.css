@@ -519,9 +519,10 @@
 }
 
 .account-portal__form-heading > img {
-  width: 34px;
-  height: 34px;
-  opacity: 0.86;
+  width: 48px;
+  height: 48px;
+  display: block;
+  opacity: 0.92;
 }
 
 .account-portal__form-label {

@@ -22,7 +22,12 @@ class KnowledgeToolRegistry:
         # Agent runs pin the release used by M4/M5 provenance. MATCH selects a
         # reviewed final release when one exists, while retaining the honest
         # preview fallback when the catalog has not published one yet.
-        self.release = catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
+        try:
+            self.release = catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
+        except LookupError:
+            # The conversational Agent remains usable on a preview catalog;
+            # formal M4 matching still enforces a pre-reviewed final release.
+            self.release = catalog.current_release(purpose=KnowledgeUsePurpose.RAG)
         self.evidence: dict[str, KnowledgeEvidence] = {}
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False

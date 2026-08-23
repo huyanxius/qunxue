@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from qunxue_api.adapters.sqlite.base import Base
@@ -32,6 +41,28 @@ class ResearchDocumentVersionRow(Base):
     restored_from_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ResearchDocumentIdentityRow(Base):
+    """Stable task/plan identity; historical duplicate documents remain auditable."""
+
+    __tablename__ = "research_document_identities"
+    __table_args__ = (
+        UniqueConstraint(
+            "document_id",
+            name="uq_research_document_identity_document",
+        ),
+    )
+
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    theory_plan_id: Mapped[str] = mapped_column(
+        ForeignKey("confirmed_theory_plans.theory_plan_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    document_id: Mapped[str] = mapped_column(String(36), nullable=False)
 
 
 class ResearchDocumentMutationRequestRow(Base):

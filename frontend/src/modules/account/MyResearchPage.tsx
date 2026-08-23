@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { DotsThreeIcon, FlaskIcon, TrashIcon } from '@phosphor-icons/react'
+import { DotsThreeIcon, TrashIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 
 import { deleteMyResearchViaApi, listMyResearchViaApi } from './accountApi'
+import { ResearchEmptyState } from './RecentResearchPanel'
 import type { MyResearchItem } from './types'
+import { useAppLocale } from '../../i18n/AppLocaleProvider'
+import { researchActionLabel, researchBlockerLabel, researchStageLabel } from './researchLabels'
 import './my-research.css'
 
 const researchQueryKey = ['account', 'research-tasks'] as const
 const dialogFocusableSelector = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-function formattedDate(value: string) {
+function formattedDate(value: string, locale: string, unknownTime: string) {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '时间未知'
-  return date.toLocaleString('zh-CN', {
+  if (Number.isNaN(date.getTime())) return unknownTime
+  return date.toLocaleString(locale, {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -21,6 +24,7 @@ function formattedDate(value: string) {
 }
 
 export function MyResearchPage() {
+  const { locale, text } = useAppLocale()
   const queryClient = useQueryClient()
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
@@ -93,7 +97,7 @@ export function MyResearchPage() {
         <span />
         <span />
         <span />
-        <p>正在读取研究任务</p>
+        <p>{text('正在读取研究任务', 'Loading research tasks')}</p>
       </div>
     )
   }
@@ -101,43 +105,34 @@ export function MyResearchPage() {
   if (research.isError) {
     return (
       <div className="research-library-state" role="alert">
-        <h2>暂时无法读取研究任务</h2>
-        <p>研究内容仍然保留。重新连接后即可继续。</p>
+        <h2>{text('暂时无法读取研究任务', 'Research tasks are unavailable')}</h2>
+        <p>{text('研究内容仍然保留。重新连接后即可继续。', 'Your research is safe. Reconnect to continue.')}</p>
         <button
           type="button"
           disabled={research.isFetching}
           onClick={() => research.refetch()}
         >
-          {research.isFetching ? '正在重试…' : '重试'}
+          {research.isFetching ? text('正在重试…', 'Retrying…') : text('重试', 'Try again')}
         </button>
       </div>
     )
   }
 
   if (research.data.length === 0) {
-    return (
-      <div className="research-library-state research-library-state--empty">
-        <span className="research-library-state__icon" aria-hidden="true">
-          <FlaskIcon size={21} weight="regular" />
-        </span>
-        <h2>还没有研究任务</h2>
-        <p>从一个具体的社会现象开始，研究过程会持续保存在这里。</p>
-        <a href="/research/new">新建研究</a>
-      </div>
-    )
+    return <ResearchEmptyState />
   }
 
   const pendingDelete = research.data.find((item) => item.taskId === pendingDeleteId)
 
   return (
     <>
-      <div className="research-table" role="table" aria-label="研究任务">
+      <div className="research-table" role="table" aria-label={text('研究任务', 'Research tasks')}>
         <div className="research-table__header" role="row">
-          <span role="columnheader">研究问题</span>
-          <span role="columnheader">阶段</span>
-          <span role="columnheader">下一步</span>
-          <span role="columnheader">更新时间</span>
-          <span role="columnheader" aria-label="操作" />
+          <span role="columnheader">{text('研究问题', 'Research question')}</span>
+          <span role="columnheader">{text('阶段', 'Stage')}</span>
+          <span role="columnheader">{text('下一步', 'Next step')}</span>
+          <span role="columnheader">{text('更新时间', 'Updated')}</span>
+          <span role="columnheader" aria-label={text('操作', 'Actions')} />
         </div>
         <div className="research-table__body" role="rowgroup">
           {research.data.map((item) => {
@@ -153,21 +148,28 @@ export function MyResearchPage() {
                   <a href={item.entryPath} title={item.phenomenonSummary}>
                     {item.phenomenonSummary}
                   </a>
-                  <span>{item.adoptedTheoryCount} 个理论</span>
+                  <span>{text(`${item.adoptedTheoryCount} 个理论`, `${item.adoptedTheoryCount} theories`)}</span>
                 </div>
                 <div role="cell">
-                  <span className="research-row__stage">{item.stageLabel}</span>
+                  <span className="research-row__stage">{researchStageLabel(item.stageLabel, locale)}</span>
                 </div>
                 <span className="research-row__next" role="cell">
-                  下一步：{item.nextActionLabel}
+                  {item.blocker ? (
+                    <>
+                      <span>{researchBlockerLabel(item.blocker.code, item.blocker.message, locale)}</span>{' '}
+                      {item.retry
+                        ? <a href={item.retry.method === 'GET' ? item.retry.href : item.entryPath}>{researchActionLabel(item.retry.label, locale)}</a>
+                        : <span>{researchActionLabel(item.nextActionLabel, locale)}</span>}
+                    </>
+                  ) : <>{text('下一步：', 'Next: ')}{researchActionLabel(item.nextActionLabel, locale)}</>}
                 </span>
                 <time role="cell" dateTime={item.updatedAt}>
-                  {formattedDate(item.updatedAt)}
+                  {formattedDate(item.updatedAt, locale, text('时间未知', 'Unknown time'))}
                 </time>
                 <div className="research-row__actions" role="cell">
                   <button
                     type="button"
-                    aria-label={`打开研究操作：${item.phenomenonSummary}`}
+                    aria-label={text(`打开研究操作：${item.phenomenonSummary}`, `Open research actions: ${item.phenomenonSummary}`)}
                     aria-expanded={menuOpen}
                     onClick={(event) => {
                       deleteTriggerRef.current = event.currentTarget
@@ -178,7 +180,7 @@ export function MyResearchPage() {
                   </button>
                   {menuOpen ? (
                     <div className="research-row__menu" role="menu">
-                      <a role="menuitem" href={item.entryPath}>继续研究</a>
+                      <a role="menuitem" href={item.entryPath}>{text('继续研究', 'Continue research')}</a>
                       <button
                         type="button"
                         role="menuitem"
@@ -188,7 +190,7 @@ export function MyResearchPage() {
                         }}
                       >
                         <TrashIcon size={15} weight="regular" aria-hidden="true" />
-                        删除研究
+                        {text('删除研究', 'Delete research')}
                       </button>
                     </div>
                   ) : null}
@@ -213,11 +215,11 @@ export function MyResearchPage() {
             <span className="delete-dialog__icon" aria-hidden="true">
               <TrashIcon size={19} weight="regular" />
             </span>
-            <h2 id="delete-research-title">永久删除这项研究？</h2>
+            <h2 id="delete-research-title">{text('永久删除这项研究？', 'Permanently delete this research?')}</h2>
             <p className="delete-dialog__question">{pendingDelete.phenomenonSummary}</p>
-            <p id="delete-research-description">删除后，任务及其派生内容无法恢复。</p>
+            <p id="delete-research-description">{text('删除后，任务及其派生内容无法恢复。', 'The task and its derived content cannot be recovered after deletion.')}</p>
             {deletion.isError ? (
-              <p className="delete-dialog__error" role="alert">删除失败，研究内容仍然保留。</p>
+              <p className="delete-dialog__error" role="alert">{text('删除失败，研究内容仍然保留。', 'Deletion failed. Your research is still available.')}</p>
             ) : null}
             <div className="delete-dialog__actions">
               <button
@@ -226,7 +228,7 @@ export function MyResearchPage() {
                 ref={deleteCancelRef}
                 onClick={() => setPendingDeleteId(null)}
               >
-                取消
+                {text('取消', 'Cancel')}
               </button>
               <button
                 className="delete-dialog__confirm"
@@ -234,7 +236,7 @@ export function MyResearchPage() {
                 disabled={deletion.isPending}
                 onClick={() => deletion.mutate(pendingDelete.taskId)}
               >
-                {deletion.isPending ? '正在删除…' : '确认永久删除'}
+                {deletion.isPending ? text('正在删除…', 'Deleting…') : text('确认永久删除', 'Permanently delete')}
               </button>
             </div>
           </section>

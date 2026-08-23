@@ -21,6 +21,16 @@ REQUIRED_FRAMEWORK_SECTION_KEYS = frozenset(
         "evidence_gaps",
     }
 )
+PROVENANCE_REQUIRED_SECTION_KEYS = frozenset(
+    {
+        "theoretical_perspective",
+        "core_concepts",
+        "mechanisms",
+        "questions_or_hypotheses",
+        "methodology",
+        "analysis_steps",
+    }
+)
 
 
 class ResearchDocumentStatus(StrEnum):
@@ -83,6 +93,24 @@ class ResearchDocumentMarkdownExport:
     markdown: str
 
 
+@dataclass(frozen=True, slots=True)
+class ResearchDocumentCompletionCheck:
+    code: str
+    label: str
+    passed: bool
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchDocumentCompletionGate:
+    document_id: UUID
+    version: int
+    ready: bool
+    pending_proposal_count: int
+    blockers: tuple[str, ...]
+    checks: tuple[ResearchDocumentCompletionCheck, ...]
+
+
 class ResearchDocumentRepository(Protocol):
     def add(self, snapshot: ResearchDocumentSnapshot) -> ResearchDocumentSnapshot: ...
 
@@ -126,6 +154,16 @@ class ResearchDocumentService:
         if not release_id:
             raise ValueError("knowledge release is required")
         self._validate_sections(sections, release_id=release_id)
+        existing = next(
+            (
+                item
+                for item in self._repository.list_for_task(task_id)
+                if item.theory_plan_id == theory_plan_id
+            ),
+            None,
+        )
+        if existing is not None:
+            return existing
         now = self._clock()
         return self._repository.add(
             ResearchDocumentSnapshot(
@@ -225,20 +263,151 @@ class ResearchDocumentService:
             raise ValueError("stale research document version")
         return persisted
 
-    def confirm(self, *, document_id: UUID, expected_version: int) -> ResearchDocumentSnapshot:
+    def completion_gate(
+        self,
+        *,
+        document_id: UUID,
+        pending_proposal_count: int = 0,
+    ) -> ResearchDocumentCompletionGate:
+        current = self.get(document_id)
+        section_by_key = {section.key: section for section in current.sections}
+        missing = sorted(REQUIRED_FRAMEWORK_SECTION_KEYS - section_by_key.keys())
+        unresolved = tuple(
+            section
+            for section in current.sections
+            if section.key in REQUIRED_FRAMEWORK_SECTION_KEYS
+            and section.status
+            in {
+                ResearchDocumentSectionStatus.DRAFT,
+                ResearchDocumentSectionStatus.NEEDS_USER_DECISION,
+            }
+        )
+        evidence_gaps = section_by_key.get("evidence_gaps")
+        gaps_disclosed = bool(evidence_gaps and evidence_gaps.content.strip())
+        missing_provenance = tuple(
+            section
+            for section in current.sections
+            if section.key in PROVENANCE_REQUIRED_SECTION_KEYS
+            and not section.evidence_refs
+            and section.status is not ResearchDocumentSectionStatus.EVIDENCE_GAP
+        )
+        blockers = tuple(
+            [f"缺少必需章节：{', '.join(missing)}。"] if missing else []
+        ) + tuple(f"章节“{section.title}”仍待审阅。" for section in unresolved)
+        blockers += tuple(
+            f"章节“{section.title}”的关键判断需要引用，或明确标记为证据缺口。"
+            for section in missing_provenance
+        )
+        if pending_proposal_count:
+            blockers += (f"还有 {pending_proposal_count} 条 Agent 建议待处理。",)
+        if not gaps_disclosed:
+            blockers += ("需要明确披露当前证据缺口。",)
+        exportable = not blockers
+        checks = (
+            ResearchDocumentCompletionCheck(
+                code="required_sections",
+                label="规定内容完整",
+                passed=not missing,
+                detail=("12 个研究框架章节齐全。" if not missing else blockers[0]),
+            ),
+            ResearchDocumentCompletionCheck(
+                code="section_review",
+                label="章节已审阅",
+                passed=not unresolved,
+                detail=(
+                    "所有规定章节均已审阅或明确标记证据缺口。"
+                    if not unresolved
+                    else "；".join(f"{section.title}仍待审阅" for section in unresolved)
+                ),
+            ),
+            ResearchDocumentCompletionCheck(
+                code="latest_version",
+                label="已使用最新版本",
+                passed=True,
+                detail=f"完成检查基于当前最新的第 {current.version} 版。",
+            ),
+            ResearchDocumentCompletionCheck(
+                code="pending_proposals",
+                label="Agent 建议已处理",
+                passed=pending_proposal_count == 0,
+                detail=(
+                    "没有待处理的 Agent 建议。"
+                    if pending_proposal_count == 0
+                    else f"还有 {pending_proposal_count} 条建议待接受或拒绝。"
+                ),
+            ),
+            ResearchDocumentCompletionCheck(
+                code="critical_provenance",
+                label="关键判断可追溯",
+                passed=not missing_provenance,
+                detail=(
+                    "理论、机制、问题与方法判断均保留引用或明确证据缺口。"
+                    if not missing_provenance
+                    else "、".join(section.title for section in missing_provenance)
+                    + "尚未保留引用或证据缺口标记。"
+                ),
+            ),
+            ResearchDocumentCompletionCheck(
+                code="evidence_gaps_disclosed",
+                label="证据缺口已披露",
+                passed=gaps_disclosed,
+                detail=(
+                    "证据缺口章节已有明确说明。"
+                    if gaps_disclosed
+                    else "证据缺口章节不能为空。"
+                ),
+            ),
+            ResearchDocumentCompletionCheck(
+                code="exportable",
+                label="成果包可导出",
+                passed=exportable,
+                detail=(
+                    "当前最新版本满足正式导出前置条件。"
+                    if exportable
+                    else "解决以上阻断项后才能生成正式成果包。"
+                ),
+            ),
+        )
+        return ResearchDocumentCompletionGate(
+            document_id=current.document_id,
+            version=current.version,
+            ready=exportable,
+            pending_proposal_count=pending_proposal_count,
+            blockers=blockers,
+            checks=checks,
+        )
+
+    def confirm(
+        self,
+        *,
+        document_id: UUID,
+        expected_version: int,
+        pending_proposal_count: int = 0,
+    ) -> ResearchDocumentSnapshot:
         current = self.get(document_id)
         self._assert_current_version(current, expected_version)
         if current.status is ResearchDocumentStatus.CONFIRMED:
             raise ValueError("confirmed document is already final")
-        section_keys = {section.key for section in current.sections}
-        missing = REQUIRED_FRAMEWORK_SECTION_KEYS - section_keys
-        if missing:
-            raise ValueError("required sections are missing: " + ", ".join(sorted(missing)))
-        if any(
-            section.status is ResearchDocumentSectionStatus.NEEDS_USER_DECISION
-            for section in current.sections
-        ):
-            raise ValueError("pending user decisions must be resolved before confirmation")
+        gate = self.completion_gate(
+            document_id=document_id,
+            pending_proposal_count=pending_proposal_count,
+        )
+        if not gate.ready:
+            missing = REQUIRED_FRAMEWORK_SECTION_KEYS - {
+                section.key for section in current.sections
+            }
+            if missing:
+                raise ValueError(
+                    "required sections are missing: " + ", ".join(sorted(missing))
+                )
+            if any(
+                section.status is ResearchDocumentSectionStatus.NEEDS_USER_DECISION
+                for section in current.sections
+            ):
+                raise ValueError(
+                    "pending user decisions must be resolved before confirmation"
+                )
+            raise ValueError("completion gate blocked: " + " ".join(gate.blockers))
         now = self._clock()
         candidate = replace(
                 current,
@@ -260,8 +429,12 @@ class ResearchDocumentService:
         self, *, document_id: UUID, version: int | None = None
     ) -> ResearchDocumentMarkdownExport:
         snapshot = self.get(document_id, version=version)
-        if snapshot.status is not ResearchDocumentStatus.CONFIRMED:
-            raise ValueError("only a confirmed document version can be exported")
+        latest = self.get(document_id)
+        if (
+            snapshot.revision_id != latest.revision_id
+            or snapshot.status is not ResearchDocumentStatus.CONFIRMED
+        ):
+            raise ValueError("only the latest confirmed document version can be exported")
         metadata = (
             "---\n"
             f"document_id: {snapshot.document_id}\n"

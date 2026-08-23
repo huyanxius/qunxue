@@ -12,7 +12,9 @@ PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "qunxue_api"
 MODULES_ROOT = PACKAGE_ROOT / "modules"
 MODULE_PACKAGE = "qunxue_api.modules"
 ALLOWED_MODULE_DEPENDENCIES = {
+    "account_management": {"identity"},
     "agent_conversation": set(),
+    "billing": set(),
     "identity": set(),
     "knowledge_catalog": set(),
     "research_intake": set(),
@@ -20,6 +22,10 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "research_framework": {"theory_matching"},
 }
 ALLOWED_CROSS_MODULE_SYMBOLS = {
+    ("account_management", "identity"): {
+        "AccountRole",
+        "AccountStatus",
+    },
     ("theory_matching", "knowledge_catalog"): {
         "KnowledgeReleaseRef",
         "SourceRecordSnapshot",
@@ -34,11 +40,19 @@ ALLOWED_CROSS_MODULE_SYMBOLS = {
     },
 }
 ALLOWED_TOP_LEVEL_DEPENDENCIES = {
+    "account_extension": {"adapters", "api", "modules"},
     "modules": {"modules"},
     "application": {"application", "modules"},
     "api": {"api", "application", "modules", "settings"},
     "adapters": {"adapters", "modules"},
-    "bootstrap": {"adapters", "api", "application", "modules", "settings"},
+    "bootstrap": {
+        "account_extension",
+        "adapters",
+        "api",
+        "application",
+        "modules",
+        "settings",
+    },
     "settings": set(),
     "main": {"bootstrap"},
 }

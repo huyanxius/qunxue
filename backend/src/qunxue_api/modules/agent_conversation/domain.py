@@ -103,6 +103,8 @@ class AgentRun:
     user_id: UUID
     idempotency_key: str
     status: Literal["running", "completed", "failed", "interrupted"]
+    provider: str = "pydantic-ai"
+    model: str = "knowledge-agent"
     knowledge_release_id: str | None = None
     turn_id: UUID | None = None
     tool_summary: tuple[dict[str, object], ...] = ()

@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ComponentType, ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ResearchMapCanvas } from './ResearchMapCanvas'
@@ -16,7 +17,7 @@ vi.mock('elkjs/lib/elk.bundled.js', () => ({
 }))
 
 vi.mock('@xyflow/react', () => ({
-  Background: () => null,
+  Background: () => <div className="react-flow__background" />,
   BackgroundVariant: { Dots: 'dots' },
   Controls: () => <div data-testid="flow-controls" />,
   Handle: () => null,
@@ -24,14 +25,17 @@ vi.mock('@xyflow/react', () => ({
   MiniMap: () => <div data-testid="flow-minimap" />,
   NodeToolbar: ({ children, isVisible }: { children: React.ReactNode; isVisible?: boolean }) => isVisible ? <>{children}</> : null,
   Position: { Left: 'left', Right: 'right', Top: 'top' },
-  ReactFlow: ({ children, nodes, onNodeClick, onInit }: {
-    children: React.ReactNode
+  ReactFlow: ({ children, nodes, nodeTypes, onNodeClick, onInit, 'aria-label': ariaLabel }: {
+    children: ReactNode
     nodes: Array<{ id: string; data: { node: { title: string } } }>
+    nodeTypes?: { argument: ComponentType<{ data: { node: { id: string; kind: string; title: string }; onFocus: () => void; onContinue: () => void }; selected: boolean }> }
     onNodeClick?: (event: unknown, node: unknown) => void
     onInit?: (instance: { fitView: () => void }) => void
+    'aria-label'?: string
   }) => {
     onInit?.({ fitView: () => undefined })
-    return <div data-testid="react-flow">{nodes.map((node) => <button type="button" key={node.id} onClick={() => onNodeClick?.({}, node)}>{node.data.node.title}</button>)}{children}</div>
+    const ArgumentNode = nodeTypes?.argument
+    return <div data-testid="react-flow" aria-label={ariaLabel}>{nodes.map((node) => <div key={node.id}><button type="button" onClick={() => onNodeClick?.({}, node)}>{node.data.node.title}</button>{ArgumentNode ? <ArgumentNode data={node.data as never} selected={false} /> : null}</div>)}{children}</div>
   },
 }))
 
@@ -57,14 +61,30 @@ const projection: ResearchCanvasProjection = {
 }
 
 describe('ResearchMapCanvas', () => {
+  it('explains the dotted canvas without duplicating the Agent prompts', () => {
+    const { container } = render(<ResearchMapCanvas projection={{ status: 'empty', question: '', nodes: [], edges: [] }} />)
+
+    expect(screen.getByLabelText('空白研究画布')).toBeVisible()
+    expect(container.querySelector('.react-flow__background')).toBeInTheDocument()
+    expect(container.querySelector('[data-research-agent-bot]')).toBeInTheDocument()
+    expect(screen.getByLabelText('画布说明')).toHaveTextContent('对话中形成的研究结构会在这里展开。')
+    expect(within(screen.getByLabelText('画布说明')).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByText('让问题在这里形成结构')).not.toBeInTheDocument()
+    expect(screen.queryByText('ARGUMENT MAP')).not.toBeInTheDocument()
+    expect(screen.queryByText('不是聊天摘要。这里仅保留 Agent 明确建立的问题、理论、主张、证据与缺口。')).not.toBeInTheDocument()
+    expect(screen.queryByText(/0 个节点/)).not.toBeInTheDocument()
+  })
+
   it('lays out typed argument nodes with mature navigation aids', async () => {
     render(<ResearchMapCanvas projection={projection} />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: '时间贫困压缩关系维护' })).toBeVisible())
+    expect(screen.queryByLabelText('画布说明')).not.toBeInTheDocument()
     expect(screen.getByTestId('flow-controls')).toBeInTheDocument()
-    expect(screen.getByTestId('flow-minimap')).toBeInTheDocument()
+    expect(screen.queryByTestId('flow-minimap')).not.toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: '画布聚焦层级' })).toBeVisible()
-    expect(screen.getByText((_, element) => element?.textContent === '6 个节点 · 4 条论证关系')).toBeVisible()
+    expect(screen.queryByText('研究论证地图')).not.toBeInTheDocument()
+    expect(screen.queryByText(/6 个节点/)).not.toBeInTheDocument()
   })
 
   it('opens the inspector from a real node selection and exposes its citation', async () => {
@@ -92,5 +112,17 @@ describe('ResearchMapCanvas', () => {
 
     fireEvent.keyDown(list, { key: 'Escape' })
     expect(screen.queryByRole('region', { name: '研究节点目录' })).not.toBeInTheDocument()
+  })
+
+  it('expands document content inside the existing argument map node', async () => {
+    const documentProjection: ResearchCanvasProjection = {
+      ...projection,
+      nodes: [...projection.nodes, { id: 'document', kind: 'document', title: '理论判断文档', summary: '研究文档', status: 'developing', provenance: 'user', citationIds: [] }],
+    }
+
+    render(<ResearchMapCanvas projection={documentProjection} selectedNodeId="document" expandedNodeContent={{ document: <section aria-label="研究文档节点">正文编辑区</section> }} />)
+
+    expect(await screen.findByRole('region', { name: '研究文档节点' })).toHaveTextContent('正文编辑区')
+    expect(screen.getByRole('region', { name: '研究论证地图' })).toContainElement(screen.getByRole('region', { name: '研究文档节点' }))
   })
 })

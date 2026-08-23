@@ -1,9 +1,9 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from '@tiptap/markdown'
-import { CheckCircleIcon, CircleNotchIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, WarningCircleIcon } from '@phosphor-icons/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useParams } from 'react-router'
+import { CheckCircleIcon, CircleNotchIcon, DownloadSimpleIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router'
 
 import {
   acceptResearchDocumentProposal,
@@ -11,6 +11,7 @@ import {
   createTheoryDecisions,
   confirmTheoryPlan,
   confirmResearchDocument,
+  createMatchRun,
   exportResearchDocument,
   getMatchRun,
   getResearchTaskNavigation,
@@ -20,9 +21,15 @@ import {
   listTheoryDecisions,
   restoreResearchDocument,
   rejectResearchDocumentProposal,
+  readResearchTaskNavigationViaApi,
   updateResearchDocument,
 } from '../../api/researchWorkspace'
-import { streamAgentTurn, type AgentEvent, type AgentToolStep } from '../../modules/research-agent'
+import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
+import { ResearchMapCanvas } from './ResearchMapCanvas'
+import { projectResearchCanvas, type ResearchCanvasProjection } from '../../modules/research-workspace'
+import type { AgentConversation } from '../../modules/research-agent'
+import { PageContent, PageShell } from '../ui/PageShell'
+import { M5ResearchDeliveryController } from './M5ResearchDeliveryController'
 import './research-document-workbench.css'
 
 const M4_SECTIONS = [
@@ -49,7 +56,6 @@ const M5_SECTIONS = [
 ] as const
 
 type SectionKey = string
-type AgentState = 'idle' | 'thinking' | 'retrieving' | 'answering' | 'error'
 type ResearchDocumentProposalResponse = NonNullable<Awaited<ReturnType<typeof listResearchTaskDocumentProposals>>['data']>['items'][number]
 type ResearchDocumentResponse = NonNullable<Awaited<ReturnType<typeof listResearchDocuments>>['data']>['items'][number]
 type ResearchTaskNavigationResponse = NonNullable<Awaited<ReturnType<typeof getResearchTaskNavigation>>['data']>
@@ -78,9 +84,10 @@ function selectCurrentDocument(items: ResearchDocumentResponse[], navigation: Re
   return (currentId ? items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? items[0] ?? null
 }
 
-export function ResearchDocumentWorkbench() {
+export function ResearchDocumentWorkbench({ userId = null }: { userId?: string | null }) {
   const { task_id: taskId, stage: stageParam } = useParams<{ task_id: string; stage?: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const stage = stageParam ?? (location.pathname.endsWith('/framework') ? 'framework' : 'match')
   const mode = stage === 'framework' ? 'framework' : 'match'
   const [navigation, setNavigation] = useState<ResearchTaskNavigationResponse | null>(null)
@@ -90,29 +97,127 @@ export function ResearchDocumentWorkbench() {
   const [activeSectionId, setActiveSectionId] = useState<SectionKey>(mode === 'match' ? M4_SECTIONS[0][0] : M5_SECTIONS[0][0])
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
-  const [agentState, setAgentState] = useState<AgentState>('idle')
-  const [agentDraft, setAgentDraft] = useState('')
-  const [agentAnswer, setAgentAnswer] = useState('')
-  const [agentError, setAgentError] = useState<string | null>(null)
-  const [toolSteps, setToolSteps] = useState<AgentToolStep[]>([])
-  const [citations, setCitations] = useState<Array<{ citation_id: string; label: string; source_id?: string | null; knowledge_id?: string | null }>>([])
-  const [conversationId, setConversationId] = useState<string | null>(null)
-  const [runtimeMode, setRuntimeMode] = useState<'mock' | 'base' | 'sft' | null>(null)
   const [matchRun, setMatchRun] = useState<MatchRunResponse | null>(null)
+  const [matchingActionState, setMatchingActionState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [matchingActionError, setMatchingActionError] = useState<string | null>(null)
   const [pendingTheoryDecisions, setPendingTheoryDecisions] = useState<Record<string, { candidate_version: number; action: TheoryDecisionAction }>>({})
   const [decisionSet, setDecisionSet] = useState<TheoryDecisionSetResponse | null>(null)
   const [relationDraft, setRelationDraft] = useState({ explanation: '', premise: '', supporting: '', excluding: '', distinguishing: '' })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved')
-  const abortRef = useRef<AbortController | null>(null)
+  const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
+  const sectionNodePrefix = `research-section:${taskId ?? 'unknown'}:${mode}:`
+  const [selectedMapNodeId, setSelectedMapNodeId] = useState<string | null>(null)
+  const matchingAttemptKeyRef = useRef<string | null>(null)
+  const matchingInFlightRef = useRef(false)
+  const saveInFlightRef = useRef<Promise<ResearchDocumentResponse | null> | null>(null)
 
-  const sections = document?.sections.length ? document.sections : sectionFallback(mode)
+  const sections = useMemo(() => document?.sections.length ? document.sections : sectionFallback(mode), [document?.sections, mode])
   const activeSection = sections.find((section) => section.section_id === activeSectionId) ?? sections[0]
   const activeContent = activeSection?.content ?? ''
   const selectedTheoryIds = Object.entries(pendingTheoryDecisions).filter(([, value]) => value.action === 'adopt' || value.action === 'combine').map(([candidateId]) => candidateId)
   const multiTheoryRelationReady = selectedTheoryIds.length < 2 || Object.values(relationDraft).every((value) => value.trim())
+  const mapProjection = useMemo<ResearchCanvasProjection>(() => {
+    const projected = projectResearchCanvas({ conversation: agentConversation })
+    const questionNode = projected.nodes.find((node) => node.kind === 'question')
+    const fallbackQuestionId = `research-question:${taskId ?? 'unknown'}`
+    const phenomenonId = `research-phenomenon:${taskId ?? 'unknown'}`
+    const nodes: ResearchCanvasProjection['nodes'] = questionNode ? [...projected.nodes] : [
+      ...projected.nodes,
+      {
+        id: fallbackQuestionId,
+        kind: 'question',
+        title: navigation?.phenomenon_summary?.phenomenon ?? '当前研究问题',
+        summary: navigation?.phenomenon_summary?.research_intent ?? '从已经确认的研究起点继续推进。',
+        excerpt: navigation?.phenomenon_summary?.research_intent ?? null,
+        status: 'grounded',
+        provenance: 'user',
+        citationIds: [],
+      },
+    ]
+    if (navigation?.phenomenon_summary) nodes.push({
+      id: phenomenonId,
+      kind: 'phenomenon',
+      title: navigation.phenomenon_summary.phenomenon,
+      summary: navigation.phenomenon_summary.research_intent ?? '已经确认并固定到当前研究任务的核心现象。',
+      excerpt: navigation.phenomenon_summary.research_intent ?? null,
+      status: 'grounded',
+      provenance: 'user',
+      citationIds: [],
+    })
+    const candidateTheoryNodes = matchRun?.candidate_page.candidates.map((candidate) => ({
+      id: `research-theory:${candidate.candidate_id}`,
+      kind: 'theory' as const,
+      title: candidate.title,
+      summary: candidate.applicability_rationale,
+      excerpt: candidate.problem_focus || candidate.applicability_rationale,
+      status: pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt' || pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine' ? 'grounded' as const : 'developing' as const,
+      provenance: 'knowledge' as const,
+      citationIds: candidate.source_ids ?? [],
+    })) ?? []
+    nodes.push(...candidateTheoryNodes)
+    const evidenceById = new Map<string, ResearchCanvasProjection['nodes'][number]>()
+    for (const candidate of matchRun?.candidate_page.candidates ?? []) {
+      for (const evidence of [...(candidate.supporting_evidence ?? []), ...(candidate.conflicting_evidence ?? [])]) {
+        const evidenceId = `research-evidence:${evidence.evidence_ref_id}`
+        evidenceById.set(evidenceId, {
+          id: evidenceId,
+          kind: 'evidence',
+          title: evidence.claim,
+          summary: evidence.excerpt ?? evidence.locator ?? '来自固定知识发布的证据。',
+          excerpt: evidence.excerpt,
+          status: 'verified',
+          provenance: 'knowledge',
+          citationIds: evidence.source_id ? [evidence.source_id] : [],
+        })
+      }
+    }
+    nodes.push(...evidenceById.values())
+    const sectionNodes = sections.map((section) => ({
+      id: `${sectionNodePrefix}${section.section_id}`,
+      kind: 'document' as const,
+      title: section.title,
+      summary: section.content.trim().replace(/[#*_`>\n]+/g, ' ').replace(/\s+/g, ' ').slice(0, 92),
+      excerpt: section.content || null,
+      status: section.status === 'confirmed' || section.status === 'reviewed' ? 'complete' as const : 'developing' as const,
+      provenance: 'user' as const,
+      citationIds: section.evidence_refs.map((reference) => reference.source_id),
+    }))
+    nodes.push(...sectionNodes)
+    const source = navigation?.phenomenon_summary ? phenomenonId : questionNode?.id ?? fallbackQuestionId
+    const stageEdges: ResearchCanvasProjection['edges'] = []
+    if (navigation?.phenomenon_summary) stageEdges.push({
+      id: `research-phenomenon-edge:${taskId ?? 'unknown'}`,
+      source: questionNode?.id ?? fallbackQuestionId,
+      target: phenomenonId,
+      relation: 'refines',
+      label: '确认现象',
+    })
+    for (const candidate of matchRun?.candidate_page.candidates ?? []) {
+      const theoryId = `research-theory:${candidate.candidate_id}`
+      stageEdges.push({ id: `research-theory-edge:${candidate.candidate_id}`, source, target: theoryId, relation: 'explains', label: '候选解释' })
+      for (const evidence of candidate.supporting_evidence ?? []) stageEdges.push({ id: `research-support:${candidate.candidate_id}:${evidence.evidence_ref_id}`, source: `research-evidence:${evidence.evidence_ref_id}`, target: theoryId, relation: 'supports', label: '支持' })
+      for (const evidence of candidate.conflicting_evidence ?? []) stageEdges.push({ id: `research-challenge:${candidate.candidate_id}:${evidence.evidence_ref_id}`, source: `research-evidence:${evidence.evidence_ref_id}`, target: theoryId, relation: 'challenges', label: '质疑' })
+    }
+    const firstLayerSize = Math.ceil(sectionNodes.length / 2)
+    const sectionEdges = sectionNodes.map((node, index) => ({
+      id: `research-section-edge:${index}:${node.id}`,
+      source: index < firstLayerSize ? source : sectionNodes[index - firstLayerSize].id,
+      target: node.id,
+      relation: 'refines' as const,
+      label: '',
+    }))
+    return {
+      ...projected,
+      status: 'ready',
+      question: navigation?.phenomenon_summary?.phenomenon ?? document?.title ?? projected.question,
+      nodes,
+      edges: [...projected.edges, ...stageEdges, ...sectionEdges],
+    }
+  }, [agentConversation, document?.title, matchRun, navigation?.phenomenon_summary, pendingTheoryDecisions, sectionNodePrefix, sections, taskId])
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
-    content: activeContent || '<p>在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。</p>',
+    content: activeContent || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。',
+    contentType: 'markdown',
     immediatelyRender: false,
     editorProps: { attributes: { 'aria-labelledby': 'research-document-heading' } },
     onUpdate: () => setSaveState('unsaved'),
@@ -120,7 +225,7 @@ export function ResearchDocumentWorkbench() {
 
   useEffect(() => {
     if (!editor || !activeSection) return
-    editor.commands.setContent(activeSection.content || '<p>在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。</p>')
+    editor.commands.setContent(activeSection.content || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。', { contentType: 'markdown' })
     setSaveState('saved')
   }, [activeSectionId, document?.revision_id, editor])
 
@@ -139,6 +244,9 @@ export function ResearchDocumentWorkbench() {
       if (disposed) return
       if (!nav.data || !docs.data) throw new Error('研究工作区暂时无法加载。')
       setNavigation(nav.data)
+      if (mode === 'match' && (nav.data.allowed_actions?.includes('start_matching') || nav.data.current_match_run_id)) {
+        setActiveSectionId('candidate_theories')
+      }
       if (mode === 'match' && nav.data.current_match_run_id) {
         const match = await getMatchRun({ path: { match_run_id: nav.data.current_match_run_id } })
         if (match.data) setMatchRun(match.data)
@@ -176,7 +284,8 @@ export function ResearchDocumentWorkbench() {
     ])
     if (navigationResult.data) setNavigation(navigationResult.data)
     if (!result.data) return
-    const currentId = mode === 'framework' ? navigation?.current_framework_id : navigation?.current_theory_plan_id
+    const latestNavigation = navigationResult.data ?? navigation
+    const currentId = mode === 'framework' ? latestNavigation?.current_framework_id : latestNavigation?.current_theory_plan_id
     const current = (currentId ? result.data.items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? result.data.items[0] ?? null
     setDocument(current)
     const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
@@ -187,21 +296,45 @@ export function ResearchDocumentWorkbench() {
     }
   }, [mode, navigation, taskId])
 
-  const saveSection = useCallback(async () => {
-    if (!editor || !document || !activeSection) return
+  const resumeFromServer = useCallback(async () => {
+    if (!taskId) return
+    const latest = await readResearchTaskNavigationViaApi(taskId)
+    setNavigation(latest)
+    if (latest.resume_path !== location.pathname) {
+      navigate(latest.resume_path, { replace: true })
+    }
+  }, [location.pathname, navigate, taskId])
+
+  const saveSection = useCallback((): Promise<ResearchDocumentResponse | null> => {
+    if (!editor || !document || !activeSection) return Promise.resolve(document)
+    if (saveInFlightRef.current) return saveInFlightRef.current
+    const content = editor.getMarkdown()
+    if (content === activeSection.content) {
+      setSaveState('saved')
+      return Promise.resolve(document)
+    }
     setSaveState('saving')
-    const content = editor.getText()
     const nextSections = document.sections.map((section) => section.section_id === activeSection.section_id
       ? { ...section, content }
       : section)
-    const result = await updateResearchDocument({
-      path: { document_id: document.document_id },
-      headers: { 'Idempotency-Key': key() },
-      body: { expected_version: document.version, sections: nextSections, change_summary: '用户直接编辑正文', source: 'user_edit' },
-    })
-    if (!result.data) throw new Error('自动保存失败，请重试。')
-    setDocument(result.data)
-    setSaveState('saved')
+    let request: Promise<ResearchDocumentResponse | null>
+    request = (async () => {
+      try {
+        const result = await updateResearchDocument({
+          path: { document_id: document.document_id },
+          headers: { 'Idempotency-Key': key() },
+          body: { expected_version: document.version, sections: nextSections, change_summary: '用户直接编辑正文', source: 'user_edit' },
+        })
+        if (!result.data) throw new Error('自动保存失败，请重试。')
+        setDocument(result.data)
+        setSaveState('saved')
+        return result.data
+      } finally {
+        if (saveInFlightRef.current === request) saveInFlightRef.current = null
+      }
+    })()
+    saveInFlightRef.current = request
+    return request
   }, [activeSection, document, editor])
 
   useEffect(() => {
@@ -210,45 +343,59 @@ export function ResearchDocumentWorkbench() {
     return () => window.clearTimeout(timer)
   }, [saveSection, saveState])
 
-  async function askAgent() {
-    const message = agentDraft.trim()
-    if (!message || agentState === 'thinking' || agentState === 'retrieving') return
-    abortRef.current?.abort()
-    const abort = new AbortController()
-    abortRef.current = abort
-    setAgentDraft('')
-    setAgentAnswer('')
-    setAgentError(null)
-    setToolSteps([])
-    setCitations([])
-    setAgentState('thinking')
-    let terminalError = false
+  async function startMatching() {
+    const phenomenon = navigation?.phenomenon_summary
+    if (
+      !taskId
+      || mode !== 'match'
+      || matchingInFlightRef.current
+      || !navigation?.allowed_actions?.includes('start_matching')
+      || !phenomenon
+      || !navigation.knowledge_release_id
+    ) return
+    const idempotencyKey = matchingAttemptKeyRef.current ?? key()
+    matchingAttemptKeyRef.current = idempotencyKey
+    matchingInFlightRef.current = true
+    setMatchingActionState('loading')
+    setMatchingActionError(null)
     try {
-      await streamAgentTurn({ conversation_id: conversationId, message, workspace: 'research', task_id: taskId, document_id: document?.document_id ?? null, section_id: activeSection?.section_id ?? null, document_version: document?.version ?? null, theory_plan_id: navigation?.current_theory_plan_id ?? null, idempotencyKey: key() }, (event: AgentEvent) => {
-        if (event.type === 'turn_started') {
-          setConversationId(event.conversation_id)
-          setRuntimeMode(event.runtime_mode ?? null)
-        }
-        if (event.type === 'agent_status') setAgentState(event.status === 'answering' ? 'answering' : 'thinking')
-        if (event.type === 'tool_started') {
-          setAgentState('retrieving')
-          setToolSteps((current) => [...current, { id: event.call_id ?? `${event.tool}-${Date.now()}`, tool: event.tool, label: event.tool, detail: event.detail, input: event.input, status: 'running' }])
-        }
-        if (event.type === 'tool_finished' || event.type === 'tool_failed') {
-          setAgentState('thinking')
-          setToolSteps((current) => current.map((step) => step.id === event.call_id || step.tool === event.tool ? { ...step, detail: event.detail, output: event.type === 'tool_finished' ? event.output : event.message, status: event.type === 'tool_failed' ? 'failed' : 'completed' } : step))
-        }
-        if (event.type === 'assistant_delta') { setAgentState('answering'); setAgentAnswer((current) => current + event.delta) }
-        if (event.type === 'citation_added') setCitations((current) => [...current, event.citation])
-        if (event.type === 'turn_completed') { void refreshDocumentState() }
-        if (event.type === 'turn_interrupted') { terminalError = true; setAgentState('error'); setAgentError(event.message) }
-        if (event.type === 'turn_failed') { terminalError = true; setAgentState('error'); setAgentError(event.message) }
-      }, abort.signal)
-      if (!terminalError) setAgentState('answering')
+      const result = await createMatchRun({
+        path: { task_id: taskId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+        body: {
+          expected_task_version: navigation.version,
+          phenomenon_query_id: phenomenon.phenomenon_query_id,
+          phenomenon_version: phenomenon.version,
+          knowledge_release_id: navigation.knowledge_release_id,
+        },
+      })
+      if (!result.data) throw new Error('理论匹配暂时未能启动。')
+      matchingAttemptKeyRef.current = null
+      setMatchRun(result.data)
+      setNavigation((current) => current
+        ? {
+            ...current,
+            version: current.version === navigation.version ? current.version + 1 : current.version,
+            current_match_run_id: result.data!.match_run_id,
+          }
+        : current)
+      const latest = await getResearchTaskNavigation({ path: { task_id: taskId } })
+      if (latest.data) {
+        setNavigation(latest.data)
+        setMatchingActionState('idle')
+      } else {
+        setMatchingActionState('error')
+        setMatchingActionError('匹配结果已保存，但进度刷新失败。刷新页面即可从服务端恢复。')
+      }
     } catch (reason: unknown) {
-      if (abort.signal.aborted) setAgentError('已中断本次 Agent 请求，可继续重试。')
-      else setAgentError(reason instanceof Error ? reason.message : 'Agent 暂时无法连接。')
-      setAgentState('error')
+      setMatchingActionState('error')
+      setMatchingActionError(
+        reason instanceof Error
+          ? reason.message
+          : '理论匹配暂时未能启动，研究状态和固定知识发布均已保留。',
+      )
+    } finally {
+      matchingInFlightRef.current = false
     }
   }
 
@@ -264,6 +411,7 @@ export function ResearchDocumentWorkbench() {
       setDocument(result.data.document)
       setProposals((current) => current.map((item) => item.proposal_id === proposal.proposal_id ? result.data!.proposal : item))
       await refreshDocumentState()
+      await resumeFromServer()
     }
   }
 
@@ -279,8 +427,12 @@ export function ResearchDocumentWorkbench() {
 
   async function confirmDocument() {
     if (!document) return
-    const result = await confirmResearchDocument({ path: { document_id: document.document_id }, headers: { 'Idempotency-Key': key() }, body: { expected_version: document.version } })
-    if (result.data) setDocument(result.data)
+    const latestDocument = await saveSection() ?? document
+    const result = await confirmResearchDocument({ path: { document_id: latestDocument.document_id }, headers: { 'Idempotency-Key': key() }, body: { expected_version: latestDocument.version } })
+    if (result.data) {
+      setDocument(result.data)
+      await resumeFromServer()
+    }
   }
 
   async function restoreVersion(version: number) {
@@ -294,6 +446,11 @@ export function ResearchDocumentWorkbench() {
       setDocument(result.data)
       setVersions((current) => [result.data!, ...current.filter((item) => item.version !== result.data!.version)])
     }
+  }
+
+  function openSectionNode(nodeId: string) {
+    setSelectedMapNodeId(nodeId)
+    if (nodeId.startsWith(sectionNodePrefix)) setActiveSectionId(nodeId.slice(sectionNodePrefix.length))
   }
 
   function recordTheoryDecision(candidateId: string, candidateVersion: number, action: TheoryDecisionAction) {
@@ -338,6 +495,7 @@ export function ResearchDocumentWorkbench() {
       setPendingTheoryDecisions(Object.fromEntries(result.data.decisions.map((decision) => [decision.candidate_id, { candidate_version: decision.candidate_version, action: decision.action }])))
       const refreshed = await getMatchRun({ path: { match_run_id: matchRun.match_run_id } })
       if (refreshed.data) setMatchRun(refreshed.data)
+      await resumeFromServer()
     }
   }
 
@@ -348,7 +506,10 @@ export function ResearchDocumentWorkbench() {
       headers: { 'Idempotency-Key': key() },
       body: { expected_decision_set_version: decisionSet.version },
     })
-    if (result.data) setDecisionSet(null)
+    if (result.data) {
+      setDecisionSet(null)
+      await resumeFromServer()
+    }
   }
 
   async function downloadDocument() {
@@ -364,100 +525,132 @@ export function ResearchDocumentWorkbench() {
     URL.revokeObjectURL(url)
   }
 
-  const stageTitle = mode === 'match' ? '理论判断文档' : '研究框架文档'
-  const runtimeBoundary = loadState === 'error' || agentError
-  const statusText = !document ? '尚未生成文档' : saveState === 'saving' ? '正在保存…' : saveState === 'unsaved' ? '有未保存更改' : document.status === 'confirmed' ? '已确认版本' : '已保存'
+  const runtimeBoundary = loadState === 'error'
+  const statusText = saveState === 'saving' ? '正在保存…' : saveState === 'unsaved' ? '有未保存更改' : null
+  const documentNodeContent = (
+    <section className="research-document-node" aria-label="研究文档节点">
+      <div className="research-document-node__topbar">
+        <span className="research-document-node__chapter-status">
+          {activeSection?.status === 'confirmed' || activeSection?.status === 'reviewed' ? <><CheckCircleIcon /> 已审阅</> : null}
+        </span>
+        <div className="research-document-node__actions">
+          {statusText ? <span className={`document-save-status document-save-status--${saveState}`} role="status">{statusText}</span> : null}
+          <button type="button" onClick={() => void downloadDocument()} disabled={!document} aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</button>
+          <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
+          <button type="button" className="research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
+        </div>
+      </div>
+
+      <div className="research-document-node__body">
+        {mode === 'framework' && taskId && navigation?.current_theory_plan_id ? (
+          <div className="research-document-workbench__delivery">
+            <M5ResearchDeliveryController
+              taskId={taskId}
+              theoryPlanId={navigation.current_theory_plan_id}
+              conversationId={navigation.conversation_id}
+              saveState={saveState}
+              onChanged={() => { void refreshDocumentState() }}
+            />
+          </div>
+        ) : null}
+        {proposals.some((proposal) => proposal.status === 'pending') ? (
+          <section className="document-proposals" aria-label="Agent 修订建议">
+            <header><span>Agent 修订建议</span><small>修改只会在你确认后写入正文</small></header>
+            {proposals.filter((proposal) => proposal.status === 'pending').map((proposal) => (
+              <article className="proposal-card" key={proposal.proposal_id}>
+                <p>{proposal.rationale}</p>
+                <div>
+                  <button type="button" onClick={() => void acceptProposal(proposal)}>接受局部修改</button>
+                  <button type="button" onClick={() => void rejectProposal(proposal)}>拒绝建议</button>
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : null}
+
+        {loadState === 'loading' ? <div className="document-loading"><CircleNotchIcon className="spin" /> 正在恢复文档版本…</div> : (
+          <>
+            <h2 id="research-document-heading" aria-label="研究文档正文">{activeSection?.title ?? '研究文档正文'}</h2>
+            {runtimeBoundary && <div className="document-boundary"><WarningCircleIcon /> {error ?? '当前 Agent 运行环境未连接；不会把静态示例当作真实研究结果。'}</div>}
+            {mode === 'match' && activeSection?.section_id === 'candidate_theories' && navigation?.allowed_actions?.includes('start_matching') && (!matchRun || matchRun.status === 'no_reliable_candidate') ? (
+              <section className="document-boundary document-boundary--action" aria-label="理论匹配操作" aria-busy={matchingActionState === 'loading'}>
+                <WarningCircleIcon />
+                <div>
+                  <strong>{navigation.blocker?.message ?? '现象已确认，可以开始理论匹配。'}</strong>
+                  {matchingActionError ? <p role="alert">{matchingActionError}</p> : null}
+                  <button type="button" disabled={matchingActionState === 'loading'} onClick={() => void startMatching()}>
+                    {matchingActionState === 'loading' ? <><CircleNotchIcon className="spin" /> 正在匹配…</> : navigation.retry?.label ?? (matchRun?.status === 'no_reliable_candidate' ? '重新匹配' : '开始理论匹配')}
+                  </button>
+                </div>
+              </section>
+            ) : null}
+            {mode === 'match' && activeSection?.section_id === 'candidate_theories' && matchRun && matchRun.status !== 'no_reliable_candidate' ? <section className="theory-candidates" aria-label="候选理论">
+              <div className="theory-candidates__heading"><span>候选理论</span><small>{matchRun.candidate_page.candidates.length} 个候选</small></div>
+              {matchRun.candidate_page.candidates.map((candidate) => <article key={candidate.candidate_id} className="theory-candidate">
+                <div><h3>{candidate.title}</h3><p>{candidate.applicability_rationale}</p></div>
+                <div className="theory-candidate__actions"><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'adopt')}>采用</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'combine')}>组合</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'retain'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'retain')}>保留</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'exclude'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'exclude')}>排除</button></div>
+              </article>)}
+              {selectedTheoryIds.length > 1 ? <fieldset className="theory-relation-editor"><legend>说明组合理论的关系</legend><textarea aria-label="组合关系说明" value={relationDraft.explanation} onChange={(event) => setRelationDraft((current) => ({ ...current, explanation: event.target.value }))} placeholder="两个理论如何共同解释研究问题" /><textarea aria-label="前提兼容性" value={relationDraft.premise} onChange={(event) => setRelationDraft((current) => ({ ...current, premise: event.target.value }))} placeholder="两者前提在哪些条件下兼容" /><textarea aria-label="支持证据要求" value={relationDraft.supporting} onChange={(event) => setRelationDraft((current) => ({ ...current, supporting: event.target.value }))} placeholder="什么证据支持组合解释" /><textarea aria-label="排除证据要求" value={relationDraft.excluding} onChange={(event) => setRelationDraft((current) => ({ ...current, excluding: event.target.value }))} placeholder="什么证据会排除组合解释" /><textarea aria-label="区分证据要求" value={relationDraft.distinguishing} onChange={(event) => setRelationDraft((current) => ({ ...current, distinguishing: event.target.value }))} placeholder="什么证据能区分各理论贡献" /></fieldset> : null}
+              <button type="button" disabled={Object.keys(pendingTheoryDecisions).length !== matchRun.candidate_page.candidates.length || !multiTheoryRelationReady} onClick={() => void submitTheoryDecisions()}>保存完整理论决定</button>
+              {decisionSet ? <button type="button" disabled={!decisionSet.allowed_actions.includes('confirm_theory_plan')} onClick={() => void confirmTheoryPlanChoice()}>确认理论方案，进入 M5</button> : null}
+            </section> : null}
+            {document ? <>
+              <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" />
+              <div className="document-evidence">
+                <span>证据边注</span>
+                {activeSection?.evidence_refs?.length ? activeSection.evidence_refs.map((ref) => <code key={ref.evidence_ref_id}>{ref.source_id}</code>) : <em>本节尚未引用来源</em>}
+              </div>
+              <details className="document-versions">
+                <summary>版本与恢复（{versions.length || document.version}）</summary>
+                <ol>
+                  {(versions.length ? versions : [document]).map((version) => <li key={version.version}>
+                    <span>v{version.version} · {version.actor}</span>
+                    <button type="button" disabled={version.version === document.version} onClick={() => void restoreVersion(version.version)}>{version.version === document.version ? '当前版本' : '恢复'}</button>
+                  </li>)}
+                </ol>
+              </details>
+            </> : <div className="document-empty" role="status">{activeSection?.section_id === 'candidate_theories' ? '在这个节点开始理论匹配，候选会直接回到画布。' : '这一部分会随着研究推进形成可编辑内容。'}</div>}
+          </>
+        )}
+      </div>
+
+    </section>
+  )
 
   return (
-    <main className="research-document-workbench" data-stage={mode}>
-      <header className="research-document-workbench__header">
-        <div>
-          <span className="research-document-workbench__eyebrow">群学致知 · M{mode === 'match' ? '4' : '5'}</span>
-          <h1>{stageTitle}</h1>
-          <p>{navigation?.phenomenon_summary?.phenomenon ?? '从真实研究任务中持续整理、审阅和确认你的判断。'}</p>
-        </div>
-        <div className="research-document-workbench__actions">
-          <span className={`document-save-status document-save-status--${saveState}`} role="status">{statusText}</span>
-          <button type="button" onClick={() => void downloadDocument()} disabled={!document} aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</button>
-          <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>确认正式版本</button>
-        </div>
-      </header>
+    <PageShell workspace wide>
+      <PageContent>
+        <main className="research-document-workbench" data-stage={mode}>
+          <h1 className="research-document-workbench__title">
+            {mode === 'framework' ? '研究框架文档' : '理论判断文档'}
+          </h1>
+          <div className="research-document-workbench__workspace">
+            <ResearchMapCanvas
+              projection={mapProjection}
+              selectedNodeId={selectedMapNodeId}
+              onSelectNode={(node) => openSectionNode(node.id)}
+              onClearSelection={() => setSelectedMapNodeId(null)}
+              onContinueNode={(node) => openSectionNode(node.id)}
+              expandedNodeContent={selectedMapNodeId?.startsWith(sectionNodePrefix) ? { [selectedMapNodeId]: documentNodeContent } : {}}
+            />
 
-      <div className="research-document-workbench__grid">
-        <nav className="research-document-workbench__chapters" aria-label="研究章节">
-          <div className="rail-heading"><span>章节</span><span className="rail-count">{sections.length}</span></div>
-          <ol>
-            {sections.map((section) => (
-              <li key={section.section_id}>
-                <button type="button" className={section.section_id === activeSectionId ? 'is-active' : ''} onClick={() => setActiveSectionId(section.section_id)}>
-                  <span>{section.title}</span>
-                  {section.status === 'confirmed' || section.status === 'reviewed' ? <CheckCircleIcon aria-label="已审阅" /> : <span className="chapter-dot" aria-label="待审阅" />}
-                </button>
-              </li>
-            ))}
-          </ol>
-          <div className="chapter-footer">
-            <span>知识发布</span>
-            <code>{document?.knowledge_release_id ?? '未绑定'}</code>
+            <ResearchAgentConversationPage
+              embedded
+              userId={userId}
+              conversationId={navigation?.conversation_id ?? null}
+              knowledgeReleaseId={navigation?.knowledge_release_id ?? document?.knowledge_release_id ?? null}
+              workspace="research"
+              taskId={taskId ?? null}
+              documentId={document?.document_id ?? null}
+              sectionId={activeSection?.section_id ?? null}
+              documentVersion={document?.version ?? null}
+              theoryPlanId={navigation?.current_theory_plan_id ?? null}
+              onConversationChange={setAgentConversation}
+              onTurnCompleted={() => { void refreshDocumentState() }}
+            />
           </div>
-        </nav>
-
-        <section className="research-document-workbench__editor" aria-label="研究文档编辑区">
-          <div className="document-paper">
-            <div className="document-paper__meta"><span>{mode === 'match' ? '理论判断' : '研究设计'}</span><span>v{document?.version ?? '—'}</span></div>
-            {loadState === 'loading' ? <div className="document-loading"><CircleNotchIcon className="spin" /> 正在恢复文档版本…</div> : (
-              <>
-                <h2 id="research-document-heading" aria-label="研究文档正文">{activeSection?.title ?? '研究文档正文'}</h2>
-                {runtimeBoundary && <div className="document-boundary"><WarningCircleIcon /> {error ?? '当前 Agent 运行环境未连接；不会把静态示例当作真实研究结果。'}</div>}
-                {mode === 'match' && matchRun ? <section className="theory-candidates" aria-label="候选理论">
-                  <div className="theory-candidates__heading"><span>候选理论</span><small>{matchRun.candidate_page.candidates.length} 个候选 · release {matchRun.knowledge_release_id}</small></div>
-                  {matchRun.candidate_page.candidates.map((candidate) => <article key={candidate.candidate_id} className="theory-candidate">
-                    <div><h3>{candidate.title}</h3><p>{candidate.applicability_rationale}</p></div>
-                    <div className="theory-candidate__actions"><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'adopt')}>采用</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'combine')}>组合</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'retain'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'retain')}>保留</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'exclude'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'exclude')}>排除</button></div>
-                  </article>)}
-                  {selectedTheoryIds.length > 1 ? <fieldset className="theory-relation-editor"><legend>说明组合理论的关系</legend><textarea aria-label="组合关系说明" value={relationDraft.explanation} onChange={(event) => setRelationDraft((current) => ({ ...current, explanation: event.target.value }))} placeholder="两个理论如何共同解释研究问题" /><textarea aria-label="前提兼容性" value={relationDraft.premise} onChange={(event) => setRelationDraft((current) => ({ ...current, premise: event.target.value }))} placeholder="两者前提在哪些条件下兼容" /><textarea aria-label="支持证据要求" value={relationDraft.supporting} onChange={(event) => setRelationDraft((current) => ({ ...current, supporting: event.target.value }))} placeholder="什么证据支持组合解释" /><textarea aria-label="排除证据要求" value={relationDraft.excluding} onChange={(event) => setRelationDraft((current) => ({ ...current, excluding: event.target.value }))} placeholder="什么证据会排除组合解释" /><textarea aria-label="区分证据要求" value={relationDraft.distinguishing} onChange={(event) => setRelationDraft((current) => ({ ...current, distinguishing: event.target.value }))} placeholder="什么证据能区分各理论贡献" /></fieldset> : null}
-                  <button type="button" disabled={Object.keys(pendingTheoryDecisions).length !== matchRun.candidate_page.candidates.length || !multiTheoryRelationReady} onClick={() => void submitTheoryDecisions()}>保存完整理论决定</button>
-                  {decisionSet ? <button type="button" disabled={!decisionSet.allowed_actions.includes('confirm_theory_plan')} onClick={() => void confirmTheoryPlanChoice()}>确认理论方案，进入 M5</button> : null}
-                </section> : null}
-                {document ? <>
-                  <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" />
-                  <div className="document-evidence">
-                    <span>证据边注</span>
-                    {activeSection?.evidence_refs?.length ? activeSection.evidence_refs.map((ref) => <code key={ref.evidence_ref_id}>{ref.source_id} · {ref.knowledge_release_id}</code>) : <em>本节尚未绑定真实来源；Agent 不会猜测引用。</em>}
-                  </div>
-                  <details className="document-versions">
-                    <summary>版本与恢复（{versions.length || document.version}）</summary>
-                    <ol>
-                      {(versions.length ? versions : [document]).map((version) => <li key={version.version}>
-                        <span>v{version.version} · {version.actor}</span>
-                        <button type="button" disabled={version.version === document.version} onClick={() => void restoreVersion(version.version)}>{version.version === document.version ? '当前版本' : '恢复'}</button>
-                      </li>)}
-                    </ol>
-                  </details>
-                </> : <div className="document-empty" role="status">尚未生成可编辑研究文档。请让研究 Agent 先生成草案，或完成前置理论决定。</div>}
-              </>
-            )}
-          </div>
-        </section>
-
-        <aside className="research-document-workbench__agent" aria-label="研究 Agent">
-          <div className="agent-panel__heading"><div><span className="agent-kicker">协作者</span><h2>{runtimeMode === 'mock' ? '预览 Agent' : runtimeMode === null ? 'Agent（待确认运行时）' : '研究 Agent'}</h2></div><span className={`agent-status agent-status--${agentState}`}><i />{agentState === 'retrieving' ? '检索中' : agentState === 'thinking' ? '思考中' : agentState === 'answering' ? '已回应' : agentState === 'error' ? '需重试' : '待命'}</span></div>
-          <div className="agent-panel__context"><span>当前选中</span><strong>{activeSection?.title}</strong><small>{runtimeMode === 'mock' ? '当前为预览运行时；不会把模拟结果当作真实研究结论。' : '请求使用研究 Agent 会话；证据与知识发布以服务返回为准。'}</small></div>
-          <div className="agent-panel__stream" aria-live="polite">
-            {toolSteps.map((step) => <div className={`tool-trace tool-trace--${step.status}`} key={step.id}><span>{step.status === 'running' ? '↻' : step.status === 'failed' ? '!' : '✓'}</span><span>{step.label}</span><small>{step.status}</small></div>)}
-            {agentAnswer && <p className="agent-answer">{agentAnswer}</p>}
-            {citations.length ? <div className="agent-citations" aria-label="Agent 引用"><span>本轮引用</span>{citations.map((citation) => <code key={citation.citation_id}>{citation.label} · {citation.source_id ?? citation.knowledge_id ?? '来源 ID 未返回'}</code>)}</div> : null}
-            {agentError && <p className="agent-error">{agentError}</p>}
-            {!agentAnswer && !agentError && !toolSteps.length && <p className="agent-empty">选中一段正文后，可以让 Agent 补反例、换理论视角或检查研究设计一致性。</p>}
-          </div>
-          {proposals.filter((proposal) => proposal.status === 'pending').map((proposal) => <div className="proposal-card" key={proposal.proposal_id}><span>待审批建议</span><p>{proposal.rationale}</p><div><button type="button" onClick={() => void acceptProposal(proposal)}>接受局部修改</button><button type="button" onClick={() => void rejectProposal(proposal)}>拒绝建议</button></div></div>)}
-          <form className="agent-composer" onSubmit={(event) => { event.preventDefault(); void askAgent() }}>
-            <textarea aria-label="给研究 Agent 的请求" value={agentDraft} onChange={(event) => setAgentDraft(event.target.value)} placeholder="例如：补一个反例，并让这段判断更谨慎" rows={3} />
-            <button type="submit" disabled={!agentDraft.trim() || agentState === 'thinking' || agentState === 'retrieving'}><PaperPlaneTiltIcon /> 发送</button>
-          </form>
-          {agentState === 'thinking' || agentState === 'retrieving' ? <button type="button" className="agent-stop" onClick={() => abortRef.current?.abort()}>中断本次请求</button> : null}
-        </aside>
-      </div>
-    </main>
+        </main>
+      </PageContent>
+    </PageShell>
   )
 }

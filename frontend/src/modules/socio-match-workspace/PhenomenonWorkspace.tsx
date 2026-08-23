@@ -216,7 +216,7 @@ export function PhenomenonWorkspace({ taskId }: { readonly taskId: string }) {
           <p key={item.evidenceRefId}><strong>{item.sourceDescription ?? item.evidenceRefId}</strong>{item.locator ? ` · ${item.locator}` : ''} · {item.useBoundary}</p>
         ))}
         <p>理论匹配将在下一模块开放。</p>
-        <a className="text-link" href="/my">返回我的研究</a>
+        <a className="text-link" href="/app?research=all">返回工作台</a>
       </section>
     )
   }

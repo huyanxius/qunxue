@@ -161,6 +161,13 @@ class KnowledgeTheoryProfileRow(Base):
 
 class KnowledgeEntryReviewRow(Base):
     __tablename__ = "knowledge_entry_reviews"
+    __table_args__ = (
+        Index(
+            "ix_knowledge_entry_reviews_release_theory",
+            "knowledge_release_id",
+            "theory_id",
+        ),
+    )
 
     knowledge_release_id: Mapped[str] = mapped_column(
         ForeignKey("knowledge_releases.knowledge_release_id", ondelete="CASCADE"),
@@ -170,3 +177,11 @@ class KnowledgeEntryReviewRow(Base):
     knowledge_id: Mapped[str] = mapped_column(String(128), nullable=False)
     review_status: Mapped[str] = mapped_column(String(32), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    theory_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    reviewer_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    reviewer_display_name: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    reviewer_credentials: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_subject_hash: Mapped[str | None] = mapped_column(String(72), nullable=True)
+    decision: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attestation: Mapped[str | None] = mapped_column(Text, nullable=True)

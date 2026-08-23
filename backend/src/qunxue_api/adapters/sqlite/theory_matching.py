@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from qunxue_api.adapters.sqlite.theory_matching_model import (
     ConfirmedTheoryPlanRow,
     MatchRunRow,
+    TheoryDecisionDraftRequestRow,
+    TheoryDecisionDraftRow,
     TheoryDecisionSetRow,
     TheoryMatchingRequestRow,
 )
@@ -37,12 +39,17 @@ from qunxue_api.modules.theory_matching import (
     MatchRunSnapshot,
     MatchRunStatus,
     TheoryCandidateContentSnapshot,
+    TheoryCandidateFailureSnapshot,
+    TheoryCandidateRetryRecord,
     TheoryCandidateSnapshot,
     TheoryDecisionAction,
+    TheoryDecisionCommand,
+    TheoryDecisionDraftSnapshot,
     TheoryDecisionRecord,
     TheoryDecisionSetSnapshot,
     TheoryJudgementDraft,
     TheoryJudgementVerdict,
+    TheoryRelationCommand,
     TheoryRelationSnapshot,
     TheoryUseAssignment,
 )
@@ -87,6 +94,7 @@ class SqliteMatchRunRepository:
         )
 
     def save(self, snapshot: MatchRunSnapshot) -> MatchRunSnapshot:
+        model = snapshot.model
         result = self._session.execute(
             update(MatchRunRow)
             .where(
@@ -97,6 +105,16 @@ class SqliteMatchRunRepository:
                 version=snapshot.version,
                 status=snapshot.status.value,
                 snapshot=_snapshot_payload(snapshot),
+                model_provider=model.provider if model is not None else None,
+                model_version=model.model_version if model is not None else None,
+                model_capability=model.capability if model is not None else None,
+                model_degraded=model.degraded if model is not None else None,
+                model_knowledge_release_id=(
+                    model.knowledge_release_id if model is not None else None
+                ),
+                trace_id=str(model.trace_id) if model is not None else None,
+                request_id=str(model.request_id) if model is not None else None,
+                contract_version=model.contract_version if model is not None else None,
             )
         )
         if result.rowcount == 1:
@@ -110,6 +128,86 @@ class SqliteMatchRunRepository:
             raise LookupError(snapshot.match_run_id)
         return _snapshot_from_row(row)
 
+    def get_decision_draft(
+        self, match_run_id: UUID
+    ) -> TheoryDecisionDraftSnapshot | None:
+        row = self._session.scalar(
+            select(TheoryDecisionDraftRow).where(
+                TheoryDecisionDraftRow.match_run_id == str(match_run_id)
+            )
+        )
+        return _decision_draft_from_row(row)
+
+    def get_decision_draft_replay(
+        self,
+        *,
+        match_run_id: UUID,
+        idempotency_key: str,
+    ) -> tuple[str, TheoryDecisionDraftSnapshot] | None:
+        row = self._session.scalar(
+            select(TheoryDecisionDraftRequestRow).where(
+                TheoryDecisionDraftRequestRow.match_run_id == str(match_run_id),
+                TheoryDecisionDraftRequestRow.idempotency_key == idempotency_key,
+            )
+        )
+        if row is None:
+            return None
+        return (
+            row.request_hash,
+            _decision_draft_from_payload(row.response_snapshot),
+        )
+
+    def save_decision_draft(
+        self,
+        snapshot: TheoryDecisionDraftSnapshot,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+        request_hash: str,
+        request_record_id: UUID,
+    ) -> TheoryDecisionDraftSnapshot:
+        payload = _decision_draft_payload(snapshot)
+        if expected_version == 0:
+            result = self._session.execute(
+                insert(TheoryDecisionDraftRow)
+                .values(
+                    draft_id=str(snapshot.draft_id),
+                    match_run_id=str(snapshot.match_run_id),
+                    version=snapshot.version,
+                    snapshot=payload,
+                    updated_at=snapshot.updated_at,
+                )
+                .on_conflict_do_nothing(index_elements=["match_run_id"])
+            )
+        else:
+            result = self._session.execute(
+                update(TheoryDecisionDraftRow)
+                .where(
+                    TheoryDecisionDraftRow.match_run_id == str(snapshot.match_run_id),
+                    TheoryDecisionDraftRow.version == expected_version,
+                )
+                .values(
+                    version=snapshot.version,
+                    snapshot=payload,
+                    updated_at=snapshot.updated_at,
+                )
+            )
+        if result.rowcount != 1:
+            raise ValueError("stale theory decision draft version")
+        self._session.add(
+            TheoryDecisionDraftRequestRow(
+                request_record_id=str(request_record_id),
+                match_run_id=str(snapshot.match_run_id),
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                resulting_version=snapshot.version,
+                response_snapshot=payload,
+                created_at=snapshot.updated_at,
+            )
+        )
+        self._session.flush()
+        return snapshot
+
     def add_decision_set(self, snapshot: TheoryDecisionSetSnapshot) -> TheoryDecisionSetSnapshot:
         self._session.execute(
             insert(TheoryDecisionSetRow)
@@ -117,16 +215,18 @@ class SqliteMatchRunRepository:
                 decision_set_id=str(snapshot.decision_set_id),
                 match_run_id=str(snapshot.match_run_id),
                 version=snapshot.version,
+                draft_version=snapshot.draft_version,
                 snapshot=_decision_set_payload(snapshot),
                 idempotency_key=snapshot.idempotency_key,
                 request_hash=snapshot.request_hash,
                 created_at=snapshot.recorded_at,
             )
-            .on_conflict_do_nothing(index_elements=["match_run_id"])
+            .on_conflict_do_nothing(index_elements=["match_run_id", "draft_version"])
         )
         row = self._session.scalar(
             select(TheoryDecisionSetRow).where(
                 TheoryDecisionSetRow.match_run_id == str(snapshot.match_run_id)
+                , TheoryDecisionSetRow.draft_version == snapshot.draft_version
             )
         )
         persisted = _decision_set_from_row(row)
@@ -144,12 +244,17 @@ class SqliteMatchRunRepository:
         return _decision_set_from_row(row) if row is not None else None
 
     def get_decision_set_for_match_run(
-        self, match_run_id: UUID
+        self, match_run_id: UUID, draft_version: int | None = None
     ) -> TheoryDecisionSetSnapshot | None:
-        row = self._session.scalar(
-            select(TheoryDecisionSetRow).where(
-                TheoryDecisionSetRow.match_run_id == str(match_run_id)
+        statement = select(TheoryDecisionSetRow).where(
+            TheoryDecisionSetRow.match_run_id == str(match_run_id)
+        )
+        if draft_version is not None:
+            statement = statement.where(
+                TheoryDecisionSetRow.draft_version == draft_version
             )
+        row = self._session.scalar(
+            statement.order_by(TheoryDecisionSetRow.draft_version.desc())
         )
         return _decision_set_from_row(row)
 
@@ -182,11 +287,11 @@ class SqliteMatchRunRepository:
                 idempotency_key=snapshot.idempotency_key,
                 request_hash=snapshot.request_hash,
             )
-            .on_conflict_do_nothing(index_elements=["decision_set_id"])
+            .on_conflict_do_nothing(index_elements=["task_id"])
         )
         row = self._session.scalar(
             select(ConfirmedTheoryPlanRow).where(
-                ConfirmedTheoryPlanRow.decision_set_id == str(snapshot.decision_set_id)
+                ConfirmedTheoryPlanRow.task_id == str(snapshot.task_id)
             )
         )
         persisted = self._confirmed_plan_from_row(row)
@@ -207,6 +312,16 @@ class SqliteMatchRunRepository:
         row = self._session.scalar(
             select(ConfirmedTheoryPlanRow).where(
                 ConfirmedTheoryPlanRow.decision_set_id == str(decision_set_id)
+            )
+        )
+        return self._confirmed_plan_from_row(row)
+
+    def get_confirmed_plan_for_task(
+        self, task_id: UUID
+    ) -> ConfirmedTheoryPlanSnapshot | None:
+        row = self._session.scalar(
+            select(ConfirmedTheoryPlanRow).where(
+                ConfirmedTheoryPlanRow.task_id == str(task_id)
             )
         )
         return self._confirmed_plan_from_row(row)
@@ -340,6 +455,20 @@ def _snapshot_payload(snapshot: MatchRunSnapshot) -> dict[str, object]:
             ],
         },
         "candidates": [_candidate_payload(candidate) for candidate in snapshot.candidates],
+        "candidate_failures": [
+            _candidate_failure_payload(failure)
+            for failure in snapshot.candidate_failures
+        ],
+        "candidate_retry_records": [
+            {
+                "candidate_id": str(item.candidate_id),
+                "expected_candidate_version": item.expected_candidate_version,
+                "idempotency_key": item.idempotency_key,
+                "request_hash": item.request_hash,
+                "resulting_match_run_version": item.resulting_match_run_version,
+            }
+            for item in snapshot.candidate_retry_records
+        ],
         "completion_basis": snapshot.completion_basis.value,
         "partial_completion_acknowledged": snapshot.partial_completion_acknowledged,
         "failed_candidate_ids": [str(value) for value in snapshot.failed_candidate_ids],
@@ -363,6 +492,7 @@ def _decision_set_payload(snapshot: TheoryDecisionSetSnapshot) -> dict[str, obje
         "decision_set_id": str(snapshot.decision_set_id),
         "match_run_id": str(snapshot.match_run_id),
         "version": snapshot.version,
+        "draft_version": snapshot.draft_version,
         "recorded_at": snapshot.recorded_at.isoformat(),
         "decisions": [
             {
@@ -460,8 +590,145 @@ def _decision_set_from_row(row: TheoryDecisionSetRow | None) -> TheoryDecisionSe
             for item in payload.get("relations", [])
         ),
         recorded_at=datetime.fromisoformat(str(payload["recorded_at"])),
+        draft_version=row.draft_version,
         idempotency_key=row.idempotency_key,
         request_hash=row.request_hash,
+    )
+
+
+def _decision_draft_payload(
+    snapshot: TheoryDecisionDraftSnapshot,
+) -> dict[str, object]:
+    return {
+        "draft_id": str(snapshot.draft_id),
+        "match_run_id": str(snapshot.match_run_id),
+        "version": snapshot.version,
+        "expected_match_run_version": snapshot.expected_match_run_version,
+        "completion_basis": snapshot.completion_basis.value,
+        "decisions": [
+            {
+                "candidate_id": str(item.candidate_id),
+                "candidate_version": item.candidate_version,
+                "action": item.action.value if item.action is not None else None,
+                "reason": item.reason,
+                "related_source_ids": list(item.related_source_ids),
+                "revised_applicability": item.revised_applicability,
+                "related_candidate_ids": [
+                    str(value) for value in item.related_candidate_ids
+                ],
+            }
+            for item in snapshot.decisions
+        ],
+        "use_assignments": [
+            {
+                "candidate_id": str(item.candidate_id),
+                "role_code": item.role_code,
+                "responsibility": item.responsibility,
+            }
+            for item in snapshot.use_assignments
+        ],
+        "relations": [
+            {
+                "candidate_ids": [str(value) for value in item.candidate_ids],
+                "relation_kind": item.relation_kind,
+                "explanation": item.explanation,
+                "premise_compatibility": item.premise_compatibility,
+                "supporting_evidence": list(item.supporting_evidence),
+                "excluding_evidence": list(item.excluding_evidence),
+                "distinguishing_evidence": list(item.distinguishing_evidence),
+            }
+            for item in snapshot.relations
+        ],
+        "acknowledged_candidate_ids": [
+            str(value) for value in snapshot.acknowledged_candidate_ids
+        ],
+        "failed_candidate_ids": [str(value) for value in snapshot.failed_candidate_ids],
+        "partial_completion_acknowledgement_reason": (
+            snapshot.partial_completion_acknowledgement_reason
+        ),
+        "updated_at": snapshot.updated_at.isoformat(),
+    }
+
+
+def _decision_draft_from_row(
+    row: TheoryDecisionDraftRow | None,
+) -> TheoryDecisionDraftSnapshot | None:
+    if row is None:
+        return None
+    return _decision_draft_from_payload(row.snapshot)
+
+
+def _decision_draft_from_payload(
+    payload: dict[str, object],
+) -> TheoryDecisionDraftSnapshot:
+    return TheoryDecisionDraftSnapshot(
+        draft_id=UUID(str(payload["draft_id"])),
+        match_run_id=UUID(str(payload["match_run_id"])),
+        version=int(payload["version"]),
+        expected_match_run_version=int(payload["expected_match_run_version"]),
+        completion_basis=MatchCompletionBasis(str(payload["completion_basis"])),
+        decisions=tuple(
+            TheoryDecisionCommand(
+                candidate_id=UUID(str(item["candidate_id"])),
+                candidate_version=int(item["candidate_version"]),
+                action=(
+                    TheoryDecisionAction(str(item["action"]))
+                    if item.get("action") is not None
+                    else None
+                ),
+                reason=str(item["reason"]),
+                related_source_ids=tuple(
+                    str(value) for value in item.get("related_source_ids", [])
+                ),
+                revised_applicability=_optional_text(
+                    item.get("revised_applicability")
+                ),
+                related_candidate_ids=tuple(
+                    UUID(str(value))
+                    for value in item.get("related_candidate_ids", [])
+                ),
+            )
+            for item in payload.get("decisions", [])
+        ),
+        use_assignments=tuple(
+            TheoryUseAssignment(
+                candidate_id=UUID(str(item["candidate_id"])),
+                role_code=str(item["role_code"]),
+                responsibility=str(item["responsibility"]),
+            )
+            for item in payload.get("use_assignments", [])
+        ),
+        relations=tuple(
+            TheoryRelationCommand(
+                candidate_ids=tuple(
+                    UUID(str(value)) for value in item.get("candidate_ids", [])
+                ),
+                relation_kind=str(item["relation_kind"]),
+                explanation=str(item["explanation"]),
+                premise_compatibility=str(item["premise_compatibility"]),
+                supporting_evidence=tuple(
+                    str(value) for value in item.get("supporting_evidence", [])
+                ),
+                excluding_evidence=tuple(
+                    str(value) for value in item.get("excluding_evidence", [])
+                ),
+                distinguishing_evidence=tuple(
+                    str(value) for value in item.get("distinguishing_evidence", [])
+                ),
+            )
+            for item in payload.get("relations", [])
+        ),
+        acknowledged_candidate_ids=tuple(
+            UUID(str(value))
+            for value in payload.get("acknowledged_candidate_ids", [])
+        ),
+        failed_candidate_ids=tuple(
+            UUID(str(value)) for value in payload.get("failed_candidate_ids", [])
+        ),
+        partial_completion_acknowledgement_reason=_optional_text(
+            payload.get("partial_completion_acknowledgement_reason")
+        ),
+        updated_at=datetime.fromisoformat(str(payload["updated_at"])),
     )
 
 
@@ -517,6 +784,20 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
     candidates = tuple(
         _candidate_from_payload(item, profiles_by_id) for item in payload["candidates"]
     )
+    candidate_failures = tuple(
+        _candidate_failure_from_payload(item, profiles_by_id)
+        for item in payload.get("candidate_failures", [])
+    )
+    candidate_retry_records = tuple(
+        TheoryCandidateRetryRecord(
+            candidate_id=UUID(str(item["candidate_id"])),
+            expected_candidate_version=int(item["expected_candidate_version"]),
+            idempotency_key=str(item["idempotency_key"]),
+            request_hash=str(item["request_hash"]),
+            resulting_match_run_version=int(item["resulting_match_run_version"]),
+        )
+        for item in payload.get("candidate_retry_records", [])
+    )
     return MatchRunSnapshot(
         match_run_id=UUID(row.match_run_id),
         task_id=UUID(row.task_id),
@@ -531,6 +812,8 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
         failed_candidate_ids=tuple(
             UUID(str(value)) for value in payload.get("failed_candidate_ids", [])
         ),
+        candidate_failures=candidate_failures,
+        candidate_retry_records=candidate_retry_records,
         partial_completion_acknowledgement_reason=_optional_text(
             payload.get("partial_completion_acknowledgement_reason")
         ),
@@ -687,28 +970,11 @@ def _evidence_from_payload(payload: dict[str, object]) -> EvidenceItemSnapshot:
 
 
 def _candidate_payload(candidate: TheoryCandidateSnapshot) -> dict[str, object]:
-    content = candidate.content
     judgement = candidate.judgement
     return {
         "candidate_id": str(candidate.candidate_id),
         "candidate_version": candidate.candidate_version,
-        "content": {
-            "theory_id": content.theory_id,
-            "title": content.title,
-            "origin": content.origin.value,
-            "problem_focus": content.problem_focus,
-            "core_claims": list(content.core_claims),
-            "analysis_levels": list(content.analysis_levels),
-            "source_ids": list(content.source_ids),
-            "reviewed_profile_theory_id": (
-                content.reviewed_profile.theory_id if content.reviewed_profile is not None else None
-            ),
-            "formal_adoption_eligible": content.formal_adoption_eligible,
-            "adoption_blockers": list(content.adoption_blockers),
-            "knowledge_id": content.knowledge_id,
-            "seed_theory_id": content.seed_theory_id,
-            "content_status": content.content_status.value,
-        },
+        "content": _candidate_content_payload(candidate.content),
         "judgement": {
             "verdict": judgement.verdict.value,
             "match_rationale": judgement.match_rationale,
@@ -718,11 +984,58 @@ def _candidate_payload(candidate: TheoryCandidateSnapshot) -> dict[str, object]:
             "evidence_gaps": list(judgement.evidence_gaps),
             "alternative_explanations": list(judgement.alternative_explanations),
             "evidence_ref_ids": list(judgement.evidence_ref_ids),
+            "supporting_evidence_ref_ids": list(
+                judgement.supporting_evidence_ref_ids
+            ),
+            "conflicting_evidence_ref_ids": list(
+                judgement.conflicting_evidence_ref_ids
+            ),
         },
         "trace_id": str(candidate.trace_id),
         "request_id": str(candidate.request_id),
         "contract_version": candidate.contract_version,
         "judgement_run_status": candidate.judgement_run_status.value,
+    }
+
+
+def _candidate_failure_payload(
+    failure: TheoryCandidateFailureSnapshot,
+) -> dict[str, object]:
+    return {
+        "candidate_id": str(failure.candidate_id),
+        "candidate_version": failure.candidate_version,
+        "content": _candidate_content_payload(failure.content),
+        "judgement_run_status": failure.judgement_run_status.value,
+        "failure_code": failure.failure_code,
+        "retryable": failure.retryable,
+        "trace_id": str(failure.trace_id),
+        "request_id": str(failure.request_id),
+        "contract_version": failure.contract_version,
+        "attempt": failure.attempt,
+    }
+
+
+def _candidate_content_payload(
+    content: TheoryCandidateContentSnapshot,
+) -> dict[str, object]:
+    return {
+        "theory_id": content.theory_id,
+        "title": content.title,
+        "origin": content.origin.value,
+        "problem_focus": content.problem_focus,
+        "core_claims": list(content.core_claims),
+        "analysis_levels": list(content.analysis_levels),
+        "source_ids": list(content.source_ids),
+        "reviewed_profile_theory_id": (
+            content.reviewed_profile.theory_id
+            if content.reviewed_profile is not None
+            else None
+        ),
+        "formal_adoption_eligible": content.formal_adoption_eligible,
+        "adoption_blockers": list(content.adoption_blockers),
+        "knowledge_id": content.knowledge_id,
+        "seed_theory_id": content.seed_theory_id,
+        "content_status": content.content_status.value,
     }
 
 
@@ -734,11 +1047,71 @@ def _candidate_from_payload(
     judgement_payload = payload["judgement"]
     assert isinstance(content_payload, dict)
     assert isinstance(judgement_payload, dict)
+    content = _candidate_content_from_payload(content_payload, profiles_by_id)
+    judgement = TheoryJudgementDraft(
+        verdict=TheoryJudgementVerdict(str(judgement_payload["verdict"])),
+        match_rationale=str(judgement_payload["match_rationale"]),
+        applicable_conditions=_text_tuple(judgement_payload["applicable_conditions"]),
+        limitations=_text_tuple(judgement_payload["limitations"]),
+        material_requirements=_text_tuple(judgement_payload["material_requirements"]),
+        evidence_gaps=_text_tuple(judgement_payload["evidence_gaps"]),
+        alternative_explanations=_text_tuple(judgement_payload["alternative_explanations"]),
+        evidence_ref_ids=_text_tuple(judgement_payload["evidence_ref_ids"]),
+        supporting_evidence_ref_ids=_text_tuple(
+            judgement_payload.get(
+                "supporting_evidence_ref_ids",
+                judgement_payload["evidence_ref_ids"],
+            )
+        ),
+        conflicting_evidence_ref_ids=_text_tuple(
+            judgement_payload.get("conflicting_evidence_ref_ids", [])
+        ),
+    )
+    return TheoryCandidateSnapshot(
+        candidate_id=UUID(str(payload["candidate_id"])),
+        candidate_version=int(payload["candidate_version"]),
+        content=content,
+        judgement=judgement,
+        trace_id=UUID(str(payload["trace_id"])),
+        request_id=UUID(str(payload["request_id"])),
+        contract_version=str(payload["contract_version"]),
+        judgement_run_status=CandidateJudgementRunStatus(str(payload["judgement_run_status"])),
+    )
+
+
+def _candidate_failure_from_payload(
+    payload: dict[str, object],
+    profiles_by_id: dict[str, TheoryProfileSnapshot],
+) -> TheoryCandidateFailureSnapshot:
+    content_payload = payload["content"]
+    assert isinstance(content_payload, dict)
+    return TheoryCandidateFailureSnapshot(
+        candidate_id=UUID(str(payload["candidate_id"])),
+        candidate_version=int(payload["candidate_version"]),
+        content=_candidate_content_from_payload(content_payload, profiles_by_id),
+        judgement_run_status=CandidateJudgementRunStatus(
+            str(payload["judgement_run_status"])
+        ),
+        failure_code=str(payload["failure_code"]),
+        retryable=bool(payload["retryable"]),
+        trace_id=UUID(str(payload["trace_id"])),
+        request_id=UUID(str(payload["request_id"])),
+        contract_version=str(payload["contract_version"]),
+        attempt=int(payload.get("attempt", 1)),
+    )
+
+
+def _candidate_content_from_payload(
+    content_payload: dict[str, object],
+    profiles_by_id: dict[str, TheoryProfileSnapshot],
+) -> TheoryCandidateContentSnapshot:
     raw_profile_id = content_payload.get("reviewed_profile_theory_id")
     reviewed_profile = (
-        profiles_by_id.get(str(raw_profile_id)) if raw_profile_id is not None else None
+        profiles_by_id.get(str(raw_profile_id))
+        if raw_profile_id is not None
+        else None
     )
-    content = TheoryCandidateContentSnapshot(
+    return TheoryCandidateContentSnapshot(
         theory_id=_optional_text(content_payload.get("theory_id")),
         title=str(content_payload["title"]),
         origin=CandidateOrigin(str(content_payload["origin"])),
@@ -752,26 +1125,6 @@ def _candidate_from_payload(
         knowledge_id=_optional_text(content_payload.get("knowledge_id")),
         seed_theory_id=_optional_text(content_payload.get("seed_theory_id")),
         content_status=CandidateContentStatus(str(content_payload["content_status"])),
-    )
-    judgement = TheoryJudgementDraft(
-        verdict=TheoryJudgementVerdict(str(judgement_payload["verdict"])),
-        match_rationale=str(judgement_payload["match_rationale"]),
-        applicable_conditions=_text_tuple(judgement_payload["applicable_conditions"]),
-        limitations=_text_tuple(judgement_payload["limitations"]),
-        material_requirements=_text_tuple(judgement_payload["material_requirements"]),
-        evidence_gaps=_text_tuple(judgement_payload["evidence_gaps"]),
-        alternative_explanations=_text_tuple(judgement_payload["alternative_explanations"]),
-        evidence_ref_ids=_text_tuple(judgement_payload["evidence_ref_ids"]),
-    )
-    return TheoryCandidateSnapshot(
-        candidate_id=UUID(str(payload["candidate_id"])),
-        candidate_version=int(payload["candidate_version"]),
-        content=content,
-        judgement=judgement,
-        trace_id=UUID(str(payload["trace_id"])),
-        request_id=UUID(str(payload["request_id"])),
-        contract_version=str(payload["contract_version"]),
-        judgement_run_status=CandidateJudgementRunStatus(str(payload["judgement_run_status"])),
     )
 
 

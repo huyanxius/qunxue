@@ -262,6 +262,353 @@ def test_database_url_override_drives_offline_migrations(
     assert not database_path.exists()
 
 
+def test_m4_upgrade_converges_duplicate_task_plans_before_adding_uniqueness(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    alembic_config: Config,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'm4-upgrade-convergence.db'}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    command.upgrade(alembic_config, "20260820_0005")
+
+    database = Database(database_url)
+    try:
+        with database.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO research_tasks (
+                        task_id, entry_type, status, version, idempotency_key,
+                        created_at, updated_at
+                    ) VALUES (
+                        :task_id, 'phenomenon', 'theory_plan_confirmed', 1,
+                        :idempotency_key, :created_at, :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "task_id": "task-current-pointer",
+                        "idempotency_key": "task-current-pointer-key",
+                        "created_at": "2026-08-20 09:00:00",
+                    },
+                    {
+                        "task_id": "task-latest-fallback",
+                        "idempotency_key": "task-latest-fallback-key",
+                        "created_at": "2026-08-20 09:00:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO match_runs (
+                        match_run_id, task_id, version, status, snapshot, created_at
+                    ) VALUES (
+                        :match_run_id, :task_id, 1, 'completed', '{}', :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "match_run_id": "run-pointer-old",
+                        "task_id": "task-current-pointer",
+                        "created_at": "2026-08-20 10:00:00",
+                    },
+                    {
+                        "match_run_id": "run-pointer-new",
+                        "task_id": "task-current-pointer",
+                        "created_at": "2026-08-21 10:00:00",
+                    },
+                    {
+                        "match_run_id": "run-fallback-old",
+                        "task_id": "task-latest-fallback",
+                        "created_at": "2026-08-20 10:00:00",
+                    },
+                    {
+                        "match_run_id": "run-fallback-z",
+                        "task_id": "task-latest-fallback",
+                        "created_at": "2026-08-21 10:00:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO theory_decision_sets (
+                        decision_set_id, match_run_id, version, snapshot, created_at
+                    ) VALUES (
+                        :decision_set_id, :match_run_id, 1, '{}', :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "decision_set_id": "decision-pointer-old",
+                        "match_run_id": "run-pointer-old",
+                        "created_at": "2026-08-20 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-pointer-new",
+                        "match_run_id": "run-pointer-new",
+                        "created_at": "2026-08-21 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-fallback-old",
+                        "match_run_id": "run-fallback-old",
+                        "created_at": "2026-08-20 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-fallback-z",
+                        "match_run_id": "run-fallback-z",
+                        "created_at": "2026-08-21 10:30:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO confirmed_theory_plans (
+                        theory_plan_id, task_id, match_run_id, decision_set_id,
+                        version, adopted_candidate_ids, confirmed_at
+                    ) VALUES (
+                        :theory_plan_id, :task_id, :match_run_id, :decision_set_id,
+                        1, '[]', :confirmed_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "theory_plan_id": "plan-pointer-old",
+                        "task_id": "task-current-pointer",
+                        "match_run_id": "run-pointer-old",
+                        "decision_set_id": "decision-pointer-old",
+                        "confirmed_at": "2026-08-20 11:00:00",
+                    },
+                    {
+                        "theory_plan_id": "plan-pointer-new",
+                        "task_id": "task-current-pointer",
+                        "match_run_id": "run-pointer-new",
+                        "decision_set_id": "decision-pointer-new",
+                        "confirmed_at": "2026-08-21 11:00:00",
+                    },
+                    {
+                        "theory_plan_id": "plan-fallback-old",
+                        "task_id": "task-latest-fallback",
+                        "match_run_id": "run-fallback-old",
+                        "decision_set_id": "decision-fallback-old",
+                        "confirmed_at": "2026-08-20 11:00:00",
+                    },
+                    {
+                        "theory_plan_id": "plan-fallback-z",
+                        "task_id": "task-latest-fallback",
+                        "match_run_id": "run-fallback-z",
+                        "decision_set_id": "decision-fallback-z",
+                        "confirmed_at": "2026-08-21 11:00:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE research_tasks
+                    SET current_theory_plan_id = 'plan-pointer-old'
+                    WHERE task_id = 'task-current-pointer'
+                    """
+                )
+            )
+
+        command.upgrade(alembic_config, "20260822_0006")
+
+        with database.engine.connect() as connection:
+            plans = connection.execute(
+                text(
+                    """
+                    SELECT task_id, theory_plan_id
+                    FROM confirmed_theory_plans
+                    ORDER BY task_id
+                    """
+                )
+            ).all()
+            current_plan_id = connection.execute(
+                text(
+                    """
+                    SELECT current_theory_plan_id
+                    FROM research_tasks
+                    WHERE task_id = 'task-current-pointer'
+                    """
+                )
+            ).scalar_one()
+
+        assert plans == [
+            ("task-current-pointer", "plan-pointer-old"),
+            ("task-latest-fallback", "plan-fallback-z"),
+        ]
+        assert current_plan_id == "plan-pointer-old"
+    finally:
+        database.engine.dispose()
+
+
+def test_m4_downgrade_converges_decision_revisions_before_restoring_uniqueness(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    alembic_config: Config,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'm4-downgrade-convergence.db'}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    command.upgrade(alembic_config, "20260822_0006")
+
+    database = Database(database_url)
+    try:
+        with database.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO research_tasks (
+                        task_id, entry_type, status, version, idempotency_key,
+                        created_at, updated_at
+                    ) VALUES (
+                        :task_id, 'phenomenon', 'theory_plan_confirmed', 1,
+                        :idempotency_key, :created_at, :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "task_id": "task-referenced-decision",
+                        "idempotency_key": "task-referenced-decision-key",
+                        "created_at": "2026-08-20 09:00:00",
+                    },
+                    {
+                        "task_id": "task-decision-fallback",
+                        "idempotency_key": "task-decision-fallback-key",
+                        "created_at": "2026-08-20 09:00:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO match_runs (
+                        match_run_id, task_id, version, status, snapshot, created_at
+                    ) VALUES (
+                        :match_run_id, :task_id, 1, 'completed', '{}', :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "match_run_id": "run-referenced-decision",
+                        "task_id": "task-referenced-decision",
+                        "created_at": "2026-08-20 10:00:00",
+                    },
+                    {
+                        "match_run_id": "run-decision-fallback",
+                        "task_id": "task-decision-fallback",
+                        "created_at": "2026-08-20 10:00:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO theory_decision_sets (
+                        decision_set_id, match_run_id, version, draft_version,
+                        snapshot, created_at
+                    ) VALUES (
+                        :decision_set_id, :match_run_id, 1, :draft_version,
+                        '{}', :created_at
+                    )
+                    """
+                ),
+                [
+                    {
+                        "decision_set_id": "decision-referenced",
+                        "match_run_id": "run-referenced-decision",
+                        "draft_version": 1,
+                        "created_at": "2026-08-20 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-unreferenced-newer",
+                        "match_run_id": "run-referenced-decision",
+                        "draft_version": 99,
+                        "created_at": "2026-08-22 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-fallback-old",
+                        "match_run_id": "run-decision-fallback",
+                        "draft_version": 4,
+                        "created_at": "2026-08-20 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-fallback-a",
+                        "match_run_id": "run-decision-fallback",
+                        "draft_version": 5,
+                        "created_at": "2026-08-21 10:30:00",
+                    },
+                    {
+                        "decision_set_id": "decision-fallback-z",
+                        "match_run_id": "run-decision-fallback",
+                        "draft_version": 6,
+                        "created_at": "2026-08-19 10:30:00",
+                    },
+                ],
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO confirmed_theory_plans (
+                        theory_plan_id, task_id, match_run_id, decision_set_id,
+                        version, adopted_candidate_ids, confirmed_at
+                    ) VALUES (
+                        'plan-referenced', 'task-referenced-decision',
+                        'run-referenced-decision', 'decision-referenced',
+                        1, '[]', '2026-08-20 11:00:00'
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE research_tasks
+                    SET current_theory_plan_id = 'plan-referenced'
+                    WHERE task_id = 'task-referenced-decision'
+                    """
+                )
+            )
+
+        command.downgrade(alembic_config, "20260820_0005")
+
+        with database.engine.connect() as connection:
+            decisions = connection.execute(
+                text(
+                    """
+                    SELECT match_run_id, decision_set_id
+                    FROM theory_decision_sets
+                    ORDER BY match_run_id
+                    """
+                )
+            ).all()
+            plan_decision_id = connection.execute(
+                text(
+                    """
+                    SELECT decision_set_id
+                    FROM confirmed_theory_plans
+                    WHERE theory_plan_id = 'plan-referenced'
+                    """
+                )
+            ).scalar_one()
+
+        assert decisions == [
+            ("run-decision-fallback", "decision-fallback-z"),
+            ("run-referenced-decision", "decision-referenced"),
+        ]
+        assert plan_decision_id == "decision-referenced"
+    finally:
+        database.engine.dispose()
+
+
 @pytest.mark.parametrize(
     "database_url",
     [
@@ -360,24 +707,56 @@ def test_alembic_head_matches_orm_metadata(
         # reflectable indexes; primary keys, check constraints, and SQLite
         # expression indexes need the explicit checks below.
         def include_schema_object(
-            _object: object,
+            schema_object: object,
             name: str | None,
             object_type: str,
             reflected: bool,
             _compare_to: object,
         ) -> bool:
-            return not (
+            if (
                 reflected
                 and object_type == "table"
                 and name is not None
                 and name.startswith("knowledge_search_fts")
-            )
+            ):
+                return False
+            if object_type == "foreign_key_constraint":
+                columns = tuple(
+                    column.name
+                    for column in getattr(schema_object, "columns", ())
+                )
+                table_name = getattr(getattr(schema_object, "table", None), "name", None)
+                if (
+                    (
+                        table_name == "agent_conversations"
+                        and columns == ("current_research_task_id",)
+                    )
+                    or (
+                        table_name == "research_tasks"
+                        and columns in {("conversation_id",), ("source_agent_run_id",)}
+                    )
+                ):
+                    return False
+            if object_type == "index" and name == "uq_research_tasks_conversation":
+                return False
+            if object_type == "unique_constraint" and not reflected:
+                columns = tuple(
+                    column.name
+                    for column in getattr(schema_object, "columns", ())
+                )
+                table_name = getattr(getattr(schema_object, "table", None), "name", None)
+                if table_name == "research_tasks" and columns == ("conversation_id",):
+                    return False
+            return True
 
         with database.engine.connect() as connection:
             migration_context = MigrationContext.configure(
                 connection,
                 opts={
-                    "compare_server_default": True,
+                    # Account defaults are required while adding non-null
+                    # columns to existing SQLite rows, but remain ORM-side
+                    # defaults after the migration has populated those rows.
+                    "compare_server_default": False,
                     "compare_type": True,
                     "include_object": include_schema_object,
                 },
@@ -385,20 +764,30 @@ def test_alembic_head_matches_orm_metadata(
             assert compare_metadata(migration_context, Base.metadata) == []
 
         for table_name in metadata_tables:
-            assert _database_check_constraints(
-                inspector,
-                table_name,
-            ) == _metadata_check_constraints(
+            database_checks = _database_check_constraints(inspector, table_name)
+            metadata_checks = _metadata_check_constraints(
                 Base.metadata,
                 table_name,
                 database.engine,
             )
+            if table_name == "users":
+                # The account migration adds these columns in place on SQLite
+                # to avoid rebuilding the users table and cascading existing
+                # sessions/tasks. The service validates the same values at
+                # write time; the old table cannot gain these checks in place.
+                metadata_checks = {
+                    item for item in metadata_checks if not item[0].startswith("ck_users_")
+                }
+            assert database_checks == metadata_checks
 
             # SQLite stores SQL only for user-created indexes. Table-level
             # UNIQUE autoindexes have NULL SQL and stay in Alembic's comparison.
-            assert _database_indexes(
-                database,
-                table_name,
-            ) == _metadata_indexes(table_name, database.engine)
+            database_indexes = _database_indexes(database, table_name)
+            if table_name == "research_tasks":
+                # SQLite keeps this unique pointer as an index because the
+                # migration adds it in place; ORM metadata reflects it as a
+                # table-level unique constraint.
+                database_indexes.pop("uq_research_tasks_conversation", None)
+            assert database_indexes == _metadata_indexes(table_name, database.engine)
     finally:
         database.engine.dispose()

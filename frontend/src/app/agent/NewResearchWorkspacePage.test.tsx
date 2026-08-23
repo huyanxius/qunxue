@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { NewResearchWorkspacePage } from './NewResearchWorkspacePage'
@@ -20,6 +20,7 @@ afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
   window.sessionStorage.clear()
+  window.localStorage.clear()
   cytoscapeMock.mockClear()
 })
 
@@ -58,6 +59,69 @@ function conversationFixture(prompt = '为什么同一社区里的互助正在�
       tool_traces: [],
       knowledge_release_id: null,
     }],
+  }
+}
+
+function researchStartJourneyFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    conversation_id: 'conversation-research-new',
+    status: 'proposal_pending',
+    task_id: null,
+    proposal: {
+      proposal_id: 'proposal-research-new',
+      conversation_id: 'conversation-research-new',
+      source_run_id: 'run-research-new',
+      source_turn_id: 'turn-research-new',
+      knowledge_release_id: 'release-formal-1',
+      phenomenon: '同一社区里的互助正在减少',
+      research_intent: '理解互助衰退背后的社会机制',
+      context: '大城市老旧小区的日常生活',
+      version: 1,
+      status: 'pending_confirmation',
+      requires_user_confirmation: true,
+      confirmed_task_id: null,
+      created_at: '2026-08-19T00:00:01Z',
+      confirmed_at: null,
+    },
+    navigation: null,
+    ...overrides,
+  }
+}
+
+function researchStartNavigationFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    task_id: 'task-created-once',
+    entry_type: 'direct_input',
+    status: 'in_progress',
+    current_stage: 'theory_matching',
+    stage_label: '理论匹配',
+    next_action_label: '开始理论匹配',
+    version: 1,
+    allowed_actions: ['start_matching'],
+    seed_theory_id: null,
+    seed_theory_name: null,
+    phenomenon_summary: {
+      phenomenon_query_id: 'phenomenon-query-1',
+      version: 1,
+      phenomenon: '同一社区里的互助正在减少',
+      research_intent: '理解互助衰退背后的社会机制',
+    },
+    adopted_theory_count: 0,
+    current_phenomenon_candidate_id: 'phenomenon-candidate-1',
+    current_material_intake_run_id: null,
+    current_match_run_id: null,
+    current_theory_plan_id: null,
+    current_framework_id: null,
+    resume_path: '/server-owned-next',
+    blocker: null,
+    retry: null,
+    knowledge_release_id: 'release-formal-1',
+    conversation_id: 'conversation-research-new',
+    source_turn_id: 'turn-research-new',
+    source_run_id: 'run-research-new',
+    created_at: '2026-08-19T00:00:01Z',
+    updated_at: '2026-08-19T00:00:02Z',
+    ...overrides,
   }
 }
 
@@ -107,13 +171,389 @@ function pausableStream() {
   return { close: () => close(), response }
 }
 
-function renderPage(path = '/research/new', strict = false) {
-  const page = <MemoryRouter initialEntries={[path]}><NewResearchWorkspacePage /></MemoryRouter>
+function renderPage(path = '/research/new', strict = false, userId = 'user-a') {
+  function LocationProbe() {
+    const location = useLocation()
+    return <output aria-label="当前测试路径">{location.pathname}{location.search}</output>
+  }
+  const page = <MemoryRouter initialEntries={[path]}><NewResearchWorkspacePage userId={userId} /><LocationProbe /></MemoryRouter>
   return render(strict ? <StrictMode>{page}</StrictMode> : page)
 }
 
 describe('NewResearchWorkspacePage', () => {
-  it('labels the configured mock runtime as a preview and never as a real model run', async () => {
+  it('shows saved Agent conversations in the left rail', async () => {
+    const conversation = conversationFixture('青年为什么推迟进入婚姻？')
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/conversations') {
+        return json({
+          items: [{
+            conversation_id: conversation.conversation_id,
+            title: conversation.title,
+            updated_at: conversation.updated_at,
+            turn_count: conversation.turn_count,
+          }],
+        })
+      }
+      return json({}, 404)
+    }))
+
+    renderPage()
+
+    const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
+    expect(history.parentElement).toHaveClass('desktop-rail__secondary')
+    expect(within(history).getByRole('button', { name: /青年为什么推迟进入婚姻/ })).toBeVisible()
+  })
+
+  it('restores the pending research proposal beside its persisted conversation', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture()
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+
+    const proposal = await screen.findByRole('region', { name: '研究建立确认' })
+    expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
+    expect(within(proposal).getByText(journey.proposal!.research_intent!)).toBeVisible()
+    expect(within(proposal).getByText(journey.proposal!.context!)).toBeVisible()
+    expect(within(proposal).getByRole('button', { name: '确认研究起点' })).toBeEnabled()
+    expect(within(proposal).getByRole('button', { name: '继续修改' })).toBeEnabled()
+  })
+
+  it('keeps one confirmation transaction across duplicate clicks and an explicit retry', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture()
+    const confirmedResearchStart = {
+      conversation_id: journey.conversation_id,
+      status: 'task_bound' as const,
+      task_id: 'task-created-once',
+      proposal: {
+        ...journey.proposal!,
+        status: 'confirmed' as const,
+        requires_user_confirmation: false,
+        confirmed_task_id: 'task-created-once',
+        confirmed_at: '2026-08-19T00:00:02Z',
+      },
+      navigation: researchStartNavigationFixture(),
+    }
+    let releaseFirstConfirmation!: (response: Response) => void
+    const firstConfirmation = new Promise<Response>((resolve) => { releaseFirstConfirmation = resolve })
+    let confirmationAttempts = 0
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname.endsWith('/confirm') && init?.method === 'POST') {
+        confirmationAttempts += 1
+        return confirmationAttempts === 1 ? firstConfirmation : json(confirmedResearchStart)
+      }
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+
+    const proposal = await screen.findByRole('region', { name: '研究建立确认' })
+    const textbox = screen.getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: '我还想补充一个社区情境' } })
+    const confirm = within(proposal).getByRole('button', { name: '确认研究起点' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+
+    await waitFor(() => expect(confirmationAttempts).toBe(1))
+    expect(confirm).toBeDisabled()
+    releaseFirstConfirmation(json({}, 503))
+
+    expect(await within(proposal).findByRole('alert')).toHaveTextContent('你的内容已保留')
+    expect(textbox).toHaveValue('我还想补充一个社区情境')
+    expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
+    expect(within(proposal).getByRole('button', { name: '返回继续修改' })).toBeEnabled()
+
+    fireEvent.click(within(proposal).getByRole('button', { name: '重试建立研究' }))
+    expect(await screen.findByRole('region', { name: '研究已建立' })).toBeVisible()
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new')
+    fireEvent.click(screen.getByRole('button', { name: '展开文档节点' }))
+    expect(await screen.findByText('/server-owned-next')).toBeVisible()
+
+    const confirmationRequests = fetch.mock.calls.filter(([input, init]) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      return url.pathname.endsWith('/confirm') && init?.method === 'POST'
+    })
+    expect(confirmationRequests).toHaveLength(2)
+    expect(confirmationRequests.map(([, init]) => new Headers(init?.headers).get('Idempotency-Key'))).toEqual([
+      'research-start:proposal-research-new',
+      'research-start:proposal-research-new',
+    ])
+    expect(confirmationRequests.map(([, init]) => JSON.parse(String(init?.body)))).toEqual([
+      {
+        expected_version: 1,
+        phenomenon: journey.proposal!.phenomenon,
+        research_intent: journey.proposal!.research_intent,
+        context: journey.proposal!.context,
+      },
+      {
+        expected_version: 1,
+        phenomenon: journey.proposal!.phenomenon,
+        research_intent: journey.proposal!.research_intent,
+        context: journey.proposal!.context,
+      },
+    ])
+  })
+
+  it('keeps an already bound conversation on the canvas until the user explicitly continues', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture({
+      status: 'task_bound',
+      task_id: 'task-bound',
+      proposal: { ...researchStartJourneyFixture().proposal!, status: 'confirmed' },
+      navigation: researchStartNavigationFixture({
+        task_id: 'task-bound',
+        resume_path: '/resume/from-server',
+      }),
+    })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}&knowledge_release_id=must-not-drive-routing`)
+
+    expect(await screen.findByRole('region', { name: '研究已建立' })).toBeVisible()
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new')
+    expect(screen.queryByRole('region', { name: '研究建立确认' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '展开文档节点' }))
+    expect(await screen.findByText('/resume/from-server')).toBeVisible()
+  })
+
+  it('loads the proposal persisted by a completed Agent turn', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture()
+    const journeyRequests: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') return streamResponse(conversation, 'base')
+      if (url.pathname.endsWith('/journey')) {
+        journeyRequests.push(url.pathname)
+        return json(journey)
+      }
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage()
+
+    const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const textbox = within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: conversation.title } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+
+    const proposal = await within(workspace).findByRole('region', { name: '研究建立确认' })
+    expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
+    expect(journeyRequests).toEqual([
+      `/api/agent/conversations/${conversation.conversation_id}/journey`,
+    ])
+  })
+
+  it('retries a disconnected Agent turn with the original question and idempotency key', async () => {
+    const question = '为什么青年在熟人社区里也会感到孤独？'
+    const conversation = conversationFixture(question, '可以从关系稳定性与情感劳动继续分析。')
+    const turnRequests: RequestInit[] = []
+    const randomUUID = vi.fn(() => turnRequests.length ? 'must-not-be-used' : 'turn-stable-key')
+    vi.stubGlobal('crypto', { randomUUID })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') {
+        turnRequests.push(init ?? {})
+        return turnRequests.length === 1
+          ? new Response(
+              'event: turn_started\ndata: {"conversation_id":"conversation-research-new","run_id":"run-disconnected","replayed":false}\n\n'
+                + 'event: assistant_delta\ndata: {"delta":"只有半段"}\n\n',
+              { headers: { 'Content-Type': 'text/event-stream' } },
+            )
+          : streamResponse(conversation, 'base')
+      }
+      if (url.pathname.endsWith('/journey')) return json(researchStartJourneyFixture({ proposal: null }))
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage()
+
+    const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const textbox = within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: question } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+
+    expect(await within(workspace).findByRole('alert')).toHaveTextContent('回答完成前中断')
+    expect(textbox).toHaveValue(question)
+    fireEvent.click(within(workspace).getByRole('button', { name: '重试本轮' }))
+
+    expect(await within(workspace).findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(turnRequests).toHaveLength(2)
+    expect(turnRequests.map((request) => new Headers(request.headers).get('Idempotency-Key'))).toEqual([
+      'turn-stable-key',
+      'turn-stable-key',
+    ])
+    expect(turnRequests.map((request) => JSON.parse(String(request.body)).message)).toEqual([question, question])
+    expect(randomUUID).toHaveBeenCalledTimes(1)
+  })
+
+  it('restores an interrupted request after refresh and reuses its idempotency key', async () => {
+    const question = '刷新后继续研究社区照护为什么变弱'
+    const conversation = conversationFixture(question, '可以继续从照护资源与关系网络分析。')
+    const turnRequests: RequestInit[] = []
+    const randomUUID = vi.fn(() => 'turn-survives-refresh')
+    vi.stubGlobal('crypto', { randomUUID })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') {
+        turnRequests.push(init ?? {})
+        return turnRequests.length === 1
+          ? new Response(
+              'event: turn_started\ndata: {"conversation_id":"conversation-research-new","run_id":"run-refresh","replayed":false}\n\n'
+                + 'event: assistant_delta\ndata: {"delta":"未完成"}\n\n',
+              { headers: { 'Content-Type': 'text/event-stream' } },
+            )
+          : streamResponse(conversation, 'base')
+      }
+      if (url.pathname.endsWith('/journey')) return json(researchStartJourneyFixture({ status: 'collecting', proposal: null }))
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    const firstPage = renderPage()
+    const firstWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const firstTextbox = within(firstWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(firstTextbox, { target: { value: question } })
+    fireEvent.submit(firstTextbox.closest('form') as HTMLFormElement)
+    expect(await within(firstWorkspace).findByRole('alert')).toHaveTextContent('回答完成前中断')
+    firstPage.unmount()
+
+    renderPage()
+    const refreshedWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const refreshedTextbox = within(refreshedWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    expect(refreshedTextbox).toHaveValue(question)
+    fireEvent.submit(refreshedTextbox.closest('form') as HTMLFormElement)
+
+    expect(await within(refreshedWorkspace).findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(turnRequests.map((request) => new Headers(request.headers).get('Idempotency-Key'))).toEqual([
+      'turn-survives-refresh',
+      'turn-survives-refresh',
+    ])
+    expect(randomUUID).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an unsent composer draft across refresh in this browser tab', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    const firstPage = renderPage()
+    const draft = '我还没有发送的研究背景也不能在刷新时丢失'
+    fireEvent.change(await screen.findByRole('textbox', { name: '和 Agent 讨论你的研究' }), {
+      target: { value: draft },
+    })
+    firstPage.unmount()
+
+    renderPage()
+    expect(await screen.findByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue(draft)
+  })
+
+  it('does not restore another account\'s research draft in the same tab', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage('/research/new', false, 'user-a')
+    const privateDraft = '账号 A 尚未发送的田野笔记'
+    fireEvent.change(await screen.findByRole('textbox', { name: '和 Agent 讨论你的研究' }), {
+      target: { value: privateDraft },
+    })
+
+    cleanup()
+    renderPage('/research/new', false, 'user-b')
+
+    expect(await screen.findByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue('')
+  })
+
+  it('keeps the conversation available when journey recovery needs an explicit retry', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture()
+    let journeyAttempts = 0
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) {
+        journeyAttempts += 1
+        return journeyAttempts === 1 ? json({}, 503) : json(journey)
+      }
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+
+    expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    const recovery = await screen.findByRole('alert', { name: '研究状态恢复失败' })
+    expect(within(recovery).getByText('对话已保留')).toBeVisible()
+    expect(within(recovery).getByRole('button', { name: '返回继续对话' })).toBeEnabled()
+
+    fireEvent.click(within(recovery).getByRole('button', { name: '重试恢复研究状态' }))
+    const proposal = await screen.findByRole('region', { name: '研究建立确认' })
+    expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
+    expect(journeyAttempts).toBe(2)
+  })
+
+  it('never lets a late journey response leak into another history conversation', async () => {
+    const conversationA = conversationFixture('研究 A：社区互助为什么减少？')
+    const conversationB = {
+      ...conversationFixture('研究 B：青年职业选择如何变化？'),
+      conversation_id: 'conversation-b',
+      title: '研究 B：青年职业选择如何变化？',
+    }
+    const journeyA = researchStartJourneyFixture({
+      proposal: {
+        ...researchStartJourneyFixture().proposal!,
+        phenomenon: '这是 A 的待确认现象',
+      },
+    })
+    const journeyB = researchStartJourneyFixture({
+      conversation_id: conversationB.conversation_id,
+      proposal: {
+        ...researchStartJourneyFixture().proposal!,
+        proposal_id: 'proposal-b',
+        phenomenon: '这是 B 的待确认现象',
+      },
+    })
+    let releaseJourneyA!: (response: Response) => void
+    const delayedJourneyA = new Promise<Response>((resolve) => { releaseJourneyA = resolve })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/conversations') {
+        return json({ items: [{ conversation_id: conversationB.conversation_id, title: conversationB.title, updated_at: conversationB.updated_at, turn_count: 1 }] })
+      }
+      if (url.pathname === `/api/agent/conversations/${conversationA.conversation_id}`) return json(conversationA)
+      if (url.pathname === `/api/agent/conversations/${conversationB.conversation_id}`) return json(conversationB)
+      if (url.pathname === `/api/agent/conversations/${conversationA.conversation_id}/journey`) return delayedJourneyA
+      if (url.pathname === `/api/agent/conversations/${conversationB.conversation_id}/journey`) return json(journeyB)
+      return json({}, 404)
+    }))
+    renderPage(`/research/new?conversation_id=${conversationA.conversation_id}`)
+
+    fireEvent.click((await screen.findAllByRole('button', { name: '打开研究记录' }))[0])
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(conversationB.title) }))
+    await waitFor(() => expect(screen.getByText(journeyB.proposal!.phenomenon)).toBeVisible())
+
+    releaseJourneyA(json(journeyA))
+    await waitFor(() => expect(screen.queryByText(journeyA.proposal!.phenomenon)).not.toBeInTheDocument())
+    expect(screen.getByText(journeyB.proposal!.phenomenon)).toBeVisible()
+  })
+
+  it('retains the configured mock runtime truth without restoring the removed status strip', async () => {
     const conversation = conversationFixture()
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
@@ -124,13 +564,16 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = renderPage().container
 
-    expect(await screen.findByText('运行模式待确认')).toBeVisible()
     const region = within(workspace).getByRole('region', { name: '新建研究工作区' })
+    const panel = within(region).getByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(panel).toHaveAttribute('data-runtime-mode', 'unknown')
+    expect(within(region).queryByText('运行模式待确认')).not.toBeInTheDocument()
     const textbox = within(region).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(region).findByText('预览 Agent')).toBeVisible()
+    await waitFor(() => expect(panel).toHaveAttribute('data-runtime-mode', 'mock'))
+    expect(within(region).queryByText('预览 Agent')).not.toBeInTheDocument()
     expect(within(region).queryByText('真实 Agent 运行')).not.toBeInTheDocument()
   })
 
@@ -160,7 +603,9 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(workspace).findByText('基础模型运行')).toBeVisible()
+    const panel = within(workspace).getByRole('complementary', { name: '研究 Agent 对话栏' })
+    await waitFor(() => expect(panel).toHaveAttribute('data-runtime-mode', 'base'))
+    expect(within(workspace).queryByText('基础模型运行')).not.toBeInTheDocument()
     expect(within(workspace).queryByText('预览 Agent')).not.toBeInTheDocument()
   })
 
@@ -257,7 +702,9 @@ describe('NewResearchWorkspacePage', () => {
       fireEvent.change(textbox, { target: { value: conversation.title } })
       fireEvent.submit(textbox.closest('form') as HTMLFormElement)
       fireEvent.click(await within(region).findByRole('button', { name: '复制回答' }))
-      expect(await within(region).findByRole('button', { name: '复制回答' })).toHaveTextContent('复制失败')
+      const failedCopy = await within(region).findByRole('button', { name: '复制失败' })
+      expect(failedCopy).toHaveAttribute('title', '复制失败')
+      expect(failedCopy).toHaveTextContent('')
     } finally {
       Object.defineProperty(navigator, 'clipboard', { configurable: true, value: originalClipboard })
     }
@@ -280,9 +727,10 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.click(await within(workspace).findByRole('button', { name: '停止生成' }))
     stream.close()
 
-    expect(await within(workspace).findByText('本轮已停止，未保存未完成的回答。')).toBeVisible()
-    expect(within(workspace).getAllByText(/未保存未完成/)).toHaveLength(1)
-    expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toBeEnabled()
+    expect(await within(workspace).findByText('本轮已停止，已保留生成内容和 0 个已完成步骤。')).toBeVisible()
+    expect(within(workspace).getAllByText(/已保留生成内容/)).toHaveLength(1)
+    expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue('怎么理解青年孤独？')
+    expect(within(workspace).getByRole('button', { name: '重试本轮' })).toBeEnabled()
   })
 
   it('turns a truncated Agent stream into a recoverable error instead of a stuck composer', async () => {
@@ -481,6 +929,40 @@ describe('NewResearchWorkspacePage', () => {
     expect(within(region).queryByRole('dialog', { name: '研究记录' })).not.toBeInTheDocument()
   })
 
+  it('lets the conversation panel be resized by dragging or keyboard and remembers the width', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    const page = renderPage()
+    const workspace = await within(page.container).findByRole('region', { name: '新建研究工作区' })
+    const columns = workspace.querySelector<HTMLElement>('.new-research__workspace')!
+    Object.defineProperty(columns, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ width: 1000, height: 800, top: 0, right: 1000, bottom: 800, left: 0, x: 0, y: 0, toJSON: () => ({}) }),
+    })
+    const separator = within(workspace).getByRole('separator', { name: '调整对话栏宽度' })
+    Object.defineProperty(separator, 'setPointerCapture', { configurable: true, value: vi.fn() })
+    Object.defineProperty(separator, 'releasePointerCapture', { configurable: true, value: vi.fn() })
+
+    fireEvent.pointerDown(separator, { pointerId: 1, clientX: 560 })
+    fireEvent.pointerMove(separator, { pointerId: 1, clientX: 500 })
+    fireEvent.pointerUp(separator, { pointerId: 1 })
+    expect(separator).toHaveAttribute('aria-valuenow', '500')
+    expect(columns.style.getPropertyValue('--new-research-agent-width')).toBe('500px')
+
+    fireEvent.keyDown(separator, { key: 'ArrowRight' })
+    expect(separator).toHaveAttribute('aria-valuenow', '476')
+    expect(window.localStorage.getItem('qunxue.research.agent-panel-width')).toBe('476')
+
+    fireEvent.mouseDown(separator, { button: 0, clientX: 524 })
+    fireEvent.mouseMove(window, { clientX: 460 })
+    expect(separator).toHaveAttribute('aria-valuenow', '540')
+    fireEvent.mouseUp(window)
+    expect(window.localStorage.getItem('qunxue.research.agent-panel-width')).toBe('540')
+  })
+
   it('turns a selected question node into an explicit follow-up prompt', async () => {
     const conversation = conversationFixture('为什么社区互助正在减少？', '可以先从信任与资源压力分析。')
     conversation.research_map = {
@@ -535,6 +1017,37 @@ describe('NewResearchWorkspacePage', () => {
     expect(activityPanel).toHaveTextContent('找到 1 条知识库预览内容（未审核）')
   })
 
+  it('uses the approved Agent conversation surface without changing the research workflow', async () => {
+    const conversation = conversationFixture('请检索知识库解释社区互助。')
+    const completeDetail = `完整工具返回：${'社会资本与社区互助。'.repeat(40)}`
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') return streamWithToolTrace(conversation, completeDetail)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage()
+
+    const panel = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(panel).toHaveClass('is-agent-synced')
+    expect(within(panel).queryByText(/知识库按需调用/)).not.toBeInTheDocument()
+    expect(panel.querySelector('.new-research__composer-footer')).not.toBeInTheDocument()
+
+    const textbox = within(panel).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: conversation.title } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+
+    const toolSummary = await within(panel).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(toolSummary).toHaveAttribute('aria-expanded', 'true')
+    expect(await within(panel).findByRole('button', { name: '查看完整工具返回' })).toBeVisible()
+
+    expect(panel.querySelector('[data-role="user-message"]')).toHaveTextContent(conversation.title)
+    expect(panel.querySelector('[data-role="assistant-response"] [data-research-agent-bot]')).toBeInTheDocument()
+    expect(within(panel).queryByText('群学 Agent')).not.toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: '复制回答' })).not.toHaveTextContent('复制')
+    expect(within(panel).getByRole('button', { name: '重新生成' })).not.toHaveTextContent('重新生成')
+  })
+
   it('summarizes oversized tool output while keeping the complete trace expandable', async () => {
     const conversation = conversationFixture('请检索知识库解释社区互助。')
     const completeDetail = `完整工具返回：${'社会资本与社区互助的检索证据。'.repeat(80)}`
@@ -551,6 +1064,8 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
+    const toolSummary = await within(workspace).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(toolSummary).toHaveAttribute('aria-expanded', 'true')
     const detailDisclosure = await within(workspace).findByRole('button', { name: '查看完整工具返回' })
     expect(within(workspace).queryByText(completeDetail)).not.toBeVisible()
     fireEvent.click(detailDisclosure)

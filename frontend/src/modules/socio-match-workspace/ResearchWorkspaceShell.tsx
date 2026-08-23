@@ -45,7 +45,7 @@ export function ResearchWorkspaceShell({
           <span>{eyebrow}</span>
           {taskLabel ? <small>{taskLabel}</small> : null}
         </div>
-        <a href="/my">全部研究</a>
+        <a href="/app?research=all">全部研究</a>
       </header>
 
       <div className="research-shell__body">

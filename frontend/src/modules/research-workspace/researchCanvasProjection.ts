@@ -18,7 +18,7 @@ export type ResearchCanvasStatus =
   | 'failed'
   | 'interrupted'
 
-export type ResearchCanvasNodeKind = AgentResearchNodeKind
+export type ResearchCanvasNodeKind = AgentResearchNodeKind | 'phenomenon' | 'document'
 export type ResearchCanvasNodeStatus = AgentResearchNodeStatus
 
 type ResearchCanvasToolStep = AgentToolStep & { interrupted?: boolean }

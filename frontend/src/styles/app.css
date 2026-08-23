@@ -30,6 +30,7 @@
   --radius-control: 8px;
   --radius-large: 14px;
   --shadow-sm: 0 0 0 1px rgb(17 17 17 / 8%);
+  position: relative;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   grid-template-rows: minmax(100dvh, auto);
@@ -38,6 +39,33 @@
   background: var(--app-canvas);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 14px;
+  isolation: isolate;
+}
+
+.app-frame__backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  background: #f7f7f3;
+  pointer-events: none;
+}
+
+.app-frame__backdrop::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgb(17 17 17 / 1.1%) 0 1px, transparent 1px 4px);
+  content: '';
+  opacity: 0.22;
+}
+
+.app-frame__shader-canvas {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  opacity: 0.44;
+  filter: saturate(0.74) contrast(1.01);
 }
 
 .app-frame--rail-collapsed {
@@ -83,8 +111,11 @@
   min-height: 560px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--app-border);
-  background: var(--app-sidebar);
+  border-right: 0;
+  background: rgb(246 246 242 / 14%);
+  box-shadow: 14px 0 36px rgb(36 41 37 / 7%);
+  backdrop-filter: blur(14px) saturate(0.94) contrast(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(0.94) contrast(1.05);
   overflow: hidden;
   transition: width 160ms ease;
 }
@@ -130,6 +161,12 @@
   flex: 0 0 auto;
   place-items: center;
   color: var(--app-ink);
+}
+
+.product-mark img {
+  width: 26px;
+  height: 26px;
+  display: block;
 }
 
 .desktop-rail__collapse {
@@ -313,15 +350,20 @@
   animation: loading-breathe 1.3s ease-in-out infinite;
 }
 
+/* 内容层必须显式抬到背景板之上：.app-frame__backdrop 是 position: fixed 且
+   z-index: 0 的不透明层，静态定位的内容会被它整片盖住（侧栏因为自带
+   z-index: 30 才幸免）。这里的 z-index 只需压过背景板，仍低于 masthead(100)
+   与移动端浮层，改动时别往上抬。 */
 .page-shell {
+  position: relative;
+  z-index: 1;
   grid-column: 2;
   grid-row: 1;
   width: min(1080px, calc(100% - 64px));
   min-width: 0;
   margin: 0 auto;
   padding: 32px 0 64px;
-  background: var(--app-canvas);
-  animation: route-content-in 140ms ease-out both;
+  background: transparent;
 }
 
 .page-shell--wide,
@@ -549,9 +591,36 @@
   background: transparent;
 }
 
-@keyframes route-content-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes route-page-enter-forward {
+  from { transform: translate3d(0, 14px, 0); }
+  68% { transform: translate3d(0, 1px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes route-page-enter-backward {
+  from { transform: translate3d(0, -14px, 0); }
+  68% { transform: translate3d(0, -1px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes route-page-enter-lateral {
+  from { transform: translate3d(0, 8px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.route-motion-surface[data-motion-active='true'][data-motion-direction='forward']
+  > * > main {
+  animation: route-page-enter-forward 222ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.route-motion-surface[data-motion-active='true'][data-motion-direction='backward']
+  > * > main {
+  animation: route-page-enter-backward 222ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.route-motion-surface[data-motion-active='true'][data-motion-direction='lateral']
+  > * > main {
+  animation: route-page-enter-lateral 222ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes loading-breathe {
@@ -614,21 +683,6 @@
   background: var(--app-ink, #111111);
 }
 
-.support-trigger {
-  position: fixed;
-  z-index: 35;
-  bottom: 70px;
-  left: 12px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--app-border-strong, #cecece);
-  border-radius: 999px;
-  color: var(--app-muted, #6f6f6f);
-  background: var(--app-canvas, #ffffff);
-  cursor: pointer;
-  font-size: 11px;
-}
-
 .network-status-notice {
   position: fixed;
   z-index: 85;
@@ -643,108 +697,6 @@
   box-shadow: 0 8px 24px rgb(17 17 17 / 10%);
   font-size: 12px;
   line-height: 1.5;
-}
-
-.app-frame--rail-collapsed .support-trigger {
-  left: 76px;
-}
-
-.support-trigger:hover,
-.support-trigger[aria-expanded='true'] {
-  color: var(--app-ink, #111111);
-  border-color: var(--app-ink, #111111);
-}
-
-.support-dialog-backdrop {
-  position: fixed;
-  z-index: 90;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgb(17 17 17 / 28%);
-}
-
-.support-dialog {
-  width: min(600px, 100%);
-  max-height: min(720px, calc(100dvh - 40px));
-  overflow: auto;
-  border: 1px solid var(--app-border, #e4e4e4);
-  border-radius: 14px;
-  color: var(--app-ink-soft, #303030);
-  background: var(--app-canvas, #ffffff);
-  box-shadow: 0 20px 60px rgb(17 17 17 / 18%);
-}
-
-.support-dialog__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 22px 18px;
-  border-bottom: 1px solid var(--app-border, #e4e4e4);
-}
-
-.support-dialog__header h2 {
-  margin: 7px 0 0;
-  color: var(--app-ink, #111111);
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.support-dialog__close {
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--app-border-strong, #cecece);
-  border-radius: 999px;
-  color: var(--app-ink-soft, #303030);
-  background: var(--app-canvas, #ffffff);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.support-dialog__body {
-  display: grid;
-  gap: 18px;
-  padding: 20px 22px 24px;
-}
-
-.support-dialog__body section {
-  padding-top: 14px;
-  border-top: 1px solid var(--app-border, #e4e4e4);
-}
-
-.support-dialog__body section:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.support-dialog__body h3 {
-  margin: 0;
-  color: var(--app-ink, #111111);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.support-dialog__body p {
-  margin: 7px 0 0;
-  color: var(--app-muted, #6f6f6f);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.support-dialog__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--app-border, #e4e4e4);
-}
-
-.support-dialog__links a {
-  color: var(--app-ink, #111111);
-  font-size: 12px;
-  text-underline-offset: 3px;
 }
 
 .not-found-state {
@@ -763,15 +715,12 @@
     padding: 56px 0 66px;
   }
 
-  .app-frame--immersive {
-    padding: 0;
+  .app-frame__shader-canvas {
+    opacity: 0.36;
   }
 
-  .support-trigger,
-  .app-frame--rail-collapsed .support-trigger {
-    right: 12px;
-    bottom: 76px;
-    left: auto;
+  .app-frame--immersive {
+    padding: 0;
   }
 
   .network-status-notice {
@@ -779,20 +728,6 @@
     right: 12px;
     left: 12px;
     max-width: none;
-  }
-
-  .support-dialog-backdrop {
-    align-items: end;
-    padding: 0;
-  }
-
-  .support-dialog {
-    width: 100%;
-    max-height: calc(100dvh - 28px);
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 14px 14px 0 0;
   }
 
   .desktop-rail {
@@ -822,6 +757,11 @@
   .product-mark {
     width: 24px;
     height: 24px;
+  }
+
+  .product-mark img {
+    width: 23px;
+    height: 23px;
   }
 
   .page-shell {
@@ -895,6 +835,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .route-motion-surface,
+  .route-motion-surface > * > main {
+    animation: none !important;
+  }
+
   *,
   *::before,
   *::after {
