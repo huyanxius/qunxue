@@ -98,6 +98,7 @@ describe('account pages', () => {
     render(
       <RegisterPage
         onRegister={register}
+        onSendRegistrationCode={vi.fn(async () => ({ resendAfterSeconds: 60 }))}
         onAuthenticated={() => undefined}
         loginHref="/login"
       />,
@@ -106,6 +107,11 @@ describe('account pages', () => {
     fireEvent.change(screen.getByLabelText('邮箱'), {
       target: { value: 'new@example.com' },
     })
+    fireEvent.click(screen.getByRole('button', { name: '发送验证码' }))
+    fireEvent.change(await screen.findByLabelText('验证码'), {
+      target: { value: '123456' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '继续设置密码' }))
     fireEvent.change(screen.getByLabelText('密码'), {
       target: { value: 'research-passphrase' },
     })
@@ -123,16 +129,22 @@ describe('account pages', () => {
     render(
       <RegisterPage
         onRegister={register}
+        onSendRegistrationCode={vi.fn(async () => ({ resendAfterSeconds: 60 }))}
         onAuthenticated={() => undefined}
         loginHref="/login"
       />,
     )
 
     expect(screen.getByLabelText('邮箱')).toHaveAttribute('maxlength', '320')
-    expect(screen.getByText('8-128 个字符。')).toBeVisible()
     fireEvent.change(screen.getByLabelText('邮箱'), {
       target: { value: 'new@example.com' },
     })
+    fireEvent.click(screen.getByRole('button', { name: '发送验证码' }))
+    fireEvent.change(await screen.findByLabelText('验证码'), {
+      target: { value: '123456' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '继续设置密码' }))
+    expect(screen.getByText('8-128 个字符。')).toBeVisible()
     fireEvent.change(screen.getByLabelText('密码'), {
       target: { value: 'p'.repeat(129) },
     })
@@ -143,5 +155,50 @@ describe('account pages', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('密码需要 8-128 个字符')
     expect(register).not.toHaveBeenCalled()
+  })
+
+  it('moves registration through email, code, and password steps', async () => {
+    const sendCode = vi.fn(async () => ({ resendAfterSeconds: 60 }))
+    const register = vi.fn(async () => undefined)
+    render(
+      <RegisterPage
+        onRegister={register}
+        onSendRegistrationCode={sendCode}
+        onAuthenticated={() => undefined}
+        loginHref="/login"
+      />,
+    )
+
+    expect(screen.getByText('第 1 步，共 3 步')).toBeVisible()
+    expect(screen.queryByLabelText('验证码')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('密码')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('邮箱'), {
+      target: { value: 'new@example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '发送验证码' }))
+
+    await waitFor(() => expect(sendCode).toHaveBeenCalledWith('new@example.com'))
+    expect(screen.getByText('第 2 步，共 3 步')).toBeVisible()
+    fireEvent.change(screen.getByLabelText('验证码'), {
+      target: { value: '123456' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '继续设置密码' }))
+
+    expect(screen.getByText('第 3 步，共 3 步')).toBeVisible()
+    fireEvent.change(screen.getByLabelText('密码'), {
+      target: { value: 'research-passphrase' },
+    })
+    fireEvent.change(screen.getByLabelText('确认密码'), {
+      target: { value: 'research-passphrase' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '创建账号' }))
+
+    await waitFor(() => {
+      expect(register).toHaveBeenCalledWith(
+        'new@example.com',
+        'research-passphrase',
+        '123456',
+      )
+    })
   })
 })
