@@ -146,6 +146,14 @@ describe('ResearchDocumentWorkbench', () => {
         match_run_id: 'match-1',
         status: 'awaiting_decision',
         knowledge_release_id: 'release-pinned-1',
+        retrieval: {
+          retrieval_index_id: 'retrieval-index-1',
+          mode: 'hybrid_reranked',
+          embedding_model: 'Pro/BAAI/bge-m3',
+          reranker_model: 'Pro/BAAI/bge-reranker-v2-m3',
+          degraded_reason: null,
+          retrieved_chunk_ids: ['theory-profile:theory:social-capital:v1'],
+        },
         candidate_page: {
           candidates: [{
             candidate_id: 'candidate-1',
@@ -170,6 +178,12 @@ describe('ResearchDocumentWorkbench', () => {
     fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
 
     expect(await screen.findByRole('heading', { name: '社会资本理论' })).toBeVisible()
+    const provenance = screen.getByRole('group', { name: '匹配发布与检索证据链' })
+    expect(provenance).toHaveTextContent('release-pinned-1')
+    expect(provenance).toHaveTextContent('retrieval-index-1')
+    expect(provenance).toHaveTextContent('hybrid_reranked')
+    expect(provenance).toHaveTextContent('Pro/BAAI/bge-m3')
+    expect(provenance).toHaveTextContent('Pro/BAAI/bge-reranker-v2-m3')
     expect(createMatchRun).toHaveBeenCalledWith({
       path: { task_id: 'task-1' },
       headers: { 'Idempotency-Key': expect.any(String) },
