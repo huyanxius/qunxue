@@ -6,6 +6,7 @@ vi.mock('../../api/client', () => ({ apiClient: { buildUrl } }))
 
 import {
   confirmResearchStartProposal,
+  deleteAgentConversation,
   getAgentConversation,
   getResearchStartJourney,
   listAgentConversations,
@@ -32,6 +33,21 @@ afterEach(() => {
 })
 
 describe('research agent SSE adapter', () => {
+  it('sends the required idempotency key when deleting a conversation', async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetch)
+
+    await deleteAgentConversation('conversation-1')
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.qunxue.test/api/agent/conversations/conversation-1',
+      expect.objectContaining({
+        method: 'DELETE',
+        headers: { 'Idempotency-Key': 'delete-agent-conversation:conversation-1' },
+      }),
+    )
+  })
+
   it('preserves the Agent runtime mode reported by the independent runner', () => {
     expect(parseAgentEventStream(
       'event: turn_started\ndata: {"conversation_id":"conversation-1","run_id":"run-1","replayed":false,"runtime_mode":"base"}\n',
