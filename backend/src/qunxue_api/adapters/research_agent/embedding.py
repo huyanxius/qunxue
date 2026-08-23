@@ -1,6 +1,7 @@
 """OpenAI-compatible embedding adapter for remote or self-hosted encoders."""
 
 import json
+import math
 from collections.abc import Sequence
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -49,7 +50,7 @@ class OpenAICompatibleEmbeddingProvider:
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
                 payload = json.loads(response.read())
-        except (HTTPError, URLError, TimeoutError, OSError) as error:
+        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
             raise EmbeddingProviderError("embedding service request failed") from error
         return _parse_embeddings(payload, expected_count=len(inputs))
 
@@ -67,8 +68,13 @@ def _parse_embeddings(payload: object, *, expected_count: int) -> list[list[floa
         if not isinstance(item, dict) or not isinstance(item.get("embedding"), list):
             raise EmbeddingProviderError("embedding response contains an invalid vector")
         vector = item["embedding"]
-        if not all(isinstance(value, (int, float)) for value in vector):
-            raise EmbeddingProviderError("embedding response contains a non-numeric vector")
+        if not vector or not all(
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+            for value in vector
+        ):
+            raise EmbeddingProviderError("embedding response contains an invalid vector")
         values.append([float(value) for value in vector])
     if len(values) != expected_count:
         raise EmbeddingProviderError("embedding response count does not match request")
