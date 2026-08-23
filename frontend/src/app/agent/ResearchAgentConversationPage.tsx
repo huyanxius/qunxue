@@ -934,28 +934,8 @@ function ToolLogo({ tool, state }: { tool: string; state?: string }) {
   )
 }
 
-function formatElapsed(milliseconds: number) {
-  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
-function StreamingRunStatus({
-  status,
-  steps,
-  startedAt,
-}: {
-  status: AgentPageStatus
-  steps: ResearchToolStep[]
-  startedAt?: number
-}) {
+function StreamingRunStatus({ status, steps }: { status: AgentPageStatus; steps: ResearchToolStep[] }) {
   const { text } = useAppLocale()
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [])
   const runningTool = [...steps].reverse().find((step) => step.status === 'running')?.tool
   const phase = runningTool && ['read_knowledge_entry', 'read_sources', 'read_research_document'].includes(runningTool)
     ? text('正在阅读研究材料', 'Reading research materials')
@@ -973,26 +953,16 @@ function StreamingRunStatus({
   return (
     <p className="new-research__run-status" role="status">
       <strong>{phase}</strong>
-      <span>{text(`已运行 ${formatElapsed(now - (startedAt ?? now))}`, `Running ${formatElapsed(now - (startedAt ?? now))}`)}</span>
     </p>
   )
 }
 
-function ToolTraceTimeline({
-  steps,
-  onOpenActivity,
-  defaultExpanded = false,
-}: {
-  steps: ResearchToolStep[]
-  onOpenActivity: () => void
-  defaultExpanded?: boolean
-}) {
+function ToolTraceTimeline({ steps, onOpenActivity }: { steps: ResearchToolStep[]; onOpenActivity: () => void }) {
   const { locale, text } = useAppLocale()
   const running = steps.some((step) => step.status === 'running')
   const interrupted = steps.some((step) => step.interrupted)
   const failed = steps.some((step) => step.status === 'failed' && !step.interrupted)
-  const [expanded, setExpanded] = useState(defaultExpanded || running || interrupted)
-  const showDetails = expanded || running || interrupted
+  const [expanded, setExpanded] = useState(false)
 
   if (!steps.length) return null
   const statusLabel = running
@@ -1009,7 +979,7 @@ function ToolTraceTimeline({
         <button
           type="button"
           className="research-agent-tool-summary"
-          aria-expanded={showDetails}
+          aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
           <span className="research-agent-tool-logo-stack" aria-hidden="true">
@@ -1025,7 +995,7 @@ function ToolTraceTimeline({
         </button>
         <button className="research-agent-tool-activity" type="button" onClick={onOpenActivity}>{text('查看活动', 'View activity')}</button>
       </header>
-      <ol className="new-research__trace-list" hidden={!showDetails}>
+      <ol className="new-research__trace-list" hidden={!expanded}>
         {steps.map((step) => (
           <li key={step.id} className={`new-research__trace-step is-${step.interrupted ? 'interrupted' : step.status}`}>
             <ToolLogo tool={step.tool} state={step.interrupted ? 'interrupted' : step.status} />
@@ -1101,8 +1071,6 @@ function AssistantTurn({
   failure,
   streaming,
   streamingStatus,
-  streamingStartedAt,
-  toolTraceExpanded,
   embedded,
   showResearchHandoff,
   knowledgeReleaseId,
@@ -1119,8 +1087,6 @@ function AssistantTurn({
   failure?: string
   streaming?: boolean
   streamingStatus?: AgentPageStatus
-  streamingStartedAt?: number
-  toolTraceExpanded?: boolean
   embedded?: boolean
   showResearchHandoff?: boolean
   knowledgeReleaseId: string | null
@@ -1142,10 +1108,10 @@ function AssistantTurn({
         <div className="new-research__assistant-label" aria-label={text('群学 Agent', 'Qunxue Agent')}>
           <ResearchAgentBot />
         </div>
-        {streaming && streamingStatus ? <StreamingRunStatus status={streamingStatus} steps={toolSteps} startedAt={streamingStartedAt} /> : null}
-        <ToolTraceTimeline steps={toolSteps} onOpenActivity={onOpenActivity} defaultExpanded={toolTraceExpanded} />
+        {streaming && streamingStatus ? <StreamingRunStatus status={streamingStatus} steps={toolSteps} /> : null}
+        <ToolTraceTimeline steps={toolSteps} onOpenActivity={onOpenActivity} />
         {answer ? <div className="new-research__markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer)}</ReactMarkdown></div> : null}
-        {!answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />{text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')}</p> : null}
+        {!streaming && !answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />{text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')}</p> : null}
         {interrupted ? (
           <p className="new-research__turn-note is-interrupted">
             <WarningCircleIcon size={14} />
@@ -1834,7 +1800,6 @@ export function ResearchAgentConversationPage({
                   toolSteps={toolStepsByTurnId[turn.turn_id] ?? persistedToolSteps(turn.tool_traces)}
                   conversationId={activeConversation?.conversation_id ?? null}
                   knowledgeReleaseId={turn.knowledge_release_id?.trim() || null}
-                  toolTraceExpanded={embedded}
                   embedded={embedded}
                   showResearchHandoff={!embedded}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
@@ -1854,8 +1819,6 @@ export function ResearchAgentConversationPage({
                     failure={streamingTurn.failure}
                     streaming={canStopGeneration && !streamingTurn.interrupted && !streamingTurn.failure}
                     streamingStatus={status}
-                    streamingStartedAt={streamingTurn.startedAt}
-                    toolTraceExpanded={embedded}
                     embedded={embedded}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                     onSelectCitation={openCitation}
@@ -1941,7 +1904,7 @@ export function ResearchAgentConversationPage({
     return (
       <>
         {conversationSurface}
-        {showConversationManagement && historyRailTarget && !historyOpen ? createPortal(
+        {showConversationManagement && historyRailTarget ? createPortal(
           <AgentConversationHistoryRail
             activeConversationId={activeConversation?.conversation_id ?? null}
             conversations={conversations}
@@ -1958,7 +1921,7 @@ export function ResearchAgentConversationPage({
 
   return (
     <PageShell
-      railContent={!historyOpen ? (
+      railContent={(
         <AgentConversationHistoryRail
           activeConversationId={activeConversation?.conversation_id ?? null}
           conversations={conversations}
@@ -1967,7 +1930,7 @@ export function ResearchAgentConversationPage({
           onOpen={openConversation}
           onRename={renameSavedConversation}
         />
-      ) : null}
+      )}
       wide
     >
       <PageContent>{conversationSurface}</PageContent>
