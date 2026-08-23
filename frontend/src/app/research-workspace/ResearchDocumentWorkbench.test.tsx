@@ -20,8 +20,10 @@ vi.mock('./ResearchMapCanvas', () => ({
   ),
 }))
 vi.mock('../agent/ResearchAgentConversationPage', () => ({
-  ResearchAgentConversationPage: ({ taskId, workspace }: { taskId: string | null; workspace: string }) => (
-    <aside aria-label="研究 Agent 对话栏" data-task-id={taskId ?? ''} data-workspace={workspace} />
+  ResearchAgentConversationPage: ({ taskId, workspace, onTurnCompleted }: { taskId: string | null; workspace: string; onTurnCompleted?: () => void }) => (
+    <aside aria-label="研究 Agent 对话栏" data-task-id={taskId ?? ''} data-workspace={workspace}>
+      <button type="button" onClick={onTurnCompleted}>完成 Agent 回合</button>
+    </aside>
   ),
 }))
 
@@ -194,6 +196,144 @@ describe('ResearchDocumentWorkbench', () => {
         knowledge_release_id: 'release-pinned-1',
       },
     })
+  })
+
+  it('projects an Agent-started match without reloading the page', async () => {
+    const initialNavigation = {
+      task_id: 'task-1',
+      version: 3,
+      allowed_actions: ['start_matching'],
+      blocker: null,
+      retry: null,
+      current_match_run_id: null,
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-pinned-1',
+      phenomenon_summary: {
+        phenomenon: '社区互助为何减少？',
+        phenomenon_query_id: 'phenomenon-1',
+        research_intent: '解释互助变化机制',
+        version: 2,
+      },
+      resume_path: '/research/task-1/match',
+    }
+    const refreshedNavigation = {
+      ...initialNavigation,
+      version: 4,
+      allowed_actions: [],
+      current_match_run_id: 'match-from-agent',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation')
+      .mockResolvedValueOnce({ data: initialNavigation } as never)
+      .mockResolvedValueOnce({ data: refreshedNavigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listTheoryDecisions').mockResolvedValue({ data: { decision_sets: [] } } as never)
+    const getMatchRun = vi.spyOn(researchApi, 'getMatchRun').mockResolvedValue({
+      data: {
+        match_run_id: 'match-from-agent',
+        status: 'awaiting_decision',
+        knowledge_release_id: 'release-pinned-1',
+        candidate_page: {
+          candidates: [{
+            candidate_id: 'candidate-agent-1',
+            version: 1,
+            title: '社会资本理论',
+            applicability_rationale: '解释稳定关系与互惠规范。',
+          }],
+        },
+        failed_candidate_ids: [],
+      },
+    } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
+    await screen.findByRole('button', { name: '开始理论匹配' })
+    fireEvent.click(screen.getByRole('button', { name: '完成 Agent 回合' }))
+
+    expect(await screen.findByRole('heading', { name: '社会资本理论' })).toBeVisible()
+    expect(getMatchRun).toHaveBeenCalledWith({ path: { match_run_id: 'match-from-agent' } })
+  })
+
+  it('clears decisions from a superseded match after an Agent turn', async () => {
+    const initialNavigation = {
+      task_id: 'task-1',
+      version: 4,
+      allowed_actions: [],
+      blocker: null,
+      retry: null,
+      current_match_run_id: 'match-old',
+      current_theory_plan_id: null,
+      current_framework_id: null,
+      knowledge_release_id: 'release-pinned-1',
+      phenomenon_summary: {
+        phenomenon: '社区互助为何减少？',
+        phenomenon_query_id: 'phenomenon-1',
+        research_intent: '解释互助变化机制',
+        version: 2,
+      },
+      resume_path: '/research/task-1/match',
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation')
+      .mockResolvedValueOnce({ data: initialNavigation } as never)
+      .mockResolvedValueOnce({
+        data: { ...initialNavigation, version: 5, current_match_run_id: 'match-new' },
+      } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'getMatchRun')
+      .mockResolvedValueOnce({
+        data: {
+          match_run_id: 'match-old',
+          status: 'awaiting_decision',
+          knowledge_release_id: 'release-pinned-1',
+          candidate_page: { candidates: [{ candidate_id: 'candidate-old', version: 1, title: '旧理论', applicability_rationale: '旧判断' }] },
+          failed_candidate_ids: [],
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        data: {
+          match_run_id: 'match-new',
+          status: 'awaiting_decision',
+          knowledge_release_id: 'release-pinned-1',
+          candidate_page: { candidates: [{ candidate_id: 'candidate-new', version: 1, title: '新理论', applicability_rationale: '新判断' }] },
+          failed_candidate_ids: [],
+        },
+      } as never)
+    vi.spyOn(researchApi, 'listTheoryDecisions')
+      .mockResolvedValueOnce({
+        data: {
+          decision_sets: [{
+            decision_set_id: 'decision-old',
+            version: 1,
+            allowed_actions: ['confirm_theory_plan'],
+            decisions: [{ candidate_id: 'candidate-old', candidate_version: 1, action: 'adopt' }],
+          }],
+        },
+      } as never)
+      .mockResolvedValueOnce({ data: { decision_sets: [] } } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
+    expect(await screen.findByRole('heading', { name: '旧理论' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '完成 Agent 回合' }))
+
+    expect(await screen.findByRole('heading', { name: '新理论' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: '确认理论方案，进入 M5' })).not.toBeInTheDocument()
   })
 
   it('executes the server retry contract after an empty matching run', async () => {

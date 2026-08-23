@@ -3,9 +3,12 @@ from types import SimpleNamespace
 
 import pytest
 from pydantic_ai import ToolDefinition
+from pydantic_ai.messages import RetryPromptPart
+from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.pydantic_runner import (
+    PydanticAIKnowledgeRunner,
     _compose_agent_prompt,
     _prepare_research_map_tool,
 )
@@ -214,6 +217,204 @@ def test_research_map_tool_is_hidden_from_plain_agent_turns() -> None:
     assert _prepare_research_map_tool(enabled, definition) is definition
 
 
+def test_research_map_tool_schema_requires_canonical_nodes_and_relations() -> None:
+    registry = KnowledgeToolRegistry(_Catalog())
+    registry.enable_research_map()
+    schemas: dict[str, dict[str, object]] = {}
+
+    async def model_stream(_messages, info):
+        schemas.update(
+            {
+                tool.name: tool.parameters_json_schema
+                for tool in info.function_tools
+            }
+        )
+        yield "继续梳理研究地图。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        runner.run_stream(
+            prompt="继续",
+            conversation=(),
+            tools=registry,
+            on_delta=lambda _delta: None,
+        )
+
+    schema = schemas["update_research_map"]
+    node_schema = schema["$defs"]["ResearchMapNodeInput"]
+    relation_schema = schema["$defs"]["ResearchMapRelationInput"]
+    assert node_schema["additionalProperties"] is False
+    assert set(node_schema["required"]) == {"id", "kind", "title"}
+    assert node_schema["properties"]["kind"]["enum"] == [
+        "question",
+        "theory",
+        "claim",
+        "evidence",
+        "gap",
+        "synthesis",
+    ]
+    assert relation_schema["additionalProperties"] is False
+    assert set(relation_schema["required"]) == {"source", "target", "relation"}
+    assert relation_schema["properties"]["relation"]["enum"] == [
+        "explains",
+        "supports",
+        "challenges",
+        "derives",
+        "refines",
+    ]
+
+
+def test_invalid_research_map_patch_gets_one_model_retry() -> None:
+    registry = KnowledgeToolRegistry(_Catalog())
+    registry.enable_research_map()
+    tool_attempts = 0
+
+    async def model_stream(messages, _info):
+        nonlocal tool_attempts
+        last_parts = messages[-1].parts
+        if tool_attempts == 0:
+            tool_attempts += 1
+            yield {
+                0: DeltaToolCall(
+                    name="update_research_map",
+                    json_args=(
+                        '{"nodes":[{"id":"q1","kind":"question",'
+                        '"title":"为什么社区互助减少？"}],'
+                        '"relations":[{"source":"q1","target":"missing",'
+                        '"relation":"refines"}]}'
+                    ),
+                    tool_call_id="call-map-invalid",
+                )
+            }
+        elif any(isinstance(part, RetryPromptPart) for part in last_parts):
+            tool_attempts += 1
+            yield {
+                0: DeltaToolCall(
+                    name="update_research_map",
+                    json_args=(
+                        '{"nodes":['
+                        '{"id":"q1","kind":"question","title":"为什么社区互助减少？"},'
+                        '{"id":"c1","kind":"claim","title":"重复互动机会正在减少"}],'
+                        '"relations":[{"source":"c1","target":"q1",'
+                        '"relation":"explains"}]}'
+                    ),
+                    tool_call_id="call-map-corrected",
+                )
+            }
+        else:
+            yield "已修正并保存研究地图。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    events: list[AgentToolEvent] = []
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="继续",
+            conversation=(),
+            tools=registry,
+            on_delta=lambda _delta: None,
+            on_tool_event=events.append,
+        )
+
+    assert tool_attempts == 2
+    assert [(event.phase, event.call_id) for event in events] == [
+        ("started", "call-map-invalid"),
+        ("failed", "call-map-invalid"),
+        ("started", "call-map-corrected"),
+        ("finished", "call-map-corrected"),
+    ]
+    assert [node["id"] for node in registry.research_map["nodes"]] == ["q1", "c1"]
+    assert result.answer == "已修正并保存研究地图。"
+
+
+def test_research_map_storage_failure_aborts_the_turn(monkeypatch) -> None:
+    registry = KnowledgeToolRegistry(_Catalog())
+    registry.enable_research_map()
+    tool_attempted = False
+
+    def unavailable_map(**_payload):
+        raise RuntimeError("storage details must not be converted into an answer")
+
+    monkeypatch.setattr(registry, "update_research_map", unavailable_map)
+
+    async def model_stream(_messages, _info):
+        nonlocal tool_attempted
+        if not tool_attempted:
+            tool_attempted = True
+            yield {
+                0: DeltaToolCall(
+                    name="update_research_map",
+                    json_args=(
+                        '{"nodes":[{"id":"q1","kind":"question",'
+                        '"title":"为什么社区互助减少？"}],"relations":[]}'
+                    ),
+                    tool_call_id="call-map-unavailable",
+                )
+            }
+        else:
+            yield "地图没保存，但我先继续回答。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    events: list[AgentToolEvent] = []
+    with (
+        runner._agent.override(model=FunctionModel(stream_function=model_stream)),
+        pytest.raises(RuntimeError, match="storage details"),
+    ):
+        runner.run_stream(
+            prompt="继续",
+            conversation=(),
+            tools=registry,
+            on_delta=lambda _delta: None,
+            on_tool_event=events.append,
+        )
+
+    assert [(event.phase, event.call_id) for event in events] == [
+        ("started", "call-map-unavailable"),
+        ("failed", "call-map-unavailable"),
+    ]
+
+
+def test_agent_openapi_exposes_typed_research_map_nodes_and_relations(client) -> None:
+    schemas = client.app.openapi()["components"]["schemas"]
+
+    node_schema = schemas["AgentResearchMapNodeResponse"]
+    relation_schema = schemas["AgentResearchMapRelationResponse"]
+    patch_schema = schemas["AgentResearchMapPatchResponse"]
+    assert set(node_schema["required"]) == {
+        "id",
+        "kind",
+        "title",
+        "status",
+        "citation_ids",
+    }
+    assert set(relation_schema["required"]) == {
+        "id",
+        "source",
+        "target",
+        "relation",
+    }
+    assert patch_schema["properties"]["nodes"]["items"]["$ref"].endswith(
+        "/AgentResearchMapNodeResponse"
+    )
+    assert patch_schema["properties"]["relations"]["items"]["$ref"].endswith(
+        "/AgentResearchMapRelationResponse"
+    )
+
+
 def test_research_prompt_carries_the_persisted_map_into_the_next_turn() -> None:
     prompt = _compose_agent_prompt(
         prompt="还缺什么证据？",
@@ -226,6 +427,8 @@ def test_research_prompt_carries_the_persisted_map_into_the_next_turn() -> None:
 
     assert "<current_research_map>" in prompt
     assert '"id":"claim-time-poverty"' in prompt
+    assert "<research_map_policy>" in prompt
+    assert "形成或修订研究问题、理论、主张、证据、缺口或综合判断" in prompt
 
 
 def test_research_workspace_streams_and_rehydrates_canvas_patch(

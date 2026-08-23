@@ -73,7 +73,10 @@ export function projectResearchCanvas({
   streamingTurn?: ResearchCanvasStreamingTurn | null
 }): ResearchCanvasProjection {
   let map = conversationMap(conversation)
-  for (const patch of streamingTurn?.canvasPatches ?? []) map = applyPatch(map, patch)
+  const livePatches = streamingTurn?.failure || streamingTurn?.interrupted
+    ? []
+    : streamingTurn?.canvasPatches ?? []
+  for (const patch of livePatches) map = applyPatch(map, patch)
 
   const nodes = map.nodes.map((node) => toCanvasNode(node, conversation))
   const edges = map.relations.map((relation) => ({

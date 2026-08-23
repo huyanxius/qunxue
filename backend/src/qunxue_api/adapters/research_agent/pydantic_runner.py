@@ -7,6 +7,7 @@ from openai.types.shared import ReasoningEffort
 from pydantic_ai import (
     Agent,
     AgentStreamEvent,
+    ModelRetry,
     PartDeltaEvent,
     PartStartEvent,
     RunContext,
@@ -25,6 +26,10 @@ from pydantic_ai.usage import UsageLimits
 
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
+)
+from qunxue_api.adapters.research_agent.research_map_contracts import (
+    ResearchMapNodeInput,
+    ResearchMapRelationInput,
 )
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
@@ -714,11 +719,11 @@ class PydanticAIKnowledgeRunner:
             )
             return result
 
-        @self._agent.tool(prepare=_prepare_research_map_tool)
+        @self._agent.tool(prepare=_prepare_research_map_tool, retries=1)
         def update_research_map(
             ctx: RunContext[KnowledgeToolRegistry],
-            nodes: list[dict[str, object]] | None = None,
-            relations: list[dict[str, object]] | None = None,
+            nodes: list[ResearchMapNodeInput] | None = None,
+            relations: list[ResearchMapRelationInput] | None = None,
             remove_node_ids: list[str] | None = None,
             remove_relation_ids: list[str] | None = None,
             title: str | None = None,
@@ -726,17 +731,21 @@ class PydanticAIKnowledgeRunner:
         ) -> dict[str, object]:
             """在研究工作区提交一组可追溯的论证地图增量。
 
-            节点 kind 只能是 question/theory/claim/evidence/gap/synthesis；节点标题可用
-            title，兼容模型常用的 label/content。关系可用 source/target/relation，
-            也兼容 from/to/type；规范化结果始终返回统一字段。
+            节点必须提供 id/kind/title，kind 只能是
+            question/theory/claim/evidence/gap/synthesis。关系必须提供
+            source/target/relation。
             relation 只能是 explains/supports/challenges/derives/refines。
             证据节点的 citation_ids 必须来自本轮知识工具真实返回的证据。
             工具日志和回答文本不应创建节点。
             """
             call_id = _tool_call_id(ctx, "update_research_map")
+            node_payload = [node.model_dump(exclude_none=True) for node in nodes or ()]
+            relation_payload = [
+                relation.model_dump(exclude_none=True) for relation in relations or ()
+            ]
             payload = {
-                "nodes": nodes or [],
-                "relations": relations or [],
+                "nodes": node_payload,
+                "relations": relation_payload,
                 "remove_node_ids": remove_node_ids or [],
                 "remove_relation_ids": remove_relation_ids or [],
             }
@@ -754,8 +763,8 @@ class PydanticAIKnowledgeRunner:
             )
             try:
                 result = ctx.deps.update_research_map(
-                    nodes=nodes,
-                    relations=relations,
+                    nodes=node_payload,
+                    relations=relation_payload,
                     remove_node_ids=remove_node_ids,
                     remove_relation_ids=remove_relation_ids,
                 )
@@ -772,10 +781,7 @@ class PydanticAIKnowledgeRunner:
                         error="research_map_invalid_patch",
                     )
                 )
-                return {
-                    "error": "research_map_invalid_patch",
-                    "message": str(error),
-                }
+                raise ModelRetry(str(error)) from error
             except Exception:
                 self._emit_tool_event(
                     AgentToolEvent(
@@ -787,10 +793,7 @@ class PydanticAIKnowledgeRunner:
                         error="research_map_unavailable",
                     )
                 )
-                return {
-                    "error": "research_map_unavailable",
-                    "message": "研究地图暂时无法更新，请继续用对话说明你的判断。",
-                }
+                raise
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="update_research_map",
@@ -1222,7 +1225,11 @@ def _compose_agent_prompt(
     required_evidence: Sequence[Mapping[str, object]] | None = None,
 ) -> str:
     map_context = (
-        "\n\n<current_research_map>\n"
+        "\n\n<research_map_policy>"
+        "研究工作区内，只要本轮形成或修订研究问题、理论、主张、证据、缺口或综合判断，"
+        "就必须在回答完成前调用 update_research_map 提交对应增量；若结构没有变化则不要调用。"
+        "工具校验失败时根据反馈修正一次，不得把失败的结构写成已经保存。"
+        "</research_map_policy>\n<current_research_map>\n"
         f"{json.dumps(research_map, ensure_ascii=False, separators=(',', ':'))}"
         "\n</current_research_map>"
         if research_map is not None

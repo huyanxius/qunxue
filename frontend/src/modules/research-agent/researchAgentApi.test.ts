@@ -138,6 +138,41 @@ describe('research agent SSE adapter', () => {
     )).toEqual([{ type: 'canvas_patch', patch }])
   })
 
+  it('rejects canvas patches whose nested nodes or relations violate the contract', () => {
+    const invalidPatches = [
+      {
+        schema_version: 1,
+        nodes: [{
+          id: 'tool-step',
+          kind: 'tool',
+          title: '检索知识库',
+          status: 'running',
+          citation_ids: [],
+        }],
+        relations: [],
+        remove_node_ids: [],
+        remove_relation_ids: [],
+      },
+      {
+        schema_version: 1,
+        nodes: [],
+        relations: [{
+          id: 'relation-invalid',
+          source: 'claim-a',
+          relation: 'supports',
+        }],
+        remove_node_ids: [],
+        remove_relation_ids: [],
+      },
+    ]
+
+    for (const patch of invalidPatches) {
+      expect(parseAgentEventStream(
+        `event: canvas_patch\ndata: ${JSON.stringify(patch)}\n`,
+      )).toEqual([])
+    }
+  })
+
   it('parses a failed tool call without turning it into a completed step', () => {
     expect(parseAgentEventStream([
       'event: tool_failed',
