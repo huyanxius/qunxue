@@ -28,6 +28,7 @@ vi.mock('../agent/ResearchAgentConversationPage', () => ({
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  window.localStorage.clear()
 })
 
 describe('ResearchDocumentWorkbench', () => {
@@ -52,6 +53,56 @@ describe('ResearchDocumentWorkbench', () => {
     expect(agent).toHaveAttribute('data-workspace', 'research')
     expect(screen.getByText(/这一部分会随着研究推进形成可编辑内容/)).toBeInTheDocument()
     expect(document.querySelector('.research-document-editor .ProseMirror')).not.toBeInTheDocument()
+  })
+
+  it('lets the Agent panel be resized from the divider', async () => {
+    const page = render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/:stage" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    const workspace = page.container.querySelector<HTMLElement>('.research-document-workbench__workspace')!
+    Object.defineProperty(workspace, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ width: 1000, height: 800, top: 0, right: 1000, bottom: 800, left: 0, x: 0, y: 0, toJSON: () => ({}) }),
+    })
+    const separator = screen.getByRole('separator', { name: '调整 Agent 对话栏宽度' })
+    Object.defineProperty(separator, 'setPointerCapture', { configurable: true, value: vi.fn() })
+    Object.defineProperty(separator, 'releasePointerCapture', { configurable: true, value: vi.fn() })
+
+    fireEvent.pointerDown(separator, { pointerId: 1, clientX: 570 })
+    fireEvent.pointerMove(separator, { pointerId: 1, clientX: 500 })
+    fireEvent.pointerUp(separator, { pointerId: 1 })
+
+    expect(separator).toHaveAttribute('aria-valuenow', '500')
+    expect(workspace.style.getPropertyValue('--rdw-agent-width')).toBe('500px')
+  })
+
+  it('keeps mouse dragging available when pointer events are not emitted', () => {
+    const page = render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/:stage" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    const workspace = page.container.querySelector<HTMLElement>('.research-document-workbench__workspace')!
+    Object.defineProperty(workspace, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ width: 1000, height: 800, top: 0, right: 1000, bottom: 800, left: 0, x: 0, y: 0, toJSON: () => ({}) }),
+    })
+    const separator = screen.getByRole('separator', { name: '调整 Agent 对话栏宽度' })
+
+    fireEvent.mouseDown(separator, { button: 0, clientX: 570 })
+    fireEvent.mouseMove(window, { clientX: 460 })
+    fireEvent.mouseUp(window)
+
+    expect(separator).toHaveAttribute('aria-valuenow', '540')
+    expect(window.localStorage.getItem('qunxue.research.agent-panel-width')).toBe('540')
   })
 
   it('states the preview boundary when the research agent is not available', async () => {
