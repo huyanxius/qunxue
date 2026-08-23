@@ -96,6 +96,7 @@ describe('AdminUsersPage', () => {
     render(<AdminUsersPage api={createApi({ createCreditRedemptionCodes })} />)
 
     await screen.findByRole('heading', { name: '用户管理' })
+    expect(screen.getByText('批量生成一次性兑换码，兑换后积分恢复至 10,000。')).toBeVisible()
     fireEvent.change(screen.getByLabelText('生成数量'), { target: { value: '20' } })
     fireEvent.change(screen.getByLabelText('有效天数'), { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: '生成兑换码' }))

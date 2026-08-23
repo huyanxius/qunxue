@@ -281,7 +281,7 @@ export function AdminUsersPage({
           <div>
             <p className="account-management-eyebrow">PRIVATE BETA CREDITS</p>
             <h2 id="credit-code-generator-title">积分兑换码</h2>
-            <p>批量生成一次性兑换码，兑换后积分恢复至 3,000。</p>
+            <p>批量生成一次性兑换码，兑换后积分恢复至 10,000。</p>
           </div>
         </header>
         <form className="account-admin-credit-code-form" onSubmit={submitCreditCodeBatch}>
