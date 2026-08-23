@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     account_initial_admin_email: str = ""
     account_initial_admin_password: SecretStr | None = None
+    resend_api_key: SecretStr | None = None
+    email_from: str = "群学致知 <noreply@qunxue.qiyuankaiwu.com>"
     cors_allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5178",
@@ -75,6 +77,12 @@ class Settings(BaseSettings):
         """Treat an empty SecretStr like an absent key at runtime boundaries."""
         return self.model_api_key is not None and bool(
             self.model_api_key.get_secret_value().strip()
+        )
+
+    @property
+    def has_resend_api_key(self) -> bool:
+        return self.resend_api_key is not None and bool(
+            self.resend_api_key.get_secret_value().strip()
         )
 
     @field_validator("database_url")

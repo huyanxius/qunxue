@@ -2,12 +2,14 @@ import re
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-from secrets import token_urlsafe
+from math import ceil
+from secrets import randbelow, token_urlsafe
 from uuid import UUID, uuid4
 
 from qunxue_api.modules.identity.domain import (
     AccountStatus,
     AuthenticatedSession,
+    RegistrationVerification,
     SessionGrant,
     User,
     UserSession,
@@ -16,11 +18,16 @@ from qunxue_api.modules.identity.errors import (
     EmailAlreadyRegistered,
     InvalidCredentials,
     InvalidEmail,
+    InvalidVerificationCode,
     Unauthenticated,
+    VerificationCodeRateLimited,
 )
-from qunxue_api.modules.identity.ports import IdentityRepository, PasswordHasher
+from qunxue_api.modules.identity.ports import EmailProvider, IdentityRepository, PasswordHasher
 
 _EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_VERIFICATION_TTL = timedelta(minutes=5)
+_VERIFICATION_COOLDOWN = timedelta(seconds=60)
+_VERIFICATION_ATTEMPTS = 5
 
 
 class IdentityService:
@@ -31,17 +38,46 @@ class IdentityService:
         *,
         invalid_password_hash: str,
         session_ttl: timedelta,
+        email_provider: EmailProvider | None = None,
         id_factory: Callable[[], UUID] = uuid4,
         credential_factory: Callable[[], str] | None = None,
         clock: Callable[[], datetime] | None = None,
+        verification_code_factory: Callable[[], str] | None = None,
+        require_email_verification: bool = True,
     ) -> None:
         self._repository = repository
         self._password_hasher = password_hasher
+        self._email_provider = email_provider
         self._invalid_password_hash = invalid_password_hash
         self._session_ttl = session_ttl
         self._id_factory = id_factory
         self._credential_factory = credential_factory or (lambda: token_urlsafe(32))
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._verification_code_factory = verification_code_factory or self._generate_code
+        self._require_email_verification = require_email_verification
+
+    def send_registration_code(self, *, email: str) -> None:
+        normalized_email = self._normalize_email(email)
+        now = self._clock()
+        current = self._repository.get_registration_verification(normalized_email)
+        if current is not None and current.resend_available_at > now:
+            retry_after = max(1, ceil((current.resend_available_at - now).total_seconds()))
+            raise VerificationCodeRateLimited(retry_after)
+
+        code = self._verification_code_factory()
+        verification = RegistrationVerification(
+            email=normalized_email,
+            code_hash=self._password_hasher.hash(code),
+            expires_at=now + _VERIFICATION_TTL,
+            resend_available_at=now + _VERIFICATION_COOLDOWN,
+            attempts_remaining=_VERIFICATION_ATTEMPTS,
+        )
+        self._repository.save_registration_verification(verification)
+        if self._email_provider is None:
+            from qunxue_api.modules.identity.errors import EmailDeliveryUnavailable
+
+            raise EmailDeliveryUnavailable
+        self._email_provider.send_verification_code(normalized_email, code)
 
     def register(
         self,
@@ -49,10 +85,13 @@ class IdentityService:
         email: str,
         password: str,
         display_name: str | None,
+        verification_code: str | None = None,
         user_agent: str | None = None,
         ip_address: str | None = None,
     ) -> SessionGrant:
         normalized_email = self._normalize_email(email)
+        if self._require_email_verification:
+            self._consume_registration_code(normalized_email, verification_code)
         if self._repository.get_user_by_email(normalized_email) is not None:
             raise EmailAlreadyRegistered
 
@@ -72,6 +111,30 @@ class IdentityService:
             user_agent=user_agent,
             ip_address=ip_address,
         )
+
+    def _consume_registration_code(self, email: str, code: str | None) -> None:
+        verification = self._repository.get_registration_verification(email)
+        now = self._clock()
+        if (
+            verification is None
+            or verification.expires_at <= now
+            or verification.attempts_remaining <= 0
+            or code is None
+        ):
+            raise InvalidVerificationCode
+
+        if not self._password_hasher.verify(verification.code_hash, code):
+            self._repository.save_registration_verification(
+                RegistrationVerification(
+                    email=verification.email,
+                    code_hash=verification.code_hash,
+                    expires_at=verification.expires_at,
+                    resend_available_at=verification.resend_available_at,
+                    attempts_remaining=verification.attempts_remaining - 1,
+                )
+            )
+            raise InvalidVerificationCode
+        self._repository.delete_registration_verification(email)
 
     def login(
         self,
@@ -155,3 +218,7 @@ class IdentityService:
         if not _EMAIL_PATTERN.fullmatch(normalized):
             raise InvalidEmail
         return normalized
+
+    @staticmethod
+    def _generate_code() -> str:
+        return f"{randbelow(1_000_000):06d}"

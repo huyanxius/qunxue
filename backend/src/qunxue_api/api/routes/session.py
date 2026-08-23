@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Request, Response, status
+from uuid import uuid4
 
-from qunxue_api.api.contracts.common import ErrorResponse
+from fastapi import APIRouter, Request, Response, status
+from fastapi.responses import JSONResponse
+
+from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.contracts.session import (
     LoginSessionRequest,
     LogoutSessionResponse,
     RegisterSessionRequest,
+    RegistrationCodeRequest,
+    RegistrationCodeResponse,
     SessionResponse,
     SessionStatus,
 )
@@ -13,13 +18,33 @@ from qunxue_api.api.dependencies import (
     IdentityServiceDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey
-from qunxue_api.modules.identity import AuthenticatedSession, SessionGrant
+from qunxue_api.modules.identity import (
+    AuthenticatedSession,
+    InvalidVerificationCode,
+    SessionGrant,
+)
 
 router = APIRouter(
     prefix="/api/session",
     tags=["session"],
     responses={422: {"model": ErrorResponse}},
 )
+
+
+@router.post(
+    "/registration-code",
+    operation_id="send_registration_code",
+    response_model=RegistrationCodeResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={429: {"model": ErrorResponse}, 503: {"model": ErrorResponse}},
+)
+def send_registration_code(
+    payload: RegistrationCodeRequest,
+    _idempotency_key: IdempotencyKey,
+    service: IdentityServiceDependency,
+) -> RegistrationCodeResponse:
+    service.send_registration_code(email=payload.email)
+    return RegistrationCodeResponse()
 
 
 @router.post(
@@ -35,14 +60,30 @@ def register_session(
     response: Response,
     request: Request,
     service: IdentityServiceDependency,
-) -> SessionResponse:
-    grant = service.register(
-        email=payload.email,
-        password=payload.password,
-        display_name=payload.display_name,
-        user_agent=request.headers.get("user-agent"),
-        ip_address=request.client.host if request.client else None,
-    )
+) -> SessionResponse | JSONResponse:
+    try:
+        grant = service.register(
+            email=payload.email,
+            password=payload.password,
+            display_name=payload.display_name,
+            verification_code=payload.verification_code,
+            user_agent=request.headers.get("user-agent"),
+            ip_address=request.client.host if request.client else None,
+        )
+    except InvalidVerificationCode as error:
+        # Return instead of re-raising so a failed-attempt decrement commits,
+        # while the service still creates no user or session.
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.EMAIL_VERIFICATION_INVALID,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content=body.model_dump(mode="json"),
+        )
     _set_session_cookie(response, request, grant)
     return _session_response(grant.authenticated)
 

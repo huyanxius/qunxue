@@ -50,3 +50,16 @@ class UserSessionRow(Base):
     user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
     revoked_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class RegistrationVerificationRow(Base):
+    __tablename__ = "registration_verifications"
+    __table_args__ = (
+        CheckConstraint("attempts_remaining >= 0", name="ck_registration_verifications_attempts"),
+    )
+
+    email: Mapped[str] = mapped_column(String(320), primary_key=True)
+    code_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resend_available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    attempts_remaining: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qunxue_api.account_extension import install_account_management
+from qunxue_api.adapters.email import ResendEmailProvider
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
     ModelGateway,
@@ -78,10 +79,13 @@ from qunxue_api.modules.agent_conversation import ConversationNotFound, Conversa
 from qunxue_api.modules.billing import CreditService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
+    EmailDeliveryUnavailable,
     IdentityError,
     IdentityService,
     InvalidEmail,
+    InvalidVerificationCode,
     Unauthenticated,
+    VerificationCodeRateLimited,
 )
 from qunxue_api.modules.research_framework import (
     ResearchDocumentProposalService,
@@ -106,6 +110,7 @@ def create_app(
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
     model_provider: ModelProvider | None = None,
+    require_email_verification: bool = True,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
@@ -123,6 +128,15 @@ def create_app(
         allow_headers=["Accept", "Content-Type", "Idempotency-Key"],
     )
     app.state.settings = resolved_settings
+    app.state.require_email_verification = require_email_verification
+    app.state.email_provider = (
+        ResendEmailProvider(
+            api_key=resolved_settings.resend_api_key.get_secret_value(),
+            from_email=resolved_settings.email_from,
+        )
+        if resolved_settings.has_resend_api_key
+        else None
+    )
     app.state.matching_start_lock = Lock()
     app.state.research_start_lock = Lock()
     app.state.database = resolved_database
@@ -157,6 +171,8 @@ def create_app(
                 password_hasher,
                 invalid_password_hash=invalid_password_hash,
                 session_ttl=timedelta(seconds=resolved_settings.session_ttl_seconds),
+                email_provider=app.state.email_provider,
+                require_email_verification=app.state.require_email_verification,
             )
 
     @contextmanager
@@ -492,17 +508,21 @@ def create_app(
         _request: Request,
         error: IdentityError,
     ) -> JSONResponse:
-        if isinstance(error, EmailAlreadyRegistered):
+        if isinstance(error, VerificationCodeRateLimited):
+            status_code = status.HTTP_429_TOO_MANY_REQUESTS
+        elif isinstance(error, EmailDeliveryUnavailable):
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        elif isinstance(error, EmailAlreadyRegistered):
             status_code = status.HTTP_409_CONFLICT
-        elif isinstance(error, InvalidEmail):
+        elif isinstance(error, (InvalidEmail, InvalidVerificationCode)):
             status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
         else:
             status_code = status.HTTP_401_UNAUTHORIZED
-        code = (
-            ErrorCode.UNAUTHENTICATED
-            if status_code == status.HTTP_401_UNAUTHORIZED
-            else ErrorCode.VALIDATION_ERROR
-        )
+        code = {
+            status.HTTP_401_UNAUTHORIZED: ErrorCode.UNAUTHENTICATED,
+            status.HTTP_429_TOO_MANY_REQUESTS: ErrorCode.EMAIL_VERIFICATION_RATE_LIMITED,
+            status.HTTP_503_SERVICE_UNAVAILABLE: ErrorCode.EMAIL_DELIVERY_UNAVAILABLE,
+        }.get(status_code, ErrorCode.VALIDATION_ERROR)
         body = ErrorResponse(
             error=ErrorDetail(
                 code=code,
@@ -514,6 +534,8 @@ def create_app(
             status_code=status_code,
             content=body.model_dump(mode="json"),
         )
+        if isinstance(error, VerificationCodeRateLimited):
+            response.headers["Retry-After"] = str(error.retry_after_seconds)
         if isinstance(error, Unauthenticated):
             response.delete_cookie(
                 resolved_settings.session_cookie_name,

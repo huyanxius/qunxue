@@ -55,3 +55,12 @@ class AuthenticatedSession:
 class SessionGrant:
     authenticated: AuthenticatedSession
     credential: str
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationVerification:
+    email: str
+    code_hash: str
+    expires_at: datetime
+    resend_available_at: datetime
+    attempts_remaining: int

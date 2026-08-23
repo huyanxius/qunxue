@@ -28,3 +28,25 @@ class InvalidEmail(IdentityError):
 
     def __init__(self) -> None:
         super().__init__("请输入有效的邮箱地址。")
+
+
+class InvalidVerificationCode(IdentityError):
+    code = "invalid_verification_code"
+
+    def __init__(self) -> None:
+        super().__init__("验证码无效或已过期，请重新获取。")
+
+
+class VerificationCodeRateLimited(IdentityError):
+    code = "verification_code_rate_limited"
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__("验证码发送过于频繁，请稍后再试。")
+
+
+class EmailDeliveryUnavailable(IdentityError):
+    code = "email_delivery_unavailable"
+
+    def __init__(self) -> None:
+        super().__init__("验证码暂时无法发送，请稍后再试。")

@@ -5,12 +5,13 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from qunxue_api.adapters.sqlite import UserRow, UserSessionRow
+from qunxue_api.adapters.sqlite import RegistrationVerificationRow, UserRow, UserSessionRow
 from qunxue_api.modules.identity import (
     AccountRole,
     AccountStatus,
     EmailAlreadyRegistered,
     IdentityRepository,
+    RegistrationVerification,
     User,
     UserSession,
 )
@@ -86,6 +87,45 @@ class SqliteIdentityRepository(IdentityRepository):
             )
         )
         self._db_session.flush()
+
+    def get_registration_verification(self, email: str) -> RegistrationVerification | None:
+        row = self._db_session.get(RegistrationVerificationRow, email)
+        if row is None:
+            return None
+        return RegistrationVerification(
+            email=row.email,
+            code_hash=row.code_hash,
+            expires_at=_as_utc(row.expires_at),
+            resend_available_at=_as_utc(row.resend_available_at),
+            attempts_remaining=row.attempts_remaining,
+        )
+
+    def save_registration_verification(
+        self,
+        verification: RegistrationVerification,
+    ) -> None:
+        row = self._db_session.get(RegistrationVerificationRow, verification.email)
+        if row is None:
+            row = RegistrationVerificationRow(
+                email=verification.email,
+                code_hash=verification.code_hash,
+                expires_at=verification.expires_at,
+                resend_available_at=verification.resend_available_at,
+                attempts_remaining=verification.attempts_remaining,
+            )
+            self._db_session.add(row)
+        else:
+            row.code_hash = verification.code_hash
+            row.expires_at = verification.expires_at
+            row.resend_available_at = verification.resend_available_at
+            row.attempts_remaining = verification.attempts_remaining
+        self._db_session.flush()
+
+    def delete_registration_verification(self, email: str) -> None:
+        row = self._db_session.get(RegistrationVerificationRow, email)
+        if row is not None:
+            self._db_session.delete(row)
+            self._db_session.flush()
 
     def get_active_session(self, token_digest: str, now: datetime) -> UserSession | None:
         row = self._db_session.scalar(
