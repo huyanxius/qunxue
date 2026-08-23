@@ -4,7 +4,7 @@ from math import ceil
 from typing import Literal
 from uuid import UUID
 
-WELCOME_GRANT = 3_000
+WELCOME_GRANT = 10_000
 INPUT_TOKENS_PER_CREDIT = 100
 OUTPUT_TOKENS_PER_CREDIT = 25
 
