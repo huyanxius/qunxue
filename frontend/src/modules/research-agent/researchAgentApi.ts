@@ -167,6 +167,7 @@ export async function deleteAgentConversation(conversationId: string): Promise<v
   }), {
     method: 'DELETE',
     credentials: 'include',
+    headers: { 'Idempotency-Key': `delete-agent-conversation:${conversationId}` },
   })
   if (!response.ok) throw new Error(response.status === 404 ? '这段对话不存在或无权访问。' : '对话删除失败')
 }
