@@ -38,6 +38,7 @@ from qunxue_api.modules.theory_matching import (
     MatchRunModelSnapshot,
     MatchRunSnapshot,
     MatchRunStatus,
+    RetrievalProvenanceSnapshot,
     TheoryCandidateContentSnapshot,
     TheoryCandidateFailureSnapshot,
     TheoryCandidateRetryRecord,
@@ -453,6 +454,16 @@ def _snapshot_payload(snapshot: MatchRunSnapshot) -> dict[str, object]:
             "evidence_items": [
                 _evidence_payload(item) for item in snapshot.evidence_bundle.evidence_items
             ],
+            "retrieval": {
+                "retrieval_index_id": snapshot.evidence_bundle.retrieval.retrieval_index_id,
+                "mode": snapshot.evidence_bundle.retrieval.mode,
+                "embedding_model": snapshot.evidence_bundle.retrieval.embedding_model,
+                "reranker_model": snapshot.evidence_bundle.retrieval.reranker_model,
+                "degraded_reason": snapshot.evidence_bundle.retrieval.degraded_reason,
+                "retrieved_chunk_ids": list(
+                    snapshot.evidence_bundle.retrieval.retrieved_chunk_ids
+                ),
+            },
         },
         "candidates": [_candidate_payload(candidate) for candidate in snapshot.candidates],
         "candidate_failures": [
@@ -772,6 +783,8 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
     evidence_items = tuple(
         _evidence_from_payload(item) for item in bundle_payload["evidence_items"]
     )
+    retrieval_payload = bundle_payload.get("retrieval", {})
+    assert isinstance(retrieval_payload, dict)
     bundle = EvidenceBundleSnapshot(
         evidence_bundle_id=str(bundle_payload["evidence_bundle_id"]),
         version=int(bundle_payload["version"]),
@@ -779,6 +792,18 @@ def _snapshot_from_row(row: MatchRunRow) -> MatchRunSnapshot:
         release=release,
         theory_profiles=profiles,
         evidence_items=evidence_items,
+        retrieval=RetrievalProvenanceSnapshot(
+            retrieval_index_id=_optional_text(
+                retrieval_payload.get("retrieval_index_id")
+            ),
+            mode=str(retrieval_payload.get("mode", "legacy_untracked")),
+            embedding_model=_optional_text(retrieval_payload.get("embedding_model")),
+            reranker_model=_optional_text(retrieval_payload.get("reranker_model")),
+            degraded_reason=_optional_text(retrieval_payload.get("degraded_reason")),
+            retrieved_chunk_ids=tuple(
+                str(value) for value in retrieval_payload.get("retrieved_chunk_ids", [])
+            ),
+        ),
     )
     profiles_by_id = {profile.theory_id: profile for profile in profiles}
     candidates = tuple(

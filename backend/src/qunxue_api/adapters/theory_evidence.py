@@ -2,8 +2,11 @@ import json
 from dataclasses import asdict
 from enum import Enum
 from hashlib import sha256
+from typing import Protocol
 from uuid import UUID
 
+from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
+from qunxue_api.adapters.retrieval.hybrid import HybridRetrievalResult
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeCatalog,
     KnowledgeReleaseLevel,
@@ -18,14 +21,33 @@ from qunxue_api.modules.research_intake import (
 from qunxue_api.modules.theory_matching import (
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    RetrievalProvenanceSnapshot,
 )
+
+
+class TheoryProfileRetriever(Protocol):
+    def search(
+        self,
+        *,
+        query: str,
+        knowledge_release_id: str,
+        release_content_hash: str,
+        document_kind: str,
+        limit: int,
+    ) -> HybridRetrievalResult: ...
 
 
 class CatalogTheoryEvidenceSource:
     """Stable recall over one audited final release pinned to a match run."""
 
-    def __init__(self, catalog: KnowledgeCatalog) -> None:
+    def __init__(
+        self,
+        catalog: KnowledgeCatalog,
+        *,
+        retriever: TheoryProfileRetriever | None = None,
+    ) -> None:
         self._catalog = catalog
+        self._retriever = retriever
 
     def retrieve(
         self,
@@ -36,12 +58,17 @@ class CatalogTheoryEvidenceSource:
         if release.level is not KnowledgeReleaseLevel.FINAL:
             raise ValueError("theory recall requires a final MATCH knowledge release")
 
-        selected_profiles = []
-        evidence_items = []
         profiles = self._catalog.list_match_profiles(
             release_id=release.knowledge_release_id
         )
-        for profile in profiles[:5]:
+        query = _phenomenon_retrieval_query(phenomenon)
+        selected_profiles, retrieval = self._select_profiles(
+            profiles=profiles,
+            query=query,
+            release=release,
+        )
+        evidence_items = []
+        for profile in selected_profiles:
             loaded_sources = self._catalog.get_sources(
                 source_ids=profile.source_ids,
                 release_id=release.knowledge_release_id,
@@ -76,8 +103,6 @@ class CatalogTheoryEvidenceSource:
                         use_boundary=source.use_boundary,
                     )
                 )
-            selected_profiles.append(profile)
-
         used_evidence_ids = {item.evidence_ref_id for item in evidence_items}
         for item in phenomenon.evidence_refs:
             if item.evidence_ref_id in used_evidence_ids:
@@ -119,6 +144,7 @@ class CatalogTheoryEvidenceSource:
                 "knowledge_release_id": release.knowledge_release_id,
                 "release_content_hash": release.content_hash,
                 "phenomenon_content_hash": phenomenon.content_hash,
+                "retrieval": _json_value(retrieval),
                 "theory_profiles": _json_value(selected_profiles),
                 "evidence_items": _json_value(evidence_items),
             },
@@ -134,6 +160,41 @@ class CatalogTheoryEvidenceSource:
             release=release,
             theory_profiles=tuple(selected_profiles),
             evidence_items=tuple(evidence_items),
+            retrieval=retrieval,
+        )
+
+    def _select_profiles(
+        self,
+        *,
+        profiles: tuple,
+        query: str,
+        release: KnowledgeReleaseRef,
+    ) -> tuple[list, RetrievalProvenanceSnapshot]:
+        by_id = {profile.theory_id: profile for profile in profiles}
+        if self._retriever is None:
+            raise RetrievalPipelineUnavailable("release-bound hybrid retriever is required")
+        result = self._retriever.search(
+            query=query,
+            knowledge_release_id=release.knowledge_release_id,
+            release_content_hash=release.content_hash,
+            document_kind="theory_profile",
+            limit=5,
+        )
+        chunk_ids = tuple(hit.chunk.chunk_id for hit in result.hits)
+        theory_ids = tuple(
+            hit.chunk.theory_id for hit in result.hits if hit.chunk.theory_id is not None
+        )
+        unknown_ids = tuple(theory_id for theory_id in theory_ids if theory_id not in by_id)
+        if unknown_ids:
+            raise ValueError("retrieval index returned a theory outside the pinned release")
+        selected = [by_id[theory_id] for theory_id in theory_ids]
+        return selected, RetrievalProvenanceSnapshot(
+            retrieval_index_id=result.retrieval_index_id,
+            mode=result.mode,
+            embedding_model=result.embedding_model,
+            reranker_model=result.reranker_model,
+            degraded_reason=result.degraded_reason,
+            retrieved_chunk_ids=chunk_ids,
         )
 
 
@@ -149,3 +210,13 @@ def _json_value(value: object) -> object:
     if isinstance(value, UUID):
         return str(value)
     return value
+
+
+def _phenomenon_retrieval_query(phenomenon: ConfirmedPhenomenonSnapshot) -> str:
+    values = (
+        phenomenon.phenomenon,
+        phenomenon.research_intent,
+        phenomenon.context,
+        *(item.excerpt for item in phenomenon.evidence_refs if item.excerpt),
+    )
+    return "\n".join(value.strip() for value in values if value and value.strip())
