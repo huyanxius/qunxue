@@ -189,25 +189,41 @@
   padding-top: 7px;
 }
 
-.account-settings-nav a {
+.account-settings-nav button {
+  width: 100%;
+  border: 0;
   padding: 9px 11px;
   border-left: 1px solid var(--account-rule);
   color: var(--account-muted);
+  background: transparent;
+  font: inherit;
   font-size: 13px;
-  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
 }
 
-.account-settings-nav a:hover,
-.account-settings-nav a:focus-visible {
+.account-settings-nav button:hover,
+.account-settings-nav button:focus-visible,
+.account-settings-nav button.is-active {
   border-left-color: var(--account-accent);
   color: var(--account-ink);
   background: rgba(255, 255, 255, 0.55);
 }
 
+.account-settings-nav button.is-active {
+  font-weight: 700;
+}
+
+.account-settings-nav button:focus-visible {
+  outline: 2px solid rgba(101, 69, 29, 0.2);
+  outline-offset: 2px;
+}
+
 .account-settings-sections {
   display: grid;
   gap: 18px;
+  min-height: 560px;
 }
 
 .account-settings-section,
@@ -222,6 +238,252 @@
 
 .account-settings-section {
   scroll-margin-top: 24px;
+}
+
+.account-credit-overview {
+  border-bottom: 1px solid var(--account-rule);
+}
+
+.account-credit-meter__label span,
+.account-credit-meter__label small,
+.account-credit-meter__value span {
+  color: var(--account-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.account-credit-meter {
+  display: grid;
+  gap: 13px;
+  padding: 22px 24px;
+}
+
+.account-credit-meter__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.account-credit-meter__label,
+.account-credit-meter__value {
+  display: grid;
+  gap: 2px;
+}
+
+.account-credit-meter__label span {
+  color: var(--account-ink);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.account-credit-meter__value {
+  grid-auto-flow: column;
+  align-items: baseline;
+  gap: 12px;
+  text-align: right;
+}
+
+.account-credit-meter__value strong {
+  font-size: 20px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-credit-meter__track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(23 24 22 / 9%);
+}
+
+.account-credit-meter__track > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--account-ink);
+  transition: width 260ms ease;
+}
+
+.account-credit-meter__track.is-unlimited > span {
+  width: 100%;
+}
+
+.account-credit-ledger {
+  padding: 20px 24px 24px;
+}
+
+.account-credit-redemption {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.42fr) minmax(15rem, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 17px 24px;
+  border-bottom: 1px solid var(--account-rule);
+}
+
+.account-credit-redemption h3,
+.account-credit-redemption p {
+  margin: 0;
+}
+
+.account-credit-redemption p {
+  margin-top: 3px;
+  color: var(--account-muted);
+  font-size: 11px;
+}
+
+.account-credit-redemption input,
+.account-admin-credit-code-form input {
+  width: 100%;
+  min-height: 2.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--account-rule);
+  border-radius: 7px;
+  background: rgb(255 255 252 / 58%);
+  color: var(--account-ink);
+}
+
+.account-credit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.account-credit-pagination span {
+  color: var(--account-muted);
+  font-size: 0.84rem;
+}
+
+.account-admin-credit-codes {
+  margin-bottom: 1rem;
+  padding: 1.1rem;
+  border: 1px solid var(--account-rule);
+  border-radius: 1rem;
+  background: var(--account-canvas);
+}
+
+.account-admin-credit-codes header h2,
+.account-admin-credit-codes header p {
+  margin: 0;
+}
+
+.account-admin-credit-codes header p:last-child {
+  margin-top: 0.3rem;
+  color: var(--account-muted);
+}
+
+.account-admin-credit-code-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8rem, 1fr)) auto;
+  gap: 0.8rem;
+  align-items: end;
+  margin-top: 1rem;
+}
+
+.account-admin-credit-code-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--account-muted);
+  font-size: 0.82rem;
+}
+
+.account-admin-credit-code-result {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--account-rule);
+}
+
+.account-admin-credit-code-result p,
+.account-admin-credit-code-result small {
+  margin: 0;
+}
+
+.account-admin-credit-code-result ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.45rem 1rem;
+  margin: 0.8rem 0 0;
+  padding-left: 1.5rem;
+}
+
+.account-admin-credit-code-result code {
+  user-select: all;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 760px) {
+  .account-credit-redemption,
+  .account-admin-credit-code-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.account-credit-ledger__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--account-rule);
+}
+
+.account-credit-ledger__heading h3 {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 720;
+  letter-spacing: 0;
+}
+
+.account-credit-ledger__heading span {
+  color: var(--account-muted);
+  font-size: 11px;
+}
+
+.account-credit-ledger__rows {
+  display: grid;
+}
+
+.account-credit-entry {
+  display: grid;
+  grid-template-columns: minmax(155px, 0.9fr) minmax(0, 1.3fr) auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 68px;
+  border-bottom: 1px solid var(--account-rule);
+}
+
+.account-credit-entry:last-child {
+  border-bottom: 0;
+}
+
+.account-credit-entry > div {
+  display: grid;
+  gap: 4px;
+}
+
+.account-credit-entry strong {
+  font-size: 13px;
+}
+
+.account-credit-entry small,
+.account-credit-entry p {
+  color: var(--account-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.account-credit-entry > strong:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.account-credit-entry > strong.is-credit {
+  color: var(--account-success);
 }
 
 .account-settings-section__heading {
@@ -1220,7 +1482,8 @@
     scrollbar-width: thin;
   }
 
-  .account-settings-nav a {
+  .account-settings-nav button {
+    width: auto;
     flex: 0 0 auto;
     border: 1px solid var(--account-rule);
     border-radius: 7px;
@@ -1267,6 +1530,25 @@
   .account-management-form--inline,
   .account-management-form__grid {
     grid-template-columns: 1fr;
+  }
+
+  .account-credit-overview,
+  .account-credit-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .account-credit-pricing {
+    border-top: 1px solid var(--account-rule);
+    border-left: 0;
+  }
+
+  .account-credit-entry {
+    gap: 7px;
+    padding: 14px 0;
+  }
+
+  .account-credit-entry > strong:last-child {
+    justify-self: start;
   }
 
   .account-privacy-row,
@@ -1423,4 +1705,169 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* 设置页沿用工作台的克制工作区语言；账户后台与登录流程保留各自样式。 */
+.account-settings-page {
+  --account-paper: #f3f2ed;
+  --account-canvas: rgb(250 249 245 / 88%);
+  --account-ink: #171816;
+  --account-muted: #6b6c66;
+  --account-rule: rgb(23 24 22 / 11%);
+  --account-rule-strong: rgb(23 24 22 / 17%);
+  --account-accent: #171816;
+  --account-accent-soft: rgb(23 24 22 / 6%);
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  padding: 0 clamp(20px, 3.2vw, 52px) clamp(44px, 6vw, 82px);
+  background: #f3f3ef;
+  isolation: isolate;
+}
+
+.account-settings-page h1,
+.account-settings-page h2,
+.account-settings-page h3,
+.account-settings-page h4 {
+  font-family: inherit;
+}
+
+.account-settings-page .account-management-hero {
+  min-height: 132px;
+  align-items: end;
+  width: min(1400px, 100%);
+  margin-bottom: clamp(28px, 3vw, 44px);
+  padding: 30px 0 25px;
+  border-color: var(--account-rule);
+}
+
+.account-settings-page .account-management-hero h1 {
+  font-size: clamp(30px, 3vw, 44px);
+  font-weight: 520;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.account-settings-page .account-management-hero > div:first-child > p:last-child {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.account-settings-page .account-management-identity {
+  min-width: 300px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: rgb(255 255 252 / 46%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 52%) inset;
+}
+
+.account-settings-page .account-management-identity > span:first-child,
+.account-settings-page .account-settings-section__heading > span {
+  color: var(--account-ink);
+  background: rgb(23 24 22 / 6%);
+}
+
+.account-settings-page .account-management-layout {
+  grid-template-columns: 184px minmax(0, 900px);
+  gap: clamp(28px, 4vw, 58px);
+  width: min(1400px, 100%);
+}
+
+.account-settings-page .account-settings-nav {
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.account-settings-page .account-settings-nav button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.account-settings-page .account-settings-nav button:hover,
+.account-settings-page .account-settings-nav button:focus-visible {
+  background: rgb(255 255 252 / 68%);
+}
+
+.account-settings-page .account-settings-nav button.is-active {
+  color: var(--account-ink);
+  background: rgb(23 24 22 / 7%);
+  font-weight: 620;
+}
+
+.account-settings-page .account-settings-sections {
+  min-height: 0;
+}
+
+.account-settings-page .account-settings-section {
+  border-radius: 12px;
+  background: rgb(250 249 245 / 96%);
+  box-shadow: 0 10px 28px rgb(20 26 23 / 5%);
+}
+
+.account-settings-page .account-settings-section__heading {
+  padding: 22px 24px 19px;
+}
+
+.account-settings-page .account-settings-section__heading h2 {
+  font-size: 18px;
+  font-weight: 560;
+  letter-spacing: -0.025em;
+}
+
+.account-settings-page .account-credit-overview {
+  display: block;
+}
+
+.account-settings-page .account-credit-ledger {
+  padding: 17px 24px 20px;
+}
+
+@media (max-width: 900px) {
+  .account-settings-page {
+    padding: 0 20px 64px;
+  }
+
+  .account-settings-page .account-management-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .account-settings-page .account-settings-nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 6px;
+  }
+
+  .account-settings-page .account-settings-nav button {
+    flex: 0 0 auto;
+    width: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-settings-page {
+    padding: 0 14px 52px;
+  }
+
+  .account-settings-page .account-management-hero {
+    grid-template-columns: 1fr;
+    padding-top: 24px;
+  }
+
+  .account-credit-meter__heading {
+    align-items: start;
+  }
+
+  .account-credit-meter__value {
+    grid-auto-flow: row;
+    gap: 2px;
+  }
+
 }

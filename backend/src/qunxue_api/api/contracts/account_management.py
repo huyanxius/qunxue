@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from qunxue_api.modules.identity import AccountRole, AccountStatus
 
@@ -35,6 +35,54 @@ class AccountResponse(BaseModel):
     last_login_at: datetime | None
     is_protected_admin: bool
     preferences: AccountPreferencesResponse
+
+
+class CreditLedgerEntryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    entry_id: UUID
+    kind: Literal["signup_grant", "usage", "redemption"]
+    points: int
+    balance_after: int = Field(ge=0)
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    created_at: datetime
+
+
+class CreditPricingResponse(BaseModel):
+    input_tokens_per_credit: int = Field(ge=1)
+    output_tokens_per_credit: int = Field(ge=1)
+
+
+class CreditSummaryResponse(BaseModel):
+    balance: int = Field(ge=0)
+    credit_limit: int = Field(ge=0)
+    grant_amount: int = Field(ge=0)
+    is_unlimited: bool
+    pricing: CreditPricingResponse
+    entries: list[CreditLedgerEntryResponse]
+    total_entries: int = Field(ge=0)
+    next_cursor: str | None
+
+
+class CreditRedemptionRequest(BaseModel):
+    code: str = Field(min_length=16, max_length=64)
+
+
+class CreditRedemptionResponse(BaseModel):
+    redeemed_points: int = Field(gt=0)
+    balance: int = Field(ge=0)
+
+
+class CreditCodeBatchCreateRequest(BaseModel):
+    count: int = Field(ge=1, le=100)
+    expires_in_days: int = Field(ge=1, le=365)
+
+
+class CreditCodeBatchResponse(BaseModel):
+    codes: list[str]
+    points: int = Field(gt=0)
+    expires_at: datetime
 
 
 class UpdateProfileRequest(BaseModel):

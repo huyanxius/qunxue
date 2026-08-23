@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from qunxue_api.account_extension import install_account_management
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
     ModelGateway,
@@ -26,6 +27,7 @@ from qunxue_api.adapters.research_agent import (
 )
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
+from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
@@ -73,6 +75,7 @@ from qunxue_api.application import (
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
+from qunxue_api.modules.billing import CreditService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
     IdentityError,
@@ -223,6 +226,7 @@ def create_app(
         with resolved_database.session() as session:
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
+            proposals = SqliteResearchDocumentProposalRepository(session)
             yield ResearchDocumentApplication(
                 documents=ResearchDocumentService(
                     repository=SqliteResearchDocumentRepository(session)
@@ -230,6 +234,9 @@ def create_app(
                 research_tasks=SqliteResearchTaskRepository(session),
                 mutations=SqliteResearchDocumentMutationRepository(session),
                 get_theory_plan=match_runs.get_confirmed_plan,
+                get_match_run=match_runs.get,
+                list_proposals_for_task=proposals.list_for_task,
+                list_actionable_proposals_for_task=proposals.list_actionable_for_task,
                 owns_match_run=matching_requests.owns,
             )
 
@@ -245,16 +252,22 @@ def create_app(
             )
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
+            proposal_repository = SqliteResearchDocumentProposalRepository(session)
             document_application = ResearchDocumentApplication(
                 documents=documents,
                 research_tasks=SqliteResearchTaskRepository(session),
                 mutations=SqliteResearchDocumentMutationRepository(session),
                 get_theory_plan=match_runs.get_confirmed_plan,
+                get_match_run=match_runs.get,
+                list_proposals_for_task=proposal_repository.list_for_task,
+                list_actionable_proposals_for_task=(
+                    proposal_repository.list_actionable_for_task
+                ),
                 owns_match_run=matching_requests.owns,
             )
             yield ResearchDocumentProposalApplication(
                 ResearchDocumentProposalService(
-                    repository=SqliteResearchDocumentProposalRepository(session),
+                    repository=proposal_repository,
                     documents=documents,
                     atomic=session.begin_nested,
                     validate_proposal=document_application.validate_proposal,
@@ -282,6 +295,7 @@ def create_app(
             )
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
+            proposal_repository = SqliteResearchDocumentProposalRepository(session)
             descriptor = app.state.model_gateway.descriptor
             matching_service = TheoryMatchingService(
                 evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
@@ -318,10 +332,15 @@ def create_app(
                 research_tasks=task_repository,
                 mutations=SqliteResearchDocumentMutationRepository(session),
                 get_theory_plan=match_runs.get_confirmed_plan,
+                get_match_run=match_runs.get,
+                list_proposals_for_task=proposal_repository.list_for_task,
+                list_actionable_proposals_for_task=(
+                    proposal_repository.list_actionable_for_task
+                ),
                 owns_match_run=matching_requests.owns,
             )
             proposal_service = ResearchDocumentProposalService(
-                repository=SqliteResearchDocumentProposalRepository(session),
+                repository=proposal_repository,
                 documents=document_service,
                 atomic=session.begin_nested,
                 validate_proposal=document_application.validate_proposal,
@@ -355,11 +374,21 @@ def create_app(
                     model=model_name,
                     timeout_seconds=resolved_settings.model_timeout_seconds,
                     extra_headers=_model_headers_from_settings(resolved_settings),
+                    reasoning_effort=resolved_settings.model_reasoning_effort,
                 )
             try:
                 yield DisciplinaryAgentApplication(
                     conversations=conversations,
                     runner=runner,
+                    credits=CreditService(
+                        SqliteCreditRepository(session),
+                        exempt_user_ids=getattr(
+                            app.state,
+                            "credit_exempt_user_ids",
+                            (),
+                        ),
+                    ),
+                    atomic=session.begin_nested,
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         documents=document_application,
@@ -592,6 +621,13 @@ def create_app(
         return JSONResponse(
             status_code=error.status_code,
             content=body.model_dump(mode="json"),
+        )
+
+    if resolved_settings.account_initial_admin_password is not None:
+        install_account_management(
+            app,
+            database=resolved_database,
+            password_hasher=password_hasher,
         )
 
     return app

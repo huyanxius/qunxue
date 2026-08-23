@@ -33,6 +33,39 @@ export type AccountSession = {
   ipAddress: string | null
 }
 
+export type CreditLedgerEntry = {
+  entryId: string
+  kind: 'signup_grant' | 'usage' | 'redemption'
+  points: number
+  balanceAfter: number
+  inputTokens: number
+  outputTokens: number
+  createdAt: string
+}
+
+export type CreditSummary = {
+  balance: number
+  creditLimit: number
+  grantAmount: number
+  isUnlimited: boolean
+  inputTokensPerCredit: number
+  outputTokensPerCredit: number
+  entries: CreditLedgerEntry[]
+  totalEntries: number
+  nextCursor: string | null
+}
+
+export type CreditRedemption = {
+  redeemedPoints: number
+  balance: number
+}
+
+export type CreditRedemptionCodeBatch = {
+  codes: string[]
+  points: number
+  expiresAt: string
+}
+
 export type PersonalDataExport = {
   exportId: string
   status: 'pending' | 'ready' | 'failed' | 'expired'
@@ -87,6 +120,12 @@ export type MutationIntent = {
 
 export type AccountManagementApi = {
   getAccount(): Promise<AccountProfile>
+  getCreditSummary(input?: { cursor?: string; limit?: number }): Promise<CreditSummary>
+  redeemCredits(input: MutationIntent & { code: string }): Promise<CreditRedemption>
+  createCreditRedemptionCodes(input: MutationIntent & {
+    count: number
+    expiresInDays: number
+  }): Promise<CreditRedemptionCodeBatch>
   updateProfile(input: MutationIntent & {
     displayName: string
     expectedVersion: number

@@ -43,7 +43,7 @@ function navigation(resumePath: string) {
 
 function LocationProbe() {
   const location = useLocation()
-  return <output aria-label="当前地址">{location.pathname}</output>
+  return <output aria-label="当前地址">{location.pathname}{location.search}</output>
 }
 
 function StageProbe() {
@@ -56,7 +56,7 @@ function NavigationControls() {
   return (
     <>
       <button type="button" onClick={() => navigate(-1)}>返回上一页</button>
-      <button type="button" onClick={() => navigate('/my')}>打开我的研究</button>
+      <button type="button" onClick={() => navigate('/app?research=all')}>打开全部研究</button>
       <button type="button" onClick={() => navigate('/research/task-1/match')}>重新打开研究</button>
     </>
   )
@@ -68,7 +68,7 @@ function renderNavigationRoute(path: string, initialEntries = [path]) {
     <MemoryRouter initialEntries={initialEntries} initialIndex={initialEntries.length - 1}>
       <QueryClientProvider client={queryClient}>
         <Routes>
-          <Route path="/my" element={<h1>我的研究</h1>} />
+          <Route path="/app" element={<h1>工作台</h1>} />
           <Route
             path="/research/:task_id"
             element={<ResearchTaskNavigationRoute><StageProbe /></ResearchTaskNavigationRoute>}
@@ -107,7 +107,7 @@ describe('ResearchTaskNavigationRoute', () => {
     expect(await screen.findByRole('heading', { name: 'match' })).toBeVisible()
   })
 
-  it('replaces a stale deep link with the server resume path before rendering the stage', async () => {
+  it('keeps an explicit stage route stable instead of jumping to the server resume path', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(
       JSON.stringify(navigation('/research/task-1/match')),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -115,15 +115,15 @@ describe('ResearchTaskNavigationRoute', () => {
 
     renderNavigationRoute(
       '/research/task-1/framework',
-      ['/my', '/research/task-1/framework'],
+      ['/app?research=all', '/research/task-1/framework'],
     )
 
-    expect(await screen.findByRole('heading', { name: 'match' })).toBeVisible()
-    expect(screen.queryByRole('heading', { name: 'framework' })).not.toBeInTheDocument()
-    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/match')
+    expect(await screen.findByRole('heading', { name: 'framework' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'match' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/framework')
 
     fireEvent.click(screen.getByRole('button', { name: '返回上一页' }))
-    expect(await screen.findByRole('heading', { name: '我的研究' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '工作台' })).toBeVisible()
   })
 
   it('resolves the task-only entry through the same server resume path', async () => {
@@ -154,7 +154,7 @@ describe('ResearchTaskNavigationRoute', () => {
 
     const failure = await screen.findByRole('alert')
     expect(failure).toHaveTextContent('研究进度暂时无法恢复')
-    expect(screen.getByRole('link', { name: '返回我的研究' })).toHaveAttribute('href', '/my')
+    expect(screen.getByRole('link', { name: '返回工作台' })).toHaveAttribute('href', '/app?research=all')
     fireEvent.click(screen.getByRole('button', { name: '重试' }))
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'match' })).toBeVisible())
@@ -174,7 +174,7 @@ describe('ResearchTaskNavigationRoute', () => {
     expect(screen.queryByRole('heading', { name: 'match' })).not.toBeInTheDocument()
   })
 
-  it('waits for fresh server navigation when a cached task is reopened from my research', async () => {
+  it('waits for fresh server navigation when a cached task is reopened from the workbench archive', async () => {
     let resolveReopenedNavigation!: (response: Response) => void
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(navigation('/research/task-1/match')), {
@@ -189,8 +189,8 @@ describe('ResearchTaskNavigationRoute', () => {
     renderNavigationRoute('/research/task-1/match')
     expect(await screen.findByRole('heading', { name: 'match' })).toBeVisible()
 
-    fireEvent.click(screen.getByRole('button', { name: '打开我的研究' }))
-    expect(await screen.findByRole('heading', { name: '我的研究' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '打开全部研究' }))
+    expect(await screen.findByRole('heading', { name: '工作台' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '重新打开研究' }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))

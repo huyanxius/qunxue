@@ -4,10 +4,9 @@
   min-height: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 46%, rgb(62 124 177 / 8%), transparent 38%),
-    radial-gradient(circle, rgb(51 64 74 / 9%) 1px, transparent 1px),
-    color-mix(in srgb, var(--paper) 93%, white);
-  background-size: auto, 24px 24px, auto;
+    radial-gradient(circle, rgb(17 17 17 / 5%) 1px, transparent 1px),
+    transparent;
+  background-size: 24px 24px, auto;
 }
 
 .obsidian-knowledge-graph--preview {
@@ -63,34 +62,37 @@
 .obsidian-knowledge-graph__controls {
   position: absolute;
   z-index: 4;
-  top: 16px;
-  right: 18px;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 7px 8px 7px 12px;
-  border: 1px solid rgb(199 211 220 / 82%);
-  border-radius: 10px;
+  gap: 10px;
+  padding: 4px 5px 4px 10px;
+  border: 1px solid var(--app-border, var(--rule));
+  border-radius: 7px;
   color: var(--ink-soft);
-  background: rgb(252 253 254 / 88%);
-  box-shadow: 0 8px 28px rgb(20 40 55 / 8%);
-  font-size: 0.68rem;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 6px 20px rgb(17 17 17 / 5%);
+  font-size: 0.66rem;
   backdrop-filter: blur(12px);
 }
 
-.obsidian-knowledge-graph__controls > div { display: flex; gap: 5px; }
+.obsidian-knowledge-graph__controls > div { display: flex; gap: 2px; }
 
 .obsidian-knowledge-graph__controls button {
-  min-height: 30px;
+  width: 28px;
+  min-height: 28px;
+  display: grid;
+  place-items: center;
   border-color: transparent;
-  padding: 5px 8px;
-  color: var(--accent-dark);
+  padding: 0;
+  color: var(--app-muted, var(--ink-soft));
   background: transparent;
 }
 
 .obsidian-knowledge-graph__controls button:hover {
-  color: var(--ink);
-  background: var(--accent-soft);
+  color: var(--app-ink, var(--ink));
+  background: var(--app-surface, var(--accent-soft));
 }
 
 .obsidian-knowledge-graph__tour-status {
@@ -128,6 +130,54 @@
   font-size: 0.72rem;
   line-height: 1.5;
   backdrop-filter: blur(10px);
+}
+
+.obsidian-knowledge-graph__start {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: min(360px, calc(100% - 48px));
+  display: grid;
+  gap: 7px;
+  color: color-mix(in srgb, var(--app-ink, #111) 76%, transparent);
+  font-family: var(--serif);
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.obsidian-knowledge-graph__start strong {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  line-height: 1.62;
+}
+
+.obsidian-knowledge-graph__start span {
+  color: color-mix(in srgb, var(--app-muted, #6f6f6f) 84%, transparent);
+  font-size: 13px;
+  line-height: 1.62;
+}
+
+.obsidian-knowledge-graph__activation {
+  position: absolute;
+  z-index: 6;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 1px solid rgb(17 17 17 / 76%);
+  border-radius: 50%;
+  background: rgb(17 17 17 / 32%);
+  box-shadow: 0 0 0 6px rgb(17 17 17 / 7%);
+  pointer-events: none;
+  animation: graph-node-activation 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes graph-node-activation {
+  0% { opacity: 0.9; transform: scale(0.45); }
+  48% { opacity: 0.48; }
+  100% { opacity: 0; transform: scale(3.8); }
 }
 
 .obsidian-knowledge-graph__hover {
@@ -184,4 +234,5 @@
   }
 
   .obsidian-knowledge-graph__tour-status i { animation: none; }
+  .obsidian-knowledge-graph__activation { display: none; }
 }

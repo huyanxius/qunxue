@@ -217,7 +217,6 @@ def test_research_map_tool_is_hidden_from_plain_agent_turns() -> None:
 def test_research_prompt_carries_the_persisted_map_into_the_next_turn() -> None:
     prompt = _compose_agent_prompt(
         prompt="还缺什么证据？",
-        conversation="上一轮形成了时间贫困主张。",
         research_map={
             "schema_version": 1,
             "nodes": [_patch()["nodes"][1]],

@@ -18,6 +18,8 @@ class ErrorCode(StrEnum):
     PROVISIONED_ADMINISTRATOR_PROTECTED = "provisioned_administrator_protected"
     PASSWORD_RESET_INVALID = "password_reset_invalid"
     TOKEN_EXPIRED = "token_expired"
+    CREDIT_CODE_UNAVAILABLE = "credit_code_unavailable"
+    CREDIT_CODE_BATCH_CONFLICT = "credit_code_batch_conflict"
     RESEARCH_TASK_NOT_FOUND = "research_task_not_found"
     RESEARCH_START_PROPOSAL_NOT_FOUND = "research_start_proposal_not_found"
     RESEARCH_START_IDEMPOTENCY_CONFLICT = "research_start_idempotency_conflict"

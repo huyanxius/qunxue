@@ -8,7 +8,6 @@ from qunxue_api.modules.knowledge_catalog import (
     KnowledgeCatalog,
     KnowledgeReleaseLevel,
     KnowledgeReleaseRef,
-    KnowledgeUsePurpose,
     SourceRecordSnapshot,
     SourceVerificationStatus,
 )
@@ -36,9 +35,6 @@ class CatalogTheoryEvidenceSource:
     ) -> EvidenceBundleSnapshot:
         if release.level is not KnowledgeReleaseLevel.FINAL:
             raise ValueError("theory recall requires a final MATCH knowledge release")
-        current_release = self._catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
-        if current_release != release:
-            raise ValueError("theory recall requires the current MATCH knowledge release")
 
         selected_profiles = []
         evidence_items = []

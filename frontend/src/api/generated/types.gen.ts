@@ -135,6 +135,16 @@ export type AgentConversationSummaryResponse = {
 };
 
 /**
+ * AgentConversationUpdateRequest
+ */
+export type AgentConversationUpdateRequest = {
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * AgentMessageResponse
  */
 export type AgentMessageResponse = {
@@ -162,6 +172,26 @@ export type AgentMessageResponse = {
      * Sequence
      */
     sequence: number;
+};
+
+/**
+ * AgentResearchJourneyResponse
+ */
+export type AgentResearchJourneyResponse = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    navigation: ResearchTaskNavigationResponse | null;
+    proposal: ResearchStartProposalResponse | null;
+    /**
+     * Status
+     */
+    status: 'collecting' | 'proposal_pending' | 'task_bound';
+    /**
+     * Task Id
+     */
+    task_id: string | null;
 };
 
 /**
@@ -508,6 +538,48 @@ export type ConfirmResearchDocumentRequest = {
      * Expected Version
      */
     expected_version: number;
+};
+
+/**
+ * ConfirmResearchStartRequest
+ */
+export type ConfirmResearchStartRequest = {
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Research Intent
+     */
+    research_intent?: string | null;
+};
+
+/**
+ * ConfirmResearchStartResponse
+ */
+export type ConfirmResearchStartResponse = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    navigation: ResearchTaskNavigationResponse;
+    proposal: ResearchStartProposalResponse;
+    /**
+     * Status
+     */
+    status: 'task_bound';
+    /**
+     * Task Id
+     */
+    task_id: string;
 };
 
 /**
@@ -911,7 +983,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'not_found' | 'method_not_allowed' | 'research_task_not_found' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
@@ -2922,6 +2994,68 @@ export type ResearchDocumentVersionListResponse = {
 };
 
 /**
+ * ResearchStartProposalResponse
+ */
+export type ResearchStartProposalResponse = {
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string | null;
+    /**
+     * Confirmed Task Id
+     */
+    confirmed_task_id: string | null;
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string;
+    /**
+     * Phenomenon
+     */
+    phenomenon: string;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string;
+    /**
+     * Requires User Confirmation
+     */
+    requires_user_confirmation: boolean;
+    /**
+     * Research Intent
+     */
+    research_intent: string | null;
+    /**
+     * Source Run Id
+     */
+    source_run_id: string;
+    /**
+     * Source Turn Id
+     */
+    source_turn_id: string;
+    /**
+     * Status
+     */
+    status: 'pending_confirmation' | 'confirmed';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ResearchTaskAction
  */
 export type ResearchTaskAction = 'submit_phenomenon';
@@ -2951,6 +3085,25 @@ export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed';
 export type ResearchTaskNavigationAction = 'submit_phenomenon' | 'confirm_phenomenon' | 'start_matching' | 'review_theory_candidates' | 'confirm_theory_plan' | 'create_framework' | 'review_framework' | 'confirm_framework' | 'export';
 
 /**
+ * ResearchTaskNavigationBlockerResponse
+ */
+export type ResearchTaskNavigationBlockerResponse = {
+    action?: ResearchTaskNavigationAction | null;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Recoverable
+     */
+    recoverable: boolean;
+};
+
+/**
  * ResearchTaskNavigationResponse
  *
  * Task-scoped aggregate used by `/my` and task-only deep links.
@@ -2964,6 +3117,11 @@ export type ResearchTaskNavigationResponse = {
      * Allowed Actions
      */
     allowed_actions: Array<ResearchTaskNavigationAction>;
+    blocker: ResearchTaskNavigationBlockerResponse | null;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
     /**
      * Created At
      */
@@ -2990,7 +3148,20 @@ export type ResearchTaskNavigationResponse = {
      */
     current_theory_plan_id: string | null;
     entry_type: EntryType;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
+    /**
+     * Next Action Label
+     */
+    next_action_label: string;
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | null;
+    /**
+     * Resume Path
+     */
+    resume_path: string;
+    retry: ResearchTaskNavigationRetryResponse | null;
     /**
      * Seed Theory Id
      */
@@ -2999,6 +3170,18 @@ export type ResearchTaskNavigationResponse = {
      * Seed Theory Name
      */
     seed_theory_name: string | null;
+    /**
+     * Source Run Id
+     */
+    source_run_id: string | null;
+    /**
+     * Source Turn Id
+     */
+    source_turn_id: string | null;
+    /**
+     * Stage Label
+     */
+    stage_label: string;
     status: ResearchTaskLifecycleStatus;
     /**
      * Task Id
@@ -3012,6 +3195,25 @@ export type ResearchTaskNavigationResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * ResearchTaskNavigationRetryResponse
+ */
+export type ResearchTaskNavigationRetryResponse = {
+    action: ResearchTaskNavigationAction;
+    /**
+     * Href
+     */
+    href: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Method
+     */
+    method: 'GET' | 'POST' | 'PATCH';
 };
 
 /**
@@ -4095,6 +4297,50 @@ export type ListAgentConversationsResponses = {
 
 export type ListAgentConversationsResponse = ListAgentConversationsResponses[keyof ListAgentConversationsResponses];
 
+export type DeleteAgentConversationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}';
+};
+
+export type DeleteAgentConversationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type DeleteAgentConversationError = DeleteAgentConversationErrors[keyof DeleteAgentConversationErrors];
+
+export type DeleteAgentConversationResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteAgentConversationResponse = DeleteAgentConversationResponses[keyof DeleteAgentConversationResponses];
+
 export type GetAgentConversationData = {
     body?: never;
     path: {
@@ -4132,6 +4378,174 @@ export type GetAgentConversationResponses = {
 };
 
 export type GetAgentConversationResponse = GetAgentConversationResponses[keyof GetAgentConversationResponses];
+
+export type UpdateAgentConversationData = {
+    body: AgentConversationUpdateRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}';
+};
+
+export type UpdateAgentConversationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateAgentConversationError = UpdateAgentConversationErrors[keyof UpdateAgentConversationErrors];
+
+export type UpdateAgentConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConversationSummaryResponse;
+};
+
+export type UpdateAgentConversationResponse = UpdateAgentConversationResponses[keyof UpdateAgentConversationResponses];
+
+export type GetAgentResearchJourneyData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}/journey';
+};
+
+export type GetAgentResearchJourneyErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetAgentResearchJourneyError = GetAgentResearchJourneyErrors[keyof GetAgentResearchJourneyErrors];
+
+export type GetAgentResearchJourneyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentResearchJourneyResponse;
+};
+
+export type GetAgentResearchJourneyResponse = GetAgentResearchJourneyResponses[keyof GetAgentResearchJourneyResponses];
+
+export type GetAgentResearchStartProposalData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}/research-start-proposal';
+};
+
+export type GetAgentResearchStartProposalErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetAgentResearchStartProposalError = GetAgentResearchStartProposalErrors[keyof GetAgentResearchStartProposalErrors];
+
+export type GetAgentResearchStartProposalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchStartProposalResponse;
+};
+
+export type GetAgentResearchStartProposalResponse = GetAgentResearchStartProposalResponses[keyof GetAgentResearchStartProposalResponses];
+
+export type ConfirmAgentResearchStartData = {
+    body: ConfirmResearchStartRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/agent/research-start-proposals/{proposal_id}/confirm';
+};
+
+export type ConfirmAgentResearchStartErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ConfirmAgentResearchStartError = ConfirmAgentResearchStartErrors[keyof ConfirmAgentResearchStartErrors];
+
+export type ConfirmAgentResearchStartResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConfirmResearchStartResponse;
+};
+
+export type ConfirmAgentResearchStartResponse = ConfirmAgentResearchStartResponses[keyof ConfirmAgentResearchStartResponses];
 
 export type StreamAgentTurnData = {
     body: AgentTurnRequest;

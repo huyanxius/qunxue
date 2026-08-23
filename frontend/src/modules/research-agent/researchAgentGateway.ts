@@ -1,8 +1,10 @@
 import {
   confirmResearchStartProposal as confirmStartProposal,
+  deleteAgentConversation as deleteConversation,
   getAgentConversation as getConversation,
   getResearchStartJourney as getStartJourney,
   listAgentConversations as listConversations,
+  renameAgentConversation as renameConversation,
   streamAgentTurn as streamTurn,
 } from './researchAgentApi'
 import type {
@@ -18,6 +20,14 @@ export function listAgentConversations(signal?: AbortSignal) {
 
 export function getAgentConversation(conversationId: string, signal?: AbortSignal) {
   return getConversation(conversationId, signal) as Promise<AgentConversation>
+}
+
+export function renameAgentConversation(conversationId: string, title: string) {
+  return renameConversation(conversationId, title) as Promise<AgentConversationSummary>
+}
+
+export function deleteAgentConversation(conversationId: string) {
+  return deleteConversation(conversationId)
 }
 
 export function getResearchStartJourney(conversationId: string, signal?: AbortSignal) {

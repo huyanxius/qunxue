@@ -1,7 +1,7 @@
 """add account settings, lifecycle, and administrator storage
 
 Revision ID: 20260822_0001
-Revises: 20260820_0005
+Revises: 20260822_0006
 Create Date: 2026-08-22
 """
 
@@ -11,15 +11,40 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260822_0001"
-down_revision: str | Sequence[str] | None = "20260820_0005"
+down_revision: str | Sequence[str] | None = "20260822_0006"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("role", sa.String(length=16), nullable=True))
-    op.add_column("users", sa.Column("status", sa.String(length=16), nullable=True))
-    op.add_column("users", sa.Column("version", sa.Integer(), nullable=True))
+    sqlite = op.get_bind().dialect.name == "sqlite"
+    op.add_column(
+        "users",
+        sa.Column(
+            "role",
+            sa.String(length=16),
+            nullable=not sqlite,
+            server_default=sa.text("'member'") if sqlite else None,
+        ),
+    )
+    op.add_column(
+        "users",
+        sa.Column(
+            "status",
+            sa.String(length=16),
+            nullable=not sqlite,
+            server_default=sa.text("'active'") if sqlite else None,
+        ),
+    )
+    op.add_column(
+        "users",
+        sa.Column(
+            "version",
+            sa.Integer(),
+            nullable=not sqlite,
+            server_default=sa.text("'1'") if sqlite else None,
+        ),
+    )
     op.add_column(
         "users",
         sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
@@ -37,17 +62,23 @@ def upgrade() -> None:
             last_login_at = created_at
         """
     )
-    with op.batch_alter_table("users") as batch_op:
-        batch_op.alter_column("role", existing_type=sa.String(length=16), nullable=False)
-        batch_op.alter_column("status", existing_type=sa.String(length=16), nullable=False)
-        batch_op.alter_column("version", existing_type=sa.Integer(), nullable=False)
-        batch_op.create_check_constraint("ck_users_role", "role IN ('member', 'admin')")
-        batch_op.create_check_constraint(
-            "ck_users_status",
-            "status IN ('active', 'disabled', 'deactivated')",
-        )
-        batch_op.create_check_constraint("ck_users_version", "version >= 1")
-        batch_op.create_index("ix_users_role_status", ["role", "status"])
+    if sqlite:
+        # Rebuilding users would fire every existing ON DELETE CASCADE path
+        # (tasks, conversations, runs and sessions). SQLite can safely retain
+        # the validated defaults and add the lookup index in place.
+        op.create_index("ix_users_role_status", "users", ["role", "status"])
+    else:
+        with op.batch_alter_table("users") as batch_op:
+            batch_op.alter_column("role", existing_type=sa.String(length=16), nullable=False)
+            batch_op.alter_column("status", existing_type=sa.String(length=16), nullable=False)
+            batch_op.alter_column("version", existing_type=sa.Integer(), nullable=False)
+            batch_op.create_check_constraint("ck_users_role", "role IN ('member', 'admin')")
+            batch_op.create_check_constraint(
+                "ck_users_status",
+                "status IN ('active', 'disabled', 'deactivated')",
+            )
+            batch_op.create_check_constraint("ck_users_version", "version >= 1")
+            batch_op.create_index("ix_users_role_status", ["role", "status"])
 
     op.add_column(
         "user_sessions",
@@ -233,6 +264,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    sqlite = op.get_bind().dialect.name == "sqlite"
     op.drop_index("ix_account_audit_target", table_name="account_audit_events")
     op.drop_index("ix_account_audit_created", table_name="account_audit_events")
     op.drop_table("account_audit_events")
@@ -251,19 +283,32 @@ def downgrade() -> None:
     op.drop_table("user_preferences")
     op.drop_table("account_system_state")
 
-    with op.batch_alter_table("user_sessions") as batch_op:
-        batch_op.drop_column("revoked_reason")
-        batch_op.drop_column("ip_address")
-        batch_op.drop_column("user_agent")
-        batch_op.drop_column("last_seen_at")
+    if sqlite:
+        for column in ("revoked_reason", "ip_address", "user_agent", "last_seen_at"):
+            op.drop_column("user_sessions", column)
+        op.drop_index("ix_users_role_status", table_name="users")
+        for column in (
+            "deactivated_at",
+            "last_login_at",
+            "version",
+            "status",
+            "role",
+        ):
+            op.drop_column("users", column)
+    else:
+        with op.batch_alter_table("user_sessions") as batch_op:
+            batch_op.drop_column("revoked_reason")
+            batch_op.drop_column("ip_address")
+            batch_op.drop_column("user_agent")
+            batch_op.drop_column("last_seen_at")
 
-    with op.batch_alter_table("users") as batch_op:
-        batch_op.drop_index("ix_users_role_status")
-        batch_op.drop_constraint("ck_users_version", type_="check")
-        batch_op.drop_constraint("ck_users_status", type_="check")
-        batch_op.drop_constraint("ck_users_role", type_="check")
-        batch_op.drop_column("deactivated_at")
-        batch_op.drop_column("last_login_at")
-        batch_op.drop_column("version")
-        batch_op.drop_column("status")
-        batch_op.drop_column("role")
+        with op.batch_alter_table("users") as batch_op:
+            batch_op.drop_index("ix_users_role_status")
+            batch_op.drop_constraint("ck_users_version", type_="check")
+            batch_op.drop_constraint("ck_users_status", type_="check")
+            batch_op.drop_constraint("ck_users_role", type_="check")
+            batch_op.drop_column("deactivated_at")
+            batch_op.drop_column("last_login_at")
+            batch_op.drop_column("version")
+            batch_op.drop_column("status")
+            batch_op.drop_column("role")

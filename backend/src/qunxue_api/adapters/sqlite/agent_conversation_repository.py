@@ -89,6 +89,7 @@ class SqliteConversationRepository:
             for row in self._session.scalars(
                 select(AgentRunRow).where(
                     AgentRunRow.conversation_id == str(conversation_id),
+                    AgentRunRow.status == "completed",
                     AgentRunRow.turn_id.is_not(None),
                 )
             )
@@ -135,12 +136,46 @@ class SqliteConversationRepository:
             self.get(user_id=user_id, conversation_id=UUID(row.conversation_id)) for row in rows
         ]
 
+    def rename(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+        updated_at: datetime,
+    ) -> Conversation:
+        row = self._session.scalar(
+            select(AgentConversationRow).where(
+                AgentConversationRow.conversation_id == str(conversation_id),
+                AgentConversationRow.user_id == str(user_id),
+            )
+        )
+        if row is None:
+            raise ConversationNotFound(str(conversation_id))
+        row.title = title
+        row.updated_at = updated_at
+        self._session.flush()
+        return self.get(user_id=user_id, conversation_id=conversation_id)
+
+    def delete(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        row = self._session.scalar(
+            select(AgentConversationRow).where(
+                AgentConversationRow.conversation_id == str(conversation_id),
+                AgentConversationRow.user_id == str(user_id),
+            )
+        )
+        if row is None:
+            raise ConversationNotFound(str(conversation_id))
+        self._session.delete(row)
+        self._session.flush()
+
     def release_ids_by_turn(self, *, conversation_id: UUID) -> dict[UUID, str]:
         return {
             UUID(row.turn_id): row.knowledge_release_id
             for row in self._session.scalars(
                 select(AgentRunRow).where(
                     AgentRunRow.conversation_id == str(conversation_id),
+                    AgentRunRow.status == "completed",
                     AgentRunRow.turn_id.is_not(None),
                     AgentRunRow.knowledge_release_id.is_not(None),
                 )
@@ -215,6 +250,8 @@ class SqliteConversationRepository:
                 existing.completed_at = None
                 existing.started_at = datetime.now(UTC)
                 existing.knowledge_release_id = run.knowledge_release_id
+                existing.provider = run.provider
+                existing.model = run.model
                 existing.turn_id = None
                 self._session.flush()
                 return _run_from_row(existing)
@@ -255,8 +292,8 @@ class SqliteConversationRepository:
                     user_id=str(run.user_id),
                     idempotency_key=run.idempotency_key,
                     status=run.status,
-                    provider="pydantic-ai",
-                    model="knowledge-agent",
+                    provider=run.provider,
+                    model=run.model,
                     knowledge_release_id=run.knowledge_release_id,
                     usage={},
                     tool_summary=[],
@@ -306,6 +343,8 @@ class SqliteConversationRepository:
         error: str | None = None,
         turn_id: UUID | None = None,
         tool_summary: tuple[dict[str, object], ...] = (),
+        provider: str | None = None,
+        model: str | None = None,
     ) -> None:
         row = self._session.get(AgentRunRow, str(run_id))
         if row is None:
@@ -314,6 +353,18 @@ class SqliteConversationRepository:
         row.error = error
         if turn_id is not None:
             row.turn_id = str(turn_id)
+        elif status != "completed":
+            row.turn_id = None
+        if provider is not None:
+            normalized_provider = provider.strip()
+            if not normalized_provider:
+                raise ValueError("Agent provider must not be empty")
+            row.provider = normalized_provider
+        if model is not None:
+            normalized_model = model.strip()
+            if not normalized_model:
+                raise ValueError("Agent model must not be empty")
+            row.model = normalized_model
         row.tool_summary = [dict(item) for item in tool_summary]
         row.completed_at = datetime.now(UTC)
         self._session.flush()
@@ -337,6 +388,8 @@ def _run_from_row(row: AgentRunRow) -> AgentRun:
         user_id=UUID(row.user_id),
         idempotency_key=row.idempotency_key,
         status=row.status,  # type: ignore[arg-type]
+        provider=row.provider,
+        model=row.model,
         knowledge_release_id=row.knowledge_release_id,
         turn_id=UUID(row.turn_id) if row.turn_id else None,
         tool_summary=tuple(dict(item) for item in row.tool_summary),

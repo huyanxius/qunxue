@@ -361,7 +361,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
             <a href="#method">研究方法</a>
             <Link to="/knowledge">知识库</Link>
             {authenticated ? (
-              <Link className="public-navigation__account" to="/my">我的研究</Link>
+              <Link className="public-navigation__account" to="/app">工作台</Link>
             ) : (
               <Link className="public-navigation__account" to="/login">登录</Link>
             )}
@@ -373,7 +373,6 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
         <section className="foundation-hero" aria-labelledby="foundation-title">
           <div className="foundation-hero__inner">
             <div className="foundation-hero__copy">
-              <p className="foundation-kicker"><span>01</span> 社会学理论发现与研究设计</p>
               <h1
                 id="foundation-title"
                 aria-label="从真实困惑、未完成的研究或已有理论框架，找到可研究的问题。"

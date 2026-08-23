@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AccountSettingsPage } from './AccountSettingsPage'
+import { AppLocaleProvider } from '../../i18n/AppLocaleProvider'
 import type {
   AccountManagementApi,
   AccountProfile,
@@ -54,6 +55,23 @@ const sessions: AccountSession[] = [
 function createApi(overrides: Partial<AccountManagementApi> = {}): AccountManagementApi {
   return {
     getAccount: async () => account,
+    getCreditSummary: async () => ({
+      balance: 1200,
+      creditLimit: 3000,
+      grantAmount: 3000,
+      isUnlimited: false,
+      inputTokensPerCredit: 100,
+      outputTokensPerCredit: 25,
+      entries: [],
+      totalEntries: 0,
+      nextCursor: null,
+    }),
+    redeemCredits: async () => ({ redeemedPoints: 3000, balance: 3000 }),
+    createCreditRedemptionCodes: async () => ({
+      codes: [],
+      points: 3000,
+      expiresAt: '2026-09-22T23:59:59Z',
+    }),
     updateProfile: async ({ displayName }) => ({ ...account, displayName, version: 4 }),
     updatePreferences: async (input) => ({
       ...account.preferences,
@@ -102,7 +120,215 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
+function openPartition(name: string) {
+  const navigation = screen.getByRole('navigation', { name: '账户设置分区' })
+  fireEvent.click(within(navigation).getByRole('button', { name }))
+}
+
 describe('AccountSettingsPage', () => {
+  it('shows one settings partition at a time and switches it from the left navigation', async () => {
+    render(<AccountSettingsPage api={createApi()} />)
+
+    expect(await screen.findByRole('heading', { name: '个人资料' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: '使用偏好' })).not.toBeInTheDocument()
+
+    const navigation = screen.getByRole('navigation', { name: '账户设置分区' })
+    fireEvent.click(within(navigation).getByRole('button', { name: '使用偏好' }))
+
+    expect(screen.getByRole('heading', { name: '使用偏好' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: '个人资料' })).not.toBeInTheDocument()
+  })
+
+  it('previews English immediately and persists the locale preference', async () => {
+    const updatePreferences = vi.fn(async (input) => ({
+      ...account.preferences,
+      locale: input.locale,
+      timezone: input.timezone,
+      researchUpdatesEnabled: input.researchUpdatesEnabled,
+      version: 3,
+    }))
+    render(
+      <AppLocaleProvider>
+        <AccountSettingsPage api={createApi({ updatePreferences })} />
+      </AppLocaleProvider>,
+    )
+
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('使用偏好')
+    fireEvent.change(screen.getByLabelText('界面语言'), { target: { value: 'en-US' } })
+
+    expect(screen.getByRole('heading', { name: 'Preferences' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Credits & usage' })).toBeVisible()
+    expect(document.documentElement).toHaveAttribute('lang', 'en')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save preferences' }))
+    await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: 'en-US' }),
+    ))
+  })
+
+  it('loads the credit balance and token ledger inside its own settings partition', async () => {
+    const getCreditSummary = vi.fn(async () => ({
+      balance: 1162,
+      creditLimit: 3000,
+      grantAmount: 3000,
+      isUnlimited: false,
+      inputTokensPerCredit: 100,
+      outputTokensPerCredit: 25,
+      entries: [{
+        entryId: 'entry-1',
+        kind: 'usage' as const,
+        points: -38,
+        balanceAfter: 1162,
+        inputTokens: 600,
+        outputTokens: 800,
+        model: 'deepseek-v4-flash',
+        createdAt: '2026-08-22T06:00:00Z',
+      }],
+      totalEntries: 1,
+      nextCursor: null,
+    }))
+    const api = { ...createApi(), getCreditSummary } as AccountManagementApi
+
+    render(<AccountSettingsPage api={api} />)
+
+    const navigation = await screen.findByRole('navigation', { name: '账户设置分区' })
+    fireEvent.click(within(navigation).getByRole('button', { name: '积分与用量' }))
+
+    expect(getCreditSummary).toHaveBeenCalledOnce()
+    expect(screen.getByText('1,162 / 3,000')).toBeVisible()
+    expect(screen.getByRole('progressbar', { name: '积分余额' })).toHaveAttribute('aria-valuenow', '39')
+    expect(screen.getByText('剩余 39%')).toBeVisible()
+    expect(screen.getByText('600 输入 · 800 输出 token')).toBeVisible()
+    expect(screen.getByText('-38')).toBeVisible()
+    expect(screen.queryByText(/deepseek-v4-flash/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '个人资料' })).not.toBeInTheDocument()
+  })
+
+  it('pages the credit consumption ledger without appending one long list', async () => {
+    const firstEntry = {
+      entryId: 'entry-new',
+      kind: 'usage' as const,
+      points: -20,
+      balanceAfter: 1100,
+      inputTokens: 100,
+      outputTokens: 25,
+      createdAt: '2026-08-23T06:00:00Z',
+    }
+    const olderEntry = {
+      ...firstEntry,
+      entryId: 'entry-old',
+      points: -12,
+      balanceAfter: 1120,
+      createdAt: '2026-08-01T06:00:00Z',
+    }
+    const getCreditSummary = vi.fn(async (input?: { cursor?: string; limit?: number }) => (
+      input?.cursor === '10'
+        ? {
+            balance: 1100,
+            creditLimit: 3000,
+            grantAmount: 3000,
+            isUnlimited: false,
+            inputTokensPerCredit: 100,
+            outputTokensPerCredit: 25,
+            entries: [olderEntry],
+            totalEntries: 11,
+            nextCursor: null,
+          }
+        : {
+            balance: 1100,
+            creditLimit: 3000,
+            grantAmount: 3000,
+            isUnlimited: false,
+            inputTokensPerCredit: 100,
+            outputTokensPerCredit: 25,
+            entries: [firstEntry],
+            totalEntries: 11,
+            nextCursor: '10',
+          }
+    ))
+    render(<AccountSettingsPage api={createApi({ getCreditSummary })} />)
+
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('积分与用量')
+    expect(screen.getByText('-20')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '下一页积分消耗记录' }))
+
+    await waitFor(() => expect(getCreditSummary).toHaveBeenLastCalledWith({
+      cursor: '10',
+      limit: 10,
+    }))
+    expect(await screen.findByText('-12')).toBeVisible()
+    expect(screen.queryByText('-20')).not.toBeInTheDocument()
+    expect(screen.getByText('第 2 页')).toBeVisible()
+  })
+
+  it('redeems one code and refreshes the visible credit balance', async () => {
+    const getCreditSummary = vi.fn()
+      .mockResolvedValueOnce({
+        balance: 1200,
+        creditLimit: 3000,
+        grantAmount: 3000,
+        isUnlimited: false,
+        inputTokensPerCredit: 100,
+        outputTokensPerCredit: 25,
+        entries: [],
+        totalEntries: 0,
+        nextCursor: null,
+      })
+      .mockResolvedValueOnce({
+        balance: 3000,
+        creditLimit: 3000,
+        grantAmount: 3000,
+        isUnlimited: false,
+        inputTokensPerCredit: 100,
+        outputTokensPerCredit: 25,
+        entries: [],
+        totalEntries: 0,
+        nextCursor: null,
+      })
+    const redeemCredits = vi.fn(async () => ({ redeemedPoints: 3000, balance: 3000 }))
+    render(<AccountSettingsPage api={createApi({ getCreditSummary, redeemCredits })} />)
+
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('积分与用量')
+    fireEvent.change(screen.getByLabelText('积分兑换码'), {
+      target: { value: 'QX-7KDM-4XJP-9TWR-P6AC' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '兑换积分' }))
+
+    await waitFor(() => expect(redeemCredits).toHaveBeenCalledWith({
+      code: 'QX-7KDM-4XJP-9TWR-P6AC',
+      idempotencyKey: expect.any(String),
+    }))
+    expect(await screen.findByText('3,000 / 3,000')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent('积分已恢复至 3,000')
+  })
+
+  it('shows an unlimited balance for the provisioned administrator', async () => {
+    const api = createApi({
+      getCreditSummary: async () => ({
+        balance: 3000,
+        creditLimit: 3000,
+        grantAmount: 3000,
+        isUnlimited: true,
+        inputTokensPerCredit: 100,
+        outputTokensPerCredit: 25,
+        entries: [],
+        totalEntries: 0,
+        nextCursor: null,
+      }),
+    })
+
+    render(<AccountSettingsPage api={api} />)
+
+    const navigation = await screen.findByRole('navigation', { name: '账户设置分区' })
+    fireEvent.click(within(navigation).getByRole('button', { name: '积分与用量' }))
+
+    expect(screen.getByText('无限')).toBeVisible()
+    expect(screen.getByText('管理员账户不扣减积分')).toBeVisible()
+  })
+
   it('recovers from a failed load and explains an empty session list', async () => {
     let attempt = 0
     const api = createApi({
@@ -123,14 +349,16 @@ describe('AccountSettingsPage', () => {
 
     expect(await screen.findByRole('heading', { name: '账户设置' })).toBeVisible()
     expect(screen.getByText('lin@example.com')).toBeVisible()
+    openPartition('安全')
     expect(screen.getByText('没有其他活跃会话')).toBeVisible()
   })
 
   it('saves a profile once while the request is pending and keeps versioned input', async () => {
     const update = deferred<AccountProfile>()
     const updateProfile = vi.fn(() => update.promise)
+    const onProfileUpdated = vi.fn()
     const api = createApi({ updateProfile })
-    render(<AccountSettingsPage api={api} />)
+    render(<AccountSettingsPage api={api} onProfileUpdated={onProfileUpdated} />)
 
     const displayName = await screen.findByLabelText('显示名称')
     fireEvent.change(displayName, { target: { value: '林研究员' } })
@@ -149,6 +377,10 @@ describe('AccountSettingsPage', () => {
     update.resolve({ ...account, displayName: '林研究员', version: 4 })
     expect(await screen.findByRole('status')).toHaveTextContent('资料已保存')
     expect(displayName).toHaveValue('林研究员')
+    expect(onProfileUpdated).toHaveBeenCalledWith(expect.objectContaining({
+      displayName: '林研究员',
+      version: 4,
+    }))
   })
 
   it('reuses one mutation key after a network failure for the same user intent', async () => {
@@ -176,6 +408,8 @@ describe('AccountSettingsPage', () => {
     const revokeSession = vi.fn(async () => undefined)
     render(<AccountSettingsPage api={createApi({ revokeSession })} />)
 
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('安全')
     const trigger = await screen.findByRole('button', { name: '撤销 Chrome · Windows 会话' })
     fireEvent.click(trigger)
     const dialog = screen.getByRole('dialog', { name: '撤销这个会话？' })
@@ -199,6 +433,8 @@ describe('AccountSettingsPage', () => {
     const changePassword = vi.fn(async () => ({ revokedSessionCount: 1 }))
     render(<AccountSettingsPage api={createApi({ changePassword })} />)
 
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('安全')
     await screen.findByRole('heading', { name: '安全' })
     fireEvent.change(screen.getByLabelText('当前密码'), {
       target: { value: 'research-passphrase' },
@@ -240,6 +476,8 @@ describe('AccountSettingsPage', () => {
       />,
     )
 
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('数据与隐私')
     const modelSwitch = await screen.findByRole('switch', { name: '允许用于改进模型' })
     expect(modelSwitch).toHaveAttribute('aria-checked', 'false')
     fireEvent.click(modelSwitch)
@@ -260,6 +498,7 @@ describe('AccountSettingsPage', () => {
       '/api/account/data-exports/export-1/download',
     )
 
+    openPartition('账户状态')
     const deleteTrigger = screen.getByRole('button', { name: '永久删除账户' })
     fireEvent.click(deleteTrigger)
     const deleteDialog = screen.getByRole('dialog', { name: '永久删除账户？' })
@@ -287,6 +526,8 @@ describe('AccountSettingsPage', () => {
       getAccount: async () => ({ ...account, role: 'admin', isProtectedAdmin: true }),
     })} />)
 
+    await screen.findByRole('heading', { name: '账户设置' })
+    openPartition('账户状态')
     expect(await screen.findByRole('heading', { name: '部署管理员保护' })).toBeVisible()
     expect(screen.getByText(/不能被降级、停用或删除/)).toBeVisible()
     expect(screen.queryByRole('button', { name: '停用账户' })).not.toBeInTheDocument()

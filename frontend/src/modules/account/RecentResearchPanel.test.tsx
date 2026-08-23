@@ -63,6 +63,44 @@ describe('RecentResearchPanel onboarding', () => {
     expect(screen.queryByText('首次研究引导')).not.toBeInTheDocument()
   })
 
+  it('shows multiple recent research tasks instead of hiding all but the first', async () => {
+    const commonTask = {
+      adopted_theory_count: 0,
+      allowed_actions: ['confirm_phenomenon'],
+      blocker: null,
+      created_at: '2026-08-08T08:00:00Z',
+      current_framework_id: null,
+      current_match_run_id: null,
+      current_material_intake_run_id: null,
+      current_phenomenon_candidate_id: 'candidate-1',
+      current_stage: 'phenomenon_confirmation',
+      entry_type: 'direct',
+      next_action_label: '确认现象',
+      seed_theory_id: null,
+      seed_theory_name: null,
+      retry: null,
+      stage_label: '现象待确认',
+      status: 'active',
+      version: 1,
+    }
+    renderPanel([{
+      ...commonTask,
+      phenomenon_summary: { phenomenon: '同一社区中的互助为何逐渐减少？', research_intent: null },
+      resume_path: '/research/task-1/phenomenon',
+      task_id: 'task-1',
+      updated_at: '2026-08-09T08:00:00Z',
+    }, {
+      ...commonTask,
+      phenomenon_summary: { phenomenon: '平台协作为什么产生隐形劳动？', research_intent: null },
+      resume_path: '/research/task-2/phenomenon',
+      task_id: 'task-2',
+      updated_at: '2026-08-08T08:00:00Z',
+    }])
+
+    expect(await screen.findByText('同一社区中的互助为何逐渐减少？')).toBeVisible()
+    expect(screen.getByText('平台协作为什么产生隐形劳动？')).toBeVisible()
+  })
+
   it('refreshes a cached list when the work home is reopened', async () => {
     const responses = [
       { items: [], next_cursor: null },

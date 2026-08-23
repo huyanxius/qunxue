@@ -38,6 +38,13 @@ const member: AdminUser = {
 function createApi(overrides: Partial<AccountManagementApi> = {}): AccountManagementApi {
   return {
     getAccount: async () => { throw new Error('not used') },
+    getCreditSummary: async () => { throw new Error('not used') },
+    redeemCredits: async () => { throw new Error('not used') },
+    createCreditRedemptionCodes: async () => ({
+      codes: [],
+      points: 3000,
+      expiresAt: '2026-09-22T23:59:59Z',
+    }),
     updateProfile: async () => { throw new Error('not used') },
     updatePreferences: async () => { throw new Error('not used') },
     updateModelDataAuthorization: async () => { throw new Error('not used') },
@@ -77,6 +84,31 @@ function createApi(overrides: Partial<AccountManagementApi> = {}): AccountManage
 }
 
 describe('AdminUsersPage', () => {
+  it('generates a configurable batch of credit redemption codes', async () => {
+    const createCreditRedemptionCodes = vi.fn(async () => ({
+      codes: [
+        'QX-7KDM-4XJP-9TWR-P6AC',
+        'QX-J4NR-W8CY-T2PH-6VKA',
+      ],
+      points: 3000,
+      expiresAt: '2026-09-22T23:59:59Z',
+    }))
+    render(<AdminUsersPage api={createApi({ createCreditRedemptionCodes })} />)
+
+    await screen.findByRole('heading', { name: '用户管理' })
+    fireEvent.change(screen.getByLabelText('生成数量'), { target: { value: '20' } })
+    fireEvent.change(screen.getByLabelText('有效天数'), { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('button', { name: '生成兑换码' }))
+
+    await waitFor(() => expect(createCreditRedemptionCodes).toHaveBeenCalledWith({
+      count: 20,
+      expiresInDays: 30,
+      idempotencyKey: expect.any(String),
+    }))
+    expect(await screen.findByText('QX-7KDM-4XJP-9TWR-P6AC')).toBeVisible()
+    expect(screen.getByText('完整兑换码只显示在这里，请立即复制保存。')).toBeVisible()
+  })
+
   it('marks the fixed administrator and does not expose lifecycle controls for it', async () => {
     render(<AdminUsersPage api={createApi()} />)
 

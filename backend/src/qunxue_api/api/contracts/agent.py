@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from qunxue_api.api.contracts.research_tasks import ResearchTaskNavigationResponse
 from qunxue_api.modules.research_intake import ResearchStartProposal
@@ -60,6 +60,13 @@ class AgentConversationResponse(AgentConversationSummaryResponse):
 
 class AgentConversationListResponse(BaseModel):
     items: list[AgentConversationSummaryResponse]
+
+
+class AgentConversationUpdateRequest(BaseModel):
+    title: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=120),
+    ]
 
 
 class AgentTurnRequest(BaseModel):

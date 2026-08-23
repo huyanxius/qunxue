@@ -14,7 +14,7 @@ type Props = {
   onGenerate: (attempt: M5GenerationAttempt) => Promise<void>
 }
 
-const GENERATION_PROMPT = '基于已确认的理论方案生成一份可审阅的 M5 正式研究框架草稿；所有 Agent 内容只作为待接受建议，不直接覆盖正式文档。'
+const GENERATION_PROMPT = '基于已确认的理论方案生成一份可审阅的 M5 正式研究框架草稿；必须完整包含且仅包含研究问题、研究对象与田野、研究问题或假设、核心概念、理论视角、作用机制、方法论、样本与资料、分析步骤、研究伦理、研究局限、证据缺口 12 个规范章节。所有 Agent 内容只作为待接受建议，不直接覆盖正式文档。'
 
 export function M5GenerationState({ theoryPlanLabel, createIdempotencyKey, onGenerate }: Props) {
   const [state, setState] = useState<'idle' | 'running' | 'failed' | 'succeeded'>('idle')

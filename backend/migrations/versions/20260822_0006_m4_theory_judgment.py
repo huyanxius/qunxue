@@ -1,7 +1,7 @@
 """persist auditable M4 theory review records
 
 Revision ID: 20260822_0006
-Revises: 20260820_0005
+Revises: 20260822_0007_m5
 Create Date: 2026-08-22
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260822_0006"
-down_revision: str | Sequence[str] | None = "20260820_0005"
+down_revision: str | Sequence[str] | None = "20260822_0007_m5"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

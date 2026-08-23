@@ -1,5 +1,8 @@
 """Persist Agent research-start proposals and task provenance."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -9,30 +12,64 @@ branch_labels = None
 depends_on = None
 
 
+@contextmanager
+def _sqlite_batch_foreign_keys_disabled() -> Iterator[None]:
+    """Prevent SQLite batch table swaps from cascading into dependent rows."""
+
+    migration_context = op.get_context()
+    if migration_context.dialect.name != "sqlite":
+        yield
+        return
+    with migration_context.autocommit_block():
+        op.execute(sa.text("PRAGMA foreign_keys=OFF"))
+    try:
+        yield
+    finally:
+        with migration_context.autocommit_block():
+            op.execute(sa.text("PRAGMA foreign_keys=ON"))
+
+
 def upgrade() -> None:
-    with op.batch_alter_table("research_tasks") as batch:
-        batch.add_column(sa.Column("knowledge_release_id", sa.String(128), nullable=True))
-        batch.add_column(sa.Column("conversation_id", sa.String(36), nullable=True))
-        batch.add_column(sa.Column("source_turn_id", sa.String(36), nullable=True))
-        batch.add_column(sa.Column("source_agent_run_id", sa.String(36), nullable=True))
-        batch.create_foreign_key(
-            "fk_research_tasks_conversation",
-            "agent_conversations",
-            ["conversation_id"],
-            ["conversation_id"],
-            ondelete="SET NULL",
-        )
-        batch.create_foreign_key(
-            "fk_research_tasks_agent_run",
-            "agent_runs",
-            ["source_agent_run_id"],
-            ["run_id"],
-            ondelete="SET NULL",
-        )
-        batch.create_unique_constraint(
+    columns = (
+        sa.Column("knowledge_release_id", sa.String(128), nullable=True),
+        sa.Column("conversation_id", sa.String(36), nullable=True),
+        sa.Column("source_turn_id", sa.String(36), nullable=True),
+        sa.Column("source_agent_run_id", sa.String(36), nullable=True),
+    )
+    if op.get_bind().dialect.name == "sqlite":
+        # Rebuilding research_tasks would cascade-delete existing M4/M5 rows.
+        # SQLite can add these nullable columns in place; the unique index keeps
+        # the cross-process conversation binding invariant without data loss.
+        for column in columns:
+            op.add_column("research_tasks", column)
+        op.create_index(
             "uq_research_tasks_conversation",
+            "research_tasks",
             ["conversation_id"],
+            unique=True,
         )
+    else:
+        with op.batch_alter_table("research_tasks") as batch:
+            for column in columns:
+                batch.add_column(column)
+            batch.create_foreign_key(
+                "fk_research_tasks_conversation",
+                "agent_conversations",
+                ["conversation_id"],
+                ["conversation_id"],
+                ondelete="SET NULL",
+            )
+            batch.create_foreign_key(
+                "fk_research_tasks_agent_run",
+                "agent_runs",
+                ["source_agent_run_id"],
+                ["run_id"],
+                ondelete="SET NULL",
+            )
+            batch.create_unique_constraint(
+                "uq_research_tasks_conversation",
+                ["conversation_id"],
+            )
 
     op.create_table(
         "research_start_proposals",
@@ -110,11 +147,21 @@ def downgrade() -> None:
         table_name="research_start_proposals",
     )
     op.drop_table("research_start_proposals")
-    with op.batch_alter_table("research_tasks") as batch:
-        batch.drop_constraint("uq_research_tasks_conversation", type_="unique")
-        batch.drop_constraint("fk_research_tasks_agent_run", type_="foreignkey")
-        batch.drop_constraint("fk_research_tasks_conversation", type_="foreignkey")
-        batch.drop_column("source_agent_run_id")
-        batch.drop_column("source_turn_id")
-        batch.drop_column("conversation_id")
-        batch.drop_column("knowledge_release_id")
+    if op.get_bind().dialect.name == "sqlite":
+        op.drop_index("uq_research_tasks_conversation", table_name="research_tasks")
+        with _sqlite_batch_foreign_keys_disabled(), op.batch_alter_table(
+            "research_tasks"
+        ) as batch:
+            batch.drop_column("source_agent_run_id")
+            batch.drop_column("source_turn_id")
+            batch.drop_column("conversation_id")
+            batch.drop_column("knowledge_release_id")
+    else:
+        with op.batch_alter_table("research_tasks") as batch:
+            batch.drop_constraint("uq_research_tasks_conversation", type_="unique")
+            batch.drop_constraint("fk_research_tasks_agent_run", type_="foreignkey")
+            batch.drop_constraint("fk_research_tasks_conversation", type_="foreignkey")
+            batch.drop_column("source_agent_run_id")
+            batch.drop_column("source_turn_id")
+            batch.drop_column("conversation_id")
+            batch.drop_column("knowledge_release_id")

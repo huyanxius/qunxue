@@ -1,8 +1,10 @@
 export {
   confirmResearchStartProposal,
+  deleteAgentConversation,
   getAgentConversation,
   getResearchStartJourney,
   listAgentConversations,
+  renameAgentConversation,
   streamAgentTurn,
 } from './researchAgentGateway'
 export type {

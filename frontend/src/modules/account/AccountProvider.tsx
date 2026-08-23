@@ -80,9 +80,9 @@ export function AccountProvider({ children }: PropsWithChildren) {
     },
     async logout(onSucceeded) {
       await logoutMutation.mutateAsync()
-      onSucceeded?.()
       setExpired(false)
       queryClient.setQueryData(sessionQueryKey, null)
+      onSucceeded?.()
     },
     retrySession: () => void sessionQuery.refetch(),
   }), [

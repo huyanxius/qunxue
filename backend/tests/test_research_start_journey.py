@@ -6,6 +6,10 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from test_theory_matching_api import (
+    _install_pre_reviewed_release,
+    _patch_all_matches_as_failure,
+)
 
 from qunxue_api.adapters.research_agent.document_tools import ResearchDocumentToolRegistry
 from qunxue_api.adapters.sqlite import (
@@ -16,12 +20,17 @@ from qunxue_api.adapters.sqlite import (
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import KnowledgeReleaseRow
 from qunxue_api.application import DisciplinaryAgentApplication, ResearchStartApplication
 from qunxue_api.bootstrap import create_app
-from qunxue_api.modules.agent_conversation import AgentRunResult, ConversationService
+from qunxue_api.modules.agent_conversation import (
+    AgentRunResult,
+    AgentToolEvent,
+    ConversationService,
+)
 from qunxue_api.modules.knowledge_catalog import KnowledgeReleaseLevel, KnowledgeUsePurpose
 from qunxue_api.modules.research_intake import (
     ResearchStartProposal,
     ResearchStartProposalStatus,
 )
+from qunxue_api.modules.theory_matching import CandidateJudgementRunStatus
 
 
 def _register(client: TestClient, *, email: str | None = None) -> UUID:
@@ -121,6 +130,8 @@ def test_run_turn_finalizes_model_proposal_against_its_persisted_turn() -> None:
     class Runner:
         def run(self, *, prompt, conversation, tools):
             del prompt, conversation
+            assert tools.research_handoff_tools_enabled is True
+            assert tools.research_document_tools_enabled is False
             proposed = tools.propose_start_research(
                 phenomenon="社区成员流动正在改变邻里互助",
                 research_intent="解释互助变化",
@@ -145,7 +156,7 @@ def test_run_turn_finalizes_model_proposal_against_its_persisted_turn() -> None:
         conversation_id=None,
         prompt="我想研究社区互助",
         idempotency_key="research-start-turn",
-        workspace="research",
+        workspace="agent",
     )
 
     assert execution.turn is not None
@@ -153,6 +164,137 @@ def test_run_turn_finalizes_model_proposal_against_its_persisted_turn() -> None:
     assert persisted[0].source_run_id == execution.run_id
     assert persisted[0].source_turn_id == execution.turn.turn_id
     assert not hasattr(registry, "create_confirmed_research_task")
+
+
+def test_plain_agent_persists_start_proposal_with_real_sqlite_registry(
+    client: TestClient,
+) -> None:
+    user_id = _register(client)
+    proposed: dict[str, object] = {}
+
+    class Runner:
+        def run(self, *, prompt, conversation, tools):
+            del prompt, conversation
+            assert tools.research_handoff_tools_enabled is True
+            proposed.update(
+                tools.propose_start_research(
+                    phenomenon="社区成员流动正在改变邻里互助",
+                    research_intent="解释互助关系变化的机制",
+                    context="城市社区",
+                )
+            )
+            return AgentRunResult(
+                answer="这个现象已经可以继续形成一项研究。",
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="test",
+            )
+
+    with client.app.state.disciplinary_agent_scope() as scoped:
+        application = DisciplinaryAgentApplication(
+            conversations=scoped._conversations,
+            runner=Runner(),
+            tools_factory=scoped._tools_factory,
+        )
+        execution = application.run_turn(
+            user_id=user_id,
+            conversation_id=None,
+            prompt="我想继续研究社区互助",
+            idempotency_key="sqlite-plain-agent-handoff",
+            workspace="agent",
+        )
+
+    assert execution.turn is not None
+    restored = client.get(
+        f"/api/agent/conversations/{execution.conversation.conversation_id}/research-start-proposal"
+    )
+    assert restored.status_code == 200
+    assert restored.json()["proposal_id"] == proposed["proposal_id"]
+    assert restored.json()["source_turn_id"] == str(execution.turn.turn_id)
+    assert restored.json()["knowledge_release_id"] == proposed["knowledge_release_id"]
+
+
+def test_failed_start_proposal_does_not_attach_handoff_trace_to_reloaded_turn(
+    client: TestClient,
+) -> None:
+    user_id = _register(client)
+
+    class Tools:
+        release = SimpleNamespace(knowledge_release_id="release-failed-proposal")
+        evidence = {}
+        research_document_tools_enabled = False
+
+        def __init__(self) -> None:
+            self.conversation_id = None
+
+        def enable_research_handoff_tools(self) -> None:
+            return None
+
+        def bind_agent_context(self, **context) -> None:
+            self.conversation_id = context["conversation_id"]
+
+        def finalize_agent_turn(self, *, source_turn_id) -> None:
+            del source_turn_id
+            raise RuntimeError("proposal persistence failed")
+
+    tools = Tools()
+
+    class Runner:
+        def run_stream(self, *, prompt, conversation, tools, on_delta, on_tool_event):
+            del prompt, conversation, tools, on_delta
+            on_tool_event(
+                AgentToolEvent(
+                    tool="propose_start_research",
+                    phase="finished",
+                    call_id="call-failed-proposal",
+                    output={
+                        "proposal_id": "proposal-failed",
+                        "conversation_id": "conversation-failed",
+                        "knowledge_release_id": "release-failed-proposal",
+                        "phenomenon": "社区成员流动正在改变邻里互助",
+                        "status": "pending_confirmation",
+                        "requires_user_confirmation": True,
+                    },
+                )
+            )
+            return AgentRunResult(
+                answer="这段讨论已经可以继续形成研究。",
+                citations=(),
+                release_id="release-failed-proposal",
+                provider="test",
+                model="test",
+            )
+
+    with client.app.state.disciplinary_agent_scope() as scoped:
+        application = DisciplinaryAgentApplication(
+            conversations=scoped._conversations,
+            runner=Runner(),
+            tools_factory=lambda: tools,
+        )
+        with pytest.raises(RuntimeError, match="proposal persistence failed"):
+            application.run_turn(
+                user_id=user_id,
+                conversation_id=None,
+                prompt="我想继续研究社区互助",
+                idempotency_key="failed-start-proposal",
+                workspace="agent",
+                on_delta=lambda _delta: None,
+            )
+
+    assert tools.conversation_id is not None
+    with client.app.state.disciplinary_agent_scope() as reloaded_application:
+        reloaded = reloaded_application.get_conversation(
+            user_id=user_id,
+            conversation_id=tools.conversation_id,
+        )
+        releases = reloaded_application.release_ids_by_turn(
+            user_id=user_id,
+            conversation_id=tools.conversation_id,
+        )
+    assert len(reloaded.turns) == 1
+    assert reloaded.turns[0].tool_summary == ()
+    assert releases == {}
 
 
 def test_completed_agent_turn_persists_a_refreshable_start_proposal(client: TestClient) -> None:
@@ -306,6 +448,7 @@ def test_failed_confirmation_rolls_back_and_can_retry_without_a_duplicate(
 def test_m4_uses_the_task_release_even_after_a_new_release_becomes_current(
     client: TestClient,
 ) -> None:
+    _install_pre_reviewed_release(client)
     user_id = _register(client)
     proposal = _persist_completed_turn_proposal(client, user_id=user_id)
     confirmed = client.post(
@@ -323,7 +466,7 @@ def test_m4_uses_the_task_release_even_after_a_new_release_becomes_current(
                 knowledge_release_id="knowledge-final-after-task-start",
                 level=KnowledgeReleaseLevel.FINAL.value,
                 content_hash="sha256:knowledge-final-after-task-start",
-                build_config_version="test-final-v1",
+                build_config_version="pre-reviewed-theory-release/v1",
                 manifest={
                     "knowledge_ids": [],
                     "relation_ids": [],
@@ -332,7 +475,7 @@ def test_m4_uses_the_task_release_even_after_a_new_release_becomes_current(
                     "review_record_ids": [],
                     "artifact_hashes": [],
                 },
-                is_current=False,
+                is_current=True,
                 built_at=datetime.now(UTC),
             )
         )
@@ -361,7 +504,18 @@ def test_m4_uses_the_task_release_even_after_a_new_release_becomes_current(
 
 def test_agent_workflow_retries_a_no_reliable_candidate_match(
     client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _install_pre_reviewed_release(client)
+    gateway = client.app.state.model_gateway
+    original_judge = gateway.judge_and_rerank
+    _patch_all_matches_as_failure(
+        client,
+        monkeypatch,
+        failure_code="no_reliable_candidate",
+        status=CandidateJudgementRunStatus.INSUFFICIENT_SOURCES,
+        retryable=False,
+    )
     user_id = _register(client)
     proposal = _persist_completed_turn_proposal(client, user_id=user_id)
     confirmed = client.post(
@@ -383,6 +537,7 @@ def test_agent_workflow_retries_a_no_reliable_candidate_match(
     )
     assert first.status_code == 200
     assert first.json()["status"] == "no_reliable_candidate"
+    monkeypatch.setattr(gateway, "judge_and_rerank", original_judge)
 
     with client.app.state.disciplinary_agent_scope() as application:
         tools = application._tools_factory()

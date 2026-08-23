@@ -18,6 +18,9 @@ def test_existing_users_remain_members_with_secondary_model_use_denied(
     monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
     command.upgrade(alembic_config, "20260820_0005")
     user_id = str(uuid4())
+    task_id = str(uuid4())
+    conversation_id = str(uuid4())
+    run_id = str(uuid4())
     now = datetime(2026, 8, 22, tzinfo=UTC)
     engine = create_engine(database_url)
     try:
@@ -36,6 +39,67 @@ def test_existing_users_remain_members_with_secondary_model_use_denied(
                     "user_id": user_id,
                     "email": "legacy@example.com",
                     "password_hash": "legacy-hash",
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO research_tasks (
+                        task_id, user_id, entry_type, status, version,
+                        idempotency_key, adopted_theory_count,
+                        created_at, updated_at
+                    ) VALUES (
+                        :task_id, :user_id, 'direct_input', 'draft', 1,
+                        'legacy-task', 0, :created_at, :updated_at
+                    )
+                    """
+                ),
+                {
+                    "task_id": task_id,
+                    "user_id": user_id,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO agent_conversations (
+                        conversation_id, user_id, title, version,
+                        created_at, updated_at
+                    ) VALUES (
+                        :conversation_id, :user_id, '旧研究对话', 1,
+                        :created_at, :updated_at
+                    )
+                    """
+                ),
+                {
+                    "conversation_id": conversation_id,
+                    "user_id": user_id,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO agent_runs (
+                        run_id, conversation_id, user_id, idempotency_key,
+                        status, provider, model, knowledge_release_id,
+                        usage, tool_summary, started_at, completed_at
+                    ) VALUES (
+                        :run_id, :conversation_id, :user_id, 'legacy-run',
+                        'completed', 'test', 'test', 'release-legacy',
+                        '{}', '[]', :created_at, :updated_at
+                    )
+                    """
+                ),
+                {
+                    "run_id": run_id,
+                    "conversation_id": conversation_id,
+                    "user_id": user_id,
                     "created_at": now,
                     "updated_at": now,
                 },
@@ -63,10 +127,27 @@ def test_existing_users_remain_members_with_secondary_model_use_denied(
                     "FROM account_system_state WHERE singleton_id = 1"
                 )
             ).one()
+            preserved = connection.execute(
+                text(
+                    """
+                    SELECT
+                        (SELECT COUNT(*) FROM research_tasks WHERE task_id = :task_id),
+                        (SELECT COUNT(*) FROM agent_conversations
+                         WHERE conversation_id = :conversation_id),
+                        (SELECT COUNT(*) FROM agent_runs WHERE run_id = :run_id)
+                    """
+                ),
+                {
+                    "task_id": task_id,
+                    "conversation_id": conversation_id,
+                    "run_id": run_id,
+                },
+            ).one()
 
         assert tuple(user) == ("member", "active", 1)
         assert tuple(preference) == (0, "2026-08-secondary-use-v1", 1)
         assert bootstrap.initial_admin_provisioned == 0
+        assert tuple(preserved) == (1, 1, 1)
         assert {
             "account_audit_events",
             "account_mutation_requests",

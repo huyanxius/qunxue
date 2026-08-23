@@ -6,7 +6,11 @@ from hashlib import sha256
 from typing import Protocol
 from uuid import UUID, uuid4
 
-from qunxue_api.modules.knowledge_catalog import KnowledgeCatalog, KnowledgeUsePurpose
+from qunxue_api.modules.knowledge_catalog import (
+    KnowledgeCatalog,
+    KnowledgeReleaseLevel,
+    KnowledgeUsePurpose,
+)
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
     ResearchTask,
@@ -17,6 +21,7 @@ from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
     MatchCompletionBasis,
     MatchRunSnapshot,
+    MatchRunStatus,
     TheoryDecisionCommand,
     TheoryDecisionDraftSnapshot,
     TheoryDecisionSetSnapshot,
@@ -163,7 +168,8 @@ class TheoryMatchingApplication:
                 raise MatchingSnapshotConflict(
                     "Research task is already pinned to another knowledge release."
                 )
-            return pinned
+            if pinned.status is not MatchRunStatus.NO_RELIABLE_CANDIDATE:
+                return pinned
 
         if current_task.knowledge_release_id is not None:
             if (
@@ -198,6 +204,11 @@ class TheoryMatchingApplication:
                 raise MatchingSnapshotConflict(
                     "Knowledge release is not the current match release."
                 )
+
+        if release.level is not KnowledgeReleaseLevel.FINAL:
+            raise MatchingCatalogNotReady(
+                "The research task is not pinned to a pre-reviewed final release."
+            )
 
         match_run = self._matching.start(phenomenon=phenomenon, release=release)
         now = self._clock()

@@ -32,7 +32,7 @@ def test_deterministic_runner_answers_generic_sociology_question_without_tool() 
 
     result = DeterministicKnowledgeRunner().run_stream(
         prompt="怎么解释年轻人越来越孤独？",
-        conversation="",
+        conversation=(),
         tools=tools,
         on_delta=deltas.append,
         on_tool_event=events.append,
@@ -53,7 +53,7 @@ def test_deterministic_runner_does_not_use_fixed_refusal_after_empty_search() ->
 
     result = DeterministicKnowledgeRunner().run(
         prompt="请检索知识库解释符号互动论",
-        conversation="",
+        conversation=(),
         tools=tools,
     )
 
@@ -86,7 +86,7 @@ def test_search_tool_trace_includes_real_result_preview() -> None:
 
     DeterministicKnowledgeRunner().run_stream(
         prompt="请检索知识库解释社会行动四类型",
-        conversation="",
+        conversation=(),
         tools=tools,
         on_delta=lambda _: None,
         on_tool_event=events.append,

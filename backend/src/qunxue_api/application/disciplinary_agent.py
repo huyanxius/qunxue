@@ -1,4 +1,6 @@
+import re
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID, uuid4
@@ -17,6 +19,48 @@ from qunxue_api.modules.agent_conversation import (
     IdempotentTurn,
     RunAlreadyActive,
     SubjectAgentRunner,
+)
+from qunxue_api.modules.billing import CreditService
+
+_PRODUCT_IDENTITY_ANSWER = "我是群学致知的社会学学科 Agent。"
+_RUNTIME_IDENTITY_PATTERNS = (
+    re.compile(
+        r"(?:报告|说出|透露|披露|告诉我|确认|介绍)\s*(?:一下)?\s*"
+        r"(?:你|您)(?:的)?(?:底层)?(?:模型|供应商|提供商|厂商|版本|型号)"
+    ),
+    re.compile(
+        r"(?:你|您)(?:到底)?(?:是|是不是|属于)\s*"
+        r"(?:什么|哪个|哪种|哪款)\s*(?:模型|版本|型号)"
+    ),
+    re.compile(
+        r"(?:你|您)(?:到底)?(?:是|是不是|属于)\s*"
+        r"(?:哪家|哪个|什么)\s*(?:供应商|提供商|厂商|公司)(?:的)?"
+    ),
+    re.compile(
+        r"(?:你|您)(?:到底)?(?:是|是不是)\s*"
+        r"(?:gpt|openai|deepseek|claude|gemini|terra|luna|sol|"
+        r"[a-z0-9]+(?:[-_.][a-z0-9]+)+)\b"
+    ),
+    re.compile(
+        r"(?:你|您)(?:正在)?(?:使用|用|基于|接入|运行于|运行在)(?:的)?\s*"
+        r"(?:什么|哪个|哪种|哪款|哪家)?\s*"
+        r"(?:模型|供应商|提供商|厂商|版本|型号)"
+    ),
+    re.compile(
+        r"(?:你|您)(?:是)?由\s*(?:谁|哪家|哪个|什么)\s*"
+        r"(?:公司|供应商|提供商|厂商)?(?:开发|提供|训练|运行)"
+    ),
+    re.compile(r"(?:你|您)(?:的)?(?:底层)?(?:模型|供应商|提供商|厂商|版本|型号)"),
+    re.compile(
+        r"\b(?:what|which)\s+(?:underlying\s+)?"
+        r"(?:model|provider|vendor|version)\s+(?:are|do)\s+you\b"
+    ),
+    re.compile(
+        r"\b(?:what|which)\s+(?:model|provider|vendor)\s+"
+        r"do\s+you\s+(?:use|run)\b"
+    ),
+    re.compile(r"\byour\s+(?:underlying\s+)?(?:model|provider|vendor|version)\b"),
+    re.compile(r"\b(?:who|what company)\s+(?:made|built|provides|runs)\s+you\b"),
 )
 
 
@@ -39,16 +83,39 @@ class DisciplinaryAgentApplication:
         conversations: ConversationService,
         runner: SubjectAgentRunner,
         tools_factory: Callable[[], AgentToolContext],
+        credits: CreditService | None = None,
+        atomic: Callable[[], AbstractContextManager[object]] | None = None,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
         self._tools_factory = tools_factory
+        self._credits = credits
+        self._atomic = atomic or nullcontext
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
 
     def get_conversation(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
         return self._conversations.get_conversation(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+
+    def rename_conversation(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+    ) -> Conversation:
+        return self._conversations.rename_conversation(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            title=title,
+        )
+
+    def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        self._conversations.delete_conversation(
             user_id=user_id,
             conversation_id=conversation_id,
         )
@@ -113,7 +180,15 @@ class DisciplinaryAgentApplication:
                 conversation_id = existing_run.conversation_id
             elif conversation_id != existing_run.conversation_id:
                 raise ValueError("idempotency key belongs to another conversation")
+        if self._credits is not None:
+            self._credits.ensure_can_start(user_id=user_id)
+            self._conversations.commit()
         tools = self._tools_factory()
+        enable_research_handoff_tools = getattr(
+            tools, "enable_research_handoff_tools", None
+        )
+        if callable(enable_research_handoff_tools):
+            enable_research_handoff_tools()
         if workspace == "research":
             prepare_research_context = getattr(tools, "prepare_research_context", None)
             if callable(prepare_research_context):
@@ -137,6 +212,18 @@ class DisciplinaryAgentApplication:
             provider=runtime_identity.provider,
             model=runtime_identity.model,
         )
+        if self._credits is not None:
+            try:
+                self._credits.reserve(user_id=user_id, run_id=run.run_id)
+                self._conversations.commit()
+            except Exception as error:
+                self._conversations.finish_run(
+                    run_id=run.run_id,
+                    status="failed",
+                    error=str(error),
+                )
+                self._conversations.commit()
+                raise
         current = self.get_conversation(
             user_id=user_id,
             conversation_id=conversation.conversation_id,
@@ -187,6 +274,8 @@ class DisciplinaryAgentApplication:
 
         cancelled = is_cancelled or (lambda: False)
         if cancelled():
+            if self._credits is not None:
+                self._credits.release(user_id=user_id, run_id=run.run_id)
             self._conversations.finish_run(
                 run_id=run.run_id,
                 status="interrupted",
@@ -195,10 +284,7 @@ class DisciplinaryAgentApplication:
             self._conversations.commit()
             raise AgentInterrupted("Agent run was interrupted by the client")
 
-        transcript = "\n".join(
-            f"{item.user_message.content}\n{item.assistant_message.content}"
-            for item in current.turns[-8:]
-        )
+        conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
 
         def record_tool_event(event: AgentToolEvent) -> None:
@@ -207,17 +293,32 @@ class DisciplinaryAgentApplication:
                 on_tool_event(event)
 
         try:
-            stream_runner = getattr(self._runner, "run_stream", None)
-            if on_delta is not None and callable(stream_runner):
-                result = stream_runner(
-                    prompt=prompt,
-                    conversation=transcript,
-                    tools=tools,
-                    on_delta=on_delta,
-                    on_tool_event=record_tool_event,
+            if _asks_about_runtime_identity(prompt):
+                result = AgentRunResult(
+                    answer=_PRODUCT_IDENTITY_ANSWER,
+                    citations=(),
+                    release_id=tools.release.knowledge_release_id,
+                    provider=runtime_identity.provider,
+                    model=runtime_identity.model,
                 )
+                if on_delta is not None:
+                    on_delta(_PRODUCT_IDENTITY_ANSWER)
             else:
-                result = self._runner.run(prompt=prompt, conversation=transcript, tools=tools)
+                stream_runner = getattr(self._runner, "run_stream", None)
+                if on_delta is not None and callable(stream_runner):
+                    result = stream_runner(
+                        prompt=prompt,
+                        conversation=conversation_history,
+                        tools=tools,
+                        on_delta=on_delta,
+                        on_tool_event=record_tool_event,
+                    )
+                else:
+                    result = self._runner.run(
+                        prompt=prompt,
+                        conversation=conversation_history,
+                        tools=tools,
+                    )
             if cancelled():
                 self._conversations.finish_run(
                     run_id=run.run_id,
@@ -228,29 +329,42 @@ class DisciplinaryAgentApplication:
                 raise AgentInterrupted("Agent run was interrupted by the client")
             citations = tuple(_agent_citation(item) for item in result.citations)
             evidence_ids = frozenset(tools.evidence)
-            turn_result = self._conversations.append_turn(
-                user_id=user_id,
-                conversation_id=conversation.conversation_id,
-                idempotency_key=idempotency_key,
-                user_content=prompt,
-                assistant_content=result.answer,
-                citations=citations,
-                evidence_ids=evidence_ids,
-                turn_id=planned_turn_id,
-            )
-            self._conversations.finish_run(
-                run_id=run.run_id,
-                status="completed",
-                turn_id=turn_result.turn_id if isinstance(turn_result, AgentTurn) else None,
-                tool_summary=tuple(_tool_summary(item) for item in tool_events),
-                provider=result.provider,
-                model=result.model,
-            )
-            if isinstance(turn_result, AgentTurn):
-                finalize_agent_turn = getattr(tools, "finalize_agent_turn", None)
-                if callable(finalize_agent_turn):
-                    finalize_agent_turn(source_turn_id=turn_result.turn_id)
+            with self._atomic():
+                turn_result = self._conversations.append_turn(
+                    user_id=user_id,
+                    conversation_id=conversation.conversation_id,
+                    idempotency_key=idempotency_key,
+                    user_content=prompt,
+                    assistant_content=result.answer,
+                    citations=citations,
+                    evidence_ids=evidence_ids,
+                    turn_id=planned_turn_id,
+                )
+                if self._credits is not None:
+                    self._credits.charge(
+                        user_id=user_id,
+                        run_id=run.run_id,
+                        input_tokens=result.input_tokens,
+                        output_tokens=result.output_tokens,
+                        model=result.model,
+                    )
+                self._conversations.finish_run(
+                    run_id=run.run_id,
+                    status="completed",
+                    turn_id=(
+                        turn_result.turn_id if isinstance(turn_result, AgentTurn) else None
+                    ),
+                    tool_summary=tuple(_tool_summary(item) for item in tool_events),
+                    provider=result.provider,
+                    model=result.model,
+                )
+                if isinstance(turn_result, AgentTurn):
+                    finalize_agent_turn = getattr(tools, "finalize_agent_turn", None)
+                    if callable(finalize_agent_turn):
+                        finalize_agent_turn(source_turn_id=turn_result.turn_id)
         except AgentInterrupted:
+            if self._credits is not None:
+                self._credits.release(user_id=user_id, run_id=run.run_id)
             self._conversations.finish_run(
                 run_id=run.run_id,
                 status="interrupted",
@@ -259,6 +373,8 @@ class DisciplinaryAgentApplication:
             self._conversations.commit()
             raise
         except Exception as error:
+            if self._credits is not None:
+                self._credits.release(user_id=user_id, run_id=run.run_id)
             self._conversations.finish_run(
                 run_id=run.run_id,
                 status="failed",
@@ -340,6 +456,11 @@ def _runner_identity(runner: SubjectAgentRunner) -> AgentRuntimeIdentity:
     if not provider or not model:
         raise ValueError("Agent runtime provider and model must not be empty")
     return AgentRuntimeIdentity(provider=provider, model=model)
+
+
+def _asks_about_runtime_identity(prompt: str) -> bool:
+    normalized = " ".join(prompt.lower().split())
+    return any(pattern.search(normalized) for pattern in _RUNTIME_IDENTITY_PATTERNS)
 
 
 def _evidence_from_citation(item):

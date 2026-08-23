@@ -395,6 +395,8 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
   const acknowledgementAttempt = useRef<{ fingerprint: string; key: string } | null>(null)
   const decisionKey = useRef<string | null>(null)
   const confirmKey = useRef<string | null>(null)
+  const restartKey = useRef<string | null>(null)
+  const loadInFlight = useRef<Promise<void> | null>(null)
   const confirmPending = useRef(false)
   const confirmedEmitted = useRef(false)
 
@@ -410,25 +412,50 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
     acknowledgementAttempt.current = null
     decisionKey.current = null
     confirmKey.current = null
+    restartKey.current = null
   }, [])
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
+    if (loadInFlight.current) return loadInFlight.current
+    const attempt = (async () => {
+      setFailure(null)
+      setNotice(null)
+      setOperation(task.matchRunId ? 'loading' : 'starting')
+      try {
+        const next = task.matchRunId
+          ? await gateway.restore({ task })
+          : await gateway.start({ task, idempotencyKey: requestKey('start-match') })
+        adoptWorkspace(next)
+      } catch (reason) {
+        setFailure(failureFrom(reason))
+      } finally {
+        setOperation(null)
+      }
+    })()
+    loadInFlight.current = attempt
+    void attempt.finally(() => {
+      if (loadInFlight.current === attempt) loadInFlight.current = null
+    })
+    return attempt
+  }, [adoptWorkspace, gateway, task])
+
+  useEffect(() => { void load() }, [load])
+
+  const restartMatching = useCallback(async () => {
+    if (operation) return
+    setOperation('starting')
     setFailure(null)
     setNotice(null)
-    setOperation(task.matchRunId ? 'loading' : 'starting')
+    if (!restartKey.current) restartKey.current = requestKey('restart-match')
     try {
-      const next = task.matchRunId
-        ? await gateway.restore({ task })
-        : await gateway.start({ task, idempotencyKey: requestKey('start-match') })
+      const next = await gateway.start({ task, idempotencyKey: restartKey.current })
       adoptWorkspace(next)
     } catch (reason) {
       setFailure(failureFrom(reason))
     } finally {
       setOperation(null)
     }
-  }, [adoptWorkspace, gateway, task])
-
-  useEffect(() => { void load() }, [load])
+  }, [adoptWorkspace, gateway, operation, task])
 
   useEffect(() => {
     if (workspace?.matchRun.status !== 'generating') return
@@ -634,7 +661,7 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
 
       {matchRun.status === 'generating' ? <div className="m4-state" role="status"><span className="m4-state__spinner" aria-hidden="true" /><strong>候选仍在生成</strong><p>页面会自动恢复，中途离开不会丢失进度。</p><button type="button" onClick={() => void load()}>立即刷新</button></div> : null}
 
-      {matchRun.status === 'no_reliable_candidate' ? <div className="m4-state m4-state--empty" role="status"><strong>暂时没有足够可靠的候选理论</strong><p>你可以返回补充现象材料，或稍后重新匹配。</p><button type="button" onClick={() => void load()}>重新检查候选</button></div> : null}
+      {matchRun.status === 'no_reliable_candidate' ? <div className="m4-state m4-state--empty" role="status"><strong>暂时没有足够可靠的候选理论</strong><p>你可以返回补充现象材料，或使用当前预审核版本重新匹配。</p><button type="button" onClick={() => void restartMatching()}>重新检查候选</button></div> : null}
 
       {matchRun.status === 'failed' ? <div className="m4-state m4-state--error" role="alert"><strong>理论判断服务本次未完成</strong><p>没有将未完成的模型结果当作候选。</p><button type="button" onClick={() => void load()}>重试匹配</button></div> : null}
 

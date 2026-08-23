@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { GrainGradient } from '@paper-design/shaders-react'
 
-const workbenchPalette = ['#f8f7f2', '#dde1dd', '#aeb8b2', '#cbbba7']
+const appFramePalette = ['#f8f7f2', '#d6ddd8', '#8f9f97', '#c3ad94']
 
 function usePrefersReducedMotion() {
   const [reducedMotion, setReducedMotion] = useState(() => (
@@ -22,7 +22,7 @@ function usePrefersReducedMotion() {
   return reducedMotion
 }
 
-export function WorkbenchShader() {
+export function AppFrameShader() {
   const reducedMotion = usePrefersReducedMotion()
 
   if (typeof window === 'undefined' || !('WebGL2RenderingContext' in window)) {
@@ -31,17 +31,17 @@ export function WorkbenchShader() {
 
   return (
     <GrainGradient
-      className="work-home__shader-canvas"
+      className="app-frame__shader-canvas"
       colorBack="#f7f7f3"
-      colors={workbenchPalette}
-      softness={0.72}
-      intensity={0.54}
+      colors={appFramePalette}
+      softness={0.64}
+      intensity={0.62}
       noise={0.18}
       shape="wave"
       fit="none"
-      scale={0.76}
+      scale={0.64}
       rotation={344}
-      speed={reducedMotion ? 0 : 0.68}
+      speed={reducedMotion ? 0 : 1.1}
       frame={1200}
       minPixelRatio={1}
       maxPixelCount={960 * 540}

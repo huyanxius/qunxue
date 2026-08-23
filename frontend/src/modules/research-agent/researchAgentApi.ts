@@ -143,6 +143,34 @@ export async function getAgentConversation(
   return await response.json() as AgentConversation
 }
 
+export async function renameAgentConversation(
+  conversationId: string,
+  title: string,
+): Promise<AgentConversationSummary> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/conversations/{conversation_id}',
+    path: { conversation_id: conversationId },
+  }), {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  })
+  if (!response.ok) throw new Error(response.status === 404 ? '这段对话不存在或无权访问。' : '对话名称修改失败')
+  return await response.json() as AgentConversationSummary
+}
+
+export async function deleteAgentConversation(conversationId: string): Promise<void> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/conversations/{conversation_id}',
+    path: { conversation_id: conversationId },
+  }), {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error(response.status === 404 ? '这段对话不存在或无权访问。' : '对话删除失败')
+}
+
 export async function getResearchStartJourney(
   conversationId: string,
   signal?: AbortSignal,

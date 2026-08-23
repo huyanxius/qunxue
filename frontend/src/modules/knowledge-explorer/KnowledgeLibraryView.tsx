@@ -9,6 +9,7 @@ import {
 
 import { KnowledgeCatalog } from './KnowledgeCatalog'
 import { KnowledgeEntryList } from './KnowledgeEntryList'
+import { KnowledgeLibraryShader } from './KnowledgeLibraryShader'
 import type { KnowledgeDirectoryDimension } from './directoryTree'
 import type { KnowledgeEntrySummary } from './types'
 import type { KnowledgeUrlState } from './urlState'
@@ -121,6 +122,7 @@ export function KnowledgeLibraryView({
       data-release-state={releaseState}
       data-dimension-tone={activeDimension ? dimensionTone(activeDimension.nodeId) : undefined}
     >
+      <KnowledgeLibraryShader />
       <aside className="knowledge-library__sidebar">
         <header className="knowledge-library__identity">
           <BooksIcon size={18} weight="regular" aria-hidden="true" />

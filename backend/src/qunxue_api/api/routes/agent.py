@@ -14,6 +14,7 @@ from qunxue_api.api.contracts.agent import (
     AgentConversationListResponse,
     AgentConversationResponse,
     AgentConversationSummaryResponse,
+    AgentConversationUpdateRequest,
     AgentMessageResponse,
     AgentResearchJourneyResponse,
     AgentTurnRequest,
@@ -32,6 +33,7 @@ from qunxue_api.modules.agent_conversation import (
     ConversationNotFound,
     RunAlreadyActive,
 )
+from qunxue_api.modules.billing import CreditRunInProgress, CreditsDepleted
 from qunxue_api.modules.research_intake import ResearchStartProposalStatus
 
 router = APIRouter(
@@ -97,6 +99,46 @@ def get_agent_conversation(
                 user_id=current.user.user_id,
                 conversation_id=conversation_id,
             ),
+        )
+
+
+@router.patch(
+    "/conversations/{conversation_id}",
+    response_model=AgentConversationSummaryResponse,
+    operation_id="update_agent_conversation",
+)
+def update_agent_conversation(
+    conversation_id: UUID,
+    payload: AgentConversationUpdateRequest,
+    request: Request,
+    current: CurrentSessionDependency,
+    _idempotency_key: IdempotencyKey,
+) -> AgentConversationSummaryResponse:
+    with request.app.state.disciplinary_agent_scope() as app:
+        return _summary(
+            app.rename_conversation(
+                user_id=current.user.user_id,
+                conversation_id=conversation_id,
+                title=payload.title,
+            )
+        )
+
+
+@router.delete(
+    "/conversations/{conversation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="delete_agent_conversation",
+)
+def delete_agent_conversation(
+    conversation_id: UUID,
+    request: Request,
+    current: CurrentSessionDependency,
+    _idempotency_key: IdempotencyKey,
+) -> None:
+    with request.app.state.disciplinary_agent_scope() as app:
+        app.delete_conversation(
+            user_id=current.user.user_id,
+            conversation_id=conversation_id,
         )
 
 
@@ -340,6 +382,19 @@ def stream_agent_turn(
             yield _event(
                 "turn_failed",
                 {"code": "run_in_progress", "message": "这段对话正在生成回答，请稍候。"},
+            )
+        except CreditRunInProgress:
+            yield _event(
+                "turn_failed",
+                {"code": "run_in_progress", "message": "当前账户已有一轮对话正在生成，请稍候。"},
+            )
+        except CreditsDepleted:
+            yield _event(
+                "turn_failed",
+                {
+                    "code": "credits_depleted",
+                    "message": "积分不足，请前往账户设置查看用量。",
+                },
             )
         except AgentInterrupted:
             yield _event(

@@ -1,43 +1,27 @@
 import {
-  ArrowClockwiseIcon,
   ArrowUpIcon,
-  BookOpenTextIcon,
-  ChatCircleDotsIcon,
+  CaretRightIcon,
+  CheckIcon,
   CircleNotchIcon,
-  ClockCounterClockwiseIcon,
-  CopyIcon,
-  FileTextIcon,
-  ListIcon,
-  MagnifyingGlassIcon,
-  MapTrifoldIcon,
-  PlusIcon,
-  SidebarSimpleIcon,
-  StopIcon,
   WarningCircleIcon,
-  XCircleIcon,
-  XIcon,
 } from '@phosphor-icons/react'
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 
-import { PageContent, PageShell } from '../ui/PageShell'
-import { ResearchContextRail, ToolDetailDisclosure, type ResearchActivity, type ResearchCitation } from '../research-workspace/ResearchContextRail'
-import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
 import {
   confirmResearchStartProposal,
-  getAgentConversation,
   getResearchStartJourney,
-  listAgentConversations,
-  streamAgentTurn,
-  type AgentCitation,
   type AgentConversation,
-  type AgentConversationSummary,
-  type AgentEvent,
-  type AgentRuntimeMode,
-  type AgentToolStep,
-  type AgentToolTrace,
   type ResearchStartJourney,
   type ResearchStartProposal,
 } from '../../modules/research-agent'
@@ -46,535 +30,56 @@ import {
   type ResearchCanvasProjection,
   type ResearchCanvasStreamingTurn,
 } from '../../modules/research-workspace'
+import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
+import { PageContent, PageShell } from '../ui/PageShell'
+import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
 import './new-research-workspace.css'
 
-const starterQuestions = [
-  '怎么解释年轻人越来越孤独？',
-  '平台算法如何改变年轻人的职业选择？',
-  '一个社会现象背后可能有哪些机制？',
-]
-const MAX_AGENT_MESSAGE_LENGTH = 12000
+const AGENT_PANEL_WIDTH_STORAGE_KEY = 'qunxue.research.agent-panel-width'
+const DEFAULT_AGENT_PANEL_WIDTH = 430
+const MIN_AGENT_PANEL_WIDTH = 320
+const MAX_AGENT_PANEL_WIDTH = 680
+const MIN_RESEARCH_CANVAS_WIDTH = 360
+const AGENT_PANEL_KEYBOARD_STEP = 24
 
-const toolLabels: Record<string, string> = {
-  search_knowledge: '检索知识库',
-  read_knowledge_entry: '读取知识条目',
-  read_sources: '读取来源',
-  browse_knowledge_directory: '浏览知识目录',
-  update_research_map: '组织研究地图',
+function clampAgentPanelWidth(width: number, maxWidth = MAX_AGENT_PANEL_WIDTH) {
+  return Math.round(Math.min(Math.max(width, MIN_AGENT_PANEL_WIDTH), Math.max(MIN_AGENT_PANEL_WIDTH, maxWidth)))
 }
 
-type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answering' | 'error'
-type AgentToolEvent = Extract<AgentEvent, { type: 'tool_started' | 'tool_finished' | 'tool_failed' }>
-type ResearchToolStep = AgentToolStep & { interrupted?: boolean }
-
-const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.research.knowledge-releases.v1'
-const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.research.agent-runtime.v1'
-const RESEARCH_DRAFT_STORAGE_KEY = 'qunxue.research.composer-draft.v1'
-const PENDING_TURN_STORAGE_KEY = 'qunxue.research.pending-turn.v1'
-const knowledgeTools = new Set(['search_knowledge', 'read_knowledge_entry', 'read_sources', 'browse_knowledge_directory'])
-
-type PendingTurnAttempt = {
-  question: string
-  idempotencyKey: string
-  conversationId: string | null
-}
-
-function scopedSessionKey(base: string, userId: string | null) {
-  return userId ? `${base}.${userId}` : null
-}
-
-function readStoredDraft(userId: string | null) {
-  if (typeof window === 'undefined') return ''
+function readStoredAgentPanelWidth() {
+  if (typeof window === 'undefined') return DEFAULT_AGENT_PANEL_WIDTH
   try {
-    const storageKey = scopedSessionKey(RESEARCH_DRAFT_STORAGE_KEY, userId)
-    return storageKey ? window.sessionStorage.getItem(storageKey)?.slice(0, MAX_AGENT_MESSAGE_LENGTH) ?? '' : ''
+    const width = Number(window.localStorage.getItem(AGENT_PANEL_WIDTH_STORAGE_KEY))
+    return Number.isFinite(width) && width > 0 ? clampAgentPanelWidth(width) : DEFAULT_AGENT_PANEL_WIDTH
   } catch {
-    return ''
+    return DEFAULT_AGENT_PANEL_WIDTH
   }
 }
 
-function persistDraft(userId: string | null, value: string) {
-  if (typeof window === 'undefined') return
+function persistAgentPanelWidth(width: number) {
   try {
-    const storageKey = scopedSessionKey(RESEARCH_DRAFT_STORAGE_KEY, userId)
-    if (!storageKey) return
-    if (value) window.sessionStorage.setItem(storageKey, value)
-    else window.sessionStorage.removeItem(storageKey)
+    window.localStorage.setItem(AGENT_PANEL_WIDTH_STORAGE_KEY, String(Math.round(width)))
   } catch {
-    // A disabled storage area only removes refresh recovery; the controlled input still works.
+    // The resize remains available for this session when storage is disabled.
   }
-}
-
-function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
-    if (!storageKey) return null
-    const raw = window.sessionStorage.getItem(storageKey)
-    if (!raw) return null
-    const value = JSON.parse(raw) as Partial<PendingTurnAttempt>
-    if (
-      typeof value.question !== 'string'
-      || !value.question.trim()
-      || value.question.length > MAX_AGENT_MESSAGE_LENGTH
-      || typeof value.idempotencyKey !== 'string'
-      || !value.idempotencyKey
-      || (value.conversationId !== null && typeof value.conversationId !== 'string')
-    ) return null
-    return {
-      question: value.question,
-      idempotencyKey: value.idempotencyKey,
-      conversationId: value.conversationId ?? null,
-    }
-  } catch {
-    return null
-  }
-}
-
-function persistPendingTurnAttempt(userId: string | null, value: PendingTurnAttempt | null) {
-  if (typeof window === 'undefined') return
-  try {
-    const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
-    if (!storageKey) return
-    if (value) window.sessionStorage.setItem(storageKey, JSON.stringify(value))
-    else window.sessionStorage.removeItem(storageKey)
-  } catch {
-    // The server idempotency key still protects an in-process retry when storage is unavailable.
-  }
-}
-
-function readStoredKnowledgeReleases(userId: string | null): Record<string, string> {
-  if (typeof window === 'undefined') return {}
-  try {
-    const storageKey = scopedSessionKey(KNOWLEDGE_RELEASE_STORAGE_KEY, userId)
-    if (!storageKey) return {}
-    const raw = window.sessionStorage.getItem(storageKey)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    const entries = Object.entries(parsed as Record<string, unknown>)
-      .filter((entry): entry is [string, string] => Boolean(entry[0]) && typeof entry[1] === 'string' && Boolean(entry[1].trim()))
-      .slice(-100)
-    return Object.fromEntries(entries)
-  } catch {
-    return {}
-  }
-}
-
-function persistKnowledgeReleases(userId: string | null, releases: Record<string, string>) {
-  if (typeof window === 'undefined') return
-  try {
-    const storageKey = scopedSessionKey(KNOWLEDGE_RELEASE_STORAGE_KEY, userId)
-    if (!storageKey) return
-    window.sessionStorage.setItem(storageKey, JSON.stringify(releases))
-  } catch {
-    // Storage can be disabled by the browser; the URL/query state remains authoritative for this view.
-  }
-}
-
-function readStoredAgentRuntimeModes(userId: string | null): Record<string, AgentRuntimeMode> {
-  if (typeof window === 'undefined') return {}
-  try {
-    const storageKey = scopedSessionKey(AGENT_RUNTIME_STORAGE_KEY, userId)
-    if (!storageKey) return {}
-    const raw = window.sessionStorage.getItem(storageKey)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    const entries = Object.entries(parsed as Record<string, unknown>)
-      .filter((entry): entry is [string, AgentRuntimeMode] => Boolean(entry[0]) && (entry[1] === 'mock' || entry[1] === 'base' || entry[1] === 'sft'))
-      .slice(-100)
-    return Object.fromEntries(entries)
-  } catch {
-    return {}
-  }
-}
-
-function persistAgentRuntimeModes(userId: string | null, modes: Record<string, AgentRuntimeMode>) {
-  if (typeof window === 'undefined') return
-  try {
-    const storageKey = scopedSessionKey(AGENT_RUNTIME_STORAGE_KEY, userId)
-    if (!storageKey) return
-    window.sessionStorage.setItem(storageKey, JSON.stringify(modes))
-  } catch {
-    // The visible badge can fall back to the current SSE event when storage is unavailable.
-  }
-}
-
-function runtimePresentation(mode: AgentRuntimeMode | null) {
-  if (!mode) {
-    return { label: '运行模式待确认', detail: '完成一次 Agent 回合后显示实际运行能力', tone: 'checking' }
-  }
-  if (mode === 'mock') {
-    return { label: '预览 Agent', detail: '当前为可重复的预览提供方，不代表外部模型输出', tone: 'preview' }
-  }
-  if (mode === 'sft') {
-    return { label: 'SFT 模型运行', detail: '回答由已配置的 SFT 模型提供', tone: 'model' }
-  }
-  return { label: '基础模型运行', detail: '回答由已配置的基础模型提供', tone: 'model' }
-}
-
-function formatToolPayload(value: unknown): string | null {
-  if (value === null || value === undefined) return null
-  if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
-  if (Array.isArray(value)) return value.map(formatToolPayload).filter(Boolean).join(' · ') || null
-  if (typeof value === 'object') {
-    return Object.entries(value as Record<string, unknown>)
-      .map(([key, item]) => {
-        const label = formatToolPayload(item)
-        return label ? `${key}: ${label}` : null
-      })
-      .filter(Boolean)
-      .join(' · ') || null
-  }
-  return null
-}
-
-function resultItemsFromOutput(output: unknown): ResearchActivity['resultItems'] {
-  if (!output || typeof output !== 'object' || !Array.isArray((output as { items?: unknown }).items)) return []
-  return ((output as { items: unknown[] }).items).flatMap((item, index) => {
-    if (!item || typeof item !== 'object') return []
-    const value = item as Record<string, unknown>
-    const title = typeof value.title === 'string'
-      ? value.title
-      : typeof value.label === 'string'
-        ? value.label
-        : `结果 ${index + 1}`
-    const excerpt = typeof value.excerpt === 'string'
-      ? value.excerpt
-      : typeof value.content === 'string'
-        ? value.content
-        : null
-    const id = typeof value.knowledge_id === 'string'
-      ? value.knowledge_id
-      : typeof value.id === 'string'
-        ? value.id
-        : `${title}-${index}`
-    return [{ id, title, excerpt }]
-  })
-}
-
-function toActivity(step: ResearchToolStep): ResearchActivity {
-  return {
-    id: step.id,
-    tool: step.tool,
-    label: step.label,
-    status: step.status,
-    interrupted: step.interrupted,
-    input: step.input,
-    detail: step.detail,
-    resultItems: resultItemsFromOutput(step.output),
-  }
-}
-
-function updateToolSteps(steps: ResearchToolStep[], event: AgentToolEvent): ResearchToolStep[] {
-  if (event.type === 'tool_started') {
-    const id = event.call_id || `${event.tool}:${steps.filter((step) => step.tool === event.tool).length + 1}`
-    const next: ResearchToolStep = {
-      id,
-      tool: event.tool,
-      label: toolLabels[event.tool] || '调用学科工具',
-      status: 'running',
-      input: event.input,
-      detail: event.detail,
-    }
-    const existing = steps.findIndex((step) => step.id === id)
-    return existing < 0 ? [...steps, next] : steps.map((step, index) => index === existing ? next : step)
-  }
-
-  const index = event.call_id
-    ? steps.findIndex((step) => step.id === event.call_id)
-    : steps.findLastIndex((step) => step.tool === event.tool && step.status === 'running')
-  const existing = index >= 0 ? steps[index] : undefined
-  const next: ResearchToolStep = {
-    id: existing?.id || event.call_id || `${event.tool}:${steps.length + 1}`,
-    tool: event.tool,
-    label: existing?.label || toolLabels[event.tool] || '调用学科工具',
-    status: event.type === 'tool_failed' ? 'failed' : 'completed',
-    input: existing?.input ?? (event.type === 'tool_failed' ? event.input : undefined),
-    output: event.type === 'tool_finished' ? event.output : existing?.output,
-    detail: event.type === 'tool_failed'
-      ? event.detail || event.message
-      : event.detail || formatToolPayload(event.output),
-  }
-  return index < 0 ? [...steps, next] : steps.map((step, stepIndex) => stepIndex === index ? next : step)
-}
-
-function persistedToolSteps(traces: AgentToolTrace[] | undefined): ResearchToolStep[] {
-  let steps: ResearchToolStep[] = []
-  for (const trace of traces ?? []) {
-    const event: AgentToolEvent = trace.phase === 'started'
-      ? { type: 'tool_started', tool: trace.tool, call_id: trace.call_id, input: trace.input ?? undefined, detail: trace.detail }
-      : trace.phase === 'failed'
-        ? {
-            type: 'tool_failed',
-            tool: trace.tool,
-            call_id: trace.call_id,
-            input: trace.input ?? undefined,
-            message: trace.detail ?? '工具调用失败',
-            error_code: trace.error ?? null,
-            detail: trace.detail,
-          }
-        : { type: 'tool_finished', tool: trace.tool, call_id: trace.call_id, output: trace.output, detail: trace.detail }
-    steps = updateToolSteps(steps, event)
-  }
-  return steps
-}
-
-function attachLocalToolSteps(conversation: AgentConversation, steps: ResearchToolStep[]): AgentConversation {
-  if (!steps.length || !conversation.turns.length) return conversation
-  const lastIndex = conversation.turns.length - 1
-  const lastTurn = conversation.turns[lastIndex]
-  const existingIds = new Set((lastTurn.tool_traces ?? []).map((trace) => trace.call_id))
-  const localTraces: AgentToolTrace[] = steps
-    .filter((step) => !existingIds.has(step.id))
-    .map((step) => ({
-      tool: step.tool,
-      phase: step.status === 'failed' ? 'failed' : 'finished',
-      call_id: step.id,
-      input: step.input && typeof step.input === 'object' && !Array.isArray(step.input)
-        ? step.input as Record<string, unknown>
-        : null,
-      output: step.output,
-      detail: step.detail,
-      error: step.status === 'failed' ? 'tool_failed' : null,
-    }))
-  if (!localTraces.length) return conversation
-  return {
-    ...conversation,
-    turns: conversation.turns.map((turn, index) => index === lastIndex
-      ? { ...turn, tool_traces: [...(turn.tool_traces ?? []), ...localTraces] }
-      : turn),
-  }
-}
-
-function statusLabel(status: AgentPageStatus, projection: ResearchCanvasProjection) {
-  if (status === 'retrieving') return '正在整理知识库活动'
-  if (status === 'answering') return 'Agent 正在生成'
-  if (status === 'thinking') return 'Agent 正在理解问题'
-  if (projection.status === 'ready') return '结构已更新'
-  if (projection.status === 'failed') return '本轮需要重试'
-  if (projection.status === 'interrupted') return '本轮已中断'
-  return '知识库按需调用'
-}
-
-function displayAgentText(value: string) {
-  return value.replace(/\[(?:citation_id:)?(?:knowledge|source):[A-Za-z0-9_.:-]+\]/g, '')
-}
-
-function citationToRail(citation: AgentCitation): ResearchCitation {
-  return {
-    id: citation.citation_id,
-    title: citation.label,
-    kind: citation.kind,
-    subtitle: `${citationKindLabel(citation.kind)}${citation.knowledge_id ? ` · ${citation.knowledge_id}` : ''}`,
-    excerpt: citation.excerpt,
-    knowledgeId: citation.knowledge_id,
-  }
-}
-
-function citationKindLabel(kind: string) {
-  if (kind === 'preview') return '未审核预览'
-  if (kind === 'entry') return '已核验条目'
-  if (kind === 'source') return '来源'
-  if (kind === 'theory') return '理论线索'
-  if (kind === 'directory') return '知识目录'
-  return '证据'
-}
-
-function interruptedSteps(steps: ResearchToolStep[]) {
-  return steps.map((step) => step.status === 'running'
-    ? { ...step, status: 'failed' as const, interrupted: true, detail: '已停止' }
-    : step)
-}
-
-function hasKnowledgeActivity(steps: ResearchToolStep[]) {
-  return steps.some((step) => knowledgeTools.has(step.tool))
-}
-
-function ToolTraceTimeline({ steps, onOpenActivity }: { steps: ResearchToolStep[]; onOpenActivity: () => void }) {
-  if (!steps.length) return null
-  const running = steps.some((step) => step.status === 'running')
-  const interrupted = steps.some((step) => step.interrupted)
-  const failed = steps.some((step) => step.status === 'failed' && !step.interrupted)
-  return (
-    <section className={`new-research__trace${running ? ' is-running' : ''}${failed ? ' is-failed' : ''}${interrupted ? ' is-interrupted' : ''}`} aria-label="Agent 工作过程">
-      <header className="new-research__trace-header">
-        <span className="new-research__trace-mark" aria-hidden="true">{interrupted ? <WarningCircleIcon size={14} /> : <CircleNotchIcon size={14} />}</span>
-        <div><strong>{running ? 'Agent 正在调用工具' : interrupted ? '工具调用已中断' : failed ? '工具调用未完成' : 'Agent 已完成工具调用'}</strong><small>{steps.length} 个实际步骤 · 按需使用知识库</small></div>
-        <button type="button" onClick={onOpenActivity}>查看活动</button>
-      </header>
-      <ol className="new-research__trace-list">
-        {steps.map((step) => (
-          <li key={step.id} className={`new-research__trace-step is-${step.interrupted ? 'interrupted' : step.status}`}>
-            <span className="new-research__trace-dot" aria-hidden="true" />
-            <div>
-              <strong>{step.label}</strong>
-              <small>{step.interrupted ? '已中断' : step.status === 'running' ? '进行中' : step.status === 'failed' ? '失败' : '已完成'}</small>
-              {step.input ? <p>{formatToolPayload(step.input)}</p> : null}
-              {step.detail ? <ToolDetailDisclosure detail={step.detail} className="new-research__trace-detail" /> : null}
-              {resultItemsFromOutput(step.output).map((item) => (
-                <span className="new-research__trace-result" key={item.id}><FileTextIcon size={13} /><b>{item.title}</b></span>
-              ))}
-            </div>
-          </li>
-        ))}
-      </ol>
-    </section>
-  )
-}
-
-function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSelect: (citation: AgentCitation) => void }) {
-  if (!citations.length) return null
-  return (
-    <div className="new-research__sources" aria-label="回答证据">
-      <span className="new-research__sources-label"><BookOpenTextIcon size={14} />依据</span>
-      {citations.map((citation, index) => (
-        <button type="button" key={citation.citation_id} onClick={() => onSelect(citation)} aria-label={`查看证据：${citation.label}`}>
-          <b>{index + 1}</b><span>{citation.label}<small>{citationKindLabel(citation.kind)}</small></span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function AssistantActions({ content, onRegenerate }: { content: string; onRegenerate: () => void }) {
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
-  async function copyAnswer() {
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('clipboard_unavailable')
-      await navigator.clipboard.writeText(content)
-      setCopyState('copied')
-    } catch {
-      setCopyState('failed')
-    }
-    window.setTimeout(() => setCopyState('idle'), 1600)
-  }
-  return (
-    <div className="new-research__assistant-actions">
-      <button type="button" aria-label="复制回答" onClick={() => { void copyAnswer() }}><CopyIcon size={14} />{copyState === 'copied' ? '已复制' : copyState === 'failed' ? '复制失败' : '复制'}</button>
-      <button type="button" aria-label="重新生成" onClick={onRegenerate}><ArrowClockwiseIcon size={14} />重新生成</button>
-    </div>
-  )
-}
-
-function ConversationHistory({
-  conversations,
-  activeConversationId,
-  loading,
-  onOpen,
-  onClose,
-}: {
-  conversations: AgentConversationSummary[]
-  activeConversationId: string | null
-  loading: boolean
-  onOpen: (conversation: AgentConversationSummary) => void
-  onClose: () => void
-}) {
-  const [query, setQuery] = useState('')
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const filtered = conversations.filter((conversation) => conversation.title.toLowerCase().includes(query.trim().toLowerCase()))
-  useEffect(() => {
-    closeButtonRef.current?.focus()
-    const handleEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
-  return (
-    <div className="new-research__history" role="dialog" aria-modal="true" aria-label="研究记录">
-      <header><div><span>研究记录</span><strong>继续一个已有问题</strong></div><button ref={closeButtonRef} type="button" aria-label="关闭研究记录" onClick={onClose}><XIcon size={16} /></button></header>
-      <label className="new-research__history-search"><MagnifyingGlassIcon size={15} /><input aria-label="搜索研究记录" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索问题" /></label>
-      <div className="new-research__history-list">
-        {loading ? <p role="status">正在加载研究记录…</p> : filtered.length ? filtered.map((conversation) => (
-          <button type="button" key={conversation.conversation_id} aria-current={conversation.conversation_id === activeConversationId ? 'true' : undefined} onClick={() => onOpen(conversation)}>
-            <span><strong>{conversation.title}</strong><small>{conversation.turn_count} 轮对话</small></span>
-            <ClockCounterClockwiseIcon size={15} />
-          </button>
-        )) : <p>还没有保存的研究对话。</p>}
-      </div>
-    </div>
-  )
-}
-
-function EmptyConversation({ onStarter }: { onStarter: (question: string) => void }) {
-  return (
-    <div className="new-research__empty-conversation">
-      <div className="new-research__empty-mark"><ChatCircleDotsIcon size={22} /></div>
-      <p className="new-research__eyebrow">对话驱动研究</p>
-      <h1>从一个社会学问题开始</h1>
-      <p className="new-research__empty-lede">把你正在观察的现象说出来。Agent 会判断何时需要知识库，并把本次会话返回的过程整理成一张可以继续追问的研究地图。</p>
-      <div className="new-research__starter-label">你可以这样开始</div>
-      <div className="new-research__starter-list">
-        {starterQuestions.map((question) => <button type="button" key={question} onClick={() => onStarter(question)}>{question}<ArrowUpIcon size={14} /></button>)}
-      </div>
-    </div>
-  )
-}
-
-function AssistantTurn({
-  question,
-  answer,
-  citations,
-  toolSteps,
-  interrupted,
-  failure,
-  streaming,
-  onOpenActivity,
-  onSelectCitation,
-  onRegenerate,
-}: {
-  question: string
-  answer: string
-  citations: AgentCitation[]
-  toolSteps: ResearchToolStep[]
-  interrupted?: boolean
-  failure?: string
-  streaming?: boolean
-  onOpenActivity: () => void
-  onSelectCitation: (citation: AgentCitation) => void
-  onRegenerate?: () => void
-}) {
-  return (
-    <article className={`new-research__turn${streaming ? ' is-streaming' : ''}`}>
-      <div className="new-research__user-message"><span>{question}</span></div>
-      <div className="new-research__assistant-message">
-        <div className="new-research__assistant-label"><span><MapTrifoldIcon size={14} />群学 Agent</span>{streaming ? <em>实时生成</em> : null}</div>
-        <ToolTraceTimeline steps={toolSteps} onOpenActivity={onOpenActivity} />
-        {answer ? <div className="new-research__markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer)}</ReactMarkdown></div> : null}
-        {!answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />Agent 正在组织问题与证据…</p> : null}
-        {interrupted ? <p className="new-research__turn-note is-interrupted"><WarningCircleIcon size={14} />本轮已停止，未保存未完成的回答。</p> : null}
-        {failure ? <p className="new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
-        {(failure || interrupted) && onRegenerate ? <div className="new-research__assistant-actions"><button type="button" aria-label="重试本轮" onClick={onRegenerate}><ArrowClockwiseIcon size={14} />从本轮问题重试</button></div> : null}
-        {!streaming && answer && !citations.length ? <p className="new-research__provenance-note"><WarningCircleIcon size={14} />{hasKnowledgeActivity(toolSteps) ? '本轮调用过知识库，但未返回可展示的来源，请谨慎使用。' : '未调用知识库：这是基于 Agent 推理的工作假设，请要求检索或补充材料后再核验。'}</p> : null}
-        <SourcePills citations={citations} onSelect={onSelectCitation} />
-        {!streaming && answer && onRegenerate ? <AssistantActions content={answer} onRegenerate={onRegenerate} /> : null}
-      </div>
-    </article>
-  )
 }
 
 function ResearchStartProposalCard({
   proposal,
-  busy = false,
+  busy,
   error,
   onConfirm,
   onContinue,
 }: {
   proposal: ResearchStartProposal
-  busy?: boolean
-  error?: string | null
+  busy: boolean
+  error: string | null
   onConfirm: () => void
   onContinue: () => void
 }) {
   return (
     <section className="new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
-      <header>
-        <span>建立研究</span>
-        <strong>请确认 Agent 理解的研究起点</strong>
-      </header>
+      <header><span>建立研究</span><strong>请确认 Agent 理解的研究起点</strong></header>
       <dl>
         <div><dt>现象</dt><dd>{proposal.phenomenon}</dd></div>
         <div><dt>意图</dt><dd>{proposal.researchIntent || '还需要通过对话补充研究意图'}</dd></div>
@@ -583,7 +88,7 @@ function ResearchStartProposalCard({
       {error ? <p className="new-research__start-error" role="alert"><WarningCircleIcon size={14} />{error}</p> : null}
       <div className="new-research__start-actions">
         <button type="button" className={`is-primary${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onConfirm}>
-          {busy ? <><CircleNotchIcon size={14} />正在建立研究…</> : <>{error ? '重试建立研究' : '确认并进入理论匹配'}<ArrowUpIcon size={14} /></>}
+          {busy ? <><CircleNotchIcon size={14} />正在建立研究…</> : <>{error ? '重试建立研究' : '确认研究起点'}<ArrowUpIcon size={14} /></>}
         </button>
         <button type="button" disabled={busy} onClick={onContinue}>{error ? '返回继续修改' : '继续修改'}</button>
       </div>
@@ -591,12 +96,21 @@ function ResearchStartProposalCard({
   )
 }
 
-function ResearchStartRecoveryError({
-  message,
-  busy,
-  onRetry,
-  onContinue,
-}: {
+function ResearchStartReadyCard({ journey, onEnter }: { journey: ResearchStartJourney; onEnter: () => void }) {
+  return (
+    <section className="new-research__start-ready" aria-label="研究已建立">
+      <span className="new-research__start-ready-mark"><CheckIcon size={15} weight="bold" /></span>
+      <div>
+        <small>研究已建立 · 画布梳理中</small>
+        <strong>{journey.proposal?.phenomenon || '当前研究问题'}</strong>
+        <p>继续在左侧整理问题、现象、理论与证据；确认结构清楚后，再展开文档节点。</p>
+      </div>
+      <button type="button" onClick={onEnter}>展开文档节点 <CaretRightIcon size={14} /></button>
+    </section>
+  )
+}
+
+function ResearchStartRecoveryError({ message, busy, onRetry, onContinue }: {
   message: string
   busy: boolean
   onRetry: () => void
@@ -617,563 +131,114 @@ function ResearchStartRecoveryError({
 }
 
 export function NewResearchWorkspacePage({ userId }: { userId: string | null }) {
-  const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = searchParams.get('knowledge_release_id')
-  const seedTheoryName = (
-    location.state && typeof location.state === 'object' && 'seedTheoryName' in location.state
-      && typeof (location.state as { seedTheoryName?: unknown }).seedTheoryName === 'string'
-      ? (location.state as { seedTheoryName: string }).seedTheoryName
-      : undefined
-  )
-  const restoredPendingTurn = useRef<PendingTurnAttempt | null>(readPendingTurnAttempt(userId))
-  const [draft, setDraft] = useState(() => readStoredDraft(userId) || restoredPendingTurn.current?.question || '')
-  const [conversations, setConversations] = useState<AgentConversationSummary[]>([])
-  const [activeConversation, setActiveConversation] = useState<AgentConversation | null>(null)
-  const [knowledgeReleaseByConversationId, setKnowledgeReleaseByConversationId] = useState<Record<string, string>>(() => (
-    requestedConversationId && requestedKnowledgeReleaseId
-      ? { ...readStoredKnowledgeReleases(userId), [requestedConversationId]: requestedKnowledgeReleaseId }
-      : readStoredKnowledgeReleases(userId)
-  ))
-  const [agentRuntimeModeByConversationId, setAgentRuntimeModeByConversationId] = useState<Record<string, AgentRuntimeMode>>(() => readStoredAgentRuntimeModes(userId))
-  const [agentRuntimeMode, setAgentRuntimeMode] = useState<AgentRuntimeMode | null>(() => (
-    requestedConversationId ? readStoredAgentRuntimeModes(userId)[requestedConversationId] ?? null : null
-  ))
-  const [researchStartJourney, setResearchStartJourney] = useState<ResearchStartJourney | null>(null)
-  const [researchStartLoading, setResearchStartLoading] = useState(false)
-  const [researchStartError, setResearchStartError] = useState<string | null>(null)
-  const [researchStartConfirming, setResearchStartConfirming] = useState(false)
+  const [conversation, setConversation] = useState<AgentConversation | null>(null)
   const [streamingTurn, setStreamingTurn] = useState<ResearchCanvasStreamingTurn | null>(null)
-  const [toolStepsByTurnId, setToolStepsByTurnId] = useState<Record<string, ResearchToolStep[]>>({})
-  const [status, setStatus] = useState<AgentPageStatus>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [historyLoading, setHistoryLoading] = useState(true)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [contextOpen, setContextOpen] = useState(false)
-  const [contextTab, setContextTab] = useState<'agent' | 'activity' | 'sources' | 'basis'>('agent')
-  const [selectedCitationId, setSelectedCitationId] = useState<string | null>(null)
+  const [journey, setJourney] = useState<ResearchStartJourney | null>(null)
+  const [journeyLoading, setJourneyLoading] = useState(false)
+  const [journeyError, setJourneyError] = useState<string | null>(null)
+  const [journeyConfirming, setJourneyConfirming] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const streamAbortController = useRef<AbortController | null>(null)
-  const streamGeneration = useRef(0)
-  const conversationLoadAbortController = useRef<AbortController | null>(null)
-  const conversationLoadGeneration = useRef(0)
-  const researchStartConfirmAbortController = useRef<AbortController | null>(null)
-  const researchStartLoadAbortController = useRef<AbortController | null>(null)
-  const pendingToolSteps = useRef<ResearchToolStep[]>([])
-  const failedTurnAttempt = useRef<PendingTurnAttempt | null>(restoredPendingTurn.current)
-  const activeTurnAttempt = useRef<PendingTurnAttempt | null>(null)
-  const pendingConversationId = useRef<string | null>(requestedConversationId ?? restoredPendingTurn.current?.conversationId ?? null)
-  const loadedConversationId = useRef<string | null>(null)
-  const transcriptEndRef = useRef<HTMLDivElement>(null)
-  const composerInputRef = useRef<HTMLTextAreaElement>(null)
+  const [suggestedPrompt, setSuggestedPrompt] = useState<string | null>(null)
+  const [suggestedPromptKey, setSuggestedPromptKey] = useState(0)
+  const [historyRailTarget, setHistoryRailTarget] = useState<HTMLDivElement | null>(null)
+  const journeyAbortController = useRef<AbortController | null>(null)
+  const workspaceRef = useRef<HTMLDivElement>(null)
+  const activeResizePointer = useRef<number | null>(null)
+  const mouseResizeCleanup = useRef<(() => void) | null>(null)
+  const panelWidthRef = useRef(readStoredAgentPanelWidth())
+  const [agentPanelWidth, setAgentPanelWidth] = useState(panelWidthRef.current)
+  const [agentPanelMaxWidth, setAgentPanelMaxWidth] = useState(MAX_AGENT_PANEL_WIDTH)
+  const [resizingAgentPanel, setResizingAgentPanel] = useState(false)
 
-  const closeHistory = useCallback(() => setHistoryOpen(false), [])
-
-  function updateDraft(value: string) {
-    setDraft(value)
-    persistDraft(userId, value)
-  }
-
-  const rememberKnowledgeRelease = useCallback((conversationId: string, releaseId: string) => {
-    if (!conversationId || !releaseId) return
-    setKnowledgeReleaseByConversationId((current) => {
-      const next = { ...current, [conversationId]: releaseId }
-      persistKnowledgeReleases(userId, next)
-      return next
-    })
-  }, [userId])
-
-  const rememberAgentRuntimeMode = useCallback((conversationId: string, mode: AgentRuntimeMode) => {
-    if (!conversationId) return
-    setAgentRuntimeModeByConversationId((current) => {
-      const next = { ...current, [conversationId]: mode }
-      persistAgentRuntimeModes(userId, next)
-      return next
-    })
-  }, [userId])
-
-  const turns = activeConversation?.turns ?? []
-  const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
-  const isBusy = researchStartConfirming || status === 'loading' || canStopGeneration
-  const canSubmit = draft.trim().length > 0 && !isBusy
-  const projection = useMemo(() => projectResearchCanvas({ conversation: activeConversation, streamingTurn }), [activeConversation, streamingTurn])
-
-  const loadConversation = useCallback(async (conversationId: string) => {
-    if (loadedConversationId.current === conversationId && activeConversation?.conversation_id === conversationId) return
-    conversationLoadAbortController.current?.abort()
-    const controller = new AbortController()
-    conversationLoadAbortController.current = controller
-    const requestGeneration = conversationLoadGeneration.current + 1
-    conversationLoadGeneration.current = requestGeneration
-    setError(null)
-    setStatus('loading')
-    setResearchStartJourney(null)
-    setResearchStartLoading(true)
-    setResearchStartError(null)
-    try {
-      const [conversationResult, journeyResult] = await Promise.allSettled([
-        getAgentConversation(conversationId, controller.signal),
-        getResearchStartJourney(conversationId, controller.signal),
-      ])
-      if (controller.signal.aborted || requestGeneration !== conversationLoadGeneration.current) return
-      if (conversationResult.status === 'rejected') throw conversationResult.reason
-      const conversation = conversationResult.value
-      const persistedConversationReleaseId = [...conversation.turns]
-        .reverse()
-        .map((turn) => turn.knowledge_release_id?.trim() || null)
-        .find((releaseId): releaseId is string => Boolean(releaseId)) || null
-      const releaseId = knowledgeReleaseByConversationId[conversationId]
-        || (conversationId === requestedConversationId ? requestedKnowledgeReleaseId : null)
-        || persistedConversationReleaseId
-      setActiveConversation(conversation)
-      setAgentRuntimeMode(agentRuntimeModeByConversationId[conversationId] ?? null)
-      loadedConversationId.current = conversationId
-      if (journeyResult.status === 'fulfilled') {
-        setResearchStartJourney(journeyResult.value)
-        const resumePath = journeyResult.value.taskId
-          ? journeyResult.value.resumePath?.trim()
-          : ''
-        if (resumePath) {
-          navigate(resumePath, { replace: true })
-          return
-        }
-      } else if ((journeyResult.reason as { name?: string } | null)?.name !== 'AbortError') {
-        setResearchStartError('研究建立状态暂时无法恢复。对话已保留，请稍后重试。')
-      }
-      if (releaseId) {
-        rememberKnowledgeRelease(conversationId, releaseId)
-      }
-      setSearchParams((current) => {
-        const next = new URLSearchParams(current)
-        next.set('conversation_id', conversationId)
-        if (releaseId) next.set('knowledge_release_id', releaseId)
-        else next.delete('knowledge_release_id')
-        return next
-      }, { replace: true })
-    } catch {
-      if (controller.signal.aborted || requestGeneration !== conversationLoadGeneration.current) return
-      setError('这段研究记录暂时无法打开。你可以从一个新问题继续。')
-    } finally {
-      if (requestGeneration === conversationLoadGeneration.current && !controller.signal.aborted) setStatus('idle')
-      if (requestGeneration === conversationLoadGeneration.current && !controller.signal.aborted) setResearchStartLoading(false)
-      if (conversationLoadAbortController.current === controller) conversationLoadAbortController.current = null
+  const projection = useMemo<ResearchCanvasProjection>(() => {
+    const projected = projectResearchCanvas({ conversation, streamingTurn })
+    const phenomenon = journey?.proposal?.phenomenon
+    if (!phenomenon || projected.nodes.some((node) => node.kind === 'phenomenon')) return projected
+    const phenomenonId = `research-phenomenon:${journey?.taskId ?? journey?.proposal?.proposalId ?? 'draft'}`
+    const question = projected.nodes.find((node) => node.kind === 'question')
+    return {
+      ...projected,
+      nodes: [...projected.nodes, {
+        id: phenomenonId,
+        kind: 'phenomenon',
+        title: phenomenon,
+        summary: journey?.proposal?.researchIntent || '等待你确认的核心研究现象。',
+        excerpt: journey?.proposal?.context || null,
+        status: journey.taskId ? 'grounded' : 'developing',
+        provenance: 'user',
+        citationIds: [],
+      }],
+      edges: question ? [...projected.edges, { id: `research-phenomenon-edge:${question.id}`, source: question.id, target: phenomenonId, relation: 'refines', label: '聚焦现象' }] : projected.edges,
     }
-  }, [activeConversation?.conversation_id, agentRuntimeModeByConversationId, knowledgeReleaseByConversationId, navigate, rememberKnowledgeRelease, requestedConversationId, requestedKnowledgeReleaseId, setSearchParams])
+  }, [conversation, journey, streamingTurn])
 
-  useEffect(() => {
+  const loadJourney = useCallback(async (conversationId: string) => {
+    journeyAbortController.current?.abort()
     const controller = new AbortController()
-    listAgentConversations(controller.signal)
-      .then((items) => setConversations(items))
-      .catch((cause: unknown) => {
-        if ((cause as { name?: string } | null)?.name === 'AbortError') return
-        if (!controller.signal.aborted) setError('研究记录暂时无法加载，但你仍然可以开始新研究。')
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setHistoryLoading(false)
-      })
-    return () => controller.abort()
+    journeyAbortController.current = controller
+    setJourneyLoading(true)
+    setJourneyError(null)
+    try {
+      const nextJourney = await getResearchStartJourney(conversationId, controller.signal)
+      if (!controller.signal.aborted) setJourney(nextJourney)
+    } catch (cause: unknown) {
+      if (!controller.signal.aborted && (cause as { name?: string } | null)?.name !== 'AbortError') {
+        setJourneyError('研究建立状态暂时无法恢复。对话已保留，请稍后重试。')
+      }
+    } finally {
+      if (!controller.signal.aborted) setJourneyLoading(false)
+    }
   }, [])
 
-  useEffect(() => {
-    if (requestedConversationId) void loadConversation(requestedConversationId)
-  }, [loadConversation, requestedConversationId])
-
-  useEffect(() => {
-    const endpoint = transcriptEndRef.current
-    if (endpoint && typeof endpoint.scrollIntoView === 'function') {
-      endpoint.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }
-  }, [streamingTurn?.answer, turns.length])
-
-  function cancelActiveStream() {
-    streamGeneration.current += 1
-    streamAbortController.current?.abort()
-    streamAbortController.current = null
-    pendingToolSteps.current = []
-    failedTurnAttempt.current = null
-    activeTurnAttempt.current = null
-    persistPendingTurnAttempt(userId, null)
-    setStreamingTurn(null)
-  }
-
-  function prepareConversationSwitch() {
-    cancelActiveStream()
-    conversationLoadAbortController.current?.abort()
-    conversationLoadGeneration.current += 1
-    loadedConversationId.current = null
-    pendingConversationId.current = null
-    setActiveConversation(null)
-    setResearchStartJourney(null)
-    setResearchStartLoading(false)
-    setResearchStartError(null)
-    researchStartConfirmAbortController.current?.abort()
-    researchStartConfirmAbortController.current = null
-    researchStartLoadAbortController.current?.abort()
-    researchStartLoadAbortController.current = null
-    setResearchStartConfirming(false)
-    setAgentRuntimeMode(null)
-    setToolStepsByTurnId({})
-    setSelectedCitationId(null)
-    setSelectedNodeId(null)
-    setContextOpen(false)
-    setContextTab('agent')
-  }
-
-  function openConversation(summary: AgentConversationSummary) {
-    prepareConversationSwitch()
-    setHistoryOpen(false)
+  const syncConversation = useCallback((nextConversation: AgentConversation) => {
+    setConversation(nextConversation)
+    const releaseId = [...nextConversation.turns].reverse().map((turn) => turn.knowledge_release_id?.trim()).find(Boolean) ?? null
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
-      next.set('conversation_id', summary.conversation_id)
-      next.delete('knowledge_release_id')
+      next.set('conversation_id', nextConversation.conversation_id)
+      if (releaseId) next.set('knowledge_release_id', releaseId)
       return next
     }, { replace: true })
-  }
+    void loadJourney(nextConversation.conversation_id)
+  }, [loadJourney, setSearchParams])
 
-  function newConversation() {
-    prepareConversationSwitch()
-    updateDraft('')
-    setError(null)
-    setStatus('idle')
-    setHistoryOpen(false)
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      next.delete('conversation_id')
-      next.delete('knowledge_release_id')
-      return next
-    }, { replace: true })
-  }
-
-  function continueEditingResearchStart() {
-    setResearchStartError(null)
-    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
-  }
-
-  async function retryResearchStartRecovery() {
-    const conversationId = activeConversation?.conversation_id
-    if (!conversationId || researchStartLoading) return
-    const controller = new AbortController()
-    researchStartLoadAbortController.current?.abort()
-    researchStartLoadAbortController.current = controller
-    setResearchStartLoading(true)
-    setResearchStartError(null)
-    try {
-      const journey = await getResearchStartJourney(conversationId, controller.signal)
-      if (controller.signal.aborted || activeConversation?.conversation_id !== journey.conversationId) return
-      setResearchStartJourney(journey)
-      const resumePath = journey.taskId ? journey.resumePath?.trim() : ''
-      if (resumePath) navigate(resumePath, { replace: true })
-    } catch (cause: unknown) {
-      if (controller.signal.aborted) return
-      setResearchStartError(cause instanceof Error
-        ? cause.message
-        : '研究建立状态暂时无法恢复。')
-    } finally {
-      if (researchStartLoadAbortController.current === controller) {
-        researchStartLoadAbortController.current = null
-        setResearchStartLoading(false)
-      }
-    }
-  }
+  useEffect(() => () => journeyAbortController.current?.abort(), [])
+  useEffect(() => () => mouseResizeCleanup.current?.(), [])
 
   async function confirmResearchStart() {
-    const proposal = researchStartJourney?.proposal
-    if (!proposal || proposal.status !== 'pending_confirmation' || researchStartConfirming) return
-    const controller = new AbortController()
-    researchStartConfirmAbortController.current?.abort()
-    researchStartConfirmAbortController.current = controller
-    setResearchStartConfirming(true)
-    setResearchStartError(null)
+    const proposal = journey?.proposal
+    if (!proposal || proposal.status !== 'pending_confirmation' || journeyConfirming) return
+    setJourneyConfirming(true)
+    setJourneyError(null)
     try {
-      const journey = await confirmResearchStartProposal({
+      const confirmed = await confirmResearchStartProposal({
         proposalId: proposal.proposalId,
         expectedVersion: proposal.version,
         phenomenon: proposal.phenomenon,
         researchIntent: proposal.researchIntent,
         context: proposal.context,
         idempotencyKey: `research-start:${proposal.proposalId}`,
-      }, controller.signal)
-      if (controller.signal.aborted) return
-      setResearchStartJourney(journey)
-      const resumePath = journey.resumePath?.trim()
-      if (!journey.taskId || !resumePath) {
-        setResearchStartError('研究已提交，但服务端尚未返回可恢复的下一步。请重试建立研究。')
-        return
-      }
-      updateDraft('')
-      navigate(resumePath, { replace: true })
+      })
+      setJourney(confirmed)
     } catch (cause: unknown) {
-      if (controller.signal.aborted) return
-      setResearchStartError(cause instanceof Error
-        ? cause.message
-        : '研究暂时未能建立，你的内容已保留。')
+      const detail = cause instanceof Error ? cause.message : ''
+      setJourneyError(`研究暂时未能建立，你的内容已保留。${detail ? ` ${detail}` : ''}`)
     } finally {
-      if (researchStartConfirmAbortController.current === controller) {
-        researchStartConfirmAbortController.current = null
-        setResearchStartConfirming(false)
-      }
+      setJourneyConfirming(false)
     }
   }
 
-  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string) {
-    const question = rawQuestion.trim()
-    if (!question || isBusy) return
-    const turnIdempotencyKey = retryIdempotencyKey
-      ?? globalThis.crypto?.randomUUID?.()
-      ?? `research-${Date.now()}`
-    const turnAttempt: PendingTurnAttempt = {
-      question,
-      idempotencyKey: turnIdempotencyKey,
-      conversationId: activeConversation?.conversation_id ?? pendingConversationId.current,
+  function enterDocumentResearch() {
+    const resumePath = journey?.taskId ? journey.resumePath?.trim() : ''
+    if (!resumePath) {
+      setJourneyError('研究已建立，但下一阶段暂时无法打开。请稍后重试恢复研究状态。')
+      return
     }
-    activeTurnAttempt.current = turnAttempt
-    persistPendingTurnAttempt(userId, turnAttempt)
-    failedTurnAttempt.current = null
-    updateDraft('')
-    setError(null)
-    setStatus('thinking')
-    pendingToolSteps.current = []
-    setStreamingTurn({ question, answer: '', citations: [], toolSteps: [], canvasPatches: [] })
-    const abortController = new AbortController()
-    const runGeneration = streamGeneration.current + 1
-    streamGeneration.current = runGeneration
-    streamAbortController.current = abortController
-    try {
-      await streamAgentTurn(
-        {
-          conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
-          message: question,
-          idempotencyKey: turnIdempotencyKey,
-          workspace: 'research',
-        },
-        (event: AgentEvent) => {
-          if (streamGeneration.current !== runGeneration) return
-          if (event.type === 'turn_started') {
-            pendingConversationId.current = event.conversation_id
-            const startedAttempt = {
-              ...turnAttempt,
-              conversationId: event.conversation_id,
-            }
-            activeTurnAttempt.current = startedAttempt
-            persistPendingTurnAttempt(userId, startedAttempt)
-            if (event.runtime_mode) {
-              setAgentRuntimeMode(event.runtime_mode)
-              rememberAgentRuntimeMode(event.conversation_id, event.runtime_mode)
-            }
-            setStatus('thinking')
-          } else if (event.type === 'agent_status') {
-            setStatus(event.status === 'answering' ? 'answering' : 'thinking')
-          } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
-            const next = updateToolSteps(pendingToolSteps.current, event)
-            pendingToolSteps.current = next
-            setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
-            setStreamingTurn((current) => current ? { ...current, toolSteps: next } : current)
-          } else if (event.type === 'assistant_delta') {
-            setStatus('answering')
-            setStreamingTurn((current) => current ? { ...current, answer: current.answer + event.delta } : current)
-          } else if (event.type === 'citation_added') {
-            setStreamingTurn((current) => current ? { ...current, citations: [...current.citations, event.citation] } : current)
-          } else if (event.type === 'canvas_patch') {
-            setStreamingTurn((current) => current
-              ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] }
-              : current)
-          } else if (event.type === 'turn_completed') {
-            failedTurnAttempt.current = null
-            activeTurnAttempt.current = null
-            persistPendingTurnAttempt(userId, null)
-            persistDraft(userId, '')
-            const localToolSteps = pendingToolSteps.current
-            const completedConversation = attachLocalToolSteps(event.conversation, localToolSteps)
-            const completedTurn = completedConversation.turns.at(-1)
-            const releaseId = event.knowledge_release_id.trim()
-            if (releaseId) {
-              rememberKnowledgeRelease(completedConversation.conversation_id, releaseId)
-            }
-            if (completedTurn && localToolSteps.length) {
-              setToolStepsByTurnId((current) => ({ ...current, [completedTurn.turn_id]: localToolSteps }))
-            }
-            pendingToolSteps.current = []
-            setActiveConversation(completedConversation)
-            loadedConversationId.current = completedConversation.conversation_id
-            pendingConversationId.current = completedConversation.conversation_id
-            setConversations((current) => [
-              { conversation_id: completedConversation.conversation_id, title: completedConversation.title, updated_at: completedConversation.updated_at, turn_count: completedConversation.turn_count },
-              ...current.filter((item) => item.conversation_id !== completedConversation.conversation_id),
-            ])
-            setStreamingTurn(null)
-            setStatus('idle')
-            setResearchStartJourney(null)
-            setResearchStartError(null)
-            setResearchStartLoading(true)
-            void getResearchStartJourney(completedConversation.conversation_id, abortController.signal)
-              .then((journey) => {
-                if (streamGeneration.current !== runGeneration || pendingConversationId.current !== journey.conversationId) return
-                setResearchStartJourney(journey)
-                const resumePath = journey.taskId ? journey.resumePath?.trim() : ''
-                if (resumePath) navigate(resumePath, { replace: true })
-              })
-              .catch((cause: unknown) => {
-                if (abortController.signal.aborted || streamGeneration.current !== runGeneration) return
-                if ((cause as { name?: string } | null)?.name === 'AbortError') return
-                setResearchStartError('对话已保存，但研究建立状态暂时无法加载。请稍后重试。')
-              })
-              .finally(() => {
-                if (streamGeneration.current === runGeneration) setResearchStartLoading(false)
-              })
-            setSearchParams((current) => {
-              const next = new URLSearchParams(current)
-              next.set('conversation_id', completedConversation.conversation_id)
-              if (releaseId) next.set('knowledge_release_id', releaseId)
-              return next
-            }, { replace: true })
-          } else if (event.type === 'turn_interrupted') {
-            settleInterruptedTurn()
-          } else if (event.type === 'turn_failed') {
-            const failedAttempt = activeTurnAttempt.current ?? turnAttempt
-            failedTurnAttempt.current = failedAttempt
-            activeTurnAttempt.current = null
-            persistPendingTurnAttempt(userId, failedAttempt)
-            updateDraft(question)
-            setStreamingTurn((current) => current ? { ...current, failure: event.message } : current)
-            setError(event.message)
-            setStatus('error')
-          }
-        },
-        abortController.signal,
-      )
-    } catch (cause: unknown) {
-      if (!abortController.signal.aborted && streamGeneration.current === runGeneration) {
-        const causeMessage = cause instanceof Error ? cause.message : ''
-        const message = causeMessage.includes('完成前中断')
-          ? '连接在回答完成前中断。请重试，这一轮不会伪造回答。'
-          : causeMessage && causeMessage !== 'Agent 暂时无法连接'
-            ? causeMessage
-            : 'Agent 暂时无法连接。请检查模型服务后重试，这一轮不会伪造回答。'
-        const failedAttempt = activeTurnAttempt.current ?? turnAttempt
-        failedTurnAttempt.current = failedAttempt
-        activeTurnAttempt.current = null
-        persistPendingTurnAttempt(userId, failedAttempt)
-        updateDraft(question)
-        setStreamingTurn((current) => current ? { ...current, failure: message } : current)
-        setError(message)
-        setStatus('error')
-      }
-    } finally {
-      if (streamAbortController.current === abortController) streamAbortController.current = null
-    }
-  }
-
-  function submitDraft() {
-    const attempt = failedTurnAttempt.current
-    const normalizedDraft = draft.trim()
-    void submitQuestion(
-      normalizedDraft,
-      attempt?.question === normalizedDraft ? attempt.idempotencyKey : undefined,
-    )
-  }
-
-  function retryFailedTurn(question: string) {
-    const attempt = failedTurnAttempt.current
-    void submitQuestion(question, attempt?.question === question ? attempt.idempotencyKey : undefined)
-  }
-
-  function settleInterruptedTurn() {
-    const attempt = activeTurnAttempt.current
-    if (attempt) {
-      failedTurnAttempt.current = attempt
-      activeTurnAttempt.current = null
-      persistPendingTurnAttempt(userId, attempt)
-      updateDraft(attempt.question)
-    }
-    const next = interruptedSteps(pendingToolSteps.current)
-    pendingToolSteps.current = next
-    setStreamingTurn((current) => current ? { ...current, interrupted: true, toolSteps: next, failure: undefined } : current)
-    setStatus('idle')
-  }
-
-  function stopGeneration() {
-    streamGeneration.current += 1
-    streamAbortController.current?.abort()
-    streamAbortController.current = null
-    settleInterruptedTurn()
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    void submitDraft()
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault()
-      void submitDraft()
-    }
-  }
-
-  const activities = useMemo(() => {
-    const values = [
-      ...turns.flatMap((turn) => toolStepsByTurnId[turn.turn_id] ?? persistedToolSteps(turn.tool_traces)),
-      ...(streamingTurn?.toolSteps ?? []),
-    ]
-    return [...new Map(values.map((step) => [step.id, step])).values()].map(toActivity)
-  }, [streamingTurn?.toolSteps, toolStepsByTurnId, turns])
-
-  const citations = useMemo(() => {
-    const values = [...turns.flatMap((turn) => turn.assistant.citations), ...(streamingTurn?.citations ?? [])]
-    return [...new Map(values.map((citation) => [citation.citation_id, citation])).values()]
-  }, [streamingTurn?.citations, turns])
-
-  const releaseByCitationId = useMemo(() => {
-    const releases: Record<string, string> = {}
-    for (const turn of turns) {
-      const releaseId = turn.knowledge_release_id?.trim()
-      if (!releaseId) continue
-      for (const citation of turn.assistant.citations) {
-        releases[citation.citation_id] = releaseId
-      }
-    }
-    return releases
-  }, [turns])
-
-  const citationsForRail = useMemo(() => citations.map(citationToRail), [citations])
-  const selectedCitation = citations.find((citation) => citation.citation_id === selectedCitationId)
-  const title = activeConversation?.title || (seedTheoryName ? `围绕「${seedTheoryName}」展开研究` : '新的研究')
-  const runtime = runtimePresentation(agentRuntimeMode)
-
-  function knowledgeReleaseForConversation(conversationId: string) {
-    return knowledgeReleaseByConversationId[conversationId]
-      || (conversationId === requestedConversationId ? requestedKnowledgeReleaseId : null)
-  }
-
-  function knowledgeEntryHref(knowledgeId: string, pinnedReleaseId?: string | null): string | null {
-    const conversationId = activeConversation?.conversation_id ?? ''
-    const releaseId = pinnedReleaseId?.trim() || knowledgeReleaseForConversation(conversationId)
-    if (!releaseId) return null
-    const returnParams = new URLSearchParams({ conversation_id: conversationId })
-    returnParams.set('knowledge_release_id', releaseId)
-    const query = new URLSearchParams()
-    query.set('knowledge_release_id', releaseId)
-    query.set('return_to', `${location.pathname}?${returnParams.toString()}`)
-    return `/knowledge/${encodeURIComponent(knowledgeId)}?${query.toString()}`
-  }
-
-  function renderKnowledgeEntryLink(citation: AgentCitation) {
-    if (!citation.knowledge_id) return null
-    const href = knowledgeEntryHref(citation.knowledge_id, releaseByCitationId[citation.citation_id])
-    if (!href) return <span className="new-research__basis-note">当前回合的知识版本尚未确认，暂不提供跳转。</span>
-    return <a href={href}>打开知识条目 <ArrowUpIcon size={13} /></a>
-  }
-
-  function openCitation(citation: AgentCitation) {
-    setSelectedCitationId(citation.citation_id)
-    setContextTab('sources')
-    setContextOpen(true)
-  }
-
-  function selectNode(node: ResearchCanvasProjection['nodes'][number]) {
-    setSelectedNodeId(node.id)
+    navigate(resumePath)
   }
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
@@ -1181,135 +246,168 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     const subject = (node.excerpt || node.title).slice(0, 800)
     const prompt = node.kind === 'question'
       ? `请继续拆解这个研究问题：${node.title}`
-      : node.kind === 'theory'
-        ? `请检验这个理论视角如何解释当前问题，并指出它的边界：${subject}`
-        : node.kind === 'claim'
-          ? `请为这个主张补充真实证据，并检查可能的反例：${subject}`
-          : node.kind === 'evidence'
-            ? `请说明这条证据支持或质疑哪些主张，并更新研究结构：${subject}`
-            : node.kind === 'gap'
-              ? `请优先补齐这个证据缺口；需要时调用知识库工具：${subject}`
-              : `请从这个阶段综合中找出最脆弱的推理，并继续推进：${subject}`
-    updateDraft(prompt)
-    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+      : node.kind === 'phenomenon'
+        ? `请继续澄清这个核心现象的边界、对象和情境：${subject}`
+        : node.kind === 'theory'
+          ? `请检验这个理论视角如何解释当前问题，并指出它的边界：${subject}`
+          : node.kind === 'claim'
+            ? `请为这个主张补充真实证据，并检查可能的反例：${subject}`
+            : node.kind === 'evidence'
+              ? `请说明这条证据支持或质疑哪些主张，并更新研究结构：${subject}`
+              : node.kind === 'gap'
+                ? `请优先补齐这个证据缺口；需要时调用知识库工具：${subject}`
+                : `请从这个节点中找出最脆弱的推理，并继续推进：${subject}`
+    setSuggestedPrompt(prompt)
+    setSuggestedPromptKey((current) => current + 1)
   }
 
+  const availableAgentPanelWidth = useCallback(() => {
+    const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width || window.innerWidth
+    return Math.max(MIN_AGENT_PANEL_WIDTH, Math.min(MAX_AGENT_PANEL_WIDTH, workspaceWidth - MIN_RESEARCH_CANVAS_WIDTH))
+  }, [])
+
+  const updateAgentPanelWidth = useCallback((width: number, persist = false) => {
+    const nextWidth = clampAgentPanelWidth(width, availableAgentPanelWidth())
+    panelWidthRef.current = nextWidth
+    setAgentPanelWidth(nextWidth)
+    if (persist) persistAgentPanelWidth(nextWidth)
+  }, [availableAgentPanelWidth])
+
+  const resizeFromClientX = useCallback((clientX: number) => {
+    const workspace = workspaceRef.current?.getBoundingClientRect()
+    if (workspace?.width) updateAgentPanelWidth(workspace.right - clientX)
+  }, [updateAgentPanelWidth])
+
+  useEffect(() => {
+    const workspace = workspaceRef.current
+    if (!workspace) return
+    const syncBounds = () => {
+      const maxWidth = availableAgentPanelWidth()
+      setAgentPanelMaxWidth(maxWidth)
+      updateAgentPanelWidth(panelWidthRef.current)
+    }
+    syncBounds()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncBounds)
+      return () => window.removeEventListener('resize', syncBounds)
+    }
+    const observer = new ResizeObserver(syncBounds)
+    observer.observe(workspace)
+    return () => observer.disconnect()
+  }, [availableAgentPanelWidth, updateAgentPanelWidth])
+
+  function startPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    activeResizePointer.current = event.pointerId
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setResizingAgentPanel(true)
+  }
+  function movePointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current === event.pointerId) resizeFromClientX(event.clientX)
+  }
+  function finishPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current !== event.pointerId) return
+    activeResizePointer.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    setResizingAgentPanel(false)
+    persistAgentPanelWidth(panelWidthRef.current)
+  }
+  function startMouseResize(event: ReactMouseEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    const targetWindow = event.currentTarget.ownerDocument.defaultView
+    if (!targetWindow) return
+    setResizingAgentPanel(true)
+    const move = (moveEvent: MouseEvent) => resizeFromClientX(moveEvent.clientX)
+    const finish = () => {
+      setResizingAgentPanel(false)
+      persistAgentPanelWidth(panelWidthRef.current)
+      targetWindow.removeEventListener('mousemove', move)
+      targetWindow.removeEventListener('mouseup', finish)
+      mouseResizeCleanup.current = null
+    }
+    mouseResizeCleanup.current = finish
+    targetWindow.addEventListener('mousemove', move)
+    targetWindow.addEventListener('mouseup', finish)
+  }
+  function handleResizeKey(event: KeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? AGENT_PANEL_KEYBOARD_STEP * 2 : AGENT_PANEL_KEYBOARD_STEP
+    const next = event.key === 'ArrowLeft' ? agentPanelWidth + step
+      : event.key === 'ArrowRight' ? agentPanelWidth - step
+        : event.key === 'Home' ? MIN_AGENT_PANEL_WIDTH
+          : event.key === 'End' ? agentPanelMaxWidth
+            : null
+    if (next === null) return
+    event.preventDefault()
+    updateAgentPanelWidth(next, true)
+  }
+
+  const journeyTail = journey?.taskId ? (
+    <ResearchStartReadyCard journey={journey} onEnter={enterDocumentResearch} />
+  ) : journey?.proposal?.status === 'pending_confirmation' ? (
+    <ResearchStartProposalCard
+      proposal={journey.proposal}
+      busy={journeyConfirming}
+      error={journeyError}
+      onConfirm={() => { void confirmResearchStart() }}
+      onContinue={() => setJourneyError(null)}
+    />
+  ) : journeyError ? (
+    <ResearchStartRecoveryError
+      message={journeyError}
+      busy={journeyLoading}
+      onRetry={() => { if (conversation?.conversation_id) void loadJourney(conversation.conversation_id) }}
+      onContinue={() => setJourneyError(null)}
+    />
+  ) : journeyLoading ? <p className="new-research__start-loading" role="status"><CircleNotchIcon size={14} />正在恢复研究建立状态…</p> : null
+
   return (
-    <PageShell workspace wide defaultRailCollapsed>
+    <PageShell workspace wide railContentRef={setHistoryRailTarget}>
       <PageContent>
         <section className="new-research" aria-label="新建研究工作区">
-          <div className="new-research__workspace">
+          <div ref={workspaceRef} className="new-research__workspace" data-resizing={resizingAgentPanel} style={{ '--new-research-agent-width': `${agentPanelWidth}px` } as CSSProperties}>
             <div className="new-research__map-column">
-              <header className="new-research__workspace-bar">
-                <div className="new-research__workspace-title"><span>研究工作区</span><strong>{title}</strong></div>
-                <div className="new-research__workspace-actions">
-                  <span className="new-research__workspace-note"><SidebarSimpleIcon size={14} />对话驱动画布</span>
-                  <button type="button" aria-label="打开研究记录" onClick={() => setHistoryOpen(true)}><ListIcon size={16} />记录</button>
-                  <button type="button" aria-label="开始新研究" onClick={newConversation}><PlusIcon size={16} />新研究</button>
-                </div>
-              </header>
               <ResearchMapCanvas
                 projection={projection}
                 selectedNodeId={selectedNodeId}
-                onSelectNode={selectNode}
+                onSelectNode={(node) => setSelectedNodeId(node.id)}
                 onClearSelection={() => setSelectedNodeId(null)}
                 onContinueNode={continueNode}
-                onOpenCitation={(citationId) => {
-                  const citation = citations.find((item) => item.citation_id === citationId)
-                  if (citation) openCitation(citation)
-                }}
               />
             </div>
-
-            <aside className="new-research__agent-panel" aria-label="研究 Agent 对话栏">
-              <header className="new-research__agent-header">
-                <div className="new-research__agent-heading"><span className="new-research__agent-icon"><MapTrifoldIcon size={17} /></span><div><span>群学 Agent</span><strong>{title}</strong></div></div>
-                <div className="new-research__agent-actions">
-                  <button type="button" aria-label="查看活动" onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                  <button type="button" aria-label="查看来源" onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                  <button type="button" aria-label="打开研究记录" onClick={() => setHistoryOpen(true)}><ClockCounterClockwiseIcon size={16} /></button>
-                </div>
-              </header>
-              <div className="new-research__agent-status"><span className={`new-research__agent-status-dot is-${projection.status}`} /><span>{statusLabel(status, projection)}</span><em className={`is-${runtime.tone}`} title={runtime.detail} aria-label={`运行模式：${runtime.label}。${runtime.detail}`}>{runtime.label}</em></div>
-
-              <main className="new-research__conversation" aria-label="研究对话内容" role="log">
-                {!turns.length && !streamingTurn ? <EmptyConversation onStarter={setDraft} /> : (
-                  <div className="new-research__transcript">
-                    {turns.map((turn) => (
-                      <AssistantTurn
-                        key={turn.turn_id}
-                        question={turn.user.content}
-                        answer={turn.assistant.content}
-                        citations={turn.assistant.citations}
-                        toolSteps={toolStepsByTurnId[turn.turn_id] ?? persistedToolSteps(turn.tool_traces)}
-                        onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
-                        onSelectCitation={openCitation}
-                        onRegenerate={() => { void submitQuestion(turn.user.content) }}
-                      />
-                    ))}
-                    {streamingTurn ? (
-                      <AssistantTurn
-                        question={streamingTurn.question}
-                        answer={streamingTurn.answer}
-                        citations={streamingTurn.citations}
-                        toolSteps={streamingTurn.toolSteps}
-                        interrupted={streamingTurn.interrupted}
-                        failure={streamingTurn.failure}
-                        streaming={canStopGeneration && !streamingTurn.interrupted && !streamingTurn.failure}
-                        onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
-                        onSelectCitation={openCitation}
-                        onRegenerate={() => retryFailedTurn(streamingTurn.question)}
-                      />
-                    ) : null}
-                    {researchStartJourney?.proposal?.status === 'pending_confirmation' ? (
-                      <ResearchStartProposalCard
-                        proposal={researchStartJourney.proposal}
-                        busy={researchStartConfirming}
-                        error={researchStartError}
-                        onConfirm={() => { void confirmResearchStart() }}
-                        onContinue={continueEditingResearchStart}
-                      />
-                    ) : researchStartError ? (
-                      <ResearchStartRecoveryError
-                        message={researchStartError}
-                        busy={researchStartLoading}
-                        onRetry={() => { void retryResearchStartRecovery() }}
-                        onContinue={continueEditingResearchStart}
-                      />
-                    ) : researchStartLoading ? <p className="new-research__start-loading" role="status"><CircleNotchIcon size={14} />正在恢复研究建立状态…</p> : null}
-                    <div ref={transcriptEndRef} />
-                  </div>
-                )}
-              </main>
-
-              <footer className="new-research__composer-dock">
-                {error ? <div className="new-research__error" role="alert"><WarningCircleIcon size={16} /><span>{error}</span><button type="button" aria-label="关闭错误提示" onClick={() => setError(null)}><XIcon size={14} /></button></div> : null}
-                <form onSubmit={handleSubmit} className="new-research__composer-form">
-                  <div className="new-research__composer">
-                    <textarea ref={composerInputRef} aria-label="和 Agent 讨论你的研究" disabled={isBusy} maxLength={MAX_AGENT_MESSAGE_LENGTH} value={draft} onChange={(event) => updateDraft(event.target.value)} onKeyDown={handleKeyDown} placeholder="描述一个现象，或告诉 Agent 你想理解什么" rows={3} />
-                    <div className="new-research__composer-footer"><span><BookOpenTextIcon size={13} />知识库按需调用 · Enter 发送 · Shift + Enter 换行</span><small className="new-research__composer-count">{draft.length}/{MAX_AGENT_MESSAGE_LENGTH}</small><button type={canStopGeneration ? 'button' : 'submit'} aria-label={canStopGeneration ? '停止生成' : isBusy ? '研究状态处理中' : '发送给研究 Agent'} className={canStopGeneration ? 'is-stop' : ''} disabled={isBusy ? !canStopGeneration : !canSubmit} onClick={canStopGeneration ? stopGeneration : undefined}>{canStopGeneration ? <StopIcon size={15} weight="fill" /> : <ArrowUpIcon size={18} />}</button></div>
-                  </div>
-                </form>
-              </footer>
-              {historyOpen ? <ConversationHistory conversations={conversations} activeConversationId={activeConversation?.conversation_id ?? null} loading={historyLoading} onOpen={openConversation} onClose={closeHistory} /> : null}
-            </aside>
-          </div>
-          {contextOpen ? (
-            <ResearchContextRail
-              activeTab={contextTab}
-              activities={activities}
-              citations={citationsForRail}
-              selectedCitationId={selectedCitationId}
-              onClose={() => setContextOpen(false)}
-              onPanelChange={setContextTab}
-              onCitationSelect={(citation) => {
-                setSelectedCitationId(citation.id)
-                setContextTab('basis')
-                setContextOpen(true)
-              }}
-              basisContent={selectedCitation ? <div className="new-research__basis"><span>当前证据 · {citationKindLabel(selectedCitation.kind)}</span><strong>{selectedCitation.label}</strong><p>{selectedCitation.excerpt || '本轮 Agent 没有返回可展开的证据摘录。'}</p>{renderKnowledgeEntryLink(selectedCitation)}</div> : undefined}
+            <div
+              className="new-research__resize-handle"
+              role="separator"
+              tabIndex={0}
+              aria-label="调整对话栏宽度"
+              aria-orientation="vertical"
+              aria-controls="research-agent-panel"
+              aria-valuemin={MIN_AGENT_PANEL_WIDTH}
+              aria-valuemax={agentPanelMaxWidth}
+              aria-valuenow={agentPanelWidth}
+              aria-valuetext={`${agentPanelWidth} 像素`}
+              onKeyDown={handleResizeKey}
+              onMouseDown={startMouseResize}
+              onPointerDown={startPointerResize}
+              onPointerMove={movePointerResize}
+              onPointerUp={finishPointerResize}
+              onPointerCancel={finishPointerResize}
             />
-          ) : null}
+            <ResearchAgentConversationPage
+              embedded
+              showConversationManagement
+              historyRailTarget={historyRailTarget}
+              userId={userId}
+              conversationId={requestedConversationId}
+              knowledgeReleaseId={requestedKnowledgeReleaseId}
+              workspace="research"
+              composerAriaLabel="和 Agent 讨论你的研究"
+              suggestedPrompt={suggestedPrompt}
+              suggestedPromptKey={suggestedPromptKey}
+              onConversationChange={syncConversation}
+              onStreamingTurnChange={setStreamingTurn}
+              conversationTail={journeyTail}
+            />
+          </div>
         </section>
       </PageContent>
     </PageShell>

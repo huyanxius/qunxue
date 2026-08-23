@@ -12,6 +12,9 @@ afterEach(cleanup)
 function createApi(consumePasswordReset: AccountManagementApi['consumePasswordReset']): AccountManagementApi {
   return {
     getAccount: async () => { throw new Error('not used') },
+    getCreditSummary: async () => { throw new Error('not used') },
+    redeemCredits: async () => { throw new Error('not used') },
+    createCreditRedemptionCodes: async () => { throw new Error('not used') },
     updateProfile: async () => { throw new Error('not used') },
     updatePreferences: async () => { throw new Error('not used') },
     updateModelDataAuthorization: async () => { throw new Error('not used') },

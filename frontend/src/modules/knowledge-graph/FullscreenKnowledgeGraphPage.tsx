@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 
 import './FullscreenKnowledgeGraph.css'
 import { ObsidianKnowledgeGraph } from './ObsidianKnowledgeGraph'
@@ -343,13 +344,14 @@ export function FullscreenKnowledgeGraphPage({
 
   async function expandDirectory(nodeId: string, cursor?: string) {
     setError('')
+    const requestCenterId = activeCenter.current
     try {
       const page = await readStructuralConnectionPage({
         releaseId: activeReleaseId,
         sourceNodeId: nodeId,
         ...(cursor ? { cursor } : {}),
       })
-      if (activeCenter.current) return
+      if (activeCenter.current !== requestCenterId) return
       setProjection((current) => mergeStructuralConnections(current, page.connections))
       setDirectoryCursor(page.nextCursor
         ? { nodeId, cursor: page.nextCursor }
@@ -429,13 +431,6 @@ export function FullscreenKnowledgeGraphPage({
   return (
     <section className="knowledge-graph-page" aria-label="全屏知识图谱工作台">
       <div className="knowledge-graph-page__canvas">
-        <header className="knowledge-graph-page__title">
-          <div>
-            <p>KNOWLEDGE / GRAPH</p>
-            <h1>知识图谱</h1>
-          </div>
-          <span>{focus ? `以 ${focus.title} 为中心` : '七维总览'}</span>
-        </header>
         <ObsidianKnowledgeGraph
           projection={projection}
           focusNodeId={focus?.knowledgeId}
@@ -446,17 +441,27 @@ export function FullscreenKnowledgeGraphPage({
       </div>
 
       <aside className="knowledge-graph-page__sidebar" aria-label="知识图谱互动栏">
+        <h1 className="knowledge-graph-page__title">知识图谱</h1>
         <form className="knowledge-graph-page__search" onSubmit={submitSearch}>
-          <label htmlFor="graph-entry-search">搜索真实条目</label>
+          <label className="knowledge-graph-page__visually-hidden" htmlFor="graph-entry-search">
+            搜索真实条目
+          </label>
           <div>
+            <MagnifyingGlassIcon size={15} aria-hidden="true" />
             <input
               id="graph-entry-search"
               type="search"
               value={queryInput}
               onChange={(event) => setQueryInput(event.target.value)}
-              placeholder="输入理论、概念或方法"
+              placeholder="搜索理论、概念或方法"
             />
-            <button type="submit" disabled={!queryInput.trim() || searching}>搜索</button>
+            <button
+              type="submit"
+              aria-label="搜索"
+              disabled={!queryInput.trim() || searching}
+            >
+              →
+            </button>
           </div>
         </form>
         {searchResultsOpen && searchResults.length > 0 ? (
@@ -494,15 +499,16 @@ export function FullscreenKnowledgeGraphPage({
               查看完整条目
             </a>
           </section>
-        ) : (
-          <p className="knowledge-graph-page__empty">选择搜索结果后，条目会自动居中并生成局部网络。</p>
-        )}
+        ) : null}
 
         <section className="knowledge-graph-page__legend" aria-label="图例与图层">
-          <h2>图例与图层</h2>
-          <p><i className="legend-line legend-line--structure" />结构路径 / 父子与同父条目</p>
-          <p><i className="legend-line legend-line--reviewed" />reviewed · 正式关系（{reviewedCount}）</p>
-          <p><i className="legend-line legend-line--pending" />pending · 待审核候选、非知识事实（{pendingCount}）</p>
+          <header>
+            <h2>关系</h2>
+            <span>{projection.edges.length}</span>
+          </header>
+          <p><i className="legend-line legend-line--structure" />目录结构</p>
+          <p><i className="legend-line legend-line--reviewed" />正式关系 <span>{reviewedCount}</span></p>
+          <p><i className="legend-line legend-line--pending" />待审核 <span>{pendingCount}</span></p>
           <button
             type="button"
             disabled={!focus}
@@ -513,7 +519,7 @@ export function FullscreenKnowledgeGraphPage({
           >
             {pendingEnabled ? '隐藏待审核候选' : '显示待审核候选'}
           </button>
-          {pendingEnabled ? <p>待审核候选、非知识事实；不会计入 reviewed 数量。</p> : null}
+          {pendingEnabled ? <p className="knowledge-graph-page__pending-note">待审核候选、非知识事实；不会计入 reviewed 数量。</p> : null}
         </section>
 
         {focus || directoryCursor ? (

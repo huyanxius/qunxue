@@ -6,6 +6,7 @@ import type {
   AccountProfile,
   AccountSession,
   AdminUser,
+  CreditSummary,
   PersonalDataExport,
 } from './accountManagementModels'
 import { AccountManagementRequestError } from './accountManagementModels'
@@ -49,6 +50,28 @@ type RawSession = {
   expires_at: string
   device_label: string
   ip_address: string | null
+}
+
+type RawCreditSummary = {
+  balance: number
+  credit_limit: number
+  grant_amount: number
+  is_unlimited: boolean
+  pricing: {
+    input_tokens_per_credit: number
+    output_tokens_per_credit: number
+  }
+  entries: Array<{
+    entry_id: string
+    kind: 'signup_grant' | 'usage' | 'redemption'
+    points: number
+    balance_after: number
+    input_tokens: number
+    output_tokens: number
+    created_at: string
+  }>
+  total_entries: number
+  next_cursor: string | null
 }
 
 type RawAdminUser = {
@@ -135,6 +158,28 @@ function toSession(value: RawSession): AccountSession {
   }
 }
 
+function toCreditSummary(value: RawCreditSummary): CreditSummary {
+  return {
+    balance: value.balance,
+    creditLimit: value.credit_limit,
+    grantAmount: value.grant_amount,
+    isUnlimited: value.is_unlimited,
+    inputTokensPerCredit: value.pricing.input_tokens_per_credit,
+    outputTokensPerCredit: value.pricing.output_tokens_per_credit,
+    entries: value.entries.map((entry) => ({
+      entryId: entry.entry_id,
+      kind: entry.kind,
+      points: entry.points,
+      balanceAfter: entry.balance_after,
+      inputTokens: entry.input_tokens,
+      outputTokens: entry.output_tokens,
+      createdAt: entry.created_at,
+    })),
+    totalEntries: value.total_entries,
+    nextCursor: value.next_cursor,
+  }
+}
+
 function toAdminUser(value: RawAdminUser): AdminUser {
   return {
     userId: value.user_id,
@@ -153,6 +198,46 @@ function toAdminUser(value: RawAdminUser): AdminUser {
 export const accountManagementApi: AccountManagementApi = {
   async getAccount() {
     return toAccount(await requestJson<RawAccount>('GET', '/api/account'))
+  },
+
+  async getCreditSummary(input = {}) {
+    const search = new URLSearchParams()
+    if (input.cursor) search.set('cursor', input.cursor)
+    if (input.limit) search.set('limit', String(input.limit))
+    const suffix = search.size ? `?${search.toString()}` : ''
+    return toCreditSummary(
+      await requestJson<RawCreditSummary>('GET', `/api/account/credits${suffix}`),
+    )
+  },
+
+  async redeemCredits(input) {
+    const result = await requestJson<{
+      redeemed_points: number
+      balance: number
+    }>('POST', '/api/account/credit-redemptions', {
+      idempotencyKey: input.idempotencyKey,
+      body: { code: input.code },
+    })
+    return { redeemedPoints: result.redeemed_points, balance: result.balance }
+  },
+
+  async createCreditRedemptionCodes(input) {
+    const result = await requestJson<{
+      codes: string[]
+      points: number
+      expires_at: string
+    }>('POST', '/api/admin/credit-redemption-codes', {
+      idempotencyKey: input.idempotencyKey,
+      body: {
+        count: input.count,
+        expires_in_days: input.expiresInDays,
+      },
+    })
+    return {
+      codes: result.codes,
+      points: result.points,
+      expiresAt: result.expires_at,
+    }
   },
 
   async updateProfile(input) {

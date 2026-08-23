@@ -16,6 +16,13 @@ from qunxue_api.api.contracts.account_management import (
     AdminUserResponse,
     ChangePasswordRequest,
     ChangePasswordResponse,
+    CreditCodeBatchCreateRequest,
+    CreditCodeBatchResponse,
+    CreditLedgerEntryResponse,
+    CreditPricingResponse,
+    CreditRedemptionRequest,
+    CreditRedemptionResponse,
+    CreditSummaryResponse,
     DataExportCreateRequest,
     DataExportResponse,
     DeactivateAccountRequest,
@@ -34,6 +41,12 @@ from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.account_management import AccountManagementService
+from qunxue_api.modules.billing import (
+    INPUT_TOKENS_PER_CREDIT,
+    OUTPUT_TOKENS_PER_CREDIT,
+    WELCOME_GRANT,
+    CreditService,
+)
 
 
 def get_account_management_service(request: Request) -> Iterator[AccountManagementService]:
@@ -45,6 +58,14 @@ AccountManagementServiceDependency = Annotated[
     AccountManagementService,
     Depends(get_account_management_service),
 ]
+
+
+def get_credit_service(request: Request) -> Iterator[CreditService]:
+    with request.app.state.credit_service_scope() as service:
+        yield service
+
+
+CreditServiceDependency = Annotated[CreditService, Depends(get_credit_service)]
 
 account_router = APIRouter(
     prefix="/api/account",
@@ -64,6 +85,54 @@ def get_account(
     service: AccountManagementServiceDependency,
 ) -> AccountResponse:
     return AccountResponse.model_validate(service.get_account(current.user.user_id))
+
+
+@account_router.get(
+    "/credits",
+    operation_id="get_account_credits",
+    response_model=CreditSummaryResponse,
+)
+def get_account_credits(
+    current: CurrentSessionDependency,
+    service: CreditServiceDependency,
+    cursor: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+) -> CreditSummaryResponse:
+    summary = service.summary(
+        user_id=current.user.user_id,
+        offset=cursor,
+        limit=limit,
+    )
+    return CreditSummaryResponse(
+        balance=summary.balance,
+        credit_limit=WELCOME_GRANT,
+        grant_amount=WELCOME_GRANT,
+        is_unlimited=summary.is_unlimited,
+        pricing=CreditPricingResponse(
+            input_tokens_per_credit=INPUT_TOKENS_PER_CREDIT,
+            output_tokens_per_credit=OUTPUT_TOKENS_PER_CREDIT,
+        ),
+        entries=[CreditLedgerEntryResponse.model_validate(entry) for entry in summary.entries],
+        total_entries=summary.total_entries,
+        next_cursor=summary.next_cursor,
+    )
+
+
+@account_router.post(
+    "/credit-redemptions",
+    operation_id="redeem_account_credits",
+    response_model=CreditRedemptionResponse,
+)
+def redeem_account_credits(
+    payload: CreditRedemptionRequest,
+    _idempotency_key: IdempotencyKey,
+    current: CurrentSessionDependency,
+    service: CreditServiceDependency,
+) -> CreditRedemptionResponse:
+    return CreditRedemptionResponse.model_validate(
+        service.redeem(user_id=current.user.user_id, code=payload.code),
+        from_attributes=True,
+    )
 
 
 @account_router.patch(
@@ -346,6 +415,33 @@ def list_admin_users(
             offset=cursor,
             limit=limit,
         )
+    )
+
+
+@admin_router.post(
+    "/credit-redemption-codes",
+    operation_id="create_admin_credit_redemption_codes",
+    response_model=CreditCodeBatchResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_admin_credit_redemption_codes(
+    payload: CreditCodeBatchCreateRequest,
+    idempotency_key: IdempotencyKey,
+    current: CurrentSessionDependency,
+    account_service: AccountManagementServiceDependency,
+    credit_service: CreditServiceDependency,
+) -> CreditCodeBatchResponse:
+    account_service.require_admin_access(current.user.user_id)
+    batch = credit_service.generate_redemption_codes(
+        actor_user_id=current.user.user_id,
+        batch_id=idempotency_key,
+        count=payload.count,
+        expires_in_days=payload.expires_in_days,
+    )
+    return CreditCodeBatchResponse(
+        codes=list(batch.codes),
+        points=batch.points,
+        expires_at=batch.expires_at,
     )
 
 

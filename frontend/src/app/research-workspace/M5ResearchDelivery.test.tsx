@@ -269,7 +269,7 @@ describe('M5 research delivery controls', () => {
       </div>,
     )
 
-    expect(screen.getByText('正式研究框架草稿 · 1 个章节')).toBeVisible()
+    expect(screen.getByText('正式研究框架草稿 · 1/12 个章节')).toBeVisible()
     expect(screen.getByText('openai-compatible · research-model-v1')).toBeVisible()
     expect(screen.getByText('知识版本 release-7')).toBeVisible()
     expect(screen.queryByRole('button', { name: '生成研究框架草稿' })).not.toBeInTheDocument()

@@ -241,7 +241,7 @@ def test_recall_pages_in_catalog_order_and_stops_after_five_eligible_profiles() 
     assert first == second
 
 
-def test_recall_rejects_a_non_final_or_non_current_match_release() -> None:
+def test_recall_rejects_non_final_and_keeps_a_pinned_final_release_reproducible() -> None:
     catalog = _CatalogFixture(entries=tuple(_entry(index) for index in range(1, 4)))
     source = CatalogTheoryEvidenceSource(catalog)
 
@@ -260,8 +260,9 @@ def test_recall_rejects_a_non_final_or_non_current_match_release() -> None:
         level=KnowledgeReleaseLevel.FINAL,
         content_hash="sha256:newer",
     )
-    with pytest.raises(ValueError, match="current MATCH knowledge release"):
-        source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
+    recalled = source.retrieve(phenomenon=PHENOMENON, release=RELEASE)
+
+    assert recalled.release == RELEASE
 
 
 @pytest.mark.parametrize(

@@ -41,7 +41,7 @@ function proposalPresentation(
     status: proposal.status,
     kind: proposal.kind,
     targetLabel: proposal.kind === 'create'
-      ? `正式研究框架草稿 · ${proposal.proposedSections.length} 个章节`
+      ? `正式研究框架草稿 · ${proposal.proposedSections.length}/12 个章节`
       : target?.title ?? proposal.title,
     before,
     after,

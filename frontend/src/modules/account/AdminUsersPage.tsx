@@ -15,6 +15,7 @@ import {
   type AccountRole,
   type AccountStatus,
   type AdminUser,
+  type CreditRedemptionCodeBatch,
   type PasswordResetLink,
 } from './accountManagementModels'
 import { AccountConfirmationDialog } from './AccountSettingsPage'
@@ -95,6 +96,9 @@ export function AdminUsersPage({
   const [statusReason, setStatusReason] = useState('')
   const [resetUser, setResetUser] = useState<AdminUser | null>(null)
   const [resetLinks, setResetLinks] = useState<Record<string, PasswordResetLink>>({})
+  const [creditCodeCount, setCreditCodeCount] = useState(20)
+  const [creditCodeExpiresInDays, setCreditCodeExpiresInDays] = useState(30)
+  const [generatedCreditCodes, setGeneratedCreditCodes] = useState<CreditRedemptionCodeBatch | null>(null)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const pendingRef = useRef<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -204,6 +208,23 @@ export function AdminUsersPage({
     setSubmittedQuery(query.trim())
   }
 
+  function submitCreditCodeBatch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const intent = {
+      count: creditCodeCount,
+      expiresInDays: creditCodeExpiresInDays,
+    }
+    void perform(
+      'credit-code-batch',
+      () => api.createCreditRedemptionCodes({
+        ...intent,
+        idempotencyKey: mutationIntents.current.keyFor('credit-code-batch', intent),
+      }),
+      setGeneratedCreditCodes,
+      `已生成 ${creditCodeCount} 个积分兑换码。`,
+    )
+  }
+
   if (directory.status === 'loading') {
     return (
       <section className="account-management-state account-management-state--loading" role="status" aria-live="polite">
@@ -254,6 +275,59 @@ export function AdminUsersPage({
 
       {feedback ? <p className="account-management-feedback" role="status">{feedback}</p> : null}
       {actionError ? <p className="account-management-alert" role="alert">{actionError}</p> : null}
+
+      <section className="account-admin-credit-codes" aria-labelledby="credit-code-generator-title">
+        <header>
+          <div>
+            <p className="account-management-eyebrow">PRIVATE BETA CREDITS</p>
+            <h2 id="credit-code-generator-title">积分兑换码</h2>
+            <p>批量生成一次性兑换码，兑换后积分恢复至 3,000。</p>
+          </div>
+        </header>
+        <form className="account-admin-credit-code-form" onSubmit={submitCreditCodeBatch}>
+          <label>
+            <span>生成数量</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={creditCodeCount}
+              onChange={(event) => setCreditCodeCount(Number(event.target.value))}
+            />
+          </label>
+          <label>
+            <span>有效天数</span>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={creditCodeExpiresInDays}
+              onChange={(event) => setCreditCodeExpiresInDays(Number(event.target.value))}
+            />
+          </label>
+          <button
+            className="account-management-button account-management-button--primary"
+            type="submit"
+            disabled={pending
+              || creditCodeCount < 1
+              || creditCodeExpiresInDays < 1}
+          >
+            {pendingAction === 'credit-code-batch' ? '正在生成…' : '生成兑换码'}
+          </button>
+        </form>
+        {generatedCreditCodes ? (
+          <div className="account-admin-credit-code-result">
+            <p>完整兑换码只显示在这里，请立即复制保存。</p>
+            <small>
+              兑换后恢复至 {generatedCreditCodes.points.toLocaleString('zh-CN')} 积分 ·
+              有效至 {formatDate(generatedCreditCodes.expiresAt)}
+            </small>
+            <ol>
+              {generatedCreditCodes.codes.map((code) => <li key={code}><code>{code}</code></li>)}
+            </ol>
+          </div>
+        ) : null}
+      </section>
 
       <section className="account-admin-toolbar" aria-label="用户目录工具">
         <form className="account-admin-search" role="search" onSubmit={submitSearch}>

@@ -12,10 +12,10 @@ function RecoveryFailure({ onRetry }: { onRetry: () => void }) {
       <PageContent>
         <ErrorState
           title="研究进度暂时无法恢复"
-          detail="研究内容仍然保留。检查网络后重试，或先返回研究列表。"
+          detail="研究内容仍然保留。检查网络后重试，或先返回工作台。"
           onRetry={onRetry}
         />
-        <a href="/my">返回我的研究</a>
+        <a href="/app?research=all">返回工作台</a>
       </PageContent>
     </PageShell>
   )
@@ -62,7 +62,8 @@ export function ResearchTaskNavigationRoute({ children }: { children: ReactNode 
     return <RecoveryFailure onRetry={() => void navigation.refetch()} />
   }
 
-  if (navigation.data.resume_path !== location.pathname) {
+  const taskOnlyPath = `/research/${taskId}`
+  if (location.pathname === taskOnlyPath && navigation.data.resume_path !== location.pathname) {
     return <Navigate replace to={navigation.data.resume_path} />
   }
 

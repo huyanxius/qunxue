@@ -27,6 +27,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/knowledge-graph/knowledgeGraphApi.ts',
     'modules/knowledge-explorer/knowledgeApi.ts',
     'modules/m4-theory-judgment/m4TheoryJudgmentApi.ts',
+    'modules/research-agent/researchAgentApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   moduleApiAdapters: Object.freeze([

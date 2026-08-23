@@ -31,9 +31,9 @@ def test_match_uses_latest_final_release_even_when_browse_preview_is_current(
                 knowledge_release_id="knowledge-final-reviewed-v1",
                 level=KnowledgeReleaseLevel.FINAL.value,
                 content_hash="sha256:knowledge-final-reviewed-v1",
-                build_config_version="reviewed-publication-v1",
+                build_config_version="pre-reviewed-theory-release/v1",
                 manifest={"theory_ids": ["theory:example"]},
-                is_current=False,
+                is_current=True,
                 built_at=datetime.now(UTC),
             )
         )

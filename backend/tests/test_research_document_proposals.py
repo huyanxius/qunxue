@@ -137,6 +137,34 @@ def section(content: str):
     )
 
 
+def framework_sections(research_question: str):
+    section_keys = (
+        "research_question",
+        "research_object_and_field",
+        "theoretical_perspective",
+        "core_concepts",
+        "mechanisms",
+        "questions_or_hypotheses",
+        "methodology",
+        "sample_and_sources",
+        "analysis_steps",
+        "ethics",
+        "limitations",
+        "evidence_gaps",
+    )
+    return tuple(
+        framework.ResearchDocumentSection(
+            section_id=key,
+            key=key,
+            title=key,
+            content=research_question if key == "research_question" else f"{key} 正文",
+            status=framework.ResearchDocumentSectionStatus.DRAFT,
+            evidence_refs=(),
+        )
+        for key in section_keys
+    )
+
+
 def document_service(repository: MemoryDocuments):
     ids = iter(UUID(int=value) for value in range(10, 30))
     return framework.ResearchDocumentService(
@@ -316,7 +344,7 @@ def test_agent_can_propose_a_complete_framework_without_creating_it() -> None:
         theory_plan_id=UUID(int=2),
         knowledge_release_id="release-final-1",
         title="社区互助研究框架",
-        sections=(section("Agent 提议的问题"),),
+        sections=framework_sections("Agent 提议的问题"),
         rationale="依据已确认理论方案生成草稿",
     )
     assert proposed.status.value == "pending"
@@ -330,6 +358,10 @@ def test_agent_can_propose_a_complete_framework_without_creating_it() -> None:
     assert accepted.document.version == 1
     assert accepted.document.actor == "agent_suggestion_accepted"
     assert accepted.document.knowledge_release_id == "release-final-1"
+    assert all(
+        item.status is framework.ResearchDocumentSectionStatus.REVIEWED
+        for item in accepted.document.sections
+    )
 
 
 def test_create_proposal_is_replayed_by_confirmed_plan_across_agent_retries() -> None:
@@ -344,7 +376,7 @@ def test_create_proposal_is_replayed_by_confirmed_plan_across_agent_retries() ->
         "theory_plan_id": UUID(int=2),
         "knowledge_release_id": "release-final-1",
         "title": "社区互助研究框架",
-        "sections": (section("Agent 提议的问题"),),
+        "sections": framework_sections("Agent 提议的问题"),
         "rationale": "依据已确认理论方案生成草稿",
     }
 
@@ -364,7 +396,7 @@ def test_create_proposal_is_replayed_by_confirmed_plan_across_agent_retries() ->
             conversation_id=UUID(int=9),
             **{
                 **{key: value for key, value in arguments.items() if key != "conversation_id"},
-                "sections": (section("另一份不一致的框架"),),
+                "sections": framework_sections("另一份不一致的框架"),
             },
         )
 
@@ -380,7 +412,7 @@ def test_failed_generation_is_archived_before_retrying_the_same_handoff() -> Non
         "theory_plan_id": UUID(int=2),
         "knowledge_release_id": "release-final-1",
         "title": "社区互助研究框架",
-        "sections": (section("Agent 提议的问题"),),
+        "sections": framework_sections("Agent 提议的问题"),
         "rationale": "依据已确认理论方案生成草稿",
     }
     first = proposals.propose_create(agent_run_id=UUID(int=5), **arguments)

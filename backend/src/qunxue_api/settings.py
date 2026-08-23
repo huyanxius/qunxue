@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 60 * 60 * 24 * 7
     session_cookie_secure: bool = False
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
-    account_initial_admin_email: str = "huyanxius@gmail.com"
+    account_initial_admin_email: str = ""
     account_initial_admin_password: SecretStr | None = None
     cors_allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     model_base_url: str | None = None
     model_api_key: SecretStr | None = None
     model_name: str | None = None
+    model_reasoning_effort: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh", "max"
+    ] | None = None
     model_timeout_seconds: float = Field(default=30, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
     model_sft_resource_header: str = "X-LoRA-ID"

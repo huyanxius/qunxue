@@ -16,8 +16,8 @@ vi.mock('../../modules/account', () => ({
 
 afterEach(cleanup)
 
-describe('PageShell support access', () => {
-  it('keeps help reachable on immersive account pages', () => {
+describe('PageShell global chrome', () => {
+  it('does not inject the retired help and boundary trigger', () => {
     render(
       <MemoryRouter>
         <PageShell immersive>
@@ -26,6 +26,6 @@ describe('PageShell support access', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('button', { name: '帮助与边界' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: '帮助与边界' })).not.toBeInTheDocument()
   })
 })

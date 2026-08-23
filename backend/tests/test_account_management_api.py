@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Barrier
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
@@ -20,12 +20,40 @@ from qunxue_api.adapters.sqlite import (
     ResearchTaskRow,
     UserRow,
 )
+from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.bootstrap import create_app
 from qunxue_api.settings import Settings
 
 TEST_ADMIN_EMAIL = "test-admin@example.com"
 TEST_ADMIN_PASSWORD = "test-initial-admin-passphrase"
+
+
+def test_create_app_installs_account_routes_when_admin_secret_is_configured(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    alembic_config: Config,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'account-bootstrap.db'}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    command.upgrade(alembic_config, "head")
+    settings = Settings(
+        _env_file=None,
+        database_url=database_url,
+        runtime_mode="mock",
+        account_initial_admin_email=TEST_ADMIN_EMAIL,
+        account_initial_admin_password=TEST_ADMIN_PASSWORD,
+    )
+    database = Database(database_url)
+    app = create_app(settings=settings, database=database)
+    try:
+        assert "/api/account" in app.openapi()["paths"]
+        assert "/api/admin/users" in app.openapi()["paths"]
+        with TestClient(app) as test_client:
+            login_admin(test_client)
+            assert test_client.get("/api/account").json()["role"] == "admin"
+    finally:
+        database.engine.dispose()
 
 
 @pytest.fixture
@@ -116,6 +144,210 @@ def test_public_registration_never_grants_administrator_role(
         "member@example.com",
         "owner@example.com",
     }
+
+
+def test_registration_grants_a_visible_credit_balance_and_ledger_entry(
+    client: TestClient,
+) -> None:
+    register(client, "credits@example.com")
+
+    response = client.get("/api/account/credits")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["is_unlimited"] is False
+    assert payload["balance"] == 3000
+    assert payload["credit_limit"] == 3000
+    assert payload["grant_amount"] == 3000
+    assert payload["pricing"] == {
+        "input_tokens_per_credit": 100,
+        "output_tokens_per_credit": 25,
+    }
+    assert payload["entries"] == []
+    assert payload["total_entries"] == 0
+
+
+def test_provisioned_administrator_has_unlimited_credits(
+    client: TestClient,
+) -> None:
+    signed_in = login_admin(client)
+    user_id = UUID(str(signed_in["user"]["user_id"]))
+
+    response = client.get("/api/account/credits")
+
+    assert response.status_code == 200
+    assert response.json()["is_unlimited"] is True
+    with client.app.state.credit_service_scope() as credits:
+        before = credits.summary(user_id=user_id)
+        run_id = uuid4()
+        credits.ensure_can_start(user_id=user_id)
+        credits.reserve(user_id=user_id, run_id=run_id)
+        charged = credits.charge(
+            user_id=user_id,
+            run_id=run_id,
+            input_tokens=1_000_000,
+            output_tokens=1_000_000,
+            model="internal-runtime",
+        )
+        after = credits.summary(user_id=user_id)
+
+    assert charged is None
+    assert after.is_unlimited is True
+    assert after.balance == before.balance
+    assert after.entries == before.entries
+
+
+def test_credit_reservation_fallback_uses_the_current_welcome_grant(
+    client: TestClient,
+) -> None:
+    registered = register(client, "reserve-fallback@example.com")
+    user_id = UUID(str(registered["user"]["user_id"]))
+
+    with client.app.state.database.session() as session:
+        repository = SqliteCreditRepository(session)
+        repository.reserve_usage(
+            user_id=user_id,
+            run_id=uuid4(),
+            now=datetime.now(UTC),
+        )
+        summary = repository.get_summary(user_id=user_id, limit=10)
+
+    assert summary is not None
+    assert summary.balance == 3000
+
+
+def test_credit_ledger_is_returned_in_non_overlapping_pages(
+    client: TestClient,
+) -> None:
+    registered = register(client, "credit-pages@example.com")
+    user_id = UUID(str(registered["user"]["user_id"]))
+    with client.app.state.credit_service_scope() as credits:
+        for _ in range(3):
+            run_id = uuid4()
+            credits.reserve(user_id=user_id, run_id=run_id)
+            credits.charge(
+                user_id=user_id,
+                run_id=run_id,
+                input_tokens=100,
+                output_tokens=25,
+                model="internal-runtime",
+            )
+
+    first = client.get("/api/account/credits", params={"limit": 2})
+    second = client.get(
+        "/api/account/credits",
+        params={"limit": 2, "cursor": first.json()["next_cursor"]},
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["total_entries"] == 3
+    assert first.json()["next_cursor"] == "2"
+    assert second.json()["next_cursor"] is None
+    first_ids = {entry["entry_id"] for entry in first.json()["entries"]}
+    second_ids = {entry["entry_id"] for entry in second.json()["entries"]}
+    assert len(first_ids) == 2
+    assert len(second_ids) == 1
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_administrator_generates_hashed_codes_and_member_redeems_once(
+    client: TestClient,
+) -> None:
+    login_admin(client)
+    batch_key = str(uuid4())
+    generated = client.post(
+        "/api/admin/credit-redemption-codes",
+        headers={"Idempotency-Key": batch_key},
+        json={"count": 2, "expires_in_days": 7},
+    )
+
+    assert generated.status_code == 201
+    payload = generated.json()
+    assert payload["points"] == 3000
+    assert len(payload["codes"]) == len(set(payload["codes"])) == 2
+    assert all(code.startswith("QX-") and len(code) == 22 for code in payload["codes"])
+
+    replay = client.post(
+        "/api/admin/credit-redemption-codes",
+        headers={"Idempotency-Key": batch_key},
+        json={"count": 2, "expires_in_days": 7},
+    )
+    assert replay.status_code == 201
+    assert replay.json()["codes"] == payload["codes"]
+
+    with client.app.state.database.engine.connect() as connection:
+        stored_hashes = connection.execute(
+            text("SELECT code_hash FROM credit_redemption_codes")
+        ).scalars().all()
+    assert len(stored_hashes) == 2
+    assert not set(payload["codes"]) & set(stored_hashes)
+
+    client.cookies.clear()
+    redeemer = register(client, "redeemer@example.com")
+    redeemer_user_id = str(redeemer["user"]["user_id"])
+    with client.app.state.database.engine.begin() as connection:
+        connection.execute(
+            text("UPDATE credit_accounts SET balance = 1200 WHERE user_id = :user_id"),
+            {"user_id": redeemer_user_id},
+        )
+    redeemed = client.post(
+        "/api/account/credit-redemptions",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"code": payload["codes"][0].lower()},
+    )
+    with client.app.state.database.engine.begin() as connection:
+        connection.execute(
+            text("UPDATE credit_accounts SET balance = 2936 WHERE user_id = :user_id"),
+            {"user_id": redeemer_user_id},
+        )
+    replayed_redemption = client.post(
+        "/api/account/credit-redemptions",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"code": payload["codes"][0]},
+    )
+
+    assert redeemed.status_code == 200
+    assert redeemed.json() == {"redeemed_points": 3000, "balance": 3000}
+    assert replayed_redemption.status_code == 200
+    assert replayed_redemption.json() == {"redeemed_points": 3000, "balance": 2936}
+    summary = client.get("/api/account/credits").json()
+    assert summary["balance"] == 2936
+    assert summary["credit_limit"] == 3000
+    assert summary["entries"] == []
+    with client.app.state.database.engine.connect() as connection:
+        redemption_entry = connection.execute(
+            text(
+                "SELECT kind, points FROM credit_ledger "
+                "WHERE user_id = :user_id AND kind = 'redemption'"
+            ),
+            {"user_id": redeemer_user_id},
+        ).one()
+    assert redemption_entry == ("redemption", 3000)
+
+    client.cookies.clear()
+    register(client, "other-redeemer@example.com")
+    unavailable = client.post(
+        "/api/account/credit-redemptions",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"code": payload["codes"][0]},
+    )
+    assert unavailable.status_code == 409
+    assert unavailable.json()["error"]["code"] == "credit_code_unavailable"
+
+
+def test_member_cannot_generate_credit_redemption_codes(
+    client: TestClient,
+) -> None:
+    register(client, "member-generator@example.com")
+
+    response = client.post(
+        "/api/admin/credit-redemption-codes",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"count": 1, "expires_in_days": 7},
+    )
+
+    assert response.status_code == 403
 
 
 def test_concurrent_clean_registration_never_grants_administrator_role(

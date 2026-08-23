@@ -15,6 +15,12 @@
   margin-left: auto;
 }
 
+.knowledge-reader__actions,
+.knowledge-reader__hero {
+  position: relative;
+  z-index: 1;
+}
+
 .knowledge-reader {
   padding-bottom: 72px;
 }
@@ -416,12 +422,14 @@
 .knowledge-reader__evidence-marker {
   position: relative;
   top: -0.42em;
+  width: 17px;
   min-width: 17px;
   height: 17px;
   display: none;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   margin-left: 4px;
-  padding: 0 4px;
+  padding: 0;
   border: 1px solid #9fc4df;
   border-radius: 999px;
   color: #315f91;
@@ -429,11 +437,12 @@
   cursor: pointer;
   font-size: 9px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 17px;
+  text-decoration: none;
 }
 
 .knowledge-reader__content[data-evidence-display='annotations'] .knowledge-reader__evidence-marker {
-  display: inline-grid;
+  display: inline-flex;
 }
 
 .knowledge-reader__content[data-evidence-display='annotations'] > blockquote[data-content-role='evidence'],

@@ -1,12 +1,9 @@
 import {
-  ArrowsOutIcon,
   ArrowUpRightIcon,
   CrosshairIcon,
   ListBulletsIcon,
-  MapTrifoldIcon,
   PathIcon,
   QuotesIcon,
-  TreeStructureIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import ELK from 'elkjs/lib/elk.bundled.js'
@@ -24,16 +21,18 @@ import {
   type Node,
   type NodeProps,
   type ReactFlowInstance,
+  type XYPosition,
 } from '@xyflow/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import type {
   ResearchCanvasEdge,
   ResearchCanvasNode,
   ResearchCanvasNodeKind,
   ResearchCanvasProjection,
-  ResearchCanvasStatus,
 } from '../../modules/research-workspace'
+import { ResearchAgentBot } from '../agent/ResearchAgentBot'
+import { ResearchMapIdleShader } from './ResearchMapIdleShader'
 import '@xyflow/react/dist/style.css'
 import './research-map-canvas.css'
 
@@ -44,36 +43,33 @@ type ResearchMapCanvasProps = {
   readonly onClearSelection?: () => void
   readonly onContinueNode?: (node: ResearchCanvasNode) => void
   readonly onOpenCitation?: (citationId: string) => void
+  readonly expandedNodeContent?: Readonly<Record<string, ReactNode>>
 }
 
 type ArgumentNodeData = {
   node: ResearchCanvasNode
   onFocus: (node: ResearchCanvasNode) => void
   onContinue: (node: ResearchCanvasNode) => void
+  sourcePosition?: Position
+  targetPosition?: Position
 }
 
 type ArgumentFlowNode = Node<ArgumentNodeData, 'argument'>
 type FocusDepth = 1 | 2 | 'all'
 
 const elk = new ELK()
-
-const statusLabels: Record<ResearchCanvasStatus, string> = {
-  empty: '等待研究问题',
-  thinking: 'Agent 正在建模',
-  retrieving: '正在核对证据',
-  answering: '正在形成论证',
-  ready: '论证结构已同步',
-  failed: '本轮未完成',
-  interrupted: '本轮已中断',
-}
+const EMPTY_EXPANDED_NODE_CONTENT: Readonly<Record<string, ReactNode>> = {}
+const ExpandedNodeContentContext = createContext<Readonly<Record<string, ReactNode>>>(EMPTY_EXPANDED_NODE_CONTENT)
 
 const kindLabels: Record<ResearchCanvasNodeKind, string> = {
   question: '研究问题',
+  phenomenon: '核心现象',
   theory: '理论视角',
   claim: '核心主张',
   evidence: '经验依据',
   gap: '证据缺口',
   synthesis: '阶段综合',
+  document: '研究章节',
 }
 
 const nodeStatusLabels: Record<ResearchCanvasNode['status'], string> = {
@@ -95,50 +91,63 @@ const relationLabels: Record<ResearchCanvasEdge['relation'], string> = {
 
 const nodeDimensions: Record<ResearchCanvasNodeKind, { width: number; height: number }> = {
   question: { width: 310, height: 126 },
+  phenomenon: { width: 292, height: 154 },
   theory: { width: 250, height: 148 },
   claim: { width: 278, height: 154 },
   evidence: { width: 286, height: 172 },
   gap: { width: 250, height: 142 },
   synthesis: { width: 318, height: 176 },
+  document: { width: 250, height: 128 },
 }
 
 function ArgumentNode({ data, selected }: NodeProps<ArgumentFlowNode>) {
   const { node } = data
+  const expandedContent = useContext(ExpandedNodeContentContext)[node.id]
+  if (expandedContent) {
+    return (
+      <article className="research-document-map-node is-expanded nodrag nowheel">
+        <Handle type="target" position={data.targetPosition ?? Position.Left} className="research-argument-node__handle" />
+        {expandedContent}
+        <Handle type="source" position={data.sourcePosition ?? Position.Right} className="research-argument-node__handle" />
+      </article>
+    )
+  }
   return (
     <article className={`research-argument-node is-${node.kind} ${selected ? 'is-selected' : ''}`}>
-      <Handle type="target" position={Position.Left} className="research-argument-node__handle" />
+      <Handle type="target" position={data.targetPosition ?? Position.Left} className="research-argument-node__handle" />
       <NodeToolbar isVisible={selected} position={Position.Top} offset={10}>
         <div className="research-argument-node__toolbar">
           <button type="button" className="nodrag" onClick={() => data.onFocus(node)}><CrosshairIcon size={13} />聚焦</button>
           <button type="button" className="nodrag" onClick={() => data.onContinue(node)}>继续研究<ArrowUpRightIcon size={13} /></button>
         </div>
       </NodeToolbar>
-      <div className="research-argument-node__meta">
+      {node.kind !== 'document' ? <div className="research-argument-node__meta">
         <span>{node.kind === 'evidence' ? <QuotesIcon size={13} /> : <PathIcon size={13} />}{kindLabels[node.kind]}</span>
         <i className={`is-${node.status}`}>{nodeStatusLabels[node.status]}</i>
-      </div>
+      </div> : null}
       <h3>{node.title}</h3>
       {node.summary ? <p>{node.summary}</p> : null}
-      <footer>
+      {node.kind !== 'document' ? <footer>
         <span>{node.citationIds.length ? `${node.citationIds.length} 条依据` : node.kind === 'gap' ? '等待补证' : 'Agent 结构化'}</span>
         <b aria-hidden="true" />
-      </footer>
-      <Handle type="source" position={Position.Right} className="research-argument-node__handle" />
+      </footer> : null}
+      <Handle type="source" position={data.sourcePosition ?? Position.Right} className="research-argument-node__handle" />
     </article>
   )
 }
 
 const nodeTypes = { argument: ArgumentNode }
 
-function MapEmptyState() {
+function MapIdleNote() {
   return (
-    <div className="research-map__empty">
-      <div className="research-map__empty-mark"><TreeStructureIcon size={24} /></div>
-      <span>ARGUMENT MAP</span>
-      <h3>从一个值得追问的社会学问题开始</h3>
-      <p>Agent 会在真实对话中识别理论、主张、证据与缺口。只有通过研究工具确认的结构才会进入画布。</p>
-      <div className="research-map__empty-spine" aria-label="论证地图结构">
-        <span>问题</span><i /><span>理论</span><i /><span>主张</span><i /><span>证据</span><i /><span>综合</span>
+    <div className="research-map__idle-state">
+      <div className="research-map__idle-content">
+        <ResearchAgentBot />
+        <div className="research-map__idle-note" aria-label="画布说明">
+          <h1>从一个社会学问题开始</h1>
+          <p>对话中形成的研究结构会在这里展开。</p>
+          <p>问题、理论、主张与证据，将随着研究推进逐步出现。</p>
+        </div>
       </div>
     </div>
   )
@@ -151,6 +160,7 @@ export function ResearchMapCanvas({
   onClearSelection,
   onContinueNode,
   onOpenCitation,
+  expandedNodeContent = EMPTY_EXPANDED_NODE_CONTENT,
 }: ResearchMapCanvasProps) {
   const [flowNodes, setFlowNodes] = useState<ArgumentFlowNode[]>([])
   const [flowEdges, setFlowEdges] = useState<Edge[]>([])
@@ -159,8 +169,14 @@ export function ResearchMapCanvas({
   const [layoutPending, setLayoutPending] = useState(false)
   const flowRef = useRef<ReactFlowInstance<ArgumentFlowNode, Edge> | null>(null)
   const layoutGeneration = useRef(0)
+  const onSelectNodeRef = useRef(onSelectNode)
+  const onContinueNodeRef = useRef(onContinueNode)
+  onSelectNodeRef.current = onSelectNode
+  onContinueNodeRef.current = onContinueNode
 
   const selectedNode = projection.nodes.find((node) => node.id === selectedNodeId) ?? null
+  const hasDocumentNodes = projection.nodes.some((node) => node.kind === 'document')
+  const focusedDocumentContent = Object.values(expandedNodeContent)[0] ?? null
   const visibleProjection = useMemo(
     () => filterProjection(projection, selectedNodeId, focusDepth),
     [focusDepth, projection, selectedNodeId],
@@ -169,8 +185,9 @@ export function ResearchMapCanvas({
     () => JSON.stringify({
       nodes: visibleProjection.nodes.map((node) => [node.id, node.kind, node.title, node.summary, node.status, node.citationIds]),
       edges: visibleProjection.edges.map((edge) => [edge.id, edge.source, edge.target, edge.relation, edge.label]),
+      expanded: Object.keys(expandedNodeContent).sort(),
     }),
-    [visibleProjection],
+    [expandedNodeContent, visibleProjection],
   )
 
   useEffect(() => {
@@ -182,7 +199,8 @@ export function ResearchMapCanvas({
     const generation = layoutGeneration.current + 1
     layoutGeneration.current = generation
     setLayoutPending(true)
-    void layoutArgumentMap(visibleProjection.nodes, visibleProjection.edges).then(({ nodes, edges }) => {
+    const expandedNodeIds = new Set(Object.keys(expandedNodeContent))
+    void layoutArgumentMap(visibleProjection.nodes, visibleProjection.edges, expandedNodeIds).then(({ nodes, edges }) => {
       if (layoutGeneration.current !== generation) return
       setFlowNodes(nodes.map((node) => ({
         ...node,
@@ -190,19 +208,27 @@ export function ResearchMapCanvas({
         data: {
           ...node.data,
           onFocus: (value) => {
-            onSelectNode?.(value)
+            onSelectNodeRef.current?.(value)
             setFocusDepth(1)
           },
-          onContinue: (value) => onContinueNode?.(value),
+          onContinue: (value) => onContinueNodeRef.current?.(value),
         },
       })))
       setFlowEdges(edges)
       setLayoutPending(false)
-      globalThis.requestAnimationFrame?.(() => flowRef.current?.fitView({ padding: 0.2, duration: 380 }))
+      globalThis.requestAnimationFrame?.(() => {
+        const expandedNodes = nodes.filter((node) => expandedNodeIds.has(node.id))
+        flowRef.current?.fitView({
+          nodes,
+          padding: expandedNodes.length ? 0.12 : 0.2,
+          maxZoom: expandedNodes.length ? 0.72 : undefined,
+          duration: 380,
+        })
+      })
     }).catch(() => {
       if (layoutGeneration.current === generation) setLayoutPending(false)
     })
-  }, [graphSignature, onContinueNode, onSelectNode, selectedNodeId, visibleProjection.edges, visibleProjection.nodes])
+  }, [graphSignature, selectedNodeId, visibleProjection.edges, visibleProjection.nodes])
 
   useEffect(() => {
     setFlowNodes((nodes) => nodes.map((node) => ({ ...node, selected: node.id === selectedNodeId })))
@@ -232,69 +258,70 @@ export function ResearchMapCanvas({
 
   return (
     <section className="research-map" aria-label="研究论证地图">
-      <header className="research-map__header">
-        <div className="research-map__heading">
-          <span className="research-map__eyebrow"><MapTrifoldIcon size={14} />研究论证地图</span>
-          <h2>{projection.question || '从问题开始，形成可检验的论证结构'}</h2>
-          <p>不是聊天摘要。这里仅保留 Agent 明确建立的问题、理论、主张、证据与缺口。</p>
-        </div>
-        <div className="research-map__header-actions">
-          <span className={`research-map__status research-map__status--${projection.status}`}><i aria-hidden="true" />{statusLabels[projection.status]}</span>
-          <button type="button" title="适应画布" aria-label="适应画布" onClick={() => flowRef.current?.fitView({ padding: 0.2, duration: 300 })} disabled={!projection.nodes.length}><ArrowsOutIcon size={16} /></button>
-          <button type="button" title="节点目录" aria-label="打开节点目录" aria-pressed={listOpen} onClick={() => setListOpen((value) => !value)} disabled={!projection.nodes.length}><ListBulletsIcon size={16} /></button>
-        </div>
-      </header>
-
-      <div className="research-map__canvas-wrap">
-        {!projection.nodes.length ? <MapEmptyState /> : (
+      <div className={`research-map__canvas-wrap${projection.nodes.length ? '' : ' is-empty'}`}>
+        {!projection.nodes.length ? <ResearchMapIdleShader /> : null}
+        {focusedDocumentContent ? (
+          <div className="research-map__document-focus">
+            <article className="research-document-map-node is-expanded nodrag nowheel">
+              {focusedDocumentContent}
+            </article>
+          </div>
+        ) : (
+        <ExpandedNodeContentContext.Provider value={expandedNodeContent}>
+        <ReactFlow<ArgumentFlowNode, Edge>
+          nodes={flowNodes}
+          edges={flowEdges}
+          nodeTypes={nodeTypes}
+          onInit={(instance) => { flowRef.current = instance }}
+          onNodeClick={(_, flowNode) => selectNode(flowNode.data.node)}
+          onNodeDoubleClick={(_, flowNode) => onContinueNode?.(flowNode.data.node)}
+          onPaneClick={clearSelection}
+          nodesDraggable
+          nodesConnectable={false}
+          elementsSelectable
+          fitView
+          minZoom={0.28}
+          maxZoom={1.7}
+          proOptions={{ hideAttribution: true }}
+          aria-label={projection.nodes.length ? '可缩放、可拖动的社会学论证地图' : '空白研究画布'}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8d6cf" />
+          {projection.nodes.length ? <Controls position="bottom-left" showInteractive={false} /> : null}
+          {!hasDocumentNodes && projection.nodes.length >= 16 ? (
+            <MiniMap
+              position="bottom-left"
+              pannable
+              zoomable
+              nodeColor={(node) => minimapColor((node.data as ArgumentNodeData).node.kind)}
+              maskColor="rgb(247 247 244 / 72%)"
+            />
+          ) : null}
+        </ReactFlow>
+        </ExpandedNodeContentContext.Provider>
+        )}
+        {!projection.nodes.length ? <MapIdleNote /> : null}
+        {projection.nodes.length && !hasDocumentNodes ? (
           <>
-            <ReactFlow<ArgumentFlowNode, Edge>
-              nodes={flowNodes}
-              edges={flowEdges}
-              nodeTypes={nodeTypes}
-              onInit={(instance) => { flowRef.current = instance }}
-              onNodeClick={(_, flowNode) => selectNode(flowNode.data.node)}
-              onNodeDoubleClick={(_, flowNode) => onContinueNode?.(flowNode.data.node)}
-              onPaneClick={clearSelection}
-              nodesDraggable
-              nodesConnectable={false}
-              elementsSelectable
-              fitView
-              minZoom={0.28}
-              maxZoom={1.7}
-              proOptions={{ hideAttribution: true }}
-              aria-label="可缩放、可拖动的社会学论证地图"
-            >
-              <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8d6cf" />
-              <Controls position="bottom-left" showInteractive={false} />
-              {projection.nodes.length >= 6 ? (
-                <MiniMap
-                  position="bottom-left"
-                  pannable
-                  zoomable
-                  nodeColor={(node) => minimapColor((node.data as ArgumentNodeData).node.kind)}
-                  maskColor="rgb(247 247 244 / 72%)"
-                />
-              ) : null}
-            </ReactFlow>
-            <div className="research-map__spine-label" aria-hidden="true"><TreeStructureIcon size={14} />论证脊柱</div>
             {layoutPending ? <div className="research-map__layout-status" role="status">正在整理结构…</div> : null}
 
-            <nav className="research-map__depth" aria-label="画布聚焦层级">
-              <span>视野</span>
-              {([1, 2, 'all'] as const).map((depth) => (
-                <button
-                  key={depth}
-                  type="button"
-                  className={focusDepth === depth ? 'is-active' : ''}
-                  disabled={depth !== 'all' && !selectedNode}
-                  aria-pressed={focusDepth === depth}
-                  onClick={() => setFocusDepth(depth)}
-                >{depth === 'all' ? '全部' : `${depth} 跳`}</button>
-              ))}
-            </nav>
+            <div className="research-map__toolbar">
+              <nav className="research-map__depth" aria-label="画布聚焦层级">
+                <span>视野</span>
+                {([1, 2, 'all'] as const).map((depth) => (
+                  <button
+                    key={depth}
+                    type="button"
+                    className={focusDepth === depth ? 'is-active' : ''}
+                    disabled={depth !== 'all' && !selectedNode}
+                    aria-pressed={focusDepth === depth}
+                    onClick={() => setFocusDepth(depth)}
+                  >{depth === 'all' ? '全部' : `${depth} 跳`}</button>
+                ))}
+              </nav>
+              <button className="research-map__directory-toggle" type="button" title="节点目录" aria-label="打开节点目录" aria-pressed={listOpen} onClick={() => setListOpen((value) => !value)}><ListBulletsIcon size={16} /></button>
+            </div>
 
-            {selectedNode ? (
+            {selectedNode && selectedNode.kind !== 'document' ? (
               <aside className="research-map__inspector" aria-label="节点检查器">
                 <header><span>{kindLabels[selectedNode.kind]}</span><button type="button" aria-label="关闭节点检查器" onClick={clearSelection}><XIcon size={15} /></button></header>
                 <div className={`research-map__inspector-mark is-${selectedNode.kind}`}><PathIcon size={17} /></div>
@@ -330,13 +357,9 @@ export function ResearchMapCanvas({
               </aside>
             ) : null}
           </>
-        )}
+        ) : null}
       </div>
 
-      <footer className="research-map__footer">
-        <span><b>{projection.nodes.length}</b> 个节点 · <b>{projection.edges.length}</b> 条论证关系</span>
-        <span className="research-map__legend"><span><i className="is-theory" />理论</span><span><i className="is-claim" />主张</span><span><i className="is-evidence" />证据</span><span><i className="is-gap" />缺口</span></span>
-      </footer>
     </section>
   )
 }
@@ -344,8 +367,15 @@ export function ResearchMapCanvas({
 async function layoutArgumentMap(
   nodes: ResearchCanvasNode[],
   edges: ResearchCanvasEdge[],
+  expandedNodeIds = new Set<string>(),
 ): Promise<{ nodes: ArgumentFlowNode[]; edges: Edge[] }> {
-  const result = await elk.layout({
+  const expandedNodeId = nodes.find((node) => expandedNodeIds.has(node.id))?.id
+  const compactNodes = nodes.filter((node) => node.id !== expandedNodeId)
+  const result = expandedNodeId ? {
+    children: nodes.map((node) => node.id === expandedNodeId
+      ? { id: node.id, x: 0, y: 0 }
+      : { id: node.id, x: 770, y: compactNodes.findIndex((item) => item.id === node.id) * 164 }),
+  } : await elk.layout({
     id: 'research-map',
     layoutOptions: {
       'elk.algorithm': 'layered',
@@ -361,24 +391,35 @@ async function layoutArgumentMap(
     children: nodes.map((node) => ({ id: node.id, ...nodeDimensions[node.kind] })),
     edges: edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
   })
-  const positions = new Map((result.children ?? []).map((child) => [child.id, { x: child.x ?? 0, y: child.y ?? 0 }]))
+  const positions = new Map<string, XYPosition>(
+    (result.children ?? []).map((child): [string, XYPosition] => [
+      child.id,
+      { x: child.x ?? 0, y: child.y ?? 0 },
+    ]),
+  )
   return {
     nodes: nodes.map((node) => ({
       id: node.id,
       type: 'argument',
       position: positions.get(node.id) ?? { x: 0, y: 0 },
-      data: { node, onFocus: () => undefined, onContinue: () => undefined },
-      style: nodeDimensions[node.kind],
+      data: {
+        node,
+        onFocus: () => undefined,
+        onContinue: () => undefined,
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+      },
+      style: expandedNodeIds.has(node.id) ? { width: 680, height: 820 } : nodeDimensions[node.kind],
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
       ariaLabel: `${kindLabels[node.kind]}：${node.title}`,
     })),
-    edges: edges.map((edge) => ({
+    edges: (expandedNodeId ? [] : edges).map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: 'smoothstep',
-      label: edge.label || relationLabels[edge.relation],
+      label: edge.label === '' ? undefined : edge.label || relationLabels[edge.relation],
       markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14, color: relationColor(edge.relation) },
       style: {
         stroke: relationColor(edge.relation),
@@ -431,9 +472,11 @@ function relationColor(relation: ResearchCanvasEdge['relation']) {
 
 function minimapColor(kind: ResearchCanvasNodeKind) {
   if (kind === 'question') return '#292d2a'
+  if (kind === 'phenomenon') return '#9a7742'
   if (kind === 'theory') return '#6c7b89'
   if (kind === 'claim') return '#4f6f60'
   if (kind === 'evidence') return '#8b988e'
   if (kind === 'gap') return '#aa6755'
+  if (kind === 'document') return '#2f312e'
   return '#765f84'
 }

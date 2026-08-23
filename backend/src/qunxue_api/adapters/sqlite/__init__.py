@@ -14,6 +14,11 @@ from qunxue_api.adapters.sqlite.agent_conversation_model import (
     AgentRunRow,
 )
 from qunxue_api.adapters.sqlite.base import Base
+from qunxue_api.adapters.sqlite.billing_model import (
+    CreditAccountRow,
+    CreditLedgerRow,
+    CreditRedemptionCodeRow,
+)
 from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeEntryReviewRow,
@@ -67,6 +72,9 @@ __all__ = [
     "AccountPasswordResetRow",
     "AccountSystemStateRow",
     "ConfirmedTheoryPlanRow",
+    "CreditAccountRow",
+    "CreditLedgerRow",
+    "CreditRedemptionCodeRow",
     "AgentConversationRow",
     "AgentMessageRow",
     "AgentRunRow",

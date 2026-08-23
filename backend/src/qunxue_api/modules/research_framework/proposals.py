@@ -9,7 +9,9 @@ from typing import Protocol
 from uuid import UUID, uuid4
 
 from qunxue_api.modules.research_framework.document import (
+    REQUIRED_FRAMEWORK_SECTION_KEYS,
     ResearchDocumentSection,
+    ResearchDocumentSectionStatus,
     ResearchDocumentService,
     ResearchDocumentSnapshot,
     ResearchDocumentStatus,
@@ -231,7 +233,11 @@ class ResearchDocumentProposalService:
         rationale: str,
     ) -> ResearchDocumentProposalSnapshot:
         release_id = knowledge_release_id.strip()
-        self._validate_proposed_sections(sections, release_id=release_id)
+        self._validate_proposed_sections(
+            sections,
+            release_id=release_id,
+            require_complete=True,
+        )
         self._require_agent_context(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -374,12 +380,23 @@ class ResearchDocumentProposalService:
         if proposal.kind is ResearchDocumentProposalKind.CREATE:
             if expected_document_version is not None:
                 raise ValueError("new document proposal has no base version")
+            self._validate_proposed_sections(
+                proposal.proposed_sections,
+                release_id=proposal.knowledge_release_id,
+                require_complete=True,
+            )
+            accepted_sections = tuple(
+                replace(section, status=ResearchDocumentSectionStatus.REVIEWED)
+                if section.status is ResearchDocumentSectionStatus.DRAFT
+                else section
+                for section in proposal.proposed_sections
+            )
             document = self._documents.create(
                 task_id=proposal.task_id,
                 theory_plan_id=proposal.theory_plan_id,
                 knowledge_release_id=proposal.knowledge_release_id,
                 title=proposal.title,
-                sections=proposal.proposed_sections,
+                sections=accepted_sections,
                 actor="agent_suggestion_accepted",
             )
         else:
@@ -391,6 +408,11 @@ class ResearchDocumentProposalService:
             if current.version != expected_document_version:
                 raise ValueError("stale research document version")
             replacement = proposal.proposed_sections[0]
+            if replacement.status is ResearchDocumentSectionStatus.DRAFT:
+                replacement = replace(
+                    replacement,
+                    status=ResearchDocumentSectionStatus.REVIEWED,
+                )
             sections = tuple(
                 replacement if item.section_id == replacement.section_id else item
                 for item in current.sections
@@ -492,7 +514,10 @@ class ResearchDocumentProposalService:
 
     @staticmethod
     def _validate_proposed_sections(
-        sections: tuple[ResearchDocumentSection, ...], *, release_id: str
+        sections: tuple[ResearchDocumentSection, ...],
+        *,
+        release_id: str,
+        require_complete: bool = False,
     ) -> None:
         if not release_id:
             raise ValueError("knowledge release is required")
@@ -503,6 +528,28 @@ class ResearchDocumentProposalService:
                 raise ValueError("proposal section content is required")
             if any(item.knowledge_release_id != release_id for item in section.evidence_refs):
                 raise ValueError("proposal evidence must use the document knowledge release")
+        if not require_complete:
+            return
+
+        section_keys = [section.key for section in sections]
+        unique_keys = set(section_keys)
+        missing = sorted(REQUIRED_FRAMEWORK_SECTION_KEYS - unique_keys)
+        unexpected = sorted(unique_keys - REQUIRED_FRAMEWORK_SECTION_KEYS)
+        duplicate = len(section_keys) != len(unique_keys)
+        if not missing and not unexpected and not duplicate:
+            return
+
+        details: list[str] = []
+        if missing:
+            details.append(f"missing: {', '.join(missing)}")
+        if unexpected:
+            details.append(f"unexpected: {', '.join(unexpected)}")
+        if duplicate:
+            details.append("duplicate section keys are not allowed")
+        raise ValueError(
+            "create proposal must include exactly the 12 required framework sections; "
+            + "; ".join(details)
+        )
 
 
 def _proposal_hash(

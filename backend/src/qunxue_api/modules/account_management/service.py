@@ -842,6 +842,9 @@ class AccountManagementService:
             "next_cursor": str(offset + limit) if has_more else None,
         }
 
+    def require_admin_access(self, user_id: UUID) -> None:
+        self._require_admin(user_id)
+
     def _require_admin(self, user_id: UUID) -> dict[str, object]:
         account = self.get_account(user_id)
         if account["role"] != "admin" or account["status"] != "active":

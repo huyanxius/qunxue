@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { Fragment, type ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,13 +7,31 @@ import * as researchApi from '../../api/researchWorkspace'
 import { ResearchDocumentWorkbench } from './ResearchDocumentWorkbench'
 
 vi.mock('../../api/client', () => ({ apiClient: {} }))
+vi.mock('./ResearchMapCanvas', () => ({
+  ResearchMapCanvas: ({ projection, expandedNodeContent, onSelectNode }: {
+    projection: { nodes: Array<{ id: string; kind: string; title: string }> }
+    expandedNodeContent: Readonly<Record<string, ReactNode>>
+    onSelectNode: (node: { id: string; kind: string; title: string }) => void
+  }) => (
+    <section aria-label="研究论证地图">
+      {projection.nodes.map((node) => <button type="button" key={node.id} aria-label={`${node.kind === 'document' ? '研究章节' : '研究节点'}：${node.title}`} onClick={() => onSelectNode(node)}>{node.title}</button>)}
+      {Object.entries(expandedNodeContent).map(([id, content]) => <Fragment key={id}>{content}</Fragment>)}
+    </section>
+  ),
+}))
+vi.mock('../agent/ResearchAgentConversationPage', () => ({
+  ResearchAgentConversationPage: ({ taskId, workspace }: { taskId: string | null; workspace: string }) => (
+    <aside aria-label="研究 Agent 对话栏" data-task-id={taskId ?? ''} data-workspace={workspace} />
+  ),
+}))
 
 afterEach(() => {
+  cleanup()
   vi.restoreAllMocks()
 })
 
 describe('ResearchDocumentWorkbench', () => {
-  it('renders a document-first three-column research workspace for a real task', async () => {
+  it('keeps document research on the canvas as editable section nodes beside the shared Agent', async () => {
     render(
       <MemoryRouter initialEntries={['/research/task-1/match']}>
         <Routes>
@@ -21,10 +40,17 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByRole('heading', { name: '理论判断文档' })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: '研究章节' })).toBeInTheDocument()
-    expect(screen.getByRole('complementary', { name: '研究 Agent' })).toBeInTheDocument()
-    expect(screen.getByText(/尚未生成可编辑研究文档/)).toBeInTheDocument()
+    const questionCard = await screen.findByRole('button', { name: '研究章节：研究问题' })
+    expect(screen.getByRole('region', { name: '研究论证地图' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '研究章节：核心现象' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '研究章节：候选理论' })).toBeInTheDocument()
+    fireEvent.click(questionCard)
+    expect(screen.getByRole('region', { name: '研究文档节点' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: '文档结构' })).not.toBeInTheDocument()
+    const agent = screen.getByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(agent).toHaveAttribute('data-task-id', 'task-1')
+    expect(agent).toHaveAttribute('data-workspace', 'research')
+    expect(screen.getByText(/这一部分会随着研究推进形成可编辑内容/)).toBeInTheDocument()
     expect(document.querySelector('.research-document-editor .ProseMirror')).not.toBeInTheDocument()
   })
 
@@ -37,6 +63,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
     expect(await screen.findByText(/当前 Agent 运行环境未连接/)).toBeInTheDocument()
     expect(screen.getAllByText(/不会把静态示例当作真实研究结果/).length).toBeGreaterThan(0)
   })
@@ -88,9 +115,10 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
 
-    expect(await screen.findByText('社会资本理论')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '社会资本理论' })).toBeVisible()
     expect(createMatchRun).toHaveBeenCalledWith({
       path: { task_id: 'task-1' },
       headers: { 'Idempotency-Key': expect.any(String) },
@@ -163,6 +191,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '重新匹配' }))
 
     await waitFor(() => expect(createMatchRun).toHaveBeenCalledTimes(1))
@@ -211,6 +240,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('网络连接中断')
     fireEvent.click(screen.getByRole('button', { name: '开始理论匹配' }))
@@ -267,7 +297,8 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('release-formal-1')).toBeVisible()
+    expect(screen.queryByText('release-formal-1')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '确认理论方案，进入 M5' }))
 
     expect(await screen.findByRole('heading', { name: 'M5 服务端恢复目标' })).toBeVisible()

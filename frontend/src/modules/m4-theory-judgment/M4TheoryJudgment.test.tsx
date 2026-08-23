@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -139,6 +140,25 @@ describe('M4TheoryJudgment', () => {
     vi.useRealTimers()
   })
 
+  it('starts one matching request while StrictMode remounts the initial effect', async () => {
+    const service = gateway()
+    const pending = deferred<M4Workspace>()
+    vi.mocked(service.start).mockReturnValue(pending.promise)
+
+    render(
+      <StrictMode>
+        <M4TheoryJudgment
+          task={{ taskId: 'task-1', taskVersion: 7, matchRunId: null, theoryPlanId: null, phenomenonQueryId: 'phenomenon-1', phenomenonVersion: 2, canStartMatching: true }}
+          gateway={service}
+        />
+      </StrictMode>,
+    )
+
+    await waitFor(() => expect(service.start).toHaveBeenCalledTimes(1))
+    pending.resolve(workspace())
+    expect(await screen.findByRole('article', { name: '候选理论：时间贫困理论' })).toBeVisible()
+  })
+
   it('restores the server draft and exposes complete fit, risk, provenance, and user-owned fields', async () => {
     const service = gateway()
     render(<M4TheoryJudgment task={{ taskId: 'task-1', taskVersion: 7, matchRunId: 'match-1', theoryPlanId: null, phenomenonQueryId: 'phenomenon-1', phenomenonVersion: 2, canStartMatching: false }} gateway={service} />)
@@ -252,8 +272,9 @@ describe('M4TheoryJudgment', () => {
     render(<M4TheoryJudgment task={{ taskId: 'task-1', taskVersion: 7, matchRunId: 'match-1', theoryPlanId: null, phenomenonQueryId: 'phenomenon-1', phenomenonVersion: 2, canStartMatching: false }} gateway={service} />)
 
     expect(await screen.findByText('暂时没有足够可靠的候选理论')).toBeVisible()
-    expect(screen.getByText('你可以返回补充现象材料，或稍后重新匹配。')).toBeVisible()
-    expect(screen.getByRole('button', { name: '重新检查候选' })).toBeEnabled()
+    expect(screen.getByText('你可以返回补充现象材料，或使用当前预审核版本重新匹配。')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '重新检查候选' }))
+    await waitFor(() => expect(service.start).toHaveBeenCalledTimes(1))
     expect(screen.queryByRole('button', { name: '保存完整理论决定' })).not.toBeInTheDocument()
   })
 

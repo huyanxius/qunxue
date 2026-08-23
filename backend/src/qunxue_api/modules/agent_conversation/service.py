@@ -38,7 +38,9 @@ class _MemoryRepository:
         runs_by_turn = {
             run.turn_id: run.tool_summary
             for run in self.runs.values()
-            if run.conversation_id == conversation_id and run.turn_id is not None
+            if run.conversation_id == conversation_id
+            and run.status == "completed"
+            and run.turn_id is not None
         }
         if not runs_by_turn:
             return conversation
@@ -70,11 +72,37 @@ class _MemoryRepository:
             )
         )
 
+    def rename(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+        updated_at: datetime,
+    ) -> Conversation:
+        conversation = self.get(user_id=user_id, conversation_id=conversation_id)
+        renamed = replace(conversation, title=title, updated_at=updated_at)
+        self.conversations[conversation_id] = renamed
+        return renamed
+
+    def delete(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        self.get(user_id=user_id, conversation_id=conversation_id)
+        self.conversations.pop(conversation_id)
+        self.turn_keys = {
+            key: turn_id for key, turn_id in self.turn_keys.items() if key[0] != conversation_id
+        }
+        self.runs = {
+            run_id: run
+            for run_id, run in self.runs.items()
+            if run.conversation_id != conversation_id
+        }
+
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]:
         return {
             run.turn_id: run.knowledge_release_id
             for run in self.runs.values()
             if run.conversation_id == conversation_id
+            and run.status == "completed"
             and run.turn_id is not None
             and run.knowledge_release_id is not None
         }
@@ -164,7 +192,11 @@ class _MemoryRepository:
             provider=provider or current.provider,
             model=model or current.model,
             knowledge_release_id=current.knowledge_release_id,
-            turn_id=current.turn_id if turn_id is None else turn_id,
+            turn_id=(
+                None
+                if status != "completed" and turn_id is None
+                else current.turn_id if turn_id is None else turn_id
+            ),
             tool_summary=tool_summary,
         )
 
@@ -196,6 +228,26 @@ class ConversationService:
 
     def list_conversations(self, *, user_id: UUID) -> Sequence[Conversation]:
         return self._repository.list(user_id=user_id)
+
+    def rename_conversation(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+    ) -> Conversation:
+        normalized_title = title.strip()
+        if not normalized_title:
+            raise ValueError("conversation title must not be empty")
+        return self._repository.rename(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            title=normalized_title[:120],
+            updated_at=datetime.now(UTC),
+        )
+
+    def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        self._repository.delete(user_id=user_id, conversation_id=conversation_id)
 
     def release_ids_by_turn(
         self,

@@ -2,7 +2,7 @@ import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from qunxue_api.adapters.sqlite.account_management_repository import (
     SqliteAccountRepository,
 )
+from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
@@ -27,6 +28,11 @@ from qunxue_api.modules.account_management import (
     InvalidCurrentPassword,
     InvalidPasswordReset,
     ProvisionedAdministratorProtected,
+)
+from qunxue_api.modules.billing import (
+    CreditCodeBatchConflict,
+    CreditCodeUnavailable,
+    CreditService,
 )
 from qunxue_api.modules.identity import PasswordHasher, User
 
@@ -60,18 +66,20 @@ def install_account_management(
             configured_admin_password = setting.get_secret_value()
     if not configured_admin_email or not configured_admin_password:
         raise RuntimeError(
+            "QUNXUE_ACCOUNT_INITIAL_ADMIN_EMAIL and "
             "QUNXUE_ACCOUNT_INITIAL_ADMIN_PASSWORD must be configured before "
             "installing account management"
         )
     if len(configured_admin_password) < 12:
         raise RuntimeError("the initial administrator password must have 12+ characters")
 
-    _provision_initial_administrator(
+    configured_admin_user_id = _provision_initial_administrator(
         database=database,
         password_hasher=password_hasher,
         email=configured_admin_email,
         password=configured_admin_password,
     )
+    credit_exempt_user_ids = frozenset({configured_admin_user_id})
 
     @contextmanager
     def service_scope() -> Iterator[AccountManagementService]:
@@ -82,10 +90,55 @@ def install_account_management(
                 password_reset_signing_secret=configured_admin_password,
             )
 
+    @contextmanager
+    def credit_service_scope() -> Iterator[CreditService]:
+        with database.session() as session:
+            yield CreditService(
+                SqliteCreditRepository(session),
+                exempt_user_ids=credit_exempt_user_ids,
+                code_signing_secret=configured_admin_password,
+            )
+
     app.state.account_management_service_scope = service_scope
+    app.state.credit_service_scope = credit_service_scope
+    app.state.credit_exempt_user_ids = credit_exempt_user_ids
     app.state.account_management_installed = True
     for router in routers:
         app.include_router(router)
+
+    @app.exception_handler(CreditCodeUnavailable)
+    async def handle_credit_code_unavailable(
+        _request: Request,
+        error: CreditCodeUnavailable,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.CREDIT_CODE_UNAVAILABLE,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(CreditCodeBatchConflict)
+    async def handle_credit_code_batch_conflict(
+        _request: Request,
+        error: CreditCodeBatchConflict,
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.CREDIT_CODE_BATCH_CONFLICT,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=body.model_dump(mode="json"),
+        )
 
     @app.exception_handler(AccountManagementError)
     async def handle_account_management_error(
@@ -155,7 +208,7 @@ def _provision_initial_administrator(
     password_hasher: PasswordHasher,
     email: str,
     password: str,
-) -> None:
+) -> UUID:
     now = datetime.now(UTC)
     with database.session() as session:
         accounts = SqliteAccountRepository(session)
@@ -172,7 +225,7 @@ def _provision_initial_administrator(
                     "the configured initial administrator no longer matches "
                     "the provisioned account"
                 )
-            return
+            return provisioned_user_id
 
         password_hash = password_hasher.hash(password)
         identities = SqliteIdentityRepository(session)
@@ -201,6 +254,7 @@ def _provision_initial_administrator(
             details={"source": "deployment_configuration"},
             now=now,
         )
+        return user.user_id
 
 
 __all__ = ["install_account_management"]

@@ -1,5 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
@@ -40,6 +41,8 @@ class AgentRunResult:
     release_id: str
     provider: str
     model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +85,7 @@ class SubjectAgentRunner(Protocol):
         self,
         *,
         prompt: str,
-        conversation: str,
+        conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult: ...
 
@@ -90,7 +93,7 @@ class SubjectAgentRunner(Protocol):
         self,
         *,
         prompt: str,
-        conversation: str,
+        conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
         on_delta: Callable[[str], None],
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
@@ -105,6 +108,17 @@ class ConversationRepository(Protocol):
     def get(self, *, user_id: UUID, conversation_id: UUID) -> Conversation: ...
 
     def list(self, *, user_id: UUID) -> Sequence[Conversation]: ...
+
+    def rename(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        title: str,
+        updated_at: datetime,
+    ) -> Conversation: ...
+
+    def delete(self, *, user_id: UUID, conversation_id: UUID) -> None: ...
 
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]: ...
 

@@ -2,7 +2,10 @@ from typing import Protocol
 from uuid import UUID
 
 from qunxue_api.application.research_start import ResearchStartApplication
-from qunxue_api.application.theory_matching import TheoryMatchingApplication
+from qunxue_api.application.theory_matching import (
+    MatchingCatalogNotReady,
+    TheoryMatchingApplication,
+)
 from qunxue_api.modules.research_intake import (
     PhenomenonService,
     ResearchStartProposal,
@@ -135,16 +138,25 @@ class AgentResearchWorkflow:
             else None
         )
         if current_match is None or current_match.status is MatchRunStatus.NO_RELIABLE_CANDIDATE:
-            match_run = self._matching.start(
-                user_id=user_id,
-                task=task,
-                phenomenon=phenomenon,
-                idempotency_key=f"agent-match:{conversation_id}:{task.version}",
-                expected_task_version=task.version,
-                phenomenon_query_id=phenomenon.phenomenon_query_id,
-                phenomenon_version=phenomenon.version,
-                requested_knowledge_release_id=task.knowledge_release_id,
-            )
+            try:
+                match_run = self._matching.start(
+                    user_id=user_id,
+                    task=task,
+                    phenomenon=phenomenon,
+                    idempotency_key=f"agent-match:{conversation_id}:{task.version}",
+                    expected_task_version=task.version,
+                    phenomenon_query_id=phenomenon.phenomenon_query_id,
+                    phenomenon_version=phenomenon.version,
+                    requested_knowledge_release_id=task.knowledge_release_id,
+                )
+            except MatchingCatalogNotReady as error:
+                return {
+                    "error": "matching_catalog_not_ready",
+                    "message": str(error),
+                    "task_id": str(task.task_id),
+                    "knowledge_release_id": task.knowledge_release_id,
+                    "next_action": "install_pre_reviewed_release_then_start_matching",
+                }
         else:
             match_run = current_match
         return _match_result(match_run)
@@ -182,13 +194,6 @@ class AgentResearchWorkflow:
                 "knowledge_release_id": match_run.knowledge_release.knowledge_release_id,
                 "next_action": "update_knowledge_release_or_refine_phenomenon",
             }
-        if match_run.status is not MatchRunStatus.AWAITING_DECISION:
-            return {
-                "error": "match_run_not_ready",
-                "message": "理论匹配尚未进入可保存用户决定的状态。",
-                "match_run_id": str(match_run.match_run_id),
-                "status": match_run.status.value,
-            }
         if (
             match_run.status is MatchRunStatus.PARTIAL_FAILURE
             and not match_run.partial_completion_acknowledged
@@ -196,6 +201,16 @@ class AgentResearchWorkflow:
             return {
                 "error": "partial_match_acknowledgement_required",
                 "failed_candidate_ids": [str(item) for item in match_run.failed_candidate_ids],
+            }
+        if match_run.status not in {
+            MatchRunStatus.AWAITING_DECISION,
+            MatchRunStatus.PARTIAL_FAILURE,
+        }:
+            return {
+                "error": "match_run_not_ready",
+                "message": "理论匹配尚未进入可保存用户决定的状态。",
+                "match_run_id": str(match_run.match_run_id),
+                "status": match_run.status.value,
             }
         candidate_versions = {
             str(item.candidate_id): item.candidate_version for item in match_run.candidates
