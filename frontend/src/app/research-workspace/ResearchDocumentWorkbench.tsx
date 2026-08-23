@@ -708,6 +708,13 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
             ) : null}
             {mode === 'match' && activeSection?.section_id === 'candidate_theories' && matchRun && matchRun.status !== 'no_reliable_candidate' ? <section className="theory-candidates" aria-label="候选理论">
               <div className="theory-candidates__heading"><span>候选理论</span><small>{matchRun.candidate_page.candidates.length} 个候选</small></div>
+              {matchRun.retrieval ? <dl className="theory-retrieval-provenance" role="group" aria-label="匹配发布与检索证据链">
+                <div><dt>固定发布</dt><dd><code>{matchRun.knowledge_release_id}</code></dd></div>
+                <div><dt>检索模式</dt><dd>{matchRun.retrieval.mode}</dd></div>
+                <div><dt>索引</dt><dd><code>{matchRun.retrieval.retrieval_index_id ?? '未记录'}</code></dd></div>
+                <div><dt>Embedding</dt><dd>{matchRun.retrieval.embedding_model ?? '未记录'}</dd></div>
+                <div><dt>Reranker</dt><dd>{matchRun.retrieval.reranker_model ?? '未记录'}</dd></div>
+              </dl> : null}
               {matchRun.candidate_page.candidates.map((candidate) => <article key={candidate.candidate_id} className="theory-candidate">
                 <div><h3>{candidate.title}</h3><p>{candidate.applicability_rationale}</p></div>
                 <div className="theory-candidate__actions"><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'adopt'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'adopt')}>采用</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'combine'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'combine')}>组合</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'retain'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'retain')}>保留</button><button type="button" aria-pressed={pendingTheoryDecisions[candidate.candidate_id]?.action === 'exclude'} onClick={() => recordTheoryDecision(candidate.candidate_id, candidate.version, 'exclude')}>排除</button></div>
