@@ -127,6 +127,31 @@ function LocationProbe() {
 }
 
 describe('ResearchAgentConversationPage', () => {
+  it('keeps the conversation rail visible while the research history dialog is open', async () => {
+    const conversation = conversationFixture({ id: 'conversation-history-rail' })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === '/api/agent/conversations') {
+        return json({ items: [{
+          conversation_id: conversation.conversation_id,
+          title: conversation.title,
+          updated_at: conversation.updated_at,
+          turn_count: conversation.turn_count,
+        }] })
+      }
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({}, 404)
+    }))
+    renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
+
+    await screen.findByText(conversation.turns[0].assistant.content)
+    expect(screen.getByRole('region', { name: 'Agent 对话记录' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '打开研究记录' }))
+
+    expect(screen.getByRole('dialog', { name: '研究记录' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Agent 对话记录' })).toBeVisible()
+  })
+
   it('renames and deletes a saved conversation from its overflow menu', async () => {
     const conversation = conversationFixture({ id: 'conversation-manage' })
     const renamedTitle = '青年婚姻研究'
@@ -787,7 +812,12 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
     expect(await within(region).findByText('正在阅读研究材料')).toBeVisible()
-    expect(within(region).getByText(/已运行 00:0\d/)).toBeVisible()
+    expect(within(region).queryByText(/已运行/)).not.toBeInTheDocument()
+    expect(within(region).queryByText('Agent 正在组织问题与证据…')).not.toBeInTheDocument()
+    const runningTool = within(region).getByRole('button', { name: /Agent 正在调用工具/ })
+    expect(runningTool).toHaveAttribute('aria-expanded', 'false')
+    expect(within(region).getByText('根据当前问题核对知识条目的主张、适用前提与证据边界')).not.toBeVisible()
+    fireEvent.click(runningTool)
     expect(within(region).getByText('根据当前问题核对知识条目的主张、适用前提与证据边界')).toBeVisible()
     fireEvent.click(within(region).getByRole('button', { name: '停止生成' }))
 
@@ -799,6 +829,9 @@ describe('ResearchAgentConversationPage', () => {
     const restored = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     expect(within(restored).getByText('已经形成一段可保留的回答。')).toBeVisible()
     expect(within(restored).getByText('本轮已停止，已保留生成内容和 1 个已完成步骤。')).toBeVisible()
+    const restoredTools = within(restored).getByRole('button', { name: /工具调用已中断/ })
+    expect(restoredTools).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(restoredTools)
     expect(within(restored).getByText('青年孤独研究')).toBeVisible()
   })
 
