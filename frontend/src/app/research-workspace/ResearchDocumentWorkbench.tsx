@@ -2,7 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from '@tiptap/markdown'
 import { CheckCircleIcon, CircleNotchIcon, DownloadSimpleIcon, WarningCircleIcon } from '@phosphor-icons/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import {
@@ -54,6 +54,35 @@ const M5_SECTIONS = [
   ['limitations', '局限'],
   ['evidence_gaps', '证据缺口'],
 ] as const
+
+const AGENT_PANEL_WIDTH_STORAGE_KEY = 'qunxue.research.agent-panel-width'
+const DEFAULT_AGENT_PANEL_WIDTH = 430
+const MIN_AGENT_PANEL_WIDTH = 320
+const MAX_AGENT_PANEL_WIDTH = 680
+const MIN_RESEARCH_CANVAS_WIDTH = 360
+const AGENT_PANEL_KEYBOARD_STEP = 24
+
+function clampAgentPanelWidth(width: number, maxWidth = MAX_AGENT_PANEL_WIDTH) {
+  return Math.round(Math.min(Math.max(width, MIN_AGENT_PANEL_WIDTH), Math.max(MIN_AGENT_PANEL_WIDTH, maxWidth)))
+}
+
+function readStoredAgentPanelWidth() {
+  if (typeof window === 'undefined') return DEFAULT_AGENT_PANEL_WIDTH
+  try {
+    const width = Number(window.localStorage.getItem(AGENT_PANEL_WIDTH_STORAGE_KEY))
+    return Number.isFinite(width) && width > 0 ? clampAgentPanelWidth(width) : DEFAULT_AGENT_PANEL_WIDTH
+  } catch {
+    return DEFAULT_AGENT_PANEL_WIDTH
+  }
+}
+
+function persistAgentPanelWidth(width: number) {
+  try {
+    window.localStorage.setItem(AGENT_PANEL_WIDTH_STORAGE_KEY, String(Math.round(width)))
+  } catch {
+    // Resizing still works for the current session when storage is unavailable.
+  }
+}
 
 type SectionKey = string
 type ResearchDocumentProposalResponse = NonNullable<Awaited<ReturnType<typeof listResearchTaskDocumentProposals>>['data']>['items'][number]
@@ -110,6 +139,13 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
   const matchingAttemptKeyRef = useRef<string | null>(null)
   const matchingInFlightRef = useRef(false)
   const saveInFlightRef = useRef<Promise<ResearchDocumentResponse | null> | null>(null)
+  const workspaceRef = useRef<HTMLDivElement | null>(null)
+  const activeResizePointer = useRef<number | null>(null)
+  const mouseResizeCleanup = useRef<(() => void) | null>(null)
+  const [agentPanelWidth, setAgentPanelWidth] = useState(readStoredAgentPanelWidth)
+  const agentPanelWidthRef = useRef(agentPanelWidth)
+  const [agentPanelMaxWidth, setAgentPanelMaxWidth] = useState(MAX_AGENT_PANEL_WIDTH)
+  const [resizingAgentPanel, setResizingAgentPanel] = useState(false)
 
   const sections = useMemo(() => document?.sections.length ? document.sections : sectionFallback(mode), [document?.sections, mode])
   const activeSection = sections.find((section) => section.section_id === activeSectionId) ?? sections[0]
@@ -275,6 +311,92 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
     })
     return () => { disposed = true }
   }, [taskId])
+
+  const availableAgentPanelWidth = useCallback(() => {
+    const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width || window.innerWidth
+    return Math.max(MIN_AGENT_PANEL_WIDTH, Math.min(MAX_AGENT_PANEL_WIDTH, workspaceWidth - MIN_RESEARCH_CANVAS_WIDTH))
+  }, [])
+
+  const updateAgentPanelWidth = useCallback((width: number, persist = false) => {
+    const nextWidth = clampAgentPanelWidth(width, availableAgentPanelWidth())
+    agentPanelWidthRef.current = nextWidth
+    setAgentPanelWidth(nextWidth)
+    if (persist) persistAgentPanelWidth(nextWidth)
+  }, [availableAgentPanelWidth])
+
+  const resizeFromClientX = useCallback((clientX: number) => {
+    const workspace = workspaceRef.current?.getBoundingClientRect()
+    if (workspace?.width) updateAgentPanelWidth(workspace.right - clientX)
+  }, [updateAgentPanelWidth])
+
+  useEffect(() => {
+    const workspace = workspaceRef.current
+    if (!workspace) return
+    const syncBounds = () => {
+      const maxWidth = availableAgentPanelWidth()
+      setAgentPanelMaxWidth(maxWidth)
+      updateAgentPanelWidth(agentPanelWidthRef.current)
+    }
+    syncBounds()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncBounds)
+      return () => window.removeEventListener('resize', syncBounds)
+    }
+    const observer = new ResizeObserver(syncBounds)
+    observer.observe(workspace)
+    return () => observer.disconnect()
+  }, [availableAgentPanelWidth, updateAgentPanelWidth])
+
+  function startPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    activeResizePointer.current = event.pointerId
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setResizingAgentPanel(true)
+  }
+
+  function movePointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current === event.pointerId) resizeFromClientX(event.clientX)
+  }
+
+  function finishPointerResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activeResizePointer.current !== event.pointerId) return
+    activeResizePointer.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    setResizingAgentPanel(false)
+    persistAgentPanelWidth(agentPanelWidthRef.current)
+  }
+
+  function startMouseResize(event: ReactMouseEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    const targetWindow = event.currentTarget.ownerDocument.defaultView
+    if (!targetWindow) return
+    setResizingAgentPanel(true)
+    const move = (moveEvent: MouseEvent) => resizeFromClientX(moveEvent.clientX)
+    const finish = () => {
+      setResizingAgentPanel(false)
+      persistAgentPanelWidth(agentPanelWidthRef.current)
+      targetWindow.removeEventListener('mousemove', move)
+      targetWindow.removeEventListener('mouseup', finish)
+      mouseResizeCleanup.current = null
+    }
+    mouseResizeCleanup.current = finish
+    targetWindow.addEventListener('mousemove', move)
+    targetWindow.addEventListener('mouseup', finish)
+  }
+
+  useEffect(() => () => mouseResizeCleanup.current?.(), [])
+
+  function handleResizeKey(event: KeyboardEvent<HTMLDivElement>) {
+    const nextWidth = event.key === 'ArrowLeft' ? agentPanelWidth + AGENT_PANEL_KEYBOARD_STEP
+      : event.key === 'ArrowRight' ? agentPanelWidth - AGENT_PANEL_KEYBOARD_STEP
+        : event.key === 'Home' ? MIN_AGENT_PANEL_WIDTH
+          : event.key === 'End' ? agentPanelMaxWidth
+            : null
+    if (nextWidth === null) return
+    event.preventDefault()
+    updateAgentPanelWidth(nextWidth, true)
+  }
 
   const refreshDocumentState = useCallback(async () => {
     if (!taskId) return
@@ -624,7 +746,12 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
           <h1 className="research-document-workbench__title">
             {mode === 'framework' ? '研究框架文档' : '理论判断文档'}
           </h1>
-          <div className="research-document-workbench__workspace">
+          <div
+            ref={workspaceRef}
+            className="research-document-workbench__workspace"
+            data-resizing={resizingAgentPanel}
+            style={{ '--rdw-agent-width': `${agentPanelWidth}px` } as CSSProperties}
+          >
             <ResearchMapCanvas
               projection={mapProjection}
               selectedNodeId={selectedMapNodeId}
@@ -632,6 +759,23 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
               onClearSelection={() => setSelectedMapNodeId(null)}
               onContinueNode={(node) => openSectionNode(node.id)}
               expandedNodeContent={selectedMapNodeId?.startsWith(sectionNodePrefix) ? { [selectedMapNodeId]: documentNodeContent } : {}}
+            />
+
+            <div
+              className="research-document-workbench__resize-handle"
+              role="separator"
+              tabIndex={0}
+              aria-label="调整 Agent 对话栏宽度"
+              aria-orientation="vertical"
+              aria-valuemin={MIN_AGENT_PANEL_WIDTH}
+              aria-valuemax={agentPanelMaxWidth}
+              aria-valuenow={agentPanelWidth}
+              onKeyDown={handleResizeKey}
+              onMouseDown={startMouseResize}
+              onPointerDown={startPointerResize}
+              onPointerMove={movePointerResize}
+              onPointerUp={finishPointerResize}
+              onPointerCancel={finishPointerResize}
             />
 
             <ResearchAgentConversationPage
