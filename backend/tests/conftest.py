@@ -83,7 +83,11 @@ def plain_client(
     )
     command.upgrade(alembic_config, "head")
     database = Database(settings.database_url)
-    app = create_app(settings=settings, database=database)
+    app = create_app(
+        settings=settings,
+        database=database,
+        require_email_verification=False,
+    )
 
     with TestClient(app) as test_client:
         yield test_client

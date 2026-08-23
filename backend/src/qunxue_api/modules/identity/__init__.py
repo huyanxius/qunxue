@@ -4,18 +4,22 @@ from qunxue_api.modules.identity.domain import (
     AccountRole,
     AccountStatus,
     AuthenticatedSession,
+    RegistrationVerification,
     SessionGrant,
     User,
     UserSession,
 )
 from qunxue_api.modules.identity.errors import (
     EmailAlreadyRegistered,
+    EmailDeliveryUnavailable,
     IdentityError,
     InvalidCredentials,
     InvalidEmail,
+    InvalidVerificationCode,
     Unauthenticated,
+    VerificationCodeRateLimited,
 )
-from qunxue_api.modules.identity.ports import IdentityRepository, PasswordHasher
+from qunxue_api.modules.identity.ports import EmailProvider, IdentityRepository, PasswordHasher
 from qunxue_api.modules.identity.service import IdentityService
 
 __all__ = [
@@ -23,14 +27,19 @@ __all__ = [
     "AccountStatus",
     "AuthenticatedSession",
     "EmailAlreadyRegistered",
+    "EmailDeliveryUnavailable",
+    "EmailProvider",
     "IdentityError",
     "IdentityRepository",
     "IdentityService",
     "InvalidCredentials",
     "InvalidEmail",
+    "InvalidVerificationCode",
     "PasswordHasher",
     "SessionGrant",
+    "RegistrationVerification",
     "Unauthenticated",
     "User",
     "UserSession",
+    "VerificationCodeRateLimited",
 ]

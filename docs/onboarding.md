@@ -41,6 +41,8 @@ make bootstrap
 
 - `QUNXUE_DATABASE_URL`：覆盖应用与 Alembic 使用的数据库地址，通过启动命令前的 shell 环境或 `backend/.env` 提供；
 - `VITE_API_BASE_URL`：覆盖浏览器请求的 API 地址，通过启动命令前的 shell 环境或 `frontend/.env.local` 提供。本地开发不要设置；跨源部署还必须由 API 明确允许前端来源，当前基线没有配置 CORS。
+- `QUNXUE_RESEND_API_KEY`：启用 Resend 注册验证码邮件发送；未配置时验证码接口明确返回服务不可用，不会伪装发送成功；
+- `QUNXUE_EMAIL_FROM`：已在 Resend 验证域名下的发件人，默认是 `群学致知 <noreply@qunxue.qiyuankaiwu.com>`。
 
 模型运行默认是 `QUNXUE_RUNTIME_MODE=mock`，继续使用 deterministic Mock，不需要密钥。只要在 `backend/.env` 填入 `QUNXUE_MODEL_API_KEY`，独立知识 Agent 就会自动切换到 DeepSeek OpenAI-compatible Provider，默认使用 `https://api.deepseek.com` 与 `deepseek-v4-flash`，并关闭 thinking 以节省推理 token。使用其他兼容服务时，再额外设置 `QUNXUE_MODEL_BASE_URL`（包含服务要求的路径）和 `QUNXUE_MODEL_NAME`；`base` 与 `sft` 仍可显式选择对应运行模式。可选配置包括 `QUNXUE_MODEL_TIMEOUT_SECONDS`、JSON 对象形式的 `QUNXUE_MODEL_EXTRA_HEADERS`。`sft` 还可用 `QUNXUE_MODEL_SFT_RESOURCE_HEADER` 和 `QUNXUE_MODEL_SFT_RESOURCE_ID` 增加一个受控资源请求头。
 

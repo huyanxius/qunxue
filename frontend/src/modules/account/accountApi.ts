@@ -8,6 +8,7 @@ import {
   loginSession,
   logoutSession,
   registerSession,
+  sendRegistrationCode,
   type SessionResponse,
 } from '../../api/generated'
 import type { AccountSession, MyResearchItem } from './types'
@@ -62,14 +63,44 @@ export function isLoginServiceFailure(failure: unknown): boolean {
 export async function registerViaApi(
   email: string,
   password: string,
+  verificationCode: string,
 ): Promise<AccountSession> {
   const { data, response } = await registerSession({
     client: apiClient,
     headers: { 'Idempotency-Key': idempotencyKey() },
-    body: { email, password, display_name: null },
+    body: { email, password, display_name: null, verification_code: verificationCode },
   })
   if (!data) throw new ApiRequestError('账号创建失败，请稍后重试。', response?.status)
   return toAccountSession(data)
+}
+
+export async function sendRegistrationCodeViaApi(
+  email: string,
+): Promise<{ resendAfterSeconds: number }> {
+  const { data, response } = await sendRegistrationCode({
+    client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body: { email },
+  })
+  if (!data) throw new ApiRequestError('验证码发送失败，请稍后重试。', response?.status)
+  return { resendAfterSeconds: data.resend_after_seconds }
+}
+
+export function registrationFailureMessage(failure: unknown): string {
+  if (failure instanceof ApiRequestError && failure.status === 422) {
+    return '验证码无效或已过期，请重新获取。'
+  }
+  if (failure instanceof ApiRequestError && failure.status === 409) {
+    return '该邮箱无法用于注册。'
+  }
+  return '账号创建失败，请稍后重试。'
+}
+
+export function registrationCodeFailureMessage(failure: unknown): string {
+  if (failure instanceof ApiRequestError && failure.status === 429) {
+    return '验证码发送过于频繁，请稍后再试。'
+  }
+  return '验证码暂时无法发送，请稍后再试。'
 }
 
 export async function logoutViaApi(): Promise<void> {

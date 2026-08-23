@@ -19,7 +19,11 @@ from qunxue_api.adapters.sqlite.billing_model import (
     CreditLedgerRow,
     CreditRedemptionCodeRow,
 )
-from qunxue_api.adapters.sqlite.identity_model import UserRow, UserSessionRow
+from qunxue_api.adapters.sqlite.identity_model import (
+    RegistrationVerificationRow,
+    UserRow,
+    UserSessionRow,
+)
 from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeEntryReviewRow,
     KnowledgeEntryRevisionRow,
@@ -100,6 +104,7 @@ __all__ = [
     "ResearchDocumentProposalRow",
     "ResearchStartConfirmationRow",
     "ResearchStartProposalRow",
+    "RegistrationVerificationRow",
     "SqliteResearchStartProposalRepository",
     "SqliteResearchDocumentProposalRepository",
     "TheoryMatchingRequestRow",

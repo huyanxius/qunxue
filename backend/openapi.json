@@ -1908,6 +1908,9 @@
           "token_expired",
           "credit_code_unavailable",
           "credit_code_batch_conflict",
+          "email_verification_invalid",
+          "email_verification_rate_limited",
+          "email_delivery_unavailable",
           "research_task_not_found",
           "research_start_proposal_not_found",
           "research_start_idempotency_conflict",
@@ -4458,6 +4461,18 @@
             "minLength": 8,
             "title": "Password",
             "type": "string"
+          },
+          "verification_code": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Code"
           }
         },
         "required": [
@@ -4465,6 +4480,43 @@
           "password"
         ],
         "title": "RegisterSessionRequest",
+        "type": "object"
+      },
+      "RegistrationCodeRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "RegistrationCodeRequest",
+        "type": "object"
+      },
+      "RegistrationCodeResponse": {
+        "properties": {
+          "expires_in_seconds": {
+            "default": 300,
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "resend_after_seconds": {
+            "default": 60,
+            "title": "Resend After Seconds",
+            "type": "integer"
+          },
+          "status": {
+            "const": "accepted",
+            "default": "accepted",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "RegistrationCodeResponse",
         "type": "object"
       },
       "RejectResearchDocumentProposalRequest": {
@@ -13221,6 +13273,80 @@
           }
         },
         "summary": "Register Session",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/session/registration-code": {
+      "post": {
+        "operationId": "send_registration_code",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Send Registration Code",
         "tags": [
           "session"
         ]
