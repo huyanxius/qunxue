@@ -173,4 +173,41 @@ describe('research canvas projection', () => {
     ]))
     expect(projection.nodes.some((node) => node.title === 'Agent 综合')).toBe(false)
   })
+
+  it.each([
+    { interrupted: true, failure: undefined },
+    { interrupted: false, failure: '研究地图更新失败' },
+  ])('discards uncommitted live patches after an unsuccessful turn', (settlement) => {
+    const uncommittedPatch: AgentResearchMapPatch = {
+      schema_version: 1,
+      nodes: [{
+        id: 'claim-uncommitted',
+        kind: 'claim',
+        title: '尚未提交的临时判断',
+        status: 'developing',
+        citation_ids: [],
+      }],
+      relations: [],
+      remove_node_ids: [],
+      remove_relation_ids: [],
+    }
+
+    const projection = projectResearchCanvas({
+      conversation,
+      streamingTurn: {
+        question: '继续分析',
+        answer: '',
+        citations: [],
+        toolSteps: [],
+        canvasPatches: [uncommittedPatch],
+        ...settlement,
+      },
+    })
+
+    expect(projection.nodes.some((node) => node.id === 'claim-uncommitted')).toBe(false)
+    expect(projection.nodes.map((node) => node.id)).toEqual([
+      'question-youth-loneliness',
+      'claim-time-poverty',
+    ])
+  })
 })
