@@ -1,0 +1,99 @@
+{
+  "suite_version": "retrieval-eval-v2",
+  "frozen_at": "2026-08-24T02:05:00+08:00",
+  "knowledge_release_id": "knowledge-final-d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "release_content_hash": "sha256:d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "chunk_schema_version": "retrieval-corpus-v1",
+  "embedding_model": "Pro/BAAI/bge-m3",
+  "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+  "parameters": {
+    "top_k": 3,
+    "rrf_rank_constant": 60,
+    "recall_limit": 30,
+    "min_lexical_score": 0.12,
+    "min_rerank_score": 0.06,
+    "max_provider_calls_per_query": 2,
+    "max_rerank_documents": 30,
+    "embedding_batch_size": 32,
+    "rerank_query_expansion_min_lexical_score": 0.30
+  },
+  "acceptance": {
+    "min_final_top1_accuracy": 1.0,
+    "min_negative_rejection_rate": 1.0,
+    "min_required_nonempty_rate": 1.0,
+    "max_p95_latency_ms": 8000
+  },
+  "queries": [
+    {
+      "case_id": "calibration-v1-historical-materialism",
+      "split": "calibration",
+      "query": "技术和生产关系的变迁为何会带来法律与意识形态的调整？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "calibration-v1-class-struggle",
+      "split": "calibration",
+      "query": "资本与劳动围绕剩余分配和控制权的对立如何塑造制度变化？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "calibration-v1-alienated-labour",
+      "split": "calibration",
+      "query": "外卖骑手被算法规定节奏、无法决定劳动过程，如何理解这种无力感？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "calibration-v1-symbolic-interaction",
+      "split": "calibration",
+      "query": "短视频评论区怎样在互动中建构身份标签？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "calibration-v1-topic-request",
+      "split": "calibration",
+      "query": "我要写本科生毕业论文，帮我想一个选题，我们快速研究。",
+      "expected_theory_id": null,
+      "expect_results": true
+    },
+    {
+      "case_id": "test-v2-historical-materialism",
+      "split": "test",
+      "query": "工厂自动化与产业转型怎样重组家庭、国家政策和主流观念？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "test-v2-class-struggle",
+      "split": "test",
+      "query": "企业所有者和雇佣劳动者围绕工作控制与收益分配形成持续对立，应如何分析？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "test-v2-alienated-labour",
+      "split": "test",
+      "query": "仓库工人必须服从扫描枪和计件系统，产品也不属于自己，这种劳动经验如何解释？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "test-v2-symbolic-interaction",
+      "split": "test",
+      "query": "课堂中的标签和自我认同如何在师生互动中形成？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "test-v2-social-capital",
+      "split": "test",
+      "query": "志愿者网络中的信任和互惠怎样促成合作？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "test-v2-topic-request",
+      "split": "test",
+      "query": "我想写一篇本科论文，请从现有知识库帮我找几个可研究的社会学方向。",
+      "expected_theory_id": null,
+      "expect_results": true
+    }
+  ]
+}

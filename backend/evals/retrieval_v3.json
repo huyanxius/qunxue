@@ -1,0 +1,98 @@
+{
+  "suite_version": "retrieval-eval-v3",
+  "frozen_at": "2026-08-24T02:25:00+08:00",
+  "knowledge_release_id": "knowledge-final-d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "release_content_hash": "sha256:d58ae546aff48b45891359b9d29e294df8c96ba1d5a71c781394e200b7f0db67",
+  "chunk_schema_version": "retrieval-corpus-v1",
+  "embedding_model": "Pro/BAAI/bge-m3",
+  "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+  "parameters": {
+    "top_k": 3,
+    "rrf_rank_constant": 60,
+    "recall_limit": 30,
+    "min_lexical_score": 0.12,
+    "min_rerank_score": 0.01,
+    "max_provider_calls_per_query": 2,
+    "max_rerank_documents": 30,
+    "embedding_batch_size": 32
+  },
+  "acceptance": {
+    "min_final_top1_accuracy": 1.0,
+    "min_negative_rejection_rate": 1.0,
+    "min_required_nonempty_rate": 1.0,
+    "max_p95_latency_ms": 8000
+  },
+  "queries": [
+    {
+      "case_id": "calibration-v3-historical-materialism",
+      "split": "calibration",
+      "query": "技术和生产关系的变迁为何会带来法律与意识形态的调整？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "calibration-v3-class-struggle",
+      "split": "calibration",
+      "query": "资本与劳动围绕剩余分配和控制权的对立如何塑造制度变化？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "calibration-v3-alienated-labour",
+      "split": "calibration",
+      "query": "外卖骑手被算法规定节奏、无法决定劳动过程，如何理解这种无力感？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "calibration-v3-symbolic-interaction",
+      "split": "calibration",
+      "query": "短视频评论区怎样在互动中建构身份标签？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "calibration-v3-topic-request",
+      "split": "calibration",
+      "query": "我要写本科生毕业论文，帮我想一个选题，我们快速研究。\n检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。",
+      "expected_theory_id": null,
+      "expect_results": true
+    },
+    {
+      "case_id": "test-v3-historical-materialism",
+      "split": "test",
+      "query": "一座城市从工业生产转向数字平台经济后，劳动组织、公共制度和价值观如何联动变化？",
+      "expected_theory_id": "theory:historical-materialism"
+    },
+    {
+      "case_id": "test-v3-class-struggle",
+      "split": "test",
+      "query": "工会与资方围绕工资、利润和决策权展开长期集体冲突，应使用什么理论分析？",
+      "expected_theory_id": "theory:class-struggle"
+    },
+    {
+      "case_id": "test-v3-alienated-labour",
+      "split": "test",
+      "query": "客服人员的每句话都被脚本和绩效系统控制，工作成果与本人分离，怎样解释这种结构性体验？",
+      "expected_theory_id": "theory:alienated-labour"
+    },
+    {
+      "case_id": "test-v3-symbolic-interaction",
+      "split": "test",
+      "query": "孩子如何在同伴互动中学会并协商性别角色？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "test-v3-social-capital",
+      "split": "test",
+      "query": "社区协会的关系网络、信任和互惠规范如何支持居民合作？",
+      "expected_theory_id": null,
+      "expect_results": false
+    },
+    {
+      "case_id": "test-v3-topic-request",
+      "split": "test",
+      "query": "我准备写本科毕业论文，请帮我从现有知识库寻找几个选题方向。\n检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。",
+      "expected_theory_id": null,
+      "expect_results": true
+    }
+  ]
+}
