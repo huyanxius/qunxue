@@ -525,13 +525,13 @@ describe('App routes', () => {
     const conversationPreview = within(agentConversation).getByRole('log', { name: '对话内容' })
     expect(within(conversationPreview).getByText('为什么同一社区里的互助正在减少？')).toBeInTheDocument()
     const toolSummary = await within(conversationPreview).findByRole('button', {
-      name: /已使用 1 个工具/,
+      name: /Agent 已完成工具调用/,
     })
     expect(toolSummary).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(toolSummary)
     expect(within(conversationPreview).getByText('检索知识库')).toBeVisible()
-    expect(within(conversationPreview).getByText('社区互助减少')).toBeVisible()
-    expect(within(conversationPreview).getByText('找到 1 条可引用证据')).toBeVisible()
+    expect(within(conversationPreview).getByText(/社区互助减少/)).toBeVisible()
+    expect(within(conversationPreview).getByText(/找到 1 条可引用证据/)).toBeVisible()
     expect(within(conversationPreview).queryByText(/^Agent$/)).not.toBeInTheDocument()
     expect(textbox).toHaveValue('')
     expect(within(agentConversation).getByRole('button', { name: '发送给社会学 Agent' })).toBeVisible()
@@ -554,7 +554,7 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    expect(await within(agentConversation).findByText('Agent 正在思考…')).toBeVisible()
+    expect(await within(agentConversation).findByText('Agent 正在组织问题与证据…')).toBeVisible()
     expect(within(agentConversation).queryByText('正在检索知识库…')).not.toBeInTheDocument()
     expect(within(agentConversation).queryByRole('region', { name: 'Agent 工作过程' })).not.toBeInTheDocument()
 
@@ -578,10 +578,9 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    const toolSummary = await within(agentConversation).findByRole('button', {
-      name: /有 1 个工具调用未完成/,
-    })
-    fireEvent.click(toolSummary)
+    const failedToolSummary = await within(agentConversation).findByRole('button', { name: /工具调用未完成/ })
+    expect(failedToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(failedToolSummary)
     expect(within(agentConversation).getByText('知识库暂时不可用')).toBeVisible()
     expect(within(agentConversation).getByText(conversation.turns[0].assistant.content)).toBeVisible()
   })
@@ -601,13 +600,12 @@ describe('App routes', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
 
-    const toolSummary = await within(agentConversation).findByRole('button', {
-      name: /已使用 2 个工具/,
-    })
-    fireEvent.click(toolSummary)
+    const repeatedToolSummary = await within(agentConversation).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(repeatedToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(repeatedToolSummary)
     expect(within(agentConversation).getAllByText('检索知识库')).toHaveLength(2)
-    expect(within(agentConversation).getByText('青年')).toBeVisible()
-    expect(within(agentConversation).getByText('孤独')).toBeVisible()
+    expect(within(agentConversation).getByText(/query: 青年/)).toBeVisible()
+    expect(within(agentConversation).getByText(/query: 孤独/)).toBeVisible()
   })
 
   it('settles the UI and marks an active tool unfinished when generation is stopped', async () => {
@@ -629,15 +627,14 @@ describe('App routes', () => {
     fireEvent.click(await within(agentConversation).findByRole('button', { name: '停止生成' }))
     stream.close()
 
-    expect(await within(agentConversation).findByText('已停止生成')).toBeVisible()
-    expect(within(agentConversation).queryByText('Agent 正在思考…')).not.toBeInTheDocument()
-    expect(within(agentConversation).getByRole('button', { name: /有 1 个工具调用未完成/ })).toBeVisible()
-    expect(within(agentConversation).getByText('已停止')).toBeVisible()
+    expect(await within(agentConversation).findByText('本轮已停止，未保存未完成的回答。')).toBeVisible()
+    expect(within(agentConversation).queryByText('Agent 正在组织问题与证据…')).not.toBeInTheDocument()
+    expect(within(agentConversation).getByText('工具调用已中断')).toBeVisible()
     expect(within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })).toBeEnabled()
     expect(within(agentConversation).getByRole('button', { name: '发送给社会学 Agent' })).toBeVisible()
   })
 
-  it('reveals citation context before opening a knowledge entry', async () => {
+  it('reveals citation context through Sources and Basis before opening a knowledge entry', async () => {
     const conversation = agentConversationFixture()
     conversation.turns[0].assistant.citations = [{
       citation_id: 'citation-1',
@@ -668,12 +665,14 @@ describe('App routes', () => {
     const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
     fireEvent.click(within(history).getByRole('button', { name: /为什么同一社区里的互助正在减少/ }))
 
-    const citation = await screen.findByRole('button', { name: /互惠规范/ })
+    const citation = await screen.findByRole('button', { name: '查看证据：互惠规范' })
     expect(screen.queryByText('互惠规范描述了持续互动中信任与回报的关系。')).not.toBeInTheDocument()
     fireEvent.click(citation)
 
-    expect(screen.getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
-    expect(screen.getByRole('button', { name: '打开知识条目' })).toBeVisible()
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(within(basis).getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
   })
 
   it('hides internal citation ids from rendered Agent prose', async () => {
@@ -800,8 +799,9 @@ describe('App routes', () => {
     const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
     fireEvent.click(within(history).getByRole('button', { name: /社会行动四类型/ }))
     const transcript = await screen.findByRole('log', { name: '对话内容' })
-    const toolSummary = await within(transcript).findByRole('button', { name: /已使用 1 个工具/ })
-    fireEvent.click(toolSummary)
+    const restoredToolSummary = await within(transcript).findByRole('button', { name: /Agent 已完成工具调用/ })
+    expect(restoredToolSummary).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(restoredToolSummary)
 
     expect(within(transcript).getByText(/韦伯将社会行动区分为目的理性/)).toBeVisible()
   })

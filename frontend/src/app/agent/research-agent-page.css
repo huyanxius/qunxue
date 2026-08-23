@@ -797,8 +797,8 @@
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 18% 42%, rgb(148 134 154 / 24%), transparent 43%),
-    radial-gradient(ellipse at 82% 58%, rgb(137 158 163 / 20%), transparent 40%),
+    radial-gradient(ellipse at 18% 42%, rgb(148 134 154 / 34%), transparent 43%),
+    radial-gradient(ellipse at 82% 58%, rgb(137 158 163 / 30%), transparent 40%),
     #f7f4f2;
   pointer-events: none;
 }
@@ -839,8 +839,8 @@
 
 .research-agent-page__shader::before {
   background:
-    radial-gradient(ellipse at 50% 50%, rgb(250 249 247 / 76%) 0 16%, rgb(250 249 247 / 40%) 36%, transparent 68%),
-    linear-gradient(180deg, rgb(255 255 255 / 64%), transparent 22% 72%, rgb(255 255 255 / 78%));
+    radial-gradient(ellipse at 50% 50%, rgb(250 249 247 / 48%) 0 16%, rgb(250 249 247 / 22%) 36%, transparent 68%),
+    linear-gradient(180deg, rgb(255 255 255 / 38%), transparent 22% 72%, rgb(255 255 255 / 56%));
 }
 
 .research-agent-page__shader::after {
@@ -850,8 +850,8 @@
 
 .research-agent-page__shader-canvas {
   z-index: 0;
-  opacity: 0.38;
-  filter: saturate(0.52) contrast(0.97);
+  opacity: 0.66;
+  filter: saturate(0.72) contrast(1.04);
 }
 
 .research-agent-page__empty-copy {
@@ -929,6 +929,17 @@
   line-height: 1;
 }
 
+.research-agent-page .research-agent-basis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.research-agent-page .research-agent-basis-actions a {
+  margin-top: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .research-agent-prompt button:not(:disabled) {
     transition: none;
@@ -962,6 +973,6 @@
   }
 
   .research-agent-page__shader-canvas {
-    opacity: 0.34;
+    opacity: 0.58;
   }
 }
