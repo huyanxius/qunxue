@@ -45,7 +45,13 @@ interface KnowledgeLibraryViewProps {
   onRetry: () => void
 }
 
-function DimensionOverview({ dimension }: { dimension: KnowledgeDirectoryDimension }) {
+function DimensionOverview({
+  dimension,
+  onSelectCategory,
+}: {
+  dimension: KnowledgeDirectoryDimension
+  onSelectCategory: (categoryId: string) => void
+}) {
   const tone = dimensionTone(dimension.nodeId)
   return (
     <section className="knowledge-collection" aria-labelledby="knowledge-collection-title" data-dimension-tone={tone}>
@@ -64,12 +70,18 @@ function DimensionOverview({ dimension }: { dimension: KnowledgeDirectoryDimensi
             const presentation = describeTaxonomyNode(category.title)
             return (
             <li key={category.nodeId} data-node-kind={presentation.kind}>
-              <span className="knowledge-collection__node-badge">{presentation.badge ?? '·'}</span>
-              <div>
-                <strong>{presentation.label}</strong>
-                <small>{category.entryCount} 条知识</small>
-              </div>
-              <ArrowRightIcon size={15} weight="regular" aria-hidden="true" />
+              <button
+                type="button"
+                aria-label={`浏览 ${category.title}`}
+                onClick={() => onSelectCategory(category.nodeId)}
+              >
+                <span className="knowledge-collection__node-badge">{presentation.badge ?? '·'}</span>
+                <span className="knowledge-collection__node-copy">
+                  <strong>{presentation.label}</strong>
+                  <small>{category.entryCount} 条知识</small>
+                </span>
+                <ArrowRightIcon size={15} weight="regular" aria-hidden="true" />
+              </button>
             </li>
             )
           })}
@@ -211,7 +223,14 @@ export function KnowledgeLibraryView({
           ) : null}
 
           {releaseState === 'ready' && !showEntries && activeDimension ? (
-            <DimensionOverview dimension={activeDimension} />
+            <DimensionOverview
+              dimension={activeDimension}
+              onSelectCategory={(categoryId) => updateState({
+                ...state,
+                dimensionId: activeDimension.nodeId,
+                categoryId,
+              })}
+            />
           ) : null}
 
           {releaseState === 'ready' && showEntries ? (
