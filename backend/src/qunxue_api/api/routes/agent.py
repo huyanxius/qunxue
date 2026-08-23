@@ -34,6 +34,7 @@ from qunxue_api.modules.agent_conversation import (
     RunAlreadyActive,
 )
 from qunxue_api.modules.billing import CreditRunInProgress, CreditsDepleted
+from qunxue_api.modules.knowledge_catalog import RetrievalPipelineUnavailable
 from qunxue_api.modules.research_intake import ResearchStartProposalStatus
 
 router = APIRouter(
@@ -400,6 +401,15 @@ def stream_agent_turn(
             yield _event(
                 "turn_interrupted",
                 {"code": "interrupted", "message": "已停止生成，未保存未完成的回答。"},
+            )
+        except RetrievalPipelineUnavailable:
+            logger.exception("Agent retrieval failed")
+            yield _event(
+                "turn_failed",
+                {
+                    "code": "retrieval_unavailable",
+                    "message": "发布绑定的知识检索暂时不可用，本轮未生成研究回答。",
+                },
             )
         except Exception:
             logger.exception("Agent turn failed")

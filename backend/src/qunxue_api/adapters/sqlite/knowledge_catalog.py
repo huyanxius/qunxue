@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from sqlalchemy import func, or_, select, text, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.knowledge_markdown import (
     ParsedKnowledgeEntry,
@@ -315,45 +316,31 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             )
             if row is None:
                 raise LookupError(knowledge_id)
-            relation_rows = session.scalars(
-                select(KnowledgeRelationRow)
-                .where(KnowledgeRelationRow.knowledge_release_id == release_id)
-                .where(KnowledgeRelationRow.review_status == KnowledgeReviewStatus.REVIEWED.value)
-                .where(
-                    or_(
-                        KnowledgeRelationRow.source_knowledge_id == knowledge_id,
-                        KnowledgeRelationRow.target_knowledge_id == knowledge_id,
+            return _entry_detail(
+                session=session,
+                release=release,
+                row=row,
+            )
+
+    def list_rag_entries(
+        self,
+        *,
+        release_id: str,
+    ) -> tuple[KnowledgeEntryDetail, ...]:
+        with self._database.session() as session:
+            release = _require_release(session, release_id)
+            rows = tuple(
+                session.scalars(
+                    select(KnowledgeEntryRevisionRow)
+                    .where(
+                        KnowledgeEntryRevisionRow.knowledge_release_id == release_id,
+                        KnowledgeEntryRevisionRow.rag_eligible.is_(True),
                     )
-                )
-                .order_by(KnowledgeRelationRow.relation_id)
-            )
-            theory_row = session.scalar(
-                select(KnowledgeTheoryProfileRow).where(
-                    KnowledgeTheoryProfileRow.knowledge_release_id == release_id,
-                    KnowledgeTheoryProfileRow.related_knowledge_ids.contains([knowledge_id]),
+                    .order_by(KnowledgeEntryRevisionRow.knowledge_id)
                 )
             )
-            source_ids = (
-                tuple(theory_row.source_ids)
-                if theory_row is not None and theory_row.match_eligible
-                else (f"source:{knowledge_id}",)
-            )
-            source_rows = session.scalars(
-                select(KnowledgeSourceRow)
-                .where(KnowledgeSourceRow.knowledge_release_id == release_id)
-                .where(KnowledgeSourceRow.source_id.in_(source_ids))
-                .order_by(KnowledgeSourceRow.source_id)
-            )
-            return KnowledgeEntryDetail(
-                release=_release_ref(release),
-                summary=_entry_summary(row),
-                aliases=tuple(row.aliases),
-                content=row.content,
-                sources=tuple(_source_snapshot(source) for source in source_rows),
-                relations=tuple(_relation_snapshot(relation) for relation in relation_rows),
-                theory_profile=(
-                    _theory_profile_snapshot(theory_row) if theory_row is not None else None
-                ),
+            return tuple(
+                _entry_detail(session=session, release=release, row=row) for row in rows
             )
 
     def get_theory_profile(
@@ -1648,6 +1635,56 @@ def _entry_summary(row: KnowledgeEntryRevisionRow) -> KnowledgeEntrySummary:
             training_candidate_eligible=row.training_candidate_eligible,
             match_eligible=row.match_eligible,
             review_record_ids=tuple(row.review_record_ids),
+        ),
+    )
+
+
+def _entry_detail(
+    *,
+    session: Session,
+    release: KnowledgeReleaseRow,
+    row: KnowledgeEntryRevisionRow,
+) -> KnowledgeEntryDetail:
+    knowledge_id = row.knowledge_id
+    release_id = release.knowledge_release_id
+    relation_rows = session.scalars(
+        select(KnowledgeRelationRow)
+        .where(KnowledgeRelationRow.knowledge_release_id == release_id)
+        .where(KnowledgeRelationRow.review_status == KnowledgeReviewStatus.REVIEWED.value)
+        .where(
+            or_(
+                KnowledgeRelationRow.source_knowledge_id == knowledge_id,
+                KnowledgeRelationRow.target_knowledge_id == knowledge_id,
+            )
+        )
+        .order_by(KnowledgeRelationRow.relation_id)
+    )
+    theory_row = session.scalar(
+        select(KnowledgeTheoryProfileRow).where(
+            KnowledgeTheoryProfileRow.knowledge_release_id == release_id,
+            KnowledgeTheoryProfileRow.related_knowledge_ids.contains([knowledge_id]),
+        )
+    )
+    source_ids = (
+        tuple(theory_row.source_ids)
+        if theory_row is not None and theory_row.match_eligible
+        else (f"source:{knowledge_id}",)
+    )
+    source_rows = session.scalars(
+        select(KnowledgeSourceRow)
+        .where(KnowledgeSourceRow.knowledge_release_id == release_id)
+        .where(KnowledgeSourceRow.source_id.in_(source_ids))
+        .order_by(KnowledgeSourceRow.source_id)
+    )
+    return KnowledgeEntryDetail(
+        release=_release_ref(release),
+        summary=_entry_summary(row),
+        aliases=tuple(row.aliases),
+        content=row.content,
+        sources=tuple(_source_snapshot(source) for source in source_rows),
+        relations=tuple(_relation_snapshot(relation) for relation in relation_rows),
+        theory_profile=(
+            _theory_profile_snapshot(theory_row) if theory_row is not None else None
         ),
     )
 

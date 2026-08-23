@@ -26,6 +26,7 @@ from qunxue_api.api.contracts.matching import (
     MatchRunAction,
     MatchRunResponse,
     RelatedTheoryResponse,
+    RetrievalProvenanceResponse,
     RetryMatchCandidateRequest,
     SaveTheoryDecisionDraftRequest,
     TheoryCandidateResponse,
@@ -55,6 +56,7 @@ from qunxue_api.application import (
     MatchingRequestConflict,
     MatchingSnapshotConflict,
 )
+from qunxue_api.modules.knowledge_catalog import RetrievalPipelineUnavailable
 from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
     EvidenceItemSnapshot,
@@ -121,6 +123,15 @@ def create_match_run(
             )
         )
         return JSONResponse(status_code=409, content=body.model_dump(mode="json"))
+    except RetrievalPipelineUnavailable:
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.RETRIEVAL_UNAVAILABLE,
+                message="发布绑定的知识检索暂时不可用，本次匹配未生成结果。",
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(status_code=503, content=body.model_dump(mode="json"))
     except (MatchingRequestConflict, MatchingSnapshotConflict) as error:
         body = ErrorResponse(
             error=ErrorDetail(
@@ -509,6 +520,16 @@ def _match_run_response(snapshot: MatchRunSnapshot) -> MatchRunResponse:
         phenomenon_query_id=snapshot.phenomenon.phenomenon_query_id,
         phenomenon_version=snapshot.phenomenon.version,
         knowledge_release_id=snapshot.knowledge_release.knowledge_release_id,
+        retrieval=RetrievalProvenanceResponse(
+            retrieval_index_id=snapshot.evidence_bundle.retrieval.retrieval_index_id,
+            mode=snapshot.evidence_bundle.retrieval.mode,
+            embedding_model=snapshot.evidence_bundle.retrieval.embedding_model,
+            reranker_model=snapshot.evidence_bundle.retrieval.reranker_model,
+            degraded_reason=snapshot.evidence_bundle.retrieval.degraded_reason,
+            retrieved_chunk_ids=list(
+                snapshot.evidence_bundle.retrieval.retrieved_chunk_ids
+            ),
+        ),
         candidate_page=candidate_page,
         model=model,
     )

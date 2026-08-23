@@ -9,6 +9,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from test_pre_reviewed_theory_release import _write_bundle
 
+from qunxue_api.adapters.retrieval import (
+    HybridRetrievalResult,
+    RetrievalPipelineUnavailable,
+)
 from qunxue_api.adapters.sqlite import (
     MatchRunRow,
     TheoryDecisionSetRow,
@@ -175,9 +179,19 @@ def _patch_all_matches_as_failure(
 
 def test_missing_final_release_returns_an_explicit_catalog_not_ready_conflict(
     client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     navigation, phenomenon = _create_confirmed_task(client)
     release = client.get("/api/knowledge/releases/current").json()
+    catalog = client.app.state.knowledge_catalog
+    current_release = catalog.current_release
+
+    def current_release_without_match(*, purpose):
+        if purpose is KnowledgeUsePurpose.MATCH:
+            raise LookupError("test catalog has no final MATCH release")
+        return current_release(purpose=purpose)
+
+    monkeypatch.setattr(catalog, "current_release", current_release_without_match)
 
     started = client.post(
         f"/api/research-tasks/{navigation['task_id']}/match-runs",
@@ -219,6 +233,69 @@ def test_stale_task_version_is_rejected_before_creating_a_match_run(
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "validation_error"
+
+
+def test_retrieval_failure_aborts_matching_without_persisting_a_match_run(
+    client: TestClient,
+) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+
+    class UnavailableRetriever:
+        def search(self, **kwargs):
+            del kwargs
+            raise RetrievalPipelineUnavailable("test retrieval outage")
+
+    client.app.state.knowledge_retriever = UnavailableRetriever()
+    response = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=_idempotency_headers(),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+    with client.app.state.database.session() as session:
+        assert len(list(session.scalars(select(MatchRunRow)))) == 0
+
+
+def test_empty_retrieval_records_no_reliable_candidate_without_running_the_model(
+    client: TestClient,
+) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+
+    class EmptyRetriever:
+        def search(self, **kwargs):
+            del kwargs
+            return HybridRetrievalResult(
+                retrieval_index_id="retrieval-index-empty",
+                mode="hybrid_reranked",
+                embedding_model="Pro/BAAI/bge-m3",
+                reranker_model="Pro/BAAI/bge-reranker-v2-m3",
+                degraded_reason=None,
+                hits=(),
+            )
+
+    client.app.state.knowledge_retriever = EmptyRetriever()
+    response = client.post(
+        f"/api/research-tasks/{navigation['task_id']}/match-runs",
+        headers=_idempotency_headers(),
+        json=_start_payload(navigation, phenomenon, knowledge_release_id=release_id),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "no_reliable_candidate"
+    assert body["candidate_page"]["candidates"] == []
+    assert body["retrieval"] == {
+        "retrieval_index_id": "retrieval-index-empty",
+        "mode": "hybrid_reranked",
+        "embedding_model": "Pro/BAAI/bge-m3",
+        "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
+        "degraded_reason": None,
+        "retrieved_chunk_ids": [],
+    }
 
 
 def test_wrong_confirmed_phenomenon_snapshot_is_rejected(client: TestClient) -> None:
@@ -587,6 +664,18 @@ def test_pre_reviewed_fixture_profiles_return_three_traceable_candidates(
     candidates = body["candidate_page"]["candidates"]
     assert body["status"] == "awaiting_decision"
     assert body["total_candidate_count"] == 3
+    assert body["retrieval"] == {
+        "retrieval_index_id": "test-release-bound-index",
+        "mode": "deterministic_test",
+        "embedding_model": "test-embedding",
+        "reranker_model": "test-reranker",
+        "degraded_reason": None,
+        "retrieved_chunk_ids": [
+            "theory-profile:theory-pre-reviewed-1:v1",
+            "theory-profile:theory-pre-reviewed-2:v1",
+            "theory-profile:theory-pre-reviewed-3:v1",
+        ],
+    }
     assert [item["knowledge_id"] for item in candidates] == [
         "D1:C001",
         "D1:C002",

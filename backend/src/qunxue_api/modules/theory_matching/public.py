@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
@@ -98,6 +98,16 @@ class EvidenceItemSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class RetrievalProvenanceSnapshot:
+    retrieval_index_id: str | None = None
+    mode: str = "legacy_untracked"
+    embedding_model: str | None = None
+    reranker_model: str | None = None
+    degraded_reason: str | None = None
+    retrieved_chunk_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceBundleSnapshot:
     evidence_bundle_id: str
     version: int
@@ -105,6 +115,9 @@ class EvidenceBundleSnapshot:
     release: KnowledgeReleaseRef
     theory_profiles: tuple[TheoryProfileSnapshot, ...]
     evidence_items: tuple[EvidenceItemSnapshot, ...]
+    retrieval: RetrievalProvenanceSnapshot = field(
+        default_factory=RetrievalProvenanceSnapshot
+    )
 
 
 @dataclass(frozen=True, slots=True)

@@ -49,11 +49,12 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self,
         *,
         catalog,
+        retriever=None,
         documents: ResearchDocumentReader,
         proposals: ResearchDocumentProposalService,
         workflow: ResearchWorkflowCoordinator | None = None,
     ) -> None:
-        super().__init__(catalog)
+        super().__init__(catalog, retriever=retriever)
         self._documents = documents
         self._proposals = proposals
         self._workflow = workflow

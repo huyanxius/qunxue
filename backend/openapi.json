@@ -1733,6 +1733,7 @@
           "validation_error",
           "phenomenon_unconfirmed",
           "catalog_not_ready",
+          "retrieval_unavailable",
           "no_adopted_theory",
           "candidate_ineligible",
           "external_candidate_adoption_blocked",
@@ -3376,6 +3377,9 @@
             "title": "Phenomenon Version",
             "type": "integer"
           },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalProvenanceResponse"
+          },
           "status": {
             "$ref": "#/components/schemas/MatchRunStatus"
           },
@@ -3409,6 +3413,7 @@
           "phenomenon_query_id",
           "phenomenon_version",
           "knowledge_release_id",
+          "retrieval",
           "candidate_page",
           "model"
         ],
@@ -5969,6 +5974,75 @@
           "reason"
         ],
         "title": "RestoreResearchDocumentRequest",
+        "type": "object"
+      },
+      "RetrievalProvenanceResponse": {
+        "properties": {
+          "degraded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Reason"
+          },
+          "embedding_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "reranker_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reranker Model"
+          },
+          "retrieval_index_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Index Id"
+          },
+          "retrieved_chunk_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Retrieved Chunk Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "retrieval_index_id",
+          "mode",
+          "embedding_model",
+          "reranker_model",
+          "degraded_reason",
+          "retrieved_chunk_ids"
+        ],
+        "title": "RetrievalProvenanceResponse",
         "type": "object"
       },
       "RetryFrameworkReviewRequest": {

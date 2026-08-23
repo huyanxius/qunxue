@@ -22,8 +22,15 @@ from qunxue_api.adapters.model import (
 )
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
+    OpenAICompatibleEmbeddingProvider,
     PydanticAIKnowledgeRunner,
     ResearchDocumentToolRegistry,
+    SiliconFlowRerankerProvider,
+)
+from qunxue_api.adapters.retrieval import (
+    RETRIEVAL_CORPUS_SCHEMA_VERSION,
+    HybridRetriever,
+    SqliteRetrievalIndex,
 )
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
@@ -106,6 +113,7 @@ def create_app(
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
     model_provider: ModelProvider | None = None,
+    knowledge_retriever: HybridRetriever | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
@@ -130,6 +138,10 @@ def create_app(
         resolved_database,
         knowledge_root=KNOWLEDGE_ROOT,
     )
+    resolved_knowledge_retriever = knowledge_retriever or _retriever_from_settings(
+        resolved_settings
+    )
+    app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
     resolved_model_provider = model_provider or _model_provider_from_settings(
         settings=resolved_settings,
@@ -179,7 +191,10 @@ def create_app(
         with app.state.matching_start_lock, resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
             matching = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
+                evidence_source=CatalogTheoryEvidenceSource(
+                    app.state.knowledge_catalog,
+                    retriever=app.state.knowledge_retriever,
+                ),
                 judge=app.state.model_gateway,
                 repository=SqliteMatchRunRepository(session),
                 provider=descriptor.provider,
@@ -260,9 +275,7 @@ def create_app(
                 get_theory_plan=match_runs.get_confirmed_plan,
                 get_match_run=match_runs.get,
                 list_proposals_for_task=proposal_repository.list_for_task,
-                list_actionable_proposals_for_task=(
-                    proposal_repository.list_actionable_for_task
-                ),
+                list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
             )
             yield ResearchDocumentProposalApplication(
@@ -298,7 +311,10 @@ def create_app(
             proposal_repository = SqliteResearchDocumentProposalRepository(session)
             descriptor = app.state.model_gateway.descriptor
             matching_service = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(app.state.knowledge_catalog),
+                evidence_source=CatalogTheoryEvidenceSource(
+                    app.state.knowledge_catalog,
+                    retriever=app.state.knowledge_retriever,
+                ),
                 judge=app.state.model_gateway,
                 repository=match_runs,
                 provider=descriptor.provider,
@@ -334,9 +350,7 @@ def create_app(
                 get_theory_plan=match_runs.get_confirmed_plan,
                 get_match_run=match_runs.get,
                 list_proposals_for_task=proposal_repository.list_for_task,
-                list_actionable_proposals_for_task=(
-                    proposal_repository.list_actionable_for_task
-                ),
+                list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
             )
             proposal_service = ResearchDocumentProposalService(
@@ -391,6 +405,7 @@ def create_app(
                     atomic=session.begin_nested,
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
+                        retriever=app.state.knowledge_retriever,
                         documents=document_application,
                         proposals=proposal_service,
                         workflow=agent_research_workflow,
@@ -631,6 +646,44 @@ def create_app(
         )
 
     return app
+
+
+def _retriever_from_settings(settings: Settings) -> HybridRetriever | None:
+    configured_values = (
+        settings.embedding_base_url,
+        settings.embedding_api_key,
+        settings.embedding_model,
+        settings.reranker_base_url,
+        settings.reranker_api_key,
+        settings.reranker_model,
+    )
+    has_partial_configuration = any(value is not None for value in configured_values)
+    if settings.runtime_mode == "mock" and not has_partial_configuration:
+        return None
+    config = settings.require_retrieval_config()
+    embedder = OpenAICompatibleEmbeddingProvider(
+        base_url=config.embedding_base_url,
+        api_key=config.embedding_api_key.get_secret_value(),
+        model=config.embedding_model,
+        timeout_seconds=config.embedding_timeout_seconds,
+    )
+    reranker = SiliconFlowRerankerProvider(
+        base_url=config.reranker_base_url,
+        api_key=config.reranker_api_key.get_secret_value(),
+        model=config.reranker_model,
+        timeout_seconds=config.reranker_timeout_seconds,
+    )
+    return HybridRetriever(
+        index=SqliteRetrievalIndex(config.index_path),
+        embedder=embedder,
+        embedding_model=config.embedding_model,
+        chunk_schema_version=RETRIEVAL_CORPUS_SCHEMA_VERSION,
+        reranker=reranker,
+        reranker_model=config.reranker_model,
+        min_rerank_score=config.min_rerank_score,
+        min_lexical_score=config.min_lexical_score,
+        recall_limit=config.recall_limit,
+    )
 
 
 def _model_provider_from_settings(

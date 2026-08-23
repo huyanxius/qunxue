@@ -176,6 +176,11 @@
 
 .theory-candidates { display: grid; gap: .65rem; margin-bottom: 1rem; }
 .theory-candidates__heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; color: var(--rdw-muted); font-size: .64rem; }
+.theory-retrieval-provenance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem .8rem; margin: 0; padding: .7rem .75rem; border: 1px solid var(--rdw-line); border-radius: .42rem; background: #f7f5f0; }
+.theory-retrieval-provenance > div { min-width: 0; }
+.theory-retrieval-provenance dt { margin-bottom: .14rem; color: #858078; font-size: .55rem; letter-spacing: .06em; text-transform: uppercase; }
+.theory-retrieval-provenance dd { overflow: hidden; margin: 0; color: #514d47; font-size: .61rem; text-overflow: ellipsis; white-space: nowrap; }
+.theory-retrieval-provenance code { font-size: inherit; }
 .theory-candidate { display: grid; gap: .55rem; padding: .75rem 0; border-top: 1px solid var(--rdw-line); }
 .theory-candidate h3 { font-family: var(--serif, Georgia, 'Times New Roman', serif); font-size: .95rem; font-weight: 590; }
 .theory-candidate p { margin-top: .25rem; color: var(--rdw-muted); font-size: .68rem; line-height: 1.55; }
