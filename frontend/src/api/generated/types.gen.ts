@@ -983,7 +983,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
@@ -2432,6 +2432,38 @@ export type RegisterSessionRequest = {
      * Password
      */
     password: string;
+    /**
+     * Verification Code
+     */
+    verification_code?: string | null;
+};
+
+/**
+ * RegistrationCodeRequest
+ */
+export type RegistrationCodeRequest = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
+ * RegistrationCodeResponse
+ */
+export type RegistrationCodeResponse = {
+    /**
+     * Expires In Seconds
+     */
+    expires_in_seconds?: number;
+    /**
+     * Resend After Seconds
+     */
+    resend_after_seconds?: number;
+    /**
+     * Status
+     */
+    status?: 'accepted';
 };
 
 /**
@@ -7228,6 +7260,45 @@ export type RegisterSessionResponses = {
 };
 
 export type RegisterSessionResponse = RegisterSessionResponses[keyof RegisterSessionResponses];
+
+export type SendRegistrationCodeData = {
+    body: RegistrationCodeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/session/registration-code';
+};
+
+export type SendRegistrationCodeErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type SendRegistrationCodeError = SendRegistrationCodeErrors[keyof SendRegistrationCodeErrors];
+
+export type SendRegistrationCodeResponses = {
+    /**
+     * Successful Response
+     */
+    202: RegistrationCodeResponse;
+};
+
+export type SendRegistrationCodeResponse = SendRegistrationCodeResponses[keyof SendRegistrationCodeResponses];
 
 export type GetConfirmedTheoryPlanData = {
     body?: never;
