@@ -144,35 +144,12 @@
   text-decoration: none;
 }
 
-.product-lockup {
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.product-lockup__copy {
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-}
-
-.product-lockup__copy strong {
+.desktop-rail__brand strong,
+.wordmark strong {
   overflow: hidden;
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.01em;
-  text-overflow: clip;
-  white-space: nowrap;
-}
-
-.product-lockup__copy small {
-  overflow: hidden;
-  color: var(--app-muted);
-  font-size: 7px;
-  font-weight: 650;
-  letter-spacing: 0.16em;
-  line-height: 1;
   text-overflow: clip;
   white-space: nowrap;
 }
@@ -775,23 +752,6 @@
 
   .wordmark {
     gap: 7px;
-  }
-
-  .wordmark .product-lockup {
-    gap: 7px;
-  }
-
-  .wordmark .product-lockup__copy {
-    gap: 2px;
-  }
-
-  .wordmark .product-lockup__copy strong {
-    font-size: 13px;
-  }
-
-  .wordmark .product-lockup__copy small {
-    font-size: 6px;
-    letter-spacing: 0.13em;
   }
 
   .product-mark {

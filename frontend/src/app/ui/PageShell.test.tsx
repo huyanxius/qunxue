@@ -28,17 +28,4 @@ describe('PageShell global chrome', () => {
 
     expect(screen.queryByRole('button', { name: '帮助与边界' })).not.toBeInTheDocument()
   })
-
-  it('keeps the SVG mark and bilingual product lockup visible in the app shell', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <PageShell>
-          <h1>工作台</h1>
-        </PageShell>
-      </MemoryRouter>,
-    )
-
-    expect(screen.getAllByText('COLLECTIVE INQUIRY')).toHaveLength(2)
-    expect(container.querySelectorAll('.product-mark img')).toHaveLength(2)
-  })
 })
