@@ -1,56 +1,69 @@
-# 群学致知
+<div align="center">
+  <img src="frontend/src/assets/qunxue-brand-mark.svg" alt="群学致知品牌标志" width="72" />
+  <h1>群学致知</h1>
+  <p><strong>从一个社会现象开始，走到一条可以核对的研究路径。</strong></p>
+  <p>
+    <a href="https://qunxue.xyz">在线体验</a>
+    ·
+    <a href="docs/product/README.md">产品事实</a>
+    ·
+    <a href="docs/onboarding.md">本地启动</a>
+  </p>
+</div>
 
-面向一流学科建设的社会学垂类大模型与智能体平台（挑战杯"揭榜挂帅"擂台赛，榜题 XH-202620，科大讯飞发榜）。
+---
 
-当前产品帮助社会学入门者和初级研究者从研究现象出发，理解候选理论的适用条件、差异和证据线索，最终由用户决定采用什么理论。产品事实以 [`docs/product/README.md`](docs/product/README.md) 为入口，交付状态以已合入 `main` 的代码和 PR 为准。
+群学致知是面向社会学入门者和初级研究者的理论发现与研究设计工作台。
 
-## 当前工程基线
+它从一个真实的研究困惑、未完成的研究或已有理论框架开始，帮助用户梳理现象、比较解释、回到知识来源并形成下一步研究计划。系统负责展开选择和保留证据线索，最终的理论判断与研究责任仍然属于研究者。
 
-正式工程不继承旧 LiveDemo 的代码、资产或依赖。当前已合入 `main` 的能力包括：
+## 在线产品
 
-```text
-M1 / PR #66 站点壳与首页双入口
-M2 / PR #58 账号会话与“我的研究”
-M3 / PR #68 研究输入、现象候选与用户确认
-M6 / PR #73 知识发布、浏览、搜索、详情与来源
-```
+当前线上入口：**[qunxue.xyz](https://qunxue.xyz)**
 
-其中真实运行链路仍遵循 React 页面 → 产品模块公共入口 → OpenAPI 生成客户端 → FastAPI → 业务模块 → repository port → SQLite。已经真实实现：
+产品首页展示从研究现象到研究路径的完整入口；登录后进入工作台，可以继续已有研究、创建新研究、与研究 Agent 对话、浏览知识库和探索知识图谱。
 
-- 后端健康检查；
-- 账号注册、登录、会话恢复与“我的研究”；
-- 创建 `direct_input` 或单份材料研究任务，编辑并确认现象候选，使用稳定 ID 恢复进度；
-- 使用 `Idempotency-Key` 避免重复写入；
-- 从仓库 Markdown 生成并持久化知识发布，通过 `/knowledge` 和 `/knowledge/:knowledge_id` 浏览、搜索、查看详情与来源；
-- Pydantic → OpenAPI → TypeScript SDK 单向生成；
-- 本地检查与 GitHub CI。
+## 一条连续的研究路径
 
-M4（理论匹配与用户决定）和 M5（研究框架）尚未交付：前端 `/research/:task_id/match`、`/research/:task_id/framework` 仍是占位页，后端对应路由保留冻结契约并返回 501。公共类型、路由和门禁规则不等于业务能力已经实现。
+| 阶段 | 研究者在这里完成什么 |
+| --- | --- |
+| 现象 | 从困惑或材料开始，整理研究对象、范围和变化，并确认现象表述。 |
+| Agent | 让 Agent 追问对象、机制、证据与未知，而不是直接替研究者下结论。 |
+| 知识 | 浏览版本化理论条目、来源和知识图谱，回到可以核对的内容。 |
+| 判断 | 并置候选理论的解释重点、适用前提、差异和证据缺口，由研究者作出选择。 |
+| 框架 | 将已确认的判断整理为研究问题、概念关系、方法、材料计划和待核对事项。 |
 
-知识源转换清单为 2,864 条；当前可发布、可浏览的 Markdown 正文解析为 2,860 条。差额来自 D7 的 H088–H091：源清单保留编号，但仓库中没有这四条正文，发布过程没有伪造内容。
+研究 Agent 可以根据问题调用知识工具；工具结果、来源版本和研究文档状态会保留在工作流中，便于继续核对。模型输出是研究建议，不自动成为正式结论。
+
+## 主要空间
+
+- **工作台**：继续正在形成的研究，查看研究状态和下一步。
+- **研究 Agent**：围绕社会学研究问题进行多轮对话，保留上下文、证据和可继续的动作。
+- **新建研究**：从具体现象、已有理论或研究材料进入研究流程。
+- **知识库**：搜索和阅读版本化的社会学理论知识，查看条目来源与相关关系。
+- **知识图谱**：从理论位置与关系出发探索知识目录，并回到具体条目核对。
+- **研究工作台**：在理论判断和正式研究框架中保留选择、审阅、修订与版本历史。
+
+## 当前边界
+
+README 描述的是当前线上产品主线；运行能力以已合入 `main` 的代码、测试和实际环境为准。
+
+- 最终理论选择、研究问题和学术判断由用户完成，系统不替用户承担结论责任。
+- 本地零配置启动使用确定性 Mock；健康检查、页面渲染或类型契约不能单独证明真实模型已接通。
+- 真实模型、检索服务、知识发布版本和引用链需要结合部署环境逐项核验，不能仅凭配置名推断。
+- 本地 SQLite 适用于单实例、单 worker 的开发与内网演示；公网部署还需要独立完成 TLS、反向代理、数据库、密钥、备份、监控和审计。
 
 ## 技术栈
 
-- Web：React、TypeScript、Vite、TanStack Query
-- API：FastAPI、Pydantic
-- 数据：SQLAlchemy、Alembic、SQLite
-- 契约：OpenAPI、Hey API
-- 工具：uv、npm、Ruff、Vitest、Oxlint
-
-## 文档入口
-
-- 第一次参与开发：[`docs/onboarding.md`](docs/onboarding.md)
-- 分发、运行、备份与发布前检查：[`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md)
-- 安全与隐私边界：[`docs/SECURITY.md`](docs/SECURITY.md)
-- 使用支持与排障：[`SUPPORT.md`](SUPPORT.md)
-- 变更记录：[`CHANGELOG.md`](CHANGELOG.md)
-- 模块职责与依赖方向：[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- 分支、提交与 PR：[`CONTRIBUTING.md`](CONTRIBUTING.md)
-- 产品事实与竞赛边界：[`docs/product/README.md`](docs/product/README.md)
+- **Web**：React、TypeScript、Vite、TanStack Query
+- **API**：FastAPI、Pydantic
+- **数据**：SQLAlchemy、Alembic、SQLite
+- **契约**：OpenAPI、Hey API 生成的 TypeScript SDK
+- **检查**：uv、npm、Ruff、Vitest、Oxlint
 
 ## 五分钟启动
 
-需要 Python 3.12、Node.js 22.18+、`uv` 和 `npm`。
+需要 Git、GNU Make、Python 3.12、[uv](https://docs.astral.sh/uv/)、Node.js 22.18+、npm 和 [GitHub CLI](https://cli.github.com/)。
 
 ```bash
 git clone https://github.com/huyanxius/qunxue.git
@@ -65,9 +78,7 @@ make dev-api
 make dev-web
 ```
 
-打开 `http://localhost:5173`。
-
-默认启动不需要密钥。完整冒烟步骤和环境变量见 [`docs/onboarding.md`](docs/onboarding.md)。
+浏览器打开 <http://localhost:5173>。默认本地运行不需要 API key；完整环境变量、冒烟流程和真实 Provider 配置见 [`docs/onboarding.md`](docs/onboarding.md)。
 
 ## 检查
 
@@ -75,15 +86,18 @@ make dev-web
 make check
 ```
 
-该命令执行契约生成与漂移检查、后端 lint/测试、前端模块边界检查、lint、类型检查、测试和生产构建。
+这会执行契约生成与漂移检查、后端 lint/测试、前端模块边界检查、lint、类型检查、测试和生产构建。
 
-SQLite 仅用于单实例、单 worker、本地非敏感演示。当前同步执行不是可靠异步队列；账号会话与知识发布已经合并，但生产级认证加固、生产数据库、真实模型 provider 和正式部署仍不在当前交付范围。
+## 仓库入口
 
-## 协作规范
+- [`docs/product/README.md`](docs/product/README.md)：产品定位、竞赛边界、证据和待决问题。
+- [`docs/onboarding.md`](docs/onboarding.md)：开发环境、启动方式和本地冒烟流程。
+- [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md)：分发、运行、备份与发布边界。
+- [`docs/SECURITY.md`](docs/SECURITY.md)：密钥、数据、部署和安全边界。
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)：模块职责、依赖方向和接口边界。
+- [`CHANGELOG.md`](CHANGELOG.md)：工程变更记录。
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)：Issue、分支、提交和 PR 流程。
 
-1. 所有改动按团队规则走分支 + PR 合入，不直接推 `main`。当前 `main` 没有 GitHub 原生分支保护，PR-only 是协作规则，不是平台强制。
-2. 每个 PR 对应一个 Issue，改动范围与 Issue 一致，不夹带无关改动；PR 小而频繁，不攒大包。
-3. PR 描述写清改动、原因、验证结果和架构影响。作者本人要能讲清改动，合并前至少一位同学 Review。
-4. 密钥红线：API key、appid 只放本地 `.env` 文件，任何时候不进仓库。
+## 协作约束
 
-详细流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，首次配置见 [`docs/onboarding.md`](docs/onboarding.md)。
+所有改动都通过 `Issue → 分支 → 原子提交 → PR → main` 交付，不直接推送 `main`。密钥、数据库文件、依赖目录、截图和构建产物不进入仓库；涉及 API 的改动必须通过契约生成流程更新客户端。
