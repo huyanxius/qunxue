@@ -1,8 +1,8 @@
 import json
 import re
+from asyncio import sleep as async_sleep
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
 from contextvars import ContextVar
-from time import sleep
 
 from openai.types.shared import ReasoningEffort
 from pydantic_ai import (
@@ -208,8 +208,21 @@ def _insufficient_evidence_answer() -> str:
     )
 
 
-class PydanticAIKnowledgeRunner:
+class _RetryingOpenAIChatModel(OpenAIChatModel):
     _PROVIDER_RETRY_DELAYS = (1.0, 2.0)
+
+    async def _completions_create(self, *args, **kwargs):
+        for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
+            try:
+                return await super()._completions_create(*args, **kwargs)
+            except ModelHTTPError as error:
+                if retry_delay is None or not _is_transient_unknown_provider(error):
+                    raise
+                await async_sleep(retry_delay)
+        raise RuntimeError("unreachable provider retry state")
+
+
+class PydanticAIKnowledgeRunner:
 
     def __init__(
         self,
@@ -238,7 +251,11 @@ class PydanticAIKnowledgeRunner:
         if _is_deepseek_flash(base_url=base_url, model=model):
             model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
-        model_instance = OpenAIChatModel(model, provider=provider, settings=model_settings)
+        model_instance = _RetryingOpenAIChatModel(
+            model,
+            provider=provider,
+            settings=model_settings,
+        )
         self._agent = Agent(
             model_instance,
             deps_type=KnowledgeToolRegistry,
@@ -882,37 +899,24 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        had_tool_activity = False
-
-        def track_tool_activity(_: AgentToolEvent) -> None:
-            nonlocal had_tool_activity
-            had_tool_activity = True
-
-        token = self._active_tool_event.set(track_tool_activity)
-        try:
-            result = self._run_with_provider_retry(
-                lambda: self._agent.run_sync(
-                    _compose_agent_prompt(
-                        prompt=prompt,
-                        research_map=getattr(tools, "research_map", None)
-                        if getattr(tools, "research_map_enabled", False)
-                        else None,
-                        document_context=getattr(tools, "document_prompt_context", None),
-                    ),
-                    message_history=_agent_message_history(conversation),
-                    deps=tools,
-                    usage_limits=self._usage_limits,
-                ),
-                can_retry=lambda: not had_tool_activity,
-            )
-            return _text_result(
-                result.output,
-                tools=tools,
-                model=self._model,
-                usage=_result_usage(result),
-            )
-        finally:
-            self._active_tool_event.reset(token)
+        result = self._agent.run_sync(
+            _compose_agent_prompt(
+                prompt=prompt,
+                research_map=getattr(tools, "research_map", None)
+                if getattr(tools, "research_map_enabled", False)
+                else None,
+                document_context=getattr(tools, "document_prompt_context", None),
+            ),
+            message_history=_agent_message_history(conversation),
+            deps=tools,
+            usage_limits=self._usage_limits,
+        )
+        return _text_result(
+            result.output,
+            tools=tools,
+            model=self._model,
+            usage=_result_usage(result),
+        )
 
     def run_stream(
         self,
@@ -923,51 +927,36 @@ class PydanticAIKnowledgeRunner:
         on_delta: Callable[[str], None],
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
     ) -> AgentRunResult:
-        had_output = False
-        had_tool_activity = False
-
-        def emit_tool_event(event: AgentToolEvent) -> None:
-            nonlocal had_tool_activity
-            had_tool_activity = True
-            if on_tool_event is not None:
-                on_tool_event(event)
-
-        token = self._active_tool_event.set(emit_tool_event)
+        token = self._active_tool_event.set(on_tool_event)
 
         async def stream_text(
             _: RunContext[KnowledgeToolRegistry],
             events: AsyncIterable[AgentStreamEvent],
         ) -> None:
-            nonlocal had_output
             async for event in events:
                 if isinstance(event, PartStartEvent) and isinstance(event.part, TextPart):
                     if event.part.content:
-                        had_output = True
                         on_delta(event.part.content)
                 elif (
                     isinstance(event, PartDeltaEvent)
                     and isinstance(event.delta, TextPartDelta)
                     and event.delta.content_delta
                 ):
-                    had_output = True
                     on_delta(event.delta.content_delta)
 
         try:
-            result = self._run_with_provider_retry(
-                lambda: self._agent.run_sync(
-                    _compose_agent_prompt(
-                        prompt=prompt,
-                        research_map=getattr(tools, "research_map", None)
-                        if getattr(tools, "research_map_enabled", False)
-                        else None,
-                        document_context=getattr(tools, "document_prompt_context", None),
-                    ),
-                    message_history=_agent_message_history(conversation),
-                    deps=tools,
-                    usage_limits=self._usage_limits,
-                    event_stream_handler=stream_text,
+            result = self._agent.run_sync(
+                _compose_agent_prompt(
+                    prompt=prompt,
+                    research_map=getattr(tools, "research_map", None)
+                    if getattr(tools, "research_map_enabled", False)
+                    else None,
+                    document_context=getattr(tools, "document_prompt_context", None),
                 ),
-                can_retry=lambda: not had_output and not had_tool_activity,
+                message_history=_agent_message_history(conversation),
+                deps=tools,
+                usage_limits=self._usage_limits,
+                event_stream_handler=stream_text,
             )
             return _text_result(
                 str(result.output),
@@ -977,25 +966,6 @@ class PydanticAIKnowledgeRunner:
             )
         finally:
             self._active_tool_event.reset(token)
-
-    def _run_with_provider_retry(
-        self,
-        operation: Callable[[], object],
-        *,
-        can_retry: Callable[[], bool],
-    ) -> object:
-        for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
-            try:
-                return operation()
-            except ModelHTTPError as error:
-                if (
-                    retry_delay is None
-                    or not can_retry()
-                    or not _is_transient_unknown_provider(error)
-                ):
-                    raise
-                sleep(retry_delay)
-        raise RuntimeError("unreachable provider retry state")
 
 
 def _is_deepseek_flash(*, base_url: str, model: str) -> bool:

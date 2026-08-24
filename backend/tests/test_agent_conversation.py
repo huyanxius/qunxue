@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -6,7 +7,9 @@ from uuid import UUID
 import pytest
 from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai.models import ModelRequestParameters
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from sqlalchemy.exc import IntegrityError
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
@@ -1888,7 +1891,7 @@ def test_agent_returns_search_failure_to_the_model_for_a_second_judgment() -> No
     assert "".join(deltas) == result.answer
 
 
-def test_agent_retries_unknown_provider_with_the_same_model_before_activity(
+def test_agent_retries_unknown_provider_at_the_model_request_boundary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     runner = PydanticAIKnowledgeRunner(
@@ -1897,9 +1900,11 @@ def test_agent_retries_unknown_provider_with_the_same_model_before_activity(
         model="gpt-5.6-terra",
         timeout_seconds=30,
     )
+    model = runner._agent.model
     attempts = 0
+    completed_request = object()
 
-    def run_sync(*args, **kwargs):
+    async def request_once(*args, **kwargs):
         nonlocal attempts
         del args, kwargs
         attempts += 1
@@ -1909,27 +1914,26 @@ def test_agent_retries_unknown_provider_with_the_same_model_before_activity(
                 model_name="gpt-5.6-terra",
                 body={"message": "unknown provider for model gpt-5.6-terra"},
             )
-        return SimpleNamespace(output="同一模型重新连接后完成回答。")
+        return completed_request
 
-    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
     monkeypatch.setattr(
-        "qunxue_api.adapters.research_agent.pydantic_runner.sleep",
-        lambda _seconds: None,
+        "qunxue_api.adapters.research_agent.pydantic_runner.async_sleep",
+        no_sleep,
         raising=False,
     )
-
-    result = runner.run_stream(
-        prompt="在怎样的策略下你会调用知识库？",
-        conversation=(),
-        tools=_FakeAgentTools(),
-        on_delta=lambda _: None,
+    result = asyncio.run(
+        model._completions_create([], False, {}, ModelRequestParameters())
     )
 
     assert attempts == 2
-    assert result.answer == "同一模型重新连接后完成回答。"
+    assert result is completed_request
 
 
-def test_agent_does_not_replay_a_turn_after_tool_activity(
+def test_agent_does_not_retry_other_bad_model_requests(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     runner = PydanticAIKnowledgeRunner(
@@ -1938,40 +1942,24 @@ def test_agent_does_not_replay_a_turn_after_tool_activity(
         model="gpt-5.6-terra",
         timeout_seconds=30,
     )
+    model = runner._agent.model
     attempts = 0
 
-    def run_sync(*args, **kwargs):
+    async def request_once(*args, **kwargs):
         nonlocal attempts
         del args, kwargs
         attempts += 1
-        runner._emit_tool_event(
-            AgentToolEvent(
-                tool="search_knowledge",
-                phase="started",
-                call_id="call-before-provider-error",
-                input={"query": "异化"},
-            )
-        )
         raise ModelHTTPError(
             status_code=400,
             model_name="gpt-5.6-terra",
-            body={"message": "unknown provider for model gpt-5.6-terra"},
+            body={"message": "invalid request parameter"},
         )
 
-    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
-    monkeypatch.setattr(
-        "qunxue_api.adapters.research_agent.pydantic_runner.sleep",
-        lambda _seconds: None,
-        raising=False,
-    )
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
-    with pytest.raises(ModelHTTPError, match="unknown provider"):
-        runner.run_stream(
-            prompt="什么是异化？",
-            conversation=(),
-            tools=_FakeAgentTools(),
-            on_delta=lambda _: None,
-            on_tool_event=lambda _: None,
+    with pytest.raises(ModelHTTPError, match="invalid request parameter"):
+        asyncio.run(
+            model._completions_create([], False, {}, ModelRequestParameters())
         )
 
     assert attempts == 1
