@@ -57,7 +57,6 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        del conversation
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
@@ -73,7 +72,9 @@ class DeterministicKnowledgeRunner:
                 provider="deterministic-knowledge",
                 model="local",
             )
-        results = tools.search_knowledge(_evidence_retrieval_query(prompt))
+        results = tools.search_knowledge(
+            _evidence_retrieval_query(prompt, conversation=conversation)
+        )
         if not results:
             return AgentRunResult(
                 answer=_insufficient_evidence_answer(),
@@ -117,7 +118,10 @@ class DeterministicKnowledgeRunner:
             for index in range(0, len(result.answer), 72):
                 on_delta(result.answer[index : index + 72])
             return result
-        retrieval_query = _evidence_retrieval_query(prompt)
+        retrieval_query = _evidence_retrieval_query(
+            prompt,
+            conversation=conversation,
+        )
         if on_tool_event is not None:
             on_tool_event(
                 AgentToolEvent(
@@ -869,6 +873,7 @@ class PydanticAIKnowledgeRunner:
     ) -> AgentRunResult:
         required_evidence = _preflight_required_evidence(
             prompt=prompt,
+            conversation=conversation,
             tools=tools,
             on_tool_event=None,
         )
@@ -923,6 +928,7 @@ class PydanticAIKnowledgeRunner:
         try:
             required_evidence = _preflight_required_evidence(
                 prompt=prompt,
+                conversation=conversation,
                 tools=tools,
                 on_tool_event=on_tool_event,
             )
@@ -987,6 +993,17 @@ _TOPIC_IDEATION_MARKERS = (
     "可研究的社会学方向",
 )
 
+_RESEARCH_CONTEXTUAL_PROMPTS = frozenset(
+    {
+        "好",
+        "好的",
+        "确认",
+        "继续",
+        "保存",
+        "就这个",
+    }
+)
+
 
 _EXPLICIT_EVIDENCE_MARKERS = (
     "知识库",
@@ -1032,19 +1049,27 @@ def _requires_knowledge_evidence(
         return True
     if not research_workspace:
         return False
-    return normalized not in {
-        "好",
-        "好的",
-        "确认",
-        "继续",
-        "取消",
-        "保存",
-        "就这个",
-    }
+    return normalized != "取消"
 
 
-def _evidence_retrieval_query(prompt: str) -> str:
+def _evidence_retrieval_query(
+    prompt: str,
+    *,
+    conversation: Sequence[AgentTurn] = (),
+) -> str:
     normalized = " ".join(prompt.split())
+    if normalized in _RESEARCH_CONTEXTUAL_PROMPTS:
+        recent_topic = next(
+            (
+                " ".join(turn.user_message.content.split())
+                for turn in reversed(conversation)
+                if " ".join(turn.user_message.content.split())
+                not in _RESEARCH_CONTEXTUAL_PROMPTS
+            ),
+            None,
+        )
+        if recent_topic:
+            return f"{recent_topic}\n当前操作：{normalized}"
     if any(marker in normalized for marker in _TOPIC_IDEATION_MARKERS):
         return (
             f"{prompt}\n"
@@ -1056,6 +1081,7 @@ def _evidence_retrieval_query(prompt: str) -> str:
 def _preflight_required_evidence(
     *,
     prompt: str,
+    conversation: Sequence[AgentTurn],
     tools: AgentToolContext,
     on_tool_event: Callable[[AgentToolEvent], None] | None,
 ) -> tuple[Mapping[str, object], ...] | None:
@@ -1067,7 +1093,10 @@ def _preflight_required_evidence(
         ),
     ):
         return None
-    retrieval_query = _evidence_retrieval_query(prompt)
+    retrieval_query = _evidence_retrieval_query(
+        prompt,
+        conversation=conversation,
+    )
     call_id = "policy:search_knowledge"
     if on_tool_event is not None:
         on_tool_event(
