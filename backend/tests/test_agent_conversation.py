@@ -1358,6 +1358,147 @@ def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
     assert result.citations == ()
 
 
+def test_agent_policy_searches_for_a_plain_sociology_concept_by_default() -> None:
+    citation_id = "knowledge:D1:C003"
+
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+
+        def __init__(self) -> None:
+            self.evidence = {}
+            self.selected_evidence_ids: tuple[str, ...] = ()
+            self.queries: list[str] = []
+
+        def select_evidence(self, citation_ids):
+            values = tuple(citation_ids)
+            assert set(values) <= set(self.evidence)
+            self.selected_evidence_ids = values
+            return values
+
+        def search_knowledge(self, query: str, *, limit: int = 5):
+            assert limit == 5
+            self.queries.append(query)
+            self.evidence[citation_id] = AgentEvidence(
+                citation_id=citation_id,
+                label="异化劳动",
+                kind="entry",
+                excerpt="异化劳动描述劳动者与劳动活动及其结果的结构性分离。",
+                knowledge_id="D1:C003",
+            )
+            return [
+                {
+                    "citation_id": citation_id,
+                    "knowledge_id": "D1:C003",
+                    "title": "异化劳动",
+                    "excerpt": "异化劳动描述劳动者与劳动活动及其结果的结构性分离。",
+                    "evidence_status": "verified",
+                }
+            ]
+
+    tools = _Tools()
+
+    async def model_stream(messages, info):
+        del messages
+        instructions = info.instructions or ""
+        follows_default_search_policy = (
+            "社会学概念、理论和社会现象" in instructions
+            and "默认先调用 search_knowledge" in instructions
+        )
+        if not tools.queries and follows_default_search_policy:
+            yield {
+                0: DeltaToolCall(
+                    name="search_knowledge",
+                    json_args='{"query":"异化劳动"}',
+                    tool_call_id="call-search-alienation",
+                )
+            }
+        elif not tools.queries:
+            yield "异化是人与其劳动及社会关系发生分离。"
+        else:
+            yield "根据知识库，异化劳动是劳动者与劳动活动及其结果的结构性分离。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    tool_events = []
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="什么是异化？",
+            conversation=(),
+            tools=tools,
+            on_delta=lambda _: None,
+            on_tool_event=tool_events.append,
+        )
+
+    assert tools.queries == ["异化劳动"]
+    assert [(event.phase, event.call_id) for event in tool_events] == [
+        ("started", "call-search-alienation"),
+        ("finished", "call-search-alienation"),
+    ]
+    assert tools.selected_evidence_ids == (citation_id,)
+    assert result.answer.startswith("根据知识库")
+
+
+def test_agent_policy_answers_tool_strategy_questions_without_searching() -> None:
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+        evidence = {}
+
+        def __init__(self) -> None:
+            self.queries: list[str] = []
+
+        def select_evidence(self, citation_ids):
+            assert tuple(citation_ids) == ()
+            return ()
+
+        def search_knowledge(self, query: str, *, limit: int = 5):
+            self.queries.append(query)
+            return []
+
+    tools = _Tools()
+
+    async def model_stream(messages, info):
+        del messages
+        instructions = info.instructions or ""
+        recognizes_tool_strategy_meta_question = (
+            "工具调用规则、检索策略或调用条件" in instructions
+            and "不要调用知识库" in instructions
+        )
+        if not tools.queries and not recognizes_tool_strategy_meta_question:
+            yield {
+                0: DeltaToolCall(
+                    name="search_knowledge",
+                    json_args='{"query":"知识库调用策略"}',
+                    tool_call_id="call-wrong-policy-search",
+                )
+            }
+        else:
+            yield "我会根据问题的社会学内容判断是否需要知识库支持。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    tool_events = []
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="在怎样的策略下你会调用知识库？",
+            conversation=(),
+            tools=tools,
+            on_delta=lambda _: None,
+            on_tool_event=tool_events.append,
+        )
+
+    assert tools.queries == []
+    assert tool_events == []
+    assert result.answer == "我会根据问题的社会学内容判断是否需要知识库支持。"
+
+
 def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
