@@ -90,7 +90,18 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
 
 @pytest.mark.parametrize(
     "prompt",
-    ["好", "好的", "确认", "继续", "取消", "保存", "就这个"],
+    [
+        "好",
+        "好的",
+        "确认",
+        "继续",
+        "取消",
+        "保存",
+        "就这个",
+        "好的！",
+        "确认。",
+        "继续。",
+    ],
 )
 def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> None:
     search = Mock(side_effect=AssertionError("flow control must not repeat search"))
@@ -119,7 +130,10 @@ def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> 
     search.assert_not_called()
 
 
-@pytest.mark.parametrize("prompt", ["有文献吗？", "为什么？", "这个理论靠谱吗？"])
+@pytest.mark.parametrize(
+    "prompt",
+    ["有文献吗？", "为什么？", "这个理论靠谱吗？", "这个理论的依据是什么？"],
+)
 def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
     search = Mock(return_value=[])
     tools = SimpleNamespace(
@@ -133,6 +147,12 @@ def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
         AgentTurn.create(
             user_content="我想研究社区流动如何改变邻里互助",
             assistant_content="可以用社会资本理论检查关系流失与互惠规范变化。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+        AgentTurn.create(
+            user_content="谢谢你",
+            assistant_content="不客气。",
             citations=(),
             evidence_ids=frozenset(),
         ),
@@ -177,7 +197,44 @@ def test_contextual_why_does_not_search_without_research_context() -> None:
     search.assert_not_called()
 
 
-def test_document_knowledge_edit_cannot_bypass_evidence_preflight() -> None:
+def test_agent_identity_context_does_not_turn_why_into_research() -> None:
+    search = Mock(side_effect=AssertionError("identity context must not search"))
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="你是社会学 Agent 吗？",
+            assistant_content="是，我是社会学学科 Agent。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="为什么？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "把这个理论解释改得更准确",
+        "把它改得更准确",
+        "调整研究问题，使表述更准确",
+    ],
+)
+def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
+    prompt: str,
+) -> None:
     search = Mock(return_value=[])
     tools = SimpleNamespace(
         release=SimpleNamespace(knowledge_release_id="release-a"),
@@ -196,15 +253,42 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight() -> None:
     )
 
     result = DeterministicKnowledgeRunner().run(
-        prompt="把这个理论解释改得更准确",
+        prompt=prompt,
         conversation=conversation,
         tools=tools,
     )
 
     query = search.call_args.args[0]
     assert "用社会资本理论解释邻里互助减少" in query
-    assert "把这个理论解释改得更准确" in query
+    assert prompt in query
     assert result.answer.startswith("当前绑定的知识发布中没有检索到")
+
+
+def test_document_presentation_edit_does_not_repeat_search() -> None:
+    search = Mock(side_effect=AssertionError("presentation edit must not search"))
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=True,
+        research_document_tools_enabled=True,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="用社会资本理论解释邻里互助减少",
+            assistant_content="当前解释强调关系网络流失。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="把这句话润色得更简洁",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_not_called()
 
 
 def test_deterministic_runner_reports_insufficient_evidence_after_empty_search() -> None:
