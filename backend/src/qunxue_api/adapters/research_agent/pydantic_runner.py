@@ -1017,6 +1017,14 @@ _CASUAL_ACK_PROMPTS = frozenset(
         "明白了",
         "知道了",
         "好的，谢谢",
+        "你好",
+        "您好",
+        "辛苦了",
+        "再见",
+        "晚安",
+        "早上好",
+        "下午好",
+        "晚上好",
         "嗯",
         "嗯嗯",
     }
@@ -1074,9 +1082,19 @@ _NON_EPISTEMIC_DOCUMENT_ACTIONS = (
     "撤销",
 )
 
+_GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS = (
+    "修改",
+    "改得",
+    "重写",
+    "调整",
+    "修正",
+    "纠正",
+)
+
 _CONTEXTUAL_EVIDENCE_PATTERNS = (
     r"^为什么(?:呢)?[？?]?$",
     r"^(?:有|有什么)?(?:依据|出处|来源|文献|参考资料)(?:吗|呢)?[？?]?$",
+    r"^需要(?:什么|哪些|怎样的?)依据[？?]?$",
     (
         r"^(?:这个|该)?(?:理论|概念|解释|说法)?"
         r"(?:靠谱吗|可靠(?:吗)?|可信(?:吗)?|成立(?:吗)?|适用(?:吗)?)[？?]?$"
@@ -1084,15 +1102,22 @@ _CONTEXTUAL_EVIDENCE_PATTERNS = (
 )
 
 _EVIDENCE_REQUEST_PATTERNS = (
-    r"(?:有|有什么|给出|提供|说明|缺少).{0,6}依据",
+    (
+        r"(?:有|有什么|给出|提供|说明|缺少).{0,6}"
+        r"依据(?!现有|给定|上述|以下|这个|该|模板|格式|要求|规则|材料)"
+    ),
     r"需要(?:什么|哪些|怎样的?)依据",
     r"(?:理论|概念|解释|说法|主张).{0,8}的?依据",
     r"依据(?:是|来自|在哪|是什么|有哪些|呢|吗)",
 )
 
 _IDENTITY_CONTEXT_PATTERNS = (
-    r"(?:你是谁|你叫什么|你的身份|你的模型)",
-    r"你是.{0,16}(?:agent|助手|模型|智能体|机器人)",
+    r"^(?:你是谁|你叫什么(?:名字)?|你能做什么|你可以做什么)[？?]?$",
+    r"^你的(?:身份|模型|名字|能力)(?:是|是什么|呢|吗)?[？?]?$",
+    (
+        r"^你是(?:什么|哪个)?\s*(?:社会学|研究|ai|人工智能)?\s*"
+        r"(?:agent|助手|模型|智能体|机器人)\s*(?:吗|呢)?[？?]?$"
+    ),
 )
 
 _RESEARCH_CONTEXT_MARKERS = (
@@ -1154,6 +1179,12 @@ def _requires_knowledge_evidence(
         if _explicit_evidence_requested(normalized):
             return True
         if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
+            return True
+        if any(
+            marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS
+        ) and any(
+            marker in normalized for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
+        ):
             return True
         if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
             return False
@@ -1228,10 +1259,16 @@ def _needs_prior_research_context(normalized: str) -> bool:
                 "该概念",
                 "这个说法",
                 "该说法",
+                "这一说法",
                 "这个主张",
                 "该主张",
+                "这一主张",
                 "这个结论",
                 "该结论",
+                "这一结论",
+                "这个解释",
+                "该解释",
+                "这一解释",
                 "上述解释",
                 "把它",
                 "将它",
@@ -1242,6 +1279,13 @@ def _needs_prior_research_context(normalized: str) -> bool:
         or (
             any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
             and any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS)
+        )
+        or (
+            any(
+                marker in normalized
+                for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
+            )
+            and any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS)
         )
     )
 
@@ -1267,11 +1311,11 @@ def _conversation_has_research_context(
 
 
 def _turn_has_research_context(turn: AgentTurn) -> bool:
+    if turn.evidence_ids or turn.assistant_message.citations:
+        return True
     user_content = _normalized_text(turn.user_message.content)
     if _is_identity_context_prompt(user_content):
         return False
-    if turn.evidence_ids or turn.assistant_message.citations:
-        return True
     assistant_content = _normalized_text(turn.assistant_message.content)
     return any(
         marker in content
