@@ -1,4 +1,5 @@
 import json
+import time
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -234,6 +235,63 @@ def test_agent_stream_does_not_invent_tool_events_for_a_direct_answer(
         "assistant_delta",
         "turn_completed",
     ]
+
+
+def test_agent_stream_keeps_the_connection_alive_while_the_model_is_idle(
+    client,
+    monkeypatch,
+) -> None:
+    class _SlowAnswerRunner:
+        def run_stream(
+            self,
+            *,
+            prompt,
+            conversation,
+            tools,
+            on_delta,
+            on_tool_event=None,
+        ) -> AgentRunResult:
+            del prompt, conversation, on_tool_event
+            time.sleep(0.05)
+            answer = "先确认研究对象，再收窄问题。"
+            on_delta(answer)
+            return AgentRunResult(
+                answer=answer,
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="slow-answer",
+            )
+
+    monkeypatch.setattr(
+        "qunxue_api.bootstrap.DeterministicKnowledgeRunner",
+        _SlowAnswerRunner,
+    )
+    monkeypatch.setattr(
+        "qunxue_api.api.routes.agent._SSE_HEARTBEAT_SECONDS",
+        0.01,
+        raising=False,
+    )
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": "slow-agent@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": "register-slow-agent"},
+    )
+    assert registered.status_code == 201
+
+    response = client.post(
+        "/api/agent/turns",
+        json={"message": "帮我收窄一个本科论文选题。"},
+        headers={"Idempotency-Key": "agent-slow-answer-1"},
+    )
+
+    assert response.status_code == 200
+    assert ": keep-alive\n\n" in response.text
+    assert "event: turn_completed" in response.text
 
 
 def test_agent_stream_exposes_tool_failure_and_aborts_the_turn(client) -> None:
