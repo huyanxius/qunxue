@@ -5,7 +5,12 @@ from unittest.mock import Mock
 
 from qunxue_api.adapters.research_agent.pydantic_runner import DeterministicKnowledgeRunner
 from qunxue_api.adapters.retrieval import RetrievalPipelineUnavailable
-from qunxue_api.modules.agent_conversation import AgentEvidence, AgentRunResult, AgentToolEvent
+from qunxue_api.modules.agent_conversation import (
+    AgentEvidence,
+    AgentRunResult,
+    AgentToolEvent,
+    AgentTurn,
+)
 
 
 def _sse_events(payload: str) -> list[tuple[str, dict[str, object]]]:
@@ -79,6 +84,36 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
 
     search.assert_called_once()
     assert [item.citation_id for item in result.citations] == [citation.citation_id]
+
+
+def test_research_workspace_control_prompt_reuses_recent_topic_for_evidence() -> None:
+    search = Mock(return_value=[])
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=True,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="我想研究社区流动如何改变邻里互助",
+            assistant_content="可以先区分关系流失与互惠规范变化。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    result = DeterministicKnowledgeRunner().run(
+        prompt="继续",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_called_once_with(
+        "我想研究社区流动如何改变邻里互助\n当前操作：继续"
+    )
+    assert result.answer.startswith("当前绑定的知识发布中没有检索到")
 
 
 def test_deterministic_runner_reports_insufficient_evidence_after_empty_search() -> None:
