@@ -76,7 +76,11 @@ def client(
     )
     command.upgrade(alembic_config, "head")
     database = Database(database_url)
-    app = create_app(settings=settings, database=database)
+    app = create_app(
+        settings=settings,
+        database=database,
+        require_email_verification=False,
+    )
     install_account_management(
         app,
         database=database,
