@@ -87,7 +87,7 @@ describe('KnowledgeGraph', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      '当前图中没有可展示的已审核显式关系。',
+      '当前图中没有可展示的知识关系。',
     )
     expect(cytoscapeMock).not.toHaveBeenCalled()
   })
@@ -172,11 +172,11 @@ describe('KnowledgeGraph', () => {
         }),
       }),
     ]))
-    fireEvent.click(screen.getByRole('button', { name: '查看待审核发现关系 extends' }))
+    fireEvent.click(screen.getByRole('button', { name: '查看候选关系 extends' }))
     expect(onSelectEdge).toHaveBeenLastCalledWith('candidate:one')
   })
 
-  it('makes a pending node review status visible in the graph label', () => {
+  it('does not append internal review state to graph labels', () => {
     render(
       <KnowledgeGraph projection={projection} onSelectKnowledge={vi.fn()} />,
     )
@@ -190,7 +190,7 @@ describe('KnowledgeGraph', () => {
       (rule: { selector: string }) => rule.selector === 'node',
     )
 
-    expect(pendingNode?.data.displayLabel).toBe('惯习\n待核验')
+    expect(pendingNode?.data.displayLabel).toBe('惯习')
     expect(nodeStyle?.style.label).toBe('data(displayLabel)')
     expect(nodeStyle?.style.width).toBe(184)
     expect(nodeStyle?.style.height).toBe(68)
@@ -235,7 +235,7 @@ describe('KnowledgeGraph', () => {
     expect(reviewedNode?.data.displayLabel).toBe('场域理论')
   })
 
-  it('labels a retired node without presenting it as pending', () => {
+  it('does not append retired state to a published node label', () => {
     const retiredProjection = {
       ...projection,
       nodes: projection.nodes.map((node) =>
@@ -257,7 +257,7 @@ describe('KnowledgeGraph', () => {
         element.data.id === 'knowledge-habitus',
     )
 
-    expect(retiredNode?.data.displayLabel).toBe('惯习\n已停用')
+    expect(retiredNode?.data.displayLabel).toBe('惯习')
   })
 
   it('destroys the previous graph before rerendering and on unmount', () => {
@@ -309,7 +309,7 @@ describe('KnowledgeGraph', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      '当前图中没有可展示的已审核显式关系。',
+      '当前图中没有可展示的知识关系。',
     )
   })
 })

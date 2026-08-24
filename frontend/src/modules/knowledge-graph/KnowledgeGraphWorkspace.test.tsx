@@ -106,10 +106,10 @@ it('restores a searched entry path and keeps pending evidence opt-in', async () 
     }))
   })
   expect(screen.getByText('当前条目：社会资本')).toBeVisible()
-  expect(screen.getByText('正式关系：当前条目没有已审核关系。')).toBeVisible()
+  expect(screen.getByText('当前条目没有知识关系。')).toBeVisible()
   expect(readIncidentCandidatePage).not.toHaveBeenCalled()
 
-  fireEvent.click(screen.getByRole('button', { name: '开启待审核发现' }))
+  fireEvent.click(screen.getByRole('button', { name: '开启候选关系' }))
   await waitFor(() => expect(readIncidentCandidatePage).toHaveBeenCalled())
   expect(readKnowledgeGraphEntry).toHaveBeenCalledWith({
     releaseId: 'release-a',
@@ -119,14 +119,14 @@ it('restores a searched entry path and keeps pending evidence opt-in', async () 
   const latestOptions = cytoscapeMock.mock.calls.at(-1)?.[0]
   expect(latestOptions.elements.find(
     (element: { data: { id: string } }) => element.data.id === 'D1:C001:E001',
-  )?.data.displayLabel).toBe('社会资本\n待核验')
+  )?.data.displayLabel).toBe('社会资本')
 
   const edgeTap = cores.at(-1)?.on.mock.calls.find(
     ([event, selector]) => event === 'tap' && selector === 'edge',
   )?.[2]
   edgeTap?.({ target: { id: () => 'candidate:one' } })
 
-  const panel = await screen.findByLabelText('待审核发现关系详情')
+  const panel = await screen.findByLabelText('候选关系详情')
   expect(within(panel).getByText('社会资本（D1:C001:E001） → 关系资源（D1:C001:E002）')).toBeVisible()
   expect(within(panel).getByText('社会资本扩展了关系资源讨论。')).toBeVisible()
   expect(within(panel).getByText(/确定性规则命中，不是校准置信度/)).toBeVisible()

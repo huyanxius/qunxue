@@ -92,7 +92,7 @@ function detail() {
     relations: [
       {
         content_version: 1,
-        description: '经审核的概念关系。',
+        description: '概念之间的显式关系。',
         direction: 'directed',
         evidence_grade: 'A',
         evidence_source_ids: ['source-1'],
@@ -422,7 +422,7 @@ describe('knowledge pages', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('知识服务暂时不可用')
   })
 
-  it('presents real reviewed relations and a theory seed without adopting it', async () => {
+  it('presents published knowledge without exposing internal review state', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = urlFor(input)
       return request.pathname === '/api/knowledge/entries'
@@ -471,6 +471,10 @@ describe('knowledge pages', () => {
     expect(screen.getByRole('button', { name: '划线批注（暂未开放）' })).toBeDisabled()
     expect(screen.getByText('知识库原始 Markdown')).toBeVisible()
     expect(screen.getAllByText('待核验')).not.toHaveLength(0)
+    expect(screen.queryByText('审核状态')).not.toBeInTheDocument()
+    expect(screen.queryByText('已审核')).not.toBeInTheDocument()
+    expect(screen.queryByText('预审核完成')).not.toBeInTheDocument()
+    expect(screen.queryByText('待审核')).not.toBeInTheDocument()
     expect(screen.getByText('D1:C002')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '以此理论开始研究' }))
     expect(onStartResearch).toHaveBeenCalledWith({

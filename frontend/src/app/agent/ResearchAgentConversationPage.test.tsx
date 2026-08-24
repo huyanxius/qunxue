@@ -365,7 +365,7 @@ describe('ResearchAgentConversationPage', () => {
       call_id: 'call-search-knowledge',
       input: { query: '个体经验 群体经验' },
       output: { results: [{ knowledge_id: citation.knowledge_id, title: citation.label }] },
-      detail: '找到 1 条知识库预览内容',
+      detail: '找到 1 条知识库预览内容（未审核）：集体知识与群体认知',
     }]
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = urlFor(input)
@@ -376,6 +376,7 @@ describe('ResearchAgentConversationPage', () => {
     renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
 
     const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    expect(region).not.toHaveTextContent('未审核')
     const knowledgeCard = await within(region).findByRole('region', { name: '知识库建议' })
     const graphCard = within(region).getByRole('region', { name: '知识图谱建议' })
     expect(within(knowledgeCard).getByText(citation.label)).toBeVisible()

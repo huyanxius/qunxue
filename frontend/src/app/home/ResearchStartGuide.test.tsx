@@ -13,6 +13,7 @@ describe('ResearchStartGuide', () => {
     expect(guide).toHaveTextContent('从一个具体现象开始')
     expect(guide).toHaveTextContent('Agent 界面预览，尚未连接研究模型')
     expect(guide).toHaveTextContent('理论匹配与研究框架尚未开放')
+    expect(guide).not.toHaveTextContent('审核')
     expect(guide).toHaveTextContent('由你确认')
   })
 })

@@ -109,7 +109,7 @@ describe('projectKnowledgeGraph', () => {
     }])
   })
 
-  it('projects only reviewed relations whose endpoints are supplied', () => {
+  it('projects published relations whose endpoints are supplied', () => {
     const graph = projectKnowledgeGraph({
       release,
       entries,

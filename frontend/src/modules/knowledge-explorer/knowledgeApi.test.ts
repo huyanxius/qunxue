@@ -245,6 +245,7 @@ describe('knowledge API', () => {
     expect(knowledge.sources[0]?.verificationStatus).toBe('pending')
     expect(knowledge.relations.map((relation) => relation.relationId)).toEqual([
       'relation-reviewed',
+      'relation-pending',
     ])
     expect(knowledge.theoryProfile).toEqual({
       matchEligible: false,

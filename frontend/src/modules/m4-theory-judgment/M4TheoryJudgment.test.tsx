@@ -171,11 +171,8 @@ describe('M4TheoryJudgment', () => {
     expect(within(card).getByText('无法单独解释互惠规范的差异。')).toBeVisible()
     expect(within(card).getByText('不应将所有互助减少归因于个人时间管理。')).toBeVisible()
     expect(within(card).getByText('社会资本理论')).toBeVisible()
-    const reviewStatus = within(card).getByRole('note', { name: /档案审核状态/ })
-    expect(reviewStatus).toHaveTextContent('预审核完成')
-    expect(reviewStatus).toHaveTextContent('仅供内测，后续仍可继续深度复核')
-    expect(reviewStatus).not.toHaveTextContent('专家终审')
-    expect(reviewStatus).not.toHaveTextContent('全面审核')
+    expect(within(card).queryByRole('note', { name: /档案审核状态/ })).not.toBeInTheDocument()
+    expect(within(card).queryByText('预审核完成')).not.toBeInTheDocument()
     expect(within(card).getAllByRole('link', { name: /社区关系与时间压力/ })[0]).toHaveAttribute('href', 'https://example.org/source-1')
     expect(within(card).getByText('第 3 章，p. 47')).toBeVisible()
     expect(screen.getByLabelText('选择时间贫困理论的理由')).toHaveValue('工时与互助频率的变化具有直接对应，但仍需补充时间日志。')
@@ -252,7 +249,7 @@ describe('M4TheoryJudgment', () => {
   })
 
   it.each([
-    ['catalog_not_ready', '知识目录尚无可用的正式发布', '重试检查', '只有预审核完成并发布为内测固定版本的理论档案才会进入匹配。'],
+    ['catalog_not_ready', '知识目录尚无可用的正式发布', '重试检查', '当前知识发布中没有可用于理论匹配的理论档案。'],
     ['network', '网络中断；如果正在编辑，请保持本页打开并在恢复连接后重试保存。', '重新连接', '恢复连接后会从服务器继续，不会生成静态候选。'],
     ['model_failed', '理论判断服务本次未完成', '重试匹配', '本次失败不会成为研究结论。'],
   ] as const)('shows a recoverable %s start failure without presenting fabricated candidates', async (code, message, action, detail) => {
@@ -272,7 +269,7 @@ describe('M4TheoryJudgment', () => {
     render(<M4TheoryJudgment task={{ taskId: 'task-1', taskVersion: 7, matchRunId: 'match-1', theoryPlanId: null, phenomenonQueryId: 'phenomenon-1', phenomenonVersion: 2, canStartMatching: false }} gateway={service} />)
 
     expect(await screen.findByText('暂时没有足够可靠的候选理论')).toBeVisible()
-    expect(screen.getByText('你可以返回补充现象材料，或使用当前预审核版本重新匹配。')).toBeVisible()
+    expect(screen.getByText('你可以返回补充现象材料，或使用当前知识版本重新匹配。')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '重新检查候选' }))
     await waitFor(() => expect(service.start).toHaveBeenCalledTimes(1))
     expect(screen.queryByRole('button', { name: '保存完整理论决定' })).not.toBeInTheDocument()
