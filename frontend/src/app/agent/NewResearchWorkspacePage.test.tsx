@@ -450,6 +450,35 @@ describe('NewResearchWorkspacePage', () => {
     expect(randomUUID).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps a timed-out turn visible after leaving and returning', async () => {
+    const question = '这轮回答会超时吗？'
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') {
+        return new Response(
+          'event: turn_started\ndata: {"conversation_id":"conversation-timeout","run_id":"run-timeout","replayed":false}\n\n'
+            + 'event: turn_failed\ndata: {"code":"turn_timeout","message":"本轮回答超时，已停止生成。"}\n\n',
+          { headers: { 'Content-Type': 'text/event-stream' } },
+        )
+      }
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    const firstPage = renderPage()
+    const firstWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const textbox = within(firstWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: question } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+    expect(await within(firstWorkspace).findByRole('alert')).toHaveTextContent('本轮回答超时')
+    firstPage.unmount()
+
+    renderPage()
+    const restoredWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    expect(await within(restoredWorkspace).findByText('本轮回答超时，已停止生成。')).toBeVisible()
+    expect(within(restoredWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue(question)
+  })
+
   it('keeps an unsent composer draft across refresh in this browser tab', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
