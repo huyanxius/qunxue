@@ -101,6 +101,9 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
         "好的！",
         "确认。",
         "继续。",
+        "谢谢你。",
+        "明白了",
+        "好的，谢谢",
     ],
 )
 def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> None:
