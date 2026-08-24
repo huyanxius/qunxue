@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from sqlalchemy.exc import IntegrityError
@@ -1832,7 +1833,7 @@ def test_agent_can_reformulate_an_empty_knowledge_search_before_answering() -> N
     assert tools.selected_evidence_ids == (citation_id,)
 
 
-def test_agent_aborts_when_the_search_tool_is_unavailable() -> None:
+def test_agent_returns_search_failure_to_the_model_for_a_second_judgment() -> None:
     class _Tools:
         release = SimpleNamespace(knowledge_release_id="release-a")
         evidence = {}
@@ -1868,11 +1869,8 @@ def test_agent_aborts_when_the_search_tool_is_unavailable() -> None:
     )
     tool_events = []
     deltas: list[str] = []
-    with (
-        runner._agent.override(model=FunctionModel(stream_function=model_stream)),
-        pytest.raises(RuntimeError, match="database details"),
-    ):
-        runner.run_stream(
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
             prompt="请结合知识库解释年轻人越来越孤独。",
             conversation=(),
             tools=tools,
@@ -1886,7 +1884,97 @@ def test_agent_aborts_when_the_search_tool_is_unavailable() -> None:
     ]
     assert tool_events[-1].error == "knowledge_search_failed"
     assert "database details" not in (tool_events[-1].detail or "")
-    assert deltas == []
+    assert result.answer == "知识库暂时不可用，我先从社会联结的结构性变化来分析。"
+    assert "".join(deltas) == result.answer
+
+
+def test_agent_retries_unknown_provider_with_the_same_model_before_activity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="gpt-5.6-terra",
+        timeout_seconds=30,
+    )
+    attempts = 0
+
+    def run_sync(*args, **kwargs):
+        nonlocal attempts
+        del args, kwargs
+        attempts += 1
+        if attempts == 1:
+            raise ModelHTTPError(
+                status_code=400,
+                model_name="gpt-5.6-terra",
+                body={"message": "unknown provider for model gpt-5.6-terra"},
+            )
+        return SimpleNamespace(output="同一模型重新连接后完成回答。")
+
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    monkeypatch.setattr(
+        "qunxue_api.adapters.research_agent.pydantic_runner.sleep",
+        lambda _seconds: None,
+        raising=False,
+    )
+
+    result = runner.run_stream(
+        prompt="在怎样的策略下你会调用知识库？",
+        conversation=(),
+        tools=_FakeAgentTools(),
+        on_delta=lambda _: None,
+    )
+
+    assert attempts == 2
+    assert result.answer == "同一模型重新连接后完成回答。"
+
+
+def test_agent_does_not_replay_a_turn_after_tool_activity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="gpt-5.6-terra",
+        timeout_seconds=30,
+    )
+    attempts = 0
+
+    def run_sync(*args, **kwargs):
+        nonlocal attempts
+        del args, kwargs
+        attempts += 1
+        runner._emit_tool_event(
+            AgentToolEvent(
+                tool="search_knowledge",
+                phase="started",
+                call_id="call-before-provider-error",
+                input={"query": "异化"},
+            )
+        )
+        raise ModelHTTPError(
+            status_code=400,
+            model_name="gpt-5.6-terra",
+            body={"message": "unknown provider for model gpt-5.6-terra"},
+        )
+
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    monkeypatch.setattr(
+        "qunxue_api.adapters.research_agent.pydantic_runner.sleep",
+        lambda _seconds: None,
+        raising=False,
+    )
+
+    with pytest.raises(ModelHTTPError, match="unknown provider"):
+        runner.run_stream(
+            prompt="什么是异化？",
+            conversation=(),
+            tools=_FakeAgentTools(),
+            on_delta=lambda _: None,
+            on_tool_event=lambda _: None,
+        )
+
+    assert attempts == 1
 
 
 def test_knowledge_directory_is_bounded_and_queryable() -> None:
