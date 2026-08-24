@@ -15,6 +15,36 @@ afterEach(() => {
 })
 
 describe('account pages', () => {
+  it('reveals and hides the login password without changing its value or submitting', () => {
+    const login = vi.fn(async () => undefined)
+    render(
+      <LoginPage
+        onLogin={login}
+        onAuthenticated={() => undefined}
+        registerHref="/register"
+      />,
+    )
+
+    const password = screen.getByLabelText('密码')
+    fireEvent.change(password, { target: { value: 'research-passphrase' } })
+
+    const reveal = screen.getByRole('button', { name: '显示密码' })
+    expect(password).toHaveAttribute('type', 'password')
+    expect(reveal).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(reveal)
+
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('research-passphrase')
+    expect(screen.getByRole('button', { name: '隐藏密码' })).toHaveAttribute('aria-pressed', 'true')
+    expect(login).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '隐藏密码' }))
+
+    expect(password).toHaveAttribute('type', 'password')
+    expect(password).toHaveValue('research-passphrase')
+  })
+
   it('shows one neutral message for every rejected login', async () => {
     const login = vi.fn(async () => {
       throw new Error('account does not exist')

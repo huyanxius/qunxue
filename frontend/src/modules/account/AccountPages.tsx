@@ -1,3 +1,4 @@
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 
@@ -83,6 +84,7 @@ export function LoginPage({
 }: LoginPageProps) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [passwordVisible, setPasswordVisible] = useState(false)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -129,10 +131,30 @@ export function LoginPage({
           <span>邮箱</span>
           <input name="email" type="email" autoComplete="email" maxLength={320} required />
         </label>
-        <label>
-          <span>密码</span>
-          <input name="password" type="password" autoComplete="current-password" minLength={8} maxLength={128} required />
-        </label>
+        <div className="account-field">
+          <label htmlFor="login-password">密码</label>
+          <div className="account-password-field">
+            <input
+              id="login-password"
+              className="account-password-field__input"
+              name="password"
+              type={passwordVisible ? 'text' : 'password'}
+              autoComplete="current-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
+            <button
+              className="account-password-field__toggle"
+              type="button"
+              aria-label={passwordVisible ? '隐藏密码' : '显示密码'}
+              aria-pressed={passwordVisible}
+              onClick={() => setPasswordVisible((visible) => !visible)}
+            >
+              {passwordVisible ? <EyeSlashIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+            </button>
+          </div>
+        </div>
         {error ? <p className="account-error" role="alert">{error}</p> : null}
         <button className="account-primary" type="submit" disabled={submitting}>
           {submitting ? '正在登录…' : '登录并继续'}

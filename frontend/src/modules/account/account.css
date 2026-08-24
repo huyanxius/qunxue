@@ -172,6 +172,47 @@
   transform: translateY(-1px);
 }
 
+.account-password-field {
+  position: relative;
+}
+
+.account-form .account-password-field__input {
+  padding-right: 58px;
+}
+
+.account-password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #686b67;
+  background: transparent;
+  cursor: pointer;
+  place-items: center;
+  transform: translateY(-50%);
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.account-password-field__toggle:hover {
+  color: #151515;
+  background: rgb(116 90 53 / 8%);
+}
+
+.account-password-field__toggle:focus-visible {
+  outline: 2px solid #745a35;
+  outline-offset: 2px;
+}
+
+.account-password-field__toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
 .account-form small,
 .account-switch {
   color: var(--ink-soft);
