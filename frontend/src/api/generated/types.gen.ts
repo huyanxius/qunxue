@@ -5148,6 +5148,10 @@ export type GetHealthErrors = {
      * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
 };
 
 export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
