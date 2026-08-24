@@ -231,6 +231,7 @@ def test_agent_identity_context_does_not_turn_why_into_research() -> None:
         "把这个理论解释改得更准确",
         "把它改得更准确",
         "调整研究问题，使表述更准确",
+        "润色这个理论解释，使其更准确",
     ],
 )
 def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
@@ -265,7 +266,11 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
     assert result.answer.startswith("当前绑定的知识发布中没有检索到")
 
 
-def test_document_presentation_edit_does_not_repeat_search() -> None:
+@pytest.mark.parametrize(
+    "prompt",
+    ["把这句话润色得更简洁", "修正错别字和标点", "修改标题和格式"],
+)
+def test_document_presentation_edit_does_not_repeat_search(prompt: str) -> None:
     search = Mock(side_effect=AssertionError("presentation edit must not search"))
     tools = SimpleNamespace(
         release=SimpleNamespace(knowledge_release_id="release-a"),
@@ -284,7 +289,7 @@ def test_document_presentation_edit_does_not_repeat_search() -> None:
     )
 
     DeterministicKnowledgeRunner().run(
-        prompt="把这句话润色得更简洁",
+        prompt=prompt,
         conversation=conversation,
         tools=tools,
     )
