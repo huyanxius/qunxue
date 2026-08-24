@@ -3,14 +3,16 @@ from uuid import uuid4
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from qunxue_api.adapters.retrieval import RetrievalPipelineUnavailable
 from qunxue_api.api.contracts.common import (
     ErrorCode,
     ErrorDetail,
     ErrorResponse,
 )
 from qunxue_api.api.contracts.health import HealthResponse
-from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
+from qunxue_api.modules.knowledge_catalog import (
+    KnowledgeUsePurpose,
+    RetrievalPipelineUnavailable,
+)
 from qunxue_api.settings import Settings
 
 router = APIRouter(
