@@ -19,9 +19,22 @@ from qunxue_api.modules.knowledge_catalog import (
 
 
 @pytest.fixture
-def client(plain_client: TestClient) -> TestClient:
+def client(plain_client: TestClient, tmp_path: Path) -> TestClient:
     """Pre-review safety tests must start without an installed final release."""
 
+    sample_dimension = tmp_path / "knowledge" / "本体论"
+    sample_dimension.mkdir(parents=True)
+    source = (
+        Path(__file__).parents[2]
+        / "knowledge"
+        / "本体论"
+        / "01-02-1. 古典社会学奠基.md"
+    )
+    (sample_dimension / source.name).symlink_to(source)
+    plain_client.app.state.knowledge_catalog = SqliteKnowledgeCatalog(
+        plain_client.app.state.database,
+        knowledge_root=tmp_path / "knowledge",
+    )
     return plain_client
 
 

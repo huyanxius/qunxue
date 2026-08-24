@@ -14,9 +14,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/.python-version
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install backend dependencies
+        run: make bootstrap-backend
+
+      - name: Run backend checks
+        run: make check-backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +58,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend and contract dependencies
         run: make bootstrap
 
-      - name: Run checks
-        run: make check
+      - name: Verify generated API contract
+        run: make check-contract
+
+      - name: Run frontend checks
+        run: make check-frontend

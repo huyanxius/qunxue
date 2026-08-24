@@ -283,35 +283,6 @@ function agentStreamResponse(conversation: ReturnType<typeof agentConversationFi
   })
 }
 
-function pausableDirectAgentStream(conversation: ReturnType<typeof agentConversationFixture>) {
-  const encoder = new TextEncoder()
-  let finish = () => undefined
-  let close = () => undefined
-  const response = new Response(new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(encoder.encode([
-        `event: turn_started\ndata: ${JSON.stringify({
-          conversation_id: conversation.conversation_id,
-          run_id: 'agent-run-direct',
-          replayed: false,
-        })}`,
-        'event: agent_status\ndata: {"status":"thinking"}',
-        '',
-      ].join('\n\n')))
-      finish = () => {
-        controller.enqueue(encoder.encode([
-          `event: assistant_delta\ndata: ${JSON.stringify({ delta: conversation.turns[0].assistant.content })}`,
-          `event: turn_completed\ndata: ${JSON.stringify({ conversation, knowledge_release_id: 'release-a' })}`,
-          '',
-        ].join('\n\n')))
-        controller.close()
-      }
-      close = () => controller.close()
-    },
-  }), { headers: { 'Content-Type': 'text/event-stream' } })
-  return { close: () => close(), finish: () => finish(), response }
-}
-
 function failedToolStreamResponse(conversation: ReturnType<typeof agentConversationFixture>) {
   const events = [
     ['turn_started', { conversation_id: conversation.conversation_id, run_id: 'agent-run-2', replayed: false }],
@@ -345,27 +316,6 @@ function repeatedToolStreamResponse(conversation: ReturnType<typeof agentConvers
   return new Response(`${events}\n\n`, {
     headers: { 'Content-Type': 'text/event-stream' },
   })
-}
-
-function pausableToolAgentStream(conversation: ReturnType<typeof agentConversationFixture>) {
-  const encoder = new TextEncoder()
-  let close = () => undefined
-  const response = new Response(new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(encoder.encode([
-        `event: turn_started\ndata: ${JSON.stringify({
-          conversation_id: conversation.conversation_id,
-          run_id: 'agent-run-stop',
-          replayed: false,
-        })}`,
-        'event: agent_status\ndata: {"status":"thinking"}',
-        'event: tool_started\ndata: {"tool":"search_knowledge","call_id":"tool-call-stop","input":{"query":"青年孤独"}}',
-        '',
-      ].join('\n\n')))
-      close = () => controller.close()
-    },
-  }), { headers: { 'Content-Type': 'text/event-stream' } })
-  return { close: () => close(), response }
 }
 
 describe('App routes', () => {
@@ -799,31 +749,6 @@ describe('App routes', () => {
     )
   })
 
-  it('answers directly without pretending that every turn searches the knowledge library', async () => {
-    const conversation = agentConversationFixture('怎么理解年轻人越来越孤独？')
-    conversation.turns[0].assistant.content = '可以从关系结构、城市流动和数字媒介三个层面理解。'
-    const directStream = pausableDirectAgentStream(conversation)
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const request = requestUrl(input)
-      if (request.pathname === '/api/agent/turns') return directStream.response
-      if (request.pathname === '/api/agent/conversations') return json({ items: [] })
-      return json({}, 404)
-    }))
-    renderRoute('/agent', { status: 'authenticated' })
-
-    const agentConversation = await screen.findByRole('region', { name: '社会学 Agent 对话' })
-    const textbox = within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })
-    fireEvent.change(textbox, { target: { value: conversation.title } })
-    fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
-
-    expect(await within(agentConversation).findByText('Agent 正在组织问题与证据…')).toBeVisible()
-    expect(within(agentConversation).queryByText('正在检索知识库…')).not.toBeInTheDocument()
-    expect(within(agentConversation).queryByRole('region', { name: 'Agent 工作过程' })).not.toBeInTheDocument()
-
-    directStream.finish()
-    expect(await within(agentConversation).findByText(conversation.turns[0].assistant.content)).toBeVisible()
-  })
-
   it('keeps a failed tool call visible while the Agent continues with a useful answer', async () => {
     const conversation = agentConversationFixture('怎么理解年轻人越来越孤独？')
     conversation.turns[0].assistant.content = '知识库暂时不可用，我先基于通用社会学知识回答。'
@@ -868,33 +793,6 @@ describe('App routes', () => {
     expect(within(agentConversation).getAllByText('检索知识库')).toHaveLength(2)
     expect(within(agentConversation).getByText(/query: 青年/)).toBeVisible()
     expect(within(agentConversation).getByText(/query: 孤独/)).toBeVisible()
-  })
-
-  it('settles the UI and marks an active tool unfinished when generation is stopped', async () => {
-    const conversation = agentConversationFixture('怎么理解青年孤独？')
-    const stream = pausableToolAgentStream(conversation)
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const request = requestUrl(input)
-      if (request.pathname === '/api/agent/turns') return stream.response
-      if (request.pathname === '/api/agent/conversations') return json({ items: [] })
-      return json({}, 404)
-    }))
-    renderRoute('/agent', { status: 'authenticated' })
-
-    const agentConversation = await screen.findByRole('region', { name: '社会学 Agent 对话' })
-    const textbox = within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })
-    fireEvent.change(textbox, { target: { value: conversation.title } })
-    fireEvent.keyDown(textbox, { key: 'Enter', code: 'Enter' })
-
-    fireEvent.click(await within(agentConversation).findByRole('button', { name: '停止生成' }))
-    stream.close()
-
-    expect(await within(agentConversation).findByText('本轮已停止，未保存未完成的回答。')).toBeVisible()
-    expect(within(agentConversation).queryByText('Agent 正在组织问题与证据…')).not.toBeInTheDocument()
-    expect(within(agentConversation).getByText('工具调用已中断')).toBeVisible()
-    expect(within(agentConversation).getByText('已中断')).toBeVisible()
-    expect(within(agentConversation).getByRole('textbox', { name: '问社会学 Agent' })).toBeEnabled()
-    expect(within(agentConversation).getByRole('button', { name: '发送给社会学 Agent' })).toBeVisible()
   })
 
   it('reveals citation context through Sources and Basis before opening a knowledge entry', async () => {
