@@ -1016,6 +1016,7 @@ _CASUAL_ACK_PROMPTS = frozenset(
         "多谢",
         "明白了",
         "知道了",
+        "好的，谢谢",
         "嗯",
         "嗯嗯",
     }
@@ -1044,8 +1045,6 @@ _SEMANTIC_EDIT_MARKERS = (
     "可靠",
     "可信",
     "正确",
-    "纠正",
-    "修正",
     "补充依据",
     "补充证据",
 )
@@ -1085,9 +1084,15 @@ _CONTEXTUAL_EVIDENCE_PATTERNS = (
 )
 
 _EVIDENCE_REQUEST_PATTERNS = (
-    r"(?:有|有什么|给出|提供|说明|缺少|需要).{0,6}依据",
+    r"(?:有|有什么|给出|提供|说明|缺少).{0,6}依据",
+    r"需要(?:什么|哪些|怎样的?)依据",
     r"(?:理论|概念|解释|说法|主张).{0,8}的?依据",
     r"依据(?:是|来自|在哪|是什么|有哪些|呢|吗)",
+)
+
+_IDENTITY_CONTEXT_PATTERNS = (
+    r"(?:你是谁|你叫什么|你的身份|你的模型)",
+    r"你是.{0,16}(?:agent|助手|模型|智能体|机器人)",
 )
 
 _RESEARCH_CONTEXT_MARKERS = (
@@ -1123,6 +1128,7 @@ _DOCUMENT_OPERATION_MARKERS = (
     "润色",
     "调整",
     "修正",
+    "纠正",
     "删除",
     "删掉",
     "接受",
@@ -1139,7 +1145,7 @@ def _requires_knowledge_evidence(
     conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     normalized = " ".join(prompt.split())
-    if _is_flow_control_prompt(normalized):
+    if _is_flow_control_prompt(normalized) or _is_casual_ack_prompt(normalized):
         return False
     is_document_operation = document_workspace and any(
         marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS
@@ -1147,14 +1153,14 @@ def _requires_knowledge_evidence(
     if is_document_operation:
         if _explicit_evidence_requested(normalized):
             return True
+        if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
+            return True
         if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
             return False
         if any(
             marker in normalized for marker in _STRUCTURAL_PRESENTATION_EDIT_MARKERS
         ):
             return False
-        if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
-            return True
         if any(marker in normalized for marker in _STYLE_EDIT_MARKERS):
             return False
         if any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS):
@@ -1220,6 +1226,12 @@ def _needs_prior_research_context(normalized: str) -> bool:
                 "该理论",
                 "这个概念",
                 "该概念",
+                "这个说法",
+                "该说法",
+                "这个主张",
+                "该主张",
+                "这个结论",
+                "该结论",
                 "上述解释",
                 "把它",
                 "将它",
@@ -1255,10 +1267,17 @@ def _conversation_has_research_context(
 
 
 def _turn_has_research_context(turn: AgentTurn) -> bool:
+    user_content = _normalized_text(turn.user_message.content)
+    if _is_identity_context_prompt(user_content):
+        return False
     if turn.evidence_ids or turn.assistant_message.citations:
         return True
-    user_content = _normalized_text(turn.user_message.content)
-    return any(marker in user_content for marker in _RESEARCH_CONTEXT_MARKERS)
+    assistant_content = _normalized_text(turn.assistant_message.content)
+    return any(
+        marker in content
+        for content in (user_content, assistant_content)
+        for marker in _RESEARCH_CONTEXT_MARKERS
+    )
 
 
 def _turn_research_query_context(turn: AgentTurn) -> str:
@@ -1275,17 +1294,27 @@ def _is_flow_control_prompt(normalized: str) -> bool:
     return _control_token(normalized) in _FLOW_CONTROL_PROMPTS
 
 
+def _is_casual_ack_prompt(normalized: str) -> bool:
+    return _control_token(normalized) in _CASUAL_ACK_PROMPTS
+
+
+def _is_identity_context_prompt(normalized: str) -> bool:
+    return any(
+        re.search(pattern, normalized, flags=re.IGNORECASE)
+        for pattern in _IDENTITY_CONTEXT_PATTERNS
+    )
+
+
 def _is_non_substantive_prompt(normalized: str) -> bool:
-    token = _control_token(normalized)
     return (
-        token in _FLOW_CONTROL_PROMPTS
-        or token in _CASUAL_ACK_PROMPTS
+        _is_flow_control_prompt(normalized)
+        or _is_casual_ack_prompt(normalized)
         or _is_contextual_evidence_followup(normalized)
     )
 
 
 def _control_token(normalized: str) -> str:
-    return normalized.rstrip("。！？!?").strip()
+    return normalized.rstrip("。！？!?….").strip()
 
 
 def _normalized_text(value: str) -> str:
