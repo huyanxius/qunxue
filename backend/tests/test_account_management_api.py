@@ -20,6 +20,7 @@ from qunxue_api.adapters.sqlite import (
     ResearchTaskRow,
     UserRow,
 )
+from qunxue_api.adapters.sqlite.billing_model import CreditAccountRow
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.bootstrap import create_app
@@ -218,6 +219,32 @@ def test_credit_reservation_fallback_uses_the_current_welcome_grant(
 
     assert summary is not None
     assert summary.balance == 10000
+
+
+def test_new_credit_reservation_preempts_an_abandoned_agent_run(
+    client: TestClient,
+) -> None:
+    registered = register(client, "reserve-preemption@example.com")
+    user_id = UUID(str(registered["user"]["user_id"]))
+    abandoned_run_id = uuid4()
+    replacement_run_id = uuid4()
+
+    with client.app.state.database.session() as session:
+        repository = SqliteCreditRepository(session)
+        repository.reserve_usage(
+            user_id=user_id,
+            run_id=abandoned_run_id,
+            now=datetime.now(UTC),
+        )
+        repository.reserve_usage(
+            user_id=user_id,
+            run_id=replacement_run_id,
+            now=datetime.now(UTC),
+        )
+        account = session.get(CreditAccountRow, str(user_id), populate_existing=True)
+
+    assert account is not None
+    assert account.active_run_id == str(replacement_run_id)
 
 
 def test_credit_ledger_is_returned_in_non_overlapping_pages(

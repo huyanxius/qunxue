@@ -1,12 +1,15 @@
 import json
+import threading
 import time
 from types import SimpleNamespace
 from unittest.mock import Mock
+from uuid import UUID
 
 import pytest
 
 from qunxue_api.adapters.research_agent.pydantic_runner import DeterministicKnowledgeRunner
 from qunxue_api.adapters.retrieval import RetrievalPipelineUnavailable
+from qunxue_api.api.routes.agent import _claim_active_run, _release_active_run
 from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
     AgentRunResult,
@@ -28,6 +31,20 @@ def _sse_events(payload: str) -> list[tuple[str, dict[str, object]]]:
         if name and data:
             events.append((name, json.loads(data)))
     return events
+
+
+def test_new_agent_stream_interrupts_the_previous_stream_for_the_same_user() -> None:
+    user_id = UUID("00000000-0000-0000-0000-000000000099")
+    previous = threading.Event()
+    replacement = threading.Event()
+
+    _claim_active_run(user_id, previous)
+    try:
+        _claim_active_run(user_id, replacement)
+        assert previous.is_set()
+        assert not replacement.is_set()
+    finally:
+        _release_active_run(user_id, replacement)
 
 
 def test_deterministic_runner_answers_generic_sociology_question_without_tool() -> None:

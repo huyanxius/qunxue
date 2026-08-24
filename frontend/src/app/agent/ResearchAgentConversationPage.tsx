@@ -424,6 +424,7 @@ function readInterruptedTurn(userId: string | null): StreamingTurn | null {
       canvasPatches: value.canvasPatches as ResearchCanvasStreamingTurn['canvasPatches'],
       startedAt: typeof value.startedAt === 'number' && Number.isFinite(value.startedAt) ? value.startedAt : Date.now(),
       interrupted: true,
+      failure: typeof value.failure === 'string' && value.failure ? value.failure : undefined,
     }
   } catch {
     return null
@@ -1587,7 +1588,12 @@ export function ResearchAgentConversationPage({
             persistPendingTurnAttempt(userId, failedAttempt)
             updateDraft(question)
             const failureMessage = localizedTurnFailure(event.code, event.message, locale)
-            setStreamingTurn((current) => current ? { ...current, failure: failureMessage } : current)
+            setStreamingTurn((current) => {
+              if (!current) return current
+              const failedTurn = { ...current, interrupted: true, failure: failureMessage }
+              persistInterruptedTurn(userId, failedTurn)
+              return failedTurn
+            })
             setError(failureMessage)
             setStatus('error')
           }
