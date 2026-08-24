@@ -1,5 +1,6 @@
 """Release-bound lexical, dense, and reranked retrieval orchestration."""
 
+import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
@@ -124,7 +125,7 @@ class HybridRetriever:
                 embedding_model=self._embedding_model,
                 chunk_schema_version=self._chunk_schema_version,
             )
-        except RetrievalIndexUnavailable as error:
+        except (RetrievalIndexUnavailable, sqlite3.Error) as error:
             raise RetrievalPipelineUnavailable(
                 "retrieval index is unavailable"
             ) from error
