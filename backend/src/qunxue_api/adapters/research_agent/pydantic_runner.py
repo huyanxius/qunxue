@@ -977,7 +977,6 @@ _EVIDENCE_REQUIRED_MARKERS = (
     "文献",
     "参考资料",
     "证据",
-    "依据",
     "毕业论文",
     "论文选题",
     "帮我想一个选题",
@@ -1085,6 +1084,12 @@ _CONTEXTUAL_EVIDENCE_PATTERNS = (
     ),
 )
 
+_EVIDENCE_REQUEST_PATTERNS = (
+    r"(?:有|有什么|给出|提供|说明|缺少|需要).{0,6}依据",
+    r"(?:理论|概念|解释|说法|主张).{0,8}的?依据",
+    r"依据(?:是|来自|在哪|是什么|有哪些|呢|吗)",
+)
+
 _RESEARCH_CONTEXT_MARKERS = (
     "研究",
     "论文",
@@ -1109,7 +1114,6 @@ _EXPLICIT_EVIDENCE_MARKERS = (
     "文献",
     "参考资料",
     "证据",
-    "依据",
 )
 
 _DOCUMENT_OPERATION_MARKERS = (
@@ -1141,7 +1145,7 @@ def _requires_knowledge_evidence(
         marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS
     )
     if is_document_operation:
-        if any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS):
+        if _explicit_evidence_requested(normalized):
             return True
         if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
             return False
@@ -1157,6 +1161,8 @@ def _requires_knowledge_evidence(
             return True
         return _conversation_has_research_context(conversation)
     if any(marker in normalized for marker in _EVIDENCE_REQUIRED_MARKERS):
+        return True
+    if _explicit_evidence_requested(normalized):
         return True
     if re.search(r"(?:解释|比较|介绍|什么是).{0,20}(?:理论|概念|学派)", normalized):
         return True
@@ -1198,6 +1204,12 @@ def _is_contextual_evidence_followup(normalized: str) -> bool:
     )
 
 
+def _explicit_evidence_requested(normalized: str) -> bool:
+    return any(
+        marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS
+    ) or any(re.search(pattern, normalized) for pattern in _EVIDENCE_REQUEST_PATTERNS)
+
+
 def _needs_prior_research_context(normalized: str) -> bool:
     return (
         _is_contextual_evidence_followup(normalized)
@@ -1223,26 +1235,23 @@ def _needs_prior_research_context(normalized: str) -> bool:
 
 
 def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
-    fallback: str | None = None
     for turn in reversed(conversation):
         candidate = _normalized_text(turn.user_message.content)
         if not candidate or _is_non_substantive_prompt(candidate):
             continue
-        context = _turn_research_query_context(turn)
-        if _turn_has_research_context(turn):
-            return context
-        if fallback is None:
-            fallback = context
-    return fallback
+        return _turn_research_query_context(turn)
+    return None
 
 
 def _conversation_has_research_context(
     conversation: Sequence[AgentTurn],
 ) -> bool:
-    return any(
-        _turn_has_research_context(turn)
-        for turn in reversed(conversation[-4:])
-    )
+    for turn in reversed(conversation):
+        candidate = _normalized_text(turn.user_message.content)
+        if not candidate or _is_non_substantive_prompt(candidate):
+            continue
+        return _turn_has_research_context(turn)
+    return False
 
 
 def _turn_has_research_context(turn: AgentTurn) -> bool:
