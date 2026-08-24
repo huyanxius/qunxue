@@ -106,6 +106,8 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
         "谢谢你。",
         "明白了",
         "好的，谢谢",
+        "你好。",
+        "辛苦了",
     ],
 )
 def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> None:
@@ -143,6 +145,9 @@ def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> 
         "这个理论靠谱吗？",
         "这个理论的依据是什么？",
         "这个说法的依据是什么？",
+        "这一说法的依据是什么？",
+        "这个解释的依据是什么？",
+        "需要哪些依据？",
     ],
 )
 def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
@@ -244,11 +249,66 @@ def test_assistant_introduced_research_clue_is_available_to_followup() -> None:
     assert "社会资本理论" in query
 
 
+def test_structured_evidence_overrides_identity_wording_in_context() -> None:
+    search = Mock(return_value=[])
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="你是研究助手吗？顺便解释社会资本理论",
+            assistant_content="社会资本理论关注关系网络、信任与互惠规范。",
+            citations=(),
+            evidence_ids=frozenset({"knowledge:social-capital"}),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="为什么？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_called_once()
+
+
+def test_substantive_model_wording_is_not_misclassified_as_identity() -> None:
+    search = Mock(return_value=[])
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="你是如何用社会资本理论模型解释邻里互助的？请给出证据",
+            assistant_content="需要检验关系网络与互惠规范两条机制。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="为什么？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_called_once()
+
+
 @pytest.mark.parametrize(
     ("user_content", "assistant_content"),
     [
         ("你是社会学 Agent 吗？", "是，我是社会学学科 Agent。"),
         ("你是研究助手吗？", "是，我可以协助研究。"),
+        ("你能做什么？", "我可以协助社会学研究。"),
     ],
 )
 def test_agent_identity_context_does_not_turn_why_into_research(
@@ -290,6 +350,8 @@ def test_agent_identity_context_does_not_turn_why_into_research(
         "润色这个理论解释，使其更准确",
         "修改标题并把研究结论改得更准确",
         "删除旧结论并改得更准确",
+        "修改标题并重写理论解释",
+        "删除旧段落并重写理论解释",
     ],
 )
 def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
@@ -333,6 +395,7 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
         "修改标题和格式",
         "请依据现有格式润色这句话",
         "需要依据现有格式调整标题",
+        "请提供一个依据现有格式调整后的标题",
     ],
 )
 def test_document_presentation_edit_does_not_repeat_search(prompt: str) -> None:
