@@ -150,6 +150,33 @@ def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
     assert result.answer.startswith("当前绑定的知识发布中没有检索到")
 
 
+def test_contextual_why_does_not_search_without_research_context() -> None:
+    search = Mock(side_effect=AssertionError("casual context must not search"))
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="你今天怎么样？",
+            assistant_content="我状态不错。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="为什么？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    search.assert_not_called()
+
+
 def test_document_knowledge_edit_cannot_bypass_evidence_preflight() -> None:
     search = Mock(return_value=[])
     tools = SimpleNamespace(
