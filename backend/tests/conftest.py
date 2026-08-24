@@ -1,5 +1,7 @@
+import json
 from collections.abc import Iterator
 from pathlib import Path
+from shutil import copyfile
 
 import pytest
 from alembic import command
@@ -101,12 +103,77 @@ def plain_client(
             Path(f"{database_path}{suffix}").unlink(missing_ok=True)
 
 
-@pytest.fixture
-def client(plain_client: TestClient) -> Iterator[TestClient]:
-    catalog = plain_client.app.state.knowledge_catalog
-    catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
-    catalog.install_pre_reviewed_bundle(
-        KNOWLEDGE_ROOT / "review-packets" / "first-match-theories.pre-reviewed.json"
+@pytest.fixture(scope="session")
+def knowledge_database_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Build a representative catalog once; per-test copies keep mutations isolated."""
+
+    template_root = tmp_path_factory.mktemp("knowledge-database")
+    template_path = template_root / "template.db"
+    database_url = f"sqlite:///{template_path}"
+    alembic_config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+        command.upgrade(alembic_config, "head")
+
+    database = Database(database_url)
+    sample_root = template_root / "knowledge"
+    sample_dimension = sample_root / "本体论"
+    sample_dimension.mkdir(parents=True)
+    sample_source = KNOWLEDGE_ROOT / "本体论" / "01-02-1. 古典社会学奠基.md"
+    (sample_dimension / sample_source.name).symlink_to(sample_source)
+    catalog = SqliteKnowledgeCatalog(
+        database,
+        knowledge_root=sample_root,
     )
-    plain_client.app.state.knowledge_retriever = _TestReleaseRetriever(catalog)
-    yield plain_client
+    preview = catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
+    bundle_payload = json.loads(
+        (KNOWLEDGE_ROOT / "review-packets" / "first-match-theories.pre-reviewed.json")
+        .read_text(encoding="utf-8")
+    )
+    bundle_payload["base_release_id"] = preview.knowledge_release_id
+    bundle_path = template_root / "first-match-theories.pre-reviewed.json"
+    bundle_path.write_text(
+        json.dumps(bundle_payload, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    catalog.install_pre_reviewed_bundle(bundle_path)
+    database.engine.dispose()
+    return template_path
+
+
+@pytest.fixture
+def client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    knowledge_database_template: Path,
+) -> Iterator[TestClient]:
+    database_path = tmp_path / "test.db"
+    copyfile(knowledge_database_template, database_path)
+    database_url = f"sqlite:///{database_path}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    settings = Settings(
+        _env_file=None,
+        database_url=database_url,
+        runtime_mode="mock",
+        model_base_url=None,
+        model_api_key=None,
+        model_name=None,
+        model_extra_headers={},
+        model_sft_resource_id=None,
+    )
+    database = Database(settings.database_url)
+    app = create_app(
+        settings=settings,
+        database=database,
+        require_email_verification=False,
+    )
+    catalog = app.state.knowledge_catalog
+    app.state.knowledge_retriever = _TestReleaseRetriever(catalog)
+
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        database.engine.dispose()
+        for suffix in ("", "-shm", "-wal"):
+            Path(f"{database_path}{suffix}").unlink(missing_ok=True)
