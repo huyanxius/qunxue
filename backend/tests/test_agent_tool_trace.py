@@ -241,6 +241,8 @@ def test_agent_identity_context_does_not_turn_why_into_research() -> None:
         "把它改得更准确",
         "调整研究问题，使表述更准确",
         "润色这个理论解释，使其更准确",
+        "修改标题并把研究结论改得更准确",
+        "删除旧结论并改得更准确",
     ],
 )
 def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
@@ -280,6 +282,7 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
     [
         "把这句话润色得更简洁",
         "修正错别字和标点",
+        "纠正错别字",
         "修改标题和格式",
         "请依据现有格式润色这句话",
     ],
