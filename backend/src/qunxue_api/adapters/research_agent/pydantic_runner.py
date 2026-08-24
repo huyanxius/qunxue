@@ -977,6 +977,7 @@ _EVIDENCE_REQUIRED_MARKERS = (
     "文献",
     "参考资料",
     "证据",
+    "依据",
     "毕业论文",
     "论文选题",
     "帮我想一个选题",
@@ -1009,6 +1010,18 @@ _FLOW_CONTROL_PROMPTS = frozenset(
     }
 )
 
+_CASUAL_ACK_PROMPTS = frozenset(
+    {
+        "谢谢",
+        "谢谢你",
+        "多谢",
+        "明白了",
+        "知道了",
+        "嗯",
+        "嗯嗯",
+    }
+)
+
 _KNOWLEDGE_JUDGMENT_MARKERS = (
     "理论",
     "概念",
@@ -1019,6 +1032,48 @@ _KNOWLEDGE_JUDGMENT_MARKERS = (
     "主张",
     "论断",
     "事实",
+    "研究问题",
+    "理论框架",
+    "研究方法",
+    "结论",
+    "论证",
+)
+
+_SEMANTIC_EDIT_MARKERS = (
+    "准确",
+    "严谨",
+    "可靠",
+    "可信",
+    "正确",
+    "纠正",
+    "修正",
+    "补充依据",
+    "补充证据",
+)
+
+_STRUCTURAL_PRESENTATION_EDIT_MARKERS = (
+    "错别字",
+    "标点",
+    "格式",
+    "排版",
+    "标题",
+    "字数",
+)
+
+_STYLE_EDIT_MARKERS = (
+    "润色",
+    "简洁",
+    "精简",
+    "措辞",
+    "语气",
+)
+
+_NON_EPISTEMIC_DOCUMENT_ACTIONS = (
+    "删除",
+    "删掉",
+    "接受",
+    "拒绝",
+    "撤销",
 )
 
 _CONTEXTUAL_EVIDENCE_PATTERNS = (
@@ -1038,13 +1093,10 @@ _RESEARCH_CONTEXT_MARKERS = (
     "学派",
     "文献",
     "证据",
-    "社会",
-    "结构",
-    "制度",
+    "知识库",
+    "框架",
     "机制",
     "因果",
-    "社区",
-    "邻里",
 )
 
 
@@ -1057,6 +1109,7 @@ _EXPLICIT_EVIDENCE_MARKERS = (
     "文献",
     "参考资料",
     "证据",
+    "依据",
 )
 
 _DOCUMENT_OPERATION_MARKERS = (
@@ -1065,6 +1118,7 @@ _DOCUMENT_OPERATION_MARKERS = (
     "重写",
     "润色",
     "调整",
+    "修正",
     "删除",
     "删掉",
     "接受",
@@ -1081,14 +1135,27 @@ def _requires_knowledge_evidence(
     conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     normalized = " ".join(prompt.split())
-    if normalized in _FLOW_CONTROL_PROMPTS:
+    if _is_flow_control_prompt(normalized):
         return False
-    if (
-        document_workspace
-        and any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
-        and not any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS)
-    ):
-        return any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS)
+    is_document_operation = document_workspace and any(
+        marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS
+    )
+    if is_document_operation:
+        if any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS):
+            return True
+        if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
+            return False
+        if any(
+            marker in normalized for marker in _STRUCTURAL_PRESENTATION_EDIT_MARKERS
+        ):
+            return False
+        if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
+            return True
+        if any(marker in normalized for marker in _STYLE_EDIT_MARKERS):
+            return False
+        if any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS):
+            return True
+        return _conversation_has_research_context(conversation)
     if any(marker in normalized for marker in _EVIDENCE_REQUIRED_MARKERS):
         return True
     if re.search(r"(?:解释|比较|介绍|什么是).{0,20}(?:理论|概念|学派)", normalized):
@@ -1132,36 +1199,88 @@ def _is_contextual_evidence_followup(normalized: str) -> bool:
 
 
 def _needs_prior_research_context(normalized: str) -> bool:
-    return _is_contextual_evidence_followup(normalized) or any(
-        marker in normalized
-        for marker in ("这个理论", "该理论", "这个概念", "该概念", "上述解释")
+    return (
+        _is_contextual_evidence_followup(normalized)
+        or any(
+            marker in normalized
+            for marker in (
+                "这个理论",
+                "该理论",
+                "这个概念",
+                "该概念",
+                "上述解释",
+                "把它",
+                "将它",
+                "这段",
+                "这一段",
+            )
+        )
+        or (
+            any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
+            and any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS)
+        )
     )
 
 
 def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
+    fallback: str | None = None
     for turn in reversed(conversation):
-        candidate = " ".join(turn.user_message.content.split())
-        if (
-            candidate
-            and candidate not in _FLOW_CONTROL_PROMPTS
-            and not _is_contextual_evidence_followup(candidate)
-        ):
-            return candidate
-    return None
+        candidate = _normalized_text(turn.user_message.content)
+        if not candidate or _is_non_substantive_prompt(candidate):
+            continue
+        context = _turn_research_query_context(turn)
+        if _turn_has_research_context(turn):
+            return context
+        if fallback is None:
+            fallback = context
+    return fallback
 
 
 def _conversation_has_research_context(
     conversation: Sequence[AgentTurn],
 ) -> bool:
-    for turn in reversed(conversation[-4:]):
-        if turn.evidence_ids or turn.assistant_message.citations:
-            return True
-        content = " ".join(
-            (turn.user_message.content, turn.assistant_message.content)
-        )
-        if any(marker in content for marker in _RESEARCH_CONTEXT_MARKERS):
-            return True
-    return False
+    return any(
+        _turn_has_research_context(turn)
+        for turn in reversed(conversation[-4:])
+    )
+
+
+def _turn_has_research_context(turn: AgentTurn) -> bool:
+    if turn.evidence_ids or turn.assistant_message.citations:
+        return True
+    user_content = _normalized_text(turn.user_message.content)
+    return any(marker in user_content for marker in _RESEARCH_CONTEXT_MARKERS)
+
+
+def _turn_research_query_context(turn: AgentTurn) -> str:
+    user_content = _normalized_text(turn.user_message.content)
+    assistant_content = _normalized_text(turn.assistant_message.content)
+    if len(assistant_content) > 360:
+        assistant_content = f"{assistant_content[:359].rstrip()}…"
+    if not assistant_content:
+        return user_content
+    return f"{user_content}\n上一轮回答线索：{assistant_content}"
+
+
+def _is_flow_control_prompt(normalized: str) -> bool:
+    return _control_token(normalized) in _FLOW_CONTROL_PROMPTS
+
+
+def _is_non_substantive_prompt(normalized: str) -> bool:
+    token = _control_token(normalized)
+    return (
+        token in _FLOW_CONTROL_PROMPTS
+        or token in _CASUAL_ACK_PROMPTS
+        or _is_contextual_evidence_followup(normalized)
+    )
+
+
+def _control_token(normalized: str) -> str:
+    return normalized.rstrip("。！？!?").strip()
+
+
+def _normalized_text(value: str) -> str:
+    return " ".join(value.split())
 
 
 def _preflight_required_evidence(
