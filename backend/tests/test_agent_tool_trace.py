@@ -166,6 +166,7 @@ def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
 
     query = search.call_args.args[0]
     assert "我想研究社区流动如何改变邻里互助" in query
+    assert "社会资本理论" in query
     assert prompt in query
     assert result.answer.startswith("当前绑定的知识发布中没有检索到")
 
