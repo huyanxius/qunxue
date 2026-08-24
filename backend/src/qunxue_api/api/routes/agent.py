@@ -48,6 +48,7 @@ router = APIRouter(
 )
 logger = logging.getLogger(__name__)
 AgentRuntimeMode = Literal["mock", "base", "sft"]
+_SSE_HEARTBEAT_SECONDS = 15.0
 
 
 def _effective_agent_runtime_mode(request: Request) -> AgentRuntimeMode:
@@ -312,7 +313,13 @@ def stream_agent_turn(
         streamed_answer = False
         try:
             while True:
-                event_name, event_payload = event_queue.get()
+                try:
+                    event_name, event_payload = event_queue.get(
+                        timeout=_SSE_HEARTBEAT_SECONDS
+                    )
+                except queue.Empty:
+                    yield ": keep-alive\n\n"
+                    continue
                 if event_name == "started":
                     yield _event("turn_started", event_payload)  # type: ignore[arg-type]
                 elif event_name == "delta":
