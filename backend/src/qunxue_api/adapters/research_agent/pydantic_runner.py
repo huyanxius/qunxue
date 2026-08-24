@@ -1030,6 +1030,12 @@ _CASUAL_ACK_PROMPTS = frozenset(
     }
 )
 
+_CASUAL_ACK_PATTERNS = (
+    r"(?:你|您)好(?:呀|啊|啦)?",
+    r"辛苦(?:了|啦)",
+    r"收到(?:了)?",
+)
+
 _KNOWLEDGE_JUDGMENT_MARKERS = (
     "理论",
     "概念",
@@ -1083,20 +1089,25 @@ _NON_EPISTEMIC_DOCUMENT_ACTIONS = (
 )
 
 _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS = (
-    "修改",
-    "改得",
     "重写",
-    "调整",
-    "修正",
-    "纠正",
+    "改写",
+    "补充",
+    "新增",
+    "增加",
+    "扩写",
+    "生成",
 )
 
 _CONTEXTUAL_EVIDENCE_PATTERNS = (
     r"^为什么(?:呢)?[？?]?$",
     r"^(?:有|有什么)?(?:依据|出处|来源|文献|参考资料)(?:吗|呢)?[？?]?$",
-    r"^需要(?:什么|哪些|怎样的?)依据[？?]?$",
+    r"^(?:还)?需要(?:什么|哪些|怎样的?)依据[？?]?$",
     (
-        r"^(?:这个|该)?(?:理论|概念|解释|说法)?"
+        r"^(?:这个|该|这一)(?:理论|概念|解释|说法|主张|结论)的?"
+        r"依据(?:是什么|有哪些|在哪|呢|吗)?[？?]?$"
+    ),
+    (
+        r"^(?:这个|该|这一)?(?:理论|概念|解释|说法)?"
         r"(?:靠谱吗|可靠(?:吗)?|可信(?:吗)?|成立(?:吗)?|适用(?:吗)?)[？?]?$"
     ),
 )
@@ -1104,7 +1115,7 @@ _CONTEXTUAL_EVIDENCE_PATTERNS = (
 _EVIDENCE_REQUEST_PATTERNS = (
     (
         r"(?:有|有什么|给出|提供|说明|缺少).{0,6}"
-        r"依据(?!现有|给定|上述|以下|这个|该|模板|格式|要求|规则|材料)"
+        r"依据(?!现有|当前|给定|上述|以下|这个|该|模板|格式|要求|规则|材料)"
     ),
     r"需要(?:什么|哪些|怎样的?)依据",
     r"(?:理论|概念|解释|说法|主张).{0,8}的?依据",
@@ -1115,7 +1126,8 @@ _IDENTITY_CONTEXT_PATTERNS = (
     r"^(?:你是谁|你叫什么(?:名字)?|你能做什么|你可以做什么)[？?]?$",
     r"^你的(?:身份|模型|名字|能力)(?:是|是什么|呢|吗)?[？?]?$",
     (
-        r"^你是(?:什么|哪个)?\s*(?:社会学|研究|ai|人工智能)?\s*"
+        r"^(?:请问\s*)?你是\s*(?:一名|一个)?\s*(?:什么|哪个)?\s*"
+        r"(?:社会学|研究|ai|人工智能)?\s*"
         r"(?:agent|助手|模型|智能体|机器人)\s*(?:吗|呢)?[？?]?$"
     ),
 )
@@ -1159,6 +1171,13 @@ _DOCUMENT_OPERATION_MARKERS = (
     "接受",
     "拒绝",
     "撤销",
+    "改写",
+    "补充",
+    "新增",
+    "增加",
+    "扩写",
+    "生成",
+    "写成",
 )
 
 
@@ -1292,6 +1311,8 @@ def _needs_prior_research_context(normalized: str) -> bool:
 
 def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
     for turn in reversed(conversation):
+        if _turn_has_structured_evidence(turn):
+            return _turn_research_query_context(turn)
         candidate = _normalized_text(turn.user_message.content)
         if not candidate or _is_non_substantive_prompt(candidate):
             continue
@@ -1303,6 +1324,8 @@ def _conversation_has_research_context(
     conversation: Sequence[AgentTurn],
 ) -> bool:
     for turn in reversed(conversation):
+        if _turn_has_structured_evidence(turn):
+            return True
         candidate = _normalized_text(turn.user_message.content)
         if not candidate or _is_non_substantive_prompt(candidate):
             continue
@@ -1311,7 +1334,7 @@ def _conversation_has_research_context(
 
 
 def _turn_has_research_context(turn: AgentTurn) -> bool:
-    if turn.evidence_ids or turn.assistant_message.citations:
+    if _turn_has_structured_evidence(turn):
         return True
     user_content = _normalized_text(turn.user_message.content)
     if _is_identity_context_prompt(user_content):
@@ -1322,6 +1345,10 @@ def _turn_has_research_context(turn: AgentTurn) -> bool:
         for content in (user_content, assistant_content)
         for marker in _RESEARCH_CONTEXT_MARKERS
     )
+
+
+def _turn_has_structured_evidence(turn: AgentTurn) -> bool:
+    return bool(turn.evidence_ids or turn.assistant_message.citations)
 
 
 def _turn_research_query_context(turn: AgentTurn) -> str:
@@ -1339,7 +1366,10 @@ def _is_flow_control_prompt(normalized: str) -> bool:
 
 
 def _is_casual_ack_prompt(normalized: str) -> bool:
-    return _control_token(normalized) in _CASUAL_ACK_PROMPTS
+    token = _control_token(normalized)
+    return token in _CASUAL_ACK_PROMPTS or any(
+        re.fullmatch(pattern, token) for pattern in _CASUAL_ACK_PATTERNS
+    )
 
 
 def _is_identity_context_prompt(normalized: str) -> bool:
