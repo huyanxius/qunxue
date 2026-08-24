@@ -182,6 +182,12 @@ def test_contextual_why_does_not_search_without_research_context() -> None:
     )
     conversation = (
         AgentTurn.create(
+            user_content="我想研究社区流动如何改变邻里互助",
+            assistant_content="可以用社会资本理论检查关系流失。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+        AgentTurn.create(
             user_content="你今天怎么样？",
             assistant_content="我状态不错。",
             citations=(),
@@ -268,7 +274,12 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
 
 @pytest.mark.parametrize(
     "prompt",
-    ["把这句话润色得更简洁", "修正错别字和标点", "修改标题和格式"],
+    [
+        "把这句话润色得更简洁",
+        "修正错别字和标点",
+        "修改标题和格式",
+        "请依据现有格式润色这句话",
+    ],
 )
 def test_document_presentation_edit_does_not_repeat_search(prompt: str) -> None:
     search = Mock(side_effect=AssertionError("presentation edit must not search"))
