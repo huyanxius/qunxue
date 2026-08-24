@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import case, func, or_, select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,6 @@ from qunxue_api.modules.billing import (
     CreditCodeUnavailable,
     CreditEntry,
     CreditRedemption,
-    CreditRunInProgress,
     CreditsDepleted,
     CreditSummary,
 )
@@ -244,11 +243,6 @@ class SqliteCreditRepository:
                 .where(
                     CreditAccountRow.user_id == str(user_id),
                     CreditAccountRow.balance > 0,
-                    or_(
-                        CreditAccountRow.active_run_id.is_(None),
-                        CreditAccountRow.active_run_id == str(run_id),
-                        CreditAccountRow.active_run_expires_at <= now,
-                    ),
                 )
                 .values(
                     active_run_id=str(run_id),
@@ -275,7 +269,9 @@ class SqliteCreditRepository:
                 raise CreditsDepleted
             if account.active_run_id == str(run_id):
                 return
-            raise CreditRunInProgress
+            # A new foreground turn owns the account lease. The displaced run
+            # cannot charge because charge_usage still requires this exact ID.
+            continue
         raise RuntimeError("credit reservation could not be created")
 
     def release_usage(self, *, user_id: UUID, run_id: UUID, now: datetime) -> None:

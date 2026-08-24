@@ -2,6 +2,7 @@ import json
 import logging
 import queue
 import threading
+import time
 from collections.abc import Iterator
 from typing import Literal
 from uuid import UUID
@@ -49,6 +50,23 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 AgentRuntimeMode = Literal["mock", "base", "sft"]
 _SSE_HEARTBEAT_SECONDS = 15.0
+_AGENT_TURN_TIMEOUT_SECONDS = 60.0
+_ACTIVE_RUNS_LOCK = threading.Lock()
+_ACTIVE_RUN_CANCEL_EVENTS: dict[UUID, threading.Event] = {}
+
+
+def _claim_active_run(user_id: UUID, cancel_event: threading.Event) -> None:
+    with _ACTIVE_RUNS_LOCK:
+        previous = _ACTIVE_RUN_CANCEL_EVENTS.get(user_id)
+        _ACTIVE_RUN_CANCEL_EVENTS[user_id] = cancel_event
+    if previous is not None and previous is not cancel_event:
+        previous.set()
+
+
+def _release_active_run(user_id: UUID, cancel_event: threading.Event) -> None:
+    with _ACTIVE_RUNS_LOCK:
+        if _ACTIVE_RUN_CANCEL_EVENTS.get(user_id) is cancel_event:
+            _ACTIVE_RUN_CANCEL_EVENTS.pop(user_id, None)
 
 
 def _effective_agent_runtime_mode(request: Request) -> AgentRuntimeMode:
@@ -263,6 +281,9 @@ def stream_agent_turn(
     def events() -> Iterator[str]:
         event_queue: queue.Queue[tuple[str, object]] = queue.Queue()
         cancel_event = threading.Event()
+        user_id = current.user.user_id
+        _claim_active_run(user_id, cancel_event)
+        deadline = time.monotonic() + _AGENT_TURN_TIMEOUT_SECONDS
         runtime_mode = _effective_agent_runtime_mode(request)
 
         def on_run_started(run_id: UUID, conversation_id: UUID, replayed: bool) -> None:
@@ -288,7 +309,7 @@ def stream_agent_turn(
             try:
                 with request.app.state.disciplinary_agent_scope() as app:
                     execution = app.run_turn(
-                        user_id=current.user.user_id,
+                        user_id=user_id,
                         conversation_id=payload.conversation_id,
                         prompt=payload.message,
                         idempotency_key=idempotency_key,
@@ -313,12 +334,21 @@ def stream_agent_turn(
         streamed_answer = False
         try:
             while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    cancel_event.set()
+                    yield _event(
+                        "turn_failed",
+                        {"code": "turn_timeout", "message": "本轮回答超时，已停止生成。"},
+                    )
+                    break
                 try:
                     event_name, event_payload = event_queue.get(
-                        timeout=_SSE_HEARTBEAT_SECONDS
+                        timeout=min(_SSE_HEARTBEAT_SECONDS, remaining)
                     )
                 except queue.Empty:
-                    yield ": keep-alive\n\n"
+                    if time.monotonic() < deadline:
+                        yield ": keep-alive\n\n"
                     continue
                 if event_name == "started":
                     yield _event("turn_started", event_payload)  # type: ignore[arg-type]
@@ -426,6 +456,7 @@ def stream_agent_turn(
             )
         finally:
             cancel_event.set()
+            _release_active_run(user_id, cancel_event)
 
     return StreamingResponse(
         events(),
