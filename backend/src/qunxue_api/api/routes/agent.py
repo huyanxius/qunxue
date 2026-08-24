@@ -350,6 +350,7 @@ def stream_agent_turn(
                     if time.monotonic() < deadline:
                         yield ": keep-alive\n\n"
                     continue
+                deadline = time.monotonic() + _AGENT_TURN_TIMEOUT_SECONDS
                 if event_name == "started":
                     yield _event("turn_started", event_payload)  # type: ignore[arg-type]
                 elif event_name == "delta":
