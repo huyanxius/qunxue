@@ -1,3 +1,4 @@
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -125,6 +126,57 @@ def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
     )
 
     with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+
+
+def test_health_rejects_a_ready_manifest_without_its_index_points(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "retrieval.db"
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name="local-base-model",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=index_path)
+    with sqlite3.connect(index_path) as connection:
+        connection.execute("DELETE FROM retrieval_points")
+
+    with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+
+
+def test_health_maps_corrupt_index_storage_to_retrieval_unavailable(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "retrieval.db"
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name="local-base-model",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=index_path)
+    index_path.write_bytes(b"not-a-sqlite-index")
+
+    with TestClient(app, raise_server_exceptions=False) as health_client:
         response = health_client.get("/api/health")
 
     assert response.status_code == 503
