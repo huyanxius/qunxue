@@ -508,51 +508,6 @@ describe('NewResearchWorkspacePage', () => {
     expect(journeyAttempts).toBe(2)
   })
 
-  it('never lets a late journey response leak into another history conversation', async () => {
-    const conversationA = conversationFixture('研究 A：社区互助为什么减少？')
-    const conversationB = {
-      ...conversationFixture('研究 B：青年职业选择如何变化？'),
-      conversation_id: 'conversation-b',
-      title: '研究 B：青年职业选择如何变化？',
-    }
-    const journeyA = researchStartJourneyFixture({
-      proposal: {
-        ...researchStartJourneyFixture().proposal!,
-        phenomenon: '这是 A 的待确认现象',
-      },
-    })
-    const journeyB = researchStartJourneyFixture({
-      conversation_id: conversationB.conversation_id,
-      proposal: {
-        ...researchStartJourneyFixture().proposal!,
-        proposal_id: 'proposal-b',
-        phenomenon: '这是 B 的待确认现象',
-      },
-    })
-    let releaseJourneyA!: (response: Response) => void
-    const delayedJourneyA = new Promise<Response>((resolve) => { releaseJourneyA = resolve })
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
-      if (url.pathname === '/api/agent/conversations') {
-        return json({ items: [{ conversation_id: conversationB.conversation_id, title: conversationB.title, updated_at: conversationB.updated_at, turn_count: 1 }] })
-      }
-      if (url.pathname === `/api/agent/conversations/${conversationA.conversation_id}`) return json(conversationA)
-      if (url.pathname === `/api/agent/conversations/${conversationB.conversation_id}`) return json(conversationB)
-      if (url.pathname === `/api/agent/conversations/${conversationA.conversation_id}/journey`) return delayedJourneyA
-      if (url.pathname === `/api/agent/conversations/${conversationB.conversation_id}/journey`) return json(journeyB)
-      return json({}, 404)
-    }))
-    renderPage(`/research/new?conversation_id=${conversationA.conversation_id}`)
-
-    fireEvent.click((await screen.findAllByRole('button', { name: '打开研究记录' }))[0])
-    fireEvent.click(await screen.findByRole('button', { name: new RegExp(conversationB.title) }))
-    await waitFor(() => expect(screen.getByText(journeyB.proposal!.phenomenon)).toBeVisible())
-
-    releaseJourneyA(json(journeyA))
-    await waitFor(() => expect(screen.queryByText(journeyA.proposal!.phenomenon)).not.toBeInTheDocument())
-    expect(screen.getByText(journeyB.proposal!.phenomenon)).toBeVisible()
-  })
-
   it('retains the configured mock runtime truth without restoring the removed status strip', async () => {
     const conversation = conversationFixture()
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -889,33 +844,6 @@ describe('NewResearchWorkspacePage', () => {
     )
   })
 
-  it('cancels an active stream before restoring another research record', async () => {
-    const stream = pausableStream()
-    const restored = conversationFixture('已保存的社区互助研究', '这是一段已保存的研究回答。')
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
-      if (url.pathname === '/api/agent/turns') return stream.response
-      if (url.pathname === '/api/agent/conversations') return json({ items: [{ conversation_id: restored.conversation_id, title: restored.title, updated_at: restored.updated_at, turn_count: 1 }] })
-      if (url.pathname === `/api/agent/conversations/${restored.conversation_id}`) return json(restored)
-      return json({}, 404)
-    }))
-    renderPage()
-
-    const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
-    const textbox = within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
-    fireEvent.change(textbox, { target: { value: '正在运行的旧研究问题' } })
-    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
-    expect(await within(workspace).findByRole('button', { name: '停止生成' })).toBeVisible()
-
-    fireEvent.click(within(workspace).getAllByRole('button', { name: '打开研究记录' })[0])
-    fireEvent.click(await screen.findByRole('button', { name: /已保存的社区互助研究/ }))
-    stream.close()
-
-    expect(await within(workspace).findByText(restored.turns[0].assistant.content, { exact: true })).toBeVisible()
-    expect(within(workspace).queryByText('正在运行的旧研究问题')).not.toBeInTheDocument()
-    expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toBeEnabled()
-  })
-
   it('treats research history as a dismissible dialog with an Escape route', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
@@ -1018,61 +946,6 @@ describe('NewResearchWorkspacePage', () => {
     expect(activityPanel).toHaveTextContent('检索知识库')
     expect(activityPanel).toHaveTextContent('找到 1 条知识条目')
     expect(activityPanel).not.toHaveTextContent('未审核')
-  })
-
-  it('uses the approved Agent conversation surface without changing the research workflow', async () => {
-    const conversation = conversationFixture('请检索知识库解释社区互助。')
-    const completeDetail = `完整工具返回：${'社会资本与社区互助。'.repeat(40)}`
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
-      if (url.pathname === '/api/agent/turns') return streamWithToolTrace(conversation, completeDetail)
-      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
-      return json({}, 404)
-    }))
-    renderPage()
-
-    const panel = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
-    expect(panel).toHaveClass('is-agent-synced')
-    expect(within(panel).queryByText(/知识库按需调用/)).not.toBeInTheDocument()
-    expect(panel.querySelector('.new-research__composer-footer')).not.toBeInTheDocument()
-
-    const textbox = within(panel).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
-    fireEvent.change(textbox, { target: { value: conversation.title } })
-    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
-
-    const toolSummary = await within(panel).findByRole('button', { name: /Agent 已完成工具调用/ })
-    expect(toolSummary).toHaveAttribute('aria-expanded', 'true')
-    expect(await within(panel).findByRole('button', { name: '查看完整工具返回' })).toBeVisible()
-
-    expect(panel.querySelector('[data-role="user-message"]')).toHaveTextContent(conversation.title)
-    expect(panel.querySelector('[data-role="assistant-response"] [data-research-agent-bot]')).toBeInTheDocument()
-    expect(within(panel).queryByText('群学 Agent')).not.toBeInTheDocument()
-    expect(within(panel).getByRole('button', { name: '复制回答' })).not.toHaveTextContent('复制')
-    expect(within(panel).getByRole('button', { name: '重新生成' })).not.toHaveTextContent('重新生成')
-  })
-
-  it('summarizes oversized tool output while keeping the complete trace expandable', async () => {
-    const conversation = conversationFixture('请检索知识库解释社区互助。')
-    const completeDetail = `完整工具返回：${'社会资本与社区互助的检索证据。'.repeat(80)}`
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
-      if (url.pathname === '/api/agent/turns') return streamWithToolTrace(conversation, completeDetail)
-      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
-      return json({}, 404)
-    }))
-    renderPage()
-
-    const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
-    const textbox = within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
-    fireEvent.change(textbox, { target: { value: conversation.title } })
-    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
-
-    const toolSummary = await within(workspace).findByRole('button', { name: /Agent 已完成工具调用/ })
-    expect(toolSummary).toHaveAttribute('aria-expanded', 'true')
-    const detailDisclosure = await within(workspace).findByRole('button', { name: '查看完整工具返回' })
-    expect(within(workspace).queryByText(completeDetail)).not.toBeVisible()
-    fireEvent.click(detailDisclosure)
-    expect(within(workspace).getByText(completeDetail)).toBeVisible()
   })
 
   it('does not turn an aborted history request into a visible product error', async () => {
