@@ -1,10 +1,17 @@
+import sqlite3
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from qunxue_api.adapters.retrieval import (
+    RETRIEVAL_CORPUS_SCHEMA_VERSION,
+    RetrievalChunk,
+    SqliteRetrievalIndex,
+)
 from qunxue_api.bootstrap import create_app
-from qunxue_api.settings import Settings
+from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
+from qunxue_api.settings import SILICONFLOW_EMBEDDING_MODEL, Settings
 
 
 def test_health_reports_runtime_contract(client: TestClient) -> None:
@@ -47,6 +54,8 @@ def test_health_reports_each_configured_runtime_mode(
         ),
         database=client.app.state.database,
     )
+    if runtime_mode != "mock":
+        _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
     with TestClient(app) as client:
         response = client.get("/api/health")
@@ -57,6 +66,121 @@ def test_health_reports_each_configured_runtime_mode(
     assert app.state.model_gateway.descriptor.provider == (
         "deterministic-mock" if runtime_mode == "mock" else "openai-compatible"
     )
+
+
+@pytest.mark.parametrize("runtime_mode", ["base", "sft"])
+def test_health_rejects_non_mock_runtime_without_a_ready_match_index(
+    runtime_mode: str,
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode=runtime_mode,
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name=f"local-{runtime_mode}-model",
+        ),
+        database=client.app.state.database,
+    )
+
+    with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+    assert response.json()["error"]["message"] == (
+        "当前 MATCH 知识发布没有身份一致的 ready 检索索引。"
+    )
+
+
+@pytest.mark.parametrize(
+    ("embedding_model", "chunk_schema_version"),
+    [
+        ("legacy-embedding", RETRIEVAL_CORPUS_SCHEMA_VERSION),
+        (SILICONFLOW_EMBEDDING_MODEL, "retrieval-corpus-v0"),
+    ],
+)
+def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
+    embedding_model: str,
+    chunk_schema_version: str,
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name="local-base-model",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(
+        app,
+        index_path=tmp_path / "retrieval.db",
+        embedding_model=embedding_model,
+        chunk_schema_version=chunk_schema_version,
+    )
+
+    with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+
+
+def test_health_rejects_a_ready_manifest_without_its_index_points(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "retrieval.db"
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name="local-base-model",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=index_path)
+    with sqlite3.connect(index_path) as connection:
+        connection.execute("DELETE FROM retrieval_points")
+
+    with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
+
+
+def test_health_maps_corrupt_index_storage_to_retrieval_unavailable(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "retrieval.db"
+    app = create_app(
+        settings=Settings(
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="http://127.0.0.1:9/v1",
+            model_name="local-base-model",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=index_path)
+    index_path.write_bytes(b"not-a-sqlite-index")
+
+    with TestClient(app, raise_server_exceptions=False) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "retrieval_unavailable"
 
 
 @pytest.mark.parametrize("runtime_mode", ["base", "sft"])
@@ -84,6 +208,38 @@ def _retrieval_settings(tmp_path: Path) -> dict[str, object]:
         "reranker_api_key": "reranker-test-key",
         "reranker_model": "Pro/BAAI/bge-reranker-v2-m3",
     }
+
+
+def _seed_ready_retrieval_index(
+    app,
+    *,
+    index_path: Path,
+    embedding_model: str = SILICONFLOW_EMBEDDING_MODEL,
+    chunk_schema_version: str = RETRIEVAL_CORPUS_SCHEMA_VERSION,
+) -> None:
+    release = app.state.knowledge_catalog.current_release(
+        purpose=KnowledgeUsePurpose.MATCH
+    )
+    SqliteRetrievalIndex(index_path).rebuild(
+        knowledge_release_id=release.knowledge_release_id,
+        release_content_hash=release.content_hash,
+        embedding_model=embedding_model,
+        chunk_schema_version=chunk_schema_version,
+        chunks=(
+            RetrievalChunk(
+                chunk_id="theory-profile:health-check:v1",
+                document_kind="theory_profile",
+                knowledge_id="D2:P001",
+                theory_id="health-check",
+                content_version=1,
+                content_hash="sha256:health-check",
+                title="健康检查理论条目",
+                text="用于验证 release-bound ready 检索索引。",
+                source_ids=("source:health-check",),
+            ),
+        ),
+        vectors=((1.0, 0.0),),
+    )
 
 
 def test_model_credentials_are_secret_values_in_runtime_settings() -> None:

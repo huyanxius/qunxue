@@ -1,5 +1,6 @@
 """Release-bound lexical, dense, and reranked retrieval orchestration."""
 
+import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
@@ -18,6 +19,7 @@ from qunxue_api.adapters.research_agent.retrieval import (
 from .errors import RetrievalPipelineUnavailable
 from .sqlite_index import (
     RetrievalChunk,
+    RetrievalIndexManifest,
     RetrievalIndexUnavailable,
     SqliteRetrievalIndex,
 )
@@ -108,6 +110,26 @@ class HybridRetriever:
         self._min_lexical_score = min_lexical_score
         self._recall_limit = max(1, recall_limit)
 
+    def require_ready_manifest(
+        self,
+        *,
+        knowledge_release_id: str,
+        release_content_hash: str,
+    ) -> RetrievalIndexManifest:
+        """Require the exact index identity used by live retrieval."""
+
+        try:
+            return self._index.find_ready_manifest(
+                knowledge_release_id=knowledge_release_id,
+                release_content_hash=release_content_hash,
+                embedding_model=self._embedding_model,
+                chunk_schema_version=self._chunk_schema_version,
+            )
+        except (RetrievalIndexUnavailable, sqlite3.Error) as error:
+            raise RetrievalPipelineUnavailable(
+                "retrieval index is unavailable"
+            ) from error
+
     def search(
         self,
         *,
@@ -134,13 +156,11 @@ class HybridRetriever:
         document_kind: str | None,
         limit: int,
     ) -> HybridRetrievalTrace:
+        manifest = self.require_ready_manifest(
+            knowledge_release_id=knowledge_release_id,
+            release_content_hash=release_content_hash,
+        )
         try:
-            manifest = self._index.find_ready_manifest(
-                knowledge_release_id=knowledge_release_id,
-                release_content_hash=release_content_hash,
-                embedding_model=self._embedding_model,
-                chunk_schema_version=self._chunk_schema_version,
-            )
             chunks = self._index.list_chunks(
                 retrieval_index_id=manifest.retrieval_index_id,
                 knowledge_release_id=knowledge_release_id,

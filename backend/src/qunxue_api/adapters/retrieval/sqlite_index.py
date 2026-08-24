@@ -293,22 +293,28 @@ class SqliteRetrievalIndex:
             row = connection.execute(
                 """
                 SELECT
-                    retrieval_index_id,
-                    knowledge_release_id,
-                    release_content_hash,
-                    embedding_model,
-                    chunk_schema_version,
-                    vector_dimension,
-                    point_count,
-                    manifest_content_hash,
-                    status
-                FROM retrieval_indexes
-                WHERE knowledge_release_id = ?
-                  AND release_content_hash = ?
-                  AND embedding_model = ?
-                  AND chunk_schema_version = ?
-                  AND status = 'ready'
-                ORDER BY retrieval_index_id
+                    manifest.retrieval_index_id,
+                    manifest.knowledge_release_id,
+                    manifest.release_content_hash,
+                    manifest.embedding_model,
+                    manifest.chunk_schema_version,
+                    manifest.vector_dimension,
+                    manifest.point_count,
+                    manifest.manifest_content_hash,
+                    manifest.status
+                FROM retrieval_indexes AS manifest
+                WHERE manifest.knowledge_release_id = ?
+                  AND manifest.release_content_hash = ?
+                  AND manifest.embedding_model = ?
+                  AND manifest.chunk_schema_version = ?
+                  AND manifest.status = 'ready'
+                  AND manifest.point_count > 0
+                  AND (
+                      SELECT COUNT(*)
+                      FROM retrieval_points AS point
+                      WHERE point.retrieval_index_id = manifest.retrieval_index_id
+                  ) = manifest.point_count
+                ORDER BY manifest.retrieval_index_id
                 LIMIT 1
                 """,
                 (

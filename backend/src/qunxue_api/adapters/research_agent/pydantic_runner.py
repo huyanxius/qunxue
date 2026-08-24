@@ -57,13 +57,13 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        del conversation
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
             document_workspace=bool(
                 getattr(tools, "research_document_tools_enabled", False)
             ),
+            conversation=conversation,
         ):
             answer = _general_answer(prompt)
             return AgentRunResult(
@@ -73,7 +73,9 @@ class DeterministicKnowledgeRunner:
                 provider="deterministic-knowledge",
                 model="local",
             )
-        results = tools.search_knowledge(_evidence_retrieval_query(prompt))
+        results = tools.search_knowledge(
+            _evidence_retrieval_query(prompt, conversation=conversation)
+        )
         if not results:
             return AgentRunResult(
                 answer=_insufficient_evidence_answer(),
@@ -112,12 +114,16 @@ class DeterministicKnowledgeRunner:
             document_workspace=bool(
                 getattr(tools, "research_document_tools_enabled", False)
             ),
+            conversation=conversation,
         ):
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
             for index in range(0, len(result.answer), 72):
                 on_delta(result.answer[index : index + 72])
             return result
-        retrieval_query = _evidence_retrieval_query(prompt)
+        retrieval_query = _evidence_retrieval_query(
+            prompt,
+            conversation=conversation,
+        )
         if on_tool_event is not None:
             on_tool_event(
                 AgentToolEvent(
@@ -165,11 +171,13 @@ def _should_search_knowledge(
     *,
     research_workspace: bool = False,
     document_workspace: bool = False,
+    conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     return _requires_knowledge_evidence(
         prompt,
         research_workspace=research_workspace,
         document_workspace=document_workspace,
+        conversation=conversation,
     )
 
 
@@ -869,6 +877,7 @@ class PydanticAIKnowledgeRunner:
     ) -> AgentRunResult:
         required_evidence = _preflight_required_evidence(
             prompt=prompt,
+            conversation=conversation,
             tools=tools,
             on_tool_event=None,
         )
@@ -923,6 +932,7 @@ class PydanticAIKnowledgeRunner:
         try:
             required_evidence = _preflight_required_evidence(
                 prompt=prompt,
+                conversation=conversation,
                 tools=tools,
                 on_tool_event=on_tool_event,
             )
@@ -987,6 +997,155 @@ _TOPIC_IDEATION_MARKERS = (
     "可研究的社会学方向",
 )
 
+_FLOW_CONTROL_PROMPTS = frozenset(
+    {
+        "好",
+        "好的",
+        "确认",
+        "继续",
+        "取消",
+        "保存",
+        "就这个",
+    }
+)
+
+_CASUAL_ACK_PROMPTS = frozenset(
+    {
+        "谢谢",
+        "谢谢你",
+        "多谢",
+        "明白了",
+        "知道了",
+        "好的，谢谢",
+        "你好",
+        "您好",
+        "辛苦了",
+        "再见",
+        "晚安",
+        "早上好",
+        "下午好",
+        "晚上好",
+        "嗯",
+        "嗯嗯",
+    }
+)
+
+_CASUAL_ACK_PATTERNS = (
+    r"(?:你|您)好(?:呀|啊|啦)?",
+    r"辛苦(?:了|啦)",
+    r"收到(?:了)?",
+)
+
+_KNOWLEDGE_JUDGMENT_MARKERS = (
+    "理论",
+    "概念",
+    "学派",
+    "解释",
+    "机制",
+    "因果",
+    "主张",
+    "论断",
+    "事实",
+    "研究问题",
+    "理论框架",
+    "研究方法",
+    "结论",
+    "论证",
+)
+
+_SEMANTIC_EDIT_MARKERS = (
+    "准确",
+    "严谨",
+    "可靠",
+    "可信",
+    "正确",
+    "补充依据",
+    "补充证据",
+)
+
+_STRUCTURAL_PRESENTATION_EDIT_MARKERS = (
+    "错别字",
+    "标点",
+    "格式",
+    "排版",
+    "标题",
+    "字数",
+)
+
+_STYLE_EDIT_MARKERS = (
+    "润色",
+    "简洁",
+    "精简",
+    "措辞",
+    "语气",
+)
+
+_NON_EPISTEMIC_DOCUMENT_ACTIONS = (
+    "删除",
+    "删掉",
+    "接受",
+    "拒绝",
+    "撤销",
+)
+
+_GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS = (
+    "重写",
+    "改写",
+    "补充",
+    "新增",
+    "增加",
+    "扩写",
+    "生成",
+)
+
+_CONTEXTUAL_EVIDENCE_PATTERNS = (
+    r"^为什么(?:呢)?[？?]?$",
+    r"^(?:有|有什么)?(?:依据|出处|来源|文献|参考资料)(?:吗|呢)?[？?]?$",
+    r"^(?:还)?需要(?:什么|哪些|怎样的?)依据[？?]?$",
+    (
+        r"^(?:这个|该|这一)(?:理论|概念|解释|说法|主张|结论)的?"
+        r"依据(?:是什么|有哪些|在哪|呢|吗)?[？?]?$"
+    ),
+    (
+        r"^(?:这个|该|这一)?(?:理论|概念|解释|说法)?"
+        r"(?:靠谱吗|可靠(?:吗)?|可信(?:吗)?|成立(?:吗)?|适用(?:吗)?)[？?]?$"
+    ),
+)
+
+_EVIDENCE_REQUEST_PATTERNS = (
+    (
+        r"(?:有|有什么|给出|提供|说明|缺少).{0,6}"
+        r"依据(?!现有|当前|给定|上述|以下|这个|该|模板|格式|要求|规则|材料)"
+    ),
+    r"需要(?:什么|哪些|怎样的?)依据",
+    r"(?:理论|概念|解释|说法|主张).{0,8}的?依据",
+    r"依据(?:是|来自|在哪|是什么|有哪些|呢|吗)",
+)
+
+_IDENTITY_CONTEXT_PATTERNS = (
+    r"^(?:你是谁|你叫什么(?:名字)?|你能做什么|你可以做什么)[？?]?$",
+    r"^你的(?:身份|模型|名字|能力)(?:是|是什么|呢|吗)?[？?]?$",
+    (
+        r"^(?:请问\s*)?你是\s*(?:一名|一个)?\s*(?:什么|哪个)?\s*"
+        r"(?:社会学|研究|ai|人工智能)?\s*"
+        r"(?:agent|助手|模型|智能体|机器人)\s*(?:吗|呢)?[？?]?$"
+    ),
+)
+
+_RESEARCH_CONTEXT_MARKERS = (
+    "研究",
+    "论文",
+    "理论",
+    "概念",
+    "学派",
+    "文献",
+    "证据",
+    "知识库",
+    "框架",
+    "机制",
+    "因果",
+)
+
 
 _EXPLICIT_EVIDENCE_MARKERS = (
     "知识库",
@@ -1005,11 +1164,20 @@ _DOCUMENT_OPERATION_MARKERS = (
     "重写",
     "润色",
     "调整",
+    "修正",
+    "纠正",
     "删除",
     "删掉",
     "接受",
     "拒绝",
     "撤销",
+    "改写",
+    "补充",
+    "新增",
+    "增加",
+    "扩写",
+    "生成",
+    "写成",
 )
 
 
@@ -1018,33 +1186,65 @@ def _requires_knowledge_evidence(
     *,
     research_workspace: bool,
     document_workspace: bool = False,
+    conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     normalized = " ".join(prompt.split())
-    if (
-        document_workspace
-        and any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
-        and not any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS)
-    ):
+    if _is_flow_control_prompt(normalized) or _is_casual_ack_prompt(normalized):
         return False
+    is_document_operation = document_workspace and any(
+        marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS
+    )
+    if is_document_operation:
+        if _explicit_evidence_requested(normalized):
+            return True
+        if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
+            return True
+        if any(
+            marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS
+        ) and any(
+            marker in normalized for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
+        ):
+            return True
+        if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
+            return False
+        if any(
+            marker in normalized for marker in _STRUCTURAL_PRESENTATION_EDIT_MARKERS
+        ):
+            return False
+        if any(marker in normalized for marker in _STYLE_EDIT_MARKERS):
+            return False
+        if any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS):
+            return True
+        return _conversation_has_research_context(conversation)
     if any(marker in normalized for marker in _EVIDENCE_REQUIRED_MARKERS):
+        return True
+    if _explicit_evidence_requested(normalized):
         return True
     if re.search(r"(?:解释|比较|介绍|什么是).{0,20}(?:理论|概念|学派)", normalized):
         return True
-    if not research_workspace:
-        return False
-    return normalized not in {
-        "好",
-        "好的",
-        "确认",
-        "继续",
-        "取消",
-        "保存",
-        "就这个",
-    }
+    if re.search(
+        r"(?:理论|概念|学派|解释|说法).{0,16}(?:靠谱|可靠|可信|成立|适用)",
+        normalized,
+    ):
+        return True
+    if (
+        _is_contextual_evidence_followup(normalized)
+        and _conversation_has_research_context(conversation)
+    ):
+        return True
+    return research_workspace
 
 
-def _evidence_retrieval_query(prompt: str) -> str:
+def _evidence_retrieval_query(
+    prompt: str,
+    *,
+    conversation: Sequence[AgentTurn] = (),
+) -> str:
     normalized = " ".join(prompt.split())
+    if _needs_prior_research_context(normalized):
+        recent_topic = _recent_research_topic(conversation)
+        if recent_topic:
+            return f"{recent_topic}\n当前追问：{normalized}"
     if any(marker in normalized for marker in _TOPIC_IDEATION_MARKERS):
         return (
             f"{prompt}\n"
@@ -1053,9 +1253,152 @@ def _evidence_retrieval_query(prompt: str) -> str:
     return prompt
 
 
+def _is_contextual_evidence_followup(normalized: str) -> bool:
+    return any(
+        re.fullmatch(pattern, normalized)
+        for pattern in _CONTEXTUAL_EVIDENCE_PATTERNS
+    )
+
+
+def _explicit_evidence_requested(normalized: str) -> bool:
+    return any(
+        marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS
+    ) or any(re.search(pattern, normalized) for pattern in _EVIDENCE_REQUEST_PATTERNS)
+
+
+def _needs_prior_research_context(normalized: str) -> bool:
+    return (
+        _is_contextual_evidence_followup(normalized)
+        or any(
+            marker in normalized
+            for marker in (
+                "这个理论",
+                "该理论",
+                "这个概念",
+                "该概念",
+                "这个说法",
+                "该说法",
+                "这一说法",
+                "这个主张",
+                "该主张",
+                "这一主张",
+                "这个结论",
+                "该结论",
+                "这一结论",
+                "这个解释",
+                "该解释",
+                "这一解释",
+                "上述解释",
+                "把它",
+                "将它",
+                "这段",
+                "这一段",
+            )
+        )
+        or (
+            any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
+            and any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS)
+        )
+        or (
+            any(
+                marker in normalized
+                for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
+            )
+            and any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS)
+        )
+    )
+
+
+def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
+    for turn in reversed(conversation):
+        if _turn_has_structured_evidence(turn):
+            return _turn_research_query_context(turn)
+        candidate = _normalized_text(turn.user_message.content)
+        if not candidate or _is_non_substantive_prompt(candidate):
+            continue
+        return _turn_research_query_context(turn)
+    return None
+
+
+def _conversation_has_research_context(
+    conversation: Sequence[AgentTurn],
+) -> bool:
+    for turn in reversed(conversation):
+        if _turn_has_structured_evidence(turn):
+            return True
+        candidate = _normalized_text(turn.user_message.content)
+        if not candidate or _is_non_substantive_prompt(candidate):
+            continue
+        return _turn_has_research_context(turn)
+    return False
+
+
+def _turn_has_research_context(turn: AgentTurn) -> bool:
+    if _turn_has_structured_evidence(turn):
+        return True
+    user_content = _normalized_text(turn.user_message.content)
+    if _is_identity_context_prompt(user_content):
+        return False
+    assistant_content = _normalized_text(turn.assistant_message.content)
+    return any(
+        marker in content
+        for content in (user_content, assistant_content)
+        for marker in _RESEARCH_CONTEXT_MARKERS
+    )
+
+
+def _turn_has_structured_evidence(turn: AgentTurn) -> bool:
+    return bool(turn.evidence_ids or turn.assistant_message.citations)
+
+
+def _turn_research_query_context(turn: AgentTurn) -> str:
+    user_content = _normalized_text(turn.user_message.content)
+    assistant_content = _normalized_text(turn.assistant_message.content)
+    if len(assistant_content) > 360:
+        assistant_content = f"{assistant_content[:359].rstrip()}…"
+    if not assistant_content:
+        return user_content
+    return f"{user_content}\n上一轮回答线索：{assistant_content}"
+
+
+def _is_flow_control_prompt(normalized: str) -> bool:
+    return _control_token(normalized) in _FLOW_CONTROL_PROMPTS
+
+
+def _is_casual_ack_prompt(normalized: str) -> bool:
+    token = _control_token(normalized)
+    return token in _CASUAL_ACK_PROMPTS or any(
+        re.fullmatch(pattern, token) for pattern in _CASUAL_ACK_PATTERNS
+    )
+
+
+def _is_identity_context_prompt(normalized: str) -> bool:
+    return any(
+        re.search(pattern, normalized, flags=re.IGNORECASE)
+        for pattern in _IDENTITY_CONTEXT_PATTERNS
+    )
+
+
+def _is_non_substantive_prompt(normalized: str) -> bool:
+    return (
+        _is_flow_control_prompt(normalized)
+        or _is_casual_ack_prompt(normalized)
+        or _is_contextual_evidence_followup(normalized)
+    )
+
+
+def _control_token(normalized: str) -> str:
+    return normalized.rstrip("。！？!?….").strip()
+
+
+def _normalized_text(value: str) -> str:
+    return " ".join(value.split())
+
+
 def _preflight_required_evidence(
     *,
     prompt: str,
+    conversation: Sequence[AgentTurn],
     tools: AgentToolContext,
     on_tool_event: Callable[[AgentToolEvent], None] | None,
 ) -> tuple[Mapping[str, object], ...] | None:
@@ -1065,9 +1408,13 @@ def _preflight_required_evidence(
         document_workspace=bool(
             getattr(tools, "research_document_tools_enabled", False)
         ),
+        conversation=conversation,
     ):
         return None
-    retrieval_query = _evidence_retrieval_query(prompt)
+    retrieval_query = _evidence_retrieval_query(
+        prompt,
+        conversation=conversation,
+    )
     call_id = "policy:search_knowledge"
     if on_tool_event is not None:
         on_tool_event(
