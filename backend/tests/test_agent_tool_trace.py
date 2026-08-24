@@ -107,7 +107,10 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
         "明白了",
         "好的，谢谢",
         "你好。",
+        "你好呀。",
         "辛苦了",
+        "辛苦啦",
+        "收到",
     ],
 )
 def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> None:
@@ -148,6 +151,9 @@ def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> 
         "这一说法的依据是什么？",
         "这个解释的依据是什么？",
         "需要哪些依据？",
+        "还需要哪些依据？",
+        "这一理论的依据是什么？",
+        "这一概念的依据是什么？",
     ],
 )
 def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
@@ -276,6 +282,40 @@ def test_structured_evidence_overrides_identity_wording_in_context() -> None:
     search.assert_called_once()
 
 
+def test_evidence_bearing_followup_becomes_the_latest_research_context() -> None:
+    search = Mock(return_value=[])
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="社区流动如何改变邻里互助？",
+            assistant_content="可以先检查稳定互动是否减少。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+        AgentTurn.create(
+            user_content="为什么？",
+            assistant_content="社会资本理论提示我们关注关系网络与互惠规范。",
+            citations=(),
+            evidence_ids=frozenset({"knowledge:social-capital"}),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="这个理论靠谱吗？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    query = search.call_args.args[0]
+    assert "社会资本理论" in query
+
+
 def test_substantive_model_wording_is_not_misclassified_as_identity() -> None:
     search = Mock(return_value=[])
     tools = SimpleNamespace(
@@ -309,6 +349,7 @@ def test_substantive_model_wording_is_not_misclassified_as_identity() -> None:
         ("你是社会学 Agent 吗？", "是，我是社会学学科 Agent。"),
         ("你是研究助手吗？", "是，我可以协助研究。"),
         ("你能做什么？", "我可以协助社会学研究。"),
+        ("请问你是一名研究助手吗？", "是，我可以协助社会学研究。"),
     ],
 )
 def test_agent_identity_context_does_not_turn_why_into_research(
@@ -352,6 +393,9 @@ def test_agent_identity_context_does_not_turn_why_into_research(
         "删除旧结论并改得更准确",
         "修改标题并重写理论解释",
         "删除旧段落并重写理论解释",
+        "删除旧段落并改写理论解释",
+        "删除旧段落并补充理论解释",
+        "删除旧结论并新增新的理论解释",
     ],
 )
 def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
@@ -396,6 +440,9 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
         "请依据现有格式润色这句话",
         "需要依据现有格式调整标题",
         "请提供一个依据现有格式调整后的标题",
+        "请提供一个依据现有格式写成的标题",
+        "修改“社会资本理论”这一节的标题格式",
+        "请提供一个依据当前格式调整后的标题",
     ],
 )
 def test_document_presentation_edit_does_not_repeat_search(prompt: str) -> None:
