@@ -351,7 +351,9 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
       <header className="public-header">
         <div className="public-header__inner">
           <Link className="public-wordmark" to="/welcome" aria-label="群学致知介绍页">
-            <img src={brandMark} alt="" />
+            <span className="public-wordmark__mark" aria-hidden="true">
+              <img src={brandMark} alt="" />
+            </span>
             <span>
               <strong>群学致知</strong>
               <small>COLLECTIVE INQUIRY</small>
@@ -512,7 +514,9 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
 
       <footer className="public-footer">
         <Link className="public-wordmark public-wordmark--footer" to="/welcome">
-          <img src={brandMark} alt="" />
+          <span className="public-wordmark__mark" aria-hidden="true">
+            <img src={brandMark} alt="" />
+          </span>
           <span><strong>群学致知</strong><small>COLLECTIVE INQUIRY</small></span>
         </Link>
         <p>为初次独立研究，保留判断的位置。</p>

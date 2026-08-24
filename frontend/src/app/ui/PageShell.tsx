@@ -49,6 +49,18 @@ function ProductMark() {
   )
 }
 
+function ProductLockup() {
+  return (
+    <span className="product-lockup">
+      <ProductMark />
+      <span className="product-lockup__copy">
+        <strong>群学致知</strong>
+        <small>COLLECTIVE INQUIRY</small>
+      </span>
+    </span>
+  )
+}
+
 function PrimaryNavigation({
   className,
   label,
@@ -135,8 +147,7 @@ export function PageShell({
           <a className="skip-link" href="#main-content">{text('跳到主要内容', 'Skip to main content')}</a>
           <header className="masthead mobile-masthead">
             <Link className="wordmark" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
-              <ProductMark />
-              <strong>群学致知</strong>
+              <ProductLockup />
             </Link>
             <nav className="account-navigation" aria-label={text('账户导航', 'Account navigation')}>
               {account.sessionState.status === 'authenticated' ? (
@@ -157,8 +168,7 @@ export function PageShell({
           <aside className={`desktop-rail${railCollapsed ? ' desktop-rail--collapsed' : ''}`} aria-label={text('群学致知功能栏', 'Qunxue Zhizhi navigation')}>
             <div className="desktop-rail__topbar">
               <Link className="desktop-rail__brand" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
-                <ProductMark />
-                <strong>群学致知</strong>
+                <ProductLockup />
               </Link>
               <button
                 className="desktop-rail__collapse"

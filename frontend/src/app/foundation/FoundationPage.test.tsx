@@ -61,6 +61,7 @@ describe('FoundationPage', () => {
       '#research-agent',
     )
     expect(container.querySelector('header.public-header')).toBeInTheDocument()
+    expect(container.querySelectorAll('.public-wordmark__mark img')).toHaveLength(2)
     expect(container.querySelector('.foundation-origin-suffix')).toHaveTextContent('，')
     expect(container.querySelector('.foundation-origin-suffix')).not.toHaveTextContent('中')
     expect(container.querySelector('.app-frame')).not.toBeInTheDocument()
