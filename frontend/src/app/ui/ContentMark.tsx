@@ -3,7 +3,7 @@ import type { PropsWithChildren } from 'react'
 export type ContentKind = 'verified' | 'analysis' | 'external' | 'user'
 
 const contentKindLabels: Record<ContentKind, string> = {
-  verified: '已审核知识',
+  verified: '知识库内容',
   analysis: '系统分析',
   external: '库外线索',
   user: '用户内容',

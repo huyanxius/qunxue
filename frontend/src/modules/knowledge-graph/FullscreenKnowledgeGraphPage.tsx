@@ -494,7 +494,7 @@ export function FullscreenKnowledgeGraphPage({
             <p>当前中心</p>
             <h2>{focus.title}</h2>
             <p>{focus.directoryPath.map((node) => node.title).join(' / ')}</p>
-            <small>{focus.knowledgeId} · {focus.reviewStatus}</small>
+            <small>{focus.knowledgeId}</small>
             <a href={entryHref(focus.knowledgeId)}>
               查看完整条目
             </a>
@@ -508,7 +508,7 @@ export function FullscreenKnowledgeGraphPage({
           </header>
           <p><i className="legend-line legend-line--structure" />目录结构</p>
           <p><i className="legend-line legend-line--reviewed" />正式关系 <span>{reviewedCount}</span></p>
-          <p><i className="legend-line legend-line--pending" />待审核 <span>{pendingCount}</span></p>
+          <p><i className="legend-line legend-line--pending" />候选关系 <span>{pendingCount}</span></p>
           <button
             type="button"
             disabled={!focus}
@@ -517,9 +517,9 @@ export function FullscreenKnowledgeGraphPage({
               pendingEnabled: pendingEnabled ? undefined : true,
             })}
           >
-            {pendingEnabled ? '隐藏待审核候选' : '显示待审核候选'}
+            {pendingEnabled ? '隐藏候选关系' : '显示候选关系'}
           </button>
-          {pendingEnabled ? <p className="knowledge-graph-page__pending-note">待审核候选、非知识事实；不会计入 reviewed 数量。</p> : null}
+          {pendingEnabled ? <p className="knowledge-graph-page__pending-note">候选关系不是正式知识，不会计入知识关系数量。</p> : null}
         </section>
 
         {focus || directoryCursor ? (
@@ -546,13 +546,13 @@ export function FullscreenKnowledgeGraphPage({
               <button type="button" onClick={() => void loadMoreRelations()}>
                 加载更多正式关系
               </button>
-            ) : relationTotal === 0 ? <p>当前中心没有已审核正式关系。</p> : null}
+            ) : relationTotal === 0 ? <p>当前中心没有知识关系。</p> : null}
             {pendingEnabled && candidateCursor ? (
               <button type="button" onClick={() => void loadMoreCandidates()}>
-                加载更多待审核候选
+                加载更多候选关系
               </button>
             ) : null}
-            {pendingEnabled && candidateTotal === 0 ? <p>当前中心没有待审核候选。</p> : null}
+            {pendingEnabled && candidateTotal === 0 ? <p>当前中心没有候选关系。</p> : null}
           </section>
         ) : null}
 
@@ -575,8 +575,8 @@ function EdgeEvidence({ edge }: { edge: KnowledgeGraphEdge }) {
   }
   if (edge.layer === 'candidate') {
     return (
-      <section className="knowledge-graph-page__evidence" aria-label="待审核候选证据">
-        <p>pending · 待审核候选、非知识事实</p>
+      <section className="knowledge-graph-page__evidence" aria-label="候选关系证据">
+        <p>candidate · 候选关系、非正式知识</p>
         <h2>{edge.relationType}</h2>
         <blockquote>{edge.evidenceExcerpt}</blockquote>
         <dl>
@@ -592,7 +592,7 @@ function EdgeEvidence({ edge }: { edge: KnowledgeGraphEdge }) {
   }
   return (
     <section className="knowledge-graph-page__evidence" aria-label="正式关系证据">
-      <p>reviewed · 正式知识关系</p>
+      <p>relation · 正式知识关系</p>
       <h2>{edge.relationType}</h2>
       <p>{edge.description}</p>
       <small>{edge.evidenceSourceIds?.join('、') || '未提供证据来源 ID'}</small>

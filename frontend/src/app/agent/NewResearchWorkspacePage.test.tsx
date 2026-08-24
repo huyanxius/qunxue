@@ -139,7 +139,7 @@ function streamResponse(conversation: ReturnType<typeof conversationFixture>, ru
 
 function streamWithToolTrace(
   conversation: ReturnType<typeof conversationFixture>,
-  detail = '找到 1 条知识库预览内容（未审核）',
+  detail = '找到 1 条知识条目',
 ) {
   const events = [
     ['turn_started', { conversation_id: conversation.conversation_id, run_id: 'run-tool', replayed: false, runtime_mode: 'mock' }],
@@ -786,13 +786,13 @@ describe('NewResearchWorkspacePage', () => {
     )
   })
 
-  it('labels preview citations as unreviewed evidence in Sources and Basis', async () => {
+  it('presents legacy preview citations as knowledge entries without review state', async () => {
     const conversation = conversationFixture('请检索预览知识。')
     conversation.turns[0].assistant.citations = [{
       citation_id: 'citation-preview',
       label: '社区互助工作笔记',
       kind: 'preview',
-      excerpt: '这是一条尚未审核的工作材料。',
+      excerpt: '这是一条知识库工作材料。',
       knowledge_id: 'D1:C099',
     }]
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -806,12 +806,14 @@ describe('NewResearchWorkspacePage', () => {
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：社区互助工作笔记/ }))
     const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
-    expect(sources).toHaveTextContent('未审核预览')
+    expect(sources).toHaveTextContent('知识条目')
+    expect(sources).not.toHaveTextContent('未审核')
     fireEvent.click(within(sources).getByRole('button', { name: /社区互助工作笔记/ }))
 
     const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
-    expect(basis).toHaveTextContent('未审核预览')
-    expect(basis).toHaveTextContent('这是一条尚未审核的工作材料。')
+    expect(basis).toHaveTextContent('知识条目')
+    expect(basis).not.toHaveTextContent('未审核')
+    expect(basis).toHaveTextContent('这是一条知识库工作材料。')
   })
 
   it('withholds a knowledge entry link when the conversation release is unknown', async () => {
@@ -1014,7 +1016,8 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.click(within(workspace).getAllByRole('button', { name: '查看活动' })[0])
     const activityPanel = await screen.findByRole('tabpanel', { name: 'Activity' })
     expect(activityPanel).toHaveTextContent('检索知识库')
-    expect(activityPanel).toHaveTextContent('找到 1 条知识库预览内容（未审核）')
+    expect(activityPanel).toHaveTextContent('找到 1 条知识条目')
+    expect(activityPanel).not.toHaveTextContent('未审核')
   })
 
   it('uses the approved Agent conversation surface without changing the research workflow', async () => {

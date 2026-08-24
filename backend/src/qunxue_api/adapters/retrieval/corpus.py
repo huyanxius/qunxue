@@ -68,8 +68,6 @@ def build_knowledge_entry_chunks(
 ) -> tuple[RetrievalChunk, ...]:
     chunks = []
     for entry in sorted(entries, key=lambda item: item.summary.knowledge_id):
-        if not entry.summary.eligibility.rag_eligible:
-            continue
         prefix = f"标题：{entry.summary.title}\n别名：{_join(entry.aliases)}"
         content_parts = _split_text(
             entry.content,

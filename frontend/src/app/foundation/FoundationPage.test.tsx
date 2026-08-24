@@ -161,7 +161,8 @@ describe('FoundationPage', () => {
     renderPage()
 
     expect((await screen.findAllByText('历史唯物主义'))[0]).toBeVisible()
-    expect(await screen.findByText('待核验')).toBeVisible()
+    expect(screen.queryByText('待审核')).not.toBeInTheDocument()
+    expect(screen.queryByText('已审核')).not.toBeInTheDocument()
     const ticker = screen.getByRole('region', { name: /知识索引流/ })
     const tickerTrack = ticker.querySelector<HTMLElement>('.knowledge-ticker__track')
     expect(tickerTrack).not.toBeNull()

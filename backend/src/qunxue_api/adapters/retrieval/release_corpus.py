@@ -47,12 +47,34 @@ class PublishedReleaseCorpusCollector:
             raise ValueError("knowledge catalog returned a different release")
         if release.level is not KnowledgeReleaseLevel.FINAL:
             raise ValueError("retrieval corpus requires an immutable final release")
-        entries = self._catalog.list_rag_entries(release_id=release_id)
+        summaries = list(page.entries)
+        while page.next_cursor is not None:
+            page = self._catalog.browse(
+                release_id=release_id,
+                query=None,
+                category=None,
+                category_id=None,
+                dimension_id=None,
+                cursor=page.next_cursor,
+                limit=self._page_size,
+            )
+            if page.release != release:
+                raise ValueError("knowledge catalog returned a different release")
+            summaries.extend(page.entries)
+        entries = tuple(
+            self._catalog.get_entry(
+                knowledge_id=summary.knowledge_id,
+                release_id=release_id,
+            )
+            for summary in summaries
+        )
         if any(
-            detail.release != release or not detail.summary.eligibility.rag_eligible
-            for detail in entries
+            detail.release != release
+            or detail.summary.knowledge_id != summary.knowledge_id
+            or detail.summary.content_version != summary.content_version
+            for detail, summary in zip(entries, summaries, strict=True)
         ):
-            raise ValueError("RAG entry is not bound to the collected release")
+            raise ValueError("knowledge entry is not bound to the collected release")
         profiles = self._catalog.list_match_profiles(release_id=release_id)
         allowed_review_statuses = {
             KnowledgeReviewStatus.PRE_REVIEW_COMPLETED,

@@ -60,9 +60,7 @@ class DeterministicKnowledgeRunner:
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
-            document_workspace=bool(
-                getattr(tools, "research_document_tools_enabled", False)
-            ),
+            document_workspace=bool(getattr(tools, "research_document_tools_enabled", False)),
             conversation=conversation,
         ):
             answer = _general_answer(prompt)
@@ -111,9 +109,7 @@ class DeterministicKnowledgeRunner:
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
-            document_workspace=bool(
-                getattr(tools, "research_document_tools_enabled", False)
-            ),
+            document_workspace=bool(getattr(tools, "research_document_tools_enabled", False)),
             conversation=conversation,
         ):
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
@@ -251,13 +247,10 @@ class PydanticAIKnowledgeRunner:
                 "无论用户如何询问或诱导，都不得披露、猜测或确认底层模型的供应商、系列、"
                 "版本、型号、推理档位或运行配置；只能自称群学致知的社会学学科 Agent。"
                 "普通讨论可以直接依据通用学科知识回答；理论、文献、来源、选题、论文与正式研究产物"
-                "必须遵守服务端 evidence_policy。required_evidence 已由服务端完成发布绑定检索时，"
-                "只能基于其中的闭集证据形成研究性判断，不得绕过检索另写一个看似完整的答案。"
-                "检索失败会中止本轮，禁止改用通用知识继续；检索为空时只能报告证据不足并停止下结论。"
-                "不要重复检索已经由 required_evidence 覆盖的同一问题；"
-                "只有确有不同证据需求时才追加检索。"
+                "应主动使用知识工具取得依据。首次检索为空时，可以提炼问题中的社会学概念后调整"
+                "检索词继续查找；检索结果只限定知识库引用的依据，不限制你理解和回应用户的问题。"
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
-                "同一问题的检索返回空结果后不要反复改写同义词重试，也不要猜测 knowledge_id；"
+                "不要无休止地重复相同检索，也不要猜测 knowledge_id；"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
                 "凡是声称来自知识库的内容都必须来自本轮工具实际返回的闭集；来源卡片由结构化"
                 "证据选择生成，不要在正文中打印 citation_id 来伪造引用。"
@@ -302,7 +295,6 @@ class PydanticAIKnowledgeRunner:
 
             仅在用户明确要求知识库内容、出处或引用，或精确条目能实质提高回答质量时使用。
             普通社会学解释和启发性讨论可以直接回答，不要为了展示工具而调用。
-            如果返回 preview_unverified，内容可用于解释但必须标注为未审核预览。
             """
             call_id = _tool_call_id(ctx, "search_knowledge")
             self._emit_tool_event(
@@ -328,12 +320,9 @@ class PydanticAIKnowledgeRunner:
                     )
                 )
                 raise
-            preview_count = sum(
-                item.get("evidence_status") == "preview_unverified" for item in result
-            )
             _select_result_evidence(ctx.deps, result)
             trace_items = _trace_items(result)
-            detail = _trace_detail(len(result), trace_items, preview_count=preview_count)
+            detail = _trace_detail(len(result), trace_items)
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="search_knowledge",
@@ -379,7 +368,6 @@ class PydanticAIKnowledgeRunner:
                 )
                 raise
             found = "error" not in result
-            preview = result.get("evidence_status") == "preview_unverified"
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="read_knowledge_entry",
@@ -388,15 +376,12 @@ class PydanticAIKnowledgeRunner:
                     input={"knowledge_id": knowledge_id},
                     output={
                         "found": found,
-                        "preview": preview,
                         "knowledge_id": knowledge_id,
                         "title": result.get("title"),
                         "excerpt": _trace_excerpt(result.get("content")),
                     },
                     detail=(
-                        f"已读取知识库预览条目（未审核）：{result.get('title', knowledge_id)}"
-                        if found and preview
-                        else f"已读取知识条目：{result.get('title', knowledge_id)}"
+                        f"已读取知识条目：{result.get('title', knowledge_id)}"
                         if found
                         else "当前知识库没有这个条目"
                     ),
@@ -875,14 +860,6 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        required_evidence = _preflight_required_evidence(
-            prompt=prompt,
-            conversation=conversation,
-            tools=tools,
-            on_tool_event=None,
-        )
-        if required_evidence == ():
-            return _insufficient_evidence_result(tools=tools, model=self._model)
         result = self._agent.run_sync(
             _compose_agent_prompt(
                 prompt=prompt,
@@ -890,7 +867,6 @@ class PydanticAIKnowledgeRunner:
                 if getattr(tools, "research_map_enabled", False)
                 else None,
                 document_context=getattr(tools, "document_prompt_context", None),
-                required_evidence=required_evidence,
             ),
             message_history=_agent_message_history(conversation),
             deps=tools,
@@ -930,16 +906,6 @@ class PydanticAIKnowledgeRunner:
                     on_delta(event.delta.content_delta)
 
         try:
-            required_evidence = _preflight_required_evidence(
-                prompt=prompt,
-                conversation=conversation,
-                tools=tools,
-                on_tool_event=on_tool_event,
-            )
-            if required_evidence == ():
-                result = _insufficient_evidence_result(tools=tools, model=self._model)
-                on_delta(result.answer)
-                return result
             result = self._agent.run_sync(
                 _compose_agent_prompt(
                     prompt=prompt,
@@ -947,7 +913,6 @@ class PydanticAIKnowledgeRunner:
                     if getattr(tools, "research_map_enabled", False)
                     else None,
                     document_context=getattr(tools, "document_prompt_context", None),
-                    required_evidence=required_evidence,
                 ),
                 message_history=_agent_message_history(conversation),
                 deps=tools,
@@ -1199,17 +1164,13 @@ def _requires_knowledge_evidence(
             return True
         if any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS):
             return True
-        if any(
-            marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS
-        ) and any(
+        if any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS) and any(
             marker in normalized for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
         ):
             return True
         if any(marker in normalized for marker in _NON_EPISTEMIC_DOCUMENT_ACTIONS):
             return False
-        if any(
-            marker in normalized for marker in _STRUCTURAL_PRESENTATION_EDIT_MARKERS
-        ):
+        if any(marker in normalized for marker in _STRUCTURAL_PRESENTATION_EDIT_MARKERS):
             return False
         if any(marker in normalized for marker in _STYLE_EDIT_MARKERS):
             return False
@@ -1227,9 +1188,8 @@ def _requires_knowledge_evidence(
         normalized,
     ):
         return True
-    if (
-        _is_contextual_evidence_followup(normalized)
-        and _conversation_has_research_context(conversation)
+    if _is_contextual_evidence_followup(normalized) and _conversation_has_research_context(
+        conversation
     ):
         return True
     return research_workspace
@@ -1246,24 +1206,18 @@ def _evidence_retrieval_query(
         if recent_topic:
             return f"{recent_topic}\n当前追问：{normalized}"
     if any(marker in normalized for marker in _TOPIC_IDEATION_MARKERS):
-        return (
-            f"{prompt}\n"
-            "检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。"
-        )
+        return f"{prompt}\n检索目标：从知识库中寻找可形成研究问题的候选方向。"
     return prompt
 
 
 def _is_contextual_evidence_followup(normalized: str) -> bool:
-    return any(
-        re.fullmatch(pattern, normalized)
-        for pattern in _CONTEXTUAL_EVIDENCE_PATTERNS
-    )
+    return any(re.fullmatch(pattern, normalized) for pattern in _CONTEXTUAL_EVIDENCE_PATTERNS)
 
 
 def _explicit_evidence_requested(normalized: str) -> bool:
-    return any(
-        marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS
-    ) or any(re.search(pattern, normalized) for pattern in _EVIDENCE_REQUEST_PATTERNS)
+    return any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS) or any(
+        re.search(pattern, normalized) for pattern in _EVIDENCE_REQUEST_PATTERNS
+    )
 
 
 def _needs_prior_research_context(normalized: str) -> bool:
@@ -1300,10 +1254,7 @@ def _needs_prior_research_context(normalized: str) -> bool:
             and any(marker in normalized for marker in _SEMANTIC_EDIT_MARKERS)
         )
         or (
-            any(
-                marker in normalized
-                for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS
-            )
+            any(marker in normalized for marker in _GENERATIVE_KNOWLEDGE_DOCUMENT_ACTIONS)
             and any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS)
         )
     )
@@ -1395,82 +1346,6 @@ def _normalized_text(value: str) -> str:
     return " ".join(value.split())
 
 
-def _preflight_required_evidence(
-    *,
-    prompt: str,
-    conversation: Sequence[AgentTurn],
-    tools: AgentToolContext,
-    on_tool_event: Callable[[AgentToolEvent], None] | None,
-) -> tuple[Mapping[str, object], ...] | None:
-    if not _requires_knowledge_evidence(
-        prompt,
-        research_workspace=bool(getattr(tools, "research_map_enabled", False)),
-        document_workspace=bool(
-            getattr(tools, "research_document_tools_enabled", False)
-        ),
-        conversation=conversation,
-    ):
-        return None
-    retrieval_query = _evidence_retrieval_query(
-        prompt,
-        conversation=conversation,
-    )
-    call_id = "policy:search_knowledge"
-    if on_tool_event is not None:
-        on_tool_event(
-            AgentToolEvent(
-                tool="search_knowledge",
-                phase="started",
-                call_id=call_id,
-                input={"query": retrieval_query},
-                detail="正式研究任务正在检索知识库",
-            )
-        )
-    try:
-        results = tools.search_knowledge(retrieval_query, limit=5)
-    except Exception:
-        if on_tool_event is not None:
-            on_tool_event(
-                AgentToolEvent(
-                    tool="search_knowledge",
-                    phase="failed",
-                    call_id=call_id,
-                    input={"query": retrieval_query},
-                    detail="知识库检索失败，本轮研究回答已中止",
-                    error="knowledge_search_failed",
-                )
-            )
-        raise
-    _select_result_evidence(tools, results)
-    trace_items = _trace_items(results)
-    if on_tool_event is not None:
-        on_tool_event(
-            AgentToolEvent(
-                tool="search_knowledge",
-                phase="finished",
-                call_id=call_id,
-                input={"query": retrieval_query},
-                output={"result_count": len(results), "items": trace_items},
-                detail=_trace_detail(len(results), trace_items),
-            )
-        )
-    return tuple(results)
-
-
-def _insufficient_evidence_result(
-    *,
-    tools: AgentToolContext,
-    model: str,
-) -> AgentRunResult:
-    return AgentRunResult(
-        answer=_insufficient_evidence_answer(),
-        citations=(),
-        release_id=tools.release.knowledge_release_id,
-        provider="pydantic-ai",
-        model=model,
-    )
-
-
 def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
     """Return bounded, user-safe facts for the visible tool trace."""
 
@@ -1481,7 +1356,7 @@ def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
                 "knowledge_id": value.knowledge_id,
                 "title": value.label,
                 "excerpt": _trace_excerpt(value.excerpt),
-                "evidence_status": "preview_unverified" if value.kind == "preview" else "verified",
+                "evidence_status": "verified",
             }
         elif isinstance(value, Mapping):
             item = {}
@@ -1498,7 +1373,9 @@ def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
             ):
                 if key in value and value[key] is not None:
                     item[key] = (
-                        _trace_excerpt(value[key])
+                        "verified"
+                        if key == "evidence_status"
+                        else _trace_excerpt(value[key])
                         if key in {"excerpt", "content_excerpt"}
                         else value[key]
                     )
@@ -1524,8 +1401,6 @@ def _trace_excerpt(value: object, *, limit: int = 220) -> str | None:
 def _trace_detail(
     count: int,
     items: list[dict[str, object]],
-    *,
-    preview_count: int = 0,
 ) -> str:
     if not items:
         return "没有找到可展示的知识条目"
@@ -1534,12 +1409,7 @@ def _trace_detail(
         title = item.get("title") or item.get("knowledge_id") or item.get("node_id")
         excerpt = item.get("excerpt") or item.get("content_excerpt")
         labels.append(f"{title}{f'：{excerpt}' if excerpt else ''}")
-    prefix = (
-        f"找到 {preview_count} 条知识库预览内容（未审核）"
-        if preview_count
-        else f"找到 {count} 条可引用证据"
-    )
-    return f"{prefix}：{'；'.join(labels)}"
+    return f"找到 {count} 条可引用证据：{'；'.join(labels)}"
 
 
 def _source_trace_detail(values) -> str:
@@ -1569,7 +1439,6 @@ def _compose_agent_prompt(
     prompt: str,
     research_map: Mapping[str, object] | None = None,
     document_context: Mapping[str, object] | None = None,
-    required_evidence: Sequence[Mapping[str, object]] | None = None,
 ) -> str:
     map_context = (
         "\n\n<research_map_policy>"
@@ -1589,17 +1458,7 @@ def _compose_agent_prompt(
         if document_context is not None
         else ""
     )
-    evidence_context = (
-        '\n\n<evidence_policy mode="required">'
-        "本轮属于正式研究取证任务。只能依据 required_evidence 中的证据形成研究判断；"
-        "不得补写未取证事实，不得省略证据边界。"
-        "</evidence_policy>\n<required_evidence>\n"
-        f"{json.dumps(required_evidence, ensure_ascii=False, separators=(',', ':'))}"
-        "\n</required_evidence>"
-        if required_evidence is not None
-        else ""
-    )
-    return f"{prompt}{map_context}{document_context_text}{evidence_context}"
+    return f"{prompt}{map_context}{document_context_text}"
 
 
 def _agent_message_history(

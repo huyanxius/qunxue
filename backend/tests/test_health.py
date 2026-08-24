@@ -291,6 +291,7 @@ def test_cross_site_session_cookie_uses_secure_none_when_configured(client: Test
             session_cookie_samesite="none",
         ),
         database=client.app.state.database,
+        require_email_verification=False,
     )
 
     with TestClient(app) as cross_origin_client:

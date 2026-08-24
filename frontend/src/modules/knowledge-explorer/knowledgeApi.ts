@@ -130,9 +130,7 @@ function entryDetail(
     aliases: entry.aliases,
     content: entry.content,
     sources: entry.sources.map(source),
-    relations: entry.relations
-      .filter((item) => item.review_status === 'reviewed')
-      .map(relation),
+    relations: entry.relations.map(relation),
     theoryProfile: theoryProfile(entry.theory_profile),
   }
 }

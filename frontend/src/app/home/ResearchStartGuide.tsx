@@ -23,7 +23,7 @@ export function ResearchStartGuide() {
         </li>
       </ol>
       <p className="research-start-guide__boundary">
-        当前版本：理论匹配与研究框架尚未开放；可用内容会明确标出来源和审核状态，研究决定仍由你确认。
+        当前版本：理论匹配与研究框架尚未开放；可用内容会明确标出来源，研究决定仍由你确认。
       </p>
     </section>
   )

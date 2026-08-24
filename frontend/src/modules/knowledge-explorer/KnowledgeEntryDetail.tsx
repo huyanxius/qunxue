@@ -5,7 +5,7 @@ import Markdown from 'react-markdown'
 import { buildMarkdownOutline, type MarkdownHeading } from './markdownOutline'
 import { activeHeadingAtOffset } from './scrollSpy'
 import type { KnowledgeEntryDetail } from './types'
-import { reviewStatusLabels, verificationStatusLabels } from './labels'
+import { verificationStatusLabels } from './labels'
 import { describeTaxonomyNode, dimensionTone } from './taxonomyPresentation'
 
 interface KnowledgeEntryDetailProps {
@@ -269,7 +269,6 @@ export function KnowledgeEntryDetail({ detail, onStartResearch }: KnowledgeEntry
         <h1>{detail.title}</h1>
         {detail.aliases.length > 0 ? <p className="knowledge-reader__aliases">亦称：{detail.aliases.join('、')}</p> : null}
         <dl className="knowledge-reader__facts">
-          <div><dt>审核状态</dt><dd data-review-status={detail.reviewStatus}>{reviewStatusLabels[detail.reviewStatus]}</dd></div>
           <div><dt>来源记录</dt><dd>{detail.sources.length} 条</dd></div>
           <div><dt>显式关系</dt><dd>{detail.relations.length} 条</dd></div>
           <div><dt>内容版本</dt><dd>v{detail.contentVersion}</dd></div>
@@ -321,7 +320,7 @@ export function KnowledgeEntryDetail({ detail, onStartResearch }: KnowledgeEntry
           </section>
 
           <section className="knowledge-reader__section" data-section-role="relation" aria-labelledby="knowledge-relations-title">
-            <header><p>审核关系</p><h2 id="knowledge-relations-title">已审核显式关系</h2></header>
+            <header><p>知识关系</p><h2 id="knowledge-relations-title">显式关系</h2></header>
             {detail.relations.length > 0 ? (
               <ul className="knowledge-reader__relation-list">
                 {detail.relations.map((relation) => {
@@ -329,19 +328,19 @@ export function KnowledgeEntryDetail({ detail, onStartResearch }: KnowledgeEntry
                   return (
                     <li key={relation.relationId}>
                       <strong>{targetId}</strong>
-                      <span>{relation.relationType} · {relation.direction} · {reviewStatusLabels[relation.reviewStatus]}</span>
+                      <span>{relation.relationType} · {relation.direction}</span>
                       <p>{relation.description}</p>
                       {relation.evidenceSourceIds.length > 0 ? <small>依据来源：{relation.evidenceSourceIds.join('、')}</small> : null}
                     </li>
                   )
                 })}
               </ul>
-            ) : <p className="knowledge-reader__empty">当前发布没有与此条目关联的已审核关系。</p>}
+            ) : <p className="knowledge-reader__empty">当前没有与此条目关联的知识关系。</p>}
           </section>
 
           {theory ? (
             <section className="knowledge-reader__theory" data-section-role="research" aria-labelledby="knowledge-theory-title">
-              <div><p>研究入口</p><h2 id="knowledge-theory-title">{theory.title}</h2><span>{reviewStatusLabels[theory.reviewStatus]} · {theory.matchEligible ? '可用于理论匹配' : '当前不用于理论匹配'}</span></div>
+              <div><p>研究入口</p><h2 id="knowledge-theory-title">{theory.title}</h2></div>
               {canSeedTheory ? <button type="button" onClick={() => onStartResearch({ theoryId: theory.theoryId, theoryName: theory.title })}>以此理论开始研究 <span aria-hidden="true">↗</span></button> : null}
             </section>
           ) : null}

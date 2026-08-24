@@ -69,7 +69,8 @@ def plain_client(
     monkeypatch: pytest.MonkeyPatch,
     alembic_config: Config,
 ) -> Iterator[TestClient]:
-    database_url = f"sqlite:///{tmp_path / 'test.db'}"
+    database_path = tmp_path / "test.db"
+    database_url = f"sqlite:///{database_path}"
     monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
     settings = Settings(
         _env_file=None,
@@ -89,10 +90,15 @@ def plain_client(
         require_email_verification=False,
     )
 
-    with TestClient(app) as test_client:
-        yield test_client
-
-    database.engine.dispose()
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        database.engine.dispose()
+        # Each catalog fixture is large; release its private database after the
+        # connections close instead of retaining gigabytes until pytest exits.
+        for suffix in ("", "-shm", "-wal"):
+            Path(f"{database_path}{suffix}").unlink(missing_ok=True)
 
 
 @pytest.fixture

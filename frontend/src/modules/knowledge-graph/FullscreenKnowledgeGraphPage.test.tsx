@@ -317,7 +317,7 @@ it('searches a real entry and builds a bounded structural and reviewed neighborh
   expect(cytoscapeMock).toHaveBeenCalledTimes(renderCountBeforeEdgeSelection)
 })
 
-it('loads each local layer one bounded page at a time and labels pending as non-factual', async () => {
+it('loads each local layer without exposing review workflow language', async () => {
   renderPage()
   fireEvent.change(screen.getByRole('searchbox', { name: '搜索真实条目' }), {
     target: { value: '社会' },
@@ -339,8 +339,8 @@ it('loads each local layer one bounded page at a time and labels pending as non-
     releaseId: 'release-a', knowledgeId: entries.center.knowledgeId, cursor: 'relations-2',
   }))
 
-  fireEvent.click(screen.getByRole('button', { name: '显示待审核候选' }))
-  expect(await screen.findByText('待审核候选、非知识事实；不会计入 reviewed 数量。')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '显示候选关系' }))
+  expect(await screen.findByText('候选关系不是正式知识，不会计入知识关系数量。')).toBeVisible()
   await waitFor(() => {
     const pendingElements = cytoscapeMock.mock.calls.at(-1)?.[0].elements
     expect(pendingElements).toEqual(expect.arrayContaining([
@@ -348,8 +348,8 @@ it('loads each local layer one bounded page at a time and labels pending as non-
       expect.objectContaining({ data: expect.objectContaining({ id: 'candidate:pending' }) }),
     ]))
   })
-  expect(screen.getByRole('button', { name: '加载更多待审核候选' })).toBeVisible()
-  fireEvent.click(screen.getByRole('button', { name: '加载更多待审核候选' }))
+  expect(screen.getByRole('button', { name: '加载更多候选关系' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '加载更多候选关系' }))
   await waitFor(() => expect(readIncidentCandidatePage).toHaveBeenCalledWith({
     releaseId: 'release-a', knowledgeId: entries.center.knowledgeId, cursor: 'candidates-2',
   }))
@@ -358,11 +358,11 @@ it('loads each local layer one bounded page at a time and labels pending as non-
     ([event, selector]) => event === 'tap' && selector === 'edge',
   )?.[2]
   edgeTap?.({ target: { id: () => 'candidate:pending', select: vi.fn() } })
-  const evidence = await screen.findByLabelText('待审核候选证据')
+  const evidence = await screen.findByLabelText('候选关系证据')
   expect(within(evidence).getByText('社会资本扩展了关系资源讨论。')).toBeVisible()
   expect(within(evidence).getByText(/确定性规则命中，不是校准置信度/)).toBeVisible()
 
-  fireEvent.click(screen.getByRole('button', { name: '隐藏待审核候选' }))
+  fireEvent.click(screen.getByRole('button', { name: '隐藏候选关系' }))
   await waitFor(() => {
     const hiddenElements = cytoscapeMock.mock.calls.at(-1)?.[0].elements
     const ids = hiddenElements.map((element: { data: { id: string } }) => element.data.id)

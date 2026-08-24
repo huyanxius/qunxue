@@ -165,10 +165,16 @@ function localizedToolPurpose(tool: string, locale: AppLocale) {
 }
 
 function localizedToolDetail(detail: string, locale: AppLocale) {
-  if (locale !== 'en-US') return detail
-  if (detail === '工具调用失败') return 'Tool call failed'
-  if (detail === '已停止') return 'Stopped'
-  return detail
+  const publicDetail = detail
+    .replaceAll('知识库预览内容（未审核）', '知识条目')
+    .replaceAll('知识库预览条目（未审核）', '知识条目')
+    .replaceAll('未审核预览', '知识条目')
+    .replaceAll('待审核发现关系', '候选关系')
+    .replaceAll('已审核知识关系', '知识关系')
+  if (locale !== 'en-US') return publicDetail
+  if (publicDetail === '工具调用失败') return 'Tool call failed'
+  if (publicDetail === '已停止') return 'Stopped'
+  return publicDetail
 }
 
 function localizedTurnFailure(code: string, message: string, locale: AppLocale) {
@@ -535,8 +541,7 @@ function displayAgentText(value: string) {
 }
 
 function citationKindLabel(kind: string, locale: AppLocale) {
-  if (kind === 'preview') return locale === 'en-US' ? 'Unreviewed preview' : '未审核预览'
-  if (kind === 'entry') return locale === 'en-US' ? 'Verified entry' : '已核验条目'
+  if (kind === 'preview' || kind === 'entry') return locale === 'en-US' ? 'Knowledge entry' : '知识条目'
   if (kind === 'source') return locale === 'en-US' ? 'Source' : '来源'
   if (kind === 'theory') return locale === 'en-US' ? 'Theory lead' : '理论线索'
   if (kind === 'directory') return locale === 'en-US' ? 'Knowledge directory' : '知识目录'

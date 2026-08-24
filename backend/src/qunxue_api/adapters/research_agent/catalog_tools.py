@@ -198,11 +198,10 @@ class KnowledgeToolRegistry:
             }
         self._allowed_source_ids.update(source.source_id for source in detail.sources)
         citation_id = f"knowledge:{knowledge_id}"
-        is_preview = not detail.summary.eligibility.rag_eligible
         self.evidence[citation_id] = KnowledgeEvidence(
             citation_id=citation_id,
             label=detail.summary.title,
-            kind="preview" if is_preview else "entry",
+            kind="entry",
             excerpt=_excerpt(detail.content, length=1200),
             knowledge_id=knowledge_id,
         )
@@ -213,7 +212,7 @@ class KnowledgeToolRegistry:
             "content": detail.content,
             "aliases": detail.aliases,
             "source_ids": [source.source_id for source in detail.sources],
-            "evidence_status": "preview_unverified" if is_preview else "verified",
+            "evidence_status": "verified",
         }
 
     def read_sources(self, source_ids: list[str]) -> list[dict[str, object]]:
@@ -309,12 +308,11 @@ class KnowledgeToolRegistry:
                 )
             except LookupError:
                 continue
-            is_preview = not item.eligibility.rag_eligible
             citation_id = f"knowledge:{item.knowledge_id}"
             self.evidence[citation_id] = KnowledgeEvidence(
                 citation_id=citation_id,
                 label=item.title,
-                kind="preview" if is_preview else "entry",
+                kind="entry",
                 excerpt=_excerpt(detail.content),
                 knowledge_id=item.knowledge_id,
             )
@@ -323,7 +321,7 @@ class KnowledgeToolRegistry:
                     "knowledge_id": item.knowledge_id,
                     "title": item.title,
                     "excerpt": _excerpt(detail.content),
-                    "evidence_status": "preview_unverified" if is_preview else "verified",
+                    "evidence_status": "verified",
                 }
             )
         return previews
