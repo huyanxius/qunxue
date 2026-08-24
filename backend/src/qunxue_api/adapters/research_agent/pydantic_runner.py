@@ -1030,6 +1030,23 @@ _CONTEXTUAL_EVIDENCE_PATTERNS = (
     ),
 )
 
+_RESEARCH_CONTEXT_MARKERS = (
+    "研究",
+    "论文",
+    "理论",
+    "概念",
+    "学派",
+    "文献",
+    "证据",
+    "社会",
+    "结构",
+    "制度",
+    "机制",
+    "因果",
+    "社区",
+    "邻里",
+)
+
 
 _EXPLICIT_EVIDENCE_MARKERS = (
     "知识库",
@@ -1081,7 +1098,10 @@ def _requires_knowledge_evidence(
         normalized,
     ):
         return True
-    if conversation and _is_contextual_evidence_followup(normalized):
+    if (
+        _is_contextual_evidence_followup(normalized)
+        and _conversation_has_research_context(conversation)
+    ):
         return True
     return research_workspace
 
@@ -1128,6 +1148,20 @@ def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
         ):
             return candidate
     return None
+
+
+def _conversation_has_research_context(
+    conversation: Sequence[AgentTurn],
+) -> bool:
+    for turn in reversed(conversation[-4:]):
+        if turn.evidence_ids or turn.assistant_message.citations:
+            return True
+        content = " ".join(
+            (turn.user_message.content, turn.assistant_message.content)
+        )
+        if any(marker in content for marker in _RESEARCH_CONTEXT_MARKERS):
+            return True
+    return False
 
 
 def _preflight_required_evidence(
