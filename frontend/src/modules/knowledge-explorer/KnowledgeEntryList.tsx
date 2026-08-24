@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 
 import type { KnowledgeEntrySummary } from './types'
-import { reviewStatusLabels } from './labels'
 import { describeTaxonomyNode, dimensionTone } from './taxonomyPresentation'
 
 interface KnowledgeEntryListProps {
@@ -87,7 +86,6 @@ export function KnowledgeEntryList({
                 <small>{contextPath(entry)}</small>
               </button>
               <div className="knowledge-explorer__result-meta">
-                <span data-review-status={entry.reviewStatus}>{reviewStatusLabels[entry.reviewStatus]}</span>
                 {onLocate ? (
                   <button type="button" aria-label={`在图中定位 ${entry.title}`} onClick={() => onLocate(entry)}>
                     定位图谱 <ArrowSquareOutIcon size={13} weight="regular" aria-hidden="true" />

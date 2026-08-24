@@ -50,8 +50,7 @@ export function projectKnowledgeGraph({
     edges: relations
       .filter(
         (relation) =>
-          relation.review_status === 'reviewed'
-          && visibleNodeIds.has(relation.source_knowledge_id)
+          visibleNodeIds.has(relation.source_knowledge_id)
           && visibleNodeIds.has(relation.target_knowledge_id),
       )
       .map(toEdge),

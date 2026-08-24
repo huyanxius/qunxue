@@ -447,7 +447,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
           <div className="foundation-section-heading">
             <p className="foundation-kicker"><span>03</span> 真实理论知识</p>
             <h2 id="knowledge-preview-title">先理解一个理论，<br />再决定是否用它解释现象。</h2>
-            <p>这里直接读取当前知识内容。待核验条目会如实标记，收录不等于已经审核。</p>
+            <p>这里直接读取当前知识内容，并单独标明来源核验信息。</p>
           </div>
           <KnowledgePreview LinkComponent={RouterLinkAdapter} />
           <Link className="foundation-text-link" to="/knowledge">继续浏览知识库 <span aria-hidden="true">↗</span></Link>
@@ -461,7 +461,7 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
               <div>
                 <h2 id="graph-preview-title">让理论的位置和关系，成为一张可探索的地图。</h2>
                 <div className="foundation-graph__details">
-                  <p>预览使用真实知识目录。正式关系与待审核发现分开呈现，不把相邻位置误写成理论关系。</p>
+                  <p>预览使用真实知识目录。正式关系与候选关系分开呈现，不把相邻位置误写成理论关系。</p>
                   <Link className="public-action public-action--text" to="/knowledge/graph">进入完整图谱</Link>
                 </div>
               </div>

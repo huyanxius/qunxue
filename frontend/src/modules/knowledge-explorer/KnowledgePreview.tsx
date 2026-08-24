@@ -12,16 +12,8 @@ import {
   readKnowledgeEntry,
   readKnowledgePreview,
 } from './knowledgeApi'
-import type { KnowledgeEntrySummary, KnowledgeReviewStatus } from './types'
+import type { KnowledgeEntrySummary } from './types'
 import './knowledge-preview.css'
-
-const reviewLabels: Record<KnowledgeReviewStatus, string> = {
-  draft: '草稿',
-  pending: '待核验',
-  pre_review_completed: '预审核完成',
-  reviewed: '已审核',
-  retired: '已停用',
-}
 
 function useKnowledgeHomePreview() {
   return useQuery({
@@ -265,7 +257,7 @@ export function KnowledgePreview({
             >
               <div className="knowledge-journey__card-surface">
                 <span className="knowledge-journey__card-head">
-                  <b>{reviewLabels[entry.reviewStatus]}</b>
+                  <b>知识条目</b>
                   <em>{String(index + 1).padStart(2, '0')}</em>
                 </span>
                 <h3>{entry.title}</h3>
@@ -439,7 +431,7 @@ export function KnowledgeTicker({
           onBlur={scheduleClose}
         >
           <span className="knowledge-ticker__card-kicker">
-            知识库条目 · {reviewLabels[activeEntry.entry.reviewStatus]}
+            知识库条目
           </span>
           <h3>{activeEntry.entry.title}</h3>
           <p className="knowledge-ticker__card-path">

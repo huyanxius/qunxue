@@ -249,7 +249,7 @@ export function KnowledgeGraphWorkspace({
           aria-pressed={candidateEnabled}
           onClick={() => void enableCandidates()}
         >
-          {candidateEnabled ? '关闭待审核发现' : '开启待审核发现'}
+          {candidateEnabled ? '关闭候选关系' : '开启候选关系'}
         </button>
       </div>
 
@@ -259,11 +259,11 @@ export function KnowledgeGraphWorkspace({
       {loadingNodeId ? <p role="status">正在展开 {loadingNodeId} 的直接子级……</p> : null}
       {error ? <p className="knowledge-graph-workspace__error" role="alert">{error}</p> : null}
       {focusEntry && relationTotal === 0 ? (
-        <p>正式关系：当前条目没有已审核关系。</p>
+        <p>当前条目没有知识关系。</p>
       ) : null}
       {candidateEnabled ? (
         <p className="knowledge-graph-workspace__pending-note">
-          待审核发现：{candidateTotal} 条。它们不是 reviewed，也不是正式知识事实。
+          候选关系：{candidateTotal} 条。它们不是正式知识。
         </p>
       ) : null}
 
@@ -276,8 +276,8 @@ export function KnowledgeGraphWorkspace({
       />
 
       {selectedEdge?.layer === 'candidate' ? (
-        <aside className="knowledge-graph-workspace__edge-panel" aria-label="待审核发现关系详情">
-          <p>pending · 待审核发现关系</p>
+        <aside className="knowledge-graph-workspace__edge-panel" aria-label="候选关系详情">
+          <p>candidate · 候选关系</p>
           <h3>{selectedEdge.relationType} · {selectedEdge.direction}</h3>
           <p>
             {selectedEdge.sourceTitle ?? selectedEdge.source}（{selectedEdge.source}）
@@ -299,7 +299,7 @@ export function KnowledgeGraphWorkspace({
 
       {selectedEdge?.layer === 'reviewed' ? (
         <aside className="knowledge-graph-workspace__edge-panel" aria-label="正式知识关系详情">
-          <p>reviewed · 正式知识关系</p>
+          <p>relation · 正式知识关系</p>
           <h3>{selectedEdge.relationType} · {selectedEdge.direction}</h3>
           <p>{selectedEdge.description}</p>
           <dl>

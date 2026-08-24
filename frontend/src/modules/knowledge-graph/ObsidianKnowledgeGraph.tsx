@@ -36,9 +36,6 @@ function graphElements(
         focusNodeId && node.id !== focusNodeId && !neighborIds.has(node.id)
           ? 'node--context'
           : '',
-        node.reviewStatus && node.reviewStatus !== 'reviewed'
-          ? 'node--unreviewed'
-          : '',
       ].filter(Boolean).join(' ')
       return {
         classes,
@@ -47,7 +44,6 @@ function graphElements(
           label: node.label,
           nodeType,
           focus: node.id === focusNodeId,
-          reviewStatus: node.reviewStatus,
         },
       }
     }),
@@ -67,7 +63,7 @@ function graphElements(
         source: edge.source,
         target: edge.target,
         label: edge.layer === 'candidate'
-          ? `pending · ${edge.relationType}`
+          ? `候选 · ${edge.relationType}`
           : edge.relationType,
         layer: edge.layer ?? 'reviewed',
       },

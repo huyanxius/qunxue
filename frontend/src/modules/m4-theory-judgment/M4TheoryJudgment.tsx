@@ -218,7 +218,7 @@ function failureFrom(reason: unknown): M4TheoryJudgmentFailure {
 }
 
 function startFailureCopy(failure: M4TheoryJudgmentFailure) {
-  if (failure.code === 'catalog_not_ready') return { action: '重试检查', detail: '只有预审核完成并发布为内测固定版本的理论档案才会进入匹配。' }
+  if (failure.code === 'catalog_not_ready') return { action: '重试检查', detail: '当前知识发布中没有可用于理论匹配的理论档案。' }
   if (failure.code === 'network') return { action: '重新连接', detail: '恢复连接后会从服务器继续，不会生成静态候选。' }
   if (failure.code === 'model_failed') return { action: '重试匹配', detail: '本次失败不会成为研究结论。' }
   return { action: '重试恢复', detail: '重试会读取同一研究任务的已保存状态。' }
@@ -301,11 +301,6 @@ function CandidateCard({ candidate, decision, disabled, onChange }: CandidateCar
       </header>
 
       <p className="m4-theory-card__rationale">{candidate.applicabilityRationale}</p>
-      {candidate.reviewStatus === 'pre_review_completed' ? <p className="m4-theory-card__review-status" role="note" aria-label="档案审核状态：预审核完成；仅供内测，后续仍可继续深度复核">
-        <strong>预审核完成</strong>
-        <span aria-hidden="true">·</span>
-        <span>仅供内测，后续仍可继续深度复核</span>
-      </p> : null}
       <div className="m4-theory-card__quick-facts">
         <span>分析层次</span>
         {candidate.analysisLevels.map((level) => <strong key={level}>{level}</strong>)}
@@ -661,7 +656,7 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
 
       {matchRun.status === 'generating' ? <div className="m4-state" role="status"><span className="m4-state__spinner" aria-hidden="true" /><strong>候选仍在生成</strong><p>页面会自动恢复，中途离开不会丢失进度。</p><button type="button" onClick={() => void load()}>立即刷新</button></div> : null}
 
-      {matchRun.status === 'no_reliable_candidate' ? <div className="m4-state m4-state--empty" role="status"><strong>暂时没有足够可靠的候选理论</strong><p>你可以返回补充现象材料，或使用当前预审核版本重新匹配。</p><button type="button" onClick={() => void restartMatching()}>重新检查候选</button></div> : null}
+      {matchRun.status === 'no_reliable_candidate' ? <div className="m4-state m4-state--empty" role="status"><strong>暂时没有足够可靠的候选理论</strong><p>你可以返回补充现象材料，或使用当前知识版本重新匹配。</p><button type="button" onClick={() => void restartMatching()}>重新检查候选</button></div> : null}
 
       {matchRun.status === 'failed' ? <div className="m4-state m4-state--error" role="alert"><strong>理论判断服务本次未完成</strong><p>没有将未完成的模型结果当作候选。</p><button type="button" onClick={() => void load()}>重试匹配</button></div> : null}
 

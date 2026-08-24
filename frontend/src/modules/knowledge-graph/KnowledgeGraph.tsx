@@ -12,18 +12,6 @@ interface KnowledgeGraphProps {
   readonly focusNodeId?: string
 }
 
-const reviewStatusLabels: Readonly<Record<string, string>> = {
-  draft: '草稿',
-  pending: '待核验',
-  retired: '已停用',
-}
-
-function nodeDisplayLabel(label: string, reviewStatus?: string) {
-  if (!reviewStatus) return label
-  if (reviewStatus === 'reviewed') return label
-  return `${label}\n${reviewStatusLabels[reviewStatus] ?? reviewStatus}`
-}
-
 function graphElements(
   projection: KnowledgeGraphProjection,
   focusNodeId?: string,
@@ -58,9 +46,8 @@ function graphElements(
       data: {
         id: node.id,
         label: node.label,
-        displayLabel: nodeDisplayLabel(node.label, node.reviewStatus),
+        displayLabel: node.label,
         nodeType: node.nodeType ?? 'entry',
-        reviewStatus: node.reviewStatus,
       },
       ...(focusNodeId ? {
         position: {
@@ -87,7 +74,7 @@ function GraphNotice({ unavailable }: { readonly unavailable: boolean }) {
     <p className="knowledge-graph__notice" role="status">
       {unavailable
         ? '知识关系图暂时不可用。请继续使用目录、关系列表和知识详情。'
-        : '当前图中没有可展示的已审核显式关系。'}
+        : '当前图中没有可展示的知识关系。'}
     </p>
   )
 }
@@ -237,7 +224,7 @@ export function KnowledgeGraph({
         <span>
           {projection.edges.filter((edge) => (edge.layer ?? 'reviewed') === 'reviewed').length} 条正式关系
           {' · '}
-          {projection.edges.filter((edge) => edge.layer === 'candidate').length} 条待审核发现
+          {projection.edges.filter((edge) => edge.layer === 'candidate').length} 条候选关系
         </span>
       </header>
 
@@ -261,10 +248,10 @@ export function KnowledgeGraph({
             <button
               key={edge.id}
               type="button"
-              aria-label={`查看${edge.layer === 'candidate' ? '待审核发现' : '正式'}关系 ${edge.relationType}`}
+              aria-label={`查看${edge.layer === 'candidate' ? '候选' : '正式'}关系 ${edge.relationType}`}
               onClick={() => onSelectEdge?.(edge.id)}
             >
-              {edge.layer === 'candidate' ? 'pending' : 'reviewed'} · {edge.relationType}
+              {edge.layer === 'candidate' ? 'candidate' : 'relation'} · {edge.relationType}
             </button>
           ))}
         </div>

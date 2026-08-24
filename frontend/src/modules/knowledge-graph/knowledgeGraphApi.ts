@@ -141,7 +141,7 @@ export async function readIncidentCandidatePage(input: {
       limit: 50,
     },
   })
-  if (!data) throw new Error('待审核发现关系暂时不可用')
+  if (!data) throw new Error('候选关系暂时不可用')
   requireRelease(data.knowledge_release_id, input.releaseId)
   return {
     candidates: data.candidates,
@@ -168,7 +168,7 @@ export async function readIncidentRelationPage(input: {
       limit: 50,
     },
   })
-  if (!data) throw new Error('已审核知识关系暂时不可用')
+  if (!data) throw new Error('知识关系暂时不可用')
   requireRelease(data.knowledge_release_id, input.releaseId)
   return {
     relations: data.relations,
