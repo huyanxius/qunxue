@@ -703,6 +703,67 @@ def test_agent_stream_keeps_the_connection_alive_while_the_model_is_idle(
     assert "event: turn_completed" in response.text
 
 
+def test_agent_stream_refreshes_timeout_while_the_model_is_making_progress(
+    client,
+    monkeypatch,
+) -> None:
+    class _ProgressingAnswerRunner:
+        def run_stream(
+            self,
+            *,
+            prompt,
+            conversation,
+            tools,
+            on_delta,
+            on_tool_event=None,
+        ) -> AgentRunResult:
+            del prompt, conversation, on_tool_event
+            time.sleep(0.12)
+            on_delta("正在继续")
+            time.sleep(0.12)
+            on_delta("回答")
+            return AgentRunResult(
+                answer="正在继续回答",
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="progressing-answer",
+            )
+
+    monkeypatch.setattr(
+        "qunxue_api.bootstrap.DeterministicKnowledgeRunner",
+        _ProgressingAnswerRunner,
+    )
+    monkeypatch.setattr(
+        "qunxue_api.api.routes.agent._AGENT_TURN_TIMEOUT_SECONDS",
+        0.2,
+    )
+    monkeypatch.setattr(
+        "qunxue_api.api.routes.agent._SSE_HEARTBEAT_SECONDS",
+        0.02,
+    )
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": "progressing-agent@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": "register-progressing-agent"},
+    )
+    assert registered.status_code == 201
+
+    response = client.post(
+        "/api/agent/turns",
+        json={"message": "请给我一个需要较长时间回答的研究问题。"},
+        headers={"Idempotency-Key": "agent-progressing-answer-1"},
+    )
+
+    events = _sse_events(response.text)
+    assert "turn_timeout" not in [payload.get("code") for _, payload in events]
+    assert events[-1][0] == "turn_completed"
+
+
 def test_agent_stream_exposes_tool_failure_and_aborts_the_turn(client) -> None:
     class _UnavailableRetriever:
         def search(self, **kwargs):
