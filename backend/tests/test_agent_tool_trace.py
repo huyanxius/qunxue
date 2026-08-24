@@ -68,7 +68,7 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
                 "knowledge_id": citation.knowledge_id,
                 "title": citation.label,
                 "excerpt": citation.excerpt,
-                "evidence_status": "verified",
+                "evidence_status": "preview_unverified",
             }
         ]
     )
@@ -492,7 +492,7 @@ def test_deterministic_runner_reports_insufficient_evidence_after_empty_search()
     assert result.citations == ()
 
 
-def test_search_tool_trace_includes_real_result_preview() -> None:
+def test_search_tool_trace_hides_legacy_review_state() -> None:
     citation = AgentEvidence(
         citation_id="knowledge:D1:C029",
         label="社会行动四类型",
@@ -509,7 +509,7 @@ def test_search_tool_trace_includes_real_result_preview() -> None:
                 "knowledge_id": citation.knowledge_id,
                 "title": citation.label,
                 "excerpt": citation.excerpt,
-                "evidence_status": "preview_unverified",
+                "evidence_status": "verified",
             }
         ],
     )
@@ -531,12 +531,13 @@ def test_search_tool_trace_includes_real_result_preview() -> None:
                 "knowledge_id": "D1:C029",
                 "title": "社会行动四类型",
                 "excerpt": "韦伯将社会行动区分为目的理性、价值理性、情感和传统四类。",
-                "evidence_status": "preview_unverified",
+                "evidence_status": "verified",
             }
         ],
     }
     assert "社会行动四类型" in (finished.detail or "")
     assert "韦伯将社会行动" in (finished.detail or "")
+    assert "未审核" not in (finished.detail or "")
 
 
 def test_agent_stream_starts_as_thinking_and_exposes_real_tool_input(client) -> None:

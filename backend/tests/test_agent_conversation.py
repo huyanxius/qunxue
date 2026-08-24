@@ -1105,7 +1105,7 @@ def test_agent_answers_sociology_question_without_preemptive_knowledge_search(
     assert result.citations == ()
 
 
-def test_formal_research_turn_preflights_evidence_before_the_model_answers(
+def test_formal_research_turn_reaches_the_model_before_a_search_query_is_chosen(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     citation_id = "retrieval:theory-profile:social-capital:v2"
@@ -1168,16 +1168,11 @@ def test_formal_research_turn_preflights_evidence_before_the_model_answers(
         on_tool_event=tool_events.append,
     )
 
-    assert tools.search_calls == [
-        prompt + "\n检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。"
-    ]
-    assert tools.selected_evidence_ids == (citation_id,)
-    assert "<required_evidence>" in str(captured["prompt"])
-    assert [(event.tool, event.phase) for event in tool_events] == [
-        ("search_knowledge", "started"),
-        ("search_knowledge", "finished"),
-    ]
-    assert [citation.citation_id for citation in result.citations] == [citation_id]
+    assert tools.search_calls == []
+    assert tools.selected_evidence_ids == ()
+    assert captured["prompt"] == prompt
+    assert tool_events == []
+    assert result.citations == ()
 
 
 def test_reading_an_unknown_knowledge_id_returns_a_tool_error() -> None:
@@ -1604,7 +1599,99 @@ def test_agent_can_run_multiple_knowledge_tools_before_answering() -> None:
     assert [citation.citation_id for citation in result.citations] == [citation_id]
 
 
-def test_agent_aborts_when_the_required_search_tool_is_unavailable() -> None:
+def test_agent_can_reformulate_an_empty_knowledge_search_before_answering() -> None:
+    citation_id = "knowledge:D1:C002"
+
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+
+        def __init__(self) -> None:
+            self.evidence = {}
+            self.selected_evidence_ids: tuple[str, ...] = ()
+            self.queries: list[str] = []
+
+        def select_evidence(self, citation_ids):
+            values = tuple(citation_ids)
+            assert set(values) <= set(self.evidence)
+            self.selected_evidence_ids = values
+            return values
+
+        def search_knowledge(self, query: str, *, limit: int = 5):
+            assert limit == 5
+            self.queries.append(query)
+            if query != "劳动过程中的时间控制与工作自主性":
+                return []
+            self.evidence[citation_id] = AgentEvidence(
+                citation_id=citation_id,
+                label="劳动过程中的时间控制",
+                kind="entry",
+                excerpt="平台通过时间指标加强劳动控制，并压缩劳动者的工作自主性。",
+                knowledge_id="D1:C002",
+            )
+            return [
+                {
+                    "citation_id": citation_id,
+                    "knowledge_id": "D1:C002",
+                    "title": "劳动过程中的时间控制",
+                    "excerpt": "平台通过时间指标加强劳动控制，并压缩劳动者的工作自主性。",
+                    "evidence_status": "verified",
+                }
+            ]
+
+    tools = _Tools()
+
+    async def model_stream(messages, info):
+        del messages, info
+        if not tools.queries:
+            yield {
+                0: DeltaToolCall(
+                    name="search_knowledge",
+                    json_args='{"query":"外卖平台为何压缩骑手时间"}',
+                    tool_call_id="call-search-original",
+                )
+            }
+        elif len(tools.queries) == 1:
+            yield {
+                0: DeltaToolCall(
+                    name="search_knowledge",
+                    json_args=('{"query":"劳动过程中的时间控制与工作自主性"}'),
+                    tool_call_id="call-search-concept",
+                )
+            }
+        else:
+            yield "可以从平台的时间控制与骑手工作自主性被压缩来解释。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="local-test-key",
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+    )
+    tool_events = []
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="请结合知识库解释：外卖平台为何压缩骑手时间",
+            conversation=(),
+            tools=tools,
+            on_delta=lambda _: None,
+            on_tool_event=tool_events.append,
+        )
+
+    assert tools.queries == [
+        "外卖平台为何压缩骑手时间",
+        "劳动过程中的时间控制与工作自主性",
+    ]
+    assert [(event.phase, event.call_id) for event in tool_events] == [
+        ("started", "call-search-original"),
+        ("finished", "call-search-original"),
+        ("started", "call-search-concept"),
+        ("finished", "call-search-concept"),
+    ]
+    assert result.answer == "可以从平台的时间控制与骑手工作自主性被压缩来解释。"
+    assert tools.selected_evidence_ids == (citation_id,)
+
+
+def test_agent_aborts_when_the_search_tool_is_unavailable() -> None:
     class _Tools:
         release = SimpleNamespace(knowledge_release_id="release-a")
         evidence = {}
@@ -1653,8 +1740,8 @@ def test_agent_aborts_when_the_required_search_tool_is_unavailable() -> None:
         )
 
     assert [(event.phase, event.call_id) for event in tool_events] == [
-        ("started", "policy:search_knowledge"),
-        ("failed", "policy:search_knowledge"),
+        ("started", "call-search-failed"),
+        ("failed", "call-search-failed"),
     ]
     assert tool_events[-1].error == "knowledge_search_failed"
     assert "database details" not in (tool_events[-1].detail or "")
@@ -1706,7 +1793,52 @@ def test_knowledge_directory_is_bounded_and_queryable() -> None:
     ] == ["D1:symbolic"]
 
 
-def test_read_preview_entry_returns_real_content_with_explicit_status() -> None:
+def test_directory_returns_uniform_entry_evidence_for_published_entries() -> None:
+    release = SimpleNamespace(knowledge_release_id="release-final")
+    item = SimpleNamespace(
+        knowledge_id="D1:C031",
+        title="社会事实",
+        eligibility=SimpleNamespace(rag_eligible=False),
+    )
+    directory = SimpleNamespace(
+        nodes=(
+            SimpleNamespace(
+                node_id="D1:classical",
+                node_type="category",
+                title="古典社会学奠基",
+                parent_node_id="D1",
+                entry_count=1,
+            ),
+        )
+    )
+    detail = SimpleNamespace(summary=item, aliases=(), content="社会事实具有约束力。")
+
+    class _Catalog:
+        def current_release(self, *, purpose):
+            del purpose
+            return release
+
+        def get_directory(self, *, release_id):
+            assert release_id == release.knowledge_release_id
+            return directory
+
+        def browse(self, **kwargs):
+            assert kwargs["category_id"] == "D1:classical"
+            return SimpleNamespace(entries=(item,))
+
+        def get_entry(self, *, knowledge_id, release_id):
+            assert knowledge_id == item.knowledge_id
+            assert release_id == release.knowledge_release_id
+            return detail
+
+    registry = KnowledgeToolRegistry(_Catalog())
+    [result] = registry.browse_knowledge_directory(query="古典社会学")
+
+    assert result["entries"][0]["evidence_status"] == "verified"
+    assert registry.evidence["knowledge:D1:C031"].kind == "entry"
+
+
+def test_read_published_entry_returns_uniform_entry_evidence() -> None:
     release = SimpleNamespace(knowledge_release_id="release-preview")
     item = SimpleNamespace(
         knowledge_id="D1:C031",
@@ -1735,5 +1867,5 @@ def test_read_preview_entry_returns_real_content_with_explicit_status() -> None:
     result = registry.read_knowledge_entry("D1:C031")
 
     assert result["content"] == "社会事实具有外在性和约束力。"
-    assert result["evidence_status"] == "preview_unverified"
-    assert registry.evidence["knowledge:D1:C031"].kind == "preview"
+    assert result["evidence_status"] == "verified"
+    assert registry.evidence["knowledge:D1:C031"].kind == "entry"
