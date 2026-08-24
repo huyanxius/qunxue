@@ -63,6 +63,7 @@ class DeterministicKnowledgeRunner:
             document_workspace=bool(
                 getattr(tools, "research_document_tools_enabled", False)
             ),
+            conversation=conversation,
         ):
             answer = _general_answer(prompt)
             return AgentRunResult(
@@ -113,6 +114,7 @@ class DeterministicKnowledgeRunner:
             document_workspace=bool(
                 getattr(tools, "research_document_tools_enabled", False)
             ),
+            conversation=conversation,
         ):
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
             for index in range(0, len(result.answer), 72):
@@ -169,11 +171,13 @@ def _should_search_knowledge(
     *,
     research_workspace: bool = False,
     document_workspace: bool = False,
+    conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     return _requires_knowledge_evidence(
         prompt,
         research_workspace=research_workspace,
         document_workspace=document_workspace,
+        conversation=conversation,
     )
 
 
@@ -993,15 +997,37 @@ _TOPIC_IDEATION_MARKERS = (
     "可研究的社会学方向",
 )
 
-_RESEARCH_CONTEXTUAL_PROMPTS = frozenset(
+_FLOW_CONTROL_PROMPTS = frozenset(
     {
         "好",
         "好的",
         "确认",
         "继续",
+        "取消",
         "保存",
         "就这个",
     }
+)
+
+_KNOWLEDGE_JUDGMENT_MARKERS = (
+    "理论",
+    "概念",
+    "学派",
+    "解释",
+    "机制",
+    "因果",
+    "主张",
+    "论断",
+    "事实",
+)
+
+_CONTEXTUAL_EVIDENCE_PATTERNS = (
+    r"^为什么(?:呢)?[？?]?$",
+    r"^(?:有|有什么)?(?:依据|出处|来源|文献|参考资料)(?:吗|呢)?[？?]?$",
+    (
+        r"^(?:这个|该)?(?:理论|概念|解释|说法)?"
+        r"(?:靠谱吗|可靠(?:吗)?|可信(?:吗)?|成立(?:吗)?|适用(?:吗)?)[？?]?$"
+    ),
 )
 
 
@@ -1035,21 +1061,29 @@ def _requires_knowledge_evidence(
     *,
     research_workspace: bool,
     document_workspace: bool = False,
+    conversation: Sequence[AgentTurn] = (),
 ) -> bool:
     normalized = " ".join(prompt.split())
+    if normalized in _FLOW_CONTROL_PROMPTS:
+        return False
     if (
         document_workspace
         and any(marker in normalized for marker in _DOCUMENT_OPERATION_MARKERS)
         and not any(marker in normalized for marker in _EXPLICIT_EVIDENCE_MARKERS)
     ):
-        return False
+        return any(marker in normalized for marker in _KNOWLEDGE_JUDGMENT_MARKERS)
     if any(marker in normalized for marker in _EVIDENCE_REQUIRED_MARKERS):
         return True
     if re.search(r"(?:解释|比较|介绍|什么是).{0,20}(?:理论|概念|学派)", normalized):
         return True
-    if not research_workspace:
-        return False
-    return normalized != "取消"
+    if re.search(
+        r"(?:理论|概念|学派|解释|说法).{0,16}(?:靠谱|可靠|可信|成立|适用)",
+        normalized,
+    ):
+        return True
+    if conversation and _is_contextual_evidence_followup(normalized):
+        return True
+    return research_workspace
 
 
 def _evidence_retrieval_query(
@@ -1058,24 +1092,42 @@ def _evidence_retrieval_query(
     conversation: Sequence[AgentTurn] = (),
 ) -> str:
     normalized = " ".join(prompt.split())
-    if normalized in _RESEARCH_CONTEXTUAL_PROMPTS:
-        recent_topic = next(
-            (
-                " ".join(turn.user_message.content.split())
-                for turn in reversed(conversation)
-                if " ".join(turn.user_message.content.split())
-                not in _RESEARCH_CONTEXTUAL_PROMPTS
-            ),
-            None,
-        )
+    if _needs_prior_research_context(normalized):
+        recent_topic = _recent_research_topic(conversation)
         if recent_topic:
-            return f"{recent_topic}\n当前操作：{normalized}"
+            return f"{recent_topic}\n当前追问：{normalized}"
     if any(marker in normalized for marker in _TOPIC_IDEATION_MARKERS):
         return (
             f"{prompt}\n"
             "检索目标：从已审核社会学理论中寻找可形成研究问题的候选方向。"
         )
     return prompt
+
+
+def _is_contextual_evidence_followup(normalized: str) -> bool:
+    return any(
+        re.fullmatch(pattern, normalized)
+        for pattern in _CONTEXTUAL_EVIDENCE_PATTERNS
+    )
+
+
+def _needs_prior_research_context(normalized: str) -> bool:
+    return _is_contextual_evidence_followup(normalized) or any(
+        marker in normalized
+        for marker in ("这个理论", "该理论", "这个概念", "该概念", "上述解释")
+    )
+
+
+def _recent_research_topic(conversation: Sequence[AgentTurn]) -> str | None:
+    for turn in reversed(conversation):
+        candidate = " ".join(turn.user_message.content.split())
+        if (
+            candidate
+            and candidate not in _FLOW_CONTROL_PROMPTS
+            and not _is_contextual_evidence_followup(candidate)
+        ):
+            return candidate
+    return None
 
 
 def _preflight_required_evidence(
@@ -1091,6 +1143,7 @@ def _preflight_required_evidence(
         document_workspace=bool(
             getattr(tools, "research_document_tools_enabled", False)
         ),
+        conversation=conversation,
     ):
         return None
     retrieval_query = _evidence_retrieval_query(
