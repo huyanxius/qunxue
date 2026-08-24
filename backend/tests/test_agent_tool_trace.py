@@ -101,6 +101,8 @@ def test_deterministic_runner_preflights_formal_research_requests() -> None:
         "好的！",
         "确认。",
         "继续。",
+        "确认……",
+        "好的...",
         "谢谢你。",
         "明白了",
         "好的，谢谢",
@@ -135,7 +137,13 @@ def test_research_workspace_flow_control_does_not_repeat_search(prompt: str) -> 
 
 @pytest.mark.parametrize(
     "prompt",
-    ["有文献吗？", "为什么？", "这个理论靠谱吗？", "这个理论的依据是什么？"],
+    [
+        "有文献吗？",
+        "为什么？",
+        "这个理论靠谱吗？",
+        "这个理论的依据是什么？",
+        "这个说法的依据是什么？",
+    ],
 )
 def test_contextual_evidence_followup_reuses_recent_topic(prompt: str) -> None:
     search = Mock(return_value=[])
@@ -207,7 +215,46 @@ def test_contextual_why_does_not_search_without_research_context() -> None:
     search.assert_not_called()
 
 
-def test_agent_identity_context_does_not_turn_why_into_research() -> None:
+def test_assistant_introduced_research_clue_is_available_to_followup() -> None:
+    search = Mock(return_value=[])
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-a"),
+        evidence={},
+        research_map_enabled=False,
+        research_document_tools_enabled=False,
+        search_knowledge=search,
+    )
+    conversation = (
+        AgentTurn.create(
+            user_content="第一个可以",
+            assistant_content="第一个方向可以用社会资本理论继续检验。",
+            citations=(),
+            evidence_ids=frozenset(),
+        ),
+    )
+
+    DeterministicKnowledgeRunner().run(
+        prompt="为什么？",
+        conversation=conversation,
+        tools=tools,
+    )
+
+    query = search.call_args.args[0]
+    assert "第一个可以" in query
+    assert "社会资本理论" in query
+
+
+@pytest.mark.parametrize(
+    ("user_content", "assistant_content"),
+    [
+        ("你是社会学 Agent 吗？", "是，我是社会学学科 Agent。"),
+        ("你是研究助手吗？", "是，我可以协助研究。"),
+    ],
+)
+def test_agent_identity_context_does_not_turn_why_into_research(
+    user_content: str,
+    assistant_content: str,
+) -> None:
     search = Mock(side_effect=AssertionError("identity context must not search"))
     tools = SimpleNamespace(
         release=SimpleNamespace(knowledge_release_id="release-a"),
@@ -218,8 +265,8 @@ def test_agent_identity_context_does_not_turn_why_into_research() -> None:
     )
     conversation = (
         AgentTurn.create(
-            user_content="你是社会学 Agent 吗？",
-            assistant_content="是，我是社会学学科 Agent。",
+            user_content=user_content,
+            assistant_content=assistant_content,
             citations=(),
             evidence_ids=frozenset(),
         ),
@@ -285,6 +332,7 @@ def test_document_knowledge_edit_cannot_bypass_evidence_preflight(
         "纠正错别字",
         "修改标题和格式",
         "请依据现有格式润色这句话",
+        "需要依据现有格式调整标题",
     ],
 )
 def test_document_presentation_edit_does_not_repeat_search(prompt: str) -> None:
