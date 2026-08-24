@@ -46,8 +46,17 @@ def test_cli_builds_the_explicit_release_with_the_real_embedding_http_adapter(
                 == first_release.knowledge_release_id,
                 KnowledgeEntryRevisionRow.knowledge_id == "D1:C001",
             )
-            .values(browse_eligible=False, rag_eligible=True)
+            .values(rag_eligible=False)
         )
+    published_entry_count = catalog.browse(
+        release_id=first_release.knowledge_release_id,
+        query=None,
+        category=None,
+        category_id=None,
+        dimension_id=None,
+        cursor=None,
+        limit=1,
+    ).total_count
 
     index_path = tmp_path / "retrieval.db"
     with _embedding_service() as base_url:
@@ -81,8 +90,8 @@ def test_cli_builds_the_explicit_release_with_the_real_embedding_http_adapter(
     assert payload["release_content_hash"] == first_release.content_hash
     assert payload["embedding_model"] == "Pro/BAAI/bge-m3"
     assert payload["chunk_schema_version"] == "retrieval-corpus-v1"
-    assert payload["point_count"] == 5
-    assert payload["knowledge_entry_count"] == 1
+    assert payload["point_count"] >= published_entry_count + 3
+    assert payload["knowledge_entry_count"] == published_entry_count
     assert payload["theory_profile_count"] == 3
 
     index = SqliteRetrievalIndex(index_path)
@@ -91,12 +100,13 @@ def test_cli_builds_the_explicit_release_with_the_real_embedding_http_adapter(
         knowledge_release_id=first_release.knowledge_release_id,
         document_kind=None,
     )
-    assert [chunk.chunk_id for chunk in chunks] == [
+    assert [
+        chunk.chunk_id
+        for chunk in chunks
+        if chunk.document_kind == "knowledge_entry" and chunk.knowledge_id == "D1:C001"
+    ] == [
         "knowledge-entry:D1:C001:v1:0",
         "knowledge-entry:D1:C001:v1:1",
-        "theory-profile:theory-pre-reviewed-1:v1",
-        "theory-profile:theory-pre-reviewed-2:v1",
-        "theory-profile:theory-pre-reviewed-3:v1",
     ]
     assert [chunk.theory_id for chunk in chunks if chunk.document_kind == "theory_profile"] == [
         "theory-pre-reviewed-1",

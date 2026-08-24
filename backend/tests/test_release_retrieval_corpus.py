@@ -15,7 +15,7 @@ from qunxue_api.modules.knowledge_catalog import (
 )
 
 
-def test_collector_keeps_all_rag_entries_and_pre_reviewed_profiles() -> None:
+def test_collector_keeps_all_published_entries_and_pre_reviewed_profiles() -> None:
     release = KnowledgeReleaseRef(
         knowledge_release_id="release-final-v1",
         level=KnowledgeReleaseLevel.FINAL,
@@ -52,20 +52,9 @@ def test_collector_keeps_all_rag_entries_and_pre_reviewed_profiles() -> None:
                 release,
                 {
                     eligible_first.knowledge_id: eligible_first,
+                    ineligible.knowledge_id: ineligible,
                     eligible_second.knowledge_id: eligible_second,
                 }[knowledge_id],
-            )
-
-        def list_rag_entries(self, *, release_id):
-            return (
-                self.get_entry(
-                    knowledge_id=eligible_first.knowledge_id,
-                    release_id=release_id,
-                ),
-                self.get_entry(
-                    knowledge_id=eligible_second.knowledge_id,
-                    release_id=release_id,
-                ),
             )
 
         def list_match_profiles(self, *, release_id):
@@ -78,10 +67,11 @@ def test_collector_keeps_all_rag_entries_and_pre_reviewed_profiles() -> None:
     )
 
     assert corpus.release == release
-    assert corpus.knowledge_entry_count == 2
+    assert corpus.knowledge_entry_count == 3
     assert corpus.theory_profile_count == 1
     assert [chunk.chunk_id for chunk in corpus.chunks] == [
         "knowledge-entry:D1:C001:v1:0",
+        "knowledge-entry:D1:C002:v1:0",
         "knowledge-entry:D1:C003:v1:0",
         "theory-profile:theory-social-capital:v1",
     ]

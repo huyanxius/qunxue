@@ -48,7 +48,7 @@ def test_theory_profile_corpus_keeps_applicability_signals_and_stable_identity()
     assert chunk.content_hash.startswith("sha256:")
 
 
-def test_knowledge_entry_corpus_excludes_content_without_rag_eligibility() -> None:
+def test_knowledge_entry_corpus_keeps_all_published_content() -> None:
     release = KnowledgeReleaseRef(
         knowledge_release_id="release-reviewed-v1",
         level=KnowledgeReleaseLevel.FINAL,
@@ -83,12 +83,12 @@ def test_knowledge_entry_corpus_excludes_content_without_rag_eligibility() -> No
         )
         for index, title, alias, content, eligible in (
             (1, "符号互动论", "互动论", "意义在互动过程中被解释和修订。", True),
-            (2, "待审概念", "草稿", "这段内容尚未取得 RAG 用途准入。", False),
+            (2, "社会事实", "集体事实", "社会事实具有外在性和约束力。", False),
         )
     )
 
     chunks = build_knowledge_entry_chunks(entries)
 
-    assert [chunk.knowledge_id for chunk in chunks] == ["D1:C001"]
+    assert [chunk.knowledge_id for chunk in chunks] == ["D1:C001", "D1:C002"]
     assert chunks[0].chunk_id == "knowledge-entry:D1:C001:v1:0"
     assert chunks[0].text.startswith("标题：符号互动论\n别名：互动论")
