@@ -34,6 +34,16 @@ from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeTheoryProfileRow,
 )
 from qunxue_api.adapters.sqlite.model_invocation_model import ModelInvocationRow
+from qunxue_api.adapters.sqlite.research_analysis_model import (
+    ResearchAnalysisWriteRequestRow,
+    ResearchAnnotationRow,
+    ResearchCodeRow,
+    ResearchComparisonRow,
+    ResearchMemoRow,
+)
+from qunxue_api.adapters.sqlite.research_analysis_repository import (
+    SqliteResearchAnalysisRepository,
+)
 from qunxue_api.adapters.sqlite.research_document import SqliteResearchDocumentRepository
 from qunxue_api.adapters.sqlite.research_document_model import (
     ResearchDocumentMutationRequestRow,
@@ -56,6 +66,16 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
     ResearchStartConfirmationRow,
     ResearchStartProposalRow,
     ResearchTaskRow,
+)
+from qunxue_api.adapters.sqlite.research_material_model import (
+    ResearchMaterialBlobRow,
+    ResearchMaterialBlockRow,
+    ResearchMaterialParseVersionRow,
+    ResearchMaterialReparseRequestRow,
+    ResearchMaterialRow,
+)
+from qunxue_api.adapters.sqlite.research_material_repository import (
+    SqliteResearchMaterialRepository,
 )
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
@@ -97,6 +117,18 @@ __all__ = [
     "PhenomenonStateRow",
     "PersonalDataExportRow",
     "ResearchTaskRow",
+    "ResearchMaterialRow",
+    "ResearchMaterialBlobRow",
+    "ResearchMaterialParseVersionRow",
+    "ResearchMaterialReparseRequestRow",
+    "ResearchMaterialBlockRow",
+    "SqliteResearchMaterialRepository",
+    "ResearchAnnotationRow",
+    "ResearchAnalysisWriteRequestRow",
+    "ResearchCodeRow",
+    "ResearchComparisonRow",
+    "ResearchMemoRow",
+    "SqliteResearchAnalysisRepository",
     "ResearchDocumentVersionRow",
     "ResearchDocumentMutationRequestRow",
     "SqliteResearchDocumentMutationRepository",

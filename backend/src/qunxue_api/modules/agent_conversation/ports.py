@@ -32,6 +32,12 @@ class AgentEvidence:
     excerpt: str
     knowledge_id: str | None = None
     source_id: str | None = None
+    source_kind: str | None = None
+    material_id: str | None = None
+    parse_id: str | None = None
+    segment_id: str | None = None
+    locator: dict[str, object] | None = None
+    deleted: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +71,20 @@ class AgentToolContext(Protocol):
     research_map: Mapping[str, object]
 
     def search_knowledge(self, query: str, *, limit: int = 5) -> list[dict[str, object]]: ...
+
+    def search_research_materials(
+        self, query: str, *, limit: int = 5
+    ) -> list[dict[str, object]]: ...
+
+    def read_research_material_context(
+        self,
+        material_id: str,
+        segment_id: str,
+        *,
+        parse_id: str | None = None,
+        before: int = 2,
+        after: int = 2,
+    ) -> dict[str, object]: ...
 
     def select_evidence(self, citation_ids: Sequence[str]) -> tuple[str, ...]: ...
 
@@ -104,6 +124,12 @@ class SubjectAgentRunner(Protocol):
 
 class ConversationRepository(Protocol):
     def commit(self) -> None: ...
+
+    def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None: ...
+
+    def link_research_task(
+        self, *, user_id: UUID, conversation_id: UUID, task_id: UUID
+    ) -> None: ...
 
     def create(self, conversation: Conversation) -> Conversation: ...
 

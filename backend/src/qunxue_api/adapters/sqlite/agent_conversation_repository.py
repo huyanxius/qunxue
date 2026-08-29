@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -6,6 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite import AgentConversationRow, AgentMessageRow, AgentRunRow
+from qunxue_api.adapters.sqlite.research_material_model import (
+    ResearchMaterialBlockRow,
+    ResearchMaterialRow,
+)
 from qunxue_api.modules.agent_conversation import (
     AgentCitation,
     AgentMessage,
@@ -13,11 +18,19 @@ from qunxue_api.modules.agent_conversation import (
     AgentTurn,
     Conversation,
     ConversationNotFound,
+    ConversationTaskBindingConflict,
     IdempotentTurn,
+    ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
     aggregate_research_map,
     patches_from_tool_summary,
 )
+
+_MATERIAL_TOOL_NAMES = frozenset(
+    {"search_research_materials", "read_research_material_context"}
+)
+_DELETED_MATERIAL_ANSWER = "该回答引用的个人研究材料已删除，原回答内容已隐藏。"
+_DELETED_MATERIAL_TRACE_DETAIL = "个人研究材料已删除，历史工具结果已隐藏。"
 
 
 def _utc(value: datetime) -> datetime:
@@ -51,6 +64,10 @@ class SqliteConversationRepository:
         )
         if row is None:
             raise ConversationNotFound(str(conversation_id))
+        if row.current_research_task_id and row.current_research_task_id != str(task_id):
+            raise ConversationTaskBindingConflict(
+                "The conversation is already bound to a different research task."
+            )
         row.current_research_task_id = str(task_id)
         self._session.flush()
 
@@ -95,24 +112,61 @@ class SqliteConversationRepository:
             )
             if row.turn_id is not None
         }
-        patches_by_turn = {
-            turn_id: patches_from_tool_summary(summary)
-            for turn_id, summary in run_summaries.items()
-        }
         turns: list[AgentTurn] = []
         for index in range(0, len(messages), 2):
             user_row, assistant_row = messages[index : index + 2]
             if user_row.role != "user" or assistant_row.role != "assistant":
                 continue
-            citations = tuple(_citation(item) for item in assistant_row.citations)
+            citations = tuple(
+                _restore_citation(
+                    item,
+                    session=self._session,
+                    user_id=UUID(row.user_id),
+                    task_id=(
+                        UUID(row.current_research_task_id)
+                        if row.current_research_task_id
+                        else None
+                    ),
+                )
+                for item in assistant_row.citations
+            )
+            raw_tool_summary = run_summaries.get(str(user_row.turn_id), ())
+            unavailable_trace_material_ids = _unavailable_trace_material_ids(
+                raw_tool_summary,
+                session=self._session,
+                user_id=UUID(row.user_id),
+                task_id=(
+                    UUID(row.current_research_task_id)
+                    if row.current_research_task_id
+                    else None
+                ),
+            )
+            deleted_citation = any(
+                citation.deleted and citation.material_id is not None
+                for citation in citations
+            )
+            tool_summary = _redact_deleted_material_traces(
+                raw_tool_summary,
+                unavailable_material_ids=unavailable_trace_material_ids,
+                force_material_tools=deleted_citation,
+            )
+            canvas_patches = patches_from_tool_summary(tool_summary)
             turns.append(
                 AgentTurn(
                     turn_id=UUID(user_row.turn_id),
                     user_message=_message(user_row),
-                    assistant_message=_message(assistant_row),
+                    assistant_message=_message(
+                        assistant_row,
+                        citations=citations,
+                        content=(
+                            _DELETED_MATERIAL_ANSWER
+                            if deleted_citation or unavailable_trace_material_ids
+                            else None
+                        ),
+                    ),
                     evidence_ids=frozenset(item.citation_id for item in citations),
-                    tool_summary=run_summaries.get(str(user_row.turn_id), ()),
-                    canvas_patches=patches_by_turn.get(str(user_row.turn_id), ()),
+                    tool_summary=tool_summary,
+                    canvas_patches=canvas_patches,
                 )
             )
         all_patches = [patch for turn in turns for patch in turn.canvas_patches]
@@ -192,6 +246,7 @@ class SqliteConversationRepository:
         )
         if existing is not None and existing.status == "completed":
             return IdempotentTurn(UUID(existing.turn_id or existing.run_id))
+        self._require_live_material_citations(conversation=conversation, turn=turn)
         self._session.add_all(
             [
                 AgentMessageRow(
@@ -222,6 +277,55 @@ class SqliteConversationRepository:
             row.version += 1
         self._session.flush()
         return turn
+
+    def _require_live_material_citations(
+        self,
+        *,
+        conversation: Conversation,
+        turn: AgentTurn,
+    ) -> None:
+        material_citations = tuple(
+            citation
+            for citation in turn.assistant_message.citations
+            if citation.material_id is not None
+        )
+        if not material_citations:
+            return
+        conversation_row = self._session.scalar(
+            select(AgentConversationRow).where(
+                AgentConversationRow.conversation_id == str(conversation.conversation_id),
+                AgentConversationRow.user_id == str(conversation.user_id),
+            )
+        )
+        task_id = conversation_row.current_research_task_id if conversation_row else None
+        for citation in material_citations:
+            material = self._session.scalar(
+                select(ResearchMaterialRow).where(
+                    ResearchMaterialRow.material_id == citation.material_id,
+                    ResearchMaterialRow.user_id == str(conversation.user_id),
+                    ResearchMaterialRow.task_id == task_id,
+                    ResearchMaterialRow.status != "deleted",
+                )
+            )
+            if (
+                material is None
+                or citation.parse_id is None
+                or citation.segment_id is None
+            ):
+                raise ResearchMaterialCitationUnavailable(
+                    "research material is no longer eligible for a new citation"
+                )
+            block = self._session.scalar(
+                select(ResearchMaterialBlockRow).where(
+                    ResearchMaterialBlockRow.material_id == citation.material_id,
+                    ResearchMaterialBlockRow.parse_id == citation.parse_id,
+                    ResearchMaterialBlockRow.segment_id == citation.segment_id,
+                )
+            )
+            if block is None:
+                raise ResearchMaterialCitationUnavailable(
+                    "research material segment is no longer eligible for a new citation"
+                )
 
     def start_run(self, run: AgentRun) -> AgentRun:
         existing = self._session.scalar(
@@ -333,7 +437,18 @@ class SqliteConversationRepository:
         )
         if row is None:
             return None
-        return _run_from_row(row)
+        run = _run_from_row(row)
+        if run.status != "completed" or run.turn_id is None:
+            return run
+        conversation = self.get(
+            user_id=user_id,
+            conversation_id=run.conversation_id,
+        )
+        turn = next(
+            (item for item in conversation.turns if item.turn_id == run.turn_id),
+            None,
+        )
+        return replace(run, tool_summary=turn.tool_summary) if turn is not None else run
 
     def finish_run(
         self,
@@ -378,6 +493,12 @@ def _citation_dict(item: AgentCitation) -> dict[str, object]:
         "excerpt": item.excerpt,
         "knowledge_id": item.knowledge_id,
         "source_id": item.source_id,
+        "source_kind": item.source_kind,
+        "material_id": item.material_id,
+        "parse_id": item.parse_id,
+        "segment_id": item.segment_id,
+        "locator": item.locator,
+        "deleted": item.deleted,
     }
 
 
@@ -404,15 +525,134 @@ def _citation(item: dict[str, object]) -> AgentCitation:
         excerpt=str(item["excerpt"]) if item.get("excerpt") else None,
         knowledge_id=str(item["knowledge_id"]) if item.get("knowledge_id") else None,
         source_id=str(item["source_id"]) if item.get("source_id") else None,
+        source_kind=str(item["source_kind"]) if item.get("source_kind") else None,
+        material_id=str(item["material_id"]) if item.get("material_id") else None,
+        parse_id=str(item["parse_id"]) if item.get("parse_id") else None,
+        segment_id=str(item["segment_id"]) if item.get("segment_id") else None,
+        locator=(dict(item["locator"]) if isinstance(item.get("locator"), dict) else None),
+        deleted=bool(item.get("deleted", False)),
     )
 
 
-def _message(row: AgentMessageRow) -> AgentMessage:
+def _redact_deleted_material_citation(citation: AgentCitation) -> AgentCitation:
+    """Keep a deleted source's identity/locator while removing its excerpt."""
+
+    return replace(citation, excerpt=None, deleted=True)
+
+
+def _restore_citation(
+    item: dict[str, object],
+    *,
+    session: Session,
+    user_id: UUID,
+    task_id: UUID | None,
+) -> AgentCitation:
+    citation = _citation(item)
+    if not citation.material_id:
+        return citation
+    material = session.scalar(
+        select(ResearchMaterialRow).where(
+            ResearchMaterialRow.material_id == citation.material_id,
+        )
+    )
+    if (
+        material is None
+        or material.user_id != str(user_id)
+        or task_id is None
+        or material.task_id != str(task_id)
+        or material.status == "deleted"
+    ):
+        return _redact_deleted_material_citation(citation)
+    return citation
+
+
+def _material_ids(value: object) -> set[str]:
+    if isinstance(value, dict):
+        found = {
+            item
+            for key, item in value.items()
+            if key == "material_id" and isinstance(item, str) and item
+        }
+        for item in value.values():
+            found.update(_material_ids(item))
+        return found
+    if isinstance(value, (list, tuple)):
+        found: set[str] = set()
+        for item in value:
+            found.update(_material_ids(item))
+        return found
+    return set()
+
+
+def _unavailable_trace_material_ids(
+    tool_summary: tuple[dict[str, object], ...],
+    *,
+    session: Session,
+    user_id: UUID,
+    task_id: UUID | None,
+) -> set[str]:
+    referenced = _material_ids(tool_summary)
+    if not referenced or task_id is None:
+        return referenced
+    live = set(
+        session.scalars(
+            select(ResearchMaterialRow.material_id).where(
+                ResearchMaterialRow.material_id.in_(referenced),
+                ResearchMaterialRow.user_id == str(user_id),
+                ResearchMaterialRow.task_id == str(task_id),
+                ResearchMaterialRow.status != "deleted",
+            )
+        )
+    )
+    return referenced - live
+
+
+def _redact_deleted_material_traces(
+    tool_summary: tuple[dict[str, object], ...],
+    *,
+    unavailable_material_ids: set[str],
+    force_material_tools: bool,
+) -> tuple[dict[str, object], ...]:
+    sensitive_call_ids = {
+        str(entry.get("call_id"))
+        for entry in tool_summary
+        if entry.get("tool") in _MATERIAL_TOOL_NAMES
+        and (
+            force_material_tools
+            or bool(_material_ids(entry).intersection(unavailable_material_ids))
+        )
+    }
+    redacted: list[dict[str, object]] = []
+    for entry in tool_summary:
+        if (
+            entry.get("tool") not in _MATERIAL_TOOL_NAMES
+            or str(entry.get("call_id")) not in sensitive_call_ids
+        ):
+            redacted.append(dict(entry))
+            continue
+        safe = dict(entry)
+        if safe.get("phase") != "started" or "output" in safe:
+            safe["output"] = {"deleted": True}
+        safe["detail"] = _DELETED_MATERIAL_TRACE_DETAIL
+        redacted.append(safe)
+    return tuple(redacted)
+
+
+def _message(
+    row: AgentMessageRow,
+    *,
+    citations: tuple[AgentCitation, ...] | None = None,
+    content: str | None = None,
+) -> AgentMessage:
     return AgentMessage(
         message_id=UUID(row.message_id),
         role=row.role,  # type: ignore[arg-type]
-        content=row.content,
-        citations=tuple(_citation(item) for item in row.citations),
+        content=row.content if content is None else content,
+        citations=(
+            citations
+            if citations is not None
+            else tuple(_citation(item) for item in row.citations)
+        ),
         sequence=row.sequence,
         created_at=_utc(row.created_at),
     )

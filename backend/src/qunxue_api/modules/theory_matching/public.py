@@ -403,6 +403,7 @@ class TheoryEvidenceSource(Protocol):
     def retrieve(
         self,
         *,
+        user_id: UUID | None = None,
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> EvidenceBundleSnapshot: ...
@@ -481,6 +482,7 @@ class TheoryMatching(Protocol):
     def start(
         self,
         *,
+        user_id: UUID | None = None,
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> MatchRunSnapshot: ...

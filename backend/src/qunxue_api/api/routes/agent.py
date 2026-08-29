@@ -32,6 +32,8 @@ from qunxue_api.modules.agent_conversation import (
     AgentInterrupted,
     AgentToolEvent,
     ConversationNotFound,
+    ConversationTaskBindingConflict,
+    ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
 )
 from qunxue_api.modules.billing import CreditRunInProgress, CreditsDepleted
@@ -417,6 +419,22 @@ def stream_agent_turn(
                     break
         except ConversationNotFound:
             yield _event("turn_failed", {"code": "not_found", "message": "对话不存在或无权访问。"})
+        except ConversationTaskBindingConflict as error:
+            yield _event(
+                "turn_failed",
+                {
+                    "code": error.code,
+                    "message": "该对话已属于另一个研究任务，无法读取当前任务材料。",
+                },
+            )
+        except ResearchMaterialCitationUnavailable as error:
+            yield _event(
+                "turn_failed",
+                {
+                    "code": error.code,
+                    "message": "引用的个人研究材料已删除或不属于当前研究，本轮未保存。",
+                },
+            )
         except RunAlreadyActive:
             yield _event(
                 "turn_failed",
@@ -533,6 +551,12 @@ def _message(item) -> AgentMessageResponse:
                 excerpt=citation.excerpt,
                 knowledge_id=citation.knowledge_id,
                 source_id=citation.source_id,
+                source_kind=citation.source_kind,
+                material_id=citation.material_id,
+                parse_id=citation.parse_id,
+                segment_id=citation.segment_id,
+                locator=citation.locator,
+                deleted=citation.deleted,
             )
             for citation in item.citations
         ],
@@ -547,6 +571,12 @@ def _citation(item) -> dict[str, object]:
         "excerpt": item.excerpt,
         "knowledge_id": item.knowledge_id,
         "source_id": item.source_id,
+        "source_kind": item.source_kind,
+        "material_id": item.material_id,
+        "parse_id": item.parse_id,
+        "segment_id": item.segment_id,
+        "locator": item.locator,
+        "deleted": item.deleted,
     }
 
 

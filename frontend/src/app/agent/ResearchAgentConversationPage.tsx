@@ -68,6 +68,12 @@ import {
   type AgentToolTrace,
 } from '../../modules/research-agent'
 import type { ResearchCanvasStreamingTurn } from '../../modules/research-workspace'
+import {
+  formatMaterialLocator,
+  normalizeMaterialLocator,
+  ResearchMaterialsPanel,
+  type ResearchMaterialLocator,
+} from '../../modules/research-materials'
 import { ResearchAgentBot } from './ResearchAgentBot'
 import { ResearchAgentShader } from './ResearchAgentShader'
 import { ResearchPromptCarousel } from './ResearchPromptCarousel'
@@ -84,12 +90,18 @@ const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v1'
 const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
+const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
 
 const knowledgeTools = new Set([
   'search_knowledge',
   'read_knowledge_entry',
   'read_sources',
   'browse_knowledge_directory',
+])
+
+const researchMaterialTools = new Set([
+  'search_research_materials',
+  'read_research_material_context',
 ])
 
 // Labels also cover historical traces created before workspace tool scopes were
@@ -99,6 +111,8 @@ const toolLabels: Record<string, string> = {
   read_knowledge_entry: '读取知识条目',
   read_sources: '读取来源',
   browse_knowledge_directory: '浏览知识目录',
+  search_research_materials: '检索研究材料',
+  read_research_material_context: '读取研究材料原文',
   update_research_map: '更新研究地图',
   propose_start_research: '整理研究起点',
   get_research_workflow_state: '读取研究进度',
@@ -114,6 +128,8 @@ const englishToolLabels: Record<string, string> = {
   read_knowledge_entry: 'Read knowledge entry',
   read_sources: 'Read sources',
   browse_knowledge_directory: 'Browse knowledge directory',
+  search_research_materials: 'Search research materials',
+  read_research_material_context: 'Read research material context',
   update_research_map: 'Update research map',
   propose_start_research: 'Prepare research starting point',
   get_research_workflow_state: 'Read research progress',
@@ -129,6 +145,8 @@ const toolPurposes: Record<string, string> = {
   read_knowledge_entry: '根据当前问题核对知识条目的主张、适用前提与证据边界',
   read_sources: '补充作者、年份、研究对象与原始来源信息',
   browse_knowledge_directory: '查看当前知识版本中可用于研究的内容范围',
+  search_research_materials: '从当前研究任务的个人材料中寻找相关原文片段',
+  read_research_material_context: '沿精确位置读取片段前后文，避免脱离整份材料解释',
   update_research_map: '把已确认的问题、理论与证据关系写入研究画布',
   propose_start_research: '把现象、研究意图与情境整理成待确认的研究起点',
   get_research_workflow_state: '读取当前研究任务的阶段与可继续操作',
@@ -144,6 +162,8 @@ const englishToolPurposes: Record<string, string> = {
   read_knowledge_entry: 'Check an entry\'s claims, assumptions, and evidence limits',
   read_sources: 'Add author, year, research subject, and original source details',
   browse_knowledge_directory: 'Review the research material available in this knowledge release',
+  search_research_materials: 'Find relevant passages in the personal materials bound to this research task',
+  read_research_material_context: 'Read the surrounding context at the exact source position',
   update_research_map: 'Record confirmed questions, theories, and evidence relationships',
   propose_start_research: 'Prepare the phenomenon and research intent for confirmation',
   get_research_workflow_state: 'Read the current research phase and available next actions',
@@ -544,17 +564,80 @@ function displayAgentText(value: string) {
 function citationKindLabel(kind: string, locale: AppLocale) {
   if (kind === 'preview' || kind === 'entry') return locale === 'en-US' ? 'Knowledge entry' : '知识条目'
   if (kind === 'source') return locale === 'en-US' ? 'Source' : '来源'
+  if (kind === 'material' || kind === 'research_material') return locale === 'en-US' ? 'Research material' : '研究材料'
   if (kind === 'theory') return locale === 'en-US' ? 'Theory lead' : '理论线索'
   if (kind === 'directory') return locale === 'en-US' ? 'Knowledge directory' : '知识目录'
   return locale === 'en-US' ? 'Evidence' : '证据'
 }
 
+type MaterialCitationFields = {
+  material_id?: unknown
+  materialId?: unknown
+  parse_id?: unknown
+  parseId?: unknown
+  segment_id?: unknown
+  segmentId?: unknown
+  locator?: unknown
+}
+
+function materialCitationFields(citation: AgentCitation | null): {
+  materialId: string | null
+  parseId: string | null
+  segmentId: string | null
+  locator: ResearchMaterialLocator | null
+} {
+  if (!citation || (citation.kind !== 'material' && citation.kind !== 'research_material')) {
+    return { materialId: null, parseId: null, segmentId: null, locator: null }
+  }
+  const fields = citation as AgentCitation & MaterialCitationFields
+  const materialId = typeof fields.material_id === 'string'
+    ? fields.material_id
+    : typeof fields.materialId === 'string' ? fields.materialId : null
+  const segmentId = typeof fields.segment_id === 'string'
+    ? fields.segment_id
+    : typeof fields.segmentId === 'string' ? fields.segmentId : null
+  const parseId = typeof fields.parse_id === 'string'
+    ? fields.parse_id
+    : typeof fields.parseId === 'string' ? fields.parseId : null
+  return {
+    materialId,
+    parseId,
+    segmentId,
+    locator: fields.locator ? normalizeMaterialLocator(fields.locator) : null,
+  }
+}
+
+function tombstoneMaterialCitation(citation: AgentCitation, materialId: string): AgentCitation {
+  if (materialCitationFields(citation).materialId !== materialId) return citation
+  return { ...citation, deleted: true, excerpt: null }
+}
+
+function tombstoneConversationMaterial(conversation: AgentConversation, materialId: string): AgentConversation {
+  let changed = false
+  const turns = conversation.turns.map((turn) => {
+    const citations = turn.assistant.citations.map((citation) => {
+      return tombstoneMaterialCitation(citation, materialId)
+    })
+    const affected = citations.some((citation, index) => citation !== turn.assistant.citations[index])
+    if (!affected) return turn
+    changed = true
+    return {
+      ...turn,
+      assistant: { ...turn.assistant, content: DELETED_MATERIAL_ANSWER, citations },
+    }
+  })
+  return changed ? { ...conversation, turns } : conversation
+}
+
+
 function citationToRail(citation: AgentCitation, locale: AppLocale): ResearchCitation {
+  const material = materialCitationFields(citation)
+  const materialLocator = material.locator ? formatMaterialLocator(material.locator) : null
   return {
     id: citation.citation_id,
     title: citation.label,
     kind: citation.kind,
-    subtitle: `${citationKindLabel(citation.kind, locale)}${citation.knowledge_id ? ` · ${citation.knowledge_id}` : ''}`,
+    subtitle: `${citationKindLabel(citation.kind, locale)}${materialLocator ? ` · ${materialLocator}` : citation.knowledge_id ? ` · ${citation.knowledge_id}` : ''}`,
     excerpt: citation.excerpt,
     knowledgeId: citation.knowledge_id,
   }
@@ -666,6 +749,10 @@ function hasKnowledgeActivity(steps: ResearchToolStep[]) {
 
 function hasCompletedKnowledgeActivity(steps: ResearchToolStep[]) {
   return steps.some((step) => knowledgeTools.has(step.tool) && step.status === 'completed')
+}
+
+function hasResearchMaterialActivity(steps: ResearchToolStep[]) {
+  return steps.some((step) => researchMaterialTools.has(step.tool))
 }
 
 function AgentConversationHistoryRail({
@@ -921,6 +1008,8 @@ const toolIcons: Record<string, Icon> = {
   read_knowledge_entry: BookOpenTextIcon,
   read_sources: LinkSimpleIcon,
   browse_knowledge_directory: FolderOpenIcon,
+  search_research_materials: MagnifyingGlassIcon,
+  read_research_material_context: FileTextIcon,
   update_research_map: MapTrifoldIcon,
   propose_start_research: SparkleIcon,
   get_research_workflow_state: PathIcon,
@@ -943,9 +1032,11 @@ function ToolLogo({ tool, state }: { tool: string; state?: string }) {
 function StreamingRunStatus({ status, steps }: { status: AgentPageStatus; steps: ResearchToolStep[] }) {
   const { text } = useAppLocale()
   const runningTool = [...steps].reverse().find((step) => step.status === 'running')?.tool
-  const phase = runningTool && ['read_knowledge_entry', 'read_sources', 'read_research_document'].includes(runningTool)
+  const phase = runningTool && ['read_knowledge_entry', 'read_sources', 'read_research_document', 'read_research_material_context'].includes(runningTool)
     ? text('正在阅读研究材料', 'Reading research materials')
-    : runningTool && ['search_knowledge', 'browse_knowledge_directory'].includes(runningTool)
+    : runningTool === 'search_research_materials'
+      ? text('正在检索个人材料', 'Searching personal research materials')
+      : runningTool && ['search_knowledge', 'browse_knowledge_directory'].includes(runningTool)
       ? text('正在检索知识库', 'Searching the knowledge base')
       : runningTool === 'start_theory_matching'
         ? text('正在比较理论视角', 'Comparing theoretical perspectives')
@@ -1137,6 +1228,8 @@ function AssistantTurn({
             <WarningCircleIcon size={14} />
             {hasKnowledgeActivity(toolSteps)
               ? text('已检索知识库，但没有可展示的来源，请谨慎引用。', 'The knowledge base was searched, but no displayable source was returned. Cite with care.')
+              : hasResearchMaterialActivity(toolSteps)
+                ? text('已检索个人材料，但没有可展示的原文位置，请谨慎引用。', 'Personal materials were searched, but no displayable source position was returned. Cite with care.')
               : text('未调用知识库 · 以下内容仅作工作假设，请结合材料核验。', 'Knowledge base not searched · treat this as a working hypothesis and verify it against your materials.')}
           </p>
         ) : null}
@@ -1222,6 +1315,9 @@ export function ResearchAgentConversationPage({
   const [historyOpen, setHistoryOpen] = useState(false)
   const [contextOpen, setContextOpen] = useState(false)
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
+  const [materialsOpen, setMaterialsOpen] = useState(false)
+  const [materialsAnalysisRefreshKey, setMaterialsAnalysisRefreshKey] = useState(0)
+  const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const [landingBackdropPhase, setLandingBackdropPhase] = useState<'visible' | 'leaving' | 'hidden'>('visible')
@@ -1232,12 +1328,25 @@ export function ResearchAgentConversationPage({
   const pendingToolSteps = useRef<ResearchToolStep[]>([])
   const failedTurnAttempt = useRef<PendingTurnAttempt | null>(restoredPendingTurn.current)
   const activeTurnAttempt = useRef<PendingTurnAttempt | null>(null)
+  const materialsOpenRef = useRef(false)
+  const locallyDeletedMaterialIds = useRef(new Set<string>())
+  const redactedStreamingMaterialIds = useRef(new Set<string>())
   const pendingConversationId = useRef<string | null>(requestedConversationId ?? restoredPendingTurn.current?.conversationId ?? null)
   const loadedConversationId = useRef<string | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
 
   const closeHistory = useCallback(() => setHistoryOpen(false), [])
+
+  function openMaterials() {
+    materialsOpenRef.current = true
+    setMaterialsOpen(true)
+  }
+
+  function closeMaterials() {
+    materialsOpenRef.current = false
+    setMaterialsOpen(false)
+  }
   const turns = useMemo(() => activeConversation?.turns ?? [], [activeConversation])
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
   const isBusy = status === 'loading' || canStopGeneration
@@ -1420,6 +1529,8 @@ export function ResearchAgentConversationPage({
     setSelectedActivityId(null)
     setContextOpen(false)
     setContextTab('agent')
+    closeMaterials()
+    setMaterialLocatorTarget(null)
   }
 
   function openConversation(summary: AgentConversationSummary) {
@@ -1492,6 +1603,7 @@ export function ResearchAgentConversationPage({
     setError(null)
     setStatus('thinking')
     pendingToolSteps.current = []
+    redactedStreamingMaterialIds.current.clear()
     const firstStreamingTurn: StreamingTurn = { question, answer: '', citations: [], toolSteps: [], canvasPatches: [], startedAt: Date.now() }
     if (isEmpty) await revealFirstStreamingTurn(firstStreamingTurn)
     else setStreamingTurn(firstStreamingTurn)
@@ -1534,9 +1646,20 @@ export function ResearchAgentConversationPage({
             setStreamingTurn((current) => current ? { ...current, toolSteps: next } : current)
           } else if (event.type === 'assistant_delta') {
             setStatus('answering')
-            setStreamingTurn((current) => current ? { ...current, answer: current.answer + event.delta } : current)
+            if (!redactedStreamingMaterialIds.current.size) {
+              setStreamingTurn((current) => current ? { ...current, answer: current.answer + event.delta } : current)
+            }
           } else if (event.type === 'citation_added') {
-            setStreamingTurn((current) => current ? { ...current, citations: [...current.citations, event.citation] } : current)
+            const materialId = materialCitationFields(event.citation).materialId
+            const citation = materialId && locallyDeletedMaterialIds.current.has(materialId)
+              ? tombstoneMaterialCitation(event.citation, materialId)
+              : event.citation
+            if (materialId && citation.deleted) redactedStreamingMaterialIds.current.add(materialId)
+            setStreamingTurn((current) => current ? {
+              ...current,
+              answer: citation.deleted ? DELETED_MATERIAL_ANSWER : current.answer,
+              citations: [...current.citations, citation],
+            } : current)
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
@@ -1546,7 +1669,10 @@ export function ResearchAgentConversationPage({
             persistInterruptedTurn(userId, null)
             persistDraft(userId, '')
             const localToolSteps = pendingToolSteps.current
-            const completedConversation = attachLocalToolSteps(event.conversation, localToolSteps)
+            const completedConversation = [...locallyDeletedMaterialIds.current].reduce(
+              (conversation, materialId) => tombstoneConversationMaterial(conversation, materialId),
+              attachLocalToolSteps(event.conversation, localToolSteps),
+            )
             const completedTurn = completedConversation.turns.at(-1)
             const releaseId = event.knowledge_release_id.trim()
             if (releaseId) rememberKnowledgeRelease(completedConversation.conversation_id, releaseId)
@@ -1554,6 +1680,7 @@ export function ResearchAgentConversationPage({
               setToolStepsByTurnId((current) => ({ ...current, [completedTurn.turn_id]: localToolSteps }))
             }
             pendingToolSteps.current = []
+            redactedStreamingMaterialIds.current.clear()
             setActiveConversation(completedConversation)
             onConversationChange?.(completedConversation)
             loadedConversationId.current = completedConversation.conversation_id
@@ -1569,6 +1696,9 @@ export function ResearchAgentConversationPage({
             ])
             setStreamingTurn(null)
             setStatus('idle')
+            if (materialsOpenRef.current) {
+              setMaterialsAnalysisRefreshKey((current) => current + 1)
+            }
             if (!embedded) {
               setSearchParams((current) => {
                 const next = new URLSearchParams(current)
@@ -1704,6 +1834,7 @@ export function ResearchAgentConversationPage({
   const selectedCitation = selectedCitationContext?.citation ?? null
   const selectedCitationId = selectedCitation?.citation_id ?? null
   const selectedCitationReleaseId = selectedCitationContext?.knowledgeReleaseId ?? null
+  const selectedMaterialCitation = materialCitationFields(selectedCitation)
   const selectedActivity = allToolSteps.find((activity) => activity.id === selectedActivityId)
   function openCitation(citation: AgentCitation, knowledgeReleaseId: string | null) {
     const conversationReleaseId = activeConversation?.conversation_id
@@ -1713,6 +1844,25 @@ export function ResearchAgentConversationPage({
     setSelectedCitationContext({ citation, knowledgeReleaseId: knowledgeReleaseId?.trim() || (embedded ? conversationReleaseId : null) })
     setContextTab('sources')
     setContextOpen(true)
+  }
+
+  function handleMaterialDeleted(materialId: string) {
+    locallyDeletedMaterialIds.current.add(materialId)
+    if (streamingTurn?.citations.some((citation) => materialCitationFields(citation).materialId === materialId)) {
+      redactedStreamingMaterialIds.current.add(materialId)
+    }
+    setActiveConversation((current) => current ? tombstoneConversationMaterial(current, materialId) : current)
+    setStreamingTurn((current) => {
+      if (!current) return current
+      const citations = current.citations.map((citation) => tombstoneMaterialCitation(citation, materialId))
+      if (!citations.some((citation, index) => citation !== current.citations[index])) return current
+      const next = { ...current, answer: DELETED_MATERIAL_ANSWER, citations }
+      if (next.interrupted) persistInterruptedTurn(userId, next)
+      return next
+    })
+    setSelectedCitationContext((current) => current
+      ? { ...current, citation: tombstoneMaterialCitation(current.citation, materialId) }
+      : current)
   }
 
   function knowledgeEntryHref(citation: AgentCitation, releaseId: string | null) {
@@ -1755,7 +1905,30 @@ export function ResearchAgentConversationPage({
     <div className="new-research__basis">
       <span>{text('当前证据', 'Current evidence')} · {citationKindLabel(selectedCitation.kind, locale)}</span>
       <strong>{selectedCitation.label}</strong>
-      <p>{selectedCitation.excerpt || text('本轮 Agent 没有返回可展开的证据摘录。', 'The Agent returned no expandable evidence excerpt for this turn.')}</p>
+      <p>{selectedCitation.deleted
+        ? text('这份研究材料已删除，原文不再可访问。', 'This research material was deleted and its source text is no longer available.')
+        : selectedCitation.excerpt || text('本轮 Agent 没有返回可展开的证据摘录。', 'The Agent returned no expandable evidence excerpt for this turn.')}</p>
+      {selectedMaterialCitation.locator
+        ? <p className="new-research__basis-locator">{formatMaterialLocator(selectedMaterialCitation.locator)}</p>
+        : null}
+      {workspace === 'research' && taskId && selectedMaterialCitation.materialId && !selectedCitation.deleted
+        ? <div className="research-agent-basis-actions">
+            <button
+              type="button"
+              onClick={() => {
+                setMaterialLocatorTarget({
+                  materialId: selectedMaterialCitation.materialId as string,
+                  parseId: selectedMaterialCitation.parseId,
+                  segmentId: selectedMaterialCitation.segmentId,
+                })
+                setContextOpen(false)
+                openMaterials()
+              }}
+            >
+              {text('打开原文位置', 'Open source location')} <ArrowUpIcon size={13} />
+            </button>
+          </div>
+        : null}
       {selectedKnowledgeEntryHref
         ? <div className="research-agent-basis-actions">
             <a href={selectedKnowledgeEntryHref}>{text('打开知识条目', 'Open knowledge entry')} <ArrowUpIcon size={13} /></a>
@@ -1784,6 +1957,19 @@ export function ResearchAgentConversationPage({
           {isEmpty && !embedded ? <div aria-hidden="true" className="research-agent-page__heading-placeholder" /> : (
             <header className="research-agent-page__conversation-heading new-research__agent-header" aria-label={text('对话操作', 'Conversation actions')}>
               <div className="new-research__agent-actions">
+                {workspace === 'research' && taskId ? (
+                  <button
+                    type="button"
+                    aria-label={text('研究材料', 'Research materials')}
+                    title={text('研究材料', 'Research materials')}
+                    onClick={() => {
+                      setMaterialLocatorTarget(null)
+                      openMaterials()
+                    }}
+                  >
+                    <FileTextIcon size={16} />
+                  </button>
+                ) : null}
                 <button type="button" aria-label={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
                 <button type="button" aria-label={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
                 {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
@@ -1906,6 +2092,21 @@ export function ResearchAgentConversationPage({
                 setContextTab('basis')
               }}
               basisContent={basisContent}
+            />
+          ) : null}
+
+          {materialsOpen && workspace === 'research' && taskId ? (
+            <ResearchMaterialsPanel
+              taskId={taskId}
+              initialMaterialId={materialLocatorTarget?.materialId ?? null}
+              initialParseId={materialLocatorTarget?.parseId ?? null}
+              initialSegmentId={materialLocatorTarget?.segmentId ?? null}
+              analysisRefreshKey={materialsAnalysisRefreshKey}
+              onMaterialDeleted={handleMaterialDeleted}
+              onClose={() => {
+                closeMaterials()
+                setMaterialLocatorTarget(null)
+              }}
             />
           ) : null}
         </section>

@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
+from inspect import Parameter, signature
 from threading import Lock
 from uuid import uuid4
 
@@ -28,6 +29,7 @@ from qunxue_api.adapters.research_agent import (
     ResearchDocumentToolRegistry,
     SiliconFlowRerankerProvider,
 )
+from qunxue_api.adapters.research_materials import parse_material
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     HybridRetriever,
@@ -40,6 +42,9 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
+from qunxue_api.adapters.sqlite.research_analysis_repository import (
+    SqliteResearchAnalysisRepository,
+)
 from qunxue_api.adapters.sqlite.research_document import (
     SqliteResearchDocumentRepository,
 )
@@ -48,6 +53,9 @@ from qunxue_api.adapters.sqlite.research_document_mutation import (
 )
 from qunxue_api.adapters.sqlite.research_document_proposal import (
     SqliteResearchDocumentProposalRepository,
+)
+from qunxue_api.adapters.sqlite.research_material_repository import (
+    SqliteResearchMaterialRepository,
 )
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
@@ -69,15 +77,19 @@ from qunxue_api.api.routes.matching import router as matching_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
+from qunxue_api.api.routes.research_analysis import router as research_analysis_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
+from qunxue_api.api.routes.research_materials import router as research_materials_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
+    ResearchAnalysisApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
     ResearchJourney,
     ResearchJourneyDependencies,
+    ResearchMaterialApplication,
     ResearchStartApplication,
     TheoryMatchingApplication,
 )
@@ -94,6 +106,7 @@ from qunxue_api.modules.identity import (
     Unauthenticated,
     VerificationCodeRateLimited,
 )
+from qunxue_api.modules.research_analysis import ResearchAnalysisService
 from qunxue_api.modules.research_framework import (
     ResearchDocumentProposalService,
     ResearchDocumentService,
@@ -123,6 +136,32 @@ def create_app(
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
 
+    def build_catalog_evidence_source(
+        *,
+        analysis_application: ResearchAnalysisApplication,
+    ) -> CatalogTheoryEvidenceSource:
+        """Build the release-bound source while tolerating older test doubles.
+
+        The comparison projection is an optional extension of the adapter
+        constructor.  Keeping the capability check at this composition point
+        lets narrow bootstrap tests replace the adapter with a legacy-shaped
+        double without weakening the production wiring.
+        """
+        kwargs: dict[str, object] = {"retriever": app.state.knowledge_retriever}
+        try:
+            parameters = signature(CatalogTheoryEvidenceSource).parameters
+        except (TypeError, ValueError):
+            parameters = {}
+        accepts_projection = (
+            "get_confirmed_comparison_projection" in parameters
+            or any(parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters.values())
+        )
+        if accepts_projection:
+            kwargs["get_confirmed_comparison_projection"] = (
+                analysis_application.get_confirmed_comparison_projection
+            )
+        return CatalogTheoryEvidenceSource(app.state.knowledge_catalog, **kwargs)
+
     app = FastAPI(
         title=resolved_settings.app_name,
         version="0.1.0",
@@ -132,7 +171,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=list(resolved_settings.cors_allowed_origins),
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Accept", "Content-Type", "Idempotency-Key"],
     )
     app.state.settings = resolved_settings
@@ -200,16 +239,28 @@ def create_app(
                 SqliteResearchTaskRepository(session),
             )
 
+    def build_research_analysis_application(
+        session,
+        *,
+        task_repository: SqliteResearchTaskRepository | None = None,
+    ) -> ResearchAnalysisApplication:
+        return ResearchAnalysisApplication(
+            analysis=ResearchAnalysisService(SqliteResearchAnalysisRepository(session)),
+            materials=SqliteResearchMaterialRepository(session),
+            research_tasks=task_repository or SqliteResearchTaskRepository(session),
+            commit=session.commit,
+        )
+
     @contextmanager
     def theory_matching_application_scope() -> Iterator[TheoryMatchingApplication]:
         # Hold the process lock until the transaction commits. Cross-process
         # writers are rejected by the task repository's version CAS.
         with app.state.matching_start_lock, resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
+            analysis_application = build_research_analysis_application(session)
             matching = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(
-                    app.state.knowledge_catalog,
-                    retriever=app.state.knowledge_retriever,
+                evidence_source=build_catalog_evidence_source(
+                    analysis_application=analysis_application,
                 ),
                 judge=app.state.model_gateway,
                 repository=SqliteMatchRunRepository(session),
@@ -229,6 +280,25 @@ def create_app(
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
+
+    @contextmanager
+    def research_material_application_scope() -> Iterator[ResearchMaterialApplication]:
+        with resolved_database.session() as session:
+            yield ResearchMaterialApplication(
+                materials=SqliteResearchMaterialRepository(session),
+                research_tasks=SqliteResearchTaskRepository(session),
+                parser=parse_material,
+                commit=session.commit,
+            )
+
+    app.state.research_material_application_scope = research_material_application_scope
+
+    @contextmanager
+    def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
+        with resolved_database.session() as session:
+            yield build_research_analysis_application(session)
+
+    app.state.research_analysis_application_scope = research_analysis_application_scope
 
     @contextmanager
     def research_navigation_match_reader_scope() -> Iterator[SqliteMatchRunRepository]:
@@ -258,6 +328,7 @@ def create_app(
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposals = SqliteResearchDocumentProposalRepository(session)
+            analysis_application = build_research_analysis_application(session)
             yield ResearchDocumentApplication(
                 documents=ResearchDocumentService(
                     repository=SqliteResearchDocumentRepository(session)
@@ -269,6 +340,7 @@ def create_app(
                 list_proposals_for_task=proposals.list_for_task,
                 list_actionable_proposals_for_task=proposals.list_actionable_for_task,
                 owns_match_run=matching_requests.owns,
+                formal_analysis_handoff=analysis_application.formal_handoff,
             )
 
     app.state.research_document_application_scope = research_document_application_scope
@@ -284,6 +356,7 @@ def create_app(
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposal_repository = SqliteResearchDocumentProposalRepository(session)
+            analysis_application = build_research_analysis_application(session)
             document_application = ResearchDocumentApplication(
                 documents=documents,
                 research_tasks=SqliteResearchTaskRepository(session),
@@ -293,6 +366,7 @@ def create_app(
                 list_proposals_for_task=proposal_repository.list_for_task,
                 list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
+                formal_analysis_handoff=analysis_application.formal_handoff,
             )
             yield ResearchDocumentProposalApplication(
                 ResearchDocumentProposalService(
@@ -325,11 +399,15 @@ def create_app(
             match_runs = SqliteMatchRunRepository(session)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposal_repository = SqliteResearchDocumentProposalRepository(session)
+            material_repository = SqliteResearchMaterialRepository(session)
+            analysis_application = build_research_analysis_application(
+                session,
+                task_repository=task_repository,
+            )
             descriptor = app.state.model_gateway.descriptor
             matching_service = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(
-                    app.state.knowledge_catalog,
-                    retriever=app.state.knowledge_retriever,
+                evidence_source=build_catalog_evidence_source(
+                    analysis_application=analysis_application,
                 ),
                 judge=app.state.model_gateway,
                 repository=match_runs,
@@ -368,6 +446,7 @@ def create_app(
                 list_proposals_for_task=proposal_repository.list_for_task,
                 list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
+                formal_analysis_handoff=analysis_application.formal_handoff,
             )
             proposal_service = ResearchDocumentProposalService(
                 repository=proposal_repository,
@@ -425,6 +504,8 @@ def create_app(
                         documents=document_application,
                         proposals=proposal_service,
                         workflow=agent_research_workflow,
+                        materials=material_repository,
+                        analysis=analysis_application,
                     ),
                 )
             except Exception:
@@ -439,6 +520,8 @@ def create_app(
     app.include_router(session_router)
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
+    app.include_router(research_materials_router)
+    app.include_router(research_analysis_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)
     app.include_router(material_intakes_router)

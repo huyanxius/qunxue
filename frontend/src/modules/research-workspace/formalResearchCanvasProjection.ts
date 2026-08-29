@@ -43,6 +43,28 @@ type FormalTheoryDecision = {
   action: string
 }
 
+type FormalComparisonFinding = {
+  kind: 'support' | 'counterexample' | 'contradict' | 'competing_explanation' | 'evidence_gap'
+  statement: string
+  annotation_ids?: string[]
+}
+
+type FormalCaseComparisonSnapshot = {
+  comparison_id: string
+  title: string
+  question: string
+  status: string
+  findings: FormalComparisonFinding[]
+  competing_explanations: string[]
+  evidence_gaps: string[]
+  next_steps: Array<{ kind: string; action: string; priority?: string }>
+  theory_implication: string
+}
+
+type FormalAnalysisSnapshot = {
+  comparisons: FormalCaseComparisonSnapshot[]
+} | null
+
 export type FormalResearchCanvasInput = {
   taskId: string | null
   mode: 'match' | 'framework'
@@ -52,6 +74,7 @@ export type FormalResearchCanvasInput = {
   pendingTheoryDecisions: Readonly<Record<string, FormalTheoryDecision>>
   sections: readonly FormalSectionSnapshot[]
   documentTitle?: string | null
+  analysisSnapshot?: FormalAnalysisSnapshot
 }
 
 /** Derive formal M3/M4/M5 canvas state only from recoverable server snapshots. */
@@ -64,6 +87,7 @@ export function projectFormalResearchCanvas({
   pendingTheoryDecisions,
   sections,
   documentTitle,
+  analysisSnapshot,
 }: FormalResearchCanvasInput): ResearchCanvasProjection {
   const taskIdentity = taskId ?? 'unknown'
   const questionNode = agentProjection.nodes.find((node) => node.kind === 'question')
@@ -201,6 +225,12 @@ export function projectFormalResearchCanvas({
     }
   }
 
+  const comparisonProjection = projectConfirmedComparisons(
+    analysisSnapshot?.comparisons ?? [],
+    source,
+  )
+  nodes.push(...comparisonProjection.nodes)
+
   const firstLayerSize = Math.ceil(sectionNodes.length / 2)
   const sectionEdges: ResearchCanvasProjection['edges'] = sectionNodes.map((node, index) => ({
     id: `research-section-edge:${index}:${node.id}`,
@@ -218,6 +248,194 @@ export function projectFormalResearchCanvas({
       ?? documentTitle
       ?? agentProjection.question,
     nodes,
-    edges: [...agentProjection.edges, ...stageEdges, ...sectionEdges],
+    edges: [
+      ...agentProjection.edges,
+      ...stageEdges,
+      ...comparisonProjection.edges,
+      ...sectionEdges,
+    ],
   }
+}
+
+function projectConfirmedComparisons(
+  comparisons: readonly FormalCaseComparisonSnapshot[],
+  source: string,
+): Pick<ResearchCanvasProjection, 'nodes' | 'edges'> {
+  const nodes: ResearchCanvasProjection['nodes'] = []
+  const edges: ResearchCanvasProjection['edges'] = []
+
+  for (const comparison of comparisons.filter((item) => item.status === 'confirmed')) {
+    const comparisonId = `research-comparison:${comparison.comparison_id}`
+    const comparisonCitationIds = distinct(
+      comparison.findings.flatMap((finding) => finding.annotation_ids ?? []),
+    )
+    nodes.push({
+      id: comparisonId,
+      kind: 'synthesis',
+      title: comparison.title,
+      summary: comparison.question,
+      excerpt: comparison.question,
+      status: 'complete',
+      provenance: 'user',
+      citationIds: comparisonCitationIds,
+    })
+    edges.push({
+      id: `${comparisonId}:edge`,
+      source,
+      target: comparisonId,
+      relation: 'derives',
+      label: '已确认比较',
+    })
+
+    const evidenceFindings = comparison.findings.filter((finding) => (
+      finding.kind === 'support'
+      || finding.kind === 'counterexample'
+      || finding.kind === 'contradict'
+    ))
+    evidenceFindings.forEach((finding, index) => {
+      const findingId = `${comparisonId}:finding:${finding.kind}:${index}`
+      const label = finding.kind === 'support'
+        ? '支持证据'
+        : finding.kind === 'counterexample'
+          ? '反例'
+          : '矛盾材料'
+      nodes.push({
+        id: findingId,
+        kind: 'evidence',
+        title: finding.statement,
+        summary: label,
+        excerpt: finding.statement,
+        status: finding.kind === 'support' ? 'verified' : 'challenged',
+        provenance: 'user',
+        citationIds: distinct(finding.annotation_ids ?? []),
+      })
+      edges.push({
+        id: `${findingId}:edge`,
+        source: findingId,
+        target: comparisonId,
+        relation: finding.kind === 'support' ? 'supports' : 'challenges',
+        label,
+      })
+    })
+
+    const competingExplanations = distinctByStatement([
+      ...comparison.findings
+        .filter((finding) => finding.kind === 'competing_explanation')
+        .map((finding) => ({
+          statement: finding.statement,
+          annotationIds: finding.annotation_ids ?? [],
+        })),
+      ...comparison.competing_explanations.map((statement) => ({ statement, annotationIds: [] })),
+    ])
+    competingExplanations.forEach((item, index) => {
+      const alternativeId = `${comparisonId}:competing:${index}`
+      nodes.push({
+        id: alternativeId,
+        kind: 'theory',
+        title: item.statement,
+        summary: '与当前解释竞争，需要继续检验。',
+        excerpt: item.statement,
+        status: 'challenged',
+        provenance: 'user',
+        citationIds: distinct(item.annotationIds),
+      })
+      edges.push({
+        id: `${alternativeId}:edge`,
+        source: alternativeId,
+        target: comparisonId,
+        relation: 'challenges',
+        label: '竞争解释',
+      })
+    })
+
+    const evidenceGaps = distinctByStatement([
+      ...comparison.findings
+        .filter((finding) => finding.kind === 'evidence_gap')
+        .map((finding) => ({
+          statement: finding.statement,
+          annotationIds: finding.annotation_ids ?? [],
+        })),
+      ...comparison.evidence_gaps.map((statement) => ({ statement, annotationIds: [] })),
+    ])
+    evidenceGaps.forEach((item, index) => {
+      const gapId = `${comparisonId}:gap:${index}`
+      nodes.push({
+        id: gapId,
+        kind: 'gap',
+        title: item.statement,
+        summary: '案例比较确认的证据缺口。',
+        excerpt: item.statement,
+        status: 'open',
+        provenance: 'user',
+        citationIds: distinct(item.annotationIds),
+      })
+      edges.push({
+        id: `${gapId}:edge`,
+        source: comparisonId,
+        target: gapId,
+        relation: 'derives',
+        label: '证据缺口',
+      })
+    })
+
+    comparison.next_steps.forEach((step, index) => {
+      const nextStepId = `${comparisonId}:next-step:${index}`
+      nodes.push({
+        id: nextStepId,
+        kind: 'gap',
+        title: step.action,
+        summary: [step.kind, step.priority].filter(Boolean).join(' · '),
+        excerpt: step.action,
+        status: 'open',
+        provenance: 'user',
+        citationIds: [],
+      })
+      edges.push({
+        id: `${nextStepId}:edge`,
+        source: comparisonId,
+        target: nextStepId,
+        relation: 'refines',
+        label: '下一步研究',
+      })
+    })
+
+    if (comparison.theory_implication.trim()) {
+      const theoryImplicationId = `${comparisonId}:theory-implication`
+      nodes.push({
+        id: theoryImplicationId,
+        kind: 'theory',
+        title: '案例比较形成的理论判断',
+        summary: comparison.theory_implication,
+        excerpt: comparison.theory_implication,
+        status: 'grounded',
+        provenance: 'user',
+        citationIds: comparisonCitationIds,
+      })
+      edges.push({
+        id: `${theoryImplicationId}:edge`,
+        source: comparisonId,
+        target: theoryImplicationId,
+        relation: 'refines',
+        label: '修订理论判断',
+      })
+    }
+  }
+
+  return { nodes, edges }
+}
+
+function distinct(values: readonly string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))]
+}
+
+function distinctByStatement<T extends { statement: string; annotationIds: string[] }>(
+  values: readonly T[],
+): T[] {
+  const byStatement = new Map<string, T>()
+  for (const value of values) {
+    const statement = value.statement.trim()
+    if (!statement || byStatement.has(statement)) continue
+    byStatement.set(statement, { ...value, statement })
+  }
+  return [...byStatement.values()]
 }

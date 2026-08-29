@@ -16,6 +16,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentTurn,
     Conversation,
     ConversationService,
+    ConversationTaskBindingConflict,
     IdempotentTurn,
     RunAlreadyActive,
     SubjectAgentRunner,
@@ -150,10 +151,17 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             idempotency_key=idempotency_key,
         )
+        conversation: Conversation | None = None
         if existing_run is not None:
             existing_conversation = self.get_conversation(
                 user_id=user_id,
                 conversation_id=existing_run.conversation_id,
+            )
+            task_id = _resolve_task_binding(
+                conversations=self._conversations,
+                user_id=user_id,
+                conversation_id=existing_conversation.conversation_id,
+                requested_task_id=task_id,
             )
             if existing_run.status == "running":
                 raise RunAlreadyActive(str(existing_run.conversation_id))
@@ -180,9 +188,32 @@ class DisciplinaryAgentApplication:
                 conversation_id = existing_run.conversation_id
             elif conversation_id != existing_run.conversation_id:
                 raise ValueError("idempotency key belongs to another conversation")
+            conversation = existing_conversation
+        else:
+            if conversation_id is None:
+                if task_id is not None:
+                    raise ConversationTaskBindingConflict(
+                        "A new conversation cannot be started with an unbound research task."
+                    )
+            else:
+                conversation = self.get_conversation(
+                    user_id=user_id,
+                    conversation_id=conversation_id,
+                )
+                task_id = _resolve_task_binding(
+                    conversations=self._conversations,
+                    user_id=user_id,
+                    conversation_id=conversation.conversation_id,
+                    requested_task_id=task_id,
+                )
         if self._credits is not None:
             self._credits.ensure_can_start(user_id=user_id)
             self._conversations.commit()
+        if conversation is None:
+            conversation = self._conversations.create_conversation(
+                user_id=user_id,
+                title=prompt,
+            )
         tools = self._tools_factory()
         enable_research_handoff_tools = getattr(
             tools, "enable_research_handoff_tools", None
@@ -198,11 +229,6 @@ class DisciplinaryAgentApplication:
                     document_id=document_id,
                     theory_plan_id=theory_plan_id,
                 )
-        conversation = (
-            self._conversations.create_conversation(user_id=user_id, title=prompt)
-            if conversation_id is None
-            else self.get_conversation(user_id=user_id, conversation_id=conversation_id)
-        )
         runtime_identity = _runner_identity(self._runner)
         run = self._conversations.start_run(
             user_id=user_id,
@@ -426,6 +452,12 @@ def _agent_citation(item) -> AgentCitation:
         excerpt=item.excerpt,
         knowledge_id=item.knowledge_id,
         source_id=item.source_id,
+        source_kind=item.source_kind,
+        material_id=item.material_id,
+        parse_id=item.parse_id,
+        segment_id=item.segment_id,
+        locator=dict(item.locator) if item.locator is not None else None,
+        deleted=item.deleted,
     )
 
 
@@ -458,6 +490,32 @@ def _runner_identity(runner: SubjectAgentRunner) -> AgentRuntimeIdentity:
     return AgentRuntimeIdentity(provider=provider, model=model)
 
 
+def _resolve_task_binding(
+    *,
+    conversations: ConversationService,
+    user_id: UUID,
+    conversation_id: UUID,
+    requested_task_id: UUID | None,
+) -> UUID | None:
+    """Use only the task already bound to this conversation.
+
+    A missing request task is resolved from the binding so the shared Agent
+    conversation can be reopened without duplicating context.  Supplying a
+    different task (or attaching one to an unbound conversation) is rejected
+    before a run or tool scope is created.
+    """
+
+    bound_task_id = conversations.get_research_task_id(
+        user_id=user_id,
+        conversation_id=conversation_id,
+    )
+    if requested_task_id is not None and requested_task_id != bound_task_id:
+        raise ConversationTaskBindingConflict(
+            "The conversation is already bound to a different research task."
+        )
+    return bound_task_id
+
+
 def _asks_about_runtime_identity(prompt: str) -> bool:
     normalized = " ".join(prompt.lower().split())
     return any(pattern.search(normalized) for pattern in _RUNTIME_IDENTITY_PATTERNS)
@@ -471,6 +529,12 @@ def _evidence_from_citation(item):
         excerpt=item.excerpt or "",
         knowledge_id=item.knowledge_id,
         source_id=item.source_id,
+        source_kind=item.source_kind,
+        material_id=item.material_id,
+        parse_id=item.parse_id,
+        segment_id=item.segment_id,
+        locator=dict(item.locator) if item.locator is not None else None,
+        deleted=item.deleted,
     )
 
 

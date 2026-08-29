@@ -61,10 +61,12 @@ class TheoryMatchingService:
     def start(
         self,
         *,
+        user_id: UUID | None = None,
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> MatchRunSnapshot:
         evidence_bundle = self._evidence_source.retrieve(
+            user_id=user_id,
             phenomenon=phenomenon,
             release=release,
         )

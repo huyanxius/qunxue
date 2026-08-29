@@ -139,6 +139,52 @@ describe('M5 research delivery adapter', () => {
     expect(generated.listResearchDocumentVersions).not.toHaveBeenCalled()
   })
 
+  it('projects the confirmed analysis snapshot pinned to the current document version', async () => {
+    generated.listResearchDocuments.mockReturnValue(ok({
+      task_id: 'task-7',
+      items: [document({
+        research_analysis: {
+          schema_version: 'research-analysis-v1',
+          task_id: 'task-7',
+          content_hash: 'sha256:analysis-4',
+          annotations: [],
+          codes: [{ code_id: 'code-1', label: '时间压力', definition: '准备时间不足。' }],
+          memos: [{ memo_id: 'memo-1', title: '资源分布', memo_kind: 'analytic' }],
+          comparisons: [{
+            comparison_id: 'comparison-1',
+            title: '案例差异',
+            theory_implication: '需要区分正式支持与同伴网络。',
+          }],
+          unavailable_annotation_ids: ['annotation-deleted'],
+        },
+      })],
+    }))
+    generated.listResearchTaskDocumentProposals.mockReturnValue(ok({ task_id: 'task-7', items: [] }))
+    generated.listResearchDocumentVersions.mockReturnValue(ok({ document_id: 'document-7', items: [] }))
+    generated.getResearchDocumentCompletionGate.mockReturnValue(ok({
+      document_id: 'document-7',
+      version: 4,
+      ready: false,
+      pending_proposal_count: 0,
+      blockers: [],
+      checks: [],
+    }))
+
+    const state = await loadM5ResearchDelivery({ taskId: 'task-7', confirmedTheoryPlanId: 'plan-7' })
+
+    expect(state.document?.analysisBasis).toEqual({
+      contentHash: 'sha256:analysis-4',
+      codes: [{ id: 'code-1', label: '时间压力', definition: '准备时间不足。' }],
+      memos: [{ id: 'memo-1', title: '资源分布', kindLabel: '分析备忘' }],
+      comparisons: [{
+        id: 'comparison-1',
+        title: '案例差异',
+        theoryImplication: '需要区分正式支持与同伴网络。',
+      }],
+      unavailableAnnotationCount: 1,
+    })
+  })
+
   it('rejects duplicate M5 documents instead of selecting an arbitrary state source', async () => {
     generated.listResearchDocuments.mockReturnValue(ok({
       task_id: 'task-7',
@@ -178,7 +224,7 @@ describe('M5 research delivery adapter', () => {
     const exported = {
       filename: 'research-delivery.md',
       markdown: '# 正式研究框架',
-      manifest: { schema_version: 'research-delivery-v1', evidence: [{ claim: '关键判断' }] },
+      manifest: { schema_version: 'research-delivery-v2', evidence: [{ claim: '关键判断' }] },
     }
 
     expect(serializeM5ResearchExport(exported, 'markdown')).toEqual({

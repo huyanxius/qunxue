@@ -73,9 +73,10 @@ class DeterministicKnowledgeRunner:
                 provider="deterministic-knowledge",
                 model="local",
             )
-        results = tools.search_knowledge(
-            _evidence_retrieval_query(prompt, conversation=conversation)
-        )
+        retrieval_query = _evidence_retrieval_query(prompt, conversation=conversation)
+        knowledge_results = tools.search_knowledge(retrieval_query)
+        material_results = _search_material_results(tools, retrieval_query)
+        results = _merge_retrieval_results(material_results, knowledge_results)
         if not results:
             return AgentRunResult(
                 answer=_insufficient_evidence_answer(),
@@ -86,13 +87,26 @@ class DeterministicKnowledgeRunner:
             )
         first = results[0]
         citation = tools.evidence[str(first["citation_id"])]
+        source_intro = (
+            f"我先从你的个人材料「{first['title']}」这段原文切入。"
+            if first.get("source_kind") == "personal_material"
+            else f"我先从「{first['title']}」这条知识切入。"
+        )
         answer = (
-            f"我先从「{first['title']}」这条知识切入。{citation.excerpt}"
+            f"{source_intro}{citation.excerpt}"
             "\n\n如果你愿意，我可以继续把这个概念和你的具体情境对照。"
+        )
+        citation_limit = 2 if material_results else 1
+        citation_results = results[:citation_limit]
+        _select_result_evidence(tools, citation_results)
+        citations = tuple(
+            tools.evidence[str(item["citation_id"])]
+            for item in citation_results
+            if str(item.get("citation_id")) in tools.evidence
         )
         return AgentRunResult(
             answer=answer,
-            citations=(citation,),
+            citations=citations or (citation,),
             release_id=tools.release.knowledge_release_id,
             provider="deterministic-knowledge",
             model="local",
@@ -108,6 +122,7 @@ class DeterministicKnowledgeRunner:
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
     ) -> AgentRunResult:
         call_id = "deterministic:search_knowledge"
+        material_enabled = _material_tools_available(tools)
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
@@ -132,6 +147,16 @@ class DeterministicKnowledgeRunner:
                     detail="正在检索知识库",
                 )
             )
+            if material_enabled:
+                on_tool_event(
+                    AgentToolEvent(
+                        tool="search_research_materials",
+                        phase="started",
+                        call_id="deterministic:search_research_materials",
+                        input={"query": retrieval_query},
+                        detail="正在检索个人研究材料",
+                    )
+                )
         try:
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
         except Exception:
@@ -146,19 +171,63 @@ class DeterministicKnowledgeRunner:
                         error="knowledge_search_failed",
                     )
                 )
+                if material_enabled and on_tool_event is not None:
+                    on_tool_event(
+                        AgentToolEvent(
+                            tool="search_research_materials",
+                            phase="failed",
+                            call_id="deterministic:search_research_materials",
+                            input={"query": retrieval_query},
+                            detail="个人材料检索暂时失败",
+                            error="research_material_search_failed",
+                        )
+                    )
             raise
         if on_tool_event is not None:
-            trace_items = _trace_items(result.citations)
+            public_citations = tuple(
+                citation
+                for citation in result.citations
+                if citation.source_kind != "personal_material"
+            )
+            trace_items = _trace_items(public_citations)
             on_tool_event(
                 AgentToolEvent(
                     tool="search_knowledge",
                     phase="finished",
                     call_id=call_id,
                     input={"query": retrieval_query},
-                    output={"result_count": len(result.citations), "items": trace_items},
-                    detail=_trace_detail(len(result.citations), trace_items),
+                    output={"result_count": len(public_citations), "items": trace_items},
+                    detail=_trace_detail(len(public_citations), trace_items),
                 )
             )
+            if material_enabled:
+                material_citations = tuple(
+                    citation
+                    for citation in result.citations
+                    if citation.source_kind == "personal_material"
+                )
+                on_tool_event(
+                    AgentToolEvent(
+                        tool="search_research_materials",
+                        phase="finished",
+                        call_id="deterministic:search_research_materials",
+                        input={"query": retrieval_query},
+                        output={
+                            "result_count": len(material_citations),
+                            "items": _trace_items(material_citations),
+                        },
+                        detail=_material_trace_detail(
+                            [
+                                {
+                                    "title": item.label,
+                                    "source_kind": "personal_material",
+                                    "locator": item.locator,
+                                }
+                                for item in material_citations
+                            ]
+                        ),
+                    )
+                )
         for index in range(0, len(result.answer), 72):
             on_delta(result.answer[index : index + 72])
         return result
@@ -177,6 +246,53 @@ def _should_search_knowledge(
         document_workspace=document_workspace,
         conversation=conversation,
     )
+
+
+def _material_tools_available(tools: AgentToolContext) -> bool:
+    return bool(
+        getattr(tools, "research_material_tools_enabled", False)
+        and callable(getattr(tools, "search_research_materials", None))
+    )
+
+
+def _search_material_results(
+    tools: AgentToolContext,
+    query: str,
+) -> list[Mapping[str, object]]:
+    if not _material_tools_available(tools):
+        return []
+    result = tools.search_research_materials(query, limit=5)
+    return (
+        [item for item in result if isinstance(item, Mapping)] if isinstance(result, list) else []
+    )
+
+
+def _mapping_results(value: object) -> list[Mapping[str, object]]:
+    return [item for item in value if isinstance(item, Mapping)] if isinstance(value, list) else []
+
+
+def _merge_retrieval_results(
+    material_results: Sequence[Mapping[str, object]],
+    knowledge_results: Sequence[Mapping[str, object]] | Mapping[str, object],
+) -> list[Mapping[str, object]]:
+    public = (
+        [item for item in knowledge_results if isinstance(item, Mapping)]
+        if isinstance(knowledge_results, list)
+        else []
+    )
+    # Keep one result per source segment/knowledge chunk while preserving the
+    # personal-material-first ordering that makes the source distinction clear
+    # in the deterministic local runtime.
+    merged: list[Mapping[str, object]] = []
+    seen: set[str] = set()
+    for item in (*material_results, *public):
+        citation_id = item.get("citation_id")
+        key = str(citation_id) if citation_id is not None else repr(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(item)
+    return merged
 
 
 def _general_answer(prompt: str) -> str:
@@ -223,7 +339,6 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
 
 
 class PydanticAIKnowledgeRunner:
-
     def __init__(
         self,
         *,
@@ -270,6 +385,18 @@ class PydanticAIKnowledgeRunner:
                 "知识工具的调用由你根据当前消息与结构化对话历史作语义判断，不要依赖或复刻关键词分类器。"
                 "面对社会学概念、理论和社会现象的解释、比较或分析，默认先调用 search_knowledge"
                 "取得知识库依据，即使用户只问‘什么是异化’这类简短问题。"
+                "当当前对话绑定研究任务且个人材料工具可用时，研究问题默认同轮调用"
+                "search_research_materials；必须把个人材料与群学公共知识分开标记，不能把一方冒充另一方。"
+                "需要解释个人材料中的片段时，先调用"
+                " read_research_material_context 获取目标位置及有限前后文，"
+                "不得脱离原文上下文或编造页码、章节和段落。"
+                "当质性分析工具可用时，先调用 get_research_analysis 读取用户已有标注、编码和备忘；"
+                "跨材料、案例或时间比较时，先调用 get_research_comparison_context，"
+                "再用 propose_case_comparison 提出支持证据、反例、矛盾材料、竞争解释、"
+                "证据缺口与下一步行动；你只能调用 propose_analysis_code、"
+                "propose_analysis_memo 或 propose_case_comparison 提出候选，"
+                "不能静默决定、确认或拒绝主题、理论与结论。候选必须等待用户在界面明确确认，"
+                "相关原文仍用 search_research_materials 与 read_research_material_context 核对。"
                 "用户询问工具调用规则、检索策略或调用条件，或者只是在问候、控制流程、询问能力边界时，"
                 "直接回答当前问题，不要调用知识库。检索前先提炼真正的社会学概念或现象，"
                 "不得把针对 Tool 行为的元问题、纠错或反馈整句当作 query。"
@@ -301,7 +428,7 @@ class PydanticAIKnowledgeRunner:
                 "methodology、sample_and_sources、analysis_steps、ethics、limitations、"
                 "evidence_gaps；不得缺失、重复或自造章节 key。"
                 "不得调用任何模型工具直接创建 ResearchTask。"
-                "研究工作区每轮最多调用 3 次 search_knowledge、"
+                "研究工作区每轮最多调用 3 次 search_knowledge、3 次 search_research_materials、"
                 "5 次读取类工具；已有足够材料后停止检索。"
                 "研究地图只记录问题、理论、主张、证据、缺口和综合，以及 explains、supports、"
                 "challenges、derives、refines 关系；不要把工具调用、聊天记录或未核验猜测写成节点。"
@@ -373,6 +500,296 @@ class PydanticAIKnowledgeRunner:
                 )
             )
             return result
+
+        @self._agent.tool(prepare=_prepare_material_tool)
+        def search_research_materials(
+            ctx: RunContext[KnowledgeToolRegistry], query: str, limit: int = 5
+        ) -> list[dict[str, object]] | dict[str, object]:
+            """检索当前研究任务中用户上传且仍有效的个人材料片段。
+
+            结果总是带有 ``research_material`` 类型、稳定 segment locator 和
+            ``personal_material`` 来源标记；工具不会访问其他任务或已删除正文。
+            """
+            safe_limit = max(1, min(int(limit), 8))
+            call_id = _tool_call_id(ctx, "search_research_materials")
+            tool_input = {"query": query, "limit": safe_limit}
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_research_materials",
+                    phase="started",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="正在检索个人研究材料",
+                )
+            )
+            try:
+                result = ctx.deps.search_research_materials(query, limit=safe_limit)
+            except RetrievalPipelineUnavailable:
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="search_research_materials",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="个人材料检索暂时失败",
+                        error="research_material_search_failed",
+                    )
+                )
+                raise
+            except Exception:
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="search_research_materials",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="个人材料检索暂时失败",
+                        error="research_material_search_failed",
+                    )
+                )
+                return {
+                    "error": "research_material_search_failed",
+                    "message": "个人研究材料检索暂时失败，请继续判断证据边界。",
+                    "retryable": True,
+                }
+            if isinstance(result, list):
+                if result:
+                    _select_result_evidence(ctx.deps, result)
+                count = len(result)
+                output = {"result_count": count, "items": _trace_items(result)}
+                detail = _material_trace_detail(result)
+            else:
+                output = result
+                detail = str(result.get("message", "当前没有绑定个人研究材料"))
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_research_materials",
+                    phase="finished" if isinstance(result, list) else "failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    output=output,
+                    detail=detail,
+                    error=None if isinstance(result, list) else str(result.get("error")),
+                )
+            )
+            return result
+
+        @self._agent.tool(prepare=_prepare_material_tool)
+        def read_research_material_context(
+            ctx: RunContext[KnowledgeToolRegistry],
+            material_id: str,
+            segment_id: str,
+            parse_id: str | None = None,
+            before: int = 2,
+            after: int = 2,
+        ) -> dict[str, object]:
+            """沿稳定 locator 读取个人材料目标片段及有限前后文。
+
+            重解析后重新打开历史引用时，必须把引用携带的 ``parse_id``
+            一并传入；省略它只读取材料当前解析版本。
+            """
+            safe_before = max(0, min(int(before), 4))
+            safe_after = max(0, min(int(after), 4))
+            call_id = _tool_call_id(ctx, "read_research_material_context")
+            tool_input = {
+                "material_id": material_id,
+                "segment_id": segment_id,
+                "parse_id": parse_id,
+                "before": safe_before,
+                "after": safe_after,
+            }
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="read_research_material_context",
+                    phase="started",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="正在读取个人材料原文上下文",
+                )
+            )
+            try:
+                if parse_id is None:
+                    # Keep the call compatible with older test doubles and
+                    # adapters while the optional argument rolls out.
+                    result = ctx.deps.read_research_material_context(
+                        material_id,
+                        segment_id,
+                        before=safe_before,
+                        after=safe_after,
+                    )
+                else:
+                    result = ctx.deps.read_research_material_context(
+                        material_id,
+                        segment_id,
+                        parse_id=parse_id,
+                        before=safe_before,
+                        after=safe_after,
+                    )
+            except RetrievalPipelineUnavailable:
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="read_research_material_context",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="个人材料原文读取暂时失败",
+                        error="research_material_context_failed",
+                    )
+                )
+                raise
+            except Exception:
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="read_research_material_context",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="个人材料原文读取暂时失败",
+                        error="research_material_context_failed",
+                    )
+                )
+                return {
+                    "error": "research_material_context_failed",
+                    "material_id": material_id,
+                    "segment_id": segment_id,
+                }
+            found = "error" not in result
+            if found:
+                _select_result_evidence(ctx.deps, [result])
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="read_research_material_context",
+                    phase="finished" if found else "failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    output={
+                        "found": found,
+                        "material_id": material_id,
+                        "segment_id": segment_id,
+                        "locator": result.get("locator"),
+                        "context_count": len(result.get("context", []))
+                        if isinstance(result.get("context"), list)
+                        else 0,
+                    },
+                    detail="已读取个人材料原文上下文" if found else "没有找到当前材料片段",
+                    error=None if found else str(result.get("error")),
+                )
+            )
+            return result
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def get_research_analysis(
+            ctx: RunContext[KnowledgeToolRegistry],
+        ) -> dict[str, object]:
+            """读取当前研究任务已有的标注、编码、备忘与比较，不产生写入。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "get_research_analysis",
+                {},
+                "正在读取质性分析",
+                candidate=False,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def propose_analysis_code(
+            ctx: RunContext[KnowledgeToolRegistry],
+            label: str,
+            definition: str,
+            annotation_ids: list[str],
+            rationale: str,
+        ) -> dict[str, object]:
+            """基于用户已有标注提出待确认编码；不会确认主题、理论或结论。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "propose_analysis_code",
+                {
+                    "label": label,
+                    "definition": definition,
+                    "annotation_ids": annotation_ids,
+                    "rationale": rationale,
+                },
+                "正在生成编码候选",
+                candidate=True,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def propose_analysis_memo(
+            ctx: RunContext[KnowledgeToolRegistry],
+            title: str,
+            content: str,
+            memo_kind: str,
+            annotation_ids: list[str],
+            code_ids: list[str],
+        ) -> dict[str, object]:
+            """基于已有材料与分析提出待确认备忘；不会写入最终研究判断。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "propose_analysis_memo",
+                {
+                    "title": title,
+                    "content": content,
+                    "memo_kind": memo_kind,
+                    "annotation_ids": annotation_ids,
+                    "code_ids": code_ids,
+                },
+                "正在生成分析备忘候选",
+                candidate=True,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def get_research_comparison_context(
+            ctx: RunContext[KnowledgeToolRegistry],
+            case_labels: list[str],
+            time_labels: list[str],
+        ) -> dict[str, object]:
+            """读取至少两个案例及可选时间锚点的已有分析，不产生写入。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "get_research_comparison_context",
+                {
+                    "case_labels": case_labels,
+                    "time_labels": time_labels,
+                },
+                "正在读取案例比较上下文",
+                candidate=False,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def propose_case_comparison(
+            ctx: RunContext[KnowledgeToolRegistry],
+            title: str,
+            question: str,
+            case_labels: list[str],
+            time_labels: list[str],
+            findings: list[dict[str, object]],
+            competing_explanations: list[str],
+            evidence_gaps: list[str],
+            next_steps: list[dict[str, object]],
+            theory_implication: str,
+        ) -> dict[str, object]:
+            """提出待用户确认的案例比较；不会替用户决定理论或结论。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "propose_case_comparison",
+                {
+                    "title": title,
+                    "question": question,
+                    "case_labels": case_labels,
+                    "time_labels": time_labels,
+                    "findings": findings,
+                    "competing_explanations": competing_explanations,
+                    "evidence_gaps": evidence_gaps,
+                    "next_steps": next_steps,
+                    "theory_implication": theory_implication,
+                },
+                "正在生成案例比较候选",
+                candidate=True,
+            )
 
         @self._agent.tool
         def read_knowledge_entry(
@@ -887,6 +1304,69 @@ class PydanticAIKnowledgeRunner:
         )
         return result
 
+    def _run_analysis_tool(
+        self,
+        ctx: RunContext[KnowledgeToolRegistry],
+        tool_name: str,
+        payload: dict[str, object],
+        detail: str,
+        *,
+        candidate: bool,
+    ) -> dict[str, object]:
+        call_id = _tool_call_id(ctx, tool_name)
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool=tool_name,
+                phase="started",
+                call_id=call_id,
+                input=payload,
+                detail=detail,
+            )
+        )
+        try:
+            invocation = dict(payload)
+            if candidate:
+                # The model never supplies provenance. The runner binds each
+                # candidate to Pydantic AI's stable call identity.
+                invocation["tool_call_id"] = call_id
+            result = getattr(ctx.deps, tool_name)(**invocation)
+        except Exception as error:
+            failure = {
+                "error": "research_analysis_tool_failed",
+                "message": str(error),
+            }
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool=tool_name,
+                    phase="failed",
+                    call_id=call_id,
+                    input=payload,
+                    output=failure,
+                    detail="质性分析操作未完成",
+                    error="research_analysis_tool_failed",
+                )
+            )
+            return failure
+        failed = bool(result.get("error"))
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool=tool_name,
+                phase="failed" if failed else "finished",
+                call_id=call_id,
+                input=payload,
+                output=result,
+                detail=(
+                    str(result.get("message", "质性分析操作未完成"))
+                    if failed
+                    else "已生成待用户确认的分析候选"
+                    if candidate
+                    else "已读取质性分析"
+                ),
+                error=str(result["error"]) if failed else None,
+            )
+        )
+        return result
+
     def _emit_tool_event(self, event: AgentToolEvent) -> None:
         callback = self._active_tool_event.get()
         if callback is not None:
@@ -899,6 +1379,11 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
+        retrieved_evidence = self._preload_bound_research_evidence(
+            prompt=prompt,
+            conversation=conversation,
+            tools=tools,
+        )
         result = self._agent.run_sync(
             _compose_agent_prompt(
                 prompt=prompt,
@@ -906,6 +1391,7 @@ class PydanticAIKnowledgeRunner:
                 if getattr(tools, "research_map_enabled", False)
                 else None,
                 document_context=getattr(tools, "document_prompt_context", None),
+                retrieved_evidence=retrieved_evidence,
             ),
             message_history=_agent_message_history(conversation),
             deps=tools,
@@ -945,6 +1431,11 @@ class PydanticAIKnowledgeRunner:
                     on_delta(event.delta.content_delta)
 
         try:
+            retrieved_evidence = self._preload_bound_research_evidence(
+                prompt=prompt,
+                conversation=conversation,
+                tools=tools,
+            )
             result = self._agent.run_sync(
                 _compose_agent_prompt(
                     prompt=prompt,
@@ -952,6 +1443,7 @@ class PydanticAIKnowledgeRunner:
                     if getattr(tools, "research_map_enabled", False)
                     else None,
                     document_context=getattr(tools, "document_prompt_context", None),
+                    retrieved_evidence=retrieved_evidence,
                 ),
                 message_history=_agent_message_history(conversation),
                 deps=tools,
@@ -966,6 +1458,149 @@ class PydanticAIKnowledgeRunner:
             )
         finally:
             self._active_tool_event.reset(token)
+
+    def _preload_bound_research_evidence(
+        self,
+        *,
+        prompt: str,
+        conversation: Sequence[AgentTurn],
+        tools: AgentToolContext,
+    ) -> dict[str, object] | None:
+        """Load both evidence pools before a bound research turn reaches the model."""
+
+        if not _material_tools_available(tools) or not _should_search_knowledge(
+            prompt,
+            research_workspace=bool(getattr(tools, "research_map_enabled", False)),
+            document_workspace=bool(
+                getattr(tools, "research_document_tools_enabled", False)
+            ),
+            conversation=conversation,
+        ):
+            return None
+        query = _evidence_retrieval_query(prompt, conversation=conversation)
+        public = self._preload_public_evidence(tools=tools, query=query)
+        personal = self._preload_personal_evidence(tools=tools, query=query)
+        return {
+            "query": query,
+            "public_knowledge": public,
+            "personal_materials": personal,
+        }
+
+    def _preload_public_evidence(
+        self,
+        *,
+        tools: AgentToolContext,
+        query: str,
+    ) -> list[Mapping[str, object]] | dict[str, object]:
+        call_id = "runner:search_knowledge"
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool="search_knowledge",
+                phase="started",
+                call_id=call_id,
+                input={"query": query},
+                detail="正在检索知识库",
+            )
+        )
+        try:
+            raw_result = tools.search_knowledge(query)
+        except Exception:
+            failure = {
+                "error": "knowledge_search_failed",
+                "message": "知识库检索暂时失败，本次没有取得公共知识证据。",
+                "retryable": True,
+            }
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_knowledge",
+                    phase="failed",
+                    call_id=call_id,
+                    input={"query": query},
+                    output=failure,
+                    detail="知识库检索暂时失败",
+                    error="knowledge_search_failed",
+                )
+            )
+            return failure
+        result = _mapping_results(raw_result)
+        if result:
+            _select_result_evidence(tools, result)
+        trace_items = _trace_items(result)
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool="search_knowledge",
+                phase="finished",
+                call_id=call_id,
+                input={"query": query},
+                output={"result_count": len(result), "items": trace_items},
+                detail=_trace_detail(len(result), trace_items),
+            )
+        )
+        return result
+
+    def _preload_personal_evidence(
+        self,
+        *,
+        tools: AgentToolContext,
+        query: str,
+    ) -> list[Mapping[str, object]] | dict[str, object]:
+        call_id = "runner:search_research_materials"
+        tool_input = {"query": query, "limit": 5}
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool="search_research_materials",
+                phase="started",
+                call_id=call_id,
+                input=tool_input,
+                detail="正在检索个人研究材料",
+            )
+        )
+        try:
+            raw_result = tools.search_research_materials(query, limit=5)
+        except RetrievalPipelineUnavailable:
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_research_materials",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="个人材料检索暂时失败",
+                    error="research_material_search_failed",
+                )
+            )
+            raise
+        except Exception:
+            failure = {
+                "error": "research_material_search_failed",
+                "message": "个人研究材料检索暂时失败，请继续判断证据边界。",
+                "retryable": True,
+            }
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_research_materials",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    output=failure,
+                    detail="个人材料检索暂时失败",
+                    error="research_material_search_failed",
+                )
+            )
+            return failure
+        result = _mapping_results(raw_result)
+        if result:
+            _select_result_evidence(tools, result)
+        self._emit_tool_event(
+            AgentToolEvent(
+                tool="search_research_materials",
+                phase="finished",
+                call_id=call_id,
+                input=tool_input,
+                output={"result_count": len(result), "items": _trace_items(result)},
+                detail=_material_trace_detail(result),
+            )
+        )
+        return result
 
 
 def _is_deepseek_flash(*, base_url: str, model: str) -> bool:
@@ -1405,15 +2040,29 @@ def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
     for value in values[:limit]:
         if isinstance(value, AgentEvidence):
             item = {
-                "knowledge_id": value.knowledge_id,
                 "title": value.label,
                 "excerpt": _trace_excerpt(value.excerpt),
                 "evidence_status": "verified",
             }
+            for key, field_value in (
+                ("knowledge_id", value.knowledge_id),
+                ("material_id", value.material_id),
+                ("parse_id", value.parse_id),
+                ("segment_id", value.segment_id),
+                ("source_id", value.source_id),
+                ("source_kind", value.source_kind),
+            ):
+                if field_value is not None:
+                    item[key] = field_value
+            if value.locator is not None:
+                item["locator"] = dict(value.locator)
         elif isinstance(value, Mapping):
             item = {}
             for key in (
                 "knowledge_id",
+                "material_id",
+                "segment_id",
+                "source_kind",
                 "node_id",
                 "source_id",
                 "title",
@@ -1464,6 +2113,31 @@ def _trace_detail(
     return f"找到 {count} 条可引用证据：{'；'.join(labels)}"
 
 
+def _material_trace_detail(values: Sequence[Mapping[str, object]]) -> str:
+    if not values:
+        return "没有找到可展示的个人材料片段"
+    labels = []
+    for item in values[:3]:
+        title = item.get("title") or item.get("material_id") or "个人材料"
+        locator = item.get("locator")
+        labels.append(f"{title}{f'（{_locator_trace(locator)}）' if locator else ''}")
+    return f"找到 {len(values)} 条个人材料证据：{'；'.join(labels)}"
+
+
+def _locator_trace(value: object) -> str:
+    if not isinstance(value, Mapping):
+        return "原文位置"
+    pieces: list[str] = []
+    if value.get("page") is not None:
+        pieces.append(f"第{value['page']}页")
+    if value.get("paragraph") is not None:
+        pieces.append(f"第{value['paragraph']}段")
+    if value.get("line_start") is not None:
+        end = value.get("line_end") or value["line_start"]
+        pieces.append(f"第{value['line_start']}-{end}行")
+    return "，".join(pieces) or "原文位置"
+
+
 def _source_trace_detail(values) -> str:
     items = _trace_items(values)
     labels = [str(item.get("title") or item.get("source_id")) for item in items]
@@ -1491,6 +2165,7 @@ def _compose_agent_prompt(
     prompt: str,
     research_map: Mapping[str, object] | None = None,
     document_context: Mapping[str, object] | None = None,
+    retrieved_evidence: Mapping[str, object] | None = None,
 ) -> str:
     map_context = (
         "\n\n<research_map_policy>"
@@ -1510,7 +2185,18 @@ def _compose_agent_prompt(
         if document_context is not None
         else ""
     )
-    return f"{prompt}{map_context}{document_context_text}"
+    retrieved_evidence_text = (
+        "\n\n<retrieved_research_evidence_policy>"
+        "服务端已为本轮同时检索群学公共知识与当前任务的个人材料。"
+        "下面两组结果均为空时才表示没有候选证据；同一 query 不要重复调用检索工具，"
+        "只有需要改写查询或补充证据时才再次检索。回答必须明确区分两类来源。"
+        "</retrieved_research_evidence_policy>\n<retrieved_research_evidence>\n"
+        f"{json.dumps(retrieved_evidence, ensure_ascii=False, separators=(',', ':'), default=str)}"
+        "\n</retrieved_research_evidence>"
+        if retrieved_evidence is not None
+        else ""
+    )
+    return f"{prompt}{map_context}{document_context_text}{retrieved_evidence_text}"
 
 
 def _agent_message_history(
@@ -1559,6 +2245,34 @@ def _prepare_document_tool(
     return (
         definition
         if getattr(ctx.deps, "research_document_tools_enabled", False)
+        and callable(getattr(ctx.deps, definition.name, None))
+        else None
+    )
+
+
+def _prepare_material_tool(
+    ctx: RunContext[KnowledgeToolRegistry],
+    definition: ToolDefinition,
+) -> ToolDefinition | None:
+    """Expose personal-material tools only for an authorized bound task."""
+
+    return (
+        definition
+        if getattr(ctx.deps, "research_material_tools_enabled", False)
+        and callable(getattr(ctx.deps, definition.name, None))
+        else None
+    )
+
+
+def _prepare_analysis_tool(
+    ctx: RunContext[KnowledgeToolRegistry],
+    definition: ToolDefinition,
+) -> ToolDefinition | None:
+    """Expose only approval-gated analysis tools with complete run provenance."""
+
+    return (
+        definition
+        if getattr(ctx.deps, "research_analysis_tools_enabled", False)
         and callable(getattr(ctx.deps, definition.name, None))
         else None
     )
@@ -1616,7 +2330,66 @@ def _select_result_evidence(
         source_ids = result.get("source_citation_ids")
         if isinstance(source_ids, list):
             citation_ids.extend(value for value in source_ids if isinstance(value, str))
-    tools.select_evidence(citation_ids[:8])
+    incoming = tuple(dict.fromkeys(citation_ids))
+    if not incoming:
+        _set_selected_evidence(tools, ())
+        return
+
+    # A research turn may deliberately combine a public concept with a
+    # task-scoped personal excerpt.  Keep both source kinds in that case;
+    # repeated searches within one source still replace the previous closed
+    # set, preserving the existing reformulation behavior.
+    existing = tuple(getattr(tools, "selected_evidence_ids", ()))
+    incoming_kinds = {_evidence_source_bucket(tools, citation_id) for citation_id in incoming}
+    existing_kinds = {_evidence_source_bucket(tools, citation_id) for citation_id in existing}
+    if existing and incoming_kinds == {"personal"} and "public" in existing_kinds:
+        # Reading a neighboring personal block should refine the personal
+        # selection without dropping a public concept retrieved earlier.
+        public = tuple(
+            citation_id
+            for citation_id in existing
+            if _evidence_source_bucket(tools, citation_id) == "public"
+        )
+        selected = tuple(dict.fromkeys((*public[:7], *incoming)))
+    elif existing and incoming_kinds == {"public"} and "personal" in existing_kinds:
+        # A public reformulation replaces only the public candidates while
+        # preserving the task-scoped excerpts already selected this turn.
+        personal = tuple(
+            citation_id
+            for citation_id in existing
+            if _evidence_source_bucket(tools, citation_id) == "personal"
+        )
+        selected = tuple(dict.fromkeys((*personal[:7], *incoming)))
+    else:
+        selected = incoming
+    _set_selected_evidence(tools, selected[:8])
+
+
+def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str]) -> None:
+    """Keep partial test/tool contexts compatible with the evidence protocol.
+
+    Production registries expose ``select_evidence`` so the closed citation set
+    is persisted in the run context.  A few lightweight deterministic runner
+    fixtures intentionally provide only search and evidence maps; preserving
+    their selected ids locally keeps those fixtures useful without weakening
+    the production protocol.
+    """
+
+    selector = getattr(tools, "select_evidence", None)
+    if callable(selector):
+        selector(citation_ids)
+        return
+    try:
+        tools.selected_evidence_ids = tuple(citation_ids)  # type: ignore[attr-defined]
+    except (AttributeError, TypeError):
+        # Immutable partial contexts cannot retain selection, but they can
+        # still produce the deterministic answer and trace.
+        return
+
+
+def _evidence_source_bucket(tools: AgentToolContext, citation_id: str) -> str:
+    evidence = tools.evidence.get(citation_id)
+    return "personal" if getattr(evidence, "source_kind", None) == "personal_material" else "public"
 
 
 def _tool_call_id(ctx: RunContext[KnowledgeToolRegistry], tool: str) -> str:

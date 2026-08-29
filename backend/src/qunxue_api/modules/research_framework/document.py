@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -46,11 +47,46 @@ class ResearchDocumentSectionStatus(StrEnum):
     CONFIRMED = "confirmed"
 
 
+class ResearchDocumentEvidenceSourceKind(StrEnum):
+    PUBLIC_KNOWLEDGE = "public_knowledge"
+    PERSONAL_MATERIAL = "personal_material"
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchDocumentEvidenceRef:
     evidence_ref_id: str
     source_id: str
-    knowledge_release_id: str
+    knowledge_release_id: str | None
+    source_kind: ResearchDocumentEvidenceSourceKind = (
+        ResearchDocumentEvidenceSourceKind.PUBLIC_KNOWLEDGE
+    )
+    annotation_id: UUID | None = None
+    material_id: UUID | None = None
+    parse_id: UUID | None = None
+    segment_id: str | None = None
+    locator: dict[str, object] | None = None
+
+    def __post_init__(self) -> None:
+        source_kind = ResearchDocumentEvidenceSourceKind(self.source_kind)
+        object.__setattr__(self, "source_kind", source_kind)
+        if source_kind is ResearchDocumentEvidenceSourceKind.PUBLIC_KNOWLEDGE:
+            if not self.knowledge_release_id or not self.knowledge_release_id.strip():
+                raise ValueError("public evidence requires a knowledge release")
+            return
+        if self.knowledge_release_id is not None:
+            raise ValueError("personal material evidence cannot claim a knowledge release")
+        if not all(
+            (
+                self.annotation_id,
+                self.material_id,
+                self.parse_id,
+                self.segment_id and self.segment_id.strip(),
+                self.locator,
+            )
+        ):
+            raise ValueError("personal material evidence requires an exact source locator")
+        object.__setattr__(self, "segment_id", self.segment_id.strip())
+        object.__setattr__(self, "locator", deepcopy(self.locator))
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +113,7 @@ class ResearchDocumentSnapshot:
     change_summary: str
     actor: str
     created_at: datetime
+    analysis_handoff: dict[str, object] | None = None
     restored_from_version: int | None = None
     confirmed_at: datetime | None = None
 
@@ -146,6 +183,7 @@ class ResearchDocumentService:
         title: str,
         sections: tuple[ResearchDocumentSection, ...],
         actor: str = "user",
+        analysis_handoff: dict[str, object] | None = None,
     ) -> ResearchDocumentSnapshot:
         normalized_title = title.strip()
         if not normalized_title:
@@ -179,6 +217,7 @@ class ResearchDocumentService:
                 change_summary="创建研究框架草稿",
                 actor=actor.strip() or "user",
                 created_at=now,
+                analysis_handoff=_analysis_handoff(analysis_handoff),
             )
         )
 
@@ -209,6 +248,7 @@ class ResearchDocumentService:
         sections: tuple[ResearchDocumentSection, ...],
         change_summary: str,
         actor: str,
+        analysis_handoff: dict[str, object] | None = None,
     ) -> ResearchDocumentSnapshot:
         current = self.get(document_id)
         self._assert_current_version(current, expected_version)
@@ -226,6 +266,11 @@ class ResearchDocumentService:
                 change_summary=summary,
                 actor=actor.strip() or "user",
                 created_at=self._clock(),
+                analysis_handoff=(
+                    current.analysis_handoff
+                    if analysis_handoff is None
+                    else _analysis_handoff(analysis_handoff)
+                ),
                 restored_from_version=None,
             )
         persisted = self._repository.add(candidate)
@@ -383,6 +428,7 @@ class ResearchDocumentService:
         document_id: UUID,
         expected_version: int,
         pending_proposal_count: int = 0,
+        analysis_handoff: dict[str, object] | None = None,
     ) -> ResearchDocumentSnapshot:
         current = self.get(document_id)
         self._assert_current_version(current, expected_version)
@@ -417,6 +463,11 @@ class ResearchDocumentService:
                 change_summary="用户确认正式研究框架",
                 actor="user",
                 created_at=now,
+                analysis_handoff=(
+                    current.analysis_handoff
+                    if analysis_handoff is None
+                    else _analysis_handoff(analysis_handoff)
+                ),
                 restored_from_version=None,
                 confirmed_at=now,
             )
@@ -449,9 +500,16 @@ class ResearchDocumentService:
             if not section.evidence_refs:
                 return rendered
             evidence_lines = "\n".join(
-                "- "
-                f"`{evidence.evidence_ref_id}` — source `{evidence.source_id}`; "
-                f"release `{evidence.knowledge_release_id}`"
+                (
+                    "- "
+                    f"`{evidence.evidence_ref_id}` — personal material "
+                    f"`{evidence.material_id}`; segment `{evidence.segment_id}`"
+                    if evidence.source_kind
+                    is ResearchDocumentEvidenceSourceKind.PERSONAL_MATERIAL
+                    else "- "
+                    f"`{evidence.evidence_ref_id}` — source `{evidence.source_id}`; "
+                    f"release `{evidence.knowledge_release_id}`"
+                )
                 for evidence in section.evidence_refs
             )
             return f"{rendered}\n\n### 证据引用\n\n{evidence_lines}"
@@ -490,6 +548,23 @@ class ResearchDocumentService:
             if not section.title.strip() or not section.content.strip():
                 raise ValueError("document section title and content are required")
             if any(
-                evidence.knowledge_release_id != release_id for evidence in section.evidence_refs
+                evidence.source_kind
+                is ResearchDocumentEvidenceSourceKind.PUBLIC_KNOWLEDGE
+                and evidence.knowledge_release_id != release_id
+                for evidence in section.evidence_refs
             ):
                 raise ValueError("evidence must use the document knowledge release")
+
+
+def _analysis_handoff(value: dict[str, object] | None) -> dict[str, object] | None:
+    if value is None:
+        return None
+    normalized = deepcopy(value)
+    if normalized.get("schema_version") != "research-analysis-v1":
+        raise ValueError("unsupported research analysis handoff")
+    annotations = normalized.get("annotations")
+    if not isinstance(annotations, list):
+        raise ValueError("research analysis annotations are required")
+    if any(isinstance(item, dict) and "quote" in item for item in annotations):
+        raise ValueError("research document handoff cannot persist source text")
+    return normalized

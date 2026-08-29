@@ -10,7 +10,11 @@ from qunxue_api.modules.agent_conversation.domain import (
     Conversation,
     IdempotentTurn,
 )
-from qunxue_api.modules.agent_conversation.errors import ConversationNotFound, RunAlreadyActive
+from qunxue_api.modules.agent_conversation.errors import (
+    ConversationNotFound,
+    ConversationTaskBindingConflict,
+    RunAlreadyActive,
+)
 from qunxue_api.modules.agent_conversation.ports import ConversationRepository
 from qunxue_api.modules.agent_conversation.research_map import (
     aggregate_research_map,
@@ -23,6 +27,7 @@ class _MemoryRepository:
         self.conversations: dict[UUID, Conversation] = {}
         self.turn_keys: dict[tuple[UUID, str], UUID] = {}
         self.runs: dict[UUID, AgentRun] = {}
+        self.research_task_ids: dict[UUID, UUID] = {}
 
     def commit(self) -> None:
         return None
@@ -30,6 +35,21 @@ class _MemoryRepository:
     def create(self, conversation: Conversation) -> Conversation:
         self.conversations[conversation.conversation_id] = conversation
         return conversation
+
+    def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None:
+        self.get(user_id=user_id, conversation_id=conversation_id)
+        return self.research_task_ids.get(conversation_id)
+
+    def link_research_task(
+        self, *, user_id: UUID, conversation_id: UUID, task_id: UUID
+    ) -> None:
+        self.get(user_id=user_id, conversation_id=conversation_id)
+        existing = self.research_task_ids.get(conversation_id)
+        if existing is not None and existing != task_id:
+            raise ConversationTaskBindingConflict(
+                "The conversation is already bound to a different research task."
+            )
+        self.research_task_ids[conversation_id] = task_id
 
     def get(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
         conversation = self.conversations.get(conversation_id)
@@ -96,6 +116,7 @@ class _MemoryRepository:
             for run_id, run in self.runs.items()
             if run.conversation_id != conversation_id
         }
+        self.research_task_ids.pop(conversation_id, None)
 
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]:
         return {
@@ -222,6 +243,21 @@ class ConversationService:
 
     def commit(self) -> None:
         self._repository.commit()
+
+    def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None:
+        return self._repository.get_research_task_id(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+
+    def link_research_task(
+        self, *, user_id: UUID, conversation_id: UUID, task_id: UUID
+    ) -> None:
+        self._repository.link_research_task(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            task_id=task_id,
+        )
 
     def get_conversation(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
         return self._repository.get(user_id=user_id, conversation_id=conversation_id)

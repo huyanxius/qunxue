@@ -1244,12 +1244,28 @@
   gap: 6px 16px;
 }
 
-.research-agent-page .research-agent-basis-actions a {
+.research-agent-page .research-agent-basis-actions a,
+.research-agent-page .research-agent-basis-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   margin-top: 2px;
+  padding: 0;
+  border: 0;
+  color: var(--research-accent);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
-.research-agent-page .research-agent-basis-actions a.is-graph svg {
+.research-agent-page .research-agent-basis-actions a.is-graph svg,
+.research-agent-page .research-agent-basis-actions button svg {
   transform: none;
+}
+
+.research-agent-page .new-research__basis-locator {
+  color: var(--research-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

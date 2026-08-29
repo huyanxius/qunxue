@@ -1,8 +1,11 @@
 import json
 from collections.abc import Callable
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from copy import deepcopy
+from dataclasses import asdict, dataclass, is_dataclass, replace
 from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 from uuid import UUID
 
 from qunxue_api.application.research_document_mutations import (
@@ -10,9 +13,11 @@ from qunxue_api.application.research_document_mutations import (
     ResearchDocumentMutationRepository,
     mutation_request_hash,
 )
+from qunxue_api.modules.research_analysis import ResearchAnalysisHandoff
 from qunxue_api.modules.research_framework import (
     ResearchDocumentCompletionCheck,
     ResearchDocumentCompletionGate,
+    ResearchDocumentEvidenceSourceKind,
     ResearchDocumentMarkdownExport,
     ResearchDocumentProposalSnapshot,
     ResearchDocumentProposalStatus,
@@ -27,6 +32,7 @@ from qunxue_api.modules.research_intake import (
 )
 from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
+    EvidenceItemSnapshot,
     MatchRunSnapshot,
 )
 
@@ -60,6 +66,7 @@ class ResearchDocumentApplication:
             [UUID], tuple[ResearchDocumentProposalSnapshot, ...]
         ],
         owns_match_run: Callable[..., bool],
+        formal_analysis_handoff: Callable[..., ResearchAnalysisHandoff] | None = None,
     ) -> None:
         self._documents = documents
         self._research_tasks = research_tasks
@@ -71,6 +78,7 @@ class ResearchDocumentApplication:
             list_actionable_proposals_for_task
         )
         self._owns_match_run = owns_match_run
+        self._formal_analysis_handoff = formal_analysis_handoff
 
     def create(
         self,
@@ -105,7 +113,15 @@ class ResearchDocumentApplication:
                 user_id=user_id, match_run_id=theory_plan.match_run_id
             ):
                 raise LookupError(theory_plan_id)
-            self._validate_evidence_refs(sections, theory_plan=theory_plan)
+            analysis_handoff = self._current_analysis_handoff(
+                user_id=user_id,
+                task_id=task.task_id,
+            )
+            self._validate_evidence_refs(
+                sections,
+                theory_plan=theory_plan,
+                analysis_handoff=analysis_handoff,
+            )
             snapshot = self._documents.create(
                 task_id=task.task_id,
                 theory_plan_id=theory_plan.theory_plan_id,
@@ -113,6 +129,7 @@ class ResearchDocumentApplication:
                 title=title,
                 sections=sections,
                 actor="user",
+                analysis_handoff=analysis_handoff,
             )
             if task.current_framework_id != snapshot.document_id:
                 saved_task = self._research_tasks.save_progress(
@@ -141,23 +158,34 @@ class ResearchDocumentApplication:
     def get(
         self, *, user_id: UUID, document_id: UUID, version: int | None = None
     ) -> ResearchDocumentSnapshot:
-        snapshot = self._documents.get(document_id, version=version)
-        self._require_owner(snapshot, user_id=user_id)
-        return snapshot
+        snapshot = self._get_owned_raw(
+            user_id=user_id,
+            document_id=document_id,
+            version=version,
+        )
+        return self._with_live_analysis_availability(snapshot, user_id=user_id)
 
     def list_versions(
         self, *, user_id: UUID, document_id: UUID
     ) -> tuple[ResearchDocumentSnapshot, ...]:
         versions = self._documents.list_versions(document_id)
         self._require_owner(versions[0], user_id=user_id)
-        return versions
+        live = self._current_analysis_handoff(
+            user_id=user_id,
+            task_id=versions[0].task_id,
+        )
+        return tuple(_with_analysis_availability(item, live) for item in versions)
 
     def list_for_task(
         self, *, user_id: UUID, task: ResearchTask
     ) -> tuple[ResearchDocumentSnapshot, ...]:
         if task.user_id != user_id:
             raise LookupError(task.task_id)
-        return self._documents.list_for_task(task.task_id)
+        live = self._current_analysis_handoff(user_id=user_id, task_id=task.task_id)
+        return tuple(
+            _with_analysis_availability(item, live)
+            for item in self._documents.list_for_task(task.task_id)
+        )
 
     def validate_proposal(
         self,
@@ -167,7 +195,7 @@ class ResearchDocumentApplication:
         theory_plan_id: UUID,
         knowledge_release_id: str,
         sections: tuple[ResearchDocumentSection, ...],
-    ) -> None:
+    ) -> dict[str, object] | None:
         theory_plan = self._get_theory_plan(theory_plan_id)
         if (
             theory_plan is None
@@ -179,7 +207,16 @@ class ResearchDocumentApplication:
             )
         ):
             raise LookupError(theory_plan_id)
-        self._validate_evidence_refs(sections, theory_plan=theory_plan)
+        analysis_handoff = self._current_analysis_handoff(
+            user_id=user_id,
+            task_id=task_id,
+        )
+        self._validate_evidence_refs(
+            sections,
+            theory_plan=theory_plan,
+            analysis_handoff=analysis_handoff,
+        )
+        return analysis_handoff
 
     def get_theory_plan_for_agent(
         self, *, user_id: UUID, theory_plan_id: UUID
@@ -225,16 +262,28 @@ class ResearchDocumentApplication:
         if replayed is not None:
             return replayed
         with self._mutation_scope(receipt):
-            current = self.get(user_id=user_id, document_id=document_id)
+            current = self._get_owned_raw(
+                user_id=user_id,
+                document_id=document_id,
+            )
             self._require_current_document(current, user_id=user_id)
             theory_plan = self._required_theory_plan(current.theory_plan_id)
-            self._validate_evidence_refs(sections, theory_plan=theory_plan)
+            analysis_handoff = self._current_analysis_handoff(
+                user_id=user_id,
+                task_id=current.task_id,
+            )
+            self._validate_evidence_refs(
+                sections,
+                theory_plan=theory_plan,
+                analysis_handoff=analysis_handoff,
+            )
             snapshot = self._documents.revise(
                 document_id=document_id,
                 expected_version=expected_version,
                 sections=sections,
                 change_summary=change_summary,
                 actor=actor,
+                analysis_handoff=analysis_handoff,
             )
             self._mutations.complete(
                 request_id=receipt.request_id,
@@ -269,7 +318,13 @@ class ResearchDocumentApplication:
         if replayed is not None:
             return replayed
         with self._mutation_scope(receipt):
-            current = self.get(user_id=user_id, document_id=document_id)
+            # Restore is deliberately based only on the selected immutable
+            # version.  Reading current analysis here would silently replace
+            # the source version's handoff with newer qualitative decisions.
+            current = self._get_owned_raw(
+                user_id=user_id,
+                document_id=document_id,
+            )
             self._require_current_document(current, user_id=user_id)
             restored = self._documents.restore(
                 document_id=document_id,
@@ -314,18 +369,30 @@ class ResearchDocumentApplication:
         if replayed is not None:
             return replayed
         with self._mutation_scope(receipt):
-            current = self.get(user_id=user_id, document_id=document_id)
+            current = self._get_owned_raw(
+                user_id=user_id,
+                document_id=document_id,
+            )
             self._require_current_document(current, user_id=user_id)
             gate = self.completion_gate(user_id=user_id, document_id=document_id)
             if not gate.ready:
                 raise ValueError("completion gate blocked: " + " ".join(gate.blockers))
             theory_plan = self._required_theory_plan(current.theory_plan_id)
-            self._validate_evidence_refs(current.sections, theory_plan=theory_plan)
+            analysis_handoff = self._current_analysis_handoff(
+                user_id=user_id,
+                task_id=current.task_id,
+            )
+            self._validate_evidence_refs(
+                current.sections,
+                theory_plan=theory_plan,
+                analysis_handoff=analysis_handoff,
+            )
             pending_proposal_count = self._pending_proposal_count(current)
             confirmed = self._documents.confirm(
                 document_id=document_id,
                 expected_version=expected_version,
                 pending_proposal_count=pending_proposal_count,
+                analysis_handoff=analysis_handoff,
             )
             task = self._research_tasks.get(current.task_id, user_id)
             if task is None:
@@ -438,6 +505,42 @@ class ResearchDocumentApplication:
         if self._research_tasks.get(snapshot.task_id, user_id) is None:
             raise LookupError(snapshot.document_id)
 
+    def _get_owned_raw(
+        self,
+        *,
+        user_id: UUID,
+        document_id: UUID,
+        version: int | None = None,
+    ) -> ResearchDocumentSnapshot:
+        snapshot = self._documents.get(document_id, version=version)
+        self._require_owner(snapshot, user_id=user_id)
+        return snapshot
+
+    def _current_analysis_handoff(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> dict[str, object] | None:
+        if self._formal_analysis_handoff is None:
+            return None
+        handoff = self._formal_analysis_handoff(user_id=user_id, task_id=task_id)
+        return _analysis_handoff_payload(handoff, expected_task_id=task_id)
+
+    def _with_live_analysis_availability(
+        self,
+        snapshot: ResearchDocumentSnapshot,
+        *,
+        user_id: UUID,
+    ) -> ResearchDocumentSnapshot:
+        if snapshot.analysis_handoff is None or self._formal_analysis_handoff is None:
+            return snapshot
+        live = self._current_analysis_handoff(
+            user_id=user_id,
+            task_id=snapshot.task_id,
+        )
+        return _with_analysis_availability(snapshot, live)
+
     def _require_current_document(
         self, snapshot: ResearchDocumentSnapshot, *, user_id: UUID
     ) -> None:
@@ -498,6 +601,7 @@ class ResearchDocumentApplication:
         sections: tuple[ResearchDocumentSection, ...],
         *,
         theory_plan: ConfirmedTheoryPlanSnapshot,
+        analysis_handoff: dict[str, object] | None = None,
     ) -> None:
         release_id = theory_plan.knowledge_release.knowledge_release_id
         allowed = {
@@ -505,14 +609,137 @@ class ResearchDocumentApplication:
             for item in theory_plan.evidence_bundle.evidence_items
             if item.source is not None
         }
+        analysis_annotations = {
+            str(item.get("annotation_id")): item
+            for item in (
+                analysis_handoff.get("annotations", []) if analysis_handoff else []
+            )
+            if isinstance(item, dict) and item.get("annotation_id")
+        }
+        unavailable = {
+            str(item)
+            for item in (
+                analysis_handoff.get("unavailable_annotation_ids", [])
+                if analysis_handoff
+                else []
+            )
+        }
         for section in sections:
             for evidence in section.evidence_refs:
-                if evidence.knowledge_release_id != release_id:
-                    raise ValueError("evidence must use the confirmed knowledge release")
-                if (evidence.evidence_ref_id, evidence.source_id) not in allowed:
+                if (
+                    evidence.source_kind
+                    is ResearchDocumentEvidenceSourceKind.PUBLIC_KNOWLEDGE
+                ):
+                    if evidence.knowledge_release_id != release_id:
+                        raise ValueError("evidence must use the confirmed knowledge release")
+                    if (evidence.evidence_ref_id, evidence.source_id) not in allowed:
+                        raise ValueError(
+                            "evidence and source IDs must belong to the confirmed theory plan"
+                        )
+                    continue
+                annotation_id = str(evidence.annotation_id)
+                annotation = analysis_annotations.get(annotation_id)
+                if (
+                    annotation is None
+                    or annotation_id in unavailable
+                    or annotation.get("source_available") is False
+                ):
                     raise ValueError(
-                        "evidence and source IDs must belong to the confirmed theory plan"
+                        "personal material evidence requires an available confirmed annotation"
                     )
+                if (
+                    annotation.get("material_id") != str(evidence.material_id)
+                    or annotation.get("parse_id") != str(evidence.parse_id)
+                    or annotation.get("segment_id") != evidence.segment_id
+                    or annotation.get("locator") != evidence.locator
+                    or evidence.evidence_ref_id
+                    != f"analysis-annotation:{annotation_id}"
+                    or evidence.source_id != f"material-segment:{evidence.segment_id}"
+                ):
+                    raise ValueError("personal material evidence locator does not match analysis")
+
+
+def _analysis_handoff_payload(
+    handoff: ResearchAnalysisHandoff,
+    *,
+    expected_task_id: UUID,
+) -> dict[str, object] | None:
+    if handoff.task_id != expected_task_id:
+        raise ValueError("research analysis handoff belongs to another task")
+    payload = _json_safe(asdict(handoff))
+    if not isinstance(payload, dict):
+        raise TypeError("research analysis handoff must serialize to an object")
+    if payload.get("schema_version") != "research-analysis-v1":
+        raise ValueError("unsupported research analysis handoff")
+    for collection in ("codes", "memos", "comparisons"):
+        values = payload.get(collection)
+        if not isinstance(values, list):
+            raise ValueError(f"research analysis {collection} must be a list")
+        if any(
+            not isinstance(item, dict) or item.get("status") != "confirmed"
+            for item in values
+        ):
+            raise ValueError("research document can only pin confirmed analysis")
+    annotations = payload.get("annotations")
+    if not isinstance(annotations, list):
+        raise ValueError("research analysis annotations must be a list")
+    for annotation in annotations:
+        if not isinstance(annotation, dict):
+            raise ValueError("research analysis annotation must be an object")
+        annotation.pop("quote", None)
+    unavailable = payload.get("unavailable_annotation_ids")
+    if not isinstance(unavailable, list):
+        raise ValueError("research analysis unavailable annotations must be a list")
+    if not any(
+        payload.get(key) for key in ("annotations", "codes", "memos", "comparisons")
+    ) and not unavailable:
+        return None
+    return payload
+
+
+def _json_safe(value: Any) -> Any:
+    if is_dataclass(value):
+        return _json_safe(asdict(value))
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.astimezone(UTC).isoformat()
+    if isinstance(value, Enum):
+        return _json_safe(value.value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_json_safe(item) for item in value]
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise TypeError(f"unsupported research analysis value: {type(value).__name__}")
+
+
+def _with_analysis_availability(
+    snapshot: ResearchDocumentSnapshot,
+    live: dict[str, object] | None,
+) -> ResearchDocumentSnapshot:
+    if snapshot.analysis_handoff is None or live is None:
+        return snapshot
+    pinned = deepcopy(snapshot.analysis_handoff)
+    unavailable = {
+        str(item) for item in live.get("unavailable_annotation_ids", [])
+    }
+    if not unavailable:
+        return snapshot
+    annotations = pinned.get("annotations")
+    if isinstance(annotations, list):
+        for annotation in annotations:
+            if not isinstance(annotation, dict):
+                continue
+            annotation_id = str(annotation.get("annotation_id"))
+            if annotation_id in unavailable:
+                annotation["source_available"] = False
+                annotation["unavailable_reason"] = "source_deleted"
+                annotation.pop("quote", None)
+    recorded = [str(item) for item in pinned.get("unavailable_annotation_ids", [])]
+    pinned["unavailable_annotation_ids"] = list(dict.fromkeys((*recorded, *unavailable)))
+    return replace(snapshot, analysis_handoff=pinned)
 
 
 def _sections_payload(
@@ -530,12 +757,132 @@ def _sections_payload(
                     "evidence_ref_id": evidence.evidence_ref_id,
                     "source_id": evidence.source_id,
                     "knowledge_release_id": evidence.knowledge_release_id,
+                    "source_kind": evidence.source_kind.value,
+                    "annotation_id": (
+                        str(evidence.annotation_id) if evidence.annotation_id else None
+                    ),
+                    "material_id": (
+                        str(evidence.material_id) if evidence.material_id else None
+                    ),
+                    "parse_id": str(evidence.parse_id) if evidence.parse_id else None,
+                    "segment_id": evidence.segment_id,
+                    "locator": evidence.locator,
                 }
                 for evidence in section.evidence_refs
             ],
         }
         for section in sections
     ]
+
+
+def _unavailable_personal_source_ids(
+    analysis_handoff: dict[str, object] | None,
+) -> tuple[set[str], set[str], set[str]]:
+    if analysis_handoff is None:
+        return set(), set(), set()
+    unavailable_annotation_ids = {
+        str(item)
+        for item in analysis_handoff.get("unavailable_annotation_ids", [])
+    }
+    unavailable_source_ids: set[str] = set()
+    unavailable_evidence_ref_ids: set[str] = set()
+    for annotation in analysis_handoff.get("annotations", []):
+        if not isinstance(annotation, dict):
+            continue
+        annotation_id = str(annotation.get("annotation_id") or "")
+        unavailable = (
+            annotation.get("source_available") is False
+            or annotation_id in unavailable_annotation_ids
+        )
+        material_id = annotation.get("material_id")
+        parse_id = annotation.get("parse_id")
+        segment_id = annotation.get("segment_id")
+        if unavailable and material_id and parse_id and segment_id:
+            unavailable_source_ids.add(
+                f"research-material:{material_id}:{parse_id}:{segment_id}"
+            )
+    comparisons = analysis_handoff.get("comparisons", [])
+    if isinstance(comparisons, list):
+        for comparison in comparisons:
+            if not isinstance(comparison, dict):
+                continue
+            comparison_id = str(comparison.get("comparison_id") or "")
+            findings = comparison.get("findings", [])
+            if not comparison_id or not isinstance(findings, list):
+                continue
+            for finding_index, finding in enumerate(findings):
+                if not isinstance(finding, dict):
+                    continue
+                annotation_ids = finding.get("annotation_ids", [])
+                if not isinstance(annotation_ids, list):
+                    continue
+                for annotation_id in annotation_ids:
+                    normalized_id = str(annotation_id)
+                    if normalized_id in unavailable_annotation_ids:
+                        unavailable_evidence_ref_ids.add(
+                            f"analysis:{comparison_id}:finding-{finding_index + 1}:{normalized_id}"
+                        )
+    return (
+        unavailable_source_ids,
+        unavailable_annotation_ids,
+        unavailable_evidence_ref_ids,
+    )
+
+
+def _annotation_id_from_evidence_ref(evidence_ref_id: str) -> str | None:
+    if evidence_ref_id.startswith("analysis:"):
+        value = evidence_ref_id.rsplit(":", 1)[-1].strip()
+        if value:
+            return value
+    return None
+
+
+def _export_evidence(
+    item: EvidenceItemSnapshot,
+    *,
+    unavailable_personal_source_ids: set[str],
+    unavailable_personal_annotation_ids: set[str],
+    unavailable_personal_evidence_ref_ids: set[str],
+) -> dict[str, object]:
+    source = item.source
+    personal = source is not None and source.source_type == "personal_research_material"
+    annotation_id = _annotation_id_from_evidence_ref(item.evidence_ref_id)
+    source_available = not (
+        personal
+        and (
+            source.source_id in unavailable_personal_source_ids
+            or annotation_id in unavailable_personal_annotation_ids
+            or item.evidence_ref_id in unavailable_personal_evidence_ref_ids
+        )
+    )
+    payload: dict[str, object] = {
+        "evidence_ref_id": item.evidence_ref_id,
+        "claim": item.claim,
+        "excerpt": item.excerpt if source_available else None,
+        "locator": item.locator,
+        "verification_status": item.verification_status.value,
+        "use_boundary": item.use_boundary,
+        "source": (
+            {
+                "source_id": source.source_id,
+                "source_type": source.source_type,
+                "title": source.title,
+                "authors_or_institution": list(source.authors_or_institution),
+                "year": source.year,
+                "publication": source.publication,
+                "locator": source.locator,
+                "url": source.url,
+                "verification_status": source.verification_status.value,
+                "use_boundary": source.use_boundary,
+            }
+            if source is not None
+            else None
+        ),
+    }
+    if personal:
+        payload["source_available"] = source_available
+        payload["unavailable_reason"] = None if source_available else "source_deleted"
+    return payload
 
 
 def _export_manifest(
@@ -551,8 +898,15 @@ def _export_manifest(
     candidate_title = {
         candidate.candidate_id: candidate.content.title for candidate in match_run.candidates
     }
+    (
+        unavailable_personal_source_ids,
+        unavailable_personal_annotation_ids,
+        unavailable_personal_evidence_ref_ids,
+    ) = _unavailable_personal_source_ids(
+        document.analysis_handoff
+    )
     return {
-        "schema_version": "research-delivery-v1",
+        "schema_version": "research-delivery-v2",
         "phenomenon": {
             "phenomenon_query_id": str(phenomenon.phenomenon_query_id),
             "version": phenomenon.version,
@@ -665,34 +1019,15 @@ def _export_manifest(
             for item in plan.relations
         ],
         "evidence": [
-            {
-                "evidence_ref_id": item.evidence_ref_id,
-                "claim": item.claim,
-                "excerpt": item.excerpt,
-                "locator": item.locator,
-                "verification_status": item.verification_status.value,
-                "use_boundary": item.use_boundary,
-                "source": (
-                    {
-                        "source_id": item.source.source_id,
-                        "source_type": item.source.source_type,
-                        "title": item.source.title,
-                        "authors_or_institution": list(
-                            item.source.authors_or_institution
-                        ),
-                        "year": item.source.year,
-                        "publication": item.source.publication,
-                        "locator": item.source.locator,
-                        "url": item.source.url,
-                        "verification_status": item.source.verification_status.value,
-                        "use_boundary": item.source.use_boundary,
-                    }
-                    if item.source is not None
-                    else None
-                ),
-            }
+            _export_evidence(
+                item,
+                unavailable_personal_source_ids=unavailable_personal_source_ids,
+                unavailable_personal_annotation_ids=unavailable_personal_annotation_ids,
+                unavailable_personal_evidence_ref_ids=unavailable_personal_evidence_ref_ids,
+            )
             for item in plan.evidence_bundle.evidence_items
         ],
+        "research_analysis": document.analysis_handoff,
         "agent_proposals": [
             {
                 "proposal_id": str(item.proposal_id),
@@ -712,6 +1047,11 @@ def _export_manifest(
                 "agent_run_id": str(item.agent_run_id),
                 "model_provider": item.model_provider,
                 "model_name": item.model_name,
+                "research_analysis_content_hash": (
+                    item.analysis_handoff.get("content_hash")
+                    if item.analysis_handoff
+                    else None
+                ),
                 "created_at": item.created_at.isoformat(),
                 "decided_at": item.decided_at.isoformat() if item.decided_at else None,
                 "proposed_sections": _sections_payload(item.proposed_sections),
@@ -729,6 +1069,11 @@ def _export_manifest(
                 "created_at": item.created_at.isoformat(),
                 "confirmed_at": (
                     item.confirmed_at.isoformat() if item.confirmed_at else None
+                ),
+                "research_analysis_content_hash": (
+                    item.analysis_handoff.get("content_hash")
+                    if item.analysis_handoff
+                    else None
                 ),
             }
             for item in versions
@@ -760,6 +1105,7 @@ def _export_markdown(
     assignments = manifest["theory_assignments"]
     relations = manifest["theory_relations"]
     evidence = manifest["evidence"]
+    research_analysis = manifest["research_analysis"]
     proposals = manifest["agent_proposals"]
     versions = manifest["document_versions"]
     formal_document = manifest["formal_document"]
@@ -842,14 +1188,39 @@ def _export_markdown(
                 f"{source['title']} "
                 f"({authors or '作者未载'}, {source['year'] or '年份未载'})"
             )
+        excerpt = (
+            "来源已删除（已保留引用定位，不包含原文）"
+            if item.get("source_available") is False
+            and item.get("unavailable_reason") == "source_deleted"
+            else item.get("excerpt") or "未附摘录"
+        )
         lines.extend(
             [
                 f"- **{item['claim']}** — {source_label}",
-                f"  - 摘录：{item.get('excerpt') or '未附摘录'}",
+                f"  - 摘录：{excerpt}",
                 f"  - 定位：{item.get('locator') or '未附定位'}",
                 f"  - 核验：{item['verification_status']}；使用边界：{item['use_boundary']}",
             ]
         )
+    lines.extend(["", "### 个人材料分析依据", ""])
+    if isinstance(research_analysis, dict):
+        lines.append(
+            f"- 分析版本：{research_analysis.get('content_hash') or '未记录'}"
+        )
+        lines.append(
+            "- 已确认编码 / 备忘 / 案例比较："
+            f"{len(research_analysis.get('codes', []))} / "
+            f"{len(research_analysis.get('memos', []))} / "
+            f"{len(research_analysis.get('comparisons', []))}"
+        )
+        unavailable_count = len(
+            research_analysis.get("unavailable_annotation_ids", [])
+        )
+        lines.append(
+            f"- 已删除来源墓碑：{unavailable_count} 处（不包含原文）"
+        )
+    else:
+        lines.append("- 本版未纳入已确认的个人材料分析。")
     lines.extend(["", "## 正式研究框架", ""])
     formal_sections = formal_document.get("sections")
     if isinstance(formal_sections, list):

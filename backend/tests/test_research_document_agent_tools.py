@@ -532,6 +532,7 @@ def test_agent_bootstrap_uses_the_persisted_document_tool_registry(client) -> No
         tools = application._tools_factory()
 
     assert isinstance(tools, registry_type)
+    assert tools._materials is not None
 
 
 def test_agent_research_task_binding_survives_a_new_scope(client) -> None:

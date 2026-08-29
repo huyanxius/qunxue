@@ -15,6 +15,12 @@ class AgentCitationResponse(BaseModel):
     excerpt: str | None = None
     knowledge_id: str | None = None
     source_id: str | None = None
+    source_kind: str | None = None
+    material_id: str | None = None
+    parse_id: str | None = None
+    segment_id: str | None = None
+    locator: dict[str, object] | None = None
+    deleted: bool = False
 
 
 class AgentMessageResponse(BaseModel):

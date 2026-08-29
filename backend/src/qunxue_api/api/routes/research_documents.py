@@ -454,6 +454,12 @@ def _section(item: ResearchDocumentSectionContract) -> ResearchDocumentSection:
                 evidence_ref_id=evidence.evidence_ref_id,
                 source_id=evidence.source_id,
                 knowledge_release_id=evidence.knowledge_release_id,
+                source_kind=evidence.source_kind,
+                annotation_id=evidence.annotation_id,
+                material_id=evidence.material_id,
+                parse_id=evidence.parse_id,
+                segment_id=evidence.segment_id,
+                locator=evidence.locator,
             )
             for evidence in item.evidence_refs
         ),
@@ -481,6 +487,12 @@ def _response(snapshot: ResearchDocumentSnapshot) -> ResearchDocumentResponse:
                         "evidence_ref_id": evidence.evidence_ref_id,
                         "source_id": evidence.source_id,
                         "knowledge_release_id": evidence.knowledge_release_id,
+                        "source_kind": evidence.source_kind,
+                        "annotation_id": evidence.annotation_id,
+                        "material_id": evidence.material_id,
+                        "parse_id": evidence.parse_id,
+                        "segment_id": evidence.segment_id,
+                        "locator": evidence.locator,
                     }
                     for evidence in section.evidence_refs
                 ],
@@ -493,6 +505,7 @@ def _response(snapshot: ResearchDocumentSnapshot) -> ResearchDocumentResponse:
         restored_from_version=snapshot.restored_from_version,
         created_at=snapshot.created_at,
         confirmed_at=snapshot.confirmed_at,
+        research_analysis=snapshot.analysis_handoff,
     )
 
 
@@ -524,6 +537,12 @@ def _proposal_response(
                         "evidence_ref_id": evidence.evidence_ref_id,
                         "source_id": evidence.source_id,
                         "knowledge_release_id": evidence.knowledge_release_id,
+                        "source_kind": evidence.source_kind,
+                        "annotation_id": evidence.annotation_id,
+                        "material_id": evidence.material_id,
+                        "parse_id": evidence.parse_id,
+                        "segment_id": evidence.segment_id,
+                        "locator": evidence.locator,
                     }
                     for evidence in section.evidence_refs
                 ],
@@ -540,6 +559,7 @@ def _proposal_response(
         requires_user_approval=(snapshot.status is ResearchDocumentProposalStatus.PENDING),
         created_at=snapshot.created_at,
         decided_at=snapshot.decided_at,
+        research_analysis=snapshot.analysis_handoff,
     )
 
 

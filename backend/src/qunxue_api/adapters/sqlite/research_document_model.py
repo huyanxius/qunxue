@@ -35,6 +35,10 @@ class ResearchDocumentVersionRow(Base):
     revision_id: Mapped[str] = mapped_column(String(36), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     sections: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    analysis_handoff: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     change_summary: Mapped[str] = mapped_column(Text, nullable=False)
     actor: Mapped[str] = mapped_column(String(64), nullable=False)

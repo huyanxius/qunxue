@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentEvidenceSourceKind,
     ResearchDocumentProposalKind,
     ResearchDocumentProposalStatus,
     ResearchDocumentSectionStatus,
@@ -15,7 +16,26 @@ from qunxue_api.modules.research_framework import (
 class ResearchDocumentEvidenceRefContract(BaseModel):
     evidence_ref_id: str = Field(min_length=1, max_length=256)
     source_id: str = Field(min_length=1, max_length=256)
-    knowledge_release_id: str = Field(min_length=1, max_length=128)
+    knowledge_release_id: str | None = Field(default=None, min_length=1, max_length=128)
+    source_kind: ResearchDocumentEvidenceSourceKind = (
+        ResearchDocumentEvidenceSourceKind.PUBLIC_KNOWLEDGE
+    )
+    annotation_id: UUID | None = None
+    material_id: UUID | None = None
+    parse_id: UUID | None = None
+    segment_id: str | None = Field(default=None, min_length=1, max_length=256)
+    locator: dict[str, object] | None = None
+
+
+class ResearchAnalysisHandoffContract(BaseModel):
+    schema_version: Literal["research-analysis-v1"]
+    task_id: UUID
+    content_hash: str
+    annotations: list[dict[str, object]]
+    codes: list[dict[str, object]]
+    memos: list[dict[str, object]]
+    comparisons: list[dict[str, object]]
+    unavailable_annotation_ids: list[UUID]
 
 
 class ResearchDocumentSectionContract(BaseModel):
@@ -73,6 +93,7 @@ class ResearchDocumentResponse(BaseModel):
     restored_from_version: int | None
     created_at: datetime
     confirmed_at: datetime | None
+    research_analysis: ResearchAnalysisHandoffContract | None
 
 
 class ResearchDocumentVersionListResponse(BaseModel):
@@ -109,6 +130,7 @@ class ResearchDocumentProposalResponse(BaseModel):
     requires_user_approval: bool
     created_at: datetime
     decided_at: datetime | None
+    research_analysis: ResearchAnalysisHandoffContract | None
 
 
 class ResearchDocumentProposalAcceptanceResponse(BaseModel):
@@ -145,7 +167,7 @@ class ResearchDocumentCompletionGateResponse(BaseModel):
 class ResearchDocumentExportManifest(BaseModel):
     """Versioned, machine-readable audit package for one formal M5 delivery."""
 
-    schema_version: Literal["research-delivery-v1"]
+    schema_version: Literal["research-delivery-v2"]
     phenomenon: dict[str, object]
     knowledge_release: dict[str, object]
     model: dict[str, object] | None
@@ -154,6 +176,7 @@ class ResearchDocumentExportManifest(BaseModel):
     theory_assignments: list[dict[str, object]]
     theory_relations: list[dict[str, object]]
     evidence: list[dict[str, object]]
+    research_analysis: ResearchAnalysisHandoffContract | None
     agent_proposals: list[dict[str, object]]
     document_versions: list[dict[str, object]]
     formal_document: dict[str, object]

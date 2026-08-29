@@ -147,7 +147,8 @@ def _run() -> MatchRunSnapshot:
 
 
 class NoopEvidence(TheoryEvidenceSource):
-    def retrieve(self, *, phenomenon, release):
+    def retrieve(self, *, user_id=None, phenomenon, release):
+        del user_id
         raise AssertionError("start is not part of this test")
 
 

@@ -234,3 +234,16 @@ test('allows a generated-only module adapter without opening other API internals
     violations.join('\n'),
   )
 })
+
+test('keeps the research materials adapter behind the generated API boundary', async () => {
+  const violations = await findBoundaryViolations()
+  const researchMaterialViolations = violations.filter((message) =>
+    message.includes('research-materials'),
+  )
+
+  assert.deepEqual(
+    researchMaterialViolations,
+    [],
+    `research materials must use the generated SDK and a declared module boundary:\n${researchMaterialViolations.join('\n')}`,
+  )
+})
