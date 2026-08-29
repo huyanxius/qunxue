@@ -51,6 +51,7 @@ class ResearchDocumentProposalRow(Base):
     knowledge_release_id: Mapped[str] = mapped_column(String(128), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     proposed_sections: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    analysis_handoff: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
     request_hash: Mapped[str] = mapped_column(String(72), nullable=False)
     model_provider: Mapped[str | None] = mapped_column(String(64), nullable=True)

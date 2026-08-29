@@ -210,7 +210,11 @@ class TheoryMatchingApplication:
                 "The research task is not pinned to a pre-reviewed final release."
             )
 
-        match_run = self._matching.start(phenomenon=phenomenon, release=release)
+        match_run = self._matching.start(
+            user_id=user_id,
+            phenomenon=phenomenon,
+            release=release,
+        )
         now = self._clock()
         saved_task = self._research_tasks.save_progress(
             replace(

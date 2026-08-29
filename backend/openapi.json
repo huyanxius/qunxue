@@ -64,6 +64,11 @@
             "title": "Citation Id",
             "type": "string"
           },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          },
           "excerpt": {
             "anyOf": [
               {
@@ -94,6 +99,51 @@
             "title": "Label",
             "type": "string"
           },
+          "locator": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "material_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Id"
+          },
+          "parse_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Id"
+          },
+          "segment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment Id"
+          },
           "source_id": {
             "anyOf": [
               {
@@ -104,6 +154,17 @@
               }
             ],
             "title": "Source Id"
+          },
+          "source_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Kind"
           }
         },
         "required": [
@@ -721,6 +782,471 @@
         "title": "AgentTurnResponse",
         "type": "object"
       },
+      "AnalysisAnnotationKind": {
+        "enum": [
+          "descriptive",
+          "researcher_reflection"
+        ],
+        "title": "AnalysisAnnotationKind",
+        "type": "string"
+      },
+      "AnalysisAnnotationResponse": {
+        "properties": {
+          "annotation_id": {
+            "format": "uuid",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "annotation_kind": {
+            "$ref": "#/components/schemas/AnalysisAnnotationKind"
+          },
+          "case_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Label"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ResearchMaterialLocatorResponse"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote"
+          },
+          "quote_end": {
+            "title": "Quote End",
+            "type": "integer"
+          },
+          "quote_hash": {
+            "title": "Quote Hash",
+            "type": "string"
+          },
+          "quote_start": {
+            "title": "Quote Start",
+            "type": "integer"
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflection"
+          },
+          "segment_content_hash": {
+            "title": "Segment Content Hash",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "source_available": {
+            "title": "Source Available",
+            "type": "boolean"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "annotation_id",
+          "task_id",
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "segment_content_hash",
+          "quote",
+          "quote_hash",
+          "quote_start",
+          "quote_end",
+          "locator",
+          "annotation_kind",
+          "case_label",
+          "observed_at",
+          "note",
+          "reflection",
+          "created_at",
+          "source_available",
+          "unavailable_reason"
+        ],
+        "title": "AnalysisAnnotationResponse",
+        "type": "object"
+      },
+      "AnalysisCodeResponse": {
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Run Id"
+          },
+          "agent_turn_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Turn Id"
+          },
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "code_id": {
+            "format": "uuid",
+            "title": "Code Id",
+            "type": "string"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisCodeStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code_id",
+          "task_id",
+          "label",
+          "definition",
+          "annotation_ids",
+          "rationale",
+          "source",
+          "status",
+          "version",
+          "created_at",
+          "conversation_id",
+          "agent_run_id",
+          "agent_turn_id",
+          "tool_call_id",
+          "decided_at",
+          "decision_reason"
+        ],
+        "title": "AnalysisCodeResponse",
+        "type": "object"
+      },
+      "AnalysisCodeStatus": {
+        "enum": [
+          "candidate",
+          "confirmed",
+          "rejected"
+        ],
+        "title": "AnalysisCodeStatus",
+        "type": "string"
+      },
+      "AnalysisMemoKind": {
+        "enum": [
+          "descriptive",
+          "reflexive",
+          "analytic",
+          "methodological"
+        ],
+        "title": "AnalysisMemoKind",
+        "type": "string"
+      },
+      "AnalysisMemoResponse": {
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Run Id"
+          },
+          "agent_turn_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Turn Id"
+          },
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Code Ids",
+            "type": "array"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "memo_id": {
+            "format": "uuid",
+            "title": "Memo Id",
+            "type": "string"
+          },
+          "memo_kind": {
+            "$ref": "#/components/schemas/AnalysisMemoKind"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisRecordStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "memo_id",
+          "task_id",
+          "title",
+          "content",
+          "memo_kind",
+          "annotation_ids",
+          "code_ids",
+          "source",
+          "status",
+          "version",
+          "created_at",
+          "conversation_id",
+          "agent_run_id",
+          "agent_turn_id",
+          "tool_call_id",
+          "decided_at",
+          "decision_reason"
+        ],
+        "title": "AnalysisMemoResponse",
+        "type": "object"
+      },
+      "AnalysisRecordStatus": {
+        "enum": [
+          "candidate",
+          "confirmed",
+          "rejected"
+        ],
+        "title": "AnalysisRecordStatus",
+        "type": "string"
+      },
       "AuditFindingResponse": {
         "properties": {
           "blocking": {
@@ -888,6 +1414,24 @@
         "title": "AuditResolutionSetResponse",
         "type": "object"
       },
+      "Body_upload_research_material": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "material_kind": {
+            "$ref": "#/components/schemas/MaterialKind",
+            "default": "other"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_research_material",
+        "type": "object"
+      },
       "BuiltInCaseContentStatus": {
         "enum": [
           "reviewed",
@@ -1025,6 +1569,224 @@
           "user_supplied"
         ],
         "title": "CandidateOrigin",
+        "type": "string"
+      },
+      "CaseComparisonResponse": {
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Run Id"
+          },
+          "agent_turn_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Turn Id"
+          },
+          "case_labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Case Labels",
+            "type": "array"
+          },
+          "comparison_id": {
+            "format": "uuid",
+            "title": "Comparison Id",
+            "type": "string"
+          },
+          "competing_explanations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Competing Explanations",
+            "type": "array"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "evidence_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Gaps",
+            "type": "array"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonFindingContract"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "next_steps": {
+            "items": {
+              "$ref": "#/components/schemas/NextResearchStepContract"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisRecordStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_implication": {
+            "title": "Theory Implication",
+            "type": "string"
+          },
+          "time_labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Time Labels",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "comparison_id",
+          "task_id",
+          "title",
+          "question",
+          "case_labels",
+          "time_labels",
+          "findings",
+          "competing_explanations",
+          "evidence_gaps",
+          "next_steps",
+          "theory_implication",
+          "source",
+          "status",
+          "version",
+          "created_at",
+          "conversation_id",
+          "agent_run_id",
+          "agent_turn_id",
+          "tool_call_id",
+          "decided_at",
+          "decision_reason"
+        ],
+        "title": "CaseComparisonResponse",
+        "type": "object"
+      },
+      "ComparisonFindingContract": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ComparisonFindingKind"
+          },
+          "statement": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "statement"
+        ],
+        "title": "ComparisonFindingContract",
+        "type": "object"
+      },
+      "ComparisonFindingKind": {
+        "enum": [
+          "support",
+          "counterexample",
+          "contradict",
+          "competing_explanation",
+          "evidence_gap"
+        ],
+        "title": "ComparisonFindingKind",
         "type": "string"
       },
       "ConceptMappingContract": {
@@ -1407,6 +2169,257 @@
         "title": "ConfirmedTheoryPlanResponse",
         "type": "object"
       },
+      "CreateAnalysisAnnotationRequest": {
+        "properties": {
+          "annotation_kind": {
+            "$ref": "#/components/schemas/AnalysisAnnotationKind"
+          },
+          "case_label": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Label"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "quote_end": {
+            "exclusiveMinimum": 0.0,
+            "title": "Quote End",
+            "type": "integer"
+          },
+          "quote_start": {
+            "minimum": 0.0,
+            "title": "Quote Start",
+            "type": "integer"
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflection"
+          },
+          "segment_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Segment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "quote_start",
+          "quote_end",
+          "annotation_kind",
+          "note"
+        ],
+        "title": "CreateAnalysisAnnotationRequest",
+        "type": "object"
+      },
+      "CreateAnalysisCodeRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "definition": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Definition",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "definition",
+          "annotation_ids",
+          "rationale"
+        ],
+        "title": "CreateAnalysisCodeRequest",
+        "type": "object"
+      },
+      "CreateAnalysisMemoRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Code Ids",
+            "type": "array"
+          },
+          "content": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "memo_kind": {
+            "$ref": "#/components/schemas/AnalysisMemoKind"
+          },
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "memo_kind"
+        ],
+        "title": "CreateAnalysisMemoRequest",
+        "type": "object"
+      },
+      "CreateCaseComparisonRequest": {
+        "properties": {
+          "case_labels": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 2,
+            "title": "Case Labels",
+            "type": "array"
+          },
+          "competing_explanations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Competing Explanations",
+            "type": "array"
+          },
+          "evidence_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Evidence Gaps",
+            "type": "array"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonFindingContract"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Findings",
+            "type": "array"
+          },
+          "next_steps": {
+            "items": {
+              "$ref": "#/components/schemas/NextResearchStepContract"
+            },
+            "maxItems": 100,
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "theory_implication": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Theory Implication",
+            "type": "string"
+          },
+          "time_labels": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Time Labels",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "question",
+          "case_labels",
+          "findings",
+          "theory_implication"
+        ],
+        "title": "CreateCaseComparisonRequest",
+        "type": "object"
+      },
       "CreateFrameworkRequest": {
         "properties": {
           "analysis_unit": {
@@ -1629,6 +2642,31 @@
           "relations"
         ],
         "title": "CreateTheoryDecisionsRequest",
+        "type": "object"
+      },
+      "DecideAnalysisRecordRequest": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/AnalysisRecordStatus"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "decision",
+          "reason"
+        ],
+        "title": "DecideAnalysisRecordRequest",
         "type": "object"
       },
       "DeferTheoryPlanRequest": {
@@ -1916,6 +2954,12 @@
           "research_start_idempotency_conflict",
           "research_start_proposal_conflict",
           "research_start_source_incomplete",
+          "research_material_not_found",
+          "research_material_too_large",
+          "unsupported_material_format",
+          "no_extractable_text",
+          "research_material_idempotency_conflict",
+          "research_material_version_conflict",
           "validation_error",
           "phenomenon_unconfirmed",
           "catalog_not_ready",
@@ -2728,6 +3772,19 @@
         ],
         "title": "FrameworkStatus",
         "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
       },
       "HealthResponse": {
         "properties": {
@@ -3832,6 +4889,17 @@
         "title": "MaterialIntakeRunResponse",
         "type": "object"
       },
+      "MaterialKind": {
+        "enum": [
+          "paper",
+          "interview_transcript",
+          "observation_record",
+          "field_note",
+          "other"
+        ],
+        "title": "MaterialKind",
+        "type": "string"
+      },
       "MethodIntentContract": {
         "properties": {
           "constraints": {
@@ -3957,6 +5025,33 @@
           "trace"
         ],
         "title": "ModelMetadata",
+        "type": "object"
+      },
+      "NextResearchStepContract": {
+        "properties": {
+          "action": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "kind": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Kind",
+            "type": "string"
+          },
+          "priority": {
+            "default": "medium",
+            "title": "Priority",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "action"
+        ],
+        "title": "NextResearchStepContract",
         "type": "object"
       },
       "PhenomenonCandidateAction": {
@@ -4706,6 +5801,122 @@
         "title": "RelationCandidateResponse",
         "type": "object"
       },
+      "ResearchAnalysisHandoffContract": {
+        "properties": {
+          "annotations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Annotations",
+            "type": "array"
+          },
+          "codes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Codes",
+            "type": "array"
+          },
+          "comparisons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Comparisons",
+            "type": "array"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "memos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Memos",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "research-analysis-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "unavailable_annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Unavailable Annotation Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "content_hash",
+          "annotations",
+          "codes",
+          "memos",
+          "comparisons",
+          "unavailable_annotation_ids"
+        ],
+        "title": "ResearchAnalysisHandoffContract",
+        "type": "object"
+      },
+      "ResearchAnalysisSnapshotResponse": {
+        "properties": {
+          "annotations": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisAnnotationResponse"
+            },
+            "title": "Annotations",
+            "type": "array"
+          },
+          "codes": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCodeResponse"
+            },
+            "title": "Codes",
+            "type": "array"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/CaseComparisonResponse"
+            },
+            "title": "Comparisons",
+            "type": "array"
+          },
+          "memos": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisMemoResponse"
+            },
+            "title": "Memos",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "annotations",
+          "codes",
+          "memos",
+          "comparisons"
+        ],
+        "title": "ResearchAnalysisSnapshotResponse",
+        "type": "object"
+      },
       "ResearchDocumentCompletionCheckResponse": {
         "properties": {
           "code": {
@@ -4781,6 +5992,18 @@
       },
       "ResearchDocumentEvidenceRefContract": {
         "properties": {
+          "annotation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
           "evidence_ref_id": {
             "maxLength": 256,
             "minLength": 1,
@@ -4788,25 +6011,92 @@
             "type": "string"
           },
           "knowledge_release_id": {
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Knowledge Release Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "material_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Id"
+          },
+          "parse_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Id"
+          },
+          "segment_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment Id"
           },
           "source_id": {
             "maxLength": 256,
             "minLength": 1,
             "title": "Source Id",
             "type": "string"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/ResearchDocumentEvidenceSourceKind",
+            "default": "public_knowledge"
           }
         },
         "required": [
           "evidence_ref_id",
-          "source_id",
-          "knowledge_release_id"
+          "source_id"
         ],
         "title": "ResearchDocumentEvidenceRefContract",
         "type": "object"
+      },
+      "ResearchDocumentEvidenceSourceKind": {
+        "enum": [
+          "public_knowledge",
+          "personal_material"
+        ],
+        "title": "ResearchDocumentEvidenceSourceKind",
+        "type": "string"
       },
       "ResearchDocumentExportManifest": {
         "description": "Versioned, machine-readable audit package for one formal M5 delivery.",
@@ -4862,8 +6152,18 @@
             "title": "Phenomenon",
             "type": "object"
           },
+          "research_analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchAnalysisHandoffContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "schema_version": {
-            "const": "research-delivery-v1",
+            "const": "research-delivery-v2",
             "title": "Schema Version",
             "type": "string"
           },
@@ -4910,6 +6210,7 @@
           "theory_assignments",
           "theory_relations",
           "evidence",
+          "research_analysis",
           "agent_proposals",
           "document_versions",
           "formal_document"
@@ -5153,6 +6454,16 @@
             "title": "Requires User Approval",
             "type": "boolean"
           },
+          "research_analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchAnalysisHandoffContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "result_document_id": {
             "anyOf": [
               {
@@ -5233,7 +6544,8 @@
           "result_document_version",
           "requires_user_approval",
           "created_at",
-          "decided_at"
+          "decided_at",
+          "research_analysis"
         ],
         "title": "ResearchDocumentProposalResponse",
         "type": "object"
@@ -5283,6 +6595,16 @@
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
+          },
+          "research_analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchAnalysisHandoffContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "restored_from_version": {
             "anyOf": [
@@ -5343,7 +6665,8 @@
           "actor",
           "restored_from_version",
           "created_at",
-          "confirmed_at"
+          "confirmed_at",
+          "research_analysis"
         ],
         "title": "ResearchDocumentResponse",
         "type": "object"
@@ -5434,6 +6757,298 @@
           "items"
         ],
         "title": "ResearchDocumentVersionListResponse",
+        "type": "object"
+      },
+      "ResearchMaterialListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchMaterialResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "items"
+        ],
+        "title": "ResearchMaterialListResponse",
+        "type": "object"
+      },
+      "ResearchMaterialLocatorResponse": {
+        "properties": {
+          "block_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Index"
+          },
+          "char_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Char End"
+          },
+          "char_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Char Start"
+          },
+          "line_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line End"
+          },
+          "line_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Start"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "paragraph": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paragraph"
+          },
+          "section_path": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Section Path",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "section_path",
+          "paragraph",
+          "line_start",
+          "line_end",
+          "char_start",
+          "char_end",
+          "block_index"
+        ],
+        "title": "ResearchMaterialLocatorResponse",
+        "type": "object"
+      },
+      "ResearchMaterialResponse": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "is_current_parse": {
+            "title": "Is Current Parse",
+            "type": "boolean"
+          },
+          "material_format": {
+            "title": "Material Format",
+            "type": "string"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "material_kind": {
+            "$ref": "#/components/schemas/MaterialKind"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "parse_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Id"
+          },
+          "parse_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Version"
+          },
+          "segment_count": {
+            "title": "Segment Count",
+            "type": "integer"
+          },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResearchMaterialSegmentResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "material_id",
+          "task_id",
+          "filename",
+          "display_name",
+          "media_type",
+          "material_format",
+          "material_kind",
+          "size_bytes",
+          "status",
+          "version",
+          "parse_id",
+          "parse_version",
+          "is_current_parse",
+          "segment_count",
+          "updated_at",
+          "error_code"
+        ],
+        "title": "ResearchMaterialResponse",
+        "type": "object"
+      },
+      "ResearchMaterialSegmentResponse": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ResearchMaterialLocatorResponse"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment_id",
+          "material_id",
+          "parse_id",
+          "ordinal",
+          "kind",
+          "text",
+          "locator"
+        ],
+        "title": "ResearchMaterialSegmentResponse",
         "type": "object"
       },
       "ResearchStartProposalResponse": {
@@ -7811,6 +9426,46 @@
           "source"
         ],
         "title": "UpdateResearchDocumentRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
         "type": "object"
       }
     }
@@ -11758,6 +13413,654 @@
         ]
       }
     },
+    "/api/research-tasks/{task_id}/analysis": {
+      "get": {
+        "operationId": "get_research_analysis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchAnalysisSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Research Analysis",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/annotations": {
+      "post": {
+        "operationId": "create_research_analysis_annotation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalysisAnnotationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisAnnotationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Research Analysis Annotation",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/codes": {
+      "post": {
+        "operationId": "create_research_analysis_code",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalysisCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Research Analysis Code",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/codes/{code_id}/decision": {
+      "post": {
+        "operationId": "decide_research_analysis_code",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "code_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Code Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAnalysisRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Research Analysis Code",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/comparisons": {
+      "post": {
+        "operationId": "create_research_case_comparison",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCaseComparisonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseComparisonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Research Case Comparison",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/comparisons/{comparison_id}/decision": {
+      "post": {
+        "operationId": "decide_research_case_comparison",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "comparison_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Comparison Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAnalysisRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseComparisonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Research Case Comparison",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/memos": {
+      "post": {
+        "operationId": "create_research_analysis_memo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalysisMemoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisMemoResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Research Analysis Memo",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/memos/{memo_id}/decision": {
+      "post": {
+        "operationId": "decide_research_analysis_memo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "memo_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Memo Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAnalysisRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisMemoResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Research Analysis Memo",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
     "/api/research-tasks/{task_id}/export": {
       "get": {
         "operationId": "export_research_trace",
@@ -12229,6 +14532,499 @@
         "summary": "Submit Material Intake",
         "tags": [
           "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/materials": {
+      "get": {
+        "operationId": "list_research_materials",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Research Materials",
+        "tags": [
+          "research-materials"
+        ]
+      },
+      "post": {
+        "operationId": "upload_research_material",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_research_material"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Research Material",
+        "tags": [
+          "research-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/materials/{material_id}": {
+      "delete": {
+        "operationId": "delete_research_material",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Research Material",
+        "tags": [
+          "research-materials"
+        ]
+      },
+      "get": {
+        "operationId": "get_research_material",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parse_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Research Material",
+        "tags": [
+          "research-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/materials/{material_id}/reparse": {
+      "post": {
+        "operationId": "reparse_research_material",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reparse Research Material",
+        "tags": [
+          "research-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/materials/{material_id}/segments/{segment_id}": {
+      "get": {
+        "operationId": "get_research_material_segment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "segment_id",
+            "required": true,
+            "schema": {
+              "title": "Segment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parse_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialSegmentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Research Material Segment",
+        "tags": [
+          "research-materials"
         ]
       }
     },

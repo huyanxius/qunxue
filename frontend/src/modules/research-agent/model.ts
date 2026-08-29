@@ -5,6 +5,12 @@ export type AgentCitation = {
   excerpt?: string | null
   knowledge_id?: string | null
   source_id?: string | null
+  source_kind?: string | null
+  material_id?: string | null
+  parse_id?: string | null
+  segment_id?: string | null
+  locator?: Record<string, unknown> | null
+  deleted?: boolean
 }
 
 export type AgentResearchNodeKind = 'question' | 'theory' | 'claim' | 'evidence' | 'gap' | 'synthesis'

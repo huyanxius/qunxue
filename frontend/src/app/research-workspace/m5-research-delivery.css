@@ -2,13 +2,78 @@
 .research-document-workbench[data-stage="framework"] .m5-proposal,
 .research-document-workbench[data-stage="framework"] .m5-version-history,
 .research-document-workbench[data-stage="framework"] .m5-export-panel,
-.research-document-workbench[data-stage="framework"] .m5-generation {
+.research-document-workbench[data-stage="framework"] .m5-generation,
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis {
   box-sizing: border-box;
   color: var(--rdw-ink, #1f2933);
   border: 1px solid var(--rdw-line, #e5e9ed);
   border-radius: .65rem;
   background: rgba(255, 255, 255, .88);
   box-shadow: 0 .7rem 2rem rgba(44, 56, 53, .055);
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis {
+  display: grid;
+  gap: .8rem;
+  padding: .95rem 1rem;
+  border-left: 3px solid rgba(33, 107, 105, .62);
+  box-shadow: none;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > header,
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .7rem;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > header strong {
+  color: #2c3734;
+  font-size: .82rem;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > header span,
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > footer span {
+  color: #71807a;
+  font-size: .62rem;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis > p {
+  margin: 0;
+  color: #65736e;
+  font-size: .7rem;
+  line-height: 1.5;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis__items {
+  display: grid;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis__items > div {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: .18rem .6rem;
+  padding: .55rem 0;
+  border-top: 1px solid #e8ece9;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis__items span {
+  grid-row: 1 / span 2;
+  color: #66756f;
+  font-size: .62rem;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis__items strong {
+  color: #35423e;
+  font-size: .72rem;
+}
+
+.research-document-workbench[data-stage="framework"] .m5-analysis-basis__items p {
+  margin: 0;
+  color: #63716c;
+  font-size: .67rem;
+  line-height: 1.45;
 }
 
 .research-document-workbench[data-stage="framework"] .m5-completion-gate,

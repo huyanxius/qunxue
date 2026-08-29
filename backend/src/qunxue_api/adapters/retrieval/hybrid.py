@@ -1,5 +1,6 @@
 """Release-bound lexical, dense, and reranked retrieval orchestration."""
 
+import math
 import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -146,6 +147,113 @@ class HybridRetriever:
             document_kind=document_kind,
             limit=limit,
         ).result
+
+    def search_chunks(
+        self,
+        *,
+        query: str,
+        chunks: Sequence[RetrievalChunk],
+        limit: int,
+        retrieval_index_id: str = "external-chunks",
+    ) -> HybridRetrievalResult:
+        """Run the same lexical/semantic/RRF/reranker pipeline over transient chunks.
+
+        Personal research materials are task-scoped and intentionally are not
+        copied into the release-bound public knowledge index.  This entry point
+        lets the Agent reuse the already configured embedding and reranking
+        providers for that closed, authorization-filtered set without creating
+        another vector database.  The caller owns the chunk lifecycle and must
+        pass only currently readable source blocks.
+        """
+
+        values = tuple(chunks)
+        if not values:
+            return HybridRetrievalResult(
+                retrieval_index_id=retrieval_index_id,
+                mode="lexical",
+                embedding_model=self._embedding_model,
+                reranker_model=self._reranker_model,
+                degraded_reason=None,
+                hits=(),
+            )
+        chunks_by_id = {chunk.chunk_id: chunk for chunk in values}
+        lexical = self._lexical_candidates(query=query, chunks=values)
+        semantic: list[RetrievalCandidate] = []
+        embed_documents = getattr(self._embedder, "embed_documents", None)
+        if callable(embed_documents):
+            try:
+                query_vector = self._embedder.embed_query(query)
+                vectors = embed_documents([chunk.text for chunk in values])
+                if len(vectors) != len(values):
+                    raise EmbeddingProviderError(
+                        "embedding response count does not match material chunks"
+                    )
+                query_norm = _vector_norm(query_vector)
+                if query_norm == 0:
+                    raise EmbeddingProviderError("query vector must not be zero")
+                scored = []
+                for chunk, vector in zip(values, vectors, strict=True):
+                    score = _cosine_similarity(query_vector, vector)
+                    scored.append(
+                        RetrievalCandidate(
+                            citation_id=chunk.chunk_id,
+                            score=score,
+                            source="semantic",
+                        )
+                    )
+                semantic = sorted(
+                    scored,
+                    key=lambda item: (-item.score, item.citation_id),
+                )[: self._recall_limit]
+            except EmbeddingProviderError as error:
+                raise RetrievalPipelineUnavailable(
+                    "embedding service is unavailable"
+                ) from error
+            except (TypeError, ValueError) as error:
+                raise RetrievalPipelineUnavailable(
+                    "embedding service returned an invalid vector"
+                ) from error
+
+        ranked_lists = tuple(item for item in (lexical, semantic) if item)
+        fused = rrf_fuse(ranked_lists, limit=self._recall_limit) if ranked_lists else []
+        safe_limit = max(1, limit)
+        mode = "hybrid" if lexical and semantic else "semantic" if semantic else "lexical"
+        if not fused:
+            return HybridRetrievalResult(
+                retrieval_index_id=retrieval_index_id,
+                mode=mode,
+                embedding_model=self._embedding_model,
+                reranker_model=self._reranker_model,
+                degraded_reason=None,
+                hits=(),
+            )
+
+        try:
+            scores = self._reranker.rerank(
+                query=query,
+                documents=tuple(chunks_by_id[item.citation_id].text for item in fused),
+                top_n=len(fused),
+            )
+        except RerankerProviderError as error:
+            raise RetrievalPipelineUnavailable("reranker service is unavailable") from error
+        hits = tuple(
+            HybridRetrievalHit(
+                chunk=chunks_by_id[fused[item.index].citation_id],
+                fused_score=fused[item.index].score,
+                retrieval_sources=fused[item.index].sources,
+                rerank_score=item.score,
+            )
+            for item in scores
+            if item.score >= self._min_rerank_score
+        )[:safe_limit]
+        return HybridRetrievalResult(
+            retrieval_index_id=retrieval_index_id,
+            mode=f"{mode}_reranked",
+            embedding_model=self._embedding_model,
+            reranker_model=self._reranker_model,
+            degraded_reason=None,
+            hits=hits,
+        )
 
     def search_with_trace(
         self,
@@ -296,3 +404,27 @@ def _meaningful_lexical_text(value: str) -> str:
 
 def _stage_hits(values: Sequence[RetrievalCandidate]) -> tuple[RetrievalStageHit, ...]:
     return tuple(RetrievalStageHit(chunk_id=item.citation_id, score=item.score) for item in values)
+
+
+def _vector_norm(values: Sequence[float]) -> float:
+    try:
+        numbers = tuple(float(value) for value in values)
+    except (TypeError, ValueError) as error:
+        raise EmbeddingProviderError("embedding vector contains a non-numeric value") from error
+    if not numbers or any(not math.isfinite(value) for value in numbers):
+        raise EmbeddingProviderError("embedding vector is empty or non-finite")
+    return math.sqrt(sum(value * value for value in numbers))
+
+
+def _cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
+    left_values = tuple(float(value) for value in left)
+    right_values = tuple(float(value) for value in right)
+    if len(left_values) != len(right_values) or not left_values:
+        raise EmbeddingProviderError("embedding vector dimensions do not match")
+    left_norm = _vector_norm(left_values)
+    right_norm = _vector_norm(right_values)
+    if right_norm == 0:
+        raise EmbeddingProviderError("embedding vector must not be zero")
+    return sum(a * b for a, b in zip(left_values, right_values, strict=True)) / (
+        left_norm * right_norm
+    )

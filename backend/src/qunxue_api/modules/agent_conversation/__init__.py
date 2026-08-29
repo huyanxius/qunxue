@@ -13,6 +13,8 @@ from qunxue_api.modules.agent_conversation.errors import (
     AgentConversationError,
     AgentInterrupted,
     ConversationNotFound,
+    ConversationTaskBindingConflict,
+    ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
 )
 from qunxue_api.modules.agent_conversation.ports import (
@@ -43,6 +45,7 @@ __all__ = [
     "AgentToolEvent",
     "AgentConversationError",
     "AgentInterrupted",
+    "ConversationTaskBindingConflict",
     "AgentMessage",
     "AgentRun",
     "AgentTurn",
@@ -50,6 +53,7 @@ __all__ = [
     "ConversationNotFound",
     "ConversationService",
     "IdempotentTurn",
+    "ResearchMaterialCitationUnavailable",
     "RunAlreadyActive",
     "UserConversation",
     "SubjectAgentRunner",

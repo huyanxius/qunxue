@@ -6,6 +6,7 @@ import { M5CompletionGate } from './M5CompletionGate'
 import { M5ExportPanel } from './M5ExportPanel'
 import { type M5GenerationAttempt, M5GenerationState } from './M5GenerationState'
 import { type M5Proposal, M5ProposalReview } from './M5ProposalReview'
+import { M5ResearchAnalysisBasis } from './M5ResearchAnalysisBasis'
 import { M5VersionHistory } from './M5VersionHistory'
 
 import './m5-research-delivery.css'
@@ -100,6 +101,7 @@ export function M5ResearchDeliveryPanel({
 
       {state.document && (
         <>
+          <M5ResearchAnalysisBasis basis={state.document.analysisBasis} />
           <M5VersionHistory
             currentVersion={state.document.version}
             versions={versions}

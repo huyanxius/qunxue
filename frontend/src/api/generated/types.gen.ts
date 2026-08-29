@@ -45,6 +45,10 @@ export type AgentCitationResponse = {
      */
     citation_id: string;
     /**
+     * Deleted
+     */
+    deleted?: boolean;
+    /**
      * Excerpt
      */
     excerpt?: string | null;
@@ -61,9 +65,31 @@ export type AgentCitationResponse = {
      */
     label: string;
     /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id?: string | null;
+    /**
+     * Segment Id
+     */
+    segment_id?: string | null;
+    /**
      * Source Id
      */
     source_id?: string | null;
+    /**
+     * Source Kind
+     */
+    source_kind?: string | null;
 };
 
 /**
@@ -388,6 +414,237 @@ export type AgentTurnResponse = {
 };
 
 /**
+ * AnalysisAnnotationKind
+ */
+export type AnalysisAnnotationKind = 'descriptive' | 'researcher_reflection';
+
+/**
+ * AnalysisAnnotationResponse
+ */
+export type AnalysisAnnotationResponse = {
+    /**
+     * Annotation Id
+     */
+    annotation_id: string;
+    annotation_kind: AnalysisAnnotationKind;
+    /**
+     * Case Label
+     */
+    case_label: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Observed At
+     */
+    observed_at: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Quote
+     */
+    quote: string | null;
+    /**
+     * Quote End
+     */
+    quote_end: number;
+    /**
+     * Quote Hash
+     */
+    quote_hash: string;
+    /**
+     * Quote Start
+     */
+    quote_start: number;
+    /**
+     * Reflection
+     */
+    reflection: string | null;
+    /**
+     * Segment Content Hash
+     */
+    segment_content_hash: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Source Available
+     */
+    source_available: boolean;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Unavailable Reason
+     */
+    unavailable_reason: string | null;
+};
+
+/**
+ * AnalysisCodeResponse
+ */
+export type AnalysisCodeResponse = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Agent Turn Id
+     */
+    agent_turn_id: string | null;
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Code Id
+     */
+    code_id: string;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Definition
+     */
+    definition: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Source
+     */
+    source: string;
+    status: AnalysisCodeStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Tool Call Id
+     */
+    tool_call_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * AnalysisCodeStatus
+ */
+export type AnalysisCodeStatus = 'candidate' | 'confirmed' | 'rejected';
+
+/**
+ * AnalysisMemoKind
+ */
+export type AnalysisMemoKind = 'descriptive' | 'reflexive' | 'analytic' | 'methodological';
+
+/**
+ * AnalysisMemoResponse
+ */
+export type AnalysisMemoResponse = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Agent Turn Id
+     */
+    agent_turn_id: string | null;
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Code Ids
+     */
+    code_ids: Array<string>;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Memo Id
+     */
+    memo_id: string;
+    memo_kind: AnalysisMemoKind;
+    /**
+     * Source
+     */
+    source: string;
+    status: AnalysisRecordStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Tool Call Id
+     */
+    tool_call_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * AnalysisRecordStatus
+ */
+export type AnalysisRecordStatus = 'candidate' | 'confirmed' | 'rejected';
+
+/**
  * AuditFindingResponse
  */
 export type AuditFindingResponse = {
@@ -493,6 +750,17 @@ export type AuditResolutionSetResponse = {
 };
 
 /**
+ * Body_upload_research_material
+ */
+export type BodyUploadResearchMaterial = {
+    /**
+     * File
+     */
+    file: Blob | File;
+    material_kind?: MaterialKind;
+};
+
+/**
  * BuiltInCaseContentStatus
  */
 export type BuiltInCaseContentStatus = 'reviewed' | 'demonstration';
@@ -564,6 +832,113 @@ export type CandidateJudgementRunStatus = 'queued' | 'running' | 'succeeded' | '
  * CandidateOrigin
  */
 export type CandidateOrigin = 'pre_reviewed_knowledge' | 'reviewed_knowledge' | 'model_exploration' | 'external_unreviewed' | 'user_supplied';
+
+/**
+ * CaseComparisonResponse
+ */
+export type CaseComparisonResponse = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Agent Turn Id
+     */
+    agent_turn_id: string | null;
+    /**
+     * Case Labels
+     */
+    case_labels: Array<string>;
+    /**
+     * Comparison Id
+     */
+    comparison_id: string;
+    /**
+     * Competing Explanations
+     */
+    competing_explanations: Array<string>;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Evidence Gaps
+     */
+    evidence_gaps: Array<string>;
+    /**
+     * Findings
+     */
+    findings: Array<ComparisonFindingContract>;
+    /**
+     * Next Steps
+     */
+    next_steps: Array<NextResearchStepContract>;
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Source
+     */
+    source: string;
+    status: AnalysisRecordStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Implication
+     */
+    theory_implication: string;
+    /**
+     * Time Labels
+     */
+    time_labels: Array<string>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Tool Call Id
+     */
+    tool_call_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ComparisonFindingContract
+ */
+export type ComparisonFindingContract = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids?: Array<string>;
+    kind: ComparisonFindingKind;
+    /**
+     * Statement
+     */
+    statement: string;
+};
+
+/**
+ * ComparisonFindingKind
+ */
+export type ComparisonFindingKind = 'support' | 'counterexample' | 'contradict' | 'competing_explanation' | 'evidence_gap';
 
 /**
  * ConceptMappingContract
@@ -797,6 +1172,136 @@ export type ConfirmedTheoryPlanResponse = {
 };
 
 /**
+ * CreateAnalysisAnnotationRequest
+ */
+export type CreateAnalysisAnnotationRequest = {
+    annotation_kind: AnalysisAnnotationKind;
+    /**
+     * Case Label
+     */
+    case_label?: string | null;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Observed At
+     */
+    observed_at?: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Quote End
+     */
+    quote_end: number;
+    /**
+     * Quote Start
+     */
+    quote_start: number;
+    /**
+     * Reflection
+     */
+    reflection?: string | null;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+};
+
+/**
+ * CreateAnalysisCodeRequest
+ */
+export type CreateAnalysisCodeRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Definition
+     */
+    definition: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+};
+
+/**
+ * CreateAnalysisMemoRequest
+ */
+export type CreateAnalysisMemoRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids?: Array<string>;
+    /**
+     * Code Ids
+     */
+    code_ids?: Array<string>;
+    /**
+     * Content
+     */
+    content: string;
+    memo_kind: AnalysisMemoKind;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * CreateCaseComparisonRequest
+ */
+export type CreateCaseComparisonRequest = {
+    /**
+     * Case Labels
+     */
+    case_labels: Array<string>;
+    /**
+     * Competing Explanations
+     */
+    competing_explanations?: Array<string>;
+    /**
+     * Evidence Gaps
+     */
+    evidence_gaps?: Array<string>;
+    /**
+     * Findings
+     */
+    findings: Array<ComparisonFindingContract>;
+    /**
+     * Next Steps
+     */
+    next_steps?: Array<NextResearchStepContract>;
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Theory Implication
+     */
+    theory_implication: string;
+    /**
+     * Time Labels
+     */
+    time_labels?: Array<string>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * CreateFrameworkRequest
  */
 export type CreateFrameworkRequest = {
@@ -915,6 +1420,21 @@ export type CreateTheoryDecisionsRequest = {
      * Use Assignments
      */
     use_assignments: Array<TheoryUseAssignmentInput>;
+};
+
+/**
+ * DecideAnalysisRecordRequest
+ */
+export type DecideAnalysisRecordRequest = {
+    decision: AnalysisRecordStatus;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -1076,7 +1596,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
@@ -1518,6 +2038,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
+
+/**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
 
 /**
  * HealthResponse
@@ -2180,6 +2710,11 @@ export type MaterialIntakeRunResponse = {
 };
 
 /**
+ * MaterialKind
+ */
+export type MaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other';
+
+/**
  * MethodIntentContract
  */
 export type MethodIntentContract = {
@@ -2250,6 +2785,24 @@ export type ModelMetadata = {
      */
     provider: string;
     trace: TraceMetadata;
+};
+
+/**
+ * NextResearchStepContract
+ */
+export type NextResearchStepContract = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Priority
+     */
+    priority?: string;
 };
 
 /**
@@ -2685,6 +3238,78 @@ export type RelationCandidateResponse = {
 };
 
 /**
+ * ResearchAnalysisHandoffContract
+ */
+export type ResearchAnalysisHandoffContract = {
+    /**
+     * Annotations
+     */
+    annotations: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Codes
+     */
+    codes: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Comparisons
+     */
+    comparisons: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Memos
+     */
+    memos: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Schema Version
+     */
+    schema_version: 'research-analysis-v1';
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Unavailable Annotation Ids
+     */
+    unavailable_annotation_ids: Array<string>;
+};
+
+/**
+ * ResearchAnalysisSnapshotResponse
+ */
+export type ResearchAnalysisSnapshotResponse = {
+    /**
+     * Annotations
+     */
+    annotations: Array<AnalysisAnnotationResponse>;
+    /**
+     * Codes
+     */
+    codes: Array<AnalysisCodeResponse>;
+    /**
+     * Comparisons
+     */
+    comparisons: Array<CaseComparisonResponse>;
+    /**
+     * Memos
+     */
+    memos: Array<AnalysisMemoResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
  * ResearchDocumentCompletionCheckResponse
  */
 export type ResearchDocumentCompletionCheckResponse = {
@@ -2741,18 +3366,46 @@ export type ResearchDocumentCompletionGateResponse = {
  */
 export type ResearchDocumentEvidenceRefContract = {
     /**
+     * Annotation Id
+     */
+    annotation_id?: string | null;
+    /**
      * Evidence Ref Id
      */
     evidence_ref_id: string;
     /**
      * Knowledge Release Id
      */
-    knowledge_release_id: string;
+    knowledge_release_id?: string | null;
+    /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id?: string | null;
+    /**
+     * Segment Id
+     */
+    segment_id?: string | null;
     /**
      * Source Id
      */
     source_id: string;
+    source_kind?: ResearchDocumentEvidenceSourceKind;
 };
+
+/**
+ * ResearchDocumentEvidenceSourceKind
+ */
+export type ResearchDocumentEvidenceSourceKind = 'public_knowledge' | 'personal_material';
 
 /**
  * ResearchDocumentExportManifest
@@ -2802,10 +3455,11 @@ export type ResearchDocumentExportManifest = {
     phenomenon: {
         [key: string]: unknown;
     };
+    research_analysis: ResearchAnalysisHandoffContract | null;
     /**
      * Schema Version
      */
-    schema_version: 'research-delivery-v1';
+    schema_version: 'research-delivery-v2';
     /**
      * Theory Assignments
      */
@@ -2973,6 +3627,7 @@ export type ResearchDocumentProposalResponse = {
      * Requires User Approval
      */
     requires_user_approval: boolean;
+    research_analysis: ResearchAnalysisHandoffContract | null;
     /**
      * Result Document Id
      */
@@ -3037,6 +3692,7 @@ export type ResearchDocumentResponse = {
      * Knowledge Release Id
      */
     knowledge_release_id: string;
+    research_analysis: ResearchAnalysisHandoffContract | null;
     /**
      * Restored From Version
      */
@@ -3117,6 +3773,160 @@ export type ResearchDocumentVersionListResponse = {
      * Items
      */
     items: Array<ResearchDocumentResponse>;
+};
+
+/**
+ * ResearchMaterialListResponse
+ */
+export type ResearchMaterialListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchMaterialResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
+ * ResearchMaterialLocatorResponse
+ */
+export type ResearchMaterialLocatorResponse = {
+    /**
+     * Block Index
+     */
+    block_index: number | null;
+    /**
+     * Char End
+     */
+    char_end: number | null;
+    /**
+     * Char Start
+     */
+    char_start: number | null;
+    /**
+     * Line End
+     */
+    line_end: number | null;
+    /**
+     * Line Start
+     */
+    line_start: number | null;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Paragraph
+     */
+    paragraph: number | null;
+    /**
+     * Section Path
+     */
+    section_path: Array<string>;
+};
+
+/**
+ * ResearchMaterialResponse
+ */
+export type ResearchMaterialResponse = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Is Current Parse
+     */
+    is_current_parse: boolean;
+    /**
+     * Material Format
+     */
+    material_format: string;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    material_kind: MaterialKind;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string | null;
+    /**
+     * Parse Version
+     */
+    parse_version: number | null;
+    /**
+     * Segment Count
+     */
+    segment_count: number;
+    /**
+     * Segments
+     */
+    segments?: Array<ResearchMaterialSegmentResponse> | null;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ResearchMaterialSegmentResponse
+ */
+export type ResearchMaterialSegmentResponse = {
+    /**
+     * Kind
+     */
+    kind: string;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Ordinal
+     */
+    ordinal: number;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -4418,6 +5228,34 @@ export type UpdateResearchDocumentRequest = {
      * Source
      */
     source: 'user_edit';
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -6554,6 +7392,346 @@ export type GetResearchTaskResponses = {
 
 export type GetResearchTaskResponse = GetResearchTaskResponses[keyof GetResearchTaskResponses];
 
+export type GetResearchAnalysisData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis';
+};
+
+export type GetResearchAnalysisErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetResearchAnalysisError = GetResearchAnalysisErrors[keyof GetResearchAnalysisErrors];
+
+export type GetResearchAnalysisResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchAnalysisSnapshotResponse;
+};
+
+export type GetResearchAnalysisResponse = GetResearchAnalysisResponses[keyof GetResearchAnalysisResponses];
+
+export type CreateResearchAnalysisAnnotationData = {
+    body: CreateAnalysisAnnotationRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/annotations';
+};
+
+export type CreateResearchAnalysisAnnotationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateResearchAnalysisAnnotationError = CreateResearchAnalysisAnnotationErrors[keyof CreateResearchAnalysisAnnotationErrors];
+
+export type CreateResearchAnalysisAnnotationResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisAnnotationResponse;
+};
+
+export type CreateResearchAnalysisAnnotationResponse = CreateResearchAnalysisAnnotationResponses[keyof CreateResearchAnalysisAnnotationResponses];
+
+export type CreateResearchAnalysisCodeData = {
+    body: CreateAnalysisCodeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/codes';
+};
+
+export type CreateResearchAnalysisCodeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateResearchAnalysisCodeError = CreateResearchAnalysisCodeErrors[keyof CreateResearchAnalysisCodeErrors];
+
+export type CreateResearchAnalysisCodeResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisCodeResponse;
+};
+
+export type CreateResearchAnalysisCodeResponse = CreateResearchAnalysisCodeResponses[keyof CreateResearchAnalysisCodeResponses];
+
+export type DecideResearchAnalysisCodeData = {
+    body: DecideAnalysisRecordRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Code Id
+         */
+        code_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/codes/{code_id}/decision';
+};
+
+export type DecideResearchAnalysisCodeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DecideResearchAnalysisCodeError = DecideResearchAnalysisCodeErrors[keyof DecideResearchAnalysisCodeErrors];
+
+export type DecideResearchAnalysisCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisCodeResponse;
+};
+
+export type DecideResearchAnalysisCodeResponse = DecideResearchAnalysisCodeResponses[keyof DecideResearchAnalysisCodeResponses];
+
+export type CreateResearchCaseComparisonData = {
+    body: CreateCaseComparisonRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/comparisons';
+};
+
+export type CreateResearchCaseComparisonErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateResearchCaseComparisonError = CreateResearchCaseComparisonErrors[keyof CreateResearchCaseComparisonErrors];
+
+export type CreateResearchCaseComparisonResponses = {
+    /**
+     * Successful Response
+     */
+    201: CaseComparisonResponse;
+};
+
+export type CreateResearchCaseComparisonResponse = CreateResearchCaseComparisonResponses[keyof CreateResearchCaseComparisonResponses];
+
+export type DecideResearchCaseComparisonData = {
+    body: DecideAnalysisRecordRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Comparison Id
+         */
+        comparison_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/comparisons/{comparison_id}/decision';
+};
+
+export type DecideResearchCaseComparisonErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DecideResearchCaseComparisonError = DecideResearchCaseComparisonErrors[keyof DecideResearchCaseComparisonErrors];
+
+export type DecideResearchCaseComparisonResponses = {
+    /**
+     * Successful Response
+     */
+    200: CaseComparisonResponse;
+};
+
+export type DecideResearchCaseComparisonResponse = DecideResearchCaseComparisonResponses[keyof DecideResearchCaseComparisonResponses];
+
+export type CreateResearchAnalysisMemoData = {
+    body: CreateAnalysisMemoRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/memos';
+};
+
+export type CreateResearchAnalysisMemoErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateResearchAnalysisMemoError = CreateResearchAnalysisMemoErrors[keyof CreateResearchAnalysisMemoErrors];
+
+export type CreateResearchAnalysisMemoResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisMemoResponse;
+};
+
+export type CreateResearchAnalysisMemoResponse = CreateResearchAnalysisMemoResponses[keyof CreateResearchAnalysisMemoResponses];
+
+export type DecideResearchAnalysisMemoData = {
+    body: DecideAnalysisRecordRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Memo Id
+         */
+        memo_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/memos/{memo_id}/decision';
+};
+
+export type DecideResearchAnalysisMemoErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DecideResearchAnalysisMemoError = DecideResearchAnalysisMemoErrors[keyof DecideResearchAnalysisMemoErrors];
+
+export type DecideResearchAnalysisMemoResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisMemoResponse;
+};
+
+export type DecideResearchAnalysisMemoResponse = DecideResearchAnalysisMemoResponses[keyof DecideResearchAnalysisMemoResponses];
+
 export type ExportResearchTraceData = {
     body?: never;
     path: {
@@ -6807,6 +7985,282 @@ export type SubmitMaterialIntakeResponses = {
 };
 
 export type SubmitMaterialIntakeResponse = SubmitMaterialIntakeResponses[keyof SubmitMaterialIntakeResponses];
+
+export type ListResearchMaterialsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials';
+};
+
+export type ListResearchMaterialsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListResearchMaterialsError = ListResearchMaterialsErrors[keyof ListResearchMaterialsErrors];
+
+export type ListResearchMaterialsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialListResponse;
+};
+
+export type ListResearchMaterialsResponse = ListResearchMaterialsResponses[keyof ListResearchMaterialsResponses];
+
+export type UploadResearchMaterialData = {
+    body: BodyUploadResearchMaterial;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials';
+};
+
+export type UploadResearchMaterialErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadResearchMaterialError = UploadResearchMaterialErrors[keyof UploadResearchMaterialErrors];
+
+export type UploadResearchMaterialResponses = {
+    /**
+     * Successful Response
+     */
+    201: ResearchMaterialResponse;
+};
+
+export type UploadResearchMaterialResponse = UploadResearchMaterialResponses[keyof UploadResearchMaterialResponses];
+
+export type DeleteResearchMaterialData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}';
+};
+
+export type DeleteResearchMaterialErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteResearchMaterialError = DeleteResearchMaterialErrors[keyof DeleteResearchMaterialErrors];
+
+export type DeleteResearchMaterialResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteResearchMaterialResponse = DeleteResearchMaterialResponses[keyof DeleteResearchMaterialResponses];
+
+export type GetResearchMaterialData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: {
+        /**
+         * Parse Id
+         */
+        parse_id?: string | null;
+    };
+    url: '/api/research-tasks/{task_id}/materials/{material_id}';
+};
+
+export type GetResearchMaterialErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetResearchMaterialError = GetResearchMaterialErrors[keyof GetResearchMaterialErrors];
+
+export type GetResearchMaterialResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialResponse;
+};
+
+export type GetResearchMaterialResponse = GetResearchMaterialResponses[keyof GetResearchMaterialResponses];
+
+export type ReparseResearchMaterialData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/reparse';
+};
+
+export type ReparseResearchMaterialErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReparseResearchMaterialError = ReparseResearchMaterialErrors[keyof ReparseResearchMaterialErrors];
+
+export type ReparseResearchMaterialResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialResponse;
+};
+
+export type ReparseResearchMaterialResponse = ReparseResearchMaterialResponses[keyof ReparseResearchMaterialResponses];
+
+export type GetResearchMaterialSegmentData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+        /**
+         * Segment Id
+         */
+        segment_id: string;
+    };
+    query?: {
+        /**
+         * Parse Id
+         */
+        parse_id?: string | null;
+    };
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/segments/{segment_id}';
+};
+
+export type GetResearchMaterialSegmentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetResearchMaterialSegmentError = GetResearchMaterialSegmentErrors[keyof GetResearchMaterialSegmentErrors];
+
+export type GetResearchMaterialSegmentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialSegmentResponse;
+};
+
+export type GetResearchMaterialSegmentResponse = GetResearchMaterialSegmentResponses[keyof GetResearchMaterialSegmentResponses];
 
 export type GetResearchTaskNavigationData = {
     body?: never;

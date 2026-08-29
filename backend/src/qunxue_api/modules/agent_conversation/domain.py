@@ -14,10 +14,27 @@ def _now() -> datetime:
 class AgentCitation:
     citation_id: str
     label: str
-    kind: Literal["entry", "preview", "source", "theory", "directory"]
+    kind: Literal[
+        "entry",
+        "preview",
+        "source",
+        "theory",
+        "directory",
+        "research_material",
+        "material",
+    ]
     excerpt: str | None = None
     knowledge_id: str | None = None
     source_id: str | None = None
+    # Personal-material citations carry a stable source coordinate in addition
+    # to the human-facing excerpt.  All fields remain optional so historical
+    # public-knowledge citations keep their original wire shape.
+    source_kind: str | None = None
+    material_id: str | None = None
+    parse_id: str | None = None
+    segment_id: str | None = None
+    locator: dict[str, object] | None = None
+    deleted: bool = False
 
 
 @dataclass(frozen=True, slots=True)

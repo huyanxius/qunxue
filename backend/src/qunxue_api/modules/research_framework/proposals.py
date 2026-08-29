@@ -1,6 +1,7 @@
 import json
 from collections.abc import Callable
 from contextlib import AbstractContextManager
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -55,6 +56,7 @@ class ResearchDocumentProposalSnapshot:
     request_hash: str = ""
     model_provider: str | None = None
     model_name: str | None = None
+    analysis_handoff: dict[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,7 +131,7 @@ class ResearchDocumentProposalService:
         id_factory: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
         atomic: Callable[[], AbstractContextManager[None]] | None = None,
-        validate_proposal: Callable[..., None] | None = None,
+        validate_proposal: Callable[..., dict[str, object] | None] | None = None,
     ) -> None:
         self._repository = repository
         self._documents = documents
@@ -173,7 +175,7 @@ class ResearchDocumentProposalService:
             knowledge_release_id=current.knowledge_release_id,
         )
         model_provider, model_name = self._required_agent_model(agent_run_id)
-        self._validate_scope(
+        analysis_handoff = self._validate_scope(
             user_id=user_id,
             task_id=current.task_id,
             theory_plan_id=current.theory_plan_id,
@@ -216,6 +218,7 @@ class ResearchDocumentProposalService:
                 request_hash=request_hash,
                 model_provider=model_provider,
                 model_name=model_name,
+                analysis_handoff=deepcopy(analysis_handoff),
             )
         )
 
@@ -246,7 +249,7 @@ class ResearchDocumentProposalService:
             knowledge_release_id=release_id,
         )
         model_provider, model_name = self._required_agent_model(agent_run_id)
-        self._validate_scope(
+        analysis_handoff = self._validate_scope(
             user_id=user_id,
             task_id=task_id,
             theory_plan_id=theory_plan_id,
@@ -298,6 +301,7 @@ class ResearchDocumentProposalService:
                 request_hash=request_hash,
                 model_provider=model_provider,
                 model_name=model_name,
+                analysis_handoff=deepcopy(analysis_handoff),
             )
         )
         if persisted.request_hash != request_hash:
@@ -368,6 +372,9 @@ class ResearchDocumentProposalService:
                     version=proposal.result_document_version,
                 ),
             )
+        # Acceptance revalidates ownership and evidence against current state,
+        # but the document version must keep the analysis snapshot from when
+        # the suggestion was generated.
         self._validate_scope(
             user_id=user_id,
             task_id=proposal.task_id,
@@ -398,6 +405,7 @@ class ResearchDocumentProposalService:
                 title=proposal.title,
                 sections=accepted_sections,
                 actor="agent_suggestion_accepted",
+                analysis_handoff=proposal.analysis_handoff,
             )
         else:
             if proposal.document_id is None or proposal.base_document_version is None:
@@ -423,6 +431,7 @@ class ResearchDocumentProposalService:
                 sections=sections,
                 change_summary=proposal.rationale,
                 actor="agent_suggestion_accepted",
+                analysis_handoff=proposal.analysis_handoff,
             )
         accepted = replace(
             proposal,
@@ -471,15 +480,16 @@ class ResearchDocumentProposalService:
         theory_plan_id: UUID,
         knowledge_release_id: str,
         sections: tuple[ResearchDocumentSection, ...],
-    ) -> None:
+    ) -> dict[str, object] | None:
         if self._validate_proposal is not None:
-            self._validate_proposal(
+            return self._validate_proposal(
                 user_id=user_id,
                 task_id=task_id,
                 theory_plan_id=theory_plan_id,
                 knowledge_release_id=knowledge_release_id,
                 sections=sections,
             )
+        return None
 
     @staticmethod
     def _required_reason(value: str) -> str:

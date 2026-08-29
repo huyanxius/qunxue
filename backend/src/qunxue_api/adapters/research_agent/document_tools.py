@@ -1,8 +1,16 @@
-from dataclasses import replace
+from collections.abc import Mapping, Sequence
+from dataclasses import fields, is_dataclass, replace
 from datetime import datetime
+from enum import Enum
 from typing import Protocol
 from uuid import UUID
 
+from qunxue_api.modules.agent_conversation import AgentEvidence
+from qunxue_api.modules.research_analysis import (
+    ComparisonFinding,
+    ComparisonFindingKind,
+    NextResearchStep,
+)
 from qunxue_api.modules.research_framework import (
     ResearchDocumentEvidenceRef,
     ResearchDocumentProposalService,
@@ -11,6 +19,12 @@ from qunxue_api.modules.research_framework import (
     ResearchDocumentSnapshot,
 )
 from qunxue_api.modules.research_intake import ResearchStartProposal
+from qunxue_api.modules.research_materials import (
+    MaterialBlock,
+    MaterialParseVersion,
+    MaterialStatus,
+    ResearchMaterial,
+)
 from qunxue_api.modules.theory_matching import ConfirmedTheoryPlanSnapshot
 
 from .catalog_tools import KnowledgeToolRegistry
@@ -24,6 +38,39 @@ class ResearchDocumentReader(Protocol):
     def get_theory_plan_for_agent(
         self, *, user_id: UUID, theory_plan_id: UUID
     ) -> ConfirmedTheoryPlanSnapshot: ...
+
+
+class ResearchMaterialReader(Protocol):
+    """Read-only, task-authorized material port used by Agent tools."""
+
+    def list(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        include_deleted: bool = False,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Sequence[ResearchMaterial]: ...
+
+    def get_parse(
+        self,
+        material_id: UUID,
+        parse_id: UUID,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> MaterialParseVersion | None: ...
+
+    def get_segment(
+        self,
+        material_id: UUID,
+        parse_id: UUID,
+        segment_id: str,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> MaterialBlock | None: ...
 
 
 class ResearchWorkflowCoordinator(Protocol):
@@ -42,6 +89,72 @@ class ResearchWorkflowCoordinator(Protocol):
     def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
 
 
+class ResearchAnalysisAgentFacade(Protocol):
+    """Narrow approval-gated boundary exposed to the existing research Agent."""
+
+    def get_for_agent(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]: ...
+
+    def propose_code_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        label: str,
+        definition: str,
+        annotation_ids: tuple[UUID, ...],
+        rationale: str,
+        conversation_id: UUID,
+        agent_run_id: UUID,
+        agent_turn_id: UUID,
+        tool_call_id: str,
+    ) -> object: ...
+
+    def propose_memo_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        title: str,
+        content: str,
+        memo_kind: str,
+        annotation_ids: tuple[UUID, ...],
+        code_ids: tuple[UUID, ...],
+        conversation_id: UUID,
+        agent_run_id: UUID,
+        agent_turn_id: UUID,
+        tool_call_id: str,
+    ) -> object: ...
+
+    def get_comparison_context_for_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        case_labels: tuple[str, ...],
+        time_labels: tuple[str, ...],
+    ) -> dict[str, object]: ...
+
+    def propose_comparison_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        title: str,
+        question: str,
+        case_labels: tuple[str, ...],
+        time_labels: tuple[str, ...],
+        findings: tuple[ComparisonFinding, ...],
+        competing_explanations: tuple[str, ...],
+        evidence_gaps: tuple[str, ...],
+        next_steps: tuple[NextResearchStep, ...],
+        theory_implication: str,
+        conversation_id: UUID,
+        agent_run_id: UUID,
+        agent_turn_id: UUID,
+        tool_call_id: str,
+    ) -> object: ...
+
+
 class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     """Adds approval-gated research-document capabilities to the knowledge tools."""
 
@@ -53,11 +166,15 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         documents: ResearchDocumentReader,
         proposals: ResearchDocumentProposalService,
         workflow: ResearchWorkflowCoordinator | None = None,
+        materials: ResearchMaterialReader | None = None,
+        analysis: ResearchAnalysisAgentFacade | None = None,
     ) -> None:
         super().__init__(catalog, retriever=retriever)
         self._documents = documents
         self._proposals = proposals
         self._workflow = workflow
+        self._materials = materials
+        self._analysis = analysis
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
         self._agent_run_id: UUID | None = None
@@ -72,12 +189,22 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._pending_start_proposal: ResearchStartProposal | None = None
         self.research_handoff_tools_enabled = False
         self.research_document_tools_enabled = False
+        self.research_material_tools_enabled = False
+        self.research_analysis_tools_enabled = False
 
     def enable_research_handoff_tools(self) -> None:
         self.research_handoff_tools_enabled = True
 
     def enable_research_document_tools(self) -> None:
         self.research_document_tools_enabled = True
+
+    def enable_research_material_tools(self) -> None:
+        """Expose task-scoped personal-material tools for the current turn."""
+
+        self.research_material_tools_enabled = (
+            self._materials is not None and self._task_id is not None
+        )
+        self._refresh_analysis_tools_enabled()
 
     @property
     def document_prompt_context(self) -> dict[str, object] | None:
@@ -175,6 +302,488 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 else None
             )
             self._theory_plan_release_id = str(restored_release_id) if restored_release_id else None
+        # A restored conversation may acquire its task id from the workflow;
+        # enable the material tools only after that binding is known.
+        if self._materials is not None and self._task_id is not None:
+            self.research_material_tools_enabled = True
+        self._refresh_analysis_tools_enabled()
+
+    def get_research_analysis(self) -> dict[str, object]:
+        """Read the current task's analysis without changing user decisions."""
+
+        user_id, task_id, _, _, _, analysis = self._analysis_context()
+        result = _json_safe(analysis.get_for_agent(user_id=user_id, task_id=task_id))
+        if not isinstance(result, dict):
+            raise TypeError("research analysis snapshot must be an object")
+        return result
+
+    def propose_analysis_code(
+        self,
+        *,
+        label: str,
+        definition: str,
+        annotation_ids: Sequence[str],
+        rationale: str,
+        tool_call_id: str,
+    ) -> dict[str, object]:
+        """Persist an Agent-authored code candidate for explicit user review."""
+
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
+            self._analysis_context()
+        )
+        result = analysis.propose_code_from_agent(
+            user_id=user_id,
+            task_id=task_id,
+            label=label,
+            definition=definition,
+            annotation_ids=_uuid_tuple(annotation_ids),
+            rationale=rationale,
+            conversation_id=conversation_id,
+            agent_run_id=run_id,
+            agent_turn_id=turn_id,
+            tool_call_id=_required_tool_call_id(tool_call_id),
+        )
+        return _candidate_analysis_payload(result)
+
+    def propose_analysis_memo(
+        self,
+        *,
+        title: str,
+        content: str,
+        memo_kind: str,
+        annotation_ids: Sequence[str],
+        code_ids: Sequence[str],
+        tool_call_id: str,
+    ) -> dict[str, object]:
+        """Persist an Agent-authored memo candidate for explicit user review."""
+
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
+            self._analysis_context()
+        )
+        result = analysis.propose_memo_from_agent(
+            user_id=user_id,
+            task_id=task_id,
+            title=title,
+            content=content,
+            memo_kind=memo_kind,
+            annotation_ids=_uuid_tuple(annotation_ids),
+            code_ids=_uuid_tuple(code_ids),
+            conversation_id=conversation_id,
+            agent_run_id=run_id,
+            agent_turn_id=turn_id,
+            tool_call_id=_required_tool_call_id(tool_call_id),
+        )
+        return _candidate_analysis_payload(result)
+
+    def get_research_comparison_context(
+        self,
+        *,
+        case_labels: Sequence[str],
+        time_labels: Sequence[str] = (),
+    ) -> dict[str, object]:
+        """Read the bounded cross-case/time context without changing analysis."""
+
+        user_id, task_id, _, _, _, analysis = self._analysis_context()
+        result = analysis.get_comparison_context_for_agent(
+            user_id=user_id,
+            task_id=task_id,
+            case_labels=_required_text_tuple(case_labels, "case label"),
+            time_labels=_required_text_tuple(
+                time_labels,
+                "time label",
+                allow_empty=True,
+            ),
+        )
+        payload = _json_safe(result)
+        if not isinstance(payload, dict):
+            raise TypeError("research comparison context must be an object")
+        return payload
+
+    def propose_case_comparison(
+        self,
+        *,
+        title: str,
+        question: str,
+        case_labels: Sequence[str],
+        time_labels: Sequence[str],
+        findings: Sequence[Mapping[str, object]],
+        competing_explanations: Sequence[str],
+        evidence_gaps: Sequence[str],
+        next_steps: Sequence[Mapping[str, object]],
+        theory_implication: str,
+        tool_call_id: str,
+    ) -> dict[str, object]:
+        """Persist an Agent-authored comparison candidate for user review."""
+
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
+            self._analysis_context()
+        )
+        result = analysis.propose_comparison_from_agent(
+            user_id=user_id,
+            task_id=task_id,
+            title=title,
+            question=question,
+            case_labels=_required_text_tuple(case_labels, "case label"),
+            time_labels=_required_text_tuple(
+                time_labels,
+                "time label",
+                allow_empty=True,
+            ),
+            findings=tuple(_comparison_finding(item) for item in findings),
+            competing_explanations=_required_text_tuple(
+                competing_explanations,
+                "competing explanation",
+                allow_empty=True,
+            ),
+            evidence_gaps=_required_text_tuple(
+                evidence_gaps,
+                "evidence gap",
+                allow_empty=True,
+            ),
+            next_steps=tuple(_next_research_step(item) for item in next_steps),
+            theory_implication=theory_implication,
+            conversation_id=conversation_id,
+            agent_run_id=run_id,
+            agent_turn_id=turn_id,
+            tool_call_id=_required_tool_call_id(tool_call_id),
+        )
+        return _candidate_analysis_payload(result)
+
+    def _refresh_analysis_tools_enabled(self) -> None:
+        self.research_analysis_tools_enabled = bool(
+            self._analysis is not None
+            and self._materials is not None
+            and self.research_material_tools_enabled
+            and self._user_id is not None
+            and self._task_id is not None
+            and self._conversation_id is not None
+            and self._agent_run_id is not None
+            and self._agent_turn_id is not None
+        )
+
+    def _analysis_context(
+        self,
+    ) -> tuple[
+        UUID,
+        UUID,
+        UUID,
+        UUID,
+        UUID,
+        ResearchAnalysisAgentFacade,
+    ]:
+        if (
+            not self.research_analysis_tools_enabled
+            or self._analysis is None
+            or self._user_id is None
+            or self._task_id is None
+            or self._conversation_id is None
+            or self._agent_run_id is None
+            or self._agent_turn_id is None
+        ):
+            raise RuntimeError(
+                "research analysis tools require material context and a persisted Agent turn"
+            )
+        return (
+            self._user_id,
+            self._task_id,
+            self._conversation_id,
+            self._agent_run_id,
+            self._agent_turn_id,
+            self._analysis,
+        )
+
+    def search_research_materials(
+        self,
+        query: str,
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, object]] | dict[str, object]:
+        """Search the current task's readable material blocks.
+
+        Authorization is applied before retrieval: deleted materials, stale
+        parse versions, and blocks from another user/task never enter the
+        candidate set.  The shared ``HybridRetriever.search_chunks`` method is
+        used when configured; a deterministic lexical fallback keeps the
+        zero-config local runner useful without introducing another index.
+        """
+
+        context = self._material_context()
+        if context is None:
+            return {
+                "error": "research_material_context_missing",
+                "message": "当前 Agent 没有绑定研究任务，无法检索个人研究材料。",
+            }
+        user_id, task_id, materials = context
+        normalized_query = str(query or "").strip()
+        if not normalized_query:
+            return []
+        safe_limit = max(1, min(int(limit), 8))
+        chunks: list[object] = []
+        metadata: dict[str, tuple[ResearchMaterial, MaterialBlock]] = {}
+        try:
+            rows = materials.list(
+                user_id=user_id,
+                task_id=task_id,
+                include_deleted=False,
+                limit=500,
+                offset=0,
+            )
+        except TypeError:
+            # Keep compatibility with narrow test doubles and older adapters;
+            # ownership is still supplied to every subsequent read.
+            rows = materials.list(user_id=user_id, task_id=task_id)
+        for material in rows:
+            if material.status is not MaterialStatus.READY or material.current_parse_id is None:
+                continue
+            parsed = materials.get_parse(
+                material.material_id,
+                material.current_parse_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if parsed is None or parsed.status is not MaterialStatus.READY:
+                continue
+            for block in parsed.blocks:
+                if block.material_id != material.material_id or block.parse_id != parsed.parse_id:
+                    continue
+                chunk_id = _material_chunk_id(material.material_id, block.segment_id)
+                chunk = _material_retrieval_chunk(material, parsed, block, chunk_id)
+                chunks.append(chunk)
+                metadata[chunk_id] = (material, block)
+
+        if not chunks:
+            return []
+        result = self._search_material_chunks(
+            query=normalized_query,
+            chunks=chunks,
+            limit=safe_limit,
+            task_id=task_id,
+        )
+        values: list[dict[str, object]] = []
+        for hit in result.hits:
+            item = metadata.get(hit.chunk.chunk_id)
+            if item is None:
+                # A custom retriever must not be able to smuggle an
+                # unauthorized chunk into the answer.
+                continue
+            material, block = item
+            citation_id = _material_citation_id(material.material_id, block.segment_id)
+            source_id = f"material-segment:{block.segment_id}"
+            evidence = AgentEvidence(
+                citation_id=citation_id,
+                label=material.display_name or material.original_filename,
+                kind="research_material",
+                excerpt=block.text,
+                source_id=source_id,
+                source_kind="personal_material",
+                material_id=str(material.material_id),
+                parse_id=str(block.parse_id),
+                segment_id=block.segment_id,
+                locator=block.locator.as_dict(),
+            )
+            self.evidence[citation_id] = evidence
+            values.append(
+                {
+                    "citation_id": citation_id,
+                    "source_id": source_id,
+                    "source_kind": "personal_material",
+                    "kind": "research_material",
+                    "material_id": str(material.material_id),
+                    "parse_id": str(block.parse_id),
+                    "segment_id": block.segment_id,
+                    "title": material.display_name or material.original_filename,
+                    "material_kind": material.material_kind.value,
+                    "material_format": material.material_format.value,
+                    "excerpt": block.text,
+                    "locator": block.locator.as_dict(),
+                    "retrieval_index_id": result.retrieval_index_id,
+                    "retrieval_mode": result.mode,
+                    "retrieval_sources": list(hit.retrieval_sources),
+                    "rerank_score": hit.rerank_score,
+                    "embedding_model": result.embedding_model,
+                    "reranker_model": result.reranker_model,
+                    "evidence_status": "verified",
+                }
+            )
+        return values
+
+    def read_research_material_context(
+        self,
+        material_id: str,
+        segment_id: str,
+        *,
+        parse_id: str | None = None,
+        before: int = 2,
+        after: int = 2,
+    ) -> dict[str, object]:
+        """Read a target segment with bounded neighboring source blocks.
+
+        A citation may point at an immutable parse that is no longer current.
+        Callers should pass its ``parse_id`` when reopening that citation;
+        omitting it intentionally resolves only the material's current parse.
+        """
+
+        context = self._material_context()
+        if context is None:
+            return {
+                "error": "research_material_context_missing",
+                "message": "当前 Agent 没有绑定研究任务，无法读取个人研究材料。",
+            }
+        user_id, task_id, materials = context
+        try:
+            parsed_material_id = UUID(material_id)
+        except ValueError:
+            return {"error": "research_material_not_found", "material_id": material_id}
+        material = materials.get(
+            parsed_material_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if material is None or material.status is not MaterialStatus.READY:
+            return {"error": "research_material_not_found", "material_id": material_id}
+        if material.current_parse_id is None and parse_id is None:
+            return {"error": "research_material_not_found", "material_id": material_id}
+        resolved_parse_id: UUID
+        if parse_id is None:
+            # ``current_parse_id`` was checked above; keeping this branch
+            # explicit makes the historical-parse path impossible to mistake
+            # for a nullable UUID.
+            assert material.current_parse_id is not None
+            resolved_parse_id = material.current_parse_id
+        else:
+            try:
+                resolved_parse_id = UUID(parse_id)
+            except ValueError:
+                return {
+                    "error": "research_material_not_found",
+                    "material_id": material_id,
+                    "parse_id": parse_id,
+                }
+        parsed = materials.get_parse(
+            parsed_material_id,
+            resolved_parse_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if parsed is None or parsed.status is not MaterialStatus.READY:
+            return {
+                "error": "research_material_not_found",
+                "material_id": material_id,
+                "parse_id": parse_id,
+            }
+        target_index = next(
+            (index for index, block in enumerate(parsed.blocks) if block.segment_id == segment_id),
+            None,
+        )
+        if target_index is None:
+            return {
+                "error": "research_material_not_found",
+                "material_id": material_id,
+                "segment_id": segment_id,
+            }
+        target = parsed.blocks[target_index]
+        bounded_before = max(0, min(int(before), 4))
+        bounded_after = max(0, min(int(after), 4))
+        start = max(0, target_index - bounded_before)
+        end = min(len(parsed.blocks), target_index + bounded_after + 1)
+        context_items = [
+            _material_context_item(block, is_target=index == target_index)
+            for index, block in enumerate(parsed.blocks[start:end], start=start)
+        ]
+        citation_id = _material_citation_id(material.material_id, target.segment_id)
+        self.evidence[citation_id] = AgentEvidence(
+            citation_id=citation_id,
+            label=material.display_name or material.original_filename,
+            kind="research_material",
+            excerpt=target.text,
+            source_id=f"material-segment:{target.segment_id}",
+            source_kind="personal_material",
+            material_id=str(material.material_id),
+            parse_id=str(target.parse_id),
+            segment_id=target.segment_id,
+            locator=target.locator.as_dict(),
+        )
+        return {
+            "citation_id": citation_id,
+            "source_id": f"material-segment:{target.segment_id}",
+            "source_kind": "personal_material",
+            "kind": "research_material",
+            "material_id": str(material.material_id),
+            "parse_id": str(target.parse_id),
+            "segment_id": target.segment_id,
+            "title": material.display_name or material.original_filename,
+            "material_kind": material.material_kind.value,
+            "material_format": material.material_format.value,
+            "text": target.text,
+            "excerpt": target.text,
+            "locator": target.locator.as_dict(),
+            "context": context_items,
+            "evidence_status": "verified",
+        }
+
+    def _material_context(
+        self,
+    ) -> tuple[UUID, UUID, ResearchMaterialReader] | None:
+        if (
+            self._materials is None
+            or self._user_id is None
+            or self._task_id is None
+            or not self.research_material_tools_enabled
+        ):
+            return None
+        return self._user_id, self._task_id, self._materials
+
+    def _search_material_chunks(
+        self,
+        *,
+        query: str,
+        chunks: Sequence[object],
+        limit: int,
+        task_id: UUID,
+    ):
+        search_chunks = getattr(self._retriever, "search_chunks", None)
+        if callable(search_chunks):
+            return search_chunks(
+                query=query,
+                chunks=tuple(chunks),
+                limit=limit,
+            )
+        # Test/local retrievers that predate the shared transient-chunk method
+        # still receive deterministic lexical ranking; production configured
+        # HybridRetriever always takes the branch above.
+        from qunxue_api.adapters.research_agent.retrieval import lexical_relevance_score
+        from qunxue_api.adapters.retrieval.hybrid import (
+            HybridRetrievalHit,
+            HybridRetrievalResult,
+        )
+
+        ranked = sorted(
+            [
+                (
+                    lexical_relevance_score(query, title=chunk.title, text=chunk.text),
+                    chunk,
+                )
+                for chunk in chunks
+            ],
+            key=lambda item: (-item[0], item[1].chunk_id),
+        )
+        selected = [item for score, item in ranked if score > 0][:limit]
+        return HybridRetrievalResult(
+            retrieval_index_id=f"research-materials:{task_id}",
+            mode="lexical",
+            embedding_model="not_configured",
+            reranker_model=None,
+            degraded_reason="shared_retriever_unavailable",
+            hits=tuple(
+                HybridRetrievalHit(
+                    chunk=item,
+                    fused_score=0.0,
+                    retrieval_sources=("lexical",),
+                    rerank_score=None,
+                )
+                for item in selected
+            ),
+        )
 
     def propose_start_research(
         self,
@@ -442,6 +1051,128 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             "agent_knowledge_release_id": self.release.knowledge_release_id,
             "message": "文档与当前 Agent 使用的知识发布版本不一致，未生成修改建议。",
         }
+
+
+def _material_chunk_id(material_id: UUID, segment_id: str) -> str:
+    return f"material-segment:{material_id}:{segment_id}"
+
+
+def _material_citation_id(material_id: UUID, segment_id: str) -> str:
+    return f"material:{material_id}:{segment_id}"
+
+
+def _material_retrieval_chunk(
+    material: ResearchMaterial,
+    parsed: MaterialParseVersion,
+    block: MaterialBlock,
+    chunk_id: str,
+):
+    # Keep the retrieval adapter's stable shape.  Material identity and
+    # locator stay in registry metadata/evidence rather than a second index
+    # schema.
+    from qunxue_api.adapters.retrieval import RetrievalChunk
+
+    return RetrievalChunk(
+        chunk_id=chunk_id,
+        document_kind="research_material",
+        knowledge_id=None,
+        theory_id=None,
+        content_version=parsed.version,
+        content_hash=block.content_hash,
+        title=material.display_name or material.original_filename,
+        text=block.text,
+        source_ids=(f"material-segment:{block.segment_id}",),
+    )
+
+
+def _material_context_item(block: MaterialBlock, *, is_target: bool) -> dict[str, object]:
+    return {
+        "segment_id": block.segment_id,
+        "parse_id": str(block.parse_id),
+        "ordinal": block.ordinal,
+        "kind": block.kind,
+        "text": block.text,
+        "locator": block.locator.as_dict(),
+        "is_target": is_target,
+    }
+
+
+def _uuid_tuple(values: Sequence[str]) -> tuple[UUID, ...]:
+    return tuple(dict.fromkeys(UUID(str(value)) for value in values))
+
+
+def _required_text_tuple(
+    values: Sequence[str],
+    name: str,
+    *,
+    allow_empty: bool = False,
+) -> tuple[str, ...]:
+    normalized = tuple(
+        dict.fromkeys(str(value).strip() for value in values if str(value).strip())
+    )
+    if not normalized and not allow_empty:
+        raise ValueError(f"{name} is required")
+    return normalized
+
+
+def _comparison_finding(value: Mapping[str, object]) -> ComparisonFinding:
+    annotation_ids = value.get("annotation_ids", ())
+    if not isinstance(annotation_ids, Sequence) or isinstance(
+        annotation_ids, (str, bytes, bytearray)
+    ):
+        raise ValueError("comparison finding annotation_ids must be a list")
+    return ComparisonFinding(
+        kind=ComparisonFindingKind(str(value.get("kind", ""))),
+        statement=str(value.get("statement", "")),
+        annotation_ids=_uuid_tuple(tuple(str(item) for item in annotation_ids)),
+    )
+
+
+def _next_research_step(value: Mapping[str, object]) -> NextResearchStep:
+    return NextResearchStep(
+        kind=str(value.get("kind", "")),
+        action=str(value.get("action", "")),
+        priority=str(value.get("priority", "medium")),
+    )
+
+
+def _required_tool_call_id(value: str) -> str:
+    normalized = str(value).strip()
+    if not normalized:
+        raise ValueError("tool_call_id is required for an analysis candidate")
+    return normalized
+
+
+def _candidate_analysis_payload(value: object) -> dict[str, object]:
+    payload = _json_safe(value)
+    if not isinstance(payload, dict):
+        raise TypeError("research analysis candidate must be an object")
+    payload["status"] = "candidate"
+    payload["requires_user_confirmation"] = True
+    return payload
+
+
+def _json_safe(value: object) -> object:
+    """Serialize domain records for model tools without coupling to one DTO."""
+
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat().replace("+00:00", "Z")
+    if isinstance(value, Enum):
+        return _json_safe(value.value)
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _json_safe(getattr(value, field.name))
+            for field in fields(value)
+        }
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_json_safe(item) for item in value]
+    raise TypeError(f"unsupported research analysis payload: {type(value).__name__}")
 
 
 def _section_from_payload(payload: dict[str, object]) -> ResearchDocumentSection:

@@ -11,6 +11,7 @@ from qunxue_api.adapters.sqlite.research_document_model import (
 )
 from qunxue_api.modules.research_framework import (
     ResearchDocumentEvidenceRef,
+    ResearchDocumentEvidenceSourceKind,
     ResearchDocumentSection,
     ResearchDocumentSectionStatus,
     ResearchDocumentSnapshot,
@@ -61,6 +62,7 @@ class SqliteResearchDocumentRepository:
                 revision_id=str(snapshot.revision_id),
                 title=snapshot.title,
                 sections=[_section_payload(section) for section in snapshot.sections],
+                analysis_handoff=snapshot.analysis_handoff,
                 status=snapshot.status.value,
                 change_summary=snapshot.change_summary,
                 actor=snapshot.actor,
@@ -156,11 +158,17 @@ def _section_payload(section: ResearchDocumentSection) -> dict[str, object]:
         "content": section.content,
         "status": section.status.value,
         "evidence_refs": [
-            {
-                "evidence_ref_id": item.evidence_ref_id,
-                "source_id": item.source_id,
-                "knowledge_release_id": item.knowledge_release_id,
-            }
+                {
+                    "evidence_ref_id": item.evidence_ref_id,
+                    "source_id": item.source_id,
+                    "knowledge_release_id": item.knowledge_release_id,
+                    "source_kind": item.source_kind.value,
+                    "annotation_id": str(item.annotation_id) if item.annotation_id else None,
+                    "material_id": str(item.material_id) if item.material_id else None,
+                    "parse_id": str(item.parse_id) if item.parse_id else None,
+                    "segment_id": item.segment_id,
+                    "locator": item.locator,
+                }
             for item in section.evidence_refs
         ],
     }
@@ -188,7 +196,39 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
                     ResearchDocumentEvidenceRef(
                         evidence_ref_id=str(item["evidence_ref_id"]),
                         source_id=str(item["source_id"]),
-                        knowledge_release_id=str(item["knowledge_release_id"]),
+                        knowledge_release_id=(
+                            str(item["knowledge_release_id"])
+                            if item.get("knowledge_release_id") is not None
+                            else None
+                        ),
+                        source_kind=ResearchDocumentEvidenceSourceKind(
+                            str(item.get("source_kind", "public_knowledge"))
+                        ),
+                        annotation_id=(
+                            UUID(str(item["annotation_id"]))
+                            if item.get("annotation_id")
+                            else None
+                        ),
+                        material_id=(
+                            UUID(str(item["material_id"]))
+                            if item.get("material_id")
+                            else None
+                        ),
+                        parse_id=(
+                            UUID(str(item["parse_id"]))
+                            if item.get("parse_id")
+                            else None
+                        ),
+                        segment_id=(
+                            str(item["segment_id"])
+                            if item.get("segment_id") is not None
+                            else None
+                        ),
+                        locator=(
+                            dict(item["locator"])
+                            if isinstance(item.get("locator"), dict)
+                            else None
+                        ),
                     )
                     for item in section.get("evidence_refs", [])
                 ),
@@ -199,6 +239,9 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
         change_summary=row.change_summary,
         actor=row.actor,
         created_at=_utc(row.created_at),
+        analysis_handoff=(
+            dict(row.analysis_handoff) if row.analysis_handoff is not None else None
+        ),
         restored_from_version=row.restored_from_version,
         confirmed_at=_utc(row.confirmed_at) if row.confirmed_at is not None else None,
     )

@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from dataclasses import asdict
 from enum import Enum
 from hashlib import sha256
@@ -14,6 +15,7 @@ from qunxue_api.modules.knowledge_catalog import (
     SourceRecordSnapshot,
     SourceVerificationStatus,
 )
+from qunxue_api.modules.research_analysis import ConfirmedComparisonProjection
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
     PhenomenonEvidenceVerificationStatus,
@@ -45,13 +47,18 @@ class CatalogTheoryEvidenceSource:
         catalog: KnowledgeCatalog,
         *,
         retriever: TheoryProfileRetriever | None = None,
+        get_confirmed_comparison_projection: (
+            Callable[..., ConfirmedComparisonProjection] | None
+        ) = None,
     ) -> None:
         self._catalog = catalog
         self._retriever = retriever
+        self._get_confirmed_comparison_projection = get_confirmed_comparison_projection
 
     def retrieve(
         self,
         *,
+        user_id: UUID | None = None,
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> EvidenceBundleSnapshot:
@@ -138,6 +145,59 @@ class CatalogTheoryEvidenceSource:
                     use_boundary=item.use_boundary,
                 )
             )
+
+        if self._get_confirmed_comparison_projection is not None:
+            if user_id is None:
+                raise ValueError("personal comparison evidence requires an authenticated owner")
+            projection = self._get_confirmed_comparison_projection(
+                user_id=user_id,
+                task_id=phenomenon.task_id,
+            )
+            for item in projection.evidence_items:
+                if item.evidence_ref_id in used_evidence_ids:
+                    raise ValueError(
+                        f"comparison evidence id conflicts with existing evidence: "
+                        f"{item.evidence_ref_id}"
+                    )
+                used_evidence_ids.add(item.evidence_ref_id)
+                locator = item.locator.display()
+                kind = item.finding_kind.value
+                boundary = {
+                    "support": "用户已确认的案例比较支持证据，仅支持该比较判断。",
+                    "counterexample": "用户已确认的案例比较反例，仅用于限制或修订理论解释。",
+                    "contradict": "用户已确认的案例比较矛盾材料，仅用于检验理论边界。",
+                    "competing_explanation": "用户已确认的竞争解释证据，不代表最终理论结论。",
+                }.get(kind, "用户已确认的案例比较证据，不代表最终理论结论。")
+                source_id = (
+                    f"research-material:{item.material_id}:{item.parse_id}:{item.segment_id}"
+                )
+                source = SourceRecordSnapshot(
+                    source_id=source_id,
+                    source_type="personal_research_material",
+                    title=(
+                        f"{item.case_label} · 个人研究材料"
+                        if item.case_label
+                        else "个人研究材料"
+                    ),
+                    authors_or_institution=(),
+                    year=None,
+                    publication=None,
+                    locator=locator,
+                    url=None,
+                    verification_status=SourceVerificationStatus.VERIFIED,
+                    use_boundary=boundary,
+                )
+                evidence_items.append(
+                    EvidenceItemSnapshot(
+                        evidence_ref_id=item.evidence_ref_id,
+                        claim=item.statement,
+                        excerpt=item.quote,
+                        locator=locator,
+                        source=source,
+                        verification_status=SourceVerificationStatus.VERIFIED,
+                        use_boundary=boundary,
+                    )
+                )
 
         payload = json.dumps(
             {

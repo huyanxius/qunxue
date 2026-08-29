@@ -16,6 +16,7 @@ from qunxue_api.adapters.sqlite.research_document_proposal_model import (
 from qunxue_api.adapters.sqlite.research_intake_model import ResearchTaskRow
 from qunxue_api.modules.research_framework import (
     ResearchDocumentEvidenceRef,
+    ResearchDocumentEvidenceSourceKind,
     ResearchDocumentProposalKind,
     ResearchDocumentProposalSnapshot,
     ResearchDocumentProposalStatus,
@@ -303,6 +304,7 @@ def _row(snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumentProposal
         knowledge_release_id=snapshot.knowledge_release_id,
         title=snapshot.title,
         proposed_sections=[_section_payload(item) for item in snapshot.proposed_sections],
+        analysis_handoff=snapshot.analysis_handoff,
         rationale=snapshot.rationale,
         request_hash=snapshot.request_hash,
         model_provider=snapshot.model_provider,
@@ -332,6 +334,12 @@ def _section_payload(section: ResearchDocumentSection) -> dict[str, object]:
                 "evidence_ref_id": item.evidence_ref_id,
                 "source_id": item.source_id,
                 "knowledge_release_id": item.knowledge_release_id,
+                "source_kind": item.source_kind.value,
+                "annotation_id": str(item.annotation_id) if item.annotation_id else None,
+                "material_id": str(item.material_id) if item.material_id else None,
+                "parse_id": str(item.parse_id) if item.parse_id else None,
+                "segment_id": item.segment_id,
+                "locator": item.locator,
             }
             for item in section.evidence_refs
         ],
@@ -365,7 +373,39 @@ def _snapshot(
                     ResearchDocumentEvidenceRef(
                         evidence_ref_id=str(evidence["evidence_ref_id"]),
                         source_id=str(evidence["source_id"]),
-                        knowledge_release_id=str(evidence["knowledge_release_id"]),
+                        knowledge_release_id=(
+                            str(evidence["knowledge_release_id"])
+                            if evidence.get("knowledge_release_id") is not None
+                            else None
+                        ),
+                        source_kind=ResearchDocumentEvidenceSourceKind(
+                            str(evidence.get("source_kind", "public_knowledge"))
+                        ),
+                        annotation_id=(
+                            UUID(str(evidence["annotation_id"]))
+                            if evidence.get("annotation_id")
+                            else None
+                        ),
+                        material_id=(
+                            UUID(str(evidence["material_id"]))
+                            if evidence.get("material_id")
+                            else None
+                        ),
+                        parse_id=(
+                            UUID(str(evidence["parse_id"]))
+                            if evidence.get("parse_id")
+                            else None
+                        ),
+                        segment_id=(
+                            str(evidence["segment_id"])
+                            if evidence.get("segment_id") is not None
+                            else None
+                        ),
+                        locator=(
+                            dict(evidence["locator"])
+                            if isinstance(evidence.get("locator"), dict)
+                            else None
+                        ),
                     )
                     for evidence in item.get("evidence_refs", [])
                 ),
@@ -384,6 +424,9 @@ def _snapshot(
         request_hash=row.request_hash,
         model_provider=row.model_provider,
         model_name=row.model_name,
+        analysis_handoff=(
+            dict(row.analysis_handoff) if row.analysis_handoff is not None else None
+        ),
     )
 
 

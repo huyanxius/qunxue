@@ -12,7 +12,6 @@ import {
   restoreResearchDocument as restoreDocumentRequest,
   updateResearchDocument as updateDocumentRequest,
   type ResearchDocumentCompletionGateResponse,
-  type ResearchDocumentExportManifest,
   type ResearchDocumentExportResponse,
   type ResearchDocumentProposalResponse,
   type ResearchDocumentResponse,
@@ -83,6 +82,7 @@ export type M5ResearchDocumentSection = Readonly<{
 }>
 
 export type M5ResearchDocument = Readonly<{
+  analysisBasis: M5ResearchAnalysisBasis | null
   actor: string
   changeSummary: string
   confirmedAt: string | null
@@ -144,6 +144,18 @@ export type M5CompletionStatus = Readonly<{
   checks: readonly M5CompletionCheck[]
 }>
 
+export type M5ResearchAnalysisBasis = Readonly<{
+  contentHash: string
+  codes: readonly Readonly<{ id: string; label: string; definition: string }>[]
+  memos: readonly Readonly<{ id: string; title: string; kindLabel: string }>[]
+  comparisons: readonly Readonly<{
+    id: string
+    title: string
+    theoryImplication: string
+  }>[]
+  unavailableAnnotationCount: number
+}>
+
 export type M5ResearchDeliveryState = Readonly<{
   taskId: string
   confirmedTheoryPlanId: string
@@ -186,8 +198,57 @@ function toSectionContract(section: M5ResearchDocumentSection) {
   }
 }
 
+const memoKindLabels: Readonly<Record<string, string>> = {
+  descriptive: '描述备忘',
+  reflexive: '反思备忘',
+  analytic: '分析备忘',
+  methodological: '方法备忘',
+}
+
+function object(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {}
+}
+
+function values(value: unknown): readonly unknown[] {
+  return Array.isArray(value) ? value : []
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function mapResearchAnalysisBasis(value: unknown): M5ResearchAnalysisBasis | null {
+  const handoff = object(value)
+  const contentHash = text(handoff.content_hash)
+  if (!contentHash) return null
+  return {
+    contentHash,
+    codes: values(handoff.codes).map(object).map((code) => ({
+      id: text(code.code_id),
+      label: text(code.label),
+      definition: text(code.definition),
+    })).filter((code) => code.id && code.label),
+    memos: values(handoff.memos).map(object).map((memo) => ({
+      id: text(memo.memo_id),
+      title: text(memo.title),
+      kindLabel: memoKindLabels[text(memo.memo_kind)] ?? '分析备忘',
+    })).filter((memo) => memo.id && memo.title),
+    comparisons: values(handoff.comparisons).map(object).map((comparison) => ({
+      id: text(comparison.comparison_id),
+      title: text(comparison.title),
+      theoryImplication: text(comparison.theory_implication),
+    })).filter((comparison) => comparison.id && comparison.title),
+    unavailableAnnotationCount: values(handoff.unavailable_annotation_ids).length,
+  }
+}
+
 function mapDocument(document: ResearchDocumentResponse): M5ResearchDocument {
   return {
+    analysisBasis: mapResearchAnalysisBasis(
+      document.research_analysis,
+    ),
     actor: document.actor,
     changeSummary: document.change_summary,
     confirmedAt: document.confirmed_at,
@@ -454,19 +515,21 @@ export type M5SerializedExport = Readonly<{
   content: string
 }>
 
+/** Stable public shape of the versioned audit package returned by M5 export. */
 export type M5ResearchExportManifest = Readonly<{
-  schema_version: 'research-delivery-v1'
-  phenomenon: Readonly<Record<string, unknown>>
-  knowledge_release: Readonly<Record<string, unknown>>
-  model: Readonly<Record<string, unknown>> | null
-  theory_candidates: readonly Readonly<Record<string, unknown>>[]
-  theory_decisions: readonly Readonly<Record<string, unknown>>[]
-  theory_assignments: readonly Readonly<Record<string, unknown>>[]
-  theory_relations: readonly Readonly<Record<string, unknown>>[]
-  evidence: readonly Readonly<Record<string, unknown>>[]
   agent_proposals: readonly Readonly<Record<string, unknown>>[]
   document_versions: readonly Readonly<Record<string, unknown>>[]
+  evidence: readonly Readonly<Record<string, unknown>>[]
   formal_document: Readonly<Record<string, unknown>>
+  knowledge_release: Readonly<Record<string, unknown>>
+  model: Readonly<Record<string, unknown>> | null
+  phenomenon: Readonly<Record<string, unknown>>
+  research_analysis: unknown | null
+  schema_version: 'research-delivery-v2'
+  theory_assignments: readonly Readonly<Record<string, unknown>>[]
+  theory_candidates: readonly Readonly<Record<string, unknown>>[]
+  theory_decisions: readonly Readonly<Record<string, unknown>>[]
+  theory_relations: readonly Readonly<Record<string, unknown>>[]
 }>
 
 export type M5ResearchExport = Readonly<{
@@ -485,7 +548,7 @@ function mapExport(exported: ResearchDocumentExportResponse): M5ResearchExport {
     documentId: exported.document_id,
     filename: exported.filename,
     knowledgeReleaseId: exported.knowledge_release_id,
-    manifest: exported.manifest as ResearchDocumentExportManifest,
+    manifest: exported.manifest,
     markdown: exported.markdown,
     taskId: exported.task_id,
     theoryPlanId: exported.theory_plan_id,

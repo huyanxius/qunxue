@@ -400,6 +400,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               conversationId={requestedConversationId}
               knowledgeReleaseId={requestedKnowledgeReleaseId}
               workspace="research"
+              taskId={journey?.taskId ?? null}
               composerAriaLabel="和 Agent 讨论你的研究"
               suggestedPrompt={suggestedPrompt}
               suggestedPromptKey={suggestedPromptKey}
