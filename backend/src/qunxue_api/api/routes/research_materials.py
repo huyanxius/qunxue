@@ -31,7 +31,11 @@ from qunxue_api.modules.research_materials import (
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}/materials",
     tags=["research-materials"],
-    responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 
 MAX_MATERIAL_BYTES = 25 * 1024 * 1024

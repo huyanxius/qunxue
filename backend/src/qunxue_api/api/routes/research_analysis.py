@@ -35,7 +35,11 @@ from qunxue_api.modules.research_analysis import (
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}/analysis",
     tags=["research-analysis"],
-    responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 
 def _error(status_code: int, code: ErrorCode, message: str) -> JSONResponse:
@@ -149,6 +153,7 @@ def decide_research_analysis_code(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisCodeResponse | JSONResponse:
     try:
         value = application.decide_code(
@@ -210,6 +215,7 @@ def decide_research_analysis_memo(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisMemoResponse | JSONResponse:
     try:
         value = application.decide_memo(
@@ -275,6 +281,7 @@ def decide_research_case_comparison(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> CaseComparisonResponse | JSONResponse:
     try:
         value = application.decide_comparison(

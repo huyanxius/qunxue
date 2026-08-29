@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
+from inspect import Parameter, signature
 from threading import Lock
 from uuid import uuid4
 
@@ -135,6 +136,32 @@ def create_app(
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
 
+    def build_catalog_evidence_source(
+        *,
+        analysis_application: ResearchAnalysisApplication,
+    ) -> CatalogTheoryEvidenceSource:
+        """Build the release-bound source while tolerating older test doubles.
+
+        The comparison projection is an optional extension of the adapter
+        constructor.  Keeping the capability check at this composition point
+        lets narrow bootstrap tests replace the adapter with a legacy-shaped
+        double without weakening the production wiring.
+        """
+        kwargs: dict[str, object] = {"retriever": app.state.knowledge_retriever}
+        try:
+            parameters = signature(CatalogTheoryEvidenceSource).parameters
+        except (TypeError, ValueError):
+            parameters = {}
+        accepts_projection = (
+            "get_confirmed_comparison_projection" in parameters
+            or any(parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters.values())
+        )
+        if accepts_projection:
+            kwargs["get_confirmed_comparison_projection"] = (
+                analysis_application.get_confirmed_comparison_projection
+            )
+        return CatalogTheoryEvidenceSource(app.state.knowledge_catalog, **kwargs)
+
     app = FastAPI(
         title=resolved_settings.app_name,
         version="0.1.0",
@@ -232,12 +259,8 @@ def create_app(
             descriptor = app.state.model_gateway.descriptor
             analysis_application = build_research_analysis_application(session)
             matching = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(
-                    app.state.knowledge_catalog,
-                    retriever=app.state.knowledge_retriever,
-                    get_confirmed_comparison_projection=(
-                        analysis_application.get_confirmed_comparison_projection
-                    ),
+                evidence_source=build_catalog_evidence_source(
+                    analysis_application=analysis_application,
                 ),
                 judge=app.state.model_gateway,
                 repository=SqliteMatchRunRepository(session),
@@ -383,12 +406,8 @@ def create_app(
             )
             descriptor = app.state.model_gateway.descriptor
             matching_service = TheoryMatchingService(
-                evidence_source=CatalogTheoryEvidenceSource(
-                    app.state.knowledge_catalog,
-                    retriever=app.state.knowledge_retriever,
-                    get_confirmed_comparison_projection=(
-                        analysis_application.get_confirmed_comparison_projection
-                    ),
+                evidence_source=build_catalog_evidence_source(
+                    analysis_application=analysis_application,
                 ),
                 judge=app.state.model_gateway,
                 repository=match_runs,
