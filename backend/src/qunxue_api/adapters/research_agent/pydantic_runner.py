@@ -2380,7 +2380,7 @@ def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str])
         selector(citation_ids)
         return
     try:
-        setattr(tools, "selected_evidence_ids", tuple(citation_ids))
+        tools.selected_evidence_ids = tuple(citation_ids)  # type: ignore[attr-defined]
     except (AttributeError, TypeError):
         # Immutable partial contexts cannot retain selection, but they can
         # still produce the deterministic answer and trace.
