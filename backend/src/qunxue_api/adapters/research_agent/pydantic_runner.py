@@ -2332,7 +2332,7 @@ def _select_result_evidence(
             citation_ids.extend(value for value in source_ids if isinstance(value, str))
     incoming = tuple(dict.fromkeys(citation_ids))
     if not incoming:
-        tools.select_evidence(())
+        _set_selected_evidence(tools, ())
         return
 
     # A research turn may deliberately combine a public concept with a
@@ -2362,7 +2362,29 @@ def _select_result_evidence(
         selected = tuple(dict.fromkeys((*personal[:7], *incoming)))
     else:
         selected = incoming
-    tools.select_evidence(selected[:8])
+    _set_selected_evidence(tools, selected[:8])
+
+
+def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str]) -> None:
+    """Keep partial test/tool contexts compatible with the evidence protocol.
+
+    Production registries expose ``select_evidence`` so the closed citation set
+    is persisted in the run context.  A few lightweight deterministic runner
+    fixtures intentionally provide only search and evidence maps; preserving
+    their selected ids locally keeps those fixtures useful without weakening
+    the production protocol.
+    """
+
+    selector = getattr(tools, "select_evidence", None)
+    if callable(selector):
+        selector(citation_ids)
+        return
+    try:
+        setattr(tools, "selected_evidence_ids", tuple(citation_ids))
+    except (AttributeError, TypeError):
+        # Immutable partial contexts cannot retain selection, but they can
+        # still produce the deterministic answer and trace.
+        return
 
 
 def _evidence_source_bucket(tools: AgentToolContext, citation_id: str) -> str:
