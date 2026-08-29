@@ -383,6 +383,7 @@ def test_case_comparison_api_is_idempotent_reachable_and_uses_cas_decisions(
         )
     decision = client.post(
         f"/api/research-tasks/{task_id}/analysis/comparisons/{candidate.comparison_id}/decision",
+        headers={"Idempotency-Key": "case-comparison-decision-1"},
         json={
             "expected_version": 1,
             "decision": "confirmed",
@@ -394,6 +395,7 @@ def test_case_comparison_api_is_idempotent_reachable_and_uses_cas_decisions(
     assert decision.json()["tool_call_id"] == "case-comparison-api-candidate"
     stale = client.post(
         f"/api/research-tasks/{task_id}/analysis/comparisons/{candidate.comparison_id}/decision",
+        headers={"Idempotency-Key": "case-comparison-decision-2"},
         json={
             "expected_version": 1,
             "decision": "rejected",
