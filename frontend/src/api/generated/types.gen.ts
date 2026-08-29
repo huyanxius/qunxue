@@ -2040,16 +2040,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -5230,34 +5220,6 @@ export type UpdateResearchDocumentRequest = {
     source: 'user_edit';
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -7414,9 +7376,9 @@ export type GetResearchAnalysisErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetResearchAnalysisError = GetResearchAnalysisErrors[keyof GetResearchAnalysisErrors];
@@ -7458,9 +7420,9 @@ export type CreateResearchAnalysisAnnotationErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchAnalysisAnnotationError = CreateResearchAnalysisAnnotationErrors[keyof CreateResearchAnalysisAnnotationErrors];
@@ -7502,9 +7464,9 @@ export type CreateResearchAnalysisCodeErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchAnalysisCodeError = CreateResearchAnalysisCodeErrors[keyof CreateResearchAnalysisCodeErrors];
@@ -7520,6 +7482,12 @@ export type CreateResearchAnalysisCodeResponse = CreateResearchAnalysisCodeRespo
 
 export type DecideResearchAnalysisCodeData = {
     body: DecideAnalysisRecordRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -7544,9 +7512,9 @@ export type DecideResearchAnalysisCodeErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DecideResearchAnalysisCodeError = DecideResearchAnalysisCodeErrors[keyof DecideResearchAnalysisCodeErrors];
@@ -7588,9 +7556,9 @@ export type CreateResearchCaseComparisonErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchCaseComparisonError = CreateResearchCaseComparisonErrors[keyof CreateResearchCaseComparisonErrors];
@@ -7606,6 +7574,12 @@ export type CreateResearchCaseComparisonResponse = CreateResearchCaseComparisonR
 
 export type DecideResearchCaseComparisonData = {
     body: DecideAnalysisRecordRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -7630,9 +7604,9 @@ export type DecideResearchCaseComparisonErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DecideResearchCaseComparisonError = DecideResearchCaseComparisonErrors[keyof DecideResearchCaseComparisonErrors];
@@ -7674,9 +7648,9 @@ export type CreateResearchAnalysisMemoErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchAnalysisMemoError = CreateResearchAnalysisMemoErrors[keyof CreateResearchAnalysisMemoErrors];
@@ -7692,6 +7666,12 @@ export type CreateResearchAnalysisMemoResponse = CreateResearchAnalysisMemoRespo
 
 export type DecideResearchAnalysisMemoData = {
     body: DecideAnalysisRecordRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -7716,9 +7696,9 @@ export type DecideResearchAnalysisMemoErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DecideResearchAnalysisMemoError = DecideResearchAnalysisMemoErrors[keyof DecideResearchAnalysisMemoErrors];
@@ -8008,9 +7988,9 @@ export type ListResearchMaterialsErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListResearchMaterialsError = ListResearchMaterialsErrors[keyof ListResearchMaterialsErrors];
@@ -8052,9 +8032,9 @@ export type UploadResearchMaterialErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UploadResearchMaterialError = UploadResearchMaterialErrors[keyof UploadResearchMaterialErrors];
@@ -8100,9 +8080,9 @@ export type DeleteResearchMaterialErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DeleteResearchMaterialError = DeleteResearchMaterialErrors[keyof DeleteResearchMaterialErrors];
@@ -8147,9 +8127,9 @@ export type GetResearchMaterialErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetResearchMaterialError = GetResearchMaterialErrors[keyof GetResearchMaterialErrors];
@@ -8195,9 +8175,9 @@ export type ReparseResearchMaterialErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ReparseResearchMaterialError = ReparseResearchMaterialErrors[keyof ReparseResearchMaterialErrors];
@@ -8246,9 +8226,9 @@ export type GetResearchMaterialSegmentErrors = {
      */
     404: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetResearchMaterialSegmentError = GetResearchMaterialSegmentErrors[keyof GetResearchMaterialSegmentErrors];
