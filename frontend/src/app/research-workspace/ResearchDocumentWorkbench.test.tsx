@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import * as researchApi from '../../api/researchWorkspace'
+import * as researchAnalysisApi from '../../modules/research-materials'
 import { ResearchDocumentWorkbench } from './ResearchDocumentWorkbench'
 
 vi.mock('../../api/client', () => ({ apiClient: {} }))
@@ -55,6 +56,67 @@ describe('ResearchDocumentWorkbench', () => {
     expect(agent).toHaveAttribute('data-workspace', 'research')
     expect(screen.getByText(/这一部分会随着研究推进形成可编辑内容/)).toBeInTheDocument()
     expect(document.querySelector('.research-document-editor .ProseMirror')).not.toBeInTheDocument()
+  })
+
+  it('restores confirmed case comparisons into the M4 argument map', async () => {
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({
+      data: {
+        task_id: 'task-1',
+        allowed_actions: [],
+        current_match_run_id: null,
+        current_theory_plan_id: null,
+        current_framework_id: null,
+        knowledge_release_id: 'release-1',
+        phenomenon_summary: { phenomenon: '迁移如何改变家庭照护分工？' },
+      },
+    } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchAnalysisApi, 'getAnalysisSnapshot').mockResolvedValue({
+      task_id: 'task-1',
+      annotations: [],
+      codes: [],
+      memos: [],
+      comparisons: [
+        {
+          comparison_id: 'comparison-confirmed',
+          status: 'confirmed',
+          title: '迁移前后的照护责任',
+          question: '迁移如何改变家庭照护分工？',
+          findings: [{ kind: 'support', statement: '跨城务工后日常照护转向祖辈。', annotation_ids: ['annotation-1'] }],
+          competing_explanations: [],
+          evidence_gaps: ['缺少留守家庭的长期观察。'],
+          next_steps: [],
+          theory_implication: '迁移对照护责任的影响受家庭资源条件约束。',
+        },
+        {
+          comparison_id: 'comparison-candidate',
+          status: 'candidate',
+          title: 'Agent 尚未确认的比较',
+          question: '候选问题',
+          findings: [],
+          competing_explanations: [],
+          evidence_gaps: [],
+          next_steps: [],
+          theory_implication: '不得进入 M4',
+        },
+      ],
+    } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/match" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('button', { name: '研究节点：迁移前后的照护责任' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '研究节点：跨城务工后日常照护转向祖辈。' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '研究节点：缺少留守家庭的长期观察。' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '研究节点：案例比较形成的理论判断' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /尚未确认/ })).not.toBeInTheDocument()
+    expect(researchAnalysisApi.getAnalysisSnapshot).toHaveBeenCalledWith('task-1')
   })
 
   it('lets the Agent panel be resized from the divider', async () => {

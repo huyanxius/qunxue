@@ -48,6 +48,16 @@ def _pending_proposal() -> ResearchDocumentProposalSnapshot:
         base_document_version=1,
         target_section_id="research_question",
         request_hash="sha256:proposal",
+        analysis_handoff={
+            "schema_version": "research-analysis-v1",
+            "task_id": str(UUID(int=5)),
+            "content_hash": "analysis-at-proposal-time",
+            "annotations": [],
+            "codes": [],
+            "memos": [],
+            "comparisons": [],
+            "unavailable_annotation_ids": [],
+        },
     )
 
 
@@ -67,6 +77,7 @@ def _create_proposal_table(engine) -> None:
                 knowledge_release_id VARCHAR(128) NOT NULL,
                 title VARCHAR(512) NOT NULL,
                 proposed_sections JSON NOT NULL,
+                analysis_handoff JSON,
                 rationale TEXT NOT NULL,
                 request_hash VARCHAR(72) NOT NULL,
                 model_provider VARCHAR(64),
@@ -138,6 +149,7 @@ def _proposal_row(snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumen
             }
             for section in snapshot.proposed_sections
         ],
+        analysis_handoff=snapshot.analysis_handoff,
         rationale=snapshot.rationale,
         request_hash=snapshot.request_hash,
         model_provider=snapshot.model_provider,

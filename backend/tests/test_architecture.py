@@ -18,10 +18,13 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "identity": set(),
     "knowledge_catalog": set(),
     "research_intake": set(),
+    "research_analysis": {"research_materials"},
+    "research_materials": set(),
     "theory_matching": {"knowledge_catalog", "research_intake"},
     "research_framework": {"theory_matching"},
 }
 ALLOWED_CROSS_MODULE_SYMBOLS = {
+    ("research_analysis", "research_materials"): {"MaterialLocator"},
     ("account_management", "identity"): {
         "AccountRole",
         "AccountStatus",

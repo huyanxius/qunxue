@@ -334,6 +334,29 @@ describe('NewResearchWorkspacePage', () => {
     expect(await screen.findByText('/resume/from-server')).toBeVisible()
   })
 
+  it('binds the confirmed research task to the shared Agent panel', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture({
+      status: 'task_bound',
+      task_id: 'task-bound',
+      proposal: { ...researchStartJourneyFixture().proposal!, status: 'confirmed' },
+      navigation: researchStartNavigationFixture({ task_id: 'task-bound' }),
+    })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+
+    const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    await within(workspace).findByRole('region', { name: '研究已建立' })
+    expect(within(workspace).getByRole('button', { name: '研究材料' })).toBeVisible()
+  })
+
   it('loads the proposal persisted by a completed Agent turn', async () => {
     const conversation = conversationFixture()
     const journey = researchStartJourneyFixture()

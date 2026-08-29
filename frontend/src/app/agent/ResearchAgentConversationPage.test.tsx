@@ -118,6 +118,7 @@ function renderEnglishPage(userId = 'user-agent', path = '/agent') {
 }
 
 function urlFor(input: RequestInfo | URL) {
+  if (input instanceof Request) return new URL(input.url)
   return typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
 }
 
@@ -259,6 +260,395 @@ describe('ResearchAgentConversationPage', () => {
       theory_plan_id: 'theory-plan-1',
     })
     expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/task-1/match?view=document')
+  })
+
+  it('offers one task-scoped research-material entry only inside a bound research workspace', async () => {
+    const conversation = conversationFixture({ id: 'conversation-material-entry' })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [] })
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const embedded = render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    const entry = within(agent).getByRole('button', { name: '研究材料' })
+    expect(within(agent).getAllByRole('button', { name: '研究材料' })).toHaveLength(1)
+    fireEvent.click(entry)
+    expect(await screen.findByRole('dialog', { name: '研究材料' })).toBeVisible()
+    embedded.unmount()
+
+    renderPage()
+    const standalone = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    expect(within(standalone).queryByRole('button', { name: '研究材料' })).not.toBeInTheDocument()
+  })
+
+  it('refreshes analysis after a completed Agent turn only while the materials overlay is open', async () => {
+    const initial = conversationFixture({ id: 'conversation-analysis-refresh' })
+    const firstCompleted = conversationFixture({
+      id: initial.conversation_id,
+      prompt: '请提出候选编码。',
+      answer: '已提出一个待确认编码。',
+    })
+    const secondCompleted = conversationFixture({
+      id: initial.conversation_id,
+      prompt: '请再检查相关片段。',
+      answer: '已补充相关片段。',
+    })
+    const firstStream = deferredStream([[
+      'turn_started',
+      { conversation_id: initial.conversation_id, run_id: 'run-analysis-first', replayed: false, runtime_mode: 'base' },
+    ]])
+    const secondStream = deferredStream([[
+      'turn_started',
+      { conversation_id: initial.conversation_id, run_id: 'run-analysis-second', replayed: false, runtime_mode: 'base' },
+    ]])
+    const streams = [firstStream, secondStream]
+    let streamIndex = 0
+    let analysisReads = 0
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlFor(input)
+      const method = input instanceof Request ? input.method : init?.method ?? 'GET'
+      if (url.pathname === `/api/agent/conversations/${initial.conversation_id}`) return json(initial)
+      if (url.pathname === '/api/agent/turns' && method === 'POST') return streams[streamIndex++].response
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [] })
+      if (url.pathname === '/api/research-tasks/task-1/analysis') {
+        analysisReads += 1
+        return json({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
+      }
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={initial.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    await within(agent).findByText(initial.turns[0].assistant.content)
+    const textbox = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(textbox, { target: { value: firstCompleted.title } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+    await waitFor(() => expect(streamIndex).toBe(1))
+
+    fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
+    const materials = await screen.findByRole('dialog', { name: '研究材料' })
+    await waitFor(() => expect(analysisReads).toBe(1))
+    firstStream.finish([
+      ['assistant_delta', { delta: firstCompleted.turns[0].assistant.content }],
+      ['turn_completed', { conversation: firstCompleted, knowledge_release_id: 'release-agent' }],
+    ])
+    await waitFor(() => expect(analysisReads).toBe(2))
+
+    fireEvent.click(within(materials).getByRole('button', { name: '关闭研究材料' }))
+    fireEvent.change(textbox, { target: { value: secondCompleted.title } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+    await waitFor(() => expect(streamIndex).toBe(2))
+    secondStream.finish([
+      ['assistant_delta', { delta: secondCompleted.turns[0].assistant.content }],
+      ['turn_completed', { conversation: secondCompleted, knowledge_release_id: 'release-agent' }],
+    ])
+    await within(agent).findByText(secondCompleted.turns[0].assistant.content)
+    expect(analysisReads).toBe(2)
+  })
+
+  it('distinguishes a personal material citation and opens its exact source locator', async () => {
+    const citation = {
+      citation_id: 'citation-material-1',
+      label: '社区访谈.docx',
+      kind: 'research_material',
+      excerpt: '受访者描述了工作时间的变化。',
+      source_id: 'material-segment:segment-1',
+      material_id: 'material-1',
+      parse_id: 'parse-1',
+      segment_id: 'segment-1',
+      locator: { page: 4, paragraph: 12 },
+    } as AgentCitation & {
+      material_id: string
+      parse_id: string
+      segment_id: string
+      locator: { page: number; paragraph: number }
+    }
+    const conversation = conversationFixture({ id: 'conversation-material-citation', citations: [citation] })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [{
+        material_id: 'material-1', task_id: 'task-1', filename: '社区访谈.docx',
+        media_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        size_bytes: 2048, status: 'ready', version: 1, parse_version: 1,
+        segment_count: 1, updated_at: '2026-08-29T00:00:00Z', error_code: null,
+      }] })
+      if (url.pathname === '/api/research-tasks/task-1/materials/material-1') return json({
+        material_id: 'material-1', task_id: 'task-1', filename: '社区访谈.docx',
+        media_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        size_bytes: 2048, status: 'ready', version: 1, parse_version: 1,
+        segment_count: 1, updated_at: '2026-08-29T00:00:00Z', error_code: null,
+        segments: [{ segment_id: 'segment-1', material_id: 'material-1', parse_id: 'parse-1', ordinal: 0, kind: 'paragraph', text: citation.excerpt, locator: citation.locator }],
+      })
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(within(agent).getByText('研究材料')).toBeVisible()
+    fireEvent.click(within(agent).getByRole('button', { name: '查看证据：社区访谈.docx' }))
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /社区访谈\.docx/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(within(basis).getByText('第 4 页 · 第 12 段')).toBeVisible()
+    fireEvent.click(within(basis).getByRole('button', { name: '打开原文位置' }))
+    const materials = await screen.findByRole('dialog', { name: '研究材料' })
+    expect(await within(materials).findByText('受访者描述了工作时间的变化。')).toBeVisible()
+    await waitFor(() => {
+      const detailRequest = fetchMock.mock.calls.find(([input]) => {
+        const url = urlFor(input)
+        return url.pathname === '/api/research-tasks/task-1/materials/material-1'
+      })
+      expect(detailRequest).toBeDefined()
+      expect(urlFor(detailRequest?.[0] as RequestInfo | URL).searchParams.get('parse_id')).toBe('parse-1')
+    })
+  })
+
+  it('keeps a deleted material citation as a tombstone without opening source text', async () => {
+    const citation = {
+      citation_id: 'citation-deleted-material-1',
+      label: '已删除的访谈.docx',
+      kind: 'research_material',
+      excerpt: null,
+      source_kind: 'personal_material',
+      material_id: 'material-deleted-1',
+      parse_id: 'parse-deleted-1',
+      segment_id: 'segment-deleted-1',
+      locator: { page: 2, paragraph: 3 },
+      deleted: true,
+    } as AgentCitation & {
+      material_id: string
+      parse_id: string
+      segment_id: string
+      locator: { page: number; paragraph: number }
+      deleted: boolean
+    }
+    const conversation = conversationFixture({ id: 'conversation-deleted-material', citations: [citation] })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [] })
+      return json({}, 404)
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    fireEvent.click(within(agent).getByRole('button', { name: '查看证据：已删除的访谈.docx' }))
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /已删除的访谈.docx/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(within(basis).getByText('这份研究材料已删除，原文不再可访问。')).toBeVisible()
+    expect(within(basis).queryByRole('button', { name: '打开原文位置' })).toBeNull()
+  })
+
+  it('turns every visible citation for a material into a tombstone as soon as that material is deleted', async () => {
+    const excerpt = '这段个人材料正文不能在删除后继续显示。'
+    const leakedAnswer = `材料原文写道：${excerpt}`
+    const citation: AgentCitation = {
+      citation_id: 'citation-material-to-delete',
+      label: '待删除访谈.docx',
+      kind: 'research_material',
+      excerpt,
+      source_kind: 'personal_material',
+      material_id: 'material-to-delete',
+      parse_id: 'parse-to-delete',
+      segment_id: 'segment-to-delete',
+      locator: { page: 6, paragraph: 2 },
+    }
+    const conversation = conversationFixture({
+      id: 'conversation-delete-material',
+      answer: leakedAnswer,
+      citations: [citation],
+    })
+    const material = {
+      material_id: 'material-to-delete', task_id: 'task-1', filename: '待删除访谈.docx',
+      media_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      size_bytes: 4096, status: 'ready', version: 1, parse_version: 1,
+      segment_count: 1, updated_at: '2026-08-29T00:00:00Z', error_code: null,
+    }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init)
+      const url = new URL(request.url)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials' && request.method === 'GET') {
+        return json({ task_id: 'task-1', items: [material] })
+      }
+      if (url.pathname === '/api/research-tasks/task-1/materials/material-to-delete' && request.method === 'DELETE') {
+        return new Response(null, { status: 204 })
+      }
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('confirm', vi.fn(() => true))
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(within(agent).getByText(leakedAnswer)).toBeVisible()
+    fireEvent.click(within(agent).getByRole('button', { name: '查看证据：待删除访谈.docx' }))
+    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    fireEvent.click(within(sources).getByRole('button', { name: /待删除访谈\.docx/ }))
+    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    expect(within(basis).getByText(excerpt)).toBeVisible()
+
+    fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
+    const materials = await screen.findByRole('dialog', { name: '研究材料' })
+    await within(materials).findByRole('button', { name: '查看材料：待删除访谈.docx' })
+    fireEvent.click(within(materials).getByRole('button', { name: '删除材料' }))
+    expect(await within(materials).findByText('材料已删除，后续检索不会再使用它。')).toBeVisible()
+    fireEvent.click(within(materials).getByRole('button', { name: '关闭研究材料' }))
+
+    await waitFor(() => {
+      expect(within(basis).getByText('这份研究材料已删除，原文不再可访问。')).toBeVisible()
+      expect(within(basis).queryByText(excerpt)).not.toBeInTheDocument()
+      expect(within(basis).queryByRole('button', { name: '打开原文位置' })).not.toBeInTheDocument()
+      expect(within(agent).getByText('该回答引用的个人研究材料已删除，原回答内容已隐藏。')).toBeVisible()
+      expect(within(agent).queryByText(leakedAnswer)).not.toBeInTheDocument()
+    })
+  })
+
+  it('hides a live streaming answer as soon as one of its personal materials is deleted', async () => {
+    const leakedAnswer = '流式回答直接复述了稍后被删除的个人材料。'
+    const citation: AgentCitation = {
+      citation_id: 'citation-streaming-material',
+      label: '流式访谈.txt',
+      kind: 'research_material',
+      excerpt: '稍后被删除的个人材料',
+      source_kind: 'personal_material',
+      material_id: 'material-streaming',
+      parse_id: 'parse-streaming',
+      segment_id: 'segment-streaming',
+      locator: { line_start: 12, line_end: 12 },
+    }
+    const material = {
+      material_id: 'material-streaming', task_id: 'task-1', filename: '流式访谈.txt',
+      media_type: 'text/plain', size_bytes: 1024, status: 'ready', version: 1,
+      parse_version: 1, segment_count: 1, updated_at: '2026-08-29T00:00:00Z', error_code: null,
+    }
+    const liveStream = deferredStream([
+      ['turn_started', { conversation_id: 'conversation-streaming-material', run_id: 'run-streaming-material', replayed: false, runtime_mode: 'base' }],
+      ['agent_status', { status: 'answering' }],
+      ['assistant_delta', { delta: leakedAnswer }],
+      ['citation_added', citation],
+    ])
+    const completed = conversationFixture({
+      id: 'conversation-streaming-material',
+      prompt: '请依据我的访谈回答。',
+      answer: `${leakedAnswer}后续流式正文也不能重新出现。`,
+      citations: [citation],
+    })
+    let streamFinished = false
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init)
+      const url = new URL(request.url)
+      if (url.pathname === '/api/agent/turns') return liveStream.response
+      if (url.pathname === '/api/research-tasks/task-1/materials' && request.method === 'GET') {
+        return json({ task_id: 'task-1', items: [material] })
+      }
+      if (url.pathname === '/api/research-tasks/task-1/materials/material-streaming' && request.method === 'DELETE') {
+        return new Response(null, { status: 204 })
+      }
+      return json({}, 404)
+    }))
+    vi.stubGlobal('confirm', vi.fn(() => true))
+
+    try {
+      render(
+        <MemoryRouter initialEntries={['/research/task-1/match']}>
+          <ResearchAgentConversationPage embedded userId="user-agent" workspace="research" taskId="task-1" />
+        </MemoryRouter>,
+      )
+
+      const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+      const textbox = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+      fireEvent.change(textbox, { target: { value: '请依据我的访谈回答。' } })
+      fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+      expect(await within(agent).findByText(leakedAnswer)).toBeVisible()
+      expect(await within(agent).findByRole('button', { name: '查看证据：流式访谈.txt' })).toBeVisible()
+
+      fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
+      const materials = await screen.findByRole('dialog', { name: '研究材料' })
+      await within(materials).findByRole('button', { name: '查看材料：流式访谈.txt' })
+      fireEvent.click(within(materials).getByRole('button', { name: '删除材料' }))
+      expect(await within(materials).findByText('材料已删除，后续检索不会再使用它。')).toBeVisible()
+
+      await waitFor(() => {
+        expect(within(agent).getByText('该回答引用的个人研究材料已删除，原回答内容已隐藏。')).toBeVisible()
+        expect(within(agent).queryByText(leakedAnswer)).not.toBeInTheDocument()
+      })
+      liveStream.finish([
+        ['assistant_delta', { delta: '后续流式正文也不能重新出现。' }],
+        ['turn_completed', { conversation: completed, knowledge_release_id: 'release-agent' }],
+      ])
+      streamFinished = true
+      await waitFor(() => {
+        expect(within(agent).getByText('该回答引用的个人研究材料已删除，原回答内容已隐藏。')).toBeVisible()
+        expect(within(agent).queryByText(/后续流式正文也不能重新出现/)).not.toBeInTheDocument()
+      })
+    } finally {
+      if (!streamFinished) liveStream.finish([['turn_interrupted', { code: 'interrupted', message: '本轮已停止。' }]])
+    }
   })
 
   it('applies the global English locale to an existing conversation', async () => {

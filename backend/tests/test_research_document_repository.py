@@ -9,6 +9,8 @@ from qunxue_api.adapters.sqlite.research_document import (
     SqliteResearchDocumentRepository,
 )
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentEvidenceRef,
+    ResearchDocumentEvidenceSourceKind,
     ResearchDocumentSection,
     ResearchDocumentSectionStatus,
     ResearchDocumentSnapshot,
@@ -55,6 +57,7 @@ def _create_document_table(engine) -> None:
                 revision_id VARCHAR(36) NOT NULL UNIQUE,
                 title VARCHAR(512) NOT NULL,
                 sections JSON NOT NULL,
+                analysis_handoff JSON,
                 status VARCHAR(32) NOT NULL,
                 change_summary TEXT NOT NULL,
                 actor VARCHAR(64) NOT NULL,
@@ -95,4 +98,52 @@ def test_repository_replays_the_winning_document_after_a_unique_identity_conflic
         session.commit()
 
     assert replayed == first
+    engine.dispose()
+
+
+def test_repository_restores_personal_evidence_and_the_pinned_analysis_handoff() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    _create_document_table(engine)
+    personal_ref = ResearchDocumentEvidenceRef(
+        evidence_ref_id="analysis-annotation:00000000-0000-0000-0000-000000000301",
+        source_id="material-segment:segment-1",
+        knowledge_release_id=None,
+        source_kind=ResearchDocumentEvidenceSourceKind.PERSONAL_MATERIAL,
+        annotation_id=UUID("00000000-0000-0000-0000-000000000301"),
+        material_id=UUID("00000000-0000-0000-0000-000000000302"),
+        parse_id=UUID("00000000-0000-0000-0000-000000000303"),
+        segment_id="segment-1",
+        locator={"page": 4, "paragraph": 12},
+    )
+    document = replace(
+        _document(),
+        sections=(replace(_document().sections[0], evidence_refs=(personal_ref,)),),
+        analysis_handoff={
+            "schema_version": "research-analysis-v1",
+            "content_hash": "analysis-v1",
+            "annotations": [
+                {
+                    "annotation_id": str(personal_ref.annotation_id),
+                    "material_id": str(personal_ref.material_id),
+                    "parse_id": str(personal_ref.parse_id),
+                    "segment_id": personal_ref.segment_id,
+                    "quote_hash": "a" * 64,
+                    "locator": personal_ref.locator,
+                    "source_available": True,
+                }
+            ],
+            "codes": [],
+            "memos": [],
+            "comparisons": [],
+            "unavailable_annotation_ids": [],
+        },
+    )
+
+    with Session(engine) as session:
+        SqliteResearchDocumentRepository(session).add(document)
+        session.commit()
+    with Session(engine) as session:
+        restored = SqliteResearchDocumentRepository(session).latest(document.document_id)
+
+    assert restored == document
     engine.dispose()

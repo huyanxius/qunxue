@@ -272,6 +272,63 @@ def test_agent_revision_stays_pending_until_the_user_accepts_it() -> None:
     assert replayed.document.revision_id == accepted.document.revision_id
 
 
+def test_accepted_agent_proposal_uses_the_analysis_handoff_pinned_when_proposed() -> None:
+    document_repository = MemoryDocuments()
+    documents = document_service(document_repository)
+    created = documents.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="理论判断",
+        sections=(section("原始研究问题"),),
+    )
+    proposal_repository = MemoryProposals()
+    current_analysis = [
+        {
+            "schema_version": "research-analysis-v1",
+            "task_id": str(created.task_id),
+            "content_hash": "analysis-at-proposal-time",
+            "annotations": [],
+            "codes": [],
+            "memos": [],
+            "comparisons": [],
+            "unavailable_annotation_ids": [],
+        }
+    ]
+    proposals = framework.ResearchDocumentProposalService(
+        repository=proposal_repository,
+        documents=documents,
+        id_factory=iter(UUID(int=value) for value in range(100, 120)).__next__,
+        clock=lambda: NOW,
+        validate_proposal=lambda **_kwargs: current_analysis[0],
+    )
+
+    proposed = proposals.propose_revision(
+        user_id=UUID(int=3),
+        conversation_id=UUID(int=4),
+        agent_run_id=UUID(int=5),
+        document_id=created.document_id,
+        expected_version=created.version,
+        section=section("按材料分析收窄后的问题"),
+        rationale="依据当时已确认的分析结果提出",
+    )
+    current_analysis[0] = {
+        **current_analysis[0],
+        "content_hash": "newer-analysis-must-not-drift-into-acceptance",
+    }
+    accepted = proposals.accept(
+        proposal_id=proposed.proposal_id,
+        user_id=UUID(int=3),
+        expected_document_version=created.version,
+    )
+
+    assert proposed.analysis_handoff["content_hash"] == "analysis-at-proposal-time"
+    assert (
+        accepted.document.analysis_handoff["content_hash"]
+        == "analysis-at-proposal-time"
+    )
+
+
 def test_rejected_or_stale_agent_revision_never_changes_the_document() -> None:
     document_repository = MemoryDocuments()
     documents = document_service(document_repository)

@@ -219,6 +219,71 @@ def test_revision_rejects_stale_versions_and_cross_release_evidence() -> None:
         )
 
 
+def test_personal_material_evidence_and_analysis_handoff_follow_document_versions() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    personal_ref = framework.ResearchDocumentEvidenceRef(
+        evidence_ref_id="analysis-annotation:00000000-0000-0000-0000-000000000301",
+        source_id="material-segment:segment-1",
+        knowledge_release_id=None,
+        source_kind=framework.ResearchDocumentEvidenceSourceKind.PERSONAL_MATERIAL,
+        annotation_id=UUID("00000000-0000-0000-0000-000000000301"),
+        material_id=UUID("00000000-0000-0000-0000-000000000302"),
+        parse_id=UUID("00000000-0000-0000-0000-000000000303"),
+        segment_id="segment-1",
+        locator={"page": 4, "paragraph": 12},
+    )
+    sections = list(required_sections())
+    sections[0] = replace(sections[0], evidence_refs=(personal_ref,))
+    first_analysis = {
+        "schema_version": "research-analysis-v1",
+        "content_hash": "analysis-v1",
+        "annotations": [
+            {
+                "annotation_id": str(personal_ref.annotation_id),
+                "material_id": str(personal_ref.material_id),
+                "parse_id": str(personal_ref.parse_id),
+                "segment_id": personal_ref.segment_id,
+                "quote_hash": "a" * 64,
+                "locator": personal_ref.locator,
+                "source_available": True,
+            }
+        ],
+        "codes": [],
+        "memos": [],
+        "comparisons": [],
+        "unavailable_annotation_ids": [],
+    }
+    created = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=tuple(sections),
+        analysis_handoff=first_analysis,
+    )
+    second_analysis = {**first_analysis, "content_hash": "analysis-v2"}
+    revised = workflow.revise(
+        document_id=created.document_id,
+        expected_version=created.version,
+        sections=created.sections,
+        change_summary="纳入新确认的分析备忘",
+        actor="user",
+        analysis_handoff=second_analysis,
+    )
+    restored = workflow.restore(
+        document_id=created.document_id,
+        source_version=created.version,
+        expected_version=revised.version,
+        reason="恢复首次分析快照",
+    )
+
+    assert created.analysis_handoff == first_analysis
+    assert revised.analysis_handoff == second_analysis
+    assert restored.analysis_handoff == first_analysis
+    assert restored.sections[0].evidence_refs == (personal_ref,)
+
+
 def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
     repository = MemoryDocumentRepository()
     workflow = service(repository)

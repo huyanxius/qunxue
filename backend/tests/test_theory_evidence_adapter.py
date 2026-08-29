@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
@@ -27,6 +28,7 @@ from qunxue_api.modules.research_intake import (
     PhenomenonEvidenceRefSnapshot,
     PhenomenonEvidenceVerificationStatus,
 )
+from qunxue_api.modules.research_materials import MaterialLocator
 
 RELEASE = KnowledgeReleaseRef(
     knowledge_release_id="release-reviewed-v1",
@@ -321,6 +323,54 @@ def test_recall_preserves_an_auditable_empty_result_for_no_reliable_candidate() 
     assert bundle.retrieval.retrieval_index_id == "retrieval-index:reviewed-v1"
     assert bundle.retrieval.mode == "hybrid_reranked"
     assert bundle.retrieval.retrieved_chunk_ids == ()
+
+
+def test_recall_adds_only_owner_scoped_confirmed_comparison_evidence() -> None:
+    owner_id = UUID(int=77)
+    calls: list[tuple[UUID, UUID]] = []
+
+    def confirmed_projection(*, user_id: UUID, task_id: UUID):
+        calls.append((user_id, task_id))
+        return SimpleNamespace(
+            content_hash="sha256:confirmed-comparison",
+            evidence_items=(
+                SimpleNamespace(
+                    evidence_ref_id="analysis-comparison:1:finding:0:annotation:1",
+                    finding_kind=SimpleNamespace(value="counterexample"),
+                    statement="第二个案例并未因成员流动而减少互助。",
+                    quote="新成员仍会轮流照看孩子。",
+                    material_id=UUID(int=81),
+                    parse_id=UUID(int=82),
+                    segment_id="segment-12",
+                    locator=MaterialLocator(page=4, paragraph=12),
+                    case_label="社区 B",
+                    observed_at="2026-08",
+                ),
+            ),
+        )
+
+    bundle = CatalogTheoryEvidenceSource(
+        _CatalogFixture(entries=(_entry(1),)),
+        retriever=_retriever(1),
+        get_confirmed_comparison_projection=confirmed_projection,
+    ).retrieve(user_id=owner_id, phenomenon=PHENOMENON, release=RELEASE)
+
+    assert calls == [(owner_id, PHENOMENON.task_id)]
+    evidence = next(
+        item for item in bundle.evidence_items
+        if item.evidence_ref_id == "analysis-comparison:1:finding:0:annotation:1"
+    )
+    assert evidence.claim == "第二个案例并未因成员流动而减少互助。"
+    assert evidence.excerpt == "新成员仍会轮流照看孩子。"
+    assert evidence.locator == "第4页，第12段"
+    assert evidence.source is not None
+    assert evidence.source.source_type == "personal_research_material"
+    assert evidence.source.source_id == (
+        "research-material:00000000-0000-0000-0000-000000000051:"
+        "00000000-0000-0000-0000-000000000052:segment-12"
+    )
+    assert evidence.verification_status is SourceVerificationStatus.VERIFIED
+    assert "反例" in evidence.use_boundary
 
 
 def test_recall_rejects_non_final_and_keeps_a_pinned_final_release_reproducible() -> None:

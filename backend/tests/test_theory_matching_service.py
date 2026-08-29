@@ -50,13 +50,16 @@ PHENOMENON = ConfirmedPhenomenonSnapshot(
 class _EvidenceSource:
     def __init__(self, bundle: EvidenceBundleSnapshot) -> None:
         self._bundle = bundle
+        self.user_ids: list[UUID | None] = []
 
     def retrieve(
         self,
         *,
+        user_id: UUID | None = None,
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> EvidenceBundleSnapshot:
+        self.user_ids.append(user_id)
         assert phenomenon == PHENOMENON
         assert release == RELEASE
         return self._bundle
@@ -200,6 +203,25 @@ def test_fewer_than_three_profiles_persist_empty_without_invoking_the_judge() ->
     assert run.stable_candidate_order == ()
     assert run.model is None
     assert recorder.list_all() == ()
+
+
+def test_matching_passes_the_authenticated_owner_to_personal_evidence_retrieval() -> None:
+    source = _EvidenceSource(_bundle(2))
+    service = TheoryMatchingService(
+        evidence_source=source,
+        judge=create_deterministic_mock_provider(),
+        repository=_MatchRunRepository(),
+        provider="deterministic-mock",
+        model_version="mock-sociology-v1",
+        capability="mock",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+    owner_id = UUID(int=909)
+
+    service.start(user_id=owner_id, phenomenon=PHENOMENON, release=RELEASE)
+
+    assert source.user_ids == [owner_id]
 
 
 class _JudgeThatOmitsOneCandidate:
