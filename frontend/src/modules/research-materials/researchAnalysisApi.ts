@@ -123,6 +123,7 @@ export async function decideAnalysisCode(
   const result = await decideResearchAnalysisCode({
     client: apiClient,
     path: { task_id: taskId, code_id: codeId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
     body,
     signal,
   })
@@ -153,6 +154,7 @@ export async function decideAnalysisMemo(
   const result = await decideResearchAnalysisMemo({
     client: apiClient,
     path: { task_id: taskId, memo_id: memoId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
     body,
     signal,
   })
@@ -183,6 +185,7 @@ export async function decideCaseComparison(
   const result = await decideResearchCaseComparison({
     client: apiClient,
     path: { task_id: taskId, comparison_id: comparisonId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
     body,
     signal,
   })
