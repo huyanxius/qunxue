@@ -65,6 +65,8 @@ const MATERIAL_KINDS: readonly ResearchMaterialKind[] = [
   'other',
 ]
 
+const READER_PAGE_SIZE = 24
+
 type ResearchMaterialsPanelProps = {
   readonly taskId: string
   readonly onClose?: () => void
@@ -106,7 +108,7 @@ function SegmentCard({
   }
 
   return (
-    <article className={`research-materials__segment${selected ? ' is-selected' : ''}`} data-segment-id={segment.segmentId}>
+    <article className={`research-materials__segment${selected ? ' is-selected' : ''}${segment.kind === 'heading' ? ' is-heading' : ''}`} data-segment-id={segment.segmentId}>
       <div className="research-materials__segment-meta">
         <span>{formatMaterialLocator(segment.locator)}</span>
         <small>{segment.kind === 'heading' ? '标题' : '正文'}</small>
@@ -135,6 +137,9 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [annotationCaseLabel, setAnnotationCaseLabel] = useState('')
   const [annotationObservedAt, setAnnotationObservedAt] = useState('')
   const [detailMode, setDetailMode] = useState<'source' | 'analysis'>('source')
+  const [readerPage, setReaderPage] = useState(0)
+  const [readerQuery, setReaderQuery] = useState('')
+  const [readerFilter, setReaderFilter] = useState<'all' | 'headings'>('all')
   const [analysisSnapshot, setAnalysisSnapshot] = useState<ResearchAnalysisSnapshot | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(true)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -238,6 +243,9 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setSelectedMaterial(null)
     setSelectedSegmentId(null)
     setDetailMode('source')
+    setReaderPage(0)
+    setReaderQuery('')
+    setReaderFilter('all')
     setAnalysisSnapshot(null)
     setAnalysisNotice(null)
     clearSelectionDraft()
@@ -280,7 +288,13 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' })
     scrolledCitationTarget.current = targetKey
-  }, [detailLoading, initialMaterialId, initialParseId, initialSegmentId, selectedMaterial, selectedSegmentId, taskId])
+  }, [detailLoading, initialMaterialId, initialParseId, initialSegmentId, readerPage, selectedMaterial, selectedSegmentId, taskId])
+
+  useEffect(() => {
+    if (detailLoading || !initialSegmentId || selectedMaterial?.materialId !== initialMaterialId) return
+    const targetIndex = (selectedMaterial.segments ?? []).findIndex((segment) => segment.segmentId === initialSegmentId)
+    if (targetIndex >= 0) setReaderPage(Math.floor(targetIndex / READER_PAGE_SIZE))
+  }, [detailLoading, initialMaterialId, initialSegmentId, selectedMaterial])
 
   async function selectMaterial(material: ResearchMaterial, parseId: string | null = null, segmentId: string | null = null) {
     const requestGeneration = ++materialDetailGeneration.current
@@ -295,6 +309,9 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     ) clearSelectionDraft()
     setSelectedMaterial(material)
     setSelectedSegmentId(segmentId)
+    setReaderPage(segmentId && material.segments ? Math.floor(Math.max(0, material.segments.findIndex((item) => item.segmentId === segmentId)) / READER_PAGE_SIZE) : 0)
+    setReaderQuery('')
+    setReaderFilter('all')
     if (material.segments && !parseId) {
       setDetailLoading(false)
       if (materialDetailAbortController.current === controller) materialDetailAbortController.current = null
@@ -515,6 +532,23 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   }
 
   const segments = selectedMaterial?.segments ?? []
+  const normalizedReaderQuery = readerQuery.trim().toLocaleLowerCase()
+  const readerSegments = segments.filter((segment) => {
+    if (readerFilter === 'headings' && segment.kind !== 'heading' && !segment.locator.headingPath.length) return false
+    if (!normalizedReaderQuery) return true
+    return `${segment.text} ${formatMaterialLocator(segment.locator)}`.toLocaleLowerCase().includes(normalizedReaderQuery)
+  })
+  const readerPageCount = Math.max(1, Math.ceil(readerSegments.length / READER_PAGE_SIZE))
+  const activeReaderPage = Math.min(readerPage, readerPageCount - 1)
+  const pagedReaderSegments = readerSegments.slice(activeReaderPage * READER_PAGE_SIZE, (activeReaderPage + 1) * READER_PAGE_SIZE)
+  const readerHeadings = segments.filter((segment, index, all) => {
+    if (segment.kind !== 'heading' && !segment.locator.headingPath.length) return false
+    const key = segment.kind === 'heading' ? segment.segmentId : segment.locator.headingPath.join(' / ')
+    return all.findIndex((candidate) => {
+      const candidateKey = candidate.kind === 'heading' ? candidate.segmentId : candidate.locator.headingPath.join(' / ')
+      return candidateKey === key
+    }) === index
+  })
 
   function clearSelectionDraft() {
     setSelectionDraft(null)
@@ -628,26 +662,90 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                     {!detailLoading && selectedMaterial.status === 'failed' ? <p className="research-materials__detail-note is-error"><WarningCircleIcon size={15} />解析失败后，原材料仍保留；重新解析成功前不会进入检索。</p> : null}
                     {!detailLoading && selectedMaterial.status === 'processing' ? <p className="research-materials__detail-note"><CircleNotchIcon className="is-spinning" size={15} />解析完成后，这里会显示章节、段落和可引用位置。</p> : null}
                     {!detailLoading && selectedMaterial.status === 'ready' && !segments.length ? <p className="research-materials__detail-note">暂时没有可展示的片段。</p> : null}
-                    <div className="research-materials__segments">
-                      {segments.map((segment) => {
-                        const selected = segment.segmentId === selectedSegmentId
-                        return (
-                          <button
-                            type="button"
-                            className="research-materials__segment-button"
-                            key={segment.segmentId}
-                            aria-current={selected ? 'location' : undefined}
-                            ref={(element) => {
-                              if (element) segmentButtonRefs.current.set(segment.segmentId, element)
-                              else segmentButtonRefs.current.delete(segment.segmentId)
-                            }}
-                            onClick={() => { void selectSegment(segment) }}
-                          >
-                            <SegmentCard segment={segment} selected={selected} onTextSelection={captureSelection} />
-                          </button>
-                        )
-                      })}
-                    </div>
+                    <section className="research-materials__reader" role="region" aria-label="文档阅读器">
+                      <div className="research-materials__reader-toolbar">
+                        <label className="research-materials__reader-search">
+                          <MagnifyingGlassIcon size={15} aria-hidden="true" />
+                          <span className="sr-only">在材料中查找</span>
+                          <input
+                            type="search"
+                            role="searchbox"
+                            aria-label="在材料中查找"
+                            value={readerQuery}
+                            onChange={(event) => { setReaderQuery(event.target.value); setReaderPage(0) }}
+                            placeholder="查找原文或定位"
+                          />
+                          {readerQuery ? <button type="button" aria-label="清除材料查找" onClick={() => { setReaderQuery(''); setReaderPage(0) }}><XIcon size={13} /></button> : null}
+                        </label>
+                        <label className="research-materials__reader-filter">
+                          <span>显示</span>
+                          <select aria-label="段落筛选" value={readerFilter} onChange={(event) => { setReaderFilter(event.target.value as typeof readerFilter); setReaderPage(0) }}>
+                            <option value="all">全部原文</option>
+                            <option value="headings">只看章节</option>
+                          </select>
+                        </label>
+                        <span className="research-materials__reader-count">
+                          {normalizedReaderQuery ? `${readerSegments.length} 处命中` : `${segments.length} 段原文`}
+                        </span>
+                      </div>
+                      <div className="research-materials__reader-layout">
+                        <nav className="research-materials__outline" aria-label="章节导航">
+                          <span>章节</span>
+                          {readerHeadings.length ? readerHeadings.map((heading) => {
+                            const headingIndex = segments.findIndex((segment) => segment.segmentId === heading.segmentId)
+                            return (
+                              <button
+                                type="button"
+                                key={heading.segmentId}
+                                onClick={() => {
+                                  setReaderQuery('')
+                                  setReaderFilter('all')
+                                  setReaderPage(Math.floor(Math.max(0, headingIndex) / READER_PAGE_SIZE))
+                                  void selectSegment(heading)
+                                }}
+                                title={heading.text}
+                              >
+                                {heading.text || heading.locator.headingPath.at(-1) || `第 ${headingIndex + 1} 段`}
+                              </button>
+                            )
+                          }) : <small>解析出章节后会显示在这里。</small>}
+                        </nav>
+                        <div className="research-materials__reader-main">
+                          <div className="research-materials__reader-page-meta">
+                            <span>{readerPageCount > 1 ? `第 ${activeReaderPage + 1} / ${readerPageCount} 页` : '连续阅读'}</span>
+                            {normalizedReaderQuery ? <span>按查找结果分页</span> : <span>每页 {READER_PAGE_SIZE} 段</span>}
+                          </div>
+                          <div className="research-materials__segments">
+                            {pagedReaderSegments.map((segment) => {
+                              const selected = segment.segmentId === selectedSegmentId
+                              return (
+                                <button
+                                  type="button"
+                                  className="research-materials__segment-button"
+                                  key={segment.segmentId}
+                                  aria-current={selected ? 'location' : undefined}
+                                  ref={(element) => {
+                                    if (element) segmentButtonRefs.current.set(segment.segmentId, element)
+                                    else segmentButtonRefs.current.delete(segment.segmentId)
+                                  }}
+                                  onClick={() => { void selectSegment(segment) }}
+                                >
+                                  <SegmentCard segment={segment} selected={selected} onTextSelection={captureSelection} />
+                                </button>
+                              )
+                            })}
+                            {!pagedReaderSegments.length ? <p className="research-materials__reader-no-results">没有匹配的原文。换个词试试。</p> : null}
+                          </div>
+                          {readerPageCount > 1 ? (
+                            <footer className="research-materials__reader-pagination" aria-label="文档分页">
+                              <button type="button" aria-label="上一页" onClick={() => setReaderPage((page) => Math.max(0, page - 1))} disabled={activeReaderPage === 0}>上一页</button>
+                              <span>{activeReaderPage + 1} / {readerPageCount}</span>
+                              <button type="button" aria-label="下一页" onClick={() => setReaderPage((page) => Math.min(readerPageCount - 1, page + 1))} disabled={activeReaderPage >= readerPageCount - 1}>下一页</button>
+                            </footer>
+                          ) : null}
+                        </div>
+                      </div>
+                    </section>
                     {selectionNotice ? <p className="research-materials__selection-notice" role="alert">{selectionNotice}</p> : null}
                     {selectionDraft ? (
                       <section className="research-materials__annotation-draft" role="region" aria-label="片段标记">

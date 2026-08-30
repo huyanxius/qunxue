@@ -33,6 +33,34 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('paginates long source text and exposes document search instead of rendering every segment at once', async () => {
+    const segments = Array.from({ length: 42 }, (_, index) => ({
+      segment_id: `segment-${index + 1}`,
+      material_id: 'material-1',
+      parse_id: 'parse-1',
+      ordinal: index,
+      kind: index === 0 ? 'heading' : 'paragraph',
+      text: index === 0 ? '一、家庭照护的重新分配' : `第 ${index + 1} 段：研究材料中的连续原文。`,
+      locator: { paragraph: index + 1, section_path: index === 0 ? ['一、家庭照护的重新分配'] : [] },
+    }))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/materials/material-1')) return response({ ...material, segment_count: segments.length, segments })
+      return response({ task_id: 'task-1', items: [material] })
+    }))
+
+    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
+    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+
+    const reader = await within(dialog).findByRole('region', { name: '文档阅读器' })
+    expect(within(reader).getByRole('searchbox', { name: '在材料中查找' })).toBeVisible()
+    expect(within(reader).getByRole('navigation', { name: '章节导航' })).toBeVisible()
+    expect(within(reader).getByText('第 2 段：研究材料中的连续原文。')).toBeVisible()
+    expect(within(reader).queryByText('第 42 段：研究材料中的连续原文。')).not.toBeInTheDocument()
+    expect(within(reader).getByRole('button', { name: '下一页' })).toBeVisible()
+  })
+
   it('renders as a persistent workspace without modal semantics', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({ task_id: 'task-1', items: [] })))
 
