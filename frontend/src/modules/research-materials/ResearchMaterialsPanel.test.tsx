@@ -33,6 +33,18 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('renders as a persistent workspace without modal semantics', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({ task_id: 'task-1', items: [] })))
+
+    render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
+
+    const workspace = await screen.findByRole('region', { name: '研究材料' })
+    expect(workspace).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: '研究材料' })).not.toBeInTheDocument()
+    expect(within(workspace).queryByRole('button', { name: '关闭研究材料' })).not.toBeInTheDocument()
+    expect(within(workspace).getByRole('button', { name: '选择文件' })).toBeVisible()
+  })
+
   it('shows persisted materials and opens an exact source locator in the detail view', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(requestOf(input, init).url).pathname

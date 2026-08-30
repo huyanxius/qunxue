@@ -9,6 +9,14 @@
   animation: research-materials-fade-in 180ms ease both;
 }
 
+.research-materials__overlay--workspace {
+  position: static;
+  display: block;
+  padding: 0;
+  background: transparent;
+  animation: none;
+}
+
 .research-materials {
   --materials-ink: var(--app-ink, #1b1a18);
   --materials-muted: var(--app-muted, #77736b);
@@ -24,6 +32,14 @@
   background: var(--materials-surface);
   box-shadow: 0 22px 65px rgb(22 20 17 / 18%);
   animation: research-materials-rise-in 260ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.research-materials__overlay--workspace > .research-materials {
+  width: 100%;
+  max-height: none;
+  min-height: 660px;
+  box-shadow: 0 10px 35px rgb(22 20 17 / 8%);
+  animation: none;
 }
 
 .research-materials__header {

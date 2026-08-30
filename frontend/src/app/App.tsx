@@ -35,6 +35,7 @@ import { KnowledgeGraphIntegration } from './KnowledgeGraphIntegration'
 import { ResearchTaskNavigationRoute } from './ResearchTaskNavigationRoute'
 import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
+import { ResearchMaterialsPage } from './research/ResearchMaterialsPage'
 import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
@@ -404,6 +405,7 @@ export function AppRoutes({
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
+      <Route path="/research/materials" element={protectedRoute(<ResearchMaterialsPage userId={authenticatedUserId} />)} />
       <Route
         path="/research/:task_id"
         element={protectedRoute(<ResearchTaskNavigationRoute>{null}</ResearchTaskNavigationRoute>)}

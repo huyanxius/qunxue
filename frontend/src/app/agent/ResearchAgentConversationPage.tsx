@@ -43,7 +43,7 @@ import {
 import { createPortal, flushSync } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Link, useLocation, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import {
   ResearchContextRail,
@@ -1128,6 +1128,47 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
   )
 }
 
+function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
+  const { text } = useAppLocale()
+  const materialCount = citations.filter((citation) => (
+    citation.kind === 'material' || citation.kind === 'research_material'
+  )).length
+  const knowledgeCount = citations.filter((citation) => (
+    Boolean(citation.knowledge_id)
+      && citation.kind !== 'material'
+      && citation.kind !== 'research_material'
+  )).length
+  if (!materialCount && !knowledgeCount) return null
+  const mixed = materialCount > 0 && knowledgeCount > 0
+  return (
+    <div
+      className={`new-research__evidence-origin${mixed ? ' is-mixed' : ''}`}
+      role="status"
+      aria-label={text('本轮证据来源', 'Evidence sources for this answer')}
+    >
+      <div className="new-research__evidence-origin-heading">
+        <BookOpenTextIcon size={14} aria-hidden="true" />
+        <span>{text('本轮证据来源', 'Evidence sources')}</span>
+      </div>
+      <div className="new-research__evidence-origin-list">
+        {knowledgeCount ? (
+          <span className="is-knowledge"><span>{text('群学知识库', 'Qunxue knowledge')}</span><b>{knowledgeCount}</b></span>
+        ) : null}
+        {materialCount ? (
+          <span className="is-material"><span>{text('你的研究材料', 'Your research materials')}</span><b>{materialCount}</b></span>
+        ) : null}
+      </div>
+      <p>
+        {mixed
+          ? text('本轮同时引用了群学知识库和你的研究材料', 'This answer cites both the Qunxue knowledge base and your research materials')
+          : materialCount
+            ? text('本轮引用了你的研究材料', 'This answer cites your research materials')
+            : text('本轮引用了群学知识库', 'This answer cites the Qunxue knowledge base')}
+      </p>
+    </div>
+  )
+}
+
 function AssistantActions({ content, onRegenerate }: { content: string; onRegenerate: () => void }) {
   const { text } = useAppLocale()
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
@@ -1233,6 +1274,7 @@ function AssistantTurn({
               : text('未调用知识库 · 以下内容仅作工作假设，请结合材料核验。', 'Knowledge base not searched · treat this as a working hypothesis and verify it against your materials.')}
           </p>
         ) : null}
+        <EvidenceOriginSummary citations={citations} />
         <SourcePills citations={citations} onSelect={(citation) => onSelectCitation(citation, knowledgeReleaseId)} />
         {knowledgeHandoffCitation && conversationId && knowledgeReleaseId
           ? <KnowledgeHandoffCards citation={knowledgeHandoffCitation} conversationId={conversationId} knowledgeReleaseId={knowledgeReleaseId} />
@@ -1289,6 +1331,7 @@ export function ResearchAgentConversationPage({
 }: ResearchAgentConversationPageProps) {
   const { locale, text } = useAppLocale()
   const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = embedded ? boundConversationId : searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = embedded ? boundKnowledgeReleaseId : searchParams.get('knowledge_release_id')
@@ -1957,12 +2000,16 @@ export function ResearchAgentConversationPage({
           {isEmpty && !embedded ? <div aria-hidden="true" className="research-agent-page__heading-placeholder" /> : (
             <header className="research-agent-page__conversation-heading new-research__agent-header" aria-label={text('对话操作', 'Conversation actions')}>
               <div className="new-research__agent-actions">
-                {workspace === 'research' && taskId ? (
+                {workspace === 'research' ? (
                   <button
                     type="button"
                     aria-label={text('研究材料', 'Research materials')}
                     title={text('研究材料', 'Research materials')}
                     onClick={() => {
+                      if (!taskId) {
+                        navigate('/research/materials')
+                        return
+                      }
                       setMaterialLocatorTarget(null)
                       openMaterials()
                     }}
