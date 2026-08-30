@@ -5,6 +5,7 @@ export { AdminUsersPage } from './AdminUsersPage'
 export { MyResearchPage } from './MyResearchPage'
 export { PasswordResetPage } from './PasswordResetPage'
 export { RecentResearchPanel } from './RecentResearchPanel'
+export { listMyResearchViaApi } from './researchTasks'
 export type {
   AccountManagementApi,
   AccountPreferences,

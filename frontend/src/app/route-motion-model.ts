@@ -19,6 +19,9 @@ function describeRoute(pathname: string): RouteDescription {
   if (pathname === '/research/new') {
     return { section: 'research', order: 2, depth: 0 }
   }
+  if (pathname === '/research/materials') {
+    return { section: 'research-materials', order: 2, depth: 0 }
+  }
 
   const researchRoute = pathname.match(/^\/research\/([^/]+)(?:\/(phenomenon|match|framework))?$/)
   if (researchRoute) {

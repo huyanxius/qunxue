@@ -67,7 +67,8 @@ const MATERIAL_KINDS: readonly ResearchMaterialKind[] = [
 
 type ResearchMaterialsPanelProps = {
   readonly taskId: string
-  readonly onClose: () => void
+  readonly onClose?: () => void
+  readonly presentation?: 'dialog' | 'workspace'
   readonly onMaterialDeleted?: (materialId: string) => void
   readonly initialMaterialId?: string | null
   readonly initialSegmentId?: string | null
@@ -115,7 +116,7 @@ function SegmentCard({
   )
 }
 
-export function ResearchMaterialsPanel({ taskId, onClose, onMaterialDeleted, initialMaterialId = null, initialSegmentId = null, initialParseId = null, analysisRefreshKey = 0 }: ResearchMaterialsPanelProps) {
+export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog', onMaterialDeleted, initialMaterialId = null, initialSegmentId = null, initialParseId = null, analysisRefreshKey = 0 }: ResearchMaterialsPanelProps) {
   const [materials, setMaterials] = useState<ResearchMaterial[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<ResearchMaterial | null>(null)
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(initialSegmentId)
@@ -542,16 +543,17 @@ export function ResearchMaterialsPanel({ taskId, onClose, onMaterialDeleted, ini
     setAnnotationObservedAt('')
   }
 
+  const workspacePresentation = presentation === 'workspace'
   return (
-    <div className="research-materials__overlay" role="presentation">
-      <section className="research-materials" role="dialog" aria-modal="true" aria-labelledby="research-materials-heading">
+    <div className={`research-materials__overlay${workspacePresentation ? ' research-materials__overlay--workspace' : ''}`} role={workspacePresentation ? undefined : 'presentation'}>
+      <section className="research-materials" role={workspacePresentation ? 'region' : 'dialog'} aria-modal={workspacePresentation ? undefined : 'true'} aria-labelledby="research-materials-heading">
         <header className="research-materials__header">
           <div>
             <span className="research-materials__eyebrow">当前研究</span>
             <h2 id="research-materials-heading">研究材料</h2>
             <p>{materials.length ? `${materials.length} 份材料` : '把论文、访谈和田野记录放在同一处'}</p>
           </div>
-          <button type="button" className="research-materials__close" aria-label="关闭研究材料" onClick={onClose}><XIcon size={18} /></button>
+          {onClose ? <button type="button" className="research-materials__close" aria-label="关闭研究材料" onClick={onClose}><XIcon size={18} /></button> : null}
         </header>
 
         <div className="research-materials__body">

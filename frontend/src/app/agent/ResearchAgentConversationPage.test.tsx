@@ -444,6 +444,30 @@ describe('ResearchAgentConversationPage', () => {
     })
   })
 
+  it('makes mixed evidence visible when an answer cites both public knowledge and personal material', async () => {
+    const citations = [
+      { citation_id: 'citation-knowledge-mixed', label: '社区互助研究', kind: 'knowledge', knowledge_id: 'D1:C001', excerpt: '公共知识条目。' },
+      { citation_id: 'citation-material-mixed', label: '社区访谈.docx', kind: 'research_material', material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-1', locator: { page: 2, paragraph: 3 }, excerpt: '个人材料片段。' },
+    ] as AgentCitation[]
+    const conversation = conversationFixture({ id: 'conversation-mixed-evidence', citations })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({ task_id: 'task-1', items: [] })
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage embedded userId="user-agent" conversationId={conversation.conversation_id} workspace="research" taskId="task-1" />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    expect(within(agent).getByRole('status', { name: '本轮证据来源' })).toHaveTextContent('本轮同时引用了群学知识库和你的研究材料')
+    expect(within(agent).getByText('群学知识库')).toBeVisible()
+    expect(within(agent).getByText('你的研究材料')).toBeVisible()
+  })
+
   it('keeps a deleted material citation as a tombstone without opening source text', async () => {
     const citation = {
       citation_id: 'citation-deleted-material-1',

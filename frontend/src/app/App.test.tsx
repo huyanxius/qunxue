@@ -345,10 +345,11 @@ describe('App routes', () => {
       '工作台',
       '研究 Agent',
       '新建研究',
+      '研究材料',
       '知识库',
       '知识图谱',
     ])
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(5)
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(6)
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',
