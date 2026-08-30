@@ -1129,7 +1129,7 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
 }
 
 function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
-  const { locale, text } = useAppLocale()
+  const { text } = useAppLocale()
   const materialCount = citations.filter((citation) => (
     citation.kind === 'material' || citation.kind === 'research_material'
   )).length
