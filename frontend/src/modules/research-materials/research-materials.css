@@ -249,7 +249,6 @@
 @media (max-width: 840px) {
   .research-materials__overlay--workspace > .research-materials { height: auto; min-height: 0; }
 }
-
 /* The source pane is a reader, not a second card grid. Pages keep very long
    imports bounded while the text itself stays continuous and selectable. */
 .research-materials__reader { margin-top: 15px; }
