@@ -258,6 +258,13 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   }, [initialMaterialId, initialParseId, initialSegmentId, materials])
 
   useEffect(() => {
+    // A material workbench opens on usable content; an empty detail pane makes
+    // the library look broken when the research already has imported files.
+    if (initialMaterialId || !materials.length || selectedMaterial || detailLoading) return
+    void selectMaterial(materials[0])
+  }, [detailLoading, initialMaterialId, materials, selectedMaterial])
+
+  useEffect(() => {
     if (
       detailLoading
       || !initialMaterialId
