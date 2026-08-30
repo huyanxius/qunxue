@@ -185,7 +185,7 @@ def test_pre_reviewed_bundle_installs_one_reproducible_final_release(
         release_id=first.release.knowledge_release_id,
     )
     assert detail.theory_profile is not None
-    assert detail.theory_profile.review_status is KnowledgeReviewStatus.PRE_REVIEW_COMPLETED
+    assert detail.theory_profile.review_status is KnowledgeReviewStatus.REVIEWED
     assert detail.theory_profile.match_eligible is True
     assert detail.sources[0].locator == "chapter 1, pp. 10-19"
 
@@ -199,7 +199,7 @@ def test_pre_reviewed_bundle_installs_one_reproducible_final_release(
         )
         assert review is not None
         assert review.theory_id == "theory-pre-reviewed-1"
-        assert review.review_status == "pre_review_completed"
+        assert review.review_status == "reviewed"
         assert review.reviewer_id == "human-pre-review:test-team"
         assert review.reviewer_display_name == "测试真实人员初审组"
         assert review.reviewer_credentials == "未声明专家终审资质；仅验证预审核状态"
