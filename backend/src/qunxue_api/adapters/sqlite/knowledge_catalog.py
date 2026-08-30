@@ -75,6 +75,16 @@ _PREVIEW_SOURCE_BOUNDARY = "仓库 Markdown 导入溯源；不是已核验的学
 _PRE_REVIEWED_BUNDLE_SCHEMA = "pre-reviewed-theory-release/v1"
 _FINAL_BUNDLE_SCHEMA = "final-theory-release/v1"
 _PRE_REVIEWED_BUILD_CONFIG_VERSION = _PRE_REVIEWED_BUNDLE_SCHEMA
+# Both labels represent a completed human review for the immutable MATCH release.
+# New final bundles use ``reviewed``; older pre-reviewed bundles retain the legacy
+# ``pre_review_completed`` label.  MATCH must accept either completed state, while
+# still rejecting pending/draft/retired records below.
+_MATCH_COMPLETED_REVIEW_STATUSES = frozenset(
+    {
+        KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value,
+        KnowledgeReviewStatus.REVIEWED.value,
+    }
+)
 _PROFILE_FIELDS = (
     "theory_id",
     "related_knowledge_ids",
@@ -435,11 +445,9 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 if review is None:
                     raise ValueError(f"theory profile has no human pre-review: {theory_id}")
                 if (
-                    row.review_status
-                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    row.review_status not in _MATCH_COMPLETED_REVIEW_STATUSES
                     or not row.match_eligible
-                    or review.review_status
-                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    or review.review_status not in _MATCH_COMPLETED_REVIEW_STATUSES
                     or review.decision != "approved_for_internal_match"
                     or not _nonblank(review.reviewer_id)
                     or not _nonblank(review.reviewer_display_name)
@@ -474,8 +482,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     )
                 )
                 if len(entry_rows) != len(set(row.related_knowledge_ids)) or any(
-                    entry.review_status
-                    != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                    entry.review_status not in _MATCH_COMPLETED_REVIEW_STATUSES
                     or not entry.match_eligible
                     or entry.content_version != row.content_version
                     or review.review_record_id not in entry.review_record_ids
@@ -1252,7 +1259,11 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
                 review_record.get("attestation"), "human review attestation"
             ),
         }
-        expected_status = KnowledgeReviewStatus.REVIEWED.value if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+        expected_status = (
+            KnowledgeReviewStatus.REVIEWED.value
+            if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA
+            else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+        )
         if review["review_status"] != expected_status:
             raise ValueError(f"human review status must be {expected_status}")
         if review["decision"] != "approved_for_internal_match":
