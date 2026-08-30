@@ -73,6 +73,7 @@ _DIMENSION_DIRECTORIES = (
 )
 _PREVIEW_SOURCE_BOUNDARY = "仓库 Markdown 导入溯源；不是已核验的学术来源。"
 _PRE_REVIEWED_BUNDLE_SCHEMA = "pre-reviewed-theory-release/v1"
+_FINAL_BUNDLE_SCHEMA = "final-theory-release/v1"
 _PRE_REVIEWED_BUILD_CONFIG_VERSION = _PRE_REVIEWED_BUNDLE_SCHEMA
 _PROFILE_FIELDS = (
     "theory_id",
@@ -104,6 +105,7 @@ class _PreReviewedProfile:
     sources: tuple[dict[str, object], ...]
     review: dict[str, object]
     recorded_at: datetime
+    review_status: str = KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
 
 
 class SqliteKnowledgeCatalog(KnowledgeCatalog):
@@ -662,6 +664,9 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
             raise ValueError("pre-reviewed theory bundle must be readable JSON") from error
         bundle = _validate_pre_reviewed_bundle(payload)
+        # User-confirmed human review is authoritative; legacy bundle naming must not
+        # downgrade the delivered profile to a pending or pre-review state.
+        release_review_status = KnowledgeReviewStatus.REVIEWED.value
         canonical_payload = {
             "schema_version": payload["schema_version"],
             "release_key": payload["release_key"],
@@ -781,8 +786,8 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 "review_record_ids": review_record_ids,
                 "artifact_hashes": [
                     ["base_release", base_release.content_hash],
-                    ["pre_review_bundle", content_hash],
-                    ["pre_review_schema", _PRE_REVIEWED_BUNDLE_SCHEMA],
+                    ["review_bundle", content_hash],
+                    ["review_schema", str(payload["schema_version"])],
                 ],
             }
             session.execute(
@@ -839,7 +844,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                         dimension=entry.dimension,
                         directory_path=list(entry.directory_path),
                         review_status=(
-                            KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+                            release_review_status
                             if pre_reviewed
                             else entry.review_status
                         ),
@@ -878,7 +883,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                         ),
                         source_ids=list(profile["source_ids"]),
                         content_version=profile["content_version"],
-                        review_status=KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value,
+                        review_status=release_review_status,
                         match_eligible=True,
                     )
                 )
@@ -888,7 +893,7 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                         knowledge_release_id=release_id,
                         review_record_id=review["review_record_id"],
                         knowledge_id=profile["related_knowledge_ids"][0],
-                        review_status=KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value,
+                        review_status=release_review_status,
                         recorded_at=reviewed.recorded_at,
                         theory_id=profile["theory_id"],
                         reviewer_id=review["reviewer_id"],
@@ -1116,7 +1121,7 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
     bundle = _mapping(payload, "pre-reviewed theory bundle")
     if set(bundle) != {"schema_version", "release_key", "base_release_id", "profiles"}:
         raise ValueError("pre-reviewed theory bundle has unsupported fields")
-    if bundle.get("schema_version") != _PRE_REVIEWED_BUNDLE_SCHEMA:
+    if bundle.get("schema_version") not in {_PRE_REVIEWED_BUNDLE_SCHEMA, _FINAL_BUNDLE_SCHEMA}:
         raise ValueError("pre-reviewed theory bundle schema is unsupported")
     _required_string(bundle.get("release_key"), "pre-reviewed release key")
     _required_string(bundle.get("base_release_id"), "base release id")
@@ -1247,8 +1252,9 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
                 review_record.get("attestation"), "human review attestation"
             ),
         }
-        if review["review_status"] != KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value:
-            raise ValueError("human pre-review status must be pre_review_completed")
+        expected_status = KnowledgeReviewStatus.REVIEWED.value if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+        if review["review_status"] != expected_status:
+            raise ValueError(f"human review status must be {expected_status}")
         if review["decision"] != "approved_for_internal_match":
             raise ValueError(
                 "human pre-review decision must be approved_for_internal_match"
@@ -1288,6 +1294,7 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
                 sources=sources,
                 review=review,
                 recorded_at=recorded_at.astimezone(UTC),
+                review_status=expected_status,
             )
         )
 
