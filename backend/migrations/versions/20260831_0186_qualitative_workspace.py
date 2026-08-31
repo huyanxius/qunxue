@@ -10,6 +10,22 @@ down_revision: str | Sequence[str] | None = "20260831_0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+_THEME_DECISION_LIFECYCLE_CHECK = """
+(
+    status = 'candidate'
+    AND version = 1
+    AND decided_at IS NULL
+    AND decision_reason IS NULL
+)
+OR
+(
+    status IN ('confirmed', 'rejected')
+    AND version >= 2
+    AND decided_at IS NOT NULL
+    AND decision_reason IS NOT NULL
+)
+"""
+
 
 def upgrade() -> None:
     op.create_table(
@@ -63,13 +79,7 @@ def upgrade() -> None:
             name="ck_research_analysis_themes_status",
         ),
         sa.CheckConstraint(
-            """
-            (status = 'candidate' AND version = 1 AND decided_at IS NULL
-             AND decision_reason IS NULL)
-            OR
-            (status IN ('confirmed', 'rejected') AND version >= 2
-             AND decided_at IS NOT NULL AND decision_reason IS NOT NULL)
-            """,
+            _THEME_DECISION_LIFECYCLE_CHECK,
             name="ck_research_analysis_themes_lifecycle",
         ),
         sa.ForeignKeyConstraint(["task_id"], ["research_tasks.task_id"], ondelete="CASCADE"),
