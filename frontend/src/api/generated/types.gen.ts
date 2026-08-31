@@ -750,6 +750,68 @@ export type AuditResolutionSetResponse = {
 };
 
 /**
+ * BatchUploadItemResponse
+ */
+export type BatchUploadItemResponse = {
+    /**
+     * Error Code
+     */
+    error_code?: string | null;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * BatchUploadResponse
+ */
+export type BatchUploadResponse = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Items
+     */
+    items: Array<BatchUploadItemResponse>;
+};
+
+/**
+ * Body_batch_upload_materials
+ */
+export type BodyBatchUploadMaterials = {
+    /**
+     * Files
+     */
+    files: Array<Blob | File>;
+    material_kind?: MaterialKind;
+};
+
+/**
+ * Body_import_literature_entries
+ */
+export type BodyImportLiteratureEntries = {
+    exchange_format: LiteratureExchangeFormat;
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_research_material
  */
 export type BodyUploadResearchMaterial = {
@@ -1186,6 +1248,11 @@ export type ConfirmedTheoryPlanResponse = {
 };
 
 /**
+ * ConsentScope
+ */
+export type ConsentScope = 'public_use' | 'project_only' | 'team_only' | 'manual_review_only' | 'withdrawn';
+
+/**
  * CreateAnalysisAnnotationRequest
  */
 export type CreateAnalysisAnnotationRequest = {
@@ -1359,6 +1426,38 @@ export type CreateFrameworkRequest = {
 };
 
 /**
+ * CreateLiteratureEntryRequest
+ */
+export type CreateLiteratureEntryRequest = {
+    /**
+     * Attachment Material Ids
+     */
+    attachment_material_ids?: Array<string>;
+    /**
+     * Collection Ids
+     */
+    collection_ids?: Array<string>;
+    /**
+     * Csl Data
+     */
+    csl_data?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Doi
+     */
+    doi?: string | null;
+    /**
+     * Item Type
+     */
+    item_type: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * CreateMatchRunRequest
  */
 export type CreateMatchRunRequest = {
@@ -1381,6 +1480,53 @@ export type CreateMatchRunRequest = {
 };
 
 /**
+ * CreateMaterialBatchRequest
+ */
+export type CreateMaterialBatchRequest = {
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * CreateMaterialCollectionRequest
+ */
+export type CreateMaterialCollectionRequest = {
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Parent Collection Id
+     */
+    parent_collection_id?: string | null;
+};
+
+/**
+ * CreateMaterialRelationRequest
+ */
+export type CreateMaterialRelationRequest = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    relation_type: MaterialRelationType;
+    /**
+     * Source Material Id
+     */
+    source_material_id: string;
+    /**
+     * Target Material Id
+     */
+    target_material_id: string;
+};
+
+/**
  * CreateMethodPlanRequest
  */
 export type CreateMethodPlanRequest = {
@@ -1393,6 +1539,30 @@ export type CreateMethodPlanRequest = {
      * Theory Plan Id
      */
     theory_plan_id: string;
+};
+
+/**
+ * CreateResearchCaseRequest
+ */
+export type CreateResearchCaseRequest = {
+    /**
+     * Attributes
+     */
+    attributes?: {
+        [key: string]: string | number | number | boolean | null;
+    };
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Material Ids
+     */
+    material_ids?: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
 };
 
 /**
@@ -1515,6 +1685,11 @@ export type DeferredTheoryPlanResponse = {
 };
 
 /**
+ * DeidentificationStatus
+ */
+export type DeidentificationStatus = 'not_required' | 'pending' | 'partial' | 'complete';
+
+/**
  * DeidentifiedMaterialInput
  */
 export type DeidentifiedMaterialInput = {
@@ -1577,6 +1752,38 @@ export type DirectInputRequest = {
 };
 
 /**
+ * DoiMetadataCandidateResponse
+ */
+export type DoiMetadataCandidateResponse = {
+    /**
+     * Csl Data
+     */
+    csl_data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Doi
+     */
+    doi: string;
+    /**
+     * Item Type
+     */
+    item_type: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Verified At
+     */
+    verified_at: string;
+};
+
+/**
  * EntryInputAction
  */
 export type EntryInputAction = 'extract_phenomenon_candidates';
@@ -1625,7 +1832,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'doi_metadata_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
@@ -2069,6 +2276,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
+
+/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -2444,6 +2661,69 @@ export type KnowledgeUseEligibilityResponse = {
 };
 
 /**
+ * LiteratureDuplicateHintResponse
+ */
+export type LiteratureDuplicateHintResponse = {
+    /**
+     * Candidate Id
+     */
+    candidate_id: string;
+    /**
+     * Literature Id
+     */
+    literature_id: string;
+    /**
+     * Reasons
+     */
+    reasons: Array<string>;
+};
+
+/**
+ * LiteratureEntryResponse
+ */
+export type LiteratureEntryResponse = {
+    /**
+     * Attachment Material Ids
+     */
+    attachment_material_ids: Array<string>;
+    /**
+     * Collection Ids
+     */
+    collection_ids: Array<string>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Csl Data
+     */
+    csl_data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Doi
+     */
+    doi: string | null;
+    /**
+     * Item Type
+     */
+    item_type: string;
+    /**
+     * Literature Id
+     */
+    literature_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * LiteratureExchangeFormat
+ */
+export type LiteratureExchangeFormat = 'bibtex' | 'ris' | 'csl_json';
+
+/**
  * LoginSessionRequest
  */
 export type LoginSessionRequest = {
@@ -2623,6 +2903,120 @@ export type MatchRunResponse = {
 export type MatchRunStatus = 'generating' | 'awaiting_decision' | 'partial_failure' | 'no_reliable_candidate' | 'completed' | 'failed';
 
 /**
+ * MaterialArchiveInventoryResponse
+ */
+export type MaterialArchiveInventoryResponse = {
+    /**
+     * Catalog Pending Material Ids
+     */
+    catalog_pending_material_ids: Array<string>;
+    /**
+     * Parse Failed Material Ids
+     */
+    parse_failed_material_ids: Array<string>;
+    /**
+     * Pending Deidentification Material Ids
+     */
+    pending_deidentification_material_ids: Array<string>;
+    /**
+     * Restricted Material Ids
+     */
+    restricted_material_ids: Array<string>;
+    /**
+     * Suspected Duplicate Literature Ids
+     */
+    suspected_duplicate_literature_ids: Array<string>;
+};
+
+/**
+ * MaterialArchiveProfileResponse
+ */
+export type MaterialArchiveProfileResponse = {
+    /**
+     * Allows External Model Processing
+     */
+    allows_external_model_processing: boolean;
+    /**
+     * Allows Manual Reading
+     */
+    allows_manual_reading: boolean;
+    /**
+     * Batch Id
+     */
+    batch_id: string | null;
+    /**
+     * Collection Ids
+     */
+    collection_ids: Array<string>;
+    consent_scope: ConsentScope;
+    deidentification_status: DeidentificationStatus;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    model_processing_scope: ModelProcessingScope;
+    research_role: ResearchRole;
+    sensitivity: SensitivityLevel;
+    /**
+     * Specific Type
+     */
+    specific_type: string;
+    stage: ResearchStage;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * MaterialBatchResponse
+ */
+export type MaterialBatchResponse = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * MaterialCollectionResponse
+ */
+export type MaterialCollectionResponse = {
+    /**
+     * Collection Id
+     */
+    collection_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Description
+     */
+    description: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Parent Collection Id
+     */
+    parent_collection_id: string | null;
+};
+
+/**
  * MaterialInputRequest
  */
 export type MaterialInputRequest = {
@@ -2740,6 +3134,38 @@ export type MaterialIntakeRunResponse = {
  * MaterialKind
  */
 export type MaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other';
+
+/**
+ * MaterialRelationResponse
+ */
+export type MaterialRelationResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Relation Id
+     */
+    relation_id: string;
+    relation_type: MaterialRelationType;
+    /**
+     * Source Material Id
+     */
+    source_material_id: string;
+    /**
+     * Target Material Id
+     */
+    target_material_id: string;
+};
+
+/**
+ * MaterialRelationType
+ */
+export type MaterialRelationType = 'derived_from' | 'supplements' | 'translation_of' | 'version_of' | 'describes' | 'related';
 
 /**
  * MethodIntentContract
@@ -3063,6 +3489,11 @@ export type ModelMetadata = {
 };
 
 /**
+ * ModelProcessingScope
+ */
+export type ModelProcessingScope = 'not_assessed' | 'manual_only' | 'local_only' | 'external_allowed';
+
+/**
  * NextResearchStepContract
  */
 export type NextResearchStepContract = {
@@ -3339,6 +3770,45 @@ export type PhenomenonSnapshotResponse = {
 };
 
 /**
+ * ProfessionalMaterialArchiveResponse
+ */
+export type ProfessionalMaterialArchiveResponse = {
+    /**
+     * Batches
+     */
+    batches: Array<MaterialBatchResponse>;
+    /**
+     * Cases
+     */
+    cases: Array<ResearchCaseResponse>;
+    /**
+     * Collections
+     */
+    collections: Array<MaterialCollectionResponse>;
+    /**
+     * Duplicate Hints
+     */
+    duplicate_hints: Array<LiteratureDuplicateHintResponse>;
+    inventory: MaterialArchiveInventoryResponse;
+    /**
+     * Literature
+     */
+    literature: Array<LiteratureEntryResponse>;
+    /**
+     * Profiles
+     */
+    profiles: Array<MaterialArchiveProfileResponse>;
+    /**
+     * Relations
+     */
+    relations: Array<MaterialRelationResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
  * RegisterSessionRequest
  */
 export type RegisterSessionRequest = {
@@ -3582,6 +4052,38 @@ export type ResearchAnalysisSnapshotResponse = {
      * Task Id
      */
     task_id: string;
+};
+
+/**
+ * ResearchCaseResponse
+ */
+export type ResearchCaseResponse = {
+    /**
+     * Attributes
+     */
+    attributes: {
+        [key: string]: string | number | number | boolean | null;
+    };
+    /**
+     * Case Id
+     */
+    case_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Description
+     */
+    description: string | null;
+    /**
+     * Material Ids
+     */
+    material_ids: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
 };
 
 /**
@@ -4206,6 +4708,16 @@ export type ResearchMaterialSegmentResponse = {
 };
 
 /**
+ * ResearchRole
+ */
+export type ResearchRole = 'empirical_material' | 'literature' | 'research_process' | 'prior_draft' | 'dataset' | 'result' | 'other';
+
+/**
+ * ResearchStage
+ */
+export type ResearchStage = 'intake' | 'collection' | 'analysis' | 'writing' | 'archived';
+
+/**
  * ResearchStartProposalResponse
  */
 export type ResearchStartProposalResponse = {
@@ -4748,6 +5260,11 @@ export type SaveTheoryDecisionDraftRequest = {
      */
     use_assignments?: Array<TheoryUseAssignmentInput>;
 };
+
+/**
+ * SensitivityLevel
+ */
+export type SensitivityLevel = 'public' | 'internal' | 'sensitive' | 'highly_sensitive';
 
 /**
  * SessionAction
@@ -5521,6 +6038,34 @@ export type UpdateFrameworkRequest = {
 };
 
 /**
+ * UpdateMaterialArchiveProfileRequest
+ */
+export type UpdateMaterialArchiveProfileRequest = {
+    /**
+     * Batch Id
+     */
+    batch_id?: string | null;
+    /**
+     * Collection Ids
+     */
+    collection_ids?: Array<string>;
+    consent_scope: ConsentScope;
+    deidentification_status: DeidentificationStatus;
+    model_processing_scope: ModelProcessingScope;
+    research_role: ResearchRole;
+    sensitivity: SensitivityLevel;
+    /**
+     * Specific Type
+     */
+    specific_type: string;
+    stage: ResearchStage;
+    /**
+     * Tags
+     */
+    tags?: Array<string>;
+};
+
+/**
  * UpdateMethodPlanRequest
  */
 export type UpdateMethodPlanRequest = {
@@ -5585,6 +6130,34 @@ export type UpdateResearchDocumentRequest = {
      * Source
      */
     source: 'user_edit';
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -8536,6 +9109,361 @@ export type CreateMatchRunResponses = {
 };
 
 export type CreateMatchRunResponse = CreateMatchRunResponses[keyof CreateMatchRunResponses];
+
+export type GetProfessionalMaterialArchiveData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive';
+};
+
+export type GetProfessionalMaterialArchiveErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProfessionalMaterialArchiveError = GetProfessionalMaterialArchiveErrors[keyof GetProfessionalMaterialArchiveErrors];
+
+export type GetProfessionalMaterialArchiveResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProfessionalMaterialArchiveResponse;
+};
+
+export type GetProfessionalMaterialArchiveResponse = GetProfessionalMaterialArchiveResponses[keyof GetProfessionalMaterialArchiveResponses];
+
+export type CreateMaterialBatchData = {
+    body: CreateMaterialBatchRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/batches';
+};
+
+export type CreateMaterialBatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateMaterialBatchError = CreateMaterialBatchErrors[keyof CreateMaterialBatchErrors];
+
+export type CreateMaterialBatchResponses = {
+    /**
+     * Successful Response
+     */
+    201: MaterialBatchResponse;
+};
+
+export type CreateMaterialBatchResponse = CreateMaterialBatchResponses[keyof CreateMaterialBatchResponses];
+
+export type BatchUploadMaterialsData = {
+    body: BodyBatchUploadMaterials;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/batches/{batch_id}/materials';
+};
+
+export type BatchUploadMaterialsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BatchUploadMaterialsError = BatchUploadMaterialsErrors[keyof BatchUploadMaterialsErrors];
+
+export type BatchUploadMaterialsResponses = {
+    /**
+     * Successful Response
+     */
+    207: BatchUploadResponse;
+};
+
+export type BatchUploadMaterialsResponse = BatchUploadMaterialsResponses[keyof BatchUploadMaterialsResponses];
+
+export type CreateResearchCaseData = {
+    body: CreateResearchCaseRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/cases';
+};
+
+export type CreateResearchCaseErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateResearchCaseError = CreateResearchCaseErrors[keyof CreateResearchCaseErrors];
+
+export type CreateResearchCaseResponses = {
+    /**
+     * Successful Response
+     */
+    201: ResearchCaseResponse;
+};
+
+export type CreateResearchCaseResponse = CreateResearchCaseResponses[keyof CreateResearchCaseResponses];
+
+export type CreateMaterialCollectionData = {
+    body: CreateMaterialCollectionRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/collections';
+};
+
+export type CreateMaterialCollectionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateMaterialCollectionError = CreateMaterialCollectionErrors[keyof CreateMaterialCollectionErrors];
+
+export type CreateMaterialCollectionResponses = {
+    /**
+     * Successful Response
+     */
+    201: MaterialCollectionResponse;
+};
+
+export type CreateMaterialCollectionResponse = CreateMaterialCollectionResponses[keyof CreateMaterialCollectionResponses];
+
+export type ResolveDoiMetadataData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query: {
+        /**
+         * Doi
+         */
+        doi: string;
+    };
+    url: '/api/research-tasks/{task_id}/material-archive/doi';
+};
+
+export type ResolveDoiMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ResolveDoiMetadataError = ResolveDoiMetadataErrors[keyof ResolveDoiMetadataErrors];
+
+export type ResolveDoiMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    200: DoiMetadataCandidateResponse;
+};
+
+export type ResolveDoiMetadataResponse = ResolveDoiMetadataResponses[keyof ResolveDoiMetadataResponses];
+
+export type CreateLiteratureEntryData = {
+    body: CreateLiteratureEntryRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/literature';
+};
+
+export type CreateLiteratureEntryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateLiteratureEntryError = CreateLiteratureEntryErrors[keyof CreateLiteratureEntryErrors];
+
+export type CreateLiteratureEntryResponses = {
+    /**
+     * Successful Response
+     */
+    201: LiteratureEntryResponse;
+};
+
+export type CreateLiteratureEntryResponse = CreateLiteratureEntryResponses[keyof CreateLiteratureEntryResponses];
+
+export type ExportLiteratureEntriesData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query: {
+        exchange_format: LiteratureExchangeFormat;
+    };
+    url: '/api/research-tasks/{task_id}/material-archive/literature/export';
+};
+
+export type ExportLiteratureEntriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportLiteratureEntriesError = ExportLiteratureEntriesErrors[keyof ExportLiteratureEntriesErrors];
+
+export type ExportLiteratureEntriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ImportLiteratureEntriesData = {
+    body: BodyImportLiteratureEntries;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/literature/import';
+};
+
+export type ImportLiteratureEntriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportLiteratureEntriesError = ImportLiteratureEntriesErrors[keyof ImportLiteratureEntriesErrors];
+
+export type ImportLiteratureEntriesResponses = {
+    /**
+     * Response Import Literature Entries
+     *
+     * Successful Response
+     */
+    201: Array<LiteratureEntryResponse>;
+};
+
+export type ImportLiteratureEntriesResponse = ImportLiteratureEntriesResponses[keyof ImportLiteratureEntriesResponses];
+
+export type UpdateProfessionalMaterialProfileData = {
+    body: UpdateMaterialArchiveProfileRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/materials/{material_id}';
+};
+
+export type UpdateProfessionalMaterialProfileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateProfessionalMaterialProfileError = UpdateProfessionalMaterialProfileErrors[keyof UpdateProfessionalMaterialProfileErrors];
+
+export type UpdateProfessionalMaterialProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: MaterialArchiveProfileResponse;
+};
+
+export type UpdateProfessionalMaterialProfileResponse = UpdateProfessionalMaterialProfileResponses[keyof UpdateProfessionalMaterialProfileResponses];
+
+export type CreateMaterialRelationData = {
+    body: CreateMaterialRelationRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/material-archive/relations';
+};
+
+export type CreateMaterialRelationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateMaterialRelationError = CreateMaterialRelationErrors[keyof CreateMaterialRelationErrors];
+
+export type CreateMaterialRelationResponses = {
+    /**
+     * Successful Response
+     */
+    201: MaterialRelationResponse;
+};
+
+export type CreateMaterialRelationResponse = CreateMaterialRelationResponses[keyof CreateMaterialRelationResponses];
 
 export type SubmitMaterialIntakeData = {
     body: MaterialIntakeRequest;
