@@ -9,8 +9,12 @@ from qunxue_api.adapters.sqlite.research_document import (
     SqliteResearchDocumentRepository,
 )
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationRef,
+    ResearchDocumentCitationState,
     ResearchDocumentEvidenceRef,
     ResearchDocumentEvidenceSourceKind,
+    ResearchDocumentFormatting,
     ResearchDocumentSection,
     ResearchDocumentSectionStatus,
     ResearchDocumentSnapshot,
@@ -57,6 +61,7 @@ def _create_document_table(engine) -> None:
                 revision_id VARCHAR(36) NOT NULL UNIQUE,
                 title VARCHAR(512) NOT NULL,
                 sections JSON NOT NULL,
+                formatting JSON NOT NULL,
                 analysis_handoff JSON,
                 status VARCHAR(32) NOT NULL,
                 change_summary TEXT NOT NULL,
@@ -137,6 +142,39 @@ def test_repository_restores_personal_evidence_and_the_pinned_analysis_handoff()
             "comparisons": [],
             "unavailable_annotation_ids": [],
         },
+    )
+
+    with Session(engine) as session:
+        SqliteResearchDocumentRepository(session).add(document)
+        session.commit()
+    with Session(engine) as session:
+        restored = SqliteResearchDocumentRepository(session).latest(document.document_id)
+
+    assert restored == document
+    engine.dispose()
+
+
+def test_repository_roundtrips_structured_citations_and_formatting() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    _create_document_table(engine)
+    citation = ResearchDocumentCitationRef(
+        citation_id="citation-1",
+        kind=ResearchDocumentCitationKind.SCHOLARLY,
+        source_id="literature-entry-1",
+        source_version="version-3",
+        locator={"label": "page", "value": "42-44"},
+        state=ResearchDocumentCitationState.NEEDS_VERIFICATION,
+    )
+    document = replace(
+        _document(),
+        sections=(replace(_document().sections[0], citation_refs=(citation,)),),
+        formatting=ResearchDocumentFormatting(
+            template_id="custom",
+            csl_style_id="custom-fieldwork",
+            locale="en-US",
+            custom_csl='<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0"/>',
+            custom_css="body { font-family: serif; }",
+        ),
     )
 
     with Session(engine) as session:

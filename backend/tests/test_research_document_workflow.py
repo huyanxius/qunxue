@@ -301,6 +301,16 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
                 knowledge_release_id="release-final-1",
             ),
         ),
+        citation_refs=(
+            framework.ResearchDocumentCitationRef(
+                citation_id="citation-1",
+                kind=framework.ResearchDocumentCitationKind.SCHOLARLY,
+                source_id="literature-entry-1",
+                source_version="version-3",
+                locator={"label": "page", "value": "42-44"},
+                state=framework.ResearchDocumentCitationState.NEEDS_VERIFICATION,
+            ),
+        ),
     )
     created = workflow.create(
         task_id=UUID(int=1),
@@ -327,6 +337,8 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
     assert "## 研究问题\n\n研究问题的可编辑正文。" in exported.markdown
     assert "evidence-1" in exported.markdown
     assert "source-1" in exported.markdown
+    assert "literature-entry-1" in exported.markdown
+    assert "needs_verification" in exported.markdown
     assert f"document_id: {DOCUMENT_ID}" in exported.markdown
 
 
