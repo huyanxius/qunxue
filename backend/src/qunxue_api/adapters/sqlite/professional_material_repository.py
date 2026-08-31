@@ -15,7 +15,7 @@ from qunxue_api.adapters.sqlite.professional_material_model import (
     MaterialRelationRow,
     ResearchCaseRow,
 )
-from qunxue_api.modules.research_materials.professional import (
+from qunxue_api.modules.research_materials import (
     ConsentScope,
     DeidentificationStatus,
     LiteratureEntry,
