@@ -989,6 +989,20 @@ export type ConfirmFrameworkRequest = {
 };
 
 /**
+ * ConfirmMethodPlanRequest
+ */
+export type ConfirmMethodPlanRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * ConfirmPhenomenonCandidateRequest
  */
 export type ConfirmPhenomenonCandidateRequest = {
@@ -1364,6 +1378,21 @@ export type CreateMatchRunRequest = {
      * Phenomenon Version
      */
     phenomenon_version: number;
+};
+
+/**
+ * CreateMethodPlanRequest
+ */
+export type CreateMethodPlanRequest = {
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    method_kind: MethodKind;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
 };
 
 /**
@@ -2723,6 +2752,33 @@ export type MethodIntentContract = {
 };
 
 /**
+ * MethodKind
+ */
+export type MethodKind = 'qualitative' | 'quantitative' | 'mixed' | 'undecided';
+
+/**
+ * MethodPlanContextItemContract
+ */
+export type MethodPlanContextItemContract = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Evidence Refs
+     */
+    evidence_refs: Array<MethodPlanEvidenceRefContract>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * MethodPlanContract
  */
 export type MethodPlanContract = {
@@ -2746,6 +2802,227 @@ export type MethodPlanContract = {
      * Rationale
      */
     rationale: string;
+};
+
+/**
+ * MethodPlanEvidenceRefContract
+ */
+export type MethodPlanEvidenceRefContract = {
+    /**
+     * Annotation Id
+     */
+    annotation_id?: string | null;
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id?: string | null;
+    /**
+     * Locator
+     */
+    locator?: string | null;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id?: string | null;
+    /**
+     * Segment Id
+     */
+    segment_id?: string | null;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+};
+
+/**
+ * MethodPlanResponse
+ */
+export type MethodPlanResponse = {
+    /**
+     * Actor
+     */
+    actor: string;
+    /**
+     * Change Summary
+     */
+    change_summary: string;
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decision Source
+     */
+    decision_source: string;
+    /**
+     * Ethical Constraints
+     */
+    ethical_constraints: Array<string>;
+    /**
+     * Evidence Ref Ids
+     */
+    evidence_ref_ids: Array<string>;
+    /**
+     * Framework Id
+     */
+    framework_id: string;
+    /**
+     * Framework Version
+     */
+    framework_version: number;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
+    /**
+     * Material Constraints
+     */
+    material_constraints: Array<string>;
+    method_kind: MethodKind;
+    /**
+     * Plan Id
+     */
+    plan_id: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Research Question
+     */
+    research_question: string;
+    /**
+     * Restored From Version
+     */
+    restored_from_version: number | null;
+    /**
+     * Reviews
+     */
+    reviews: Array<MethodPlanReviewContract>;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Sections
+     */
+    sections: Array<MethodPlanSectionContract>;
+    /**
+     * Shared Context
+     */
+    shared_context: Array<MethodPlanContextItemContract>;
+    /**
+     * Stale Reason
+     */
+    stale_reason: string | null;
+    status: MethodPlanStatus;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Concepts
+     */
+    theory_concepts: Array<string>;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string;
+    /**
+     * Theory Plan Version
+     */
+    theory_plan_version: number;
+    /**
+     * Theory Summary
+     */
+    theory_summary: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MethodPlanReviewContract
+ */
+export type MethodPlanReviewContract = {
+    /**
+     * Blocking
+     */
+    blocking: boolean;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Resolved At
+     */
+    resolved_at?: string | null;
+    /**
+     * Review Id
+     */
+    review_id: string;
+};
+
+/**
+ * MethodPlanSectionContract
+ */
+export type MethodPlanSectionContract = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * MethodPlanStatus
+ */
+export type MethodPlanStatus = 'draft' | 'under_review' | 'confirmed' | 'stale';
+
+/**
+ * MethodPlanVersionListResponse
+ */
+export type MethodPlanVersionListResponse = {
+    /**
+     * Items
+     */
+    items: Array<MethodPlanResponse>;
+    /**
+     * Plan Id
+     */
+    plan_id: string;
 };
 
 /**
@@ -3433,6 +3710,7 @@ export type ResearchDocumentExportManifest = {
     knowledge_release: {
         [key: string]: unknown;
     };
+    method_plan: MethodPlanResponse | null;
     /**
      * Model
      */
@@ -4008,7 +4286,7 @@ export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed';
 /**
  * ResearchTaskNavigationAction
  */
-export type ResearchTaskNavigationAction = 'submit_phenomenon' | 'confirm_phenomenon' | 'start_matching' | 'review_theory_candidates' | 'confirm_theory_plan' | 'create_framework' | 'review_framework' | 'confirm_framework' | 'export';
+export type ResearchTaskNavigationAction = 'submit_phenomenon' | 'confirm_phenomenon' | 'start_matching' | 'review_theory_candidates' | 'confirm_theory_plan' | 'create_framework' | 'review_framework' | 'confirm_framework' | 'design_method' | 'export';
 
 /**
  * ResearchTaskNavigationBlockerResponse
@@ -4064,6 +4342,14 @@ export type ResearchTaskNavigationResponse = {
      * Current Material Intake Run Id
      */
     current_material_intake_run_id: string | null;
+    /**
+     * Current Method Plan Id
+     */
+    current_method_plan_id?: string | null;
+    /**
+     * Current Method Plan Status
+     */
+    current_method_plan_status?: string | null;
     /**
      * Current Phenomenon Candidate Id
      */
@@ -4217,7 +4503,7 @@ export type ResearchTaskResponse = {
 /**
  * ResearchTaskStage
  */
-export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' | 'theory_matching' | 'theory_decision' | 'framework_drafting' | 'framework_review' | 'completed';
+export type ResearchTaskStage = 'phenomenon_input' | 'phenomenon_confirmation' | 'theory_matching' | 'theory_decision' | 'framework_drafting' | 'framework_review' | 'method_design' | 'completed';
 
 /**
  * ResearchTaskStatus
@@ -4288,6 +4574,38 @@ export type ResearchTraceResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * ResolveMethodPlanReviewRequest
+ */
+export type ResolveMethodPlanReviewRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RestoreMethodPlanRequest
+ */
+export type RestoreMethodPlanRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Source Version
+     */
+    source_version: number;
 };
 
 /**
@@ -4364,6 +4682,24 @@ export type RetryMatchCandidateRequest = {
      * Expected Match Run Version
      */
     expected_match_run_version: number;
+};
+
+/**
+ * ReviewMethodPlanRequest
+ */
+export type ReviewMethodPlanRequest = {
+    /**
+     * Blocking
+     */
+    blocking?: boolean;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Note
+     */
+    note: string;
 };
 
 /**
@@ -5174,6 +5510,29 @@ export type UpdateFrameworkRequest = {
      * Revision Reason
      */
     revision_reason: string;
+};
+
+/**
+ * UpdateMethodPlanRequest
+ */
+export type UpdateMethodPlanRequest = {
+    /**
+     * Change Summary
+     */
+    change_summary: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    method_kind: MethodKind;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Sections
+     */
+    sections: Array<MethodPlanSectionContract>;
 };
 
 /**
@@ -6741,6 +7100,250 @@ export type GetMaterialIntakeRunResponses = {
 
 export type GetMaterialIntakeRunResponse = GetMaterialIntakeRunResponses[keyof GetMaterialIntakeRunResponses];
 
+export type GetMethodPlanData = {
+    body?: never;
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}';
+};
+
+export type GetMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetMethodPlanError = GetMethodPlanErrors[keyof GetMethodPlanErrors];
+
+export type GetMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type GetMethodPlanResponse = GetMethodPlanResponses[keyof GetMethodPlanResponses];
+
+export type UpdateMethodPlanData = {
+    body: UpdateMethodPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}';
+};
+
+export type UpdateMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateMethodPlanError = UpdateMethodPlanErrors[keyof UpdateMethodPlanErrors];
+
+export type UpdateMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type UpdateMethodPlanResponse = UpdateMethodPlanResponses[keyof UpdateMethodPlanResponses];
+
+export type ConfirmMethodPlanData = {
+    body: ConfirmMethodPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}/confirm';
+};
+
+export type ConfirmMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ConfirmMethodPlanError = ConfirmMethodPlanErrors[keyof ConfirmMethodPlanErrors];
+
+export type ConfirmMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type ConfirmMethodPlanResponse = ConfirmMethodPlanResponses[keyof ConfirmMethodPlanResponses];
+
+export type RestoreMethodPlanData = {
+    body: RestoreMethodPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}/restore';
+};
+
+export type RestoreMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type RestoreMethodPlanError = RestoreMethodPlanErrors[keyof RestoreMethodPlanErrors];
+
+export type RestoreMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type RestoreMethodPlanResponse = RestoreMethodPlanResponses[keyof RestoreMethodPlanResponses];
+
+export type ReviewMethodPlanData = {
+    body: ReviewMethodPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}/reviews';
+};
+
+export type ReviewMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ReviewMethodPlanError = ReviewMethodPlanErrors[keyof ReviewMethodPlanErrors];
+
+export type ReviewMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type ReviewMethodPlanResponse = ReviewMethodPlanResponses[keyof ReviewMethodPlanResponses];
+
+export type ResolveMethodPlanReviewData = {
+    body: ResolveMethodPlanReviewRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+        /**
+         * Review Id
+         */
+        review_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}/reviews/{review_id}/resolve';
+};
+
+export type ResolveMethodPlanReviewErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ResolveMethodPlanReviewError = ResolveMethodPlanReviewErrors[keyof ResolveMethodPlanReviewErrors];
+
+export type ResolveMethodPlanReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanResponse;
+};
+
+export type ResolveMethodPlanReviewResponse = ResolveMethodPlanReviewResponses[keyof ResolveMethodPlanReviewResponses];
+
+export type ListMethodPlanVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/method-plans/{plan_id}/versions';
+};
+
+export type ListMethodPlanVersionsErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListMethodPlanVersionsError = ListMethodPlanVersionsErrors[keyof ListMethodPlanVersionsErrors];
+
+export type ListMethodPlanVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPlanVersionListResponse;
+};
+
+export type ListMethodPlanVersionsResponse = ListMethodPlanVersionsResponses[keyof ListMethodPlanVersionsResponses];
+
 export type ListPhenomenonExamplesData = {
     body?: never;
     path?: never;
@@ -8241,6 +8844,74 @@ export type GetResearchMaterialSegmentResponses = {
 };
 
 export type GetResearchMaterialSegmentResponse = GetResearchMaterialSegmentResponses[keyof GetResearchMaterialSegmentResponses];
+
+export type CreateMethodPlanData = {
+    body: CreateMethodPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/method-plans';
+};
+
+export type CreateMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type CreateMethodPlanError = CreateMethodPlanErrors[keyof CreateMethodPlanErrors];
+
+export type CreateMethodPlanResponses = {
+    /**
+     * Successful Response
+     */
+    201: MethodPlanResponse;
+};
+
+export type CreateMethodPlanResponse = CreateMethodPlanResponses[keyof CreateMethodPlanResponses];
+
+export type GetCurrentMethodPlanData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/method-plans/current';
+};
+
+export type GetCurrentMethodPlanErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetCurrentMethodPlanError = GetCurrentMethodPlanErrors[keyof GetCurrentMethodPlanErrors];
+
+export type GetCurrentMethodPlanResponses = {
+    /**
+     * Response Get Current Method Plan
+     *
+     * Successful Response
+     */
+    200: MethodPlanResponse | null;
+};
+
+export type GetCurrentMethodPlanResponse = GetCurrentMethodPlanResponses[keyof GetCurrentMethodPlanResponses];
 
 export type GetResearchTaskNavigationData = {
     body?: never;
