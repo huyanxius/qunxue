@@ -15,6 +15,7 @@ from qunxue_api.application.research_journey import (
     ResearchJourneyDependencies,
 )
 from qunxue_api.application.research_materials import ResearchMaterialApplication
+from qunxue_api.application.professional_materials import ProfessionalMaterialsApplication
 from qunxue_api.application.research_method import ResearchMethodPlanApplication
 from qunxue_api.application.research_start import (
     ResearchStartApplication,
@@ -36,6 +37,7 @@ __all__ = [
     "ResearchJourneyConfigurationError",
     "ResearchJourneyDependencies",
     "ResearchMaterialApplication",
+    "ProfessionalMaterialsApplication",
     "ResearchMethodPlanApplication",
     "ResearchStartApplication",
     "ResearchStartConfirmationResult",
