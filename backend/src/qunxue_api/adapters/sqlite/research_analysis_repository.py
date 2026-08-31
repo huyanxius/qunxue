@@ -15,23 +15,39 @@ from sqlalchemy.orm import Session
 from qunxue_api.adapters.sqlite.research_analysis_model import (
     ResearchAnalysisWriteRequestRow,
     ResearchAnnotationRow,
+    ResearchCaseProfileRow,
+    ResearchCodebookEntryRow,
     ResearchCodeRow,
     ResearchComparisonRow,
+    ResearchMatrixCellRow,
+    ResearchMemoLinkRow,
     ResearchMemoRow,
+    ResearchMethodPresetRow,
+    ResearchThemeRow,
 )
 from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisCaseProfile,
     AnalysisCode,
     AnalysisCodeStatus,
     AnalysisMemo,
     AnalysisMemoKind,
+    AnalysisMemoLink,
     AnalysisRecordStatus,
+    AnalysisTheme,
     AnalysisWriteRequest,
     CaseComparison,
+    CaseThemeMatrixCell,
+    CodebookEntry,
+    CodebookLifecycle,
     ComparisonFinding,
     ComparisonFindingKind,
+    MatrixSubjectKind,
+    MemoTargetKind,
+    MethodPresetSelection,
     NextResearchStep,
+    QualitativeMethod,
     ResearchAnalysisIdempotencyConflict,
 )
 from qunxue_api.modules.research_materials import MaterialLocator
@@ -375,6 +391,320 @@ class SqliteResearchAnalysisRepository:
         rows = self._owned_rows(ResearchComparisonRow, user_id, task_id)
         return tuple(_comparison(row) for row in rows)
 
+    def add_codebook_entry(self, value: CodebookEntry) -> CodebookEntry:
+        values = {
+            "code_id": str(value.code_id),
+            "user_id": str(value.user_id),
+            "task_id": str(value.task_id),
+            "inclusion_rules": list(value.inclusion_rules),
+            "exclusion_rules": list(value.exclusion_rules),
+            "parent_code_id": _uuid_text(value.parent_code_id),
+            "positive_example_annotation_ids": [
+                str(item) for item in value.positive_example_annotation_ids
+            ],
+            "negative_example_annotation_ids": [
+                str(item) for item in value.negative_example_annotation_ids
+            ],
+            "lifecycle": value.lifecycle.value,
+            "related_code_ids": [str(item) for item in value.related_code_ids],
+            "version": value.version,
+            "updated_at": value.updated_at,
+            "revision_reason": value.revision_reason,
+        }
+        self._upsert_workspace_version(
+            model=ResearchCodebookEntryRow,
+            index_elements=["code_id"],
+            values=values,
+            version=value.version,
+        )
+        persisted = _codebook_entry(
+            self._session.scalar(
+                select(ResearchCodebookEntryRow)
+                .where(ResearchCodebookEntryRow.code_id == str(value.code_id))
+                .execution_options(populate_existing=True)
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("codebook entry was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def get_codebook_entry(
+        self, code_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> CodebookEntry | None:
+        return _codebook_entry(
+            self._session.scalar(
+                select(ResearchCodebookEntryRow).where(
+                    ResearchCodebookEntryRow.code_id == str(code_id),
+                    ResearchCodebookEntryRow.user_id == str(user_id),
+                    ResearchCodebookEntryRow.task_id == str(task_id),
+                )
+            )
+        )
+
+    def list_codebook_entries(self, *, user_id: UUID, task_id: UUID) -> tuple[CodebookEntry, ...]:
+        rows = self._session.scalars(
+            select(ResearchCodebookEntryRow)
+            .where(
+                ResearchCodebookEntryRow.user_id == str(user_id),
+                ResearchCodebookEntryRow.task_id == str(task_id),
+            )
+            .order_by(ResearchCodebookEntryRow.updated_at, ResearchCodebookEntryRow.code_id)
+        )
+        return tuple(_codebook_entry(row) for row in rows)
+
+    def add_theme(self, value: AnalysisTheme) -> AnalysisTheme:
+        values = {
+            "theme_id": str(value.theme_id),
+            "user_id": str(value.user_id),
+            "task_id": str(value.task_id),
+            "label": value.label,
+            "central_concept": value.central_concept,
+            "code_ids": [str(item) for item in value.code_ids],
+            "annotation_ids": [str(item) for item in value.annotation_ids],
+            "source": value.source,
+            "status": value.status.value,
+            "version": value.version,
+            "created_at": value.created_at,
+            "decided_at": value.decided_at,
+            "decision_reason": value.decision_reason,
+        }
+        self._upsert_workspace_version(
+            model=ResearchThemeRow,
+            index_elements=["theme_id"],
+            values=values,
+            version=value.version,
+        )
+        persisted = _theme(
+            self._session.scalar(
+                select(ResearchThemeRow)
+                .where(ResearchThemeRow.theme_id == str(value.theme_id))
+                .execution_options(populate_existing=True)
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("analysis theme was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def get_theme(self, theme_id: UUID, *, user_id: UUID, task_id: UUID) -> AnalysisTheme | None:
+        return _theme(
+            self._session.scalar(
+                select(ResearchThemeRow).where(
+                    ResearchThemeRow.theme_id == str(theme_id),
+                    ResearchThemeRow.user_id == str(user_id),
+                    ResearchThemeRow.task_id == str(task_id),
+                )
+            )
+        )
+
+    def list_themes(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisTheme, ...]:
+        rows = self._session.scalars(
+            select(ResearchThemeRow)
+            .where(
+                ResearchThemeRow.user_id == str(user_id),
+                ResearchThemeRow.task_id == str(task_id),
+            )
+            .order_by(ResearchThemeRow.created_at, ResearchThemeRow.theme_id)
+        )
+        return tuple(_theme(row) for row in rows)
+
+    def add_memo_link(self, value: AnalysisMemoLink) -> AnalysisMemoLink:
+        self._session.execute(
+            insert(ResearchMemoLinkRow)
+            .values(
+                link_id=str(value.link_id),
+                user_id=str(value.user_id),
+                task_id=str(value.task_id),
+                memo_id=str(value.memo_id),
+                target_kind=value.target_kind.value,
+                target_ref=value.target_ref,
+                annotation_ids=[str(item) for item in value.annotation_ids],
+                created_at=value.created_at,
+            )
+            .on_conflict_do_nothing(index_elements=["link_id"])
+        )
+        persisted = _memo_link(
+            self._session.scalar(
+                select(ResearchMemoLinkRow).where(ResearchMemoLinkRow.link_id == str(value.link_id))
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("analysis memo link was not persisted")
+        self._ensure_same_scope(persisted, value)
+        if persisted != value:
+            raise ValueError("analysis memo link identity contains different content")
+        return persisted
+
+    def list_memo_links(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisMemoLink, ...]:
+        rows = self._session.scalars(
+            select(ResearchMemoLinkRow)
+            .where(
+                ResearchMemoLinkRow.user_id == str(user_id),
+                ResearchMemoLinkRow.task_id == str(task_id),
+            )
+            .order_by(ResearchMemoLinkRow.created_at, ResearchMemoLinkRow.link_id)
+        )
+        return tuple(_memo_link(row) for row in rows)
+
+    def add_case_profile(self, value: AnalysisCaseProfile) -> AnalysisCaseProfile:
+        values = {
+            "profile_id": str(value.profile_id),
+            "user_id": str(value.user_id),
+            "task_id": str(value.task_id),
+            "case_ref": value.case_ref,
+            "display_label": value.display_label,
+            "attributes": [list(item) for item in value.attributes],
+            "summary": value.summary,
+            "annotation_ids": [str(item) for item in value.annotation_ids],
+            "memo_ids": [str(item) for item in value.memo_ids],
+            "version": value.version,
+            "updated_at": value.updated_at,
+        }
+        self._upsert_workspace_version(
+            model=ResearchCaseProfileRow,
+            index_elements=["profile_id"],
+            values=values,
+            version=value.version,
+        )
+        persisted = _case_profile(
+            self._session.scalar(
+                select(ResearchCaseProfileRow)
+                .where(ResearchCaseProfileRow.profile_id == str(value.profile_id))
+                .execution_options(populate_existing=True)
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("analysis case profile was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def get_case_profile(
+        self, profile_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> AnalysisCaseProfile | None:
+        return _case_profile(
+            self._session.scalar(
+                select(ResearchCaseProfileRow).where(
+                    ResearchCaseProfileRow.profile_id == str(profile_id),
+                    ResearchCaseProfileRow.user_id == str(user_id),
+                    ResearchCaseProfileRow.task_id == str(task_id),
+                )
+            )
+        )
+
+    def list_case_profiles(
+        self, *, user_id: UUID, task_id: UUID
+    ) -> tuple[AnalysisCaseProfile, ...]:
+        rows = self._session.scalars(
+            select(ResearchCaseProfileRow)
+            .where(
+                ResearchCaseProfileRow.user_id == str(user_id),
+                ResearchCaseProfileRow.task_id == str(task_id),
+            )
+            .order_by(ResearchCaseProfileRow.updated_at, ResearchCaseProfileRow.profile_id)
+        )
+        return tuple(_case_profile(row) for row in rows)
+
+    def add_matrix_cell(self, value: CaseThemeMatrixCell) -> CaseThemeMatrixCell:
+        values = {
+            "cell_id": str(value.cell_id),
+            "user_id": str(value.user_id),
+            "task_id": str(value.task_id),
+            "case_profile_id": str(value.case_profile_id),
+            "subject_kind": value.subject_kind.value,
+            "subject_id": str(value.subject_id),
+            "summary": value.summary,
+            "annotation_ids": [str(item) for item in value.annotation_ids],
+            "memo_ids": [str(item) for item in value.memo_ids],
+            "finding_kinds": [item.value for item in value.finding_kinds],
+            "version": value.version,
+            "updated_at": value.updated_at,
+        }
+        self._upsert_workspace_version(
+            model=ResearchMatrixCellRow,
+            index_elements=["cell_id"],
+            values=values,
+            version=value.version,
+        )
+        persisted = _matrix_cell(
+            self._session.scalar(
+                select(ResearchMatrixCellRow)
+                .where(ResearchMatrixCellRow.cell_id == str(value.cell_id))
+                .execution_options(populate_existing=True)
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("analysis matrix cell was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def list_matrix_cells(self, *, user_id: UUID, task_id: UUID) -> tuple[CaseThemeMatrixCell, ...]:
+        rows = self._session.scalars(
+            select(ResearchMatrixCellRow)
+            .where(
+                ResearchMatrixCellRow.user_id == str(user_id),
+                ResearchMatrixCellRow.task_id == str(task_id),
+            )
+            .order_by(ResearchMatrixCellRow.updated_at, ResearchMatrixCellRow.cell_id)
+        )
+        return tuple(_matrix_cell(row) for row in rows)
+
+    def add_method_selection(self, value: MethodPresetSelection) -> MethodPresetSelection:
+        values = {
+            "user_id": str(value.user_id),
+            "task_id": str(value.task_id),
+            "method": value.method.value,
+            "version": value.version,
+            "updated_at": value.updated_at,
+        }
+        self._upsert_workspace_version(
+            model=ResearchMethodPresetRow,
+            index_elements=["user_id", "task_id"],
+            values=values,
+            version=value.version,
+        )
+        persisted = _method_selection(
+            self._session.scalar(
+                select(ResearchMethodPresetRow)
+                .where(
+                    ResearchMethodPresetRow.user_id == str(value.user_id),
+                    ResearchMethodPresetRow.task_id == str(value.task_id),
+                )
+                .execution_options(populate_existing=True)
+            )
+        )
+        if persisted is None:
+            raise RuntimeError("analysis method preset was not persisted")
+        return persisted
+
+    def get_method_selection(self, *, user_id: UUID, task_id: UUID) -> MethodPresetSelection | None:
+        return _method_selection(
+            self._session.scalar(
+                select(ResearchMethodPresetRow).where(
+                    ResearchMethodPresetRow.user_id == str(user_id),
+                    ResearchMethodPresetRow.task_id == str(task_id),
+                )
+            )
+        )
+
+    def _upsert_workspace_version(
+        self,
+        *,
+        model: Any,
+        index_elements: list[str],
+        values: dict[str, object],
+        version: int,
+    ) -> None:
+        self._session.execute(
+            insert(model)
+            .values(**values)
+            .on_conflict_do_update(
+                index_elements=index_elements,
+                set_={key: value for key, value in values.items() if key not in index_elements},
+                where=model.version < version,
+            )
+        )
+
     def _save_decision(
         self,
         *,
@@ -628,4 +958,130 @@ def _comparison(row: ResearchComparisonRow | None) -> CaseComparison | None:
         tool_call_id=row.tool_call_id,
         decided_at=_utc(row.decided_at),
         decision_reason=row.decision_reason,
+    )
+
+
+def _codebook_entry(row: ResearchCodebookEntryRow | None) -> CodebookEntry | None:
+    if row is None:
+        return None
+    updated_at = _utc(row.updated_at)
+    if updated_at is None:
+        raise ValueError("codebook entry is missing updated_at")
+    return CodebookEntry(
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        code_id=UUID(row.code_id),
+        inclusion_rules=tuple(row.inclusion_rules),
+        exclusion_rules=tuple(row.exclusion_rules),
+        parent_code_id=UUID(row.parent_code_id) if row.parent_code_id else None,
+        positive_example_annotation_ids=tuple(
+            UUID(item) for item in row.positive_example_annotation_ids
+        ),
+        negative_example_annotation_ids=tuple(
+            UUID(item) for item in row.negative_example_annotation_ids
+        ),
+        lifecycle=CodebookLifecycle(row.lifecycle),
+        related_code_ids=tuple(UUID(item) for item in row.related_code_ids),
+        version=row.version,
+        updated_at=updated_at,
+        revision_reason=row.revision_reason,
+    )
+
+
+def _theme(row: ResearchThemeRow | None) -> AnalysisTheme | None:
+    if row is None:
+        return None
+    created_at = _utc(row.created_at)
+    if created_at is None:
+        raise ValueError("analysis theme is missing created_at")
+    return AnalysisTheme(
+        theme_id=UUID(row.theme_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        label=row.label,
+        central_concept=row.central_concept,
+        code_ids=tuple(UUID(item) for item in row.code_ids),
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        source=row.source,
+        status=AnalysisRecordStatus(row.status),
+        version=row.version,
+        created_at=created_at,
+        decided_at=_utc(row.decided_at),
+        decision_reason=row.decision_reason,
+    )
+
+
+def _memo_link(row: ResearchMemoLinkRow | None) -> AnalysisMemoLink | None:
+    if row is None:
+        return None
+    created_at = _utc(row.created_at)
+    if created_at is None:
+        raise ValueError("analysis memo link is missing created_at")
+    return AnalysisMemoLink(
+        link_id=UUID(row.link_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        memo_id=UUID(row.memo_id),
+        target_kind=MemoTargetKind(row.target_kind),
+        target_ref=row.target_ref,
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        created_at=created_at,
+    )
+
+
+def _case_profile(row: ResearchCaseProfileRow | None) -> AnalysisCaseProfile | None:
+    if row is None:
+        return None
+    updated_at = _utc(row.updated_at)
+    if updated_at is None:
+        raise ValueError("analysis case profile is missing updated_at")
+    return AnalysisCaseProfile(
+        profile_id=UUID(row.profile_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        case_ref=row.case_ref,
+        display_label=row.display_label,
+        attributes=tuple((item[0], item[1]) for item in row.attributes),
+        summary=row.summary,
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        memo_ids=tuple(UUID(item) for item in row.memo_ids),
+        version=row.version,
+        updated_at=updated_at,
+    )
+
+
+def _matrix_cell(row: ResearchMatrixCellRow | None) -> CaseThemeMatrixCell | None:
+    if row is None:
+        return None
+    updated_at = _utc(row.updated_at)
+    if updated_at is None:
+        raise ValueError("analysis matrix cell is missing updated_at")
+    return CaseThemeMatrixCell(
+        cell_id=UUID(row.cell_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        case_profile_id=UUID(row.case_profile_id),
+        subject_kind=MatrixSubjectKind(row.subject_kind),
+        subject_id=UUID(row.subject_id),
+        summary=row.summary,
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        memo_ids=tuple(UUID(item) for item in row.memo_ids),
+        finding_kinds=tuple(ComparisonFindingKind(item) for item in row.finding_kinds),
+        version=row.version,
+        updated_at=updated_at,
+    )
+
+
+def _method_selection(row: ResearchMethodPresetRow | None) -> MethodPresetSelection | None:
+    if row is None:
+        return None
+    updated_at = _utc(row.updated_at)
+    if updated_at is None:
+        raise ValueError("analysis method preset is missing updated_at")
+    return MethodPresetSelection(
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        method=QualitativeMethod(row.method),
+        version=row.version,
+        updated_at=updated_at,
     )

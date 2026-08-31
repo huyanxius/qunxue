@@ -33,6 +33,45 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('persists a qualitative method choice and refreshes the stable workspace snapshot', async () => {
+    const analysisSnapshot = {
+      task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [],
+      method_presets: [
+        { method: 'thematic_analysis', label: '主题分析', primary_view: 'themes', matrix_axes: ['个案', '主题'], prompts: '发展共享意义模式。', guardrails: '代码不等于主题。' },
+        { method: 'case_study', label: '个案研究', primary_view: 'case_matrix', matrix_axes: ['个案', '分析命题'], prompts: '先做个案内解释。', guardrails: '属性不代替个案解释。' },
+      ],
+      workspace: {
+        schema_version: 'qualitative-workspace-v1', content_hash: 'f'.repeat(64),
+        method_preset: { method: 'thematic_analysis', version: 0, updated_at: '1970-01-01T00:00:00Z' },
+        codebook_entries: [], memo_links: [], case_profiles: [], formal_themes: [], candidate_themes: [], matrix_cells: [],
+      },
+    }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = requestOf(input, init)
+      const path = new URL(request.url).pathname
+      if (path.endsWith('/analysis/workspace/method') && request.method === 'PUT') {
+        return response({ method: 'case_study', version: 1, updated_at: '2026-08-31T00:00:00Z' })
+      }
+      if (path.endsWith('/analysis')) return response(analysisSnapshot)
+      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
+      return response({ task_id: 'task-1', items: [material] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
+    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(await within(dialog).findByRole('button', { name: '分析' }))
+    const method = await within(dialog).findByRole('combobox', { name: '方法取向' })
+    fireEvent.change(method, { target: { value: 'case_study' } })
+
+    await waitFor(() => expect(fetchMock.mock.calls.some((call) => {
+      const request = requestOf(...call)
+      return request.method === 'PUT' && new URL(request.url).pathname.endsWith('/analysis/workspace/method')
+    })).toBe(true))
+    await waitFor(() => expect(fetchMock.mock.calls.filter((call) => new URL(requestOf(...call).url).pathname.endsWith('/analysis'))).toHaveLength(2))
+  })
+
   it('paginates long source text and exposes document search instead of rendering every segment at once', async () => {
     const segments = Array.from({ length: 42 }, (_, index) => ({
       segment_id: `segment-${index + 1}`,

@@ -7,12 +7,18 @@ import type {
   ResearchAnalysisSnapshot,
 } from './researchAnalysisModel'
 import {
+  attachAnalysisMemo,
+  configureCodebookEntry,
   createAnalysisAnnotation,
   createAnalysisCode,
   createAnalysisMemo,
+  createAnalysisTheme,
   decideAnalysisCode,
   decideAnalysisMemo,
   getAnalysisSnapshot,
+  saveAnalysisCaseProfile,
+  saveCaseThemeMatrixCell,
+  setQualitativeMethod,
 } from './researchAnalysisApi'
 
 afterEach(() => {
@@ -123,5 +129,51 @@ describe('research analysis generated-client boundary', () => {
     expect(await codeRequest.json()).toEqual({ decision: 'confirmed', expected_version: 2, reason: '已核对原文' })
     expect(new URL(memoRequest.url).pathname).toContain('/memos/memo-1/decision')
     expect(await memoRequest.json()).toEqual({ decision: 'rejected', expected_version: 4, reason: '过度概括' })
+  })
+
+  it('uses generated workspace operations for codebook, themes, memos, cases, matrix, and method', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = requestOf(input, init)
+      return json({ path: new URL(request.url).pathname, body: await request.clone().json() }, request.method === 'POST' ? 201 : 200)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await configureCodebookEntry('task-1', 'code-1', {
+      expected_version: null,
+      inclusion_rules: ['明确描述渠道'],
+      exclusion_rules: ['只描述结果'],
+      parent_code_id: null,
+      positive_example_annotation_ids: ['annotation-1'],
+      negative_example_annotation_ids: ['annotation-2'],
+    })
+    await createAnalysisTheme('task-1', {
+      label: '制度资源的多重入口', central_concept: '正式与非正式入口并存。',
+      code_ids: ['code-1'], annotation_ids: ['annotation-1', 'annotation-2'],
+    })
+    await attachAnalysisMemo('task-1', {
+      memo_id: 'memo-1', target_kind: 'code', target_ref: 'code-1', annotation_ids: ['annotation-2'],
+    })
+    await saveAnalysisCaseProfile('task-1', {
+      expected_version: null, case_ref: 'case-ref-1', display_label: '县城个案',
+      attributes: [{ name: '地区', value: '县城' }], summary: '依靠邻里网络。',
+      annotation_ids: ['annotation-2'], memo_ids: ['memo-1'],
+    })
+    await saveCaseThemeMatrixCell('task-1', {
+      expected_version: null, case_profile_id: 'profile-1', subject_kind: 'theme', subject_id: 'theme-1',
+      summary: '构成反例。', annotation_ids: ['annotation-2'], memo_ids: ['memo-1'],
+      finding_kinds: ['counterexample'],
+    })
+    await setQualitativeMethod('task-1', { method: 'case_study', expected_version: null })
+
+    const requests = fetchMock.mock.calls.map((call) => requestOf(...call))
+    expect(requests.map((request) => request.method)).toEqual(['PUT', 'POST', 'POST', 'POST', 'PUT', 'PUT'])
+    expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+      '/api/research-tasks/task-1/analysis/workspace/codebook/code-1',
+      '/api/research-tasks/task-1/analysis/workspace/themes',
+      '/api/research-tasks/task-1/analysis/workspace/memo-links',
+      '/api/research-tasks/task-1/analysis/workspace/cases',
+      '/api/research-tasks/task-1/analysis/workspace/matrix-cell',
+      '/api/research-tasks/task-1/analysis/workspace/method',
+    ])
   })
 })
