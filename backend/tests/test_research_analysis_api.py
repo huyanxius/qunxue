@@ -408,3 +408,148 @@ def test_case_comparison_api_is_idempotent_reachable_and_uses_cas_decisions(
         paths["/api/research-tasks/{task_id}/analysis/comparisons"]["post"]["operationId"]
         == "create_research_case_comparison"
     )
+
+
+def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_method(
+    client: TestClient,
+) -> None:
+    _authenticate(client)
+    task_id = _task(client)
+    material_a, segment_a = _material(
+        client,
+        task_id,
+        filename="城市访谈.txt",
+        text="单位群里发布了补贴消息，受访者当天就完成了申请。",
+    )
+    material_b, segment_b = _material(
+        client,
+        task_id,
+        filename="县城访谈.txt",
+        text="没有单位渠道，邻居转告后受访者也完成了申请。",
+    )
+    annotation_a = _annotation(
+        client,
+        task_id,
+        material_a,
+        segment_a,
+        quote="单位群里发布了补贴消息",
+        case_label="城市个案",
+    )
+    annotation_b = _annotation(
+        client,
+        task_id,
+        material_b,
+        segment_b,
+        quote="邻居转告后受访者也完成了申请",
+        case_label="县城个案",
+    )
+    code = client.post(
+        f"/api/research-tasks/{task_id}/analysis/codes",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "label": "资源信息渠道",
+            "definition": "获得制度资源信息的正式或非正式渠道。",
+            "annotation_ids": [annotation_a["annotation_id"], annotation_b["annotation_id"]],
+            "rationale": "两段原文呈现了不同渠道。",
+        },
+    ).json()
+    memo = client.post(
+        f"/api/research-tasks/{task_id}/analysis/memos",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "title": "组织渠道并非必要条件",
+            "content": "县城个案构成对单位渠道必要性的反例。",
+            "memo_kind": "analytic",
+            "annotation_ids": [annotation_b["annotation_id"]],
+            "code_ids": [code["code_id"]],
+        },
+    ).json()
+
+    codebook = client.put(
+        f"/api/research-tasks/{task_id}/analysis/workspace/codebook/{code['code_id']}",
+        json={
+            "expected_version": None,
+            "inclusion_rules": ["明确说出信息或资源进入渠道"],
+            "exclusion_rules": ["只描述资源结果，没有渠道过程"],
+            "parent_code_id": None,
+            "positive_example_annotation_ids": [annotation_a["annotation_id"]],
+            "negative_example_annotation_ids": [annotation_b["annotation_id"]],
+        },
+    )
+    assert codebook.status_code == 200, codebook.text
+    theme = client.post(
+        f"/api/research-tasks/{task_id}/analysis/workspace/themes",
+        json={
+            "label": "制度资源的多重入口",
+            "central_concept": "正式组织与非正式网络都可能构成资源入口。",
+            "code_ids": [code["code_id"]],
+            "annotation_ids": [annotation_a["annotation_id"], annotation_b["annotation_id"]],
+        },
+    )
+    assert theme.status_code == 201, theme.text
+    assert theme.json()["status"] == "confirmed"
+    memo_link = client.post(
+        f"/api/research-tasks/{task_id}/analysis/workspace/memo-links",
+        json={
+            "memo_id": memo["memo_id"],
+            "target_kind": "code",
+            "target_ref": code["code_id"],
+            "annotation_ids": [annotation_b["annotation_id"]],
+        },
+    )
+    assert memo_link.status_code == 201, memo_link.text
+    profile = client.post(
+        f"/api/research-tasks/{task_id}/analysis/workspace/cases",
+        json={
+            "expected_version": None,
+            "case_ref": "opaque-case-county",
+            "display_label": "县城个案",
+            "attributes": [{"name": "地区", "value": "县城"}],
+            "summary": "主要依靠非正式网络取得资源信息。",
+            "annotation_ids": [annotation_b["annotation_id"]],
+            "memo_ids": [memo["memo_id"]],
+        },
+    )
+    assert profile.status_code == 200, profile.text
+    matrix = client.put(
+        f"/api/research-tasks/{task_id}/analysis/workspace/matrix-cell",
+        json={
+            "expected_version": None,
+            "case_profile_id": profile.json()["profile_id"],
+            "subject_kind": "theme",
+            "subject_id": theme.json()["theme_id"],
+            "summary": "该个案反驳了单位渠道是必要条件的解释。",
+            "annotation_ids": [annotation_b["annotation_id"]],
+            "memo_ids": [memo["memo_id"]],
+            "finding_kinds": ["counterexample", "evidence_gap"],
+        },
+    )
+    assert matrix.status_code == 200, matrix.text
+    method = client.put(
+        f"/api/research-tasks/{task_id}/analysis/workspace/method",
+        json={"method": "case_study", "expected_version": None},
+    )
+    assert method.status_code == 200, method.text
+
+    snapshot = client.get(f"/api/research-tasks/{task_id}/analysis")
+    assert snapshot.status_code == 200
+    workspace = snapshot.json()["workspace"]
+    assert workspace["schema_version"] == "qualitative-workspace-v1"
+    assert workspace["content_hash"]
+    assert workspace["method_preset"]["method"] == "case_study"
+    assert workspace["codebook_entries"][0]["code_id"] == code["code_id"]
+    assert workspace["formal_themes"][0]["theme_id"] == theme.json()["theme_id"]
+    assert workspace["case_profiles"][0]["case_ref"] == "opaque-case-county"
+    assert workspace["matrix_cells"][0]["finding_kinds"] == [
+        "counterexample",
+        "evidence_gap",
+    ]
+    assert {item["method"] for item in snapshot.json()["method_presets"]} == {
+        "thematic_analysis",
+        "grounded_theory",
+        "ethnography",
+        "case_study",
+        "narrative_research",
+        "discourse_conversation_analysis",
+        "literature_review",
+    }
