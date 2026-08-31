@@ -30,6 +30,7 @@ from qunxue_api.adapters.research_agent import (
     SiliconFlowRerankerProvider,
 )
 from qunxue_api.adapters.research_materials import parse_material
+from qunxue_api.adapters.research_materials.doi import CrossrefDoiMetadataResolver
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     HybridRetriever,
@@ -56,6 +57,9 @@ from qunxue_api.adapters.sqlite.research_document_proposal import (
 )
 from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
+)
+from qunxue_api.adapters.sqlite.professional_material_repository import (
+    SqliteProfessionalMaterialRepository,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
 from qunxue_api.adapters.sqlite.research_start_proposal import (
@@ -84,10 +88,14 @@ from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_materials import router as research_materials_router
+from qunxue_api.api.routes.professional_materials import (
+    router as professional_materials_router,
+)
 from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
+    ProfessionalMaterialsApplication,
     DisciplinaryAgentApplication,
     ResearchAnalysisApplication,
     ResearchDocumentApplication,
@@ -315,6 +323,21 @@ def create_app(
             )
 
     app.state.research_material_application_scope = research_material_application_scope
+
+    @contextmanager
+    def professional_materials_application_scope() -> Iterator[ProfessionalMaterialsApplication]:
+        with resolved_database.session() as session:
+            yield ProfessionalMaterialsApplication(
+                archive=SqliteProfessionalMaterialRepository(session),
+                materials=SqliteResearchMaterialRepository(session),
+                research_tasks=SqliteResearchTaskRepository(session),
+                commit=session.commit,
+                doi_resolver=CrossrefDoiMetadataResolver(),
+            )
+
+    app.state.professional_materials_application_scope = (
+        professional_materials_application_scope
+    )
 
     @contextmanager
     def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
@@ -592,6 +615,7 @@ def create_app(
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
     app.include_router(research_materials_router)
+    app.include_router(professional_materials_router)
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)
     app.include_router(phenomena_router)
