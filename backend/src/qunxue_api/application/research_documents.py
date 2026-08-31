@@ -18,6 +18,7 @@ from qunxue_api.modules.research_framework import (
     ResearchDocumentCompletionCheck,
     ResearchDocumentCompletionGate,
     ResearchDocumentEvidenceSourceKind,
+    ResearchDocumentFormatting,
     ResearchDocumentMarkdownExport,
     ResearchDocumentProposalSnapshot,
     ResearchDocumentProposalStatus,
@@ -253,6 +254,7 @@ class ResearchDocumentApplication:
         change_summary: str,
         actor: str,
         idempotency_key: str,
+        formatting: ResearchDocumentFormatting | None = None,
     ) -> ResearchDocumentSnapshot:
         receipt = self._mutations.claim(
             user_id=user_id,
@@ -264,6 +266,17 @@ class ResearchDocumentApplication:
                     "sections": _sections_payload(sections),
                     "change_summary": change_summary,
                     "actor": actor,
+                    "formatting": (
+                        {
+                            "template_id": formatting.template_id,
+                            "csl_style_id": formatting.csl_style_id,
+                            "locale": formatting.locale,
+                            "custom_csl": formatting.custom_csl,
+                            "custom_css": formatting.custom_css,
+                        }
+                        if formatting is not None
+                        else None
+                    ),
                 }
             ),
         )
@@ -293,6 +306,7 @@ class ResearchDocumentApplication:
                 change_summary=change_summary,
                 actor=actor,
                 analysis_handoff=analysis_handoff,
+                formatting=formatting,
             )
             self._invalidate_method_plan_if_needed(
                 current.task_id, "研究框架版本已变化，旧方法计划需要重新确认。"
@@ -867,6 +881,17 @@ def _sections_payload(
                 }
                 for evidence in section.evidence_refs
             ],
+            "citation_refs": [
+                {
+                    "citation_id": citation.citation_id,
+                    "kind": citation.kind.value,
+                    "source_id": citation.source_id,
+                    "source_version": citation.source_version,
+                    "locator": citation.locator,
+                    "state": citation.state.value,
+                }
+                for citation in section.citation_refs
+            ],
         }
         for section in sections
     ]
@@ -1093,6 +1118,31 @@ def _export_manifest(
     )
     return {
         "schema_version": "research-delivery-v2",
+        "document_identity": {
+            "document_id": str(document.document_id),
+            "revision_id": str(document.revision_id),
+            "version": document.version,
+        },
+        "formatting": {
+            "template_id": document.formatting.template_id,
+            "csl_style_id": document.formatting.csl_style_id,
+            "locale": document.formatting.locale,
+            "custom_csl": document.formatting.custom_csl,
+            "custom_css": document.formatting.custom_css,
+        },
+        "citation_audit": [
+            {
+                "section_id": section.section_id,
+                "citation_id": citation.citation_id,
+                "kind": citation.kind.value,
+                "source_id": citation.source_id,
+                "source_version": citation.source_version,
+                "locator": citation.locator,
+                "state": citation.state.value,
+            }
+            for section in document.sections
+            for citation in section.citation_refs
+        ],
         "phenomenon": {
             "phenomenon_query_id": str(phenomenon.phenomenon_query_id),
             "version": phenomenon.version,
