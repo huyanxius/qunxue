@@ -9,6 +9,8 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     service: str
     runtime_mode: Literal["mock", "base", "sft"]
+    provider: str
+    model_version: str
     persistence: Literal["sqlite"]
     contract_version: str
     capability: Literal["unavailable"] | ModelCapability

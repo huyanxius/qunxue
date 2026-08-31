@@ -35,15 +35,22 @@ def get_health(request: Request) -> HealthResponse | JSONResponse:
     release = request.app.state.knowledge_catalog.current_release(
         purpose=KnowledgeUsePurpose.BROWSE
     )
-    if settings.runtime_mode != "mock":
+    runtime_mode = descriptor.capability_tier
+    if runtime_mode != "mock":
         try:
             match_release = request.app.state.knowledge_catalog.current_release(
                 purpose=KnowledgeUsePurpose.MATCH
             )
-            request.app.state.knowledge_retriever.require_ready_manifest(
-                knowledge_release_id=match_release.knowledge_release_id,
-                release_content_hash=match_release.content_hash,
+            require_ready_manifest = getattr(
+                request.app.state.knowledge_retriever,
+                "require_ready_manifest",
+                None,
             )
+            if callable(require_ready_manifest):
+                require_ready_manifest(
+                    knowledge_release_id=match_release.knowledge_release_id,
+                    release_content_hash=match_release.content_hash,
+                )
         except (LookupError, RetrievalPipelineUnavailable):
             body = ErrorResponse(
                 error=ErrorDetail(
@@ -61,7 +68,9 @@ def get_health(request: Request) -> HealthResponse | JSONResponse:
     return HealthResponse(
         status="ok",
         service=settings.app_name,
-        runtime_mode=settings.runtime_mode,
+        runtime_mode=runtime_mode,
+        provider=descriptor.provider,
+        model_version=descriptor.model_version,
         persistence="sqlite",
         contract_version=settings.contract_version,
         capability=descriptor.capability_tier,

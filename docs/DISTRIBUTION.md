@@ -38,7 +38,7 @@ cd backend && uv run alembic upgrade head
 curl --fail http://127.0.0.1:8000/api/health
 ```
 
-健康响应中的 `runtime_mode`、`capability`、`persistence` 和 `knowledge_release_id` 是服务配置与当前知识发布的事实来源；独立 Agent 请求还要以该请求的 provider、运行记录和引用版本为准。页面上的对话、检索或知识条目不应被解读为超出这些证据的能力承诺。
+健康响应中的 `runtime_mode`、`provider`、`model_version`、`capability`、`persistence` 和 `knowledge_release_id` 是服务配置与当前知识发布的事实来源；独立 Agent 请求还要以该请求的 provider、运行记录和引用版本为准。页面上的对话、检索或知识条目不应被解读为超出这些证据的能力承诺。
 
 | 配置 | 含义 | 可以对外怎么说 |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ curl --fail http://127.0.0.1:8000/api/health
 | `QUNXUE_RUNTIME_MODE=base` | OpenAI-compatible 模型 | 只有健康检查、真实请求和引用链都通过后，才能称为真实模型运行 |
 | `QUNXUE_RUNTIME_MODE=sft` | 带受控资源标识的兼容模型 | 需额外验证资源权限、模型版本和审计记录 |
 
-对于 `QUNXUE_RUNTIME_MODE=base` 或 `sft`，`QUNXUE_MODEL_BASE_URL` 与 `QUNXUE_MODEL_NAME` 是必填项，缺少时应用应启动失败。当前零配置路径由模型网关明确使用确定性 mock；健康接口只证明这层配置。独立 Agent 可能按自身配置选择兼容 Provider，即使健康响应仍显示 `mock`，也必须从该次运行记录中的 provider、模型名、引用链和发布版本逐项确认，不能用 API key 或健康响应推断真实模型已接通。
+只要提供非空 `QUNXUE_MODEL_API_KEY`，系统会自动使用默认的 DeepSeek OpenAI-compatible endpoint 和 `deepseek-v4-flash`；可选的 `QUNXUE_MODEL_BASE_URL` 与 `QUNXUE_MODEL_NAME` 用于覆盖默认值。没有模型 key 时，显式 `base` 或 `sft` 仍要求完整模型配置。只提供模型 key 时，理论匹配使用当前 final MATCH 发布中的 release-bound 词法目录检索，不要求额外检索密钥。当前零配置路径由模型网关明确使用确定性 mock；健康接口返回实际装配的 provider、模型和运行模式。
 
 ## 数据、备份与升级
 
@@ -81,6 +81,6 @@ curl --fail http://127.0.0.1:8000/api/health
 ## 常见故障
 
 - **页面出现 Vite overlay 或找不到模块**：在 `frontend` 目录重新执行 `npm ci`，确认 lockfile 与代码来自同一版本；不要手删依赖来绕过错误。
-- **健康检查是 `runtime_mode=mock`**：这是默认且诚实的零配置状态。需要真实模型时按上面的变量配置并重新启动 API。
+- **健康检查仍是 `runtime_mode=mock`**：确认 `QUNXUE_MODEL_API_KEY` 非空并重启 API；健康响应会直接显示实际 provider、模型和运行模式。
 - **浏览器收到 401**：先确认 API 与浏览器使用同一主机名（`localhost` 与 `127.0.0.1` 不要混用），再检查 cookie 和 CORS 配置。
 - **数据库迁移失败**：停止旧进程，备份数据库后执行 `cd backend && uv run alembic upgrade head`，保留完整错误输出。

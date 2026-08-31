@@ -2056,9 +2056,17 @@ export type HealthResponse = {
      */
     knowledge_release_id: string | null;
     /**
+     * Model Version
+     */
+    model_version: string;
+    /**
      * Persistence
      */
     persistence: 'sqlite';
+    /**
+     * Provider
+     */
+    provider: string;
     /**
      * Runtime Mode
      */
