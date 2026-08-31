@@ -12,6 +12,7 @@ from qunxue_api.modules.research_materials.domain import (
     ResearchMaterial,
 )
 from qunxue_api.modules.research_materials.errors import (
+    DoiMetadataUnavailable,
     MaterialDeleted,
     MaterialIdempotencyConflict,
     MaterialNotFound,
@@ -21,10 +22,43 @@ from qunxue_api.modules.research_materials.errors import (
     ResearchMaterialError,
     UnsupportedMaterialFormat,
 )
+from qunxue_api.modules.research_materials.literature_exchange import (
+    export_literature_entries,
+    import_literature_entries,
+)
 from qunxue_api.modules.research_materials.ports import ResearchMaterialRepository
+from qunxue_api.modules.research_materials.professional import (
+    CaseAttributeValue,
+    ConsentScope,
+    DeidentificationStatus,
+    DoiMetadataCandidate,
+    ImportedLiteratureRecord,
+    LiteratureDuplicateHint,
+    LiteratureEntry,
+    LiteratureExchangeFormat,
+    MaterialArchiveInventory,
+    MaterialArchiveProfile,
+    MaterialBatch,
+    MaterialCollection,
+    MaterialRelation,
+    MaterialRelationType,
+    ModelProcessingScope,
+    ProfessionalMaterialArchive,
+    ProfessionalMaterialArchiveView,
+    ResearchCase,
+    ResearchRole,
+    ResearchStage,
+    SensitivityLevel,
+    normalize_doi,
+)
+from qunxue_api.modules.research_materials.professional_ports import (
+    DoiMetadataResolver,
+    ProfessionalMaterialRepository,
+)
 from qunxue_api.modules.research_materials.service import ResearchMaterialService
 
 __all__ = [
+    "DoiMetadataUnavailable",
     "MaterialBlock",
     "MaterialDeleted",
     "MaterialFormat",
@@ -44,4 +78,30 @@ __all__ = [
     "ResearchMaterialRepository",
     "ResearchMaterialService",
     "UnsupportedMaterialFormat",
+    "CaseAttributeValue",
+    "ConsentScope",
+    "DeidentificationStatus",
+    "DoiMetadataCandidate",
+    "DoiMetadataResolver",
+    "ImportedLiteratureRecord",
+    "LiteratureEntry",
+    "LiteratureDuplicateHint",
+    "LiteratureExchangeFormat",
+    "MaterialArchiveProfile",
+    "MaterialArchiveInventory",
+    "MaterialBatch",
+    "MaterialCollection",
+    "MaterialRelation",
+    "MaterialRelationType",
+    "ModelProcessingScope",
+    "ProfessionalMaterialArchive",
+    "ProfessionalMaterialArchiveView",
+    "ProfessionalMaterialRepository",
+    "ResearchCase",
+    "ResearchRole",
+    "ResearchStage",
+    "SensitivityLevel",
+    "export_literature_entries",
+    "import_literature_entries",
+    "normalize_doi",
 ]

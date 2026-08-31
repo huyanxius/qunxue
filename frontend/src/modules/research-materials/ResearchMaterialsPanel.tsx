@@ -30,6 +30,7 @@ import {
 import {
   ResearchAnalysisWorkspace,
 } from './ResearchAnalysisWorkspace'
+import { ProfessionalMaterialArchivePanel } from './ProfessionalMaterialArchive'
 import type { ResearchAnalysisDecision } from './ResearchAnalysisCandidateCard'
 import {
   deleteResearchMaterial,
@@ -136,7 +137,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [annotationReflection, setAnnotationReflection] = useState('')
   const [annotationCaseLabel, setAnnotationCaseLabel] = useState('')
   const [annotationObservedAt, setAnnotationObservedAt] = useState('')
-  const [detailMode, setDetailMode] = useState<'source' | 'analysis'>('source')
+  const [detailMode, setDetailMode] = useState<'source' | 'analysis' | 'archive'>('source')
   const [readerPage, setReaderPage] = useState(0)
   const [readerQuery, setReaderQuery] = useState('')
   const [readerFilter, setReaderFilter] = useState<'all' | 'headings'>('all')
@@ -653,10 +654,18 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                 <div className="research-materials__detail-modes" aria-label="材料视图">
                   <button type="button" aria-pressed={detailMode === 'source'} onClick={() => setDetailMode('source')}>原文</button>
                   <button type="button" aria-pressed={detailMode === 'analysis'} onClick={() => setDetailMode('analysis')}>分析</button>
+                  <button type="button" aria-pressed={detailMode === 'archive'} onClick={() => setDetailMode('archive')}>档案</button>
                 </div>
                 {analysisNotice ? <p className="research-materials__analysis-notice" role="status">{analysisNotice}</p> : null}
                 {analysisError ? <p className="research-materials__detail-note is-error" role="alert"><WarningCircleIcon size={15} />{analysisError}</p> : null}
-                {detailMode === 'source' ? (
+                {detailMode === 'archive' ? (
+                  <ProfessionalMaterialArchivePanel
+                    taskId={taskId}
+                    selectedMaterial={selectedMaterial}
+                    materials={materials}
+                    onMaterialsChanged={() => { void loadMaterials() }}
+                  />
+                ) : detailMode === 'source' ? (
                   <>
                     {detailLoading ? <p className="research-materials__loading"><CircleNotchIcon className="is-spinning" size={16} />正在读取原文结构</p> : null}
                     {!detailLoading && selectedMaterial.status === 'failed' ? <p className="research-materials__detail-note is-error"><WarningCircleIcon size={15} />解析失败后，原材料仍保留；重新解析成功前不会进入检索。</p> : null}

@@ -147,6 +147,30 @@ class SqliteResearchMaterialRepository:
             query = query.where(ResearchMaterialRow.status != MaterialStatus.DELETED.value)
         return self._to_domain(self._session.scalar(query))
 
+    def is_external_model_processable(
+        self,
+        material_id: UUID,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> bool:
+        """Gate external-model use without changing manual material reads.
+
+        A legacy row without a professional profile preserves its established
+        behavior. Once cataloged, the archive profile becomes authoritative.
+        """
+
+        from qunxue_api.adapters.sqlite.professional_material_repository import (
+            SqliteProfessionalMaterialRepository,
+        )
+
+        profile = SqliteProfessionalMaterialRepository(self._session).get_profile(
+            material_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        return profile is None or profile.allows_external_model_processing
+
     def list(
         self,
         *,

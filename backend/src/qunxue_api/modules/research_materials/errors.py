@@ -46,3 +46,9 @@ class MaterialParseError(ResearchMaterialError):
             self.code = code
         detail = message or self.code
         super().__init__(f"{self.code}: {detail}")
+
+
+class DoiMetadataUnavailable(ResearchMaterialError):
+    """The external DOI registry could not provide a usable response."""
+
+    code = "doi_metadata_unavailable"
