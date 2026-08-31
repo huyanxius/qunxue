@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Fragment, type ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -35,6 +35,144 @@ afterEach(() => {
 })
 
 describe('ResearchDocumentWorkbench', () => {
+  it('shows a local proposal diff and blocks acceptance when its baseline is stale', async () => {
+    const document = {
+      document_id: 'document-1',
+      task_id: 'task-1',
+      theory_plan_id: 'plan-1',
+      knowledge_release_id: 'release-1',
+      revision_id: 'revision-3',
+      version: 3,
+      title: '迁移与照护',
+      sections: [{
+        section_id: 'research_question',
+        key: 'research_question',
+        title: '研究问题',
+        content: '迁移后的照护主要由**祖辈**承担。',
+        status: 'reviewed',
+        evidence_refs: [],
+        citation_refs: [],
+      }],
+      status: 'draft',
+      change_summary: '用户直接编辑正文',
+      actor: 'user',
+      restored_from_version: null,
+      created_at: '2026-08-31T10:00:00Z',
+      confirmed_at: null,
+      research_analysis: null,
+      formatting: {
+        template_id: 'chinese-social-science',
+        csl_style_id: 'china-national-standard-gb-t-7714-2015-author-date',
+        locale: 'zh-CN',
+      },
+    }
+    const proposal = {
+      proposal_id: 'proposal-1',
+      kind: 'revise',
+      status: 'pending',
+      user_id: 'user-1',
+      conversation_id: 'conversation-1',
+      agent_run_id: 'run-1',
+      model_provider: 'provider',
+      model_name: 'model',
+      task_id: 'task-1',
+      theory_plan_id: 'plan-1',
+      knowledge_release_id: 'release-1',
+      title: '迁移与照护',
+      proposed_sections: [{
+        ...document.sections[0],
+        content: '迁移后的照护主要由**社区**承担，并依赖邻里互助。',
+      }],
+      rationale: '把笼统主体改成分析中确认的社区照护网络。',
+      document_id: 'document-1',
+      base_document_version: 2,
+      target_section_id: 'research_question',
+      decision_reason: null,
+      result_document_id: null,
+      result_document_version: null,
+      requires_user_approval: true,
+      research_analysis: null,
+      created_at: '2026-08-31T09:00:00Z',
+      decided_at: null,
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({
+      data: {
+        task_id: 'task-1',
+        allowed_actions: [],
+        current_match_run_id: null,
+        current_theory_plan_id: 'plan-1',
+        current_framework_id: null,
+        knowledge_release_id: 'release-1',
+        phenomenon_summary: { phenomenon: '迁移如何改变照护？' },
+        resume_path: '/research/task-1/match',
+      },
+    } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [document] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [proposal] } } as never)
+    vi.spyOn(researchApi, 'listResearchDocumentVersions').mockResolvedValue({ data: { items: [document] } } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes>
+          <Route path="/research/:task_id/:stage" element={<ResearchDocumentWorkbench />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
+    expect(await screen.findByText('建议基线 v2')).toBeVisible()
+    expect(screen.getByText('当前文稿已是 v3，建议基线发生冲突。')).toBeVisible()
+    expect(screen.getByRole('button', { name: '接受局部修改' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: '按当前版本重新比较' }))
+    const diff = screen.getByLabelText('研究问题局部差异')
+    expect(within(diff).getByText('祖辈').tagName).toBe('DEL')
+    expect(within(diff).getByText('社区').tagName).toBe('INS')
+    expect(within(diff).getByText('，并依赖邻里互助').tagName).toBe('INS')
+  })
+
+  it('pins template and CSL selections by creating a new document version', async () => {
+    const document = {
+      document_id: 'document-1', task_id: 'task-1', theory_plan_id: 'plan-1', knowledge_release_id: 'release-1',
+      revision_id: 'revision-1', version: 1, title: '跨语言研究', status: 'draft', change_summary: '创建文稿', actor: 'user',
+      restored_from_version: null, created_at: '2026-08-31T10:00:00Z', confirmed_at: null,
+      research_analysis: { schema_version: 'research-analysis-v1', task_id: 'task-1', content_hash: 'analysis-confirmed-1', annotations: [], codes: [], memos: [], comparisons: [], unavailable_annotation_ids: [] },
+      formatting: { template_id: 'chinese-social-science', csl_style_id: 'china-national-standard-gb-t-7714-2015-author-date', locale: 'zh-CN' },
+      sections: [{ section_id: 'research_question', key: 'research_question', title: '研究问题', content: '照护实践 combines family duty.', status: 'reviewed', evidence_refs: [], citation_refs: [{ citation_id: 'citation-1', kind: 'scholarly', source_id: 'literature-entry-1', source_version: 'v2', locator: { label: 'page', value: '42' }, state: 'needs_verification' }] }],
+    }
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: { task_id: 'task-1', allowed_actions: [], current_match_run_id: null, current_theory_plan_id: 'plan-1', current_framework_id: null, knowledge_release_id: 'release-1', phenomenon_summary: { phenomenon: '照护实践' }, resume_path: '/research/task-1/match' } } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [document] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchDocumentVersions').mockResolvedValue({ data: { items: [document] } } as never)
+    const update = vi.spyOn(researchApi, 'updateResearchDocument').mockResolvedValue({ data: { ...document, version: 2, formatting: { template_id: 'asa', csl_style_id: 'american-sociological-association', locale: 'en-US' } } } as never)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <Routes><Route path="/research/:task_id/:stage" element={<ResearchDocumentWorkbench />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
+    expect(screen.getByRole('complementary', { name: '结构化引用' })).toHaveTextContent('literature-entry-1')
+    expect(screen.getByRole('complementary', { name: '结构化引用' })).toHaveTextContent('待核实')
+    expect(screen.getByRole('note', { name: '分析依据' })).toHaveTextContent('analysis-confirmed-1')
+    fireEvent.change(screen.getByRole('combobox', { name: '论文模板' }), { target: { value: 'asa' } })
+    fireEvent.change(screen.getByRole('combobox', { name: '引用样式' }), { target: { value: 'american-sociological-association' } })
+    fireEvent.change(screen.getByRole('combobox', { name: '引用语言' }), { target: { value: 'en-US' } })
+    fireEvent.click(screen.getByRole('button', { name: '应用格式并形成新版本' }))
+
+    await waitFor(() => expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      body: expect.objectContaining({
+        expected_version: 1,
+        formatting: { template_id: 'asa', csl_style_id: 'american-sociological-association', locale: 'en-US' },
+      }),
+    })))
+    fireEvent.click(screen.getByLabelText('导出研究文档'))
+    expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '下载 DOCX' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '打印或另存 PDF' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '下载审计 JSON' })).toBeVisible()
+  })
+
   it('keeps document research on the canvas as editable section nodes beside the shared Agent', async () => {
     render(
       <MemoryRouter initialEntries={['/research/task-1/match']}>
