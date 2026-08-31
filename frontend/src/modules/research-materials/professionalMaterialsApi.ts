@@ -11,23 +11,25 @@ import {
   importLiteratureEntries as importLiteratureEntriesRequest,
   resolveDoiMetadata as resolveDoiMetadataRequest,
   updateProfessionalMaterialProfile as updateProfessionalMaterialProfileRequest,
-  type BatchUploadResponse,
-  type CreateMaterialCollectionRequest,
-  type CreateMaterialRelationRequest,
-  type CreateLiteratureEntryRequest,
-  type CreateResearchCaseRequest,
-  type DoiMetadataCandidateResponse,
-  type LiteratureEntryResponse,
-  type LiteratureExchangeFormat,
-  type MaterialArchiveProfileResponse,
-  type MaterialBatchResponse,
-  type MaterialCollectionResponse,
-  type MaterialKind,
-  type MaterialRelationResponse,
-  type ProfessionalMaterialArchiveResponse,
-  type ResearchCaseResponse,
-  type UpdateMaterialArchiveProfileRequest,
 } from '../../api/generated'
+import type {
+  BatchUploadResult,
+  CreateLiteratureEntryInput,
+  CreateMaterialCollectionInput,
+  CreateMaterialRelationInput,
+  CreateResearchCaseInput,
+  DoiMetadataCandidate,
+  LiteratureEntry,
+  LiteratureFormat,
+  MaterialBatch,
+  MaterialCollection,
+  MaterialKind,
+  MaterialRelation,
+  ProfessionalMaterialArchive,
+  ProfessionalMaterialProfile,
+  ProfessionalMaterialProfileUpdate,
+  ResearchCase,
+} from './professionalMaterialsModel'
 
 export class ProfessionalMaterialsApiError extends Error {
   readonly status: number
@@ -75,7 +77,7 @@ function idempotencyKey(): string {
 export async function getProfessionalMaterialArchive(
   taskId: string,
   signal?: AbortSignal,
-): Promise<ProfessionalMaterialArchiveResponse> {
+): Promise<ProfessionalMaterialArchive> {
   const result = await getProfessionalMaterialArchiveRequest({
     client: apiClient, path: { task_id: taskId }, signal,
   })
@@ -85,8 +87,8 @@ export async function getProfessionalMaterialArchive(
 export async function updateProfessionalMaterialProfile(
   taskId: string,
   materialId: string,
-  body: UpdateMaterialArchiveProfileRequest,
-): Promise<MaterialArchiveProfileResponse> {
+  body: ProfessionalMaterialProfileUpdate,
+): Promise<ProfessionalMaterialProfile> {
   const result = await updateProfessionalMaterialProfileRequest({
     client: apiClient,
     path: { task_id: taskId, material_id: materialId },
@@ -98,49 +100,59 @@ export async function updateProfessionalMaterialProfile(
 export async function createMaterialBatch(
   taskId: string,
   name: string,
-): Promise<MaterialBatchResponse> {
+): Promise<MaterialBatch> {
   const result = await createMaterialBatchRequest({
-    client: apiClient, path: { task_id: taskId }, body: { name },
+    client: apiClient,
+    path: { task_id: taskId },
+    body: { name },
   })
   return requireData(result, '批次暂时无法创建。')
 }
 
 export async function createMaterialCollection(
   taskId: string,
-  body: CreateMaterialCollectionRequest,
-): Promise<MaterialCollectionResponse> {
+  body: CreateMaterialCollectionInput,
+): Promise<MaterialCollection> {
   const result = await createMaterialCollectionRequest({
-    client: apiClient, path: { task_id: taskId }, body,
+    client: apiClient,
+    path: { task_id: taskId },
+    body,
   })
   return requireData(result, '集合暂时无法创建。')
 }
 
 export async function createResearchCase(
   taskId: string,
-  body: CreateResearchCaseRequest,
-): Promise<ResearchCaseResponse> {
+  body: CreateResearchCaseInput,
+): Promise<ResearchCase> {
   const result = await createResearchCaseRequest({
-    client: apiClient, path: { task_id: taskId }, body,
+    client: apiClient,
+    path: { task_id: taskId },
+    body,
   })
   return requireData(result, '个案暂时无法创建。')
 }
 
 export async function createMaterialRelation(
   taskId: string,
-  body: CreateMaterialRelationRequest,
-): Promise<MaterialRelationResponse> {
+  body: CreateMaterialRelationInput,
+): Promise<MaterialRelation> {
   const result = await createMaterialRelationRequest({
-    client: apiClient, path: { task_id: taskId }, body,
+    client: apiClient,
+    path: { task_id: taskId },
+    body,
   })
   return requireData(result, '材料关系暂时无法创建。')
 }
 
 export async function createLiteratureEntry(
   taskId: string,
-  body: CreateLiteratureEntryRequest,
-): Promise<LiteratureEntryResponse> {
+  body: CreateLiteratureEntryInput,
+): Promise<LiteratureEntry> {
   const result = await createLiteratureEntryRequest({
-    client: apiClient, path: { task_id: taskId }, body,
+    client: apiClient,
+    path: { task_id: taskId },
+    body,
   })
   return requireData(result, '文献条目暂时无法创建。')
 }
@@ -150,7 +162,7 @@ export async function uploadMaterialBatch(
   batchId: string,
   files: File[],
   materialKind: MaterialKind,
-): Promise<BatchUploadResponse> {
+): Promise<BatchUploadResult> {
   const result = await batchUploadMaterialsRequest({
     client: apiClient,
     headers: { 'Idempotency-Key': idempotencyKey() },
@@ -163,8 +175,8 @@ export async function uploadMaterialBatch(
 export async function importLiteratureEntries(
   taskId: string,
   file: File,
-  exchangeFormat: LiteratureExchangeFormat,
-): Promise<LiteratureEntryResponse[]> {
+  exchangeFormat: LiteratureFormat,
+): Promise<LiteratureEntry[]> {
   const result = await importLiteratureEntriesRequest({
     client: apiClient,
     path: { task_id: taskId },
@@ -176,7 +188,7 @@ export async function importLiteratureEntries(
 export async function resolveDoiMetadata(
   taskId: string,
   doi: string,
-): Promise<DoiMetadataCandidateResponse> {
+): Promise<DoiMetadataCandidate> {
   const result = await resolveDoiMetadataRequest({
     client: apiClient,
     path: { task_id: taskId },
@@ -187,7 +199,7 @@ export async function resolveDoiMetadata(
 
 export async function exportLiteratureEntries(
   taskId: string,
-  exchangeFormat: LiteratureExchangeFormat,
+  exchangeFormat: LiteratureFormat,
 ): Promise<Blob> {
   const result = await exportLiteratureEntriesRequest({
     client: apiClient,
