@@ -18,6 +18,20 @@ from qunxue_api.modules.research_analysis.domain import (
 )
 from qunxue_api.modules.research_analysis.errors import ResearchAnalysisIdempotencyConflict
 from qunxue_api.modules.research_analysis.ports import ResearchAnalysisRepository
+from qunxue_api.modules.research_analysis.qualitative_workspace import (
+    AnalysisCaseProfile,
+    AnalysisMemoLink,
+    AnalysisTheme,
+    CaseThemeMatrix,
+    CaseThemeMatrixCell,
+    CodebookEntry,
+    CodebookLifecycle,
+    MatrixSubjectKind,
+    MemoTargetKind,
+    MethodPresetSelection,
+    QualitativeMethod,
+    QualitativeWorkspaceSnapshot,
+)
 
 
 class _MemoryRepository:
@@ -27,6 +41,12 @@ class _MemoryRepository:
         self.memos: dict[UUID, AnalysisMemo] = {}
         self.comparisons: dict[UUID, CaseComparison] = {}
         self.write_requests: dict[tuple[UUID, UUID, str, str], AnalysisWriteRequest] = {}
+        self.codebook_entries: dict[UUID, CodebookEntry] = {}
+        self.themes: dict[UUID, AnalysisTheme] = {}
+        self.memo_links: dict[UUID, AnalysisMemoLink] = {}
+        self.case_profiles: dict[UUID, AnalysisCaseProfile] = {}
+        self.matrix_cells: dict[UUID, CaseThemeMatrixCell] = {}
+        self.method_selections: dict[tuple[UUID, UUID], MethodPresetSelection] = {}
 
     def reserve_write(self, value: AnalysisWriteRequest) -> AnalysisWriteRequest:
         key = (value.user_id, value.task_id, value.namespace, value.idempotency_key)
@@ -93,6 +113,57 @@ class _MemoryRepository:
 
     def list_comparisons(self, *, user_id, task_id):
         return _list_owned(self.comparisons.values(), user_id, task_id)
+
+    def add_codebook_entry(self, value):
+        self.codebook_entries[value.code_id] = value
+        return value
+
+    def get_codebook_entry(self, code_id, *, user_id, task_id):
+        return _owned(self.codebook_entries.get(code_id), user_id, task_id)
+
+    def list_codebook_entries(self, *, user_id, task_id):
+        return _list_owned(self.codebook_entries.values(), user_id, task_id)
+
+    def add_theme(self, value):
+        self.themes[value.theme_id] = value
+        return value
+
+    def get_theme(self, theme_id, *, user_id, task_id):
+        return _owned(self.themes.get(theme_id), user_id, task_id)
+
+    def list_themes(self, *, user_id, task_id):
+        return _list_owned(self.themes.values(), user_id, task_id)
+
+    def add_memo_link(self, value):
+        self.memo_links[value.link_id] = value
+        return value
+
+    def list_memo_links(self, *, user_id, task_id):
+        return _list_owned(self.memo_links.values(), user_id, task_id)
+
+    def add_case_profile(self, value):
+        self.case_profiles[value.profile_id] = value
+        return value
+
+    def get_case_profile(self, profile_id, *, user_id, task_id):
+        return _owned(self.case_profiles.get(profile_id), user_id, task_id)
+
+    def list_case_profiles(self, *, user_id, task_id):
+        return _list_owned(self.case_profiles.values(), user_id, task_id)
+
+    def add_matrix_cell(self, value):
+        self.matrix_cells[value.cell_id] = value
+        return value
+
+    def list_matrix_cells(self, *, user_id, task_id):
+        return _list_owned(self.matrix_cells.values(), user_id, task_id)
+
+    def add_method_selection(self, value):
+        self.method_selections[(value.user_id, value.task_id)] = value
+        return value
+
+    def get_method_selection(self, *, user_id, task_id):
+        return self.method_selections.get((user_id, task_id))
 
 
 def _owned(value, user_id, task_id):
@@ -371,6 +442,524 @@ class ResearchAnalysisService:
                 now=datetime.now(UTC),
             )
         )
+
+    def configure_codebook_entry(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_id: UUID,
+        inclusion_rules: tuple[str, ...],
+        exclusion_rules: tuple[str, ...],
+        positive_example_annotation_ids: tuple[UUID, ...],
+        negative_example_annotation_ids: tuple[UUID, ...],
+        parent_code_id: UUID | None,
+        expected_version: int | None,
+        now: datetime | None = None,
+    ) -> CodebookEntry:
+        self._require_confirmed_codes(
+            user_id=user_id,
+            task_id=task_id,
+            code_ids=tuple(item for item in (code_id, parent_code_id) if item is not None),
+        )
+        self._require_annotations(
+            user_id=user_id,
+            task_id=task_id,
+            annotation_ids=(
+                *positive_example_annotation_ids,
+                *negative_example_annotation_ids,
+            ),
+        )
+        updated_at = now or datetime.now(UTC)
+        existing = self._repository.get_codebook_entry(
+            code_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if existing is None:
+            if expected_version is not None:
+                raise ValueError("codebook entry does not exist")
+            value = CodebookEntry.create(
+                user_id=user_id,
+                task_id=task_id,
+                code_id=code_id,
+                inclusion_rules=inclusion_rules,
+                exclusion_rules=exclusion_rules,
+                parent_code_id=parent_code_id,
+                positive_example_annotation_ids=positive_example_annotation_ids,
+                negative_example_annotation_ids=negative_example_annotation_ids,
+                now=updated_at,
+            )
+        else:
+            if expected_version is None:
+                raise ValueError("expected codebook entry version is required")
+            value = existing.revise(
+                inclusion_rules=inclusion_rules,
+                exclusion_rules=exclusion_rules,
+                parent_code_id=parent_code_id,
+                positive_example_annotation_ids=positive_example_annotation_ids,
+                negative_example_annotation_ids=negative_example_annotation_ids,
+                expected_version=expected_version,
+                now=updated_at,
+            )
+        return self._repository.add_codebook_entry(value)
+
+    def transition_codebook_entry(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_id: UUID,
+        lifecycle: CodebookLifecycle,
+        related_code_ids: tuple[UUID, ...],
+        expected_version: int,
+        reason: str,
+        now: datetime | None = None,
+    ) -> CodebookEntry:
+        self._require_confirmed_codes(
+            user_id=user_id,
+            task_id=task_id,
+            code_ids=(code_id, *related_code_ids),
+        )
+        existing = self._repository.get_codebook_entry(
+            code_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if existing is None:
+            raise LookupError(code_id)
+        return self._repository.add_codebook_entry(
+            existing.transition(
+                lifecycle=lifecycle,
+                related_code_ids=related_code_ids,
+                expected_version=expected_version,
+                reason=reason,
+                now=now or datetime.now(UTC),
+            )
+        )
+
+    def create_theme(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        label: str,
+        central_concept: str,
+        code_ids: tuple[UUID, ...],
+        annotation_ids: tuple[UUID, ...],
+        source: str,
+        now: datetime | None = None,
+        theme_id: UUID | None = None,
+    ) -> AnalysisTheme:
+        self._require_confirmed_codes(
+            user_id=user_id,
+            task_id=task_id,
+            code_ids=code_ids,
+        )
+        self._require_annotations(
+            user_id=user_id,
+            task_id=task_id,
+            annotation_ids=annotation_ids,
+        )
+        return self._repository.add_theme(
+            AnalysisTheme.create(
+                user_id=user_id,
+                task_id=task_id,
+                label=label,
+                central_concept=central_concept,
+                code_ids=code_ids,
+                annotation_ids=annotation_ids,
+                source=source,
+                now=now or datetime.now(UTC),
+                theme_id=theme_id,
+            )
+        )
+
+    def confirm_theme(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        theme_id: UUID,
+        expected_version: int,
+        user_confirmed: bool,
+        reason: str,
+    ) -> AnalysisTheme:
+        existing = self._repository.get_theme(
+            theme_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if existing is None:
+            raise LookupError(theme_id)
+        return self._repository.add_theme(
+            existing.confirm(
+                user_confirmed=user_confirmed,
+                expected_version=expected_version,
+                reason=reason,
+                now=datetime.now(UTC),
+            )
+        )
+
+    def attach_memo(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        memo_id: UUID,
+        target_kind: MemoTargetKind,
+        target_ref: str,
+        annotation_ids: tuple[UUID, ...],
+        now: datetime | None = None,
+    ) -> AnalysisMemoLink:
+        self._require_confirmed_memos(
+            user_id=user_id,
+            task_id=task_id,
+            memo_ids=(memo_id,),
+        )
+        self._require_annotations(
+            user_id=user_id,
+            task_id=task_id,
+            annotation_ids=annotation_ids,
+        )
+        self._validate_memo_target(
+            user_id=user_id,
+            task_id=task_id,
+            target_kind=target_kind,
+            target_ref=target_ref,
+        )
+        return self._repository.add_memo_link(
+            AnalysisMemoLink.create(
+                user_id=user_id,
+                task_id=task_id,
+                memo_id=memo_id,
+                target_kind=target_kind,
+                target_ref=target_ref,
+                annotation_ids=annotation_ids,
+                now=now or datetime.now(UTC),
+            )
+        )
+
+    def save_case_profile(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        case_ref: str,
+        display_label: str,
+        attributes: tuple[tuple[str, str], ...],
+        summary: str,
+        annotation_ids: tuple[UUID, ...],
+        memo_ids: tuple[UUID, ...],
+        expected_version: int | None,
+        now: datetime | None = None,
+    ) -> AnalysisCaseProfile:
+        self._require_annotations(
+            user_id=user_id,
+            task_id=task_id,
+            annotation_ids=annotation_ids,
+        )
+        self._require_confirmed_memos(
+            user_id=user_id,
+            task_id=task_id,
+            memo_ids=memo_ids,
+        )
+        existing = next(
+            (
+                item
+                for item in self._repository.list_case_profiles(
+                    user_id=user_id,
+                    task_id=task_id,
+                )
+                if item.case_ref == case_ref.strip()
+            ),
+            None,
+        )
+        if existing is None:
+            if expected_version is not None:
+                raise ValueError("case profile does not exist")
+            profile_id = None
+            version = 1
+        else:
+            if expected_version != existing.version:
+                raise ValueError("stale case profile version")
+            profile_id = existing.profile_id
+            version = existing.version + 1
+        return self._repository.add_case_profile(
+            AnalysisCaseProfile.create(
+                user_id=user_id,
+                task_id=task_id,
+                case_ref=case_ref,
+                display_label=display_label,
+                attributes=attributes,
+                summary=summary,
+                annotation_ids=annotation_ids,
+                memo_ids=memo_ids,
+                now=now or datetime.now(UTC),
+                profile_id=profile_id,
+                version=version,
+            )
+        )
+
+    def save_matrix_cell(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        case_profile_id: UUID,
+        subject_kind: MatrixSubjectKind,
+        subject_id: UUID,
+        summary: str,
+        annotation_ids: tuple[UUID, ...],
+        memo_ids: tuple[UUID, ...],
+        finding_kinds: tuple[ComparisonFindingKind, ...],
+        expected_version: int | None,
+        now: datetime | None = None,
+    ) -> CaseThemeMatrixCell:
+        profile = self._repository.get_case_profile(
+            case_profile_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if profile is None:
+            raise LookupError(case_profile_id)
+        self._require_annotations(
+            user_id=user_id,
+            task_id=task_id,
+            annotation_ids=annotation_ids,
+        )
+        if not set(annotation_ids).issubset(set(profile.annotation_ids)):
+            raise ValueError("matrix evidence must belong to the selected case profile")
+        self._require_confirmed_memos(
+            user_id=user_id,
+            task_id=task_id,
+            memo_ids=memo_ids,
+        )
+        if subject_kind is MatrixSubjectKind.CODE:
+            self._require_confirmed_codes(
+                user_id=user_id,
+                task_id=task_id,
+                code_ids=(subject_id,),
+            )
+        else:
+            theme = self._repository.get_theme(
+                subject_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if theme is None or theme.status is not AnalysisRecordStatus.CONFIRMED:
+                raise ValueError("matrix theme must be user-confirmed")
+        existing = next(
+            (
+                item
+                for item in self._repository.list_matrix_cells(
+                    user_id=user_id,
+                    task_id=task_id,
+                )
+                if item.case_profile_id == case_profile_id
+                and item.subject_kind is subject_kind
+                and item.subject_id == subject_id
+            ),
+            None,
+        )
+        if existing is None:
+            if expected_version is not None:
+                raise ValueError("matrix cell does not exist")
+            cell_id = None
+            version = 1
+        else:
+            if expected_version != existing.version:
+                raise ValueError("stale matrix cell version")
+            cell_id = existing.cell_id
+            version = existing.version + 1
+        return self._repository.add_matrix_cell(
+            CaseThemeMatrixCell.create(
+                user_id=user_id,
+                task_id=task_id,
+                case_profile_id=case_profile_id,
+                subject_kind=subject_kind,
+                subject_id=subject_id,
+                summary=summary,
+                annotation_ids=annotation_ids,
+                memo_ids=memo_ids,
+                finding_kinds=finding_kinds,
+                now=now or datetime.now(UTC),
+                cell_id=cell_id,
+                version=version,
+            )
+        )
+
+    def build_case_theme_matrix(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        attribute_filters: tuple[tuple[str, str], ...] = (),
+    ) -> CaseThemeMatrix:
+        filters = tuple((name.strip(), value.strip()) for name, value in attribute_filters)
+        profiles = tuple(
+            item
+            for item in self._repository.list_case_profiles(
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if all(filter_item in item.attributes for filter_item in filters)
+        )
+        profile_ids = {item.profile_id for item in profiles}
+        cells = tuple(
+            item
+            for item in self._repository.list_matrix_cells(
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if item.case_profile_id in profile_ids
+        )
+        return CaseThemeMatrix(
+            row_profile_ids=tuple(item.profile_id for item in profiles),
+            column_subjects=tuple(
+                dict.fromkeys((item.subject_kind, item.subject_id) for item in cells)
+            ),
+            cells=cells,
+            attribute_filters=filters,
+        )
+
+    def set_method_preset(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        method: QualitativeMethod,
+        expected_version: int | None,
+        now: datetime | None = None,
+    ) -> MethodPresetSelection:
+        existing = self._repository.get_method_selection(user_id=user_id, task_id=task_id)
+        if existing is None:
+            if expected_version is not None:
+                raise ValueError("method preset does not exist")
+            version = 1
+        else:
+            if expected_version != existing.version:
+                raise ValueError("stale method preset version")
+            version = existing.version + 1
+        return self._repository.add_method_selection(
+            MethodPresetSelection(
+                user_id=user_id,
+                task_id=task_id,
+                method=QualitativeMethod(method),
+                version=version,
+                updated_at=now or datetime.now(UTC),
+            )
+        )
+
+    def qualitative_workspace_snapshot(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> QualitativeWorkspaceSnapshot:
+        method = self._repository.get_method_selection(user_id=user_id, task_id=task_id)
+        if method is None:
+            method = MethodPresetSelection(
+                user_id=user_id,
+                task_id=task_id,
+                method=QualitativeMethod.THEMATIC_ANALYSIS,
+                version=0,
+                updated_at=datetime(1970, 1, 1, tzinfo=UTC),
+            )
+        themes = self._repository.list_themes(user_id=user_id, task_id=task_id)
+        return QualitativeWorkspaceSnapshot.create(
+            task_id=task_id,
+            method_preset=method,
+            codebook_entries=self._repository.list_codebook_entries(
+                user_id=user_id,
+                task_id=task_id,
+            ),
+            memo_links=self._repository.list_memo_links(user_id=user_id, task_id=task_id),
+            case_profiles=self._repository.list_case_profiles(
+                user_id=user_id,
+                task_id=task_id,
+            ),
+            formal_themes=tuple(
+                item for item in themes if item.status is AnalysisRecordStatus.CONFIRMED
+            ),
+            candidate_themes=tuple(
+                item for item in themes if item.status is AnalysisRecordStatus.CANDIDATE
+            ),
+            matrix_cells=self._repository.list_matrix_cells(user_id=user_id, task_id=task_id),
+        )
+
+    def _require_annotations(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        annotation_ids: tuple[UUID, ...],
+    ) -> None:
+        owned = {
+            item.annotation_id
+            for item in self._repository.list_annotations(user_id=user_id, task_id=task_id)
+        }
+        if not annotation_ids or any(item not in owned for item in annotation_ids):
+            raise ValueError("source annotation is required and must belong to this research task")
+
+    def _require_confirmed_codes(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_ids: tuple[UUID, ...],
+    ) -> None:
+        if not code_ids:
+            raise ValueError("confirmed analysis code is required")
+        for code_id in code_ids:
+            code = self._repository.get_code(code_id, user_id=user_id, task_id=task_id)
+            if code is None or code.status is not AnalysisCodeStatus.CONFIRMED:
+                raise ValueError("codebook and themes require user-confirmed codes")
+
+    def _require_confirmed_memos(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        memo_ids: tuple[UUID, ...],
+    ) -> None:
+        for memo_id in memo_ids:
+            memo = self._repository.get_memo(memo_id, user_id=user_id, task_id=task_id)
+            if memo is None or memo.status is not AnalysisRecordStatus.CONFIRMED:
+                raise ValueError("memo link requires a user-confirmed memo")
+
+    def _validate_memo_target(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        target_kind: MemoTargetKind,
+        target_ref: str,
+    ) -> None:
+        if target_kind is MemoTargetKind.PROJECT and target_ref != str(task_id):
+            raise ValueError("project memo target must be the research task")
+        if target_kind is MemoTargetKind.CODE:
+            try:
+                code_id = UUID(target_ref)
+            except ValueError as error:
+                raise ValueError("code memo target must be a code id") from error
+            self._require_confirmed_codes(
+                user_id=user_id,
+                task_id=task_id,
+                code_ids=(code_id,),
+            )
+        if target_kind is MemoTargetKind.COMPARISON:
+            try:
+                comparison_id = UUID(target_ref)
+            except ValueError as error:
+                raise ValueError("comparison memo target must be a comparison id") from error
+            comparison = self._repository.get_comparison(
+                comparison_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if comparison is None or comparison.status is not AnalysisRecordStatus.CONFIRMED:
+                raise ValueError("memo comparison target must be user-confirmed")
 
     def research_map_patch(
         self,
