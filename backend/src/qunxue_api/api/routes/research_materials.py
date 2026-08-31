@@ -14,6 +14,7 @@ from qunxue_api.api.contracts.research_materials import (
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
     OwnedResearchTaskDependency,
+    ProfessionalMaterialsApplicationDependency,
     ResearchMaterialApplicationDependency,
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey
@@ -109,6 +110,7 @@ async def upload_research_material(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchMaterialApplicationDependency,
+    archive: ProfessionalMaterialsApplicationDependency,
     idempotency_key: IdempotencyKey,
     file: Annotated[UploadFile, File()],
     material_kind: Annotated[ResearchMaterialKindInput, Form()] = MaterialKind.OTHER,
@@ -140,6 +142,11 @@ async def upload_research_material(
         # idempotency key. Keep that normal race explicit and retryable instead
         # of leaking it as an unhandled 500.
         return _error(409, error.code, str(error))
+    archive.ensure_profile(
+        user_id=current.user.user_id,
+        task_id=task_id,
+        material_id=material.material_id,
+    )
     return _material_response(application, material)
 
 
