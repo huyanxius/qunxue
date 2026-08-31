@@ -43,6 +43,9 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
+from qunxue_api.adapters.sqlite.professional_material_repository import (
+    SqliteProfessionalMaterialRepository,
+)
 from qunxue_api.adapters.sqlite.research_analysis_repository import (
     SqliteResearchAnalysisRepository,
 )
@@ -57,9 +60,6 @@ from qunxue_api.adapters.sqlite.research_document_proposal import (
 )
 from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
-)
-from qunxue_api.adapters.sqlite.professional_material_repository import (
-    SqliteProfessionalMaterialRepository,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
 from qunxue_api.adapters.sqlite.research_start_proposal import (
@@ -85,18 +85,18 @@ from qunxue_api.api.routes.matching import router as matching_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
-from qunxue_api.api.routes.research_analysis import router as research_analysis_router
-from qunxue_api.api.routes.research_documents import router as research_documents_router
-from qunxue_api.api.routes.research_materials import router as research_materials_router
 from qunxue_api.api.routes.professional_materials import (
     router as professional_materials_router,
 )
+from qunxue_api.api.routes.research_analysis import router as research_analysis_router
+from qunxue_api.api.routes.research_documents import router as research_documents_router
+from qunxue_api.api.routes.research_materials import router as research_materials_router
 from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
-    ProfessionalMaterialsApplication,
     DisciplinaryAgentApplication,
+    ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,

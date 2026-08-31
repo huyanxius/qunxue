@@ -68,8 +68,16 @@ def upgrade() -> None:
         sa.Column("model_processing_scope", sa.String(length=32), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(["batch_id"], ["research_material_batches.batch_id"], ondelete="SET NULL"),
-        sa.ForeignKeyConstraint(["material_id"], ["research_materials.material_id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["batch_id"],
+            ["research_material_batches.batch_id"],
+            ondelete="SET NULL",
+        ),
+        sa.ForeignKeyConstraint(
+            ["material_id"],
+            ["research_materials.material_id"],
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("material_id"),
     )
     op.create_index(
@@ -97,8 +105,16 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("literature_id"),
     )
-    op.create_index("ix_literature_task_title", "research_literature_entries", ["user_id", "task_id", "title"])
-    op.create_index("ix_literature_task_doi", "research_literature_entries", ["user_id", "task_id", "doi"])
+    op.create_index(
+        "ix_literature_task_title",
+        "research_literature_entries",
+        ["user_id", "task_id", "title"],
+    )
+    op.create_index(
+        "ix_literature_task_doi",
+        "research_literature_entries",
+        ["user_id", "task_id", "doi"],
+    )
     op.create_table(
         "research_cases",
         sa.Column("case_id", sa.String(length=36), nullable=False),
@@ -113,7 +129,11 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("case_id"),
         sa.UniqueConstraint("user_id", "task_id", "name", name="uq_research_case_task_name"),
     )
-    op.create_index("ix_research_cases_task_created", "research_cases", ["user_id", "task_id", "created_at"])
+    op.create_index(
+        "ix_research_cases_task_created",
+        "research_cases",
+        ["user_id", "task_id", "created_at"],
+    )
     op.create_table(
         "research_material_relations",
         sa.Column("relation_id", sa.String(length=36), nullable=False),
@@ -124,8 +144,16 @@ def upgrade() -> None:
         sa.Column("relation_type", sa.String(length=32), nullable=False),
         sa.Column("note", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(["source_material_id"], ["research_materials.material_id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["target_material_id"], ["research_materials.material_id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["source_material_id"],
+            ["research_materials.material_id"],
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["target_material_id"],
+            ["research_materials.material_id"],
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("relation_id"),
         sa.UniqueConstraint(
             "user_id", "task_id", "source_material_id", "target_material_id", "relation_type",
@@ -147,10 +175,19 @@ def downgrade() -> None:
     op.drop_index("ix_literature_task_doi", table_name="research_literature_entries")
     op.drop_index("ix_literature_task_title", table_name="research_literature_entries")
     op.drop_table("research_literature_entries")
-    op.drop_index("ix_material_profiles_task_policy", table_name="research_material_archive_profiles")
-    op.drop_index("ix_material_profiles_task_stage", table_name="research_material_archive_profiles")
+    op.drop_index(
+        "ix_material_profiles_task_policy",
+        table_name="research_material_archive_profiles",
+    )
+    op.drop_index(
+        "ix_material_profiles_task_stage",
+        table_name="research_material_archive_profiles",
+    )
     op.drop_table("research_material_archive_profiles")
-    op.drop_index("ix_material_collections_task_created", table_name="research_material_collections")
+    op.drop_index(
+        "ix_material_collections_task_created",
+        table_name="research_material_collections",
+    )
     op.drop_table("research_material_collections")
     op.drop_index("ix_material_batches_task_created", table_name="research_material_batches")
     op.drop_table("research_material_batches")
