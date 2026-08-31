@@ -6,8 +6,15 @@ from hashlib import sha256
 from typing import Protocol
 from uuid import UUID
 
+from qunxue_api.adapters.research_agent.retrieval import lexical_relevance_score
+from qunxue_api.adapters.retrieval import (
+    HybridRetrievalHit,
+    HybridRetrievalResult,
+    RetrievalChunk,
+    build_knowledge_entry_chunks,
+    build_theory_profile_chunks,
+)
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
-from qunxue_api.adapters.retrieval.hybrid import HybridRetrievalResult
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeCatalog,
     KnowledgeReleaseLevel,
@@ -37,6 +44,135 @@ class TheoryProfileRetriever(Protocol):
         document_kind: str,
         limit: int,
     ) -> HybridRetrievalResult: ...
+
+
+class CatalogTheoryLexicalRetriever:
+    """Release-bound lexical fallback for API-key-only installations.
+
+    Hybrid retrieval remains opt-in when its embedding and reranker credentials
+    are configured.  A clean installation still needs a deterministic way to
+    recall the audited catalog, so this adapter ranks the same release corpus
+    without introducing another credential or silently switching to mock data.
+    """
+
+    def __init__(self, catalog: KnowledgeCatalog) -> None:
+        self._catalog = catalog
+
+    def search(
+        self,
+        *,
+        query: str,
+        knowledge_release_id: str,
+        release_content_hash: str,
+        document_kind: str | None,
+        limit: int,
+    ) -> HybridRetrievalResult:
+        chunks = self._chunks(
+            knowledge_release_id=knowledge_release_id,
+            document_kind=document_kind,
+        )
+        return self._lexical_result(
+            query=query,
+            chunks=chunks,
+            limit=limit,
+            retrieval_index_id=(
+                f"catalog-lexical:{knowledge_release_id}:"
+                f"{release_content_hash.removeprefix('sha256:')[:16]}"
+            ),
+        )
+
+    def search_chunks(
+        self,
+        *,
+        query: str,
+        chunks: tuple[RetrievalChunk, ...],
+        limit: int,
+        retrieval_index_id: str = "external-chunks",
+    ) -> HybridRetrievalResult:
+        """Rank task-scoped material blocks without an embedding credential."""
+
+        return self._lexical_result(
+            query=query,
+            chunks=chunks,
+            limit=limit,
+            retrieval_index_id=f"{retrieval_index_id}:catalog-lexical",
+        )
+
+    @staticmethod
+    def _lexical_result(
+        *,
+        query: str,
+        chunks: tuple[RetrievalChunk, ...],
+        limit: int,
+        retrieval_index_id: str,
+    ) -> HybridRetrievalResult:
+        ranked = sorted(
+            [
+                (
+                    lexical_relevance_score(query, title=chunk.title, text=chunk.text),
+                    chunk,
+                )
+                for chunk in chunks
+            ],
+            key=lambda item: (-item[0], item[1].chunk_id),
+        )
+        selected = [
+            (score, chunk) for score, chunk in ranked if score > 0
+        ][: max(1, limit)]
+        # A short or unfamiliar phenomenon should still expose the audited
+        # candidate set to the real judge instead of fabricating a no-match.
+        if not selected:
+            selected = ranked[: max(1, limit)]
+        return HybridRetrievalResult(
+            retrieval_index_id=retrieval_index_id,
+            mode="catalog_lexical",
+            embedding_model="not_configured",
+            reranker_model=None,
+            degraded_reason=None,
+            hits=tuple(
+                HybridRetrievalHit(
+                    chunk=chunk,
+                    fused_score=score,
+                    retrieval_sources=("lexical",),
+                    rerank_score=None,
+                )
+                for score, chunk in selected
+            ),
+        )
+
+    def _chunks(
+        self,
+        *,
+        knowledge_release_id: str,
+        document_kind: str | None,
+    ) -> tuple[RetrievalChunk, ...]:
+        if document_kind == "theory_profile":
+            return build_theory_profile_chunks(
+                self._catalog.list_match_profiles(release_id=knowledge_release_id)
+            )
+        if document_kind == "knowledge_entry":
+            return build_knowledge_entry_chunks(
+                self._catalog.list_rag_entries(release_id=knowledge_release_id)
+            )
+        if document_kind is None:
+            return tuple(
+                sorted(
+                    (
+                        *build_knowledge_entry_chunks(
+                            self._catalog.list_rag_entries(
+                                release_id=knowledge_release_id
+                            )
+                        ),
+                        *build_theory_profile_chunks(
+                            self._catalog.list_match_profiles(
+                                release_id=knowledge_release_id
+                            )
+                        ),
+                    ),
+                    key=lambda item: item.chunk_id,
+                )
+            )
+        return ()
 
 
 class CatalogTheoryEvidenceSource:
