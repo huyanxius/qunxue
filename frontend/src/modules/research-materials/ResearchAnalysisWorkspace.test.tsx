@@ -9,6 +9,15 @@ afterEach(cleanup)
 const snapshot: ResearchAnalysisSnapshot = {
   task_id: 'task-1',
   comparisons: [],
+  method_presets: [{
+    method: 'thematic_analysis', label: '主题分析', primary_view: 'themes',
+    matrix_axes: ['个案', '主题'], prompts: '发展共享意义模式。', guardrails: '代码不等于主题。',
+  }],
+  workspace: {
+    schema_version: 'qualitative-workspace-v1', content_hash: 'e'.repeat(64),
+    method_preset: { method: 'thematic_analysis', version: 0, updated_at: '1970-01-01T00:00:00Z' },
+    codebook_entries: [], memo_links: [], case_profiles: [], formal_themes: [], candidate_themes: [], matrix_cells: [],
+  },
   annotations: [{
     annotation_id: 'annotation-1', task_id: 'task-1', material_id: 'material-1', parse_id: 'parse-1',
     segment_id: 'segment-1', segment_content_hash: 'a'.repeat(64), quote: '姐姐承担了大部分照护',
@@ -76,6 +85,31 @@ const comparisonSnapshot: ResearchAnalysisSnapshot = {
 }
 
 describe('ResearchAnalysisWorkspace', () => {
+  it('opens the source-grounded qualitative workspace from the analysis record', () => {
+    render(
+      <ResearchAnalysisWorkspace
+        snapshot={snapshot}
+        selectedMaterialId="material-1"
+        onCreateCode={vi.fn()}
+        onCreateMemo={vi.fn()}
+        onDecideCode={vi.fn()}
+        onDecideMemo={vi.fn()}
+        onConfigureCodebook={vi.fn()}
+        onTransitionCodebook={vi.fn()}
+        onCreateTheme={vi.fn()}
+        onConfirmTheme={vi.fn()}
+        onAttachMemo={vi.fn()}
+        onSaveCaseProfile={vi.fn()}
+        onSaveMatrixCell={vi.fn()}
+        onSetMethod={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('region', { name: '社会学质性分析工作区' })).toBeVisible()
+    expect(screen.getByRole('combobox', { name: '方法取向' })).toHaveValue('thematic_analysis')
+    expect(screen.getByText('代码不等于主题。')).toBeVisible()
+  })
+
   it('shows confirmed user records separately from Agent candidates', () => {
     render(
       <ResearchAnalysisWorkspace
