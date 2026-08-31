@@ -86,8 +86,9 @@ def _material_and_parse(*, deleted: bool = False):
 
 
 class _Materials:
-    def __init__(self, *, deleted: bool = False):
+    def __init__(self, *, deleted: bool = False, external_model_allowed: bool = True):
         self.material, self.parsed, self.block = _material_and_parse(deleted=deleted)
+        self.external_model_allowed = external_model_allowed
 
     def list(self, *, user_id, task_id, include_deleted=False, limit=100, offset=0):
         assert user_id == USER_ID
@@ -126,6 +127,12 @@ class _Materials:
         ):
             return None
         return self.block
+
+    def is_external_model_processable(self, material_id, *, user_id, task_id):
+        assert material_id == MATERIAL_ID
+        assert user_id == USER_ID
+        assert task_id == TASK_ID
+        return self.external_model_allowed
 
 
 class _ReparsedMaterials(_Materials):
@@ -371,6 +378,19 @@ def test_deleted_material_is_not_searchable_or_readable():
         "missing-segment",
     )
     assert result["error"] == "research_material_not_found"
+
+
+def test_manual_only_material_stays_readable_in_library_but_never_enters_agent_tools():
+    materials = _Materials(external_model_allowed=False)
+    registry = _registry(materials, _Retriever())
+
+    assert materials.get(MATERIAL_ID, user_id=USER_ID, task_id=TASK_ID) is not None
+    assert registry.search_research_materials("照护") == []
+    result = registry.read_research_material_context(
+        str(MATERIAL_ID),
+        materials.block.segment_id,
+    )
+    assert result["error"] == "research_material_model_processing_restricted"
 
 
 def test_empty_material_search_does_not_clear_previously_selected_public_evidence():
