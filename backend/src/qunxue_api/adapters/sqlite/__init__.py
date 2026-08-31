@@ -34,6 +34,17 @@ from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
     KnowledgeTheoryProfileRow,
 )
 from qunxue_api.adapters.sqlite.model_invocation_model import ModelInvocationRow
+from qunxue_api.adapters.sqlite.professional_material_model import (
+    LiteratureEntryRow,
+    MaterialArchiveProfileRow,
+    MaterialBatchRow,
+    MaterialCollectionRow,
+    MaterialRelationRow,
+    ResearchCaseRow,
+)
+from qunxue_api.adapters.sqlite.professional_material_repository import (
+    SqliteProfessionalMaterialRepository,
+)
 from qunxue_api.adapters.sqlite.research_analysis_model import (
     ResearchAnalysisWriteRequestRow,
     ResearchAnnotationRow,
@@ -115,6 +126,13 @@ __all__ = [
     "KnowledgeSourceRow",
     "KnowledgeTheoryProfileRow",
     "ModelInvocationRow",
+    "LiteratureEntryRow",
+    "MaterialArchiveProfileRow",
+    "MaterialBatchRow",
+    "MaterialCollectionRow",
+    "MaterialRelationRow",
+    "ResearchCaseRow",
+    "SqliteProfessionalMaterialRepository",
     "MaterialIntakeRunRow",
     "MatchRunRow",
     "PhenomenonCandidateVersionRow",
