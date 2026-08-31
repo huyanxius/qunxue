@@ -21,6 +21,22 @@ from qunxue_api.modules.research_analysis.errors import (
     ResearchAnalysisVersionConflict,
 )
 from qunxue_api.modules.research_analysis.ports import ResearchAnalysisRepository
+from qunxue_api.modules.research_analysis.qualitative_workspace import (
+    AnalysisCaseProfile,
+    AnalysisMemoLink,
+    AnalysisTheme,
+    CaseThemeMatrix,
+    CaseThemeMatrixCell,
+    CodebookEntry,
+    CodebookLifecycle,
+    MatrixSubjectKind,
+    MemoTargetKind,
+    MethodPresetSelection,
+    QualitativeMethod,
+    QualitativeMethodPreset,
+    QualitativeWorkspaceSnapshot,
+    qualitative_method_presets,
+)
 from qunxue_api.modules.research_analysis.service import ResearchAnalysisService
 
 __all__ = [
@@ -44,4 +60,18 @@ __all__ = [
     "ResearchAnalysisIdempotencyConflict",
     "ResearchAnalysisNotFound",
     "ResearchAnalysisVersionConflict",
+    "AnalysisCaseProfile",
+    "AnalysisMemoLink",
+    "AnalysisTheme",
+    "CaseThemeMatrix",
+    "CaseThemeMatrixCell",
+    "CodebookEntry",
+    "CodebookLifecycle",
+    "MatrixSubjectKind",
+    "MemoTargetKind",
+    "MethodPresetSelection",
+    "QualitativeMethod",
+    "QualitativeMethodPreset",
+    "QualitativeWorkspaceSnapshot",
+    "qualitative_method_presets",
 ]
