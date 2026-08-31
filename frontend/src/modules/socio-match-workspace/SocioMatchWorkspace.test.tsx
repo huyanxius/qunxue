@@ -10,13 +10,15 @@ afterEach(() => {
 })
 
 describe('SocioMatchWorkspace public API', () => {
-  it('keeps transport functions and query hooks private', () => {
+  it('keeps raw transport functions and query hooks private', () => {
     expect(Object.keys(publicApi).sort()).toEqual([
       'NewResearchPage',
       'PhenomenonWorkspace',
       'ResearchDemoPreview',
       'ResearchWorkspaceShell',
       'SocioMatchWorkspace',
+      'createExistingResearchProject',
+      'createMaterialFirstResearchProject',
       'startResearchTask',
     ])
   })
