@@ -204,11 +204,11 @@ def get_agent_research_journey(
         return AgentResearchJourneyResponse(
             conversation_id=journey.conversation_id,
             status=(
-                "task_bound"
-                if journey.task is not None
-                else "proposal_pending"
+                "proposal_pending"
                 if journey.proposal is not None
                 and journey.proposal.status is ResearchStartProposalStatus.PENDING_CONFIRMATION
+                else "task_bound"
+                if journey.task is not None
                 else "collecting"
             ),
             task_id=journey.task.task_id if journey.task is not None else None,

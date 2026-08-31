@@ -8,9 +8,16 @@ export { ResearchWorkspaceShell } from './ResearchWorkspaceShell'
 export type { ResearchStageId } from './ResearchWorkspaceShell'
 export type { SocioMatchWorkspaceProps } from './SocioMatchWorkspace'
 export { startResearchTask } from './researchTaskActions'
+export {
+  createExistingResearchProject,
+  createMaterialFirstResearchProject,
+} from './researchProjectEntry'
 export type {
+  ResearchCentralTool,
   ResearchTask,
   ResearchTaskAction,
+  ResearchTaskEntryMode,
   ResearchTaskEntryType,
+  ResearchTaskLifecycleStatus,
   ResearchTaskStatus,
 } from './researchTaskModel'

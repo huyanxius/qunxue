@@ -78,6 +78,10 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def prepare_start_proposal(self, **payload: object) -> ResearchStartProposal: ...
 
+    def can_prepare_start_proposal(
+        self, *, user_id: UUID, conversation_id: UUID
+    ) -> bool: ...
+
     def persist_completed_turn_proposal(
         self, proposal: ResearchStartProposal
     ) -> ResearchStartProposal: ...
@@ -795,7 +799,11 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         user_id, conversation_id, agent_run_id = self._context()
         if self._workflow is None:
             return {"error": "research_workflow_unavailable"}
-        if self._task_id is not None:
+        can_prepare = getattr(self._workflow, "can_prepare_start_proposal", None)
+        if self._task_id is not None and not (
+            callable(can_prepare)
+            and can_prepare(user_id=user_id, conversation_id=conversation_id)
+        ):
             return {
                 "error": "research_task_already_bound",
                 "task_id": str(self._task_id),

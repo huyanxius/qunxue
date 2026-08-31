@@ -321,6 +321,14 @@ def test_completed_agent_turn_persists_a_refreshable_start_proposal(client: Test
 def test_confirm_start_is_idempotent_and_persists_task_provenance(client: TestClient) -> None:
     user_id = _register(client)
     proposal = _persist_completed_turn_proposal(client, user_id=user_id)
+    draft_journey = client.get(
+        f"/api/agent/conversations/{proposal['conversation_id']}/journey"
+    )
+    assert draft_journey.status_code == 200
+    draft_task_id = draft_journey.json()["task_id"]
+    assert draft_task_id
+    assert draft_journey.json()["navigation"]["status"] == "draft"
+    assert draft_journey.json()["navigation"]["resume_path"].startswith("/research/new?")
     headers = {"Idempotency-Key": str(uuid4())}
     payload = _confirmation_payload(proposal)
 
@@ -340,12 +348,16 @@ def test_confirm_start_is_idempotent_and_persists_task_provenance(client: TestCl
     assert replay.json() == first.json()
     navigation = first.json()["navigation"]
     assert first.json()["status"] == "task_bound"
+    assert first.json()["task_id"] == draft_task_id
     assert first.json()["task_id"] == navigation["task_id"]
     assert first.json()["conversation_id"] == proposal["conversation_id"]
     assert navigation["current_stage"] == "theory_matching"
+    assert navigation["status"] == "in_progress"
     assert navigation["stage_label"] == "理论匹配"
     assert navigation["next_action_label"] == "开始理论匹配"
-    assert navigation["resume_path"] == f"/research/{navigation['task_id']}/match"
+    assert navigation["resume_path"] == (
+        f"/research/new?conversation_id={proposal['conversation_id']}"
+    )
     assert navigation["knowledge_release_id"] == proposal["knowledge_release_id"]
     assert navigation["conversation_id"] == proposal["conversation_id"]
     assert navigation["source_turn_id"] == proposal["source_turn_id"]
@@ -382,6 +394,8 @@ def test_first_confirmation_cannot_change_the_persisted_agent_proposal(
 ) -> None:
     user_id = _register(client)
     proposal = _persist_completed_turn_proposal(client, user_id=user_id)
+    draft_items = client.get("/api/research-tasks").json()["items"]
+    assert len(draft_items) == 1
     changed_payload = {
         **_confirmation_payload(proposal),
         "phenomenon": "确认请求不能替换 Agent 已持久化的研究现象",
@@ -395,7 +409,7 @@ def test_first_confirmation_cannot_change_the_persisted_agent_proposal(
 
     assert changed.status_code == 409
     assert changed.json()["error"]["code"] == "research_start_proposal_conflict"
-    assert client.get("/api/research-tasks").json()["items"] == []
+    assert client.get("/api/research-tasks").json()["items"] == draft_items
     restored = client.get(
         f"/api/agent/conversations/{proposal['conversation_id']}/research-start-proposal"
     )
@@ -410,6 +424,9 @@ def test_failed_confirmation_rolls_back_and_can_retry_without_a_duplicate(
 ) -> None:
     user_id = _register(client)
     proposal = _persist_completed_turn_proposal(client, user_id=user_id)
+    draft_items = client.get("/api/research-tasks").json()["items"]
+    assert len(draft_items) == 1
+    draft_task_id = draft_items[0]["task_id"]
     endpoint = f"/api/agent/research-start-proposals/{proposal['proposal_id']}/confirm"
     payload = _confirmation_payload(proposal)
 
@@ -429,7 +446,9 @@ def test_failed_confirmation_rolls_back_and_can_retry_without_a_duplicate(
                 json=payload,
             )
 
-    assert client.get("/api/research-tasks").json()["items"] == []
+    listed_after_failure = client.get("/api/research-tasks").json()["items"]
+    assert [item["task_id"] for item in listed_after_failure] == [draft_task_id]
+    assert listed_after_failure[0]["status"] == "draft"
     journey = client.get(f"/api/agent/conversations/{proposal['conversation_id']}/journey")
     assert journey.status_code == 200
     assert journey.json()["status"] == "proposal_pending"
@@ -441,6 +460,7 @@ def test_failed_confirmation_rolls_back_and_can_retry_without_a_duplicate(
     )
     assert retried.status_code == 201
     task_id = retried.json()["task_id"]
+    assert task_id == draft_task_id
     listed = client.get("/api/research-tasks").json()["items"]
     assert [item["task_id"] for item in listed] == [task_id]
 

@@ -1,4 +1,5 @@
 export { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
+export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
 export {
   formatMaterialLocator,
