@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.5",
     "argon2-cffi>=25.1.0",
+    "bibtexparser>=1.4.4,<2.0",
     "fastapi>=0.140.7",
     "markdown-it-py>=4.0.0",
     "pydantic-ai-slim[openai]>=1.0,<2.0",
@@ -14,6 +15,7 @@ dependencies = [
     "pypdf>=6.0,<7.0",
     "python-multipart>=0.0.20,<1.0",
     "resend>=2.0",
+    "rispy>=0.10.0,<1.0",
     "sqlalchemy>=2.0.51",
     "uvicorn[standard]>=0.51.0",
 ]

@@ -95,6 +95,15 @@ wheels = [
 ]
 
 [[package]]
+name = "bibtexparser"
+version = "1.4.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/44/1c/577d3ce406e88f370e80a6ebf76ae52a2866521e0b585e8ec612759894f1/bibtexparser-1.4.4.tar.gz", hash = "sha256:093b6c824f7a71d3a748867c4057b71f77c55b8dbc07efc993b781771520d8fb", size = 55594, upload-time = "2026-01-29T18:58:01.366Z" }
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -946,6 +955,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyparsing"
+version = "3.3.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53cf703ba0957b23ab84c264080fb5a450416f/pyparsing-3.3.2.tar.gz", hash = "sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc", size = 6851574, upload-time = "2026-01-21T03:57:59.36Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl", hash = "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d", size = 122781, upload-time = "2026-01-21T03:57:55.912Z" },
+]
+
+[[package]]
 name = "pypdf"
 version = "6.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1041,6 +1059,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "argon2-cffi" },
+    { name = "bibtexparser" },
     { name = "fastapi" },
     { name = "markdown-it-py" },
     { name = "pydantic-ai-slim", extra = ["openai"] },
@@ -1048,6 +1067,7 @@ dependencies = [
     { name = "pypdf" },
     { name = "python-multipart" },
     { name = "resend" },
+    { name = "rispy" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1063,6 +1083,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "argon2-cffi", specifier = ">=25.1.0" },
+    { name = "bibtexparser", specifier = ">=1.4.4,<2.0" },
     { name = "fastapi", specifier = ">=0.140.7" },
     { name = "markdown-it-py", specifier = ">=4.0.0" },
     { name = "pydantic-ai-slim", extras = ["openai"], specifier = ">=1.0,<2.0" },
@@ -1070,6 +1091,7 @@ requires-dist = [
     { name = "pypdf", specifier = ">=6.0,<7.0" },
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "resend", specifier = ">=2.0" },
+    { name = "rispy", specifier = ">=0.10.0,<1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.51" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.51.0" },
 ]
@@ -1195,6 +1217,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/07/c7/b026919dfc6aedf0fd1645261022943b6570207fe5008044a8c871e3a2da/resend-2.39.0.tar.gz", hash = "sha256:be03c28cfb29956621fe8135e223c11dc69abc0a330e243b4f1968b97c41d4aa", size = 56114, upload-time = "2026-08-21T12:54:47.97Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/6d/e00e9988c6d2f1d29f32511702ff74f76e0847fd9c4a3ac748186ee48073/resend-2.39.0-py2.py3-none-any.whl", hash = "sha256:60aa241b8a38eafa7198aa407a5151fd05349b704e72d5bbfe29901e62431300", size = 87979, upload-time = "2026-08-21T12:54:46.74Z" },
+]
+
+[[package]]
+name = "rispy"
+version = "0.10.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/80/79150d1fabf30a863e2ec5e8d289731863efe2a7762ff5072d9e97b8bfbc/rispy-0.10.0.tar.gz", hash = "sha256:0b815b668fcc993e4f540670fd37090576ecfbc58a57e2daae67774241e91c84", size = 16703, upload-time = "2025-05-23T17:00:39.479Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/25/efdcd3dadf3f2aabbdb64d028db1dca1b1467a08d84b5117bffc3b1a599b/rispy-0.10.0-py3-none-any.whl", hash = "sha256:acc8b941ab5e7b65b5365e468af2e00f0cb031a9e5c5a6b06538d856151e61be", size = 15260, upload-time = "2025-05-23T17:00:37.796Z" },
 ]
 
 [[package]]
