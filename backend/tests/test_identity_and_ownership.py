@@ -322,9 +322,9 @@ def test_real_persisted_tasks_restore_all_six_stages_and_projection_fields(
         ),
         (
             ResearchTaskStatus.FRAMEWORK_CONFIRMED,
-            "completed",
-            "completed",
-            "export",
+            "in_progress",
+            "method_design",
+            "design_method",
         ),
     ]
     persisted: list[dict[str, object]] = []

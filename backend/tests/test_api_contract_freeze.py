@@ -222,6 +222,7 @@ def test_research_task_navigation_restores_my_list_and_task_only_deep_links(
         "theory_decision",
         "framework_drafting",
         "framework_review",
+        "method_design",
         "completed",
     } == set(schemas["ResearchTaskStage"]["enum"])
     assert (
