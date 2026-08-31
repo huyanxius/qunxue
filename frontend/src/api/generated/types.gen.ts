@@ -1417,7 +1417,20 @@ export type CreateResearchDocumentRequest = {
  * CreateResearchTaskRequest
  */
 export type CreateResearchTaskRequest = {
+    entry_mode?: ResearchEntryMode;
     entry_type?: EntryType;
+    /**
+     * Method Orientation
+     */
+    method_orientation?: string | null;
+    /**
+     * Project Stage
+     */
+    project_stage?: string | null;
+    /**
+     * Project Title
+     */
+    project_title?: string | null;
     /**
      * Seed Theory Id
      */
@@ -3339,6 +3352,11 @@ export type PhenomenonSnapshotResponse = {
 };
 
 /**
+ * ProjectLifecycleStatus
+ */
+export type ProjectLifecycleStatus = 'draft' | 'in_progress' | 'archived';
+
+/**
  * RegisterSessionRequest
  */
 export type RegisterSessionRequest = {
@@ -3583,6 +3601,11 @@ export type ResearchAnalysisSnapshotResponse = {
      */
     task_id: string;
 };
+
+/**
+ * ResearchCentralTool
+ */
+export type ResearchCentralTool = 'agent' | 'research_map' | 'materials' | 'phenomenon' | 'theory_matching' | 'framework' | 'method';
 
 /**
  * ResearchDocumentCompletionCheckResponse
@@ -4052,6 +4075,11 @@ export type ResearchDocumentVersionListResponse = {
 };
 
 /**
+ * ResearchEntryMode
+ */
+export type ResearchEntryMode = 'from_scratch' | 'existing_research' | 'legacy';
+
+/**
  * ResearchMaterialListResponse
  */
 export type ResearchMaterialListResponse = {
@@ -4289,7 +4317,7 @@ export type ResearchTaskDocumentProposalListResponse = {
 /**
  * ResearchTaskLifecycleStatus
  */
-export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed';
+export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'completed' | 'archived';
 
 /**
  * ResearchTaskNavigationAction
@@ -4367,16 +4395,30 @@ export type ResearchTaskNavigationResponse = {
      * Current Theory Plan Id
      */
     current_theory_plan_id: string | null;
+    entry_mode: ResearchEntryMode;
     entry_type: EntryType;
     /**
      * Knowledge Release Id
      */
     knowledge_release_id: string | null;
+    last_central_tool: ResearchCentralTool | null;
+    /**
+     * Method Orientation
+     */
+    method_orientation: string | null;
     /**
      * Next Action Label
      */
     next_action_label: string;
     phenomenon_summary: ResearchTaskPhenomenonSummaryResponse | null;
+    /**
+     * Project Stage
+     */
+    project_stage: string | null;
+    /**
+     * Project Title
+     */
+    project_title: string;
     /**
      * Resume Path
      */
@@ -4484,7 +4526,22 @@ export type ResearchTaskResponse = {
      * Created At
      */
     created_at: string;
+    entry_mode: ResearchEntryMode;
     entry_type: EntryType;
+    last_central_tool: ResearchCentralTool | null;
+    lifecycle_status: ProjectLifecycleStatus;
+    /**
+     * Method Orientation
+     */
+    method_orientation: string | null;
+    /**
+     * Project Stage
+     */
+    project_stage: string | null;
+    /**
+     * Project Title
+     */
+    project_title: string;
     /**
      * Seed Theory Id
      */
@@ -5585,6 +5642,30 @@ export type UpdateResearchDocumentRequest = {
      * Source
      */
     source: 'user_edit';
+};
+
+/**
+ * UpdateResearchTaskRequest
+ */
+export type UpdateResearchTaskRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    last_central_tool?: ResearchCentralTool | null;
+    lifecycle_status?: ProjectLifecycleStatus | null;
+    /**
+     * Method Orientation
+     */
+    method_orientation?: string | null;
+    /**
+     * Project Stage
+     */
+    project_stage?: string | null;
+    /**
+     * Project Title
+     */
+    project_title?: string | null;
 };
 
 export type ListAgentConversationsData = {
@@ -7964,6 +8045,50 @@ export type GetResearchTaskResponses = {
 };
 
 export type GetResearchTaskResponse = GetResearchTaskResponses[keyof GetResearchTaskResponses];
+
+export type UpdateResearchTaskData = {
+    body: UpdateResearchTaskRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}';
+};
+
+export type UpdateResearchTaskErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateResearchTaskError = UpdateResearchTaskErrors[keyof UpdateResearchTaskErrors];
+
+export type UpdateResearchTaskResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchTaskResponse;
+};
+
+export type UpdateResearchTaskResponse = UpdateResearchTaskResponses[keyof UpdateResearchTaskResponses];
 
 export type GetResearchAnalysisData = {
     body?: never;
