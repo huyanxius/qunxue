@@ -13,6 +13,8 @@ DEFAULT_DATABASE_URL = f"sqlite:///{BACKEND_ROOT / 'var' / 'qunxue.db'}"
 DEFAULT_RETRIEVAL_INDEX_PATH = BACKEND_ROOT / "var" / "retrieval.db"
 SILICONFLOW_EMBEDDING_MODEL = "Pro/BAAI/bge-m3"
 SILICONFLOW_RERANKER_MODEL = "Pro/BAAI/bge-reranker-v2-m3"
+DEFAULT_MODEL_BASE_URL = "https://api.deepseek.com"
+DEFAULT_MODEL_NAME = "deepseek-v4-flash"
 
 
 @dataclass(frozen=True, slots=True)

@@ -3847,9 +3847,17 @@
             ],
             "title": "Knowledge Release Id"
           },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
           "persistence": {
             "const": "sqlite",
             "title": "Persistence",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
             "type": "string"
           },
           "runtime_mode": {
@@ -3875,6 +3883,8 @@
           "status",
           "service",
           "runtime_mode",
+          "provider",
+          "model_version",
           "persistence",
           "contract_version",
           "capability",

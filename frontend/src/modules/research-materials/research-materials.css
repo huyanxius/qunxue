@@ -60,16 +60,16 @@
 .research-materials__close { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; color: var(--materials-muted); background: transparent; cursor: pointer; }
 .research-materials__close:hover { color: var(--materials-ink); background: color-mix(in srgb, var(--materials-border) 62%, transparent); }
 
-.research-materials__body { display: grid; grid-template-columns: minmax(360px, .9fr) minmax(360px, 1.1fr); min-height: 0; }
+.research-materials__body { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); min-height: 0; }
 .research-materials__library, .research-materials__detail { min-width: 0; min-height: 0; overflow: auto; }
 .research-materials__library { padding: 18px 20px 24px 25px; border-right: 1px solid var(--materials-border); }
 .research-materials__detail { padding: 22px 25px 26px; background: color-mix(in srgb, white 42%, var(--materials-surface)); }
 
-.research-materials__add-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--materials-border); }
+.research-materials__add-row { display: flex; align-items: flex-start; flex-direction: column; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--materials-border); }
 .research-materials__add-row > div:first-child { display: grid; gap: 3px; }
 .research-materials__add-row strong { font-size: 13px; }
 .research-materials__add-row small { color: var(--materials-muted); font-size: 11px; }
-.research-materials__add-actions { display: flex; align-items: center; gap: 7px; }
+.research-materials__add-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; width: 100%; }
 .research-materials__kind-label { color: var(--materials-muted); font-size: 11px; }
 .research-materials__add-actions select { max-width: 94px; padding: 7px 23px 7px 8px; border: 1px solid var(--materials-border); border-radius: 7px; color: var(--materials-ink); background: transparent; font: inherit; font-size: 11px; }
 .research-materials__add-button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid var(--materials-ink); border-radius: 8px; color: var(--materials-surface); background: var(--materials-ink); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
@@ -248,4 +248,50 @@
 
 @media (max-width: 840px) {
   .research-materials__overlay--workspace > .research-materials { height: auto; min-height: 0; }
+}
+/* The source pane is a reader, not a second card grid. Pages keep very long
+   imports bounded while the text itself stays continuous and selectable. */
+.research-materials__reader { margin-top: 15px; }
+.research-materials__reader-toolbar { display: flex; align-items: center; gap: 10px; padding: 9px 0 12px; border-bottom: 1px solid var(--materials-border); }
+.research-materials__reader-search { display: flex; align-items: center; flex: 1 1 220px; gap: 7px; min-width: 0; padding: 7px 9px; border: 1px solid var(--materials-border); border-radius: 7px; color: var(--materials-muted); background: rgb(255 255 255 / 52%); }
+.research-materials__reader-search:focus-within { border-color: color-mix(in srgb, var(--materials-ink) 42%, var(--materials-border)); outline: 2px solid color-mix(in srgb, var(--materials-ink) 12%, transparent); outline-offset: 1px; }
+.research-materials__reader-search input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--materials-ink); background: transparent; font: inherit; font-size: 11px; }
+.research-materials__reader-search input::placeholder { color: color-mix(in srgb, var(--materials-muted) 78%, transparent); }
+.research-materials__reader-search button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 4px; color: var(--materials-muted); background: transparent; cursor: pointer; }
+.research-materials__reader-search button:hover { color: var(--materials-ink); background: var(--materials-border); }
+.research-materials__reader-filter { display: flex; align-items: center; gap: 6px; color: var(--materials-muted); font-size: 10px; white-space: nowrap; }
+.research-materials__reader-filter select { padding: 7px 22px 7px 8px; border: 1px solid var(--materials-border); border-radius: 7px; color: var(--materials-ink); background: transparent; font: inherit; font-size: 10px; }
+.research-materials__reader-count { color: var(--materials-muted); font-size: 10px; white-space: nowrap; }
+.research-materials__reader-layout { display: grid; grid-template-columns: minmax(96px, .28fr) minmax(0, 1fr); gap: 18px; margin-top: 14px; }
+.research-materials__outline { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 2px 13px 0 0; border-right: 1px solid var(--materials-border); }
+.research-materials__outline > span { margin-bottom: 5px; color: var(--materials-muted); font-size: 10px; letter-spacing: .08em; }
+.research-materials__outline button { overflow: hidden; padding: 5px 0; border: 0; color: var(--materials-muted); background: transparent; font: inherit; font-size: 10px; line-height: 1.45; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.research-materials__outline button:hover { color: var(--materials-ink); }
+.research-materials__outline small { color: var(--materials-muted); font-size: 10px; line-height: 1.5; }
+.research-materials__reader-main { min-width: 0; }
+.research-materials__reader-page-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 1px 0 11px; color: var(--materials-muted); font-size: 10px; }
+.research-materials__segments { display: block; margin-top: 0; }
+.research-materials__segment-button { display: block; width: 100%; padding: 0; border: 0; border-left: 2px solid transparent; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.research-materials__segment-button:hover, .research-materials__segment-button:focus-visible { border-left-color: color-mix(in srgb, var(--materials-ink) 38%, var(--materials-border)); outline: 0; }
+.research-materials__segment { padding: 5px 0 8px 12px; border: 0; border-radius: 0; background: transparent; transition: border-color 140ms ease, background 140ms ease; }
+.research-materials__segment-button:hover .research-materials__segment { border: 0; transform: none; background: color-mix(in srgb, var(--materials-border) 18%, transparent); }
+.research-materials__segment.is-selected { border: 0; background: color-mix(in srgb, #d4bd76 18%, transparent); }
+.research-materials__segment-meta { display: flex; align-items: center; justify-content: flex-start; gap: 8px; color: color-mix(in srgb, var(--materials-muted) 82%, transparent); font-size: 9px; }
+.research-materials__segment-meta small { opacity: .85; }
+.research-materials__segment p { margin: 3px 0 0; color: var(--materials-ink); font-family: var(--serif, Georgia, serif); font-size: 14px; line-height: 1.82; }
+.research-materials__segment.is-heading { padding-top: 14px; }
+.research-materials__segment.is-heading .research-materials__segment-meta small { color: #806522; }
+.research-materials__segment.is-heading p { font-family: inherit; font-size: 16px; font-weight: 650; line-height: 1.45; }
+.research-materials__reader-no-results { margin: 0; padding: 26px 0; color: var(--materials-muted); font-size: 12px; }
+.research-materials__reader-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--materials-border); color: var(--materials-muted); font-size: 10px; }
+.research-materials__reader-pagination button { padding: 6px 9px; border: 1px solid var(--materials-border); border-radius: 6px; color: var(--materials-ink); background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
+.research-materials__reader-pagination button:hover:not(:disabled) { border-color: var(--materials-ink); }
+.research-materials__reader-pagination button:disabled { cursor: not-allowed; opacity: .42; }
+
+@media (max-width: 620px) {
+  .research-materials__reader-toolbar { align-items: stretch; flex-wrap: wrap; }
+  .research-materials__reader-search { flex-basis: 100%; }
+  .research-materials__reader-layout { grid-template-columns: 1fr; }
+  .research-materials__outline { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--materials-border); }
+  .research-materials__outline > span { grid-column: 1 / -1; }
 }

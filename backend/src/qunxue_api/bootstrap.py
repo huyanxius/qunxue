@@ -68,7 +68,10 @@ from qunxue_api.adapters.sqlite.theory_matching import (
     SqliteMatchingRequestRepository,
     SqliteMatchRunRepository,
 )
-from qunxue_api.adapters.theory_evidence import CatalogTheoryEvidenceSource
+from qunxue_api.adapters.theory_evidence import (
+    CatalogTheoryEvidenceSource,
+    CatalogTheoryLexicalRetriever,
+)
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.routes.agent import router as agent_router
 from qunxue_api.api.routes.frameworks import router as frameworks_router
@@ -125,7 +128,13 @@ from qunxue_api.modules.research_intake import (
 )
 from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.theory_matching import TheoryMatchingService
-from qunxue_api.settings import KNOWLEDGE_ROOT, Settings, get_settings
+from qunxue_api.settings import (
+    DEFAULT_MODEL_BASE_URL,
+    DEFAULT_MODEL_NAME,
+    KNOWLEDGE_ROOT,
+    Settings,
+    get_settings,
+)
 
 
 def create_app(
@@ -198,6 +207,10 @@ def create_app(
     resolved_knowledge_retriever = knowledge_retriever or _retriever_from_settings(
         resolved_settings
     )
+    if resolved_knowledge_retriever is None and resolved_settings.has_model_api_key:
+        resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(
+            app.state.knowledge_catalog
+        )
     app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
     resolved_model_provider = model_provider or _model_provider_from_settings(
@@ -516,14 +529,13 @@ def create_app(
             # A key in the local .env opts the independent Agent into a real
             # OpenAI-compatible runtime while keeping the deterministic runner
             # as the zero-config development default.
-            use_real_agent = (
-                resolved_settings.runtime_mode != "mock" or resolved_settings.has_model_api_key
-            )
+            agent_runtime_mode = _effective_model_runtime_mode(resolved_settings)
+            use_real_agent = agent_runtime_mode != "mock"
             model_base_url = resolved_settings.model_base_url or (
-                "https://api.deepseek.com" if resolved_settings.has_model_api_key else None
+                DEFAULT_MODEL_BASE_URL if resolved_settings.has_model_api_key else None
             )
             model_name = resolved_settings.model_name or (
-                "deepseek-v4-flash" if resolved_settings.has_model_api_key else None
+                DEFAULT_MODEL_NAME if resolved_settings.has_model_api_key else None
             )
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
@@ -823,7 +835,9 @@ def _retriever_from_settings(settings: Settings) -> HybridRetriever | None:
         settings.reranker_model,
     )
     has_partial_configuration = any(value is not None for value in configured_values)
-    if settings.runtime_mode == "mock" and not has_partial_configuration:
+    if not has_partial_configuration and (
+        settings.runtime_mode == "mock" or settings.has_model_api_key
+    ):
         return None
     config = settings.require_retrieval_config()
     embedder = OpenAICompatibleEmbeddingProvider(
@@ -856,9 +870,16 @@ def _model_provider_from_settings(
     settings: Settings,
     builtin_case_catalog: BuiltInCaseCatalog,
 ) -> ModelProvider:
-    if settings.runtime_mode == "mock":
+    runtime_mode = _effective_model_runtime_mode(settings)
+    if runtime_mode == "mock":
         return create_deterministic_mock_provider(catalog=builtin_case_catalog)
-    if settings.model_base_url is None or settings.model_name is None:
+    model_base_url = settings.model_base_url or (
+        DEFAULT_MODEL_BASE_URL if settings.has_model_api_key else None
+    )
+    model_name = settings.model_name or (
+        DEFAULT_MODEL_NAME if settings.has_model_api_key else None
+    )
+    if model_base_url is None or model_name is None:
         raise ValueError(
             "QUNXUE_MODEL_BASE_URL (model_base_url) and "
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
@@ -867,17 +888,25 @@ def _model_provider_from_settings(
     headers = _model_headers_from_settings(settings)
 
     return OpenAICompatibleModelProvider(
-        base_url=settings.model_base_url,
+        base_url=model_base_url,
         api_key=(
             settings.model_api_key.get_secret_value()
             if settings.model_api_key is not None
             else None
         ),
-        model=settings.model_name,
+        model=model_name,
         timeout_seconds=settings.model_timeout_seconds,
-        capability_tier=settings.runtime_mode,
+        capability_tier=runtime_mode,
         extra_headers=headers,
     )
+
+
+def _effective_model_runtime_mode(settings: Settings) -> str:
+    """Resolve the runtime selected by the actual model credentials."""
+
+    if settings.runtime_mode == "mock" and settings.has_model_api_key:
+        return "base"
+    return settings.runtime_mode
 
 
 def _model_headers_from_settings(settings: Settings) -> dict[str, str]:
