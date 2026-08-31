@@ -15,6 +15,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'm4-theory-judgment': Object.freeze([]),
     'research-agent': Object.freeze([]),
     'research-materials': Object.freeze([]),
+    'research-method': Object.freeze([]),
     'research-workspace': Object.freeze(['research-agent']),
     'socio-match-workspace': Object.freeze([]),
   }),
@@ -31,6 +32,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-agent/researchAgentApi.ts',
     'modules/research-materials/researchAnalysisApi.ts',
     'modules/research-materials/researchMaterialsApi.ts',
+    'modules/research-method/researchMethodApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   moduleApiAdapters: Object.freeze([
@@ -42,6 +44,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-agent/researchAgentApi.ts',
     'modules/research-materials/researchAnalysisApi.ts',
     'modules/research-materials/researchMaterialsApi.ts',
+    'modules/research-method/researchMethodApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
   appApiAdapters: Object.freeze([

@@ -37,6 +37,7 @@ import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { ResearchMaterialsPage } from './research/ResearchMaterialsPage'
 import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
+import { MethodPlanWorkspace } from '../modules/research-method'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import {
@@ -428,6 +429,12 @@ export function AppRoutes({
           <ResearchTaskNavigationRoute><ResearchDocumentWorkbench userId={authenticatedUserId} /></ResearchTaskNavigationRoute>,
         )}
       />
+      <Route
+        path="/research/:task_id/method"
+        element={protectedRoute(
+          <ResearchTaskNavigationRoute><MethodPlanRoute /></ResearchTaskNavigationRoute>,
+        )}
+      />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
       <Route path="/password-reset/:token" element={<PasswordResetRoute />} />
@@ -438,6 +445,11 @@ export function AppRoutes({
       </RouteMotionSurface>
     </RailStateProvider>
   )
+}
+
+function MethodPlanRoute() {
+  const { task_id: taskId } = useParams<{ task_id: string }>()
+  return <PageShell wide><PageContent>{taskId ? <MethodPlanWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}</PageContent></PageShell>
 }
 
 export function App() {
