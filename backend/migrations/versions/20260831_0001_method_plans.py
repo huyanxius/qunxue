@@ -12,7 +12,10 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column("research_tasks", sa.Column("current_method_plan_id", sa.String(length=36), nullable=True))
+    op.add_column(
+        "research_tasks",
+        sa.Column("current_method_plan_id", sa.String(length=36), nullable=True),
+    )
     op.add_column(
         "research_tasks",
         sa.Column("current_method_plan_status", sa.String(length=32), nullable=True),
@@ -69,6 +72,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("research_tasks", "current_method_plan_status")
     op.drop_column("research_tasks", "current_method_plan_id")
-    op.drop_index("ix_research_method_plan_versions_task", table_name="research_method_plan_versions")
+    op.drop_index(
+        "ix_research_method_plan_versions_task",
+        table_name="research_method_plan_versions",
+    )
     op.drop_table("research_method_plan_versions")
     op.drop_table("research_method_plan_identities")
