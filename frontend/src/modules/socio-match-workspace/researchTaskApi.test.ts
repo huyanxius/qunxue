@@ -11,6 +11,52 @@ afterEach(() => {
 })
 
 describe('research task API', () => {
+  it('creates an existing research project with its descriptive metadata', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => Response.json({
+      task_id: 'existing-task',
+      entry_type: 'material_input',
+      entry_mode: 'existing_research',
+      lifecycle_status: 'in_progress',
+      project_title: '社区照护田野研究',
+      project_stage: '材料整理',
+      method_orientation: '质性访谈',
+      last_central_tool: 'materials',
+      status: 'draft',
+      version: 1,
+      allowed_actions: ['submit_phenomenon'],
+      seed_theory_id: null,
+      seed_theory_name: null,
+      created_at: '2026-08-31T00:00:00Z',
+      updated_at: '2026-08-31T00:00:00Z',
+    }, { status: 201 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const task = await createResearchTaskViaApi('existing-entry', {
+      entryType: 'material_input',
+      entryMode: 'existing_research',
+      projectTitle: '社区照护田野研究',
+      projectStage: '材料整理',
+      methodOrientation: '质性访谈',
+    })
+
+    const request = fetchMock.mock.calls[0][0] as Request
+    expect(await request.json()).toEqual({
+      entry_type: 'material_input',
+      entry_mode: 'existing_research',
+      project_title: '社区照护田野研究',
+      project_stage: '材料整理',
+      method_orientation: '质性访谈',
+      seed_theory_id: null,
+    })
+    expect(task).toMatchObject({
+      taskId: 'existing-task',
+      entryMode: 'existing_research',
+      lifecycleStatus: 'in_progress',
+      projectTitle: '社区照护田野研究',
+      lastCentralTool: 'materials',
+    })
+  })
+
   it('sends a stable idempotency key through the generated transport', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
       new Response(

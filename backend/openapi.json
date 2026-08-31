@@ -1633,6 +1633,119 @@
         "title": "AuditResolutionSetResponse",
         "type": "object"
       },
+      "BatchUploadItemResponse": {
+        "properties": {
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "material_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "status"
+        ],
+        "title": "BatchUploadItemResponse",
+        "type": "object"
+      },
+      "BatchUploadResponse": {
+        "properties": {
+          "batch_id": {
+            "format": "uuid",
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BatchUploadItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "batch_id",
+          "items"
+        ],
+        "title": "BatchUploadResponse",
+        "type": "object"
+      },
+      "Body_batch_upload_materials": {
+        "properties": {
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "material_kind": {
+            "$ref": "#/components/schemas/MaterialKind",
+            "default": "other"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_batch_upload_materials",
+        "type": "object"
+      },
+      "Body_import_literature_entries": {
+        "properties": {
+          "exchange_format": {
+            "$ref": "#/components/schemas/LiteratureExchangeFormat"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exchange_format",
+          "file"
+        ],
+        "title": "Body_import_literature_entries",
+        "type": "object"
+      },
       "Body_upload_research_material": {
         "properties": {
           "file": {
@@ -2655,6 +2768,17 @@
         "title": "ConfirmedTheoryPlanResponse",
         "type": "object"
       },
+      "ConsentScope": {
+        "enum": [
+          "public_use",
+          "project_only",
+          "team_only",
+          "manual_review_only",
+          "withdrawn"
+        ],
+        "title": "ConsentScope",
+        "type": "string"
+      },
       "CreateAnalysisAnnotationRequest": {
         "properties": {
           "annotation_kind": {
@@ -3064,6 +3188,63 @@
         "title": "CreateFrameworkRequest",
         "type": "object"
       },
+      "CreateLiteratureEntryRequest": {
+        "properties": {
+          "attachment_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Attachment Material Ids",
+            "type": "array"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "csl_data": {
+            "additionalProperties": true,
+            "title": "Csl Data",
+            "type": "object"
+          },
+          "doi": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doi"
+          },
+          "item_type": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Item Type",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_type",
+          "title"
+        ],
+        "title": "CreateLiteratureEntryRequest",
+        "type": "object"
+      },
       "CreateMatchRunRequest": {
         "properties": {
           "expected_task_version": {
@@ -3101,6 +3282,96 @@
         "title": "CreateMatchRunRequest",
         "type": "object"
       },
+      "CreateMaterialBatchRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateMaterialBatchRequest",
+        "type": "object"
+      },
+      "CreateMaterialCollectionRequest": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_collection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Collection Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateMaterialCollectionRequest",
+        "type": "object"
+      },
+      "CreateMaterialRelationRequest": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "relation_type": {
+            "$ref": "#/components/schemas/MaterialRelationType"
+          },
+          "source_material_id": {
+            "format": "uuid",
+            "title": "Source Material Id",
+            "type": "string"
+          },
+          "target_material_id": {
+            "format": "uuid",
+            "title": "Target Material Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_material_id",
+          "target_material_id",
+          "relation_type"
+        ],
+        "title": "CreateMaterialRelationRequest",
+        "type": "object"
+      },
       "CreateMethodPlanRequest": {
         "properties": {
           "framework_id": {
@@ -3123,6 +3394,65 @@
           "method_kind"
         ],
         "title": "CreateMethodPlanRequest",
+        "type": "object"
+      },
+      "CreateResearchCaseRequest": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Attributes",
+            "type": "object"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Material Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateResearchCaseRequest",
         "type": "object"
       },
       "CreateResearchDocumentRequest": {
@@ -3158,9 +3488,52 @@
       },
       "CreateResearchTaskRequest": {
         "properties": {
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode",
+            "default": "from_scratch"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType",
             "default": "direct_input"
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
           },
           "seed_theory_id": {
             "anyOf": [
@@ -3330,6 +3703,16 @@
         "title": "DeferredTheoryPlanResponse",
         "type": "object"
       },
+      "DeidentificationStatus": {
+        "enum": [
+          "not_required",
+          "pending",
+          "partial",
+          "complete"
+        ],
+        "title": "DeidentificationStatus",
+        "type": "string"
+      },
       "DeidentifiedMaterialInput": {
         "properties": {
           "deidentified_text": {
@@ -3445,6 +3828,46 @@
         "title": "DirectInputRequest",
         "type": "object"
       },
+      "DoiMetadataCandidateResponse": {
+        "properties": {
+          "csl_data": {
+            "additionalProperties": true,
+            "title": "Csl Data",
+            "type": "object"
+          },
+          "doi": {
+            "title": "Doi",
+            "type": "string"
+          },
+          "item_type": {
+            "title": "Item Type",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "verified_at": {
+            "format": "date-time",
+            "title": "Verified At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doi",
+          "item_type",
+          "title",
+          "csl_data",
+          "source",
+          "verified_at"
+        ],
+        "title": "DoiMetadataCandidateResponse",
+        "type": "object"
+      },
       "EntryInputAction": {
         "enum": [
           "extract_phenomenon_candidates"
@@ -3554,6 +3977,7 @@
           "phenomenon_unconfirmed",
           "catalog_not_ready",
           "retrieval_unavailable",
+          "doi_metadata_unavailable",
           "no_adopted_theory",
           "candidate_ineligible",
           "external_candidate_adoption_blocked",
@@ -4956,6 +5380,109 @@
         "title": "KnowledgeUseEligibilityResponse",
         "type": "object"
       },
+      "LiteratureDuplicateHintResponse": {
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "literature_id": {
+            "format": "uuid",
+            "title": "Literature Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "literature_id",
+          "candidate_id",
+          "reasons"
+        ],
+        "title": "LiteratureDuplicateHintResponse",
+        "type": "object"
+      },
+      "LiteratureEntryResponse": {
+        "properties": {
+          "attachment_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Attachment Material Ids",
+            "type": "array"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "csl_data": {
+            "additionalProperties": true,
+            "title": "Csl Data",
+            "type": "object"
+          },
+          "doi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doi"
+          },
+          "item_type": {
+            "title": "Item Type",
+            "type": "string"
+          },
+          "literature_id": {
+            "format": "uuid",
+            "title": "Literature Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "literature_id",
+          "item_type",
+          "title",
+          "doi",
+          "csl_data",
+          "attachment_material_ids",
+          "collection_ids",
+          "created_at"
+        ],
+        "title": "LiteratureEntryResponse",
+        "type": "object"
+      },
+      "LiteratureExchangeFormat": {
+        "enum": [
+          "bibtex",
+          "ris",
+          "csl_json"
+        ],
+        "title": "LiteratureExchangeFormat",
+        "type": "string"
+      },
       "LoginSessionRequest": {
         "properties": {
           "email": {
@@ -5262,6 +5789,223 @@
         "title": "MatchRunStatus",
         "type": "string"
       },
+      "MaterialArchiveInventoryResponse": {
+        "properties": {
+          "catalog_pending_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Catalog Pending Material Ids",
+            "type": "array"
+          },
+          "parse_failed_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Parse Failed Material Ids",
+            "type": "array"
+          },
+          "pending_deidentification_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Pending Deidentification Material Ids",
+            "type": "array"
+          },
+          "restricted_material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Restricted Material Ids",
+            "type": "array"
+          },
+          "suspected_duplicate_literature_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Suspected Duplicate Literature Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "catalog_pending_material_ids",
+          "parse_failed_material_ids",
+          "suspected_duplicate_literature_ids",
+          "pending_deidentification_material_ids",
+          "restricted_material_ids"
+        ],
+        "title": "MaterialArchiveInventoryResponse",
+        "type": "object"
+      },
+      "MaterialArchiveProfileResponse": {
+        "properties": {
+          "allows_external_model_processing": {
+            "title": "Allows External Model Processing",
+            "type": "boolean"
+          },
+          "allows_manual_reading": {
+            "title": "Allows Manual Reading",
+            "type": "boolean"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "consent_scope": {
+            "$ref": "#/components/schemas/ConsentScope"
+          },
+          "deidentification_status": {
+            "$ref": "#/components/schemas/DeidentificationStatus"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "model_processing_scope": {
+            "$ref": "#/components/schemas/ModelProcessingScope"
+          },
+          "research_role": {
+            "$ref": "#/components/schemas/ResearchRole"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/SensitivityLevel"
+          },
+          "specific_type": {
+            "title": "Specific Type",
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ResearchStage"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_id",
+          "research_role",
+          "specific_type",
+          "stage",
+          "batch_id",
+          "tags",
+          "collection_ids",
+          "sensitivity",
+          "consent_scope",
+          "deidentification_status",
+          "model_processing_scope",
+          "allows_manual_reading",
+          "allows_external_model_processing",
+          "updated_at"
+        ],
+        "title": "MaterialArchiveProfileResponse",
+        "type": "object"
+      },
+      "MaterialBatchResponse": {
+        "properties": {
+          "batch_id": {
+            "format": "uuid",
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "batch_id",
+          "name",
+          "created_at"
+        ],
+        "title": "MaterialBatchResponse",
+        "type": "object"
+      },
+      "MaterialCollectionResponse": {
+        "properties": {
+          "collection_id": {
+            "format": "uuid",
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_collection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Collection Id"
+          }
+        },
+        "required": [
+          "collection_id",
+          "name",
+          "description",
+          "parent_collection_id",
+          "created_at"
+        ],
+        "title": "MaterialCollectionResponse",
+        "type": "object"
+      },
       "MaterialInputRequest": {
         "properties": {
           "context": {
@@ -5485,6 +6229,66 @@
           "other"
         ],
         "title": "MaterialKind",
+        "type": "string"
+      },
+      "MaterialRelationResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "relation_id": {
+            "format": "uuid",
+            "title": "Relation Id",
+            "type": "string"
+          },
+          "relation_type": {
+            "$ref": "#/components/schemas/MaterialRelationType"
+          },
+          "source_material_id": {
+            "format": "uuid",
+            "title": "Source Material Id",
+            "type": "string"
+          },
+          "target_material_id": {
+            "format": "uuid",
+            "title": "Target Material Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "relation_id",
+          "source_material_id",
+          "target_material_id",
+          "relation_type",
+          "note",
+          "created_at"
+        ],
+        "title": "MaterialRelationResponse",
+        "type": "object"
+      },
+      "MaterialRelationType": {
+        "enum": [
+          "derived_from",
+          "supplements",
+          "translation_of",
+          "version_of",
+          "describes",
+          "related"
+        ],
+        "title": "MaterialRelationType",
         "type": "string"
       },
       "MatrixSubjectKind": {
@@ -6099,6 +6903,16 @@
         "title": "ModelMetadata",
         "type": "object"
       },
+      "ModelProcessingScope": {
+        "enum": [
+          "not_assessed",
+          "manual_only",
+          "local_only",
+          "external_allowed"
+        ],
+        "title": "ModelProcessingScope",
+        "type": "string"
+      },
       "NextResearchStepContract": {
         "properties": {
           "action": {
@@ -6601,6 +7415,89 @@
         ],
         "title": "PhenomenonSnapshotResponse",
         "type": "object"
+      },
+      "ProfessionalMaterialArchiveResponse": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialBatchResponse"
+            },
+            "title": "Batches",
+            "type": "array"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchCaseResponse"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialCollectionResponse"
+            },
+            "title": "Collections",
+            "type": "array"
+          },
+          "duplicate_hints": {
+            "items": {
+              "$ref": "#/components/schemas/LiteratureDuplicateHintResponse"
+            },
+            "title": "Duplicate Hints",
+            "type": "array"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/MaterialArchiveInventoryResponse"
+          },
+          "literature": {
+            "items": {
+              "$ref": "#/components/schemas/LiteratureEntryResponse"
+            },
+            "title": "Literature",
+            "type": "array"
+          },
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialArchiveProfileResponse"
+            },
+            "title": "Profiles",
+            "type": "array"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialRelationResponse"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "profiles",
+          "batches",
+          "collections",
+          "literature",
+          "cases",
+          "relations",
+          "inventory",
+          "duplicate_hints"
+        ],
+        "title": "ProfessionalMaterialArchiveResponse",
+        "type": "object"
+      },
+      "ProjectLifecycleStatus": {
+        "enum": [
+          "draft",
+          "in_progress",
+          "archived"
+        ],
+        "title": "ProjectLifecycleStatus",
+        "type": "string"
       },
       "QualitativeMethod": {
         "enum": [
@@ -7123,6 +8020,89 @@
         ],
         "title": "ResearchAnalysisSnapshotResponse",
         "type": "object"
+      },
+      "ResearchCaseResponse": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Attributes",
+            "type": "object"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "material_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Material Ids",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "name",
+          "description",
+          "attributes",
+          "material_ids",
+          "created_at"
+        ],
+        "title": "ResearchCaseResponse",
+        "type": "object"
+      },
+      "ResearchCentralTool": {
+        "enum": [
+          "agent",
+          "research_map",
+          "materials",
+          "phenomenon",
+          "theory_matching",
+          "framework",
+          "method"
+        ],
+        "title": "ResearchCentralTool",
+        "type": "string"
       },
       "ResearchDocumentCompletionCheckResponse": {
         "properties": {
@@ -7977,6 +8957,15 @@
         "title": "ResearchDocumentVersionListResponse",
         "type": "object"
       },
+      "ResearchEntryMode": {
+        "enum": [
+          "from_scratch",
+          "existing_research",
+          "legacy"
+        ],
+        "title": "ResearchEntryMode",
+        "type": "string"
+      },
       "ResearchMaterialListResponse": {
         "properties": {
           "items": {
@@ -8269,6 +9258,30 @@
         "title": "ResearchMaterialSegmentResponse",
         "type": "object"
       },
+      "ResearchRole": {
+        "enum": [
+          "empirical_material",
+          "literature",
+          "research_process",
+          "prior_draft",
+          "dataset",
+          "result",
+          "other"
+        ],
+        "title": "ResearchRole",
+        "type": "string"
+      },
+      "ResearchStage": {
+        "enum": [
+          "intake",
+          "collection",
+          "analysis",
+          "writing",
+          "archived"
+        ],
+        "title": "ResearchStage",
+        "type": "string"
+      },
       "ResearchStartProposalResponse": {
         "properties": {
           "confirmed_at": {
@@ -8419,7 +9432,8 @@
         "enum": [
           "draft",
           "in_progress",
-          "completed"
+          "completed",
+          "archived"
         ],
         "title": "ResearchTaskLifecycleStatus",
         "type": "string"
@@ -8600,6 +9614,9 @@
             ],
             "title": "Current Theory Plan Id"
           },
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
           },
@@ -8614,6 +9631,27 @@
             ],
             "title": "Knowledge Release Id"
           },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
           "next_action_label": {
             "title": "Next Action Label",
             "type": "string"
@@ -8627,6 +9665,21 @@
                 "type": "null"
               }
             ]
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "title": "Project Title",
+            "type": "string"
           },
           "resume_path": {
             "title": "Resume Path",
@@ -8713,6 +9766,11 @@
         "required": [
           "task_id",
           "entry_type",
+          "entry_mode",
+          "project_title",
+          "project_stage",
+          "method_orientation",
+          "last_central_tool",
           "status",
           "current_stage",
           "stage_label",
@@ -8851,8 +9909,50 @@
             "title": "Created At",
             "type": "string"
           },
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
+          },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lifecycle_status": {
+            "$ref": "#/components/schemas/ProjectLifecycleStatus"
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "title": "Project Title",
+            "type": "string"
           },
           "seed_theory_id": {
             "anyOf": [
@@ -8898,6 +9998,12 @@
           "task_id",
           "entry_type",
           "status",
+          "entry_mode",
+          "lifecycle_status",
+          "project_title",
+          "project_stage",
+          "method_orientation",
+          "last_central_tool",
           "version",
           "allowed_actions",
           "seed_theory_id",
@@ -9464,6 +10570,16 @@
         ],
         "title": "SaveTheoryDecisionDraftRequest",
         "type": "object"
+      },
+      "SensitivityLevel": {
+        "enum": [
+          "public",
+          "internal",
+          "sensitive",
+          "highly_sensitive"
+        ],
+        "title": "SensitivityLevel",
+        "type": "string"
       },
       "SessionAction": {
         "enum": [
@@ -10861,6 +11977,74 @@
         "title": "UpdateFrameworkRequest",
         "type": "object"
       },
+      "UpdateMaterialArchiveProfileRequest": {
+        "properties": {
+          "batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "consent_scope": {
+            "$ref": "#/components/schemas/ConsentScope"
+          },
+          "deidentification_status": {
+            "$ref": "#/components/schemas/DeidentificationStatus"
+          },
+          "model_processing_scope": {
+            "$ref": "#/components/schemas/ModelProcessingScope"
+          },
+          "research_role": {
+            "$ref": "#/components/schemas/ResearchRole"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/SensitivityLevel"
+          },
+          "specific_type": {
+            "maxLength": 96,
+            "minLength": 1,
+            "title": "Specific Type",
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ResearchStage"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "research_role",
+          "specific_type",
+          "stage",
+          "sensitivity",
+          "consent_scope",
+          "deidentification_status",
+          "model_processing_scope"
+        ],
+        "title": "UpdateMaterialArchiveProfileRequest",
+        "type": "object"
+      },
       "UpdateMethodPlanRequest": {
         "properties": {
           "change_summary": {
@@ -10983,6 +12167,79 @@
           "source"
         ],
         "title": "UpdateResearchDocumentRequest",
+        "type": "object"
+      },
+      "UpdateResearchTaskRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lifecycle_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectLifecycleStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "UpdateResearchTaskRequest",
         "type": "object"
       }
     }
@@ -15342,6 +16599,88 @@
         "tags": [
           "research-tasks"
         ]
+      },
+      "patch": {
+        "operationId": "update_research_task",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResearchTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Research Task",
+        "tags": [
+          "research-tasks"
+        ]
       }
     },
     "/api/research-tasks/{task_id}/analysis": {
@@ -17124,6 +18463,698 @@
         "summary": "Create Match Run",
         "tags": [
           "matching"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive": {
+      "get": {
+        "operationId": "get_professional_material_archive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessionalMaterialArchiveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Professional Material Archive",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/batches": {
+      "post": {
+        "operationId": "create_material_batch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMaterialBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Material Batch",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/batches/{batch_id}/materials": {
+      "post": {
+        "operationId": "batch_upload_materials",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_batch_upload_materials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "207": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Batch Upload Materials",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/cases": {
+      "post": {
+        "operationId": "create_research_case",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResearchCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCaseResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Research Case",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/collections": {
+      "post": {
+        "operationId": "create_material_collection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMaterialCollectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialCollectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Material Collection",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/doi": {
+      "get": {
+        "operationId": "resolve_doi_metadata",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "doi",
+            "required": true,
+            "schema": {
+              "maxLength": 300,
+              "minLength": 6,
+              "title": "Doi",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DoiMetadataCandidateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Resolve Doi Metadata",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/literature": {
+      "post": {
+        "operationId": "create_literature_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLiteratureEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiteratureEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Literature Entry",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/literature/export": {
+      "get": {
+        "operationId": "export_literature_entries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exchange_format",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LiteratureExchangeFormat"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Export Literature Entries Route",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/literature/import": {
+      "post": {
+        "operationId": "import_literature_entries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_literature_entries"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LiteratureEntryResponse"
+                  },
+                  "title": "Response Import Literature Entries",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Import Literature Entries Route",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/materials/{material_id}": {
+      "patch": {
+        "operationId": "update_professional_material_profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMaterialArchiveProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialArchiveProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Professional Material Profile",
+        "tags": [
+          "professional-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/material-archive/relations": {
+      "post": {
+        "operationId": "create_material_relation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMaterialRelationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialRelationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Material Relation",
+        "tags": [
+          "professional-materials"
         ]
       }
     },

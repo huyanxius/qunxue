@@ -30,6 +30,7 @@ from qunxue_api.adapters.research_agent import (
     SiliconFlowRerankerProvider,
 )
 from qunxue_api.adapters.research_materials import parse_material
+from qunxue_api.adapters.research_materials.doi import CrossrefDoiMetadataResolver
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     HybridRetriever,
@@ -42,6 +43,9 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
+from qunxue_api.adapters.sqlite.professional_material_repository import (
+    SqliteProfessionalMaterialRepository,
+)
 from qunxue_api.adapters.sqlite.research_analysis_repository import (
     SqliteResearchAnalysisRepository,
 )
@@ -81,6 +85,9 @@ from qunxue_api.api.routes.matching import router as matching_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
+from qunxue_api.api.routes.professional_materials import (
+    router as professional_materials_router,
+)
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_materials import router as research_materials_router
@@ -89,6 +96,7 @@ from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
+    ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
@@ -315,6 +323,21 @@ def create_app(
             )
 
     app.state.research_material_application_scope = research_material_application_scope
+
+    @contextmanager
+    def professional_materials_application_scope() -> Iterator[ProfessionalMaterialsApplication]:
+        with resolved_database.session() as session:
+            yield ProfessionalMaterialsApplication(
+                archive=SqliteProfessionalMaterialRepository(session),
+                materials=SqliteResearchMaterialRepository(session),
+                research_tasks=SqliteResearchTaskRepository(session),
+                commit=session.commit,
+                doi_resolver=CrossrefDoiMetadataResolver(),
+            )
+
+    app.state.professional_materials_application_scope = (
+        professional_materials_application_scope
+    )
 
     @contextmanager
     def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
@@ -569,6 +592,16 @@ def create_app(
                         ),
                     ),
                     atomic=session.begin_nested,
+                    ensure_research_draft=(
+                        lambda **payload: research_start_application.ensure_draft_project(
+                            **payload
+                        ).task_id
+                    ),
+                    bind_research_draft=(
+                        lambda **payload: research_start_application.bind_material_first_draft(
+                            **payload
+                        ).task_id
+                    ),
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
@@ -592,6 +625,7 @@ def create_app(
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
     app.include_router(research_materials_router)
+    app.include_router(professional_materials_router)
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)
     app.include_router(phenomena_router)

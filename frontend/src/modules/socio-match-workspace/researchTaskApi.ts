@@ -24,7 +24,10 @@ import type {
   PhenomenonSnapshot,
   ResearchTask,
   ResearchTaskAction,
+  ResearchCentralTool,
+  ResearchTaskEntryMode,
   ResearchTaskEntryType,
+  ResearchTaskLifecycleStatus,
   RestoredPhenomenon,
   SeedTheoryClue,
   SeedTheoryStart,
@@ -36,6 +39,28 @@ const entryTypes = {
   material_input: 'material_input',
 } satisfies Record<ResearchTaskResponse['entry_type'], ResearchTaskEntryType>
 
+const entryModes = {
+  from_scratch: 'from_scratch',
+  existing_research: 'existing_research',
+  legacy: 'legacy',
+} satisfies Record<ResearchTaskResponse['entry_mode'], ResearchTaskEntryMode>
+
+const lifecycleStatuses = {
+  draft: 'draft',
+  in_progress: 'in_progress',
+  archived: 'archived',
+} satisfies Record<ResearchTaskResponse['lifecycle_status'], ResearchTaskLifecycleStatus>
+
+const centralTools = {
+  agent: 'agent',
+  research_map: 'research_map',
+  materials: 'materials',
+  phenomenon: 'phenomenon',
+  theory_matching: 'theory_matching',
+  framework: 'framework',
+  method: 'method',
+} satisfies Record<NonNullable<ResearchTaskResponse['last_central_tool']>, ResearchCentralTool>
+
 const taskActions = {
   submit_phenomenon: 'submit_phenomenon',
 } satisfies Record<ResearchTaskResponse['allowed_actions'][number], ResearchTaskAction>
@@ -45,9 +70,20 @@ function seedTheory(id: string | null, name: string | null): SeedTheoryClue | nu
 }
 
 function toResearchTask(response: ResearchTaskResponse): ResearchTask {
+  const entryMode = response.entry_mode
+  const lifecycleStatus = response.lifecycle_status
+  const projectTitle = response.project_title
   return {
     taskId: response.task_id,
     entryType: entryTypes[response.entry_type],
+    ...(entryMode ? { entryMode: entryModes[entryMode] } : {}),
+    ...(lifecycleStatus ? { lifecycleStatus: lifecycleStatuses[lifecycleStatus] } : {}),
+    ...(projectTitle ? { projectTitle } : {}),
+    ...(response.project_stage !== undefined ? { projectStage: response.project_stage } : {}),
+    ...(response.method_orientation !== undefined ? { methodOrientation: response.method_orientation } : {}),
+    ...(response.last_central_tool !== undefined
+      ? { lastCentralTool: response.last_central_tool ? centralTools[response.last_central_tool] : null }
+      : {}),
     status: response.status,
     version: response.version,
     allowedActions: response.allowed_actions.map((action) => taskActions[action]),
@@ -99,6 +135,10 @@ export async function createResearchTaskViaApi(
   requestKey: string,
   options: {
     entryType?: ResearchTaskEntryType
+    entryMode?: ResearchTaskEntryMode
+    projectTitle?: string
+    projectStage?: string
+    methodOrientation?: string
     seedTheory?: SeedTheoryStart | null
   } = {},
 ): Promise<ResearchTask> {
@@ -106,6 +146,10 @@ export async function createResearchTaskViaApi(
     client: apiClient,
     body: {
       entry_type: options.entryType ?? 'direct_input',
+      ...(options.entryMode ? { entry_mode: options.entryMode } : {}),
+      ...(options.projectTitle !== undefined ? { project_title: options.projectTitle } : {}),
+      ...(options.projectStage !== undefined ? { project_stage: options.projectStage } : {}),
+      ...(options.methodOrientation !== undefined ? { method_orientation: options.methodOrientation } : {}),
       seed_theory_id: options.seedTheory?.theoryId ?? null,
     },
     headers: { 'Idempotency-Key': requestKey },

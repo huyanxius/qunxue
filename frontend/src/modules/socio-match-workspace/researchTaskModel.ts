@@ -1,4 +1,14 @@
 export type ResearchTaskEntryType = 'direct_input' | 'material_input'
+export type ResearchTaskEntryMode = 'from_scratch' | 'existing_research' | 'legacy'
+export type ResearchTaskLifecycleStatus = 'draft' | 'in_progress' | 'archived'
+export type ResearchCentralTool =
+  | 'agent'
+  | 'research_map'
+  | 'materials'
+  | 'phenomenon'
+  | 'theory_matching'
+  | 'framework'
+  | 'method'
 export type ResearchTaskStatus =
   | 'draft'
   | 'phenomenon_confirmed'
@@ -21,6 +31,12 @@ export interface SeedTheoryClue extends SeedTheoryStart {
 export interface ResearchTask {
   readonly taskId: string
   readonly entryType: ResearchTaskEntryType
+  readonly entryMode?: ResearchTaskEntryMode
+  readonly lifecycleStatus?: ResearchTaskLifecycleStatus
+  readonly projectTitle?: string
+  readonly projectStage?: string | null
+  readonly methodOrientation?: string | null
+  readonly lastCentralTool?: ResearchCentralTool | null
   readonly status: ResearchTaskStatus
   readonly version: number
   readonly allowedActions: readonly ResearchTaskAction[]

@@ -4,6 +4,7 @@ from qunxue_api.application.disciplinary_agent import (
     AgentTurnExecution,
     DisciplinaryAgentApplication,
 )
+from qunxue_api.application.professional_materials import ProfessionalMaterialsApplication
 from qunxue_api.application.research_analysis import ResearchAnalysisApplication
 from qunxue_api.application.research_document_proposals import (
     ResearchDocumentProposalApplication,
@@ -36,6 +37,7 @@ __all__ = [
     "ResearchJourneyConfigurationError",
     "ResearchJourneyDependencies",
     "ResearchMaterialApplication",
+    "ProfessionalMaterialsApplication",
     "ResearchMethodPlanApplication",
     "ResearchStartApplication",
     "ResearchStartConfirmationResult",

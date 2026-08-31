@@ -11,6 +11,7 @@ from qunxue_api.modules.research_intake import (
     ResearchStartProposal,
     ResearchTaskRepository,
     ResearchTaskService,
+    ResearchTaskStatus,
 )
 from qunxue_api.modules.theory_matching import (
     MatchRunStatus,
@@ -89,6 +90,18 @@ class AgentResearchWorkflow:
             research_intent=research_intent,
             context=context,
         )
+
+    def can_prepare_start_proposal(
+        self, *, user_id: UUID, conversation_id: UUID
+    ) -> bool:
+        task_id = self._bindings.get_research_task_id(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+        if task_id is None:
+            return True
+        task = self._tasks.get(task_id, user_id=user_id)
+        return task.status is ResearchTaskStatus.DRAFT
 
     def persist_completed_turn_proposal(
         self, proposal: ResearchStartProposal

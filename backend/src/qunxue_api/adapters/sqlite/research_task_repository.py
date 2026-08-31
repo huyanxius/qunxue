@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from qunxue_api.adapters.sqlite import ModelInvocationRow, ResearchTaskRow
 from qunxue_api.modules.research_intake import (
     EntryType,
+    ProjectLifecycleStatus,
+    ResearchCentralTool,
+    ResearchEntryMode,
     ResearchTask,
     ResearchTaskRepository,
     ResearchTaskStatus,
@@ -69,6 +72,14 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
                 status=task.status.value,
                 version=task.version,
                 idempotency_key=task.idempotency_key,
+                entry_mode=task.entry_mode.value,
+                lifecycle_status=task.lifecycle_status.value,
+                project_title=task.project_title,
+                project_stage=task.project_stage,
+                method_orientation=task.method_orientation,
+                last_central_tool=(
+                    task.last_central_tool.value if task.last_central_tool else None
+                ),
                 seed_theory_id=task.seed_theory_id,
                 seed_theory_name=task.seed_theory_name,
                 phenomenon_query_id=(
@@ -148,6 +159,13 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             )
             .values(
                 status=task.status.value,
+                lifecycle_status=task.lifecycle_status.value,
+                project_title=task.project_title,
+                project_stage=task.project_stage,
+                method_orientation=task.method_orientation,
+                last_central_tool=(
+                    task.last_central_tool.value if task.last_central_tool else None
+                ),
                 version=task.version,
                 updated_at=task.updated_at,
                 phenomenon_query_id=(
@@ -207,6 +225,14 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
             status=ResearchTaskStatus(row.status),
             version=row.version,
             idempotency_key=row.idempotency_key,
+            entry_mode=ResearchEntryMode(row.entry_mode),
+            lifecycle_status=ProjectLifecycleStatus(row.lifecycle_status),
+            project_title=row.project_title,
+            project_stage=row.project_stage,
+            method_orientation=row.method_orientation,
+            last_central_tool=(
+                ResearchCentralTool(row.last_central_tool) if row.last_central_tool else None
+            ),
             seed_theory_id=row.seed_theory_id,
             seed_theory_name=row.seed_theory_name,
             created_at=_as_utc(row.created_at),

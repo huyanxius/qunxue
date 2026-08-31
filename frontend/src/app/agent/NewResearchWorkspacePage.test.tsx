@@ -181,6 +181,76 @@ function renderPage(path = '/research/new', strict = false, userId = 'user-a') {
 }
 
 describe('NewResearchWorkspacePage', () => {
+  it('creates no empty task on open and keeps first materials on one draft task', async () => {
+    const taskId = 'material-first-task'
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      const url = new URL(request.url)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname === '/api/research-tasks' && request.method === 'POST') {
+        return json({
+          task_id: taskId,
+          entry_type: 'material_input',
+          entry_mode: 'from_scratch',
+          lifecycle_status: 'draft',
+          project_title: '社区访谈.txt',
+          project_stage: null,
+          method_orientation: null,
+          last_central_tool: 'materials',
+          status: 'draft',
+          version: 1,
+          allowed_actions: ['submit_phenomenon'],
+          seed_theory_id: null,
+          seed_theory_name: null,
+          created_at: '2026-08-31T00:00:00Z',
+          updated_at: '2026-08-31T00:00:00Z',
+        }, 201)
+      }
+      if (url.pathname === `/api/research-tasks/${taskId}/materials` && request.method === 'POST') {
+        const form = await request.formData()
+        const file = form.get('file') as File
+        return json({
+          material_id: `material-${file.name}`,
+          task_id: taskId,
+          filename: file.name,
+          media_type: file.type || 'text/plain',
+          material_kind: 'other',
+          size_bytes: file.size,
+          status: 'ready',
+          version: 1,
+          parse_version: 1,
+          segment_count: 1,
+          created_at: '2026-08-31T00:00:00Z',
+          updated_at: '2026-08-31T00:00:00Z',
+        }, 201)
+      }
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderPage()
+
+    await screen.findByRole('region', { name: 'Agent 对话记录' })
+    expect(fetch.mock.calls.some(([input, init]) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      return new URL(request.url).pathname === '/api/research-tasks'
+    })).toBe(false)
+
+    const files = [
+      new File(['第一份访谈'], '社区访谈.txt', { type: 'text/plain' }),
+      new File(['第二份访谈'], '补充访谈.md', { type: 'text/markdown' }),
+    ]
+    fireEvent.change(screen.getByLabelText('从材料开始研究'), { target: { files } })
+
+    await waitFor(() => expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(
+      `/research/new?task_id=${taskId}`,
+    ))
+    const uploadRequests = fetch.mock.calls.filter(([input, init]) => {
+      const request = input instanceof Request ? input : new Request(input, init)
+      return new URL(request.url).pathname.endsWith('/materials')
+    })
+    expect(uploadRequests).toHaveLength(2)
+  })
+
   it('shows saved Agent conversations in the left rail', async () => {
     const conversation = conversationFixture('青年为什么推迟进入婚姻？')
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -224,6 +294,30 @@ describe('NewResearchWorkspacePage', () => {
     expect(within(proposal).getByText(journey.proposal!.context!)).toBeVisible()
     expect(within(proposal).getByRole('button', { name: '确认研究起点' })).toBeEnabled()
     expect(within(proposal).getByRole('button', { name: '继续修改' })).toBeEnabled()
+  })
+
+  it('keeps confirmation visible when the conversation already owns its draft project', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture({
+      task_id: 'draft-task-created-from-first-message',
+      navigation: researchStartNavigationFixture({
+        task_id: 'draft-task-created-from-first-message',
+        status: 'draft',
+        current_stage: 'phenomenon_input',
+      }),
+    })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+
+    expect(await screen.findByRole('region', { name: '研究建立确认' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: '研究已建立' })).not.toBeInTheDocument()
   })
 
   it('keeps one confirmation transaction across duplicate clicks and an explicit retry', async () => {

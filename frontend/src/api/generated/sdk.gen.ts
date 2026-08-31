@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptResearchDocumentProposalData, AcceptResearchDocumentProposalErrors, AcceptResearchDocumentProposalResponses, AcknowledgePartialMatchData, AcknowledgePartialMatchErrors, AcknowledgePartialMatchResponses, ConfigureResearchCodebookEntryData, ConfigureResearchCodebookEntryErrors, ConfigureResearchCodebookEntryResponses, ConfirmAgentResearchStartData, ConfirmAgentResearchStartErrors, ConfirmAgentResearchStartResponses, ConfirmFrameworkData, ConfirmFrameworkErrors, ConfirmFrameworkResponses, ConfirmMethodPlanData, ConfirmMethodPlanErrors, ConfirmMethodPlanResponses, ConfirmPhenomenonCandidateData, ConfirmPhenomenonCandidateErrors, ConfirmPhenomenonCandidateResponses, ConfirmResearchAnalysisThemeData, ConfirmResearchAnalysisThemeErrors, ConfirmResearchAnalysisThemeResponses, ConfirmResearchDocumentData, ConfirmResearchDocumentErrors, ConfirmResearchDocumentResponses, ConfirmTheoryPlanData, ConfirmTheoryPlanErrors, ConfirmTheoryPlanResponses, CreateFrameworkData, CreateFrameworkErrors, CreateFrameworkResponses, CreateMatchRunData, CreateMatchRunErrors, CreateMatchRunResponses, CreateMethodPlanData, CreateMethodPlanErrors, CreateMethodPlanResponses, CreateResearchAnalysisAnnotationData, CreateResearchAnalysisAnnotationErrors, CreateResearchAnalysisAnnotationResponses, CreateResearchAnalysisCodeData, CreateResearchAnalysisCodeErrors, CreateResearchAnalysisCodeResponses, CreateResearchAnalysisMemoData, CreateResearchAnalysisMemoErrors, CreateResearchAnalysisMemoLinkData, CreateResearchAnalysisMemoLinkErrors, CreateResearchAnalysisMemoLinkResponses, CreateResearchAnalysisMemoResponses, CreateResearchAnalysisThemeData, CreateResearchAnalysisThemeErrors, CreateResearchAnalysisThemeResponses, CreateResearchCaseComparisonData, CreateResearchCaseComparisonErrors, CreateResearchCaseComparisonResponses, CreateResearchDocumentData, CreateResearchDocumentErrors, CreateResearchDocumentResponses, CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, CreateTheoryDecisionsData, CreateTheoryDecisionsErrors, CreateTheoryDecisionsResponses, DecideResearchAnalysisCodeData, DecideResearchAnalysisCodeErrors, DecideResearchAnalysisCodeResponses, DecideResearchAnalysisMemoData, DecideResearchAnalysisMemoErrors, DecideResearchAnalysisMemoResponses, DecideResearchCaseComparisonData, DecideResearchCaseComparisonErrors, DecideResearchCaseComparisonResponses, DeferTheoryPlanData, DeferTheoryPlanErrors, DeferTheoryPlanResponses, DeleteAgentConversationData, DeleteAgentConversationErrors, DeleteAgentConversationResponses, DeleteResearchMaterialData, DeleteResearchMaterialErrors, DeleteResearchMaterialResponses, DeleteResearchTaskData, DeleteResearchTaskErrors, DeleteResearchTaskResponses, ExportConfirmedFrameworkData, ExportConfirmedFrameworkErrors, ExportConfirmedFrameworkResponses, ExportResearchDocumentData, ExportResearchDocumentErrors, ExportResearchDocumentResponses, ExportResearchTraceData, ExportResearchTraceErrors, ExportResearchTraceResponses, ExtractPhenomenonCandidatesData, ExtractPhenomenonCandidatesErrors, ExtractPhenomenonCandidatesResponses, GetAgentConversationData, GetAgentConversationErrors, GetAgentConversationResponses, GetAgentResearchJourneyData, GetAgentResearchJourneyErrors, GetAgentResearchJourneyResponses, GetAgentResearchStartProposalData, GetAgentResearchStartProposalErrors, GetAgentResearchStartProposalResponses, GetConfirmedTheoryPlanData, GetConfirmedTheoryPlanErrors, GetConfirmedTheoryPlanResponses, GetCurrentKnowledgeReleaseData, GetCurrentKnowledgeReleaseErrors, GetCurrentKnowledgeReleaseResponses, GetCurrentMethodPlanData, GetCurrentMethodPlanErrors, GetCurrentMethodPlanResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetFrameworkData, GetFrameworkErrors, GetFrameworkResponses, GetFrameworkReviewData, GetFrameworkReviewErrors, GetFrameworkReviewResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetKnowledgeDirectoryData, GetKnowledgeDirectoryErrors, GetKnowledgeDirectoryResponses, GetKnowledgeEntryData, GetKnowledgeEntryErrors, GetKnowledgeEntryResponses, GetMatchRunData, GetMatchRunErrors, GetMatchRunResponses, GetMaterialIntakeRunData, GetMaterialIntakeRunErrors, GetMaterialIntakeRunResponses, GetMethodPlanData, GetMethodPlanErrors, GetMethodPlanResponses, GetPhenomenonCandidateData, GetPhenomenonCandidateErrors, GetPhenomenonCandidateResponses, GetResearchAnalysisData, GetResearchAnalysisErrors, GetResearchAnalysisResponses, GetResearchDocumentCompletionGateData, GetResearchDocumentCompletionGateErrors, GetResearchDocumentCompletionGateResponses, GetResearchDocumentData, GetResearchDocumentErrors, GetResearchDocumentProposalData, GetResearchDocumentProposalErrors, GetResearchDocumentProposalResponses, GetResearchDocumentResponses, GetResearchMaterialData, GetResearchMaterialErrors, GetResearchMaterialResponses, GetResearchMaterialSegmentData, GetResearchMaterialSegmentErrors, GetResearchMaterialSegmentResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskNavigationData, GetResearchTaskNavigationErrors, GetResearchTaskNavigationResponses, GetResearchTaskResponses, GetResearchTraceData, GetResearchTraceErrors, GetResearchTraceResponses, GetTheoryDecisionDraftData, GetTheoryDecisionDraftErrors, GetTheoryDecisionDraftResponses, ListAgentConversationsData, ListAgentConversationsErrors, ListAgentConversationsResponses, ListBuiltinCasesData, ListBuiltinCasesErrors, ListBuiltinCasesResponses, ListKnowledgeConnectionsData, ListKnowledgeConnectionsErrors, ListKnowledgeConnectionsResponses, ListKnowledgeEntriesData, ListKnowledgeEntriesErrors, ListKnowledgeEntriesResponses, ListKnowledgeRelationCandidatesData, ListKnowledgeRelationCandidatesErrors, ListKnowledgeRelationCandidatesResponses, ListKnowledgeRelationsData, ListKnowledgeRelationsErrors, ListKnowledgeRelationsResponses, ListMatchCandidatesData, ListMatchCandidatesErrors, ListMatchCandidatesResponses, ListMethodPlanVersionsData, ListMethodPlanVersionsErrors, ListMethodPlanVersionsResponses, ListPhenomenonExamplesData, ListPhenomenonExamplesResponses, ListPhenomenonSnapshotsData, ListPhenomenonSnapshotsErrors, ListPhenomenonSnapshotsResponses, ListResearchDocumentProposalsData, ListResearchDocumentProposalsErrors, ListResearchDocumentProposalsResponses, ListResearchDocumentsData, ListResearchDocumentsErrors, ListResearchDocumentsResponses, ListResearchDocumentVersionsData, ListResearchDocumentVersionsErrors, ListResearchDocumentVersionsResponses, ListResearchMaterialsData, ListResearchMaterialsErrors, ListResearchMaterialsResponses, ListResearchTaskDocumentProposalsData, ListResearchTaskDocumentProposalsErrors, ListResearchTaskDocumentProposalsResponses, ListResearchTasksData, ListResearchTasksErrors, ListResearchTasksResponses, ListTheoryDecisionsData, ListTheoryDecisionsErrors, ListTheoryDecisionsResponses, LoginSessionData, LoginSessionErrors, LoginSessionResponses, LogoutSessionData, LogoutSessionErrors, LogoutSessionResponses, RegisterSessionData, RegisterSessionErrors, RegisterSessionResponses, RejectResearchDocumentProposalData, RejectResearchDocumentProposalErrors, RejectResearchDocumentProposalResponses, ReparseResearchMaterialData, ReparseResearchMaterialErrors, ReparseResearchMaterialResponses, ResolveMethodPlanReviewData, ResolveMethodPlanReviewErrors, ResolveMethodPlanReviewResponses, RestoreMethodPlanData, RestoreMethodPlanErrors, RestoreMethodPlanResponses, RestoreResearchDocumentData, RestoreResearchDocumentErrors, RestoreResearchDocumentResponses, RetryFrameworkReviewData, RetryFrameworkReviewErrors, RetryFrameworkReviewResponses, RetryMatchCandidateData, RetryMatchCandidateErrors, RetryMatchCandidateResponses, ReviewMethodPlanData, ReviewMethodPlanErrors, ReviewMethodPlanResponses, SaveResearchAnalysisCaseProfileData, SaveResearchAnalysisCaseProfileErrors, SaveResearchAnalysisCaseProfileResponses, SaveResearchCaseThemeMatrixCellData, SaveResearchCaseThemeMatrixCellErrors, SaveResearchCaseThemeMatrixCellResponses, SaveTheoryDecisionDraftData, SaveTheoryDecisionDraftErrors, SaveTheoryDecisionDraftResponses, SendRegistrationCodeData, SendRegistrationCodeErrors, SendRegistrationCodeResponses, SetResearchQualitativeMethodData, SetResearchQualitativeMethodErrors, SetResearchQualitativeMethodResponses, StartFrameworkReviewData, StartFrameworkReviewErrors, StartFrameworkReviewResponses, StreamAgentTurnData, StreamAgentTurnErrors, StreamAgentTurnResponse, StreamAgentTurnResponses, SubmitAuditResolutionsData, SubmitAuditResolutionsErrors, SubmitAuditResolutionsResponses, SubmitDirectInputData, SubmitDirectInputErrors, SubmitDirectInputResponses, SubmitMaterialInputData, SubmitMaterialInputErrors, SubmitMaterialInputResponses, SubmitMaterialIntakeData, SubmitMaterialIntakeErrors, SubmitMaterialIntakeResponses, TransitionResearchCodebookEntryData, TransitionResearchCodebookEntryErrors, TransitionResearchCodebookEntryResponses, UpdateAgentConversationData, UpdateAgentConversationErrors, UpdateAgentConversationResponses, UpdateFrameworkData, UpdateFrameworkErrors, UpdateFrameworkResponses, UpdateMethodPlanData, UpdateMethodPlanErrors, UpdateMethodPlanResponses, UpdatePhenomenonCandidateData, UpdatePhenomenonCandidateErrors, UpdatePhenomenonCandidateResponses, UpdateResearchDocumentData, UpdateResearchDocumentErrors, UpdateResearchDocumentResponses, UploadResearchMaterialData, UploadResearchMaterialErrors, UploadResearchMaterialResponses } from './types.gen';
+import type { AcceptResearchDocumentProposalData, AcceptResearchDocumentProposalErrors, AcceptResearchDocumentProposalResponses, AcknowledgePartialMatchData, AcknowledgePartialMatchErrors, AcknowledgePartialMatchResponses, BatchUploadMaterialsData, BatchUploadMaterialsErrors, BatchUploadMaterialsResponses, ConfigureResearchCodebookEntryData, ConfigureResearchCodebookEntryErrors, ConfigureResearchCodebookEntryResponses, ConfirmAgentResearchStartData, ConfirmAgentResearchStartErrors, ConfirmAgentResearchStartResponses, ConfirmFrameworkData, ConfirmFrameworkErrors, ConfirmFrameworkResponses, ConfirmMethodPlanData, ConfirmMethodPlanErrors, ConfirmMethodPlanResponses, ConfirmPhenomenonCandidateData, ConfirmPhenomenonCandidateErrors, ConfirmPhenomenonCandidateResponses, ConfirmResearchAnalysisThemeData, ConfirmResearchAnalysisThemeErrors, ConfirmResearchAnalysisThemeResponses, ConfirmResearchDocumentData, ConfirmResearchDocumentErrors, ConfirmResearchDocumentResponses, ConfirmTheoryPlanData, ConfirmTheoryPlanErrors, ConfirmTheoryPlanResponses, CreateFrameworkData, CreateFrameworkErrors, CreateFrameworkResponses, CreateLiteratureEntryData, CreateLiteratureEntryErrors, CreateLiteratureEntryResponses, CreateMatchRunData, CreateMatchRunErrors, CreateMatchRunResponses, CreateMaterialBatchData, CreateMaterialBatchErrors, CreateMaterialBatchResponses, CreateMaterialCollectionData, CreateMaterialCollectionErrors, CreateMaterialCollectionResponses, CreateMaterialRelationData, CreateMaterialRelationErrors, CreateMaterialRelationResponses, CreateMethodPlanData, CreateMethodPlanErrors, CreateMethodPlanResponses, CreateResearchAnalysisAnnotationData, CreateResearchAnalysisAnnotationErrors, CreateResearchAnalysisAnnotationResponses, CreateResearchAnalysisCodeData, CreateResearchAnalysisCodeErrors, CreateResearchAnalysisCodeResponses, CreateResearchAnalysisMemoData, CreateResearchAnalysisMemoErrors, CreateResearchAnalysisMemoLinkData, CreateResearchAnalysisMemoLinkErrors, CreateResearchAnalysisMemoLinkResponses, CreateResearchAnalysisMemoResponses, CreateResearchAnalysisThemeData, CreateResearchAnalysisThemeErrors, CreateResearchAnalysisThemeResponses, CreateResearchCaseComparisonData, CreateResearchCaseComparisonErrors, CreateResearchCaseComparisonResponses, CreateResearchCaseData, CreateResearchCaseErrors, CreateResearchCaseResponses, CreateResearchDocumentData, CreateResearchDocumentErrors, CreateResearchDocumentResponses, CreateResearchTaskData, CreateResearchTaskErrors, CreateResearchTaskResponses, CreateTheoryDecisionsData, CreateTheoryDecisionsErrors, CreateTheoryDecisionsResponses, DecideResearchAnalysisCodeData, DecideResearchAnalysisCodeErrors, DecideResearchAnalysisCodeResponses, DecideResearchAnalysisMemoData, DecideResearchAnalysisMemoErrors, DecideResearchAnalysisMemoResponses, DecideResearchCaseComparisonData, DecideResearchCaseComparisonErrors, DecideResearchCaseComparisonResponses, DeferTheoryPlanData, DeferTheoryPlanErrors, DeferTheoryPlanResponses, DeleteAgentConversationData, DeleteAgentConversationErrors, DeleteAgentConversationResponses, DeleteResearchMaterialData, DeleteResearchMaterialErrors, DeleteResearchMaterialResponses, DeleteResearchTaskData, DeleteResearchTaskErrors, DeleteResearchTaskResponses, ExportConfirmedFrameworkData, ExportConfirmedFrameworkErrors, ExportConfirmedFrameworkResponses, ExportLiteratureEntriesData, ExportLiteratureEntriesErrors, ExportLiteratureEntriesResponses, ExportResearchDocumentData, ExportResearchDocumentErrors, ExportResearchDocumentResponses, ExportResearchTraceData, ExportResearchTraceErrors, ExportResearchTraceResponses, ExtractPhenomenonCandidatesData, ExtractPhenomenonCandidatesErrors, ExtractPhenomenonCandidatesResponses, GetAgentConversationData, GetAgentConversationErrors, GetAgentConversationResponses, GetAgentResearchJourneyData, GetAgentResearchJourneyErrors, GetAgentResearchJourneyResponses, GetAgentResearchStartProposalData, GetAgentResearchStartProposalErrors, GetAgentResearchStartProposalResponses, GetConfirmedTheoryPlanData, GetConfirmedTheoryPlanErrors, GetConfirmedTheoryPlanResponses, GetCurrentKnowledgeReleaseData, GetCurrentKnowledgeReleaseErrors, GetCurrentKnowledgeReleaseResponses, GetCurrentMethodPlanData, GetCurrentMethodPlanErrors, GetCurrentMethodPlanResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetFrameworkData, GetFrameworkErrors, GetFrameworkResponses, GetFrameworkReviewData, GetFrameworkReviewErrors, GetFrameworkReviewResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetKnowledgeDirectoryData, GetKnowledgeDirectoryErrors, GetKnowledgeDirectoryResponses, GetKnowledgeEntryData, GetKnowledgeEntryErrors, GetKnowledgeEntryResponses, GetMatchRunData, GetMatchRunErrors, GetMatchRunResponses, GetMaterialIntakeRunData, GetMaterialIntakeRunErrors, GetMaterialIntakeRunResponses, GetMethodPlanData, GetMethodPlanErrors, GetMethodPlanResponses, GetPhenomenonCandidateData, GetPhenomenonCandidateErrors, GetPhenomenonCandidateResponses, GetProfessionalMaterialArchiveData, GetProfessionalMaterialArchiveErrors, GetProfessionalMaterialArchiveResponses, GetResearchAnalysisData, GetResearchAnalysisErrors, GetResearchAnalysisResponses, GetResearchDocumentCompletionGateData, GetResearchDocumentCompletionGateErrors, GetResearchDocumentCompletionGateResponses, GetResearchDocumentData, GetResearchDocumentErrors, GetResearchDocumentProposalData, GetResearchDocumentProposalErrors, GetResearchDocumentProposalResponses, GetResearchDocumentResponses, GetResearchMaterialData, GetResearchMaterialErrors, GetResearchMaterialResponses, GetResearchMaterialSegmentData, GetResearchMaterialSegmentErrors, GetResearchMaterialSegmentResponses, GetResearchTaskData, GetResearchTaskErrors, GetResearchTaskNavigationData, GetResearchTaskNavigationErrors, GetResearchTaskNavigationResponses, GetResearchTaskResponses, GetResearchTraceData, GetResearchTraceErrors, GetResearchTraceResponses, GetTheoryDecisionDraftData, GetTheoryDecisionDraftErrors, GetTheoryDecisionDraftResponses, ImportLiteratureEntriesData, ImportLiteratureEntriesErrors, ImportLiteratureEntriesResponses, ListAgentConversationsData, ListAgentConversationsErrors, ListAgentConversationsResponses, ListBuiltinCasesData, ListBuiltinCasesErrors, ListBuiltinCasesResponses, ListKnowledgeConnectionsData, ListKnowledgeConnectionsErrors, ListKnowledgeConnectionsResponses, ListKnowledgeEntriesData, ListKnowledgeEntriesErrors, ListKnowledgeEntriesResponses, ListKnowledgeRelationCandidatesData, ListKnowledgeRelationCandidatesErrors, ListKnowledgeRelationCandidatesResponses, ListKnowledgeRelationsData, ListKnowledgeRelationsErrors, ListKnowledgeRelationsResponses, ListMatchCandidatesData, ListMatchCandidatesErrors, ListMatchCandidatesResponses, ListMethodPlanVersionsData, ListMethodPlanVersionsErrors, ListMethodPlanVersionsResponses, ListPhenomenonExamplesData, ListPhenomenonExamplesResponses, ListPhenomenonSnapshotsData, ListPhenomenonSnapshotsErrors, ListPhenomenonSnapshotsResponses, ListResearchDocumentProposalsData, ListResearchDocumentProposalsErrors, ListResearchDocumentProposalsResponses, ListResearchDocumentsData, ListResearchDocumentsErrors, ListResearchDocumentsResponses, ListResearchDocumentVersionsData, ListResearchDocumentVersionsErrors, ListResearchDocumentVersionsResponses, ListResearchMaterialsData, ListResearchMaterialsErrors, ListResearchMaterialsResponses, ListResearchTaskDocumentProposalsData, ListResearchTaskDocumentProposalsErrors, ListResearchTaskDocumentProposalsResponses, ListResearchTasksData, ListResearchTasksErrors, ListResearchTasksResponses, ListTheoryDecisionsData, ListTheoryDecisionsErrors, ListTheoryDecisionsResponses, LoginSessionData, LoginSessionErrors, LoginSessionResponses, LogoutSessionData, LogoutSessionErrors, LogoutSessionResponses, RegisterSessionData, RegisterSessionErrors, RegisterSessionResponses, RejectResearchDocumentProposalData, RejectResearchDocumentProposalErrors, RejectResearchDocumentProposalResponses, ReparseResearchMaterialData, ReparseResearchMaterialErrors, ReparseResearchMaterialResponses, ResolveDoiMetadataData, ResolveDoiMetadataErrors, ResolveDoiMetadataResponses, ResolveMethodPlanReviewData, ResolveMethodPlanReviewErrors, ResolveMethodPlanReviewResponses, RestoreMethodPlanData, RestoreMethodPlanErrors, RestoreMethodPlanResponses, RestoreResearchDocumentData, RestoreResearchDocumentErrors, RestoreResearchDocumentResponses, RetryFrameworkReviewData, RetryFrameworkReviewErrors, RetryFrameworkReviewResponses, RetryMatchCandidateData, RetryMatchCandidateErrors, RetryMatchCandidateResponses, ReviewMethodPlanData, ReviewMethodPlanErrors, ReviewMethodPlanResponses, SaveResearchAnalysisCaseProfileData, SaveResearchAnalysisCaseProfileErrors, SaveResearchAnalysisCaseProfileResponses, SaveResearchCaseThemeMatrixCellData, SaveResearchCaseThemeMatrixCellErrors, SaveResearchCaseThemeMatrixCellResponses, SaveTheoryDecisionDraftData, SaveTheoryDecisionDraftErrors, SaveTheoryDecisionDraftResponses, SendRegistrationCodeData, SendRegistrationCodeErrors, SendRegistrationCodeResponses, SetResearchQualitativeMethodData, SetResearchQualitativeMethodErrors, SetResearchQualitativeMethodResponses, StartFrameworkReviewData, StartFrameworkReviewErrors, StartFrameworkReviewResponses, StreamAgentTurnData, StreamAgentTurnErrors, StreamAgentTurnResponse, StreamAgentTurnResponses, SubmitAuditResolutionsData, SubmitAuditResolutionsErrors, SubmitAuditResolutionsResponses, SubmitDirectInputData, SubmitDirectInputErrors, SubmitDirectInputResponses, SubmitMaterialInputData, SubmitMaterialInputErrors, SubmitMaterialInputResponses, SubmitMaterialIntakeData, SubmitMaterialIntakeErrors, SubmitMaterialIntakeResponses, TransitionResearchCodebookEntryData, TransitionResearchCodebookEntryErrors, TransitionResearchCodebookEntryResponses, UpdateAgentConversationData, UpdateAgentConversationErrors, UpdateAgentConversationResponses, UpdateFrameworkData, UpdateFrameworkErrors, UpdateFrameworkResponses, UpdateMethodPlanData, UpdateMethodPlanErrors, UpdateMethodPlanResponses, UpdatePhenomenonCandidateData, UpdatePhenomenonCandidateErrors, UpdatePhenomenonCandidateResponses, UpdateProfessionalMaterialProfileData, UpdateProfessionalMaterialProfileErrors, UpdateProfessionalMaterialProfileResponses, UpdateResearchDocumentData, UpdateResearchDocumentErrors, UpdateResearchDocumentResponses, UpdateResearchTaskData, UpdateResearchTaskErrors, UpdateResearchTaskResponses, UploadResearchMaterialData, UploadResearchMaterialErrors, UploadResearchMaterialResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -505,6 +505,18 @@ export const deleteResearchTask = <ThrowOnError extends boolean = false>(options
 export const getResearchTask = <ThrowOnError extends boolean = false>(options: Options<GetResearchTaskData, ThrowOnError>): RequestResult<GetResearchTaskResponses, GetResearchTaskErrors, ThrowOnError> => (options.client ?? client).get<GetResearchTaskResponses, GetResearchTaskErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}', ...options });
 
 /**
+ * Update Research Task
+ */
+export const updateResearchTask = <ThrowOnError extends boolean = false>(options: Options<UpdateResearchTaskData, ThrowOnError>): RequestResult<UpdateResearchTaskResponses, UpdateResearchTaskErrors, ThrowOnError> => (options.client ?? client).patch<UpdateResearchTaskResponses, UpdateResearchTaskErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Get Research Analysis
  */
 export const getResearchAnalysis = <ThrowOnError extends boolean = false>(options: Options<GetResearchAnalysisData, ThrowOnError>): RequestResult<GetResearchAnalysisResponses, GetResearchAnalysisErrors, ThrowOnError> => (options.client ?? client).get<GetResearchAnalysisResponses, GetResearchAnalysisErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/analysis', ...options });
@@ -737,6 +749,119 @@ export const submitMaterialInput = <ThrowOnError extends boolean = false>(option
  */
 export const createMatchRun = <ThrowOnError extends boolean = false>(options: Options<CreateMatchRunData, ThrowOnError>): RequestResult<CreateMatchRunResponses, CreateMatchRunErrors, ThrowOnError> => (options.client ?? client).post<CreateMatchRunResponses, CreateMatchRunErrors, ThrowOnError>({
     url: '/api/research-tasks/{task_id}/match-runs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Professional Material Archive
+ */
+export const getProfessionalMaterialArchive = <ThrowOnError extends boolean = false>(options: Options<GetProfessionalMaterialArchiveData, ThrowOnError>): RequestResult<GetProfessionalMaterialArchiveResponses, GetProfessionalMaterialArchiveErrors, ThrowOnError> => (options.client ?? client).get<GetProfessionalMaterialArchiveResponses, GetProfessionalMaterialArchiveErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/material-archive', ...options });
+
+/**
+ * Create Material Batch
+ */
+export const createMaterialBatch = <ThrowOnError extends boolean = false>(options: Options<CreateMaterialBatchData, ThrowOnError>): RequestResult<CreateMaterialBatchResponses, CreateMaterialBatchErrors, ThrowOnError> => (options.client ?? client).post<CreateMaterialBatchResponses, CreateMaterialBatchErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/batches',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Batch Upload Materials
+ */
+export const batchUploadMaterials = <ThrowOnError extends boolean = false>(options: Options<BatchUploadMaterialsData, ThrowOnError>): RequestResult<BatchUploadMaterialsResponses, BatchUploadMaterialsErrors, ThrowOnError> => (options.client ?? client).post<BatchUploadMaterialsResponses, BatchUploadMaterialsErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    url: '/api/research-tasks/{task_id}/material-archive/batches/{batch_id}/materials',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Create Research Case
+ */
+export const createResearchCase = <ThrowOnError extends boolean = false>(options: Options<CreateResearchCaseData, ThrowOnError>): RequestResult<CreateResearchCaseResponses, CreateResearchCaseErrors, ThrowOnError> => (options.client ?? client).post<CreateResearchCaseResponses, CreateResearchCaseErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/cases',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create Material Collection
+ */
+export const createMaterialCollection = <ThrowOnError extends boolean = false>(options: Options<CreateMaterialCollectionData, ThrowOnError>): RequestResult<CreateMaterialCollectionResponses, CreateMaterialCollectionErrors, ThrowOnError> => (options.client ?? client).post<CreateMaterialCollectionResponses, CreateMaterialCollectionErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/collections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Resolve Doi Metadata
+ */
+export const resolveDoiMetadata = <ThrowOnError extends boolean = false>(options: Options<ResolveDoiMetadataData, ThrowOnError>): RequestResult<ResolveDoiMetadataResponses, ResolveDoiMetadataErrors, ThrowOnError> => (options.client ?? client).get<ResolveDoiMetadataResponses, ResolveDoiMetadataErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/material-archive/doi', ...options });
+
+/**
+ * Create Literature Entry
+ */
+export const createLiteratureEntry = <ThrowOnError extends boolean = false>(options: Options<CreateLiteratureEntryData, ThrowOnError>): RequestResult<CreateLiteratureEntryResponses, CreateLiteratureEntryErrors, ThrowOnError> => (options.client ?? client).post<CreateLiteratureEntryResponses, CreateLiteratureEntryErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/literature',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Export Literature Entries Route
+ */
+export const exportLiteratureEntries = <ThrowOnError extends boolean = false>(options: Options<ExportLiteratureEntriesData, ThrowOnError>): RequestResult<ExportLiteratureEntriesResponses, ExportLiteratureEntriesErrors, ThrowOnError> => (options.client ?? client).get<ExportLiteratureEntriesResponses, ExportLiteratureEntriesErrors, ThrowOnError>({ url: '/api/research-tasks/{task_id}/material-archive/literature/export', ...options });
+
+/**
+ * Import Literature Entries Route
+ */
+export const importLiteratureEntries = <ThrowOnError extends boolean = false>(options: Options<ImportLiteratureEntriesData, ThrowOnError>): RequestResult<ImportLiteratureEntriesResponses, ImportLiteratureEntriesErrors, ThrowOnError> => (options.client ?? client).post<ImportLiteratureEntriesResponses, ImportLiteratureEntriesErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    url: '/api/research-tasks/{task_id}/material-archive/literature/import',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Update Professional Material Profile
+ */
+export const updateProfessionalMaterialProfile = <ThrowOnError extends boolean = false>(options: Options<UpdateProfessionalMaterialProfileData, ThrowOnError>): RequestResult<UpdateProfessionalMaterialProfileResponses, UpdateProfessionalMaterialProfileErrors, ThrowOnError> => (options.client ?? client).patch<UpdateProfessionalMaterialProfileResponses, UpdateProfessionalMaterialProfileErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/materials/{material_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create Material Relation
+ */
+export const createMaterialRelation = <ThrowOnError extends boolean = false>(options: Options<CreateMaterialRelationData, ThrowOnError>): RequestResult<CreateMaterialRelationResponses, CreateMaterialRelationErrors, ThrowOnError> => (options.client ?? client).post<CreateMaterialRelationResponses, CreateMaterialRelationErrors, ThrowOnError>({
+    url: '/api/research-tasks/{task_id}/material-archive/relations',
     ...options,
     headers: {
         'Content-Type': 'application/json',

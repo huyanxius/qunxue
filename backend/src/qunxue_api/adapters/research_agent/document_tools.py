@@ -72,11 +72,23 @@ class ResearchMaterialReader(Protocol):
         task_id: UUID,
     ) -> MaterialBlock | None: ...
 
+    def is_external_model_processable(
+        self,
+        material_id: UUID,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> bool: ...
+
 
 class ResearchWorkflowCoordinator(Protocol):
     def restore(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]: ...
 
     def prepare_start_proposal(self, **payload: object) -> ResearchStartProposal: ...
+
+    def can_prepare_start_proposal(
+        self, *, user_id: UUID, conversation_id: UUID
+    ) -> bool: ...
 
     def persist_completed_turn_proposal(
         self, proposal: ResearchStartProposal
@@ -535,6 +547,13 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         for material in rows:
             if material.status is not MaterialStatus.READY or material.current_parse_id is None:
                 continue
+            if not self._material_allows_external_model(
+                materials,
+                material.material_id,
+                user_id=user_id,
+                task_id=task_id,
+            ):
+                continue
             parsed = materials.get_parse(
                 material.material_id,
                 material.current_parse_id,
@@ -641,6 +660,17 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         )
         if material is None or material.status is not MaterialStatus.READY:
             return {"error": "research_material_not_found", "material_id": material_id}
+        if not self._material_allows_external_model(
+            materials,
+            parsed_material_id,
+            user_id=user_id,
+            task_id=task_id,
+        ):
+            return {
+                "error": "research_material_model_processing_restricted",
+                "material_id": material_id,
+                "message": "该材料仅可手动阅读，未进入外部模型上下文。",
+            }
         if material.current_parse_id is None and parse_id is None:
             return {"error": "research_material_not_found", "material_id": material_id}
         resolved_parse_id: UUID
@@ -733,6 +763,21 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             return None
         return self._user_id, self._task_id, self._materials
 
+    @staticmethod
+    def _material_allows_external_model(
+        materials: ResearchMaterialReader,
+        material_id: UUID,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> bool:
+        policy = getattr(materials, "is_external_model_processable", None)
+        if not callable(policy):
+            # Narrow test doubles and legacy adapters predate the professional
+            # profile. Production SQLite exposes the policy method.
+            return True
+        return bool(policy(material_id, user_id=user_id, task_id=task_id))
+
     def _search_material_chunks(
         self,
         *,
@@ -795,7 +840,11 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         user_id, conversation_id, agent_run_id = self._context()
         if self._workflow is None:
             return {"error": "research_workflow_unavailable"}
-        if self._task_id is not None:
+        can_prepare = getattr(self._workflow, "can_prepare_start_proposal", None)
+        if self._task_id is not None and not (
+            callable(can_prepare)
+            and can_prepare(user_id=user_id, conversation_id=conversation_id)
+        ):
             return {
                 "error": "research_task_already_bound",
                 "task_id": str(self._task_id),

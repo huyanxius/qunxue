@@ -17,6 +17,9 @@ from qunxue_api.modules.research_intake.domain import (
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     PreparedPhenomenonCandidate,
+    ProjectLifecycleStatus,
+    ResearchCentralTool,
+    ResearchEntryMode,
     ResearchTask,
     ResearchTaskStatus,
 )
@@ -45,6 +48,12 @@ class ResearchTaskService:
         user_id: UUID,
         entry_type: EntryType,
         idempotency_key: str,
+        entry_mode: ResearchEntryMode = ResearchEntryMode.FROM_SCRATCH,
+        lifecycle_status: ProjectLifecycleStatus = ProjectLifecycleStatus.DRAFT,
+        project_title: str = "未命名研究",
+        project_stage: str | None = None,
+        method_orientation: str | None = None,
+        last_central_tool: ResearchCentralTool | None = None,
         seed_theory_id: str | None = None,
         seed_theory_name: str | None = None,
         knowledge_release_id: str | None = None,
@@ -57,6 +66,12 @@ class ResearchTaskService:
             user_id=user_id,
             entry_type=entry_type,
             idempotency_key=idempotency_key,
+            entry_mode=entry_mode,
+            lifecycle_status=lifecycle_status,
+            project_title=project_title.strip() or "未命名研究",
+            project_stage=_optional_text(project_stage),
+            method_orientation=_optional_text(method_orientation),
+            last_central_tool=last_central_tool,
             seed_theory_id=seed_theory_id,
             seed_theory_name=seed_theory_name,
             now=self._clock(),
@@ -84,6 +99,41 @@ class ResearchTaskService:
 
     def save_progress(self, task: ResearchTask) -> ResearchTask | None:
         return self._repository.save_progress(task)
+
+    def update_project(
+        self,
+        task_id: UUID,
+        *,
+        user_id: UUID,
+        expected_version: int,
+        lifecycle_status: ProjectLifecycleStatus | None = None,
+        project_title: str | None = None,
+        project_stage: str | None = None,
+        method_orientation: str | None = None,
+        last_central_tool: ResearchCentralTool | None = None,
+    ) -> ResearchTask | None:
+        task = self.get(task_id, user_id=user_id)
+        if task.version != expected_version:
+            return None
+        now = self._clock()
+        return self._repository.save_progress(
+            replace(
+                task,
+                version=task.version + 1,
+                updated_at=now,
+                lifecycle_status=lifecycle_status or task.lifecycle_status,
+                project_title=(project_title.strip() or task.project_title)
+                if project_title is not None
+                else task.project_title,
+                project_stage=_optional_text(project_stage)
+                if project_stage is not None
+                else task.project_stage,
+                method_orientation=_optional_text(method_orientation)
+                if method_orientation is not None
+                else task.method_orientation,
+                last_central_tool=last_central_tool or task.last_central_tool,
+            )
+        )
 
 
 class PhenomenonService:
@@ -310,6 +360,7 @@ class PhenomenonService:
             replace(
                 task,
                 status=ResearchTaskStatus.PHENOMENON_CONFIRMED,
+                lifecycle_status=ProjectLifecycleStatus.IN_PROGRESS,
                 version=task.version + 1,
                 updated_at=confirmed_at,
                 phenomenon_query_id=snapshot.phenomenon_query_id,
@@ -325,3 +376,10 @@ class PhenomenonService:
 
     def progress(self, task_id: UUID) -> PhenomenonProgress:
         return self._repository.progress(task_id)
+
+
+def _optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None

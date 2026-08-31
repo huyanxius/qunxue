@@ -3,6 +3,8 @@ import {
   CaretRightIcon,
   CheckIcon,
   CircleNotchIcon,
+  FileTextIcon,
+  FolderOpenIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import {
@@ -16,7 +18,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import {
   confirmResearchStartProposal,
@@ -30,6 +32,12 @@ import {
   type ResearchCanvasProjection,
   type ResearchCanvasStreamingTurn,
 } from '../../modules/research-workspace'
+import {
+  isSupportedResearchMaterialFile,
+  RESEARCH_MATERIAL_ACCEPT,
+  uploadInitialResearchMaterials,
+} from '../../modules/research-materials'
+import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
@@ -135,12 +143,16 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = searchParams.get('knowledge_release_id')
+  const requestedTaskId = searchParams.get('task_id')
   const [conversation, setConversation] = useState<AgentConversation | null>(null)
   const [streamingTurn, setStreamingTurn] = useState<ResearchCanvasStreamingTurn | null>(null)
   const [journey, setJourney] = useState<ResearchStartJourney | null>(null)
   const [journeyLoading, setJourneyLoading] = useState(false)
   const [journeyError, setJourneyError] = useState<string | null>(null)
   const [journeyConfirming, setJourneyConfirming] = useState(false)
+  const [materialTaskId, setMaterialTaskId] = useState<string | null>(requestedTaskId)
+  const [materialUploading, setMaterialUploading] = useState(false)
+  const [materialEntryError, setMaterialEntryError] = useState<string | null>(null)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [suggestedPrompt, setSuggestedPrompt] = useState<string | null>(null)
   const [suggestedPromptKey, setSuggestedPromptKey] = useState(0)
@@ -150,9 +162,11 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   const activeResizePointer = useRef<number | null>(null)
   const mouseResizeCleanup = useRef<(() => void) | null>(null)
   const panelWidthRef = useRef(readStoredAgentPanelWidth())
+  const materialEntryRequestKey = useRef<string | null>(null)
   const [agentPanelWidth, setAgentPanelWidth] = useState(panelWidthRef.current)
   const [agentPanelMaxWidth, setAgentPanelMaxWidth] = useState(MAX_AGENT_PANEL_WIDTH)
   const [resizingAgentPanel, setResizingAgentPanel] = useState(false)
+  const activeTaskId = journey?.taskId ?? materialTaskId ?? requestedTaskId
 
   const projection = useMemo<ResearchCanvasProjection>(() => {
     const projected = projectResearchCanvas({ conversation, streamingTurn })
@@ -208,6 +222,39 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
 
   useEffect(() => () => journeyAbortController.current?.abort(), [])
   useEffect(() => () => mouseResizeCleanup.current?.(), [])
+  useEffect(() => {
+    if (requestedTaskId) setMaterialTaskId(requestedTaskId)
+  }, [requestedTaskId])
+
+  async function startFromMaterials(files: File[]) {
+    if (!files.length || materialUploading) return
+    const unsupported = files.find((file) => !isSupportedResearchMaterialFile(file))
+    if (unsupported) {
+      setMaterialEntryError(`${unsupported.name} 不是可导入的 PDF、DOCX、TXT 或 Markdown 文件。`)
+      return
+    }
+    setMaterialUploading(true)
+    setMaterialEntryError(null)
+    try {
+      materialEntryRequestKey.current ??= `material-entry:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`
+      const taskId = materialTaskId
+        ?? (await createMaterialFirstResearchProject(
+          materialEntryRequestKey.current,
+          files[0].name,
+        )).taskId
+      setMaterialTaskId(taskId)
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+        next.set('task_id', taskId)
+        return next
+      }, { replace: true })
+      await uploadInitialResearchMaterials(taskId, files)
+    } catch (cause: unknown) {
+      setMaterialEntryError(cause instanceof Error ? cause.message : '材料暂时无法导入，请重试。')
+    } finally {
+      setMaterialUploading(false)
+    }
+  }
 
   async function confirmResearchStart() {
     const proposal = journey?.proposal
@@ -341,9 +388,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     updateAgentPanelWidth(next, true)
   }
 
-  const journeyTail = journey?.taskId ? (
-    <ResearchStartReadyCard journey={journey} onEnter={enterDocumentResearch} />
-  ) : journey?.proposal?.status === 'pending_confirmation' ? (
+  const journeyTail = journey?.proposal?.status === 'pending_confirmation' ? (
     <ResearchStartProposalCard
       proposal={journey.proposal}
       busy={journeyConfirming}
@@ -351,6 +396,8 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
       onConfirm={() => { void confirmResearchStart() }}
       onContinue={() => setJourneyError(null)}
     />
+  ) : journey?.taskId ? (
+    <ResearchStartReadyCard journey={journey} onEnter={enterDocumentResearch} />
   ) : journeyError ? (
     <ResearchStartRecoveryError
       message={journeyError}
@@ -366,6 +413,28 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
         <section className="new-research" aria-label="新建研究工作区">
           <div ref={workspaceRef} className="new-research__workspace" data-resizing={resizingAgentPanel} style={{ '--new-research-agent-width': `${agentPanelWidth}px` } as CSSProperties}>
             <div className="new-research__map-column">
+              {!activeTaskId ? (
+                <aside className="new-research__entry-strip" aria-label="研究起点">
+                  <div>
+                    <span>从零开始</span>
+                    <strong>直接提问，或先放入一批材料</strong>
+                  </div>
+                  <label className={materialUploading ? 'is-busy' : ''}>
+                    {materialUploading ? <CircleNotchIcon size={14} /> : <FileTextIcon size={14} />}
+                    <span>{materialUploading ? '正在导入…' : '从材料开始研究'}</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept={RESEARCH_MATERIAL_ACCEPT}
+                      aria-label="从材料开始研究"
+                      disabled={materialUploading}
+                      onChange={(event) => { void startFromMaterials(Array.from(event.target.files ?? [])) }}
+                    />
+                  </label>
+                  <Link to="/research/existing"><FolderOpenIcon size={14} />接入已有研究</Link>
+                  {materialEntryError ? <p role="alert"><WarningCircleIcon size={13} />{materialEntryError}</p> : null}
+                </aside>
+              ) : null}
               <ResearchMapCanvas
                 projection={projection}
                 selectedNodeId={selectedNodeId}
@@ -400,7 +469,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               conversationId={requestedConversationId}
               knowledgeReleaseId={requestedKnowledgeReleaseId}
               workspace="research"
-              taskId={journey?.taskId ?? null}
+              taskId={activeTaskId ?? null}
               composerAriaLabel="和 Agent 讨论你的研究"
               suggestedPrompt={suggestedPrompt}
               suggestedPromptKey={suggestedPromptKey}

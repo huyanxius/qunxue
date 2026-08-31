@@ -143,3 +143,46 @@ def test_credit_rejection_does_not_leave_an_empty_conversation():
         )
 
     assert conversations.list_conversations(user_id=USER_ID) == ()
+
+
+def test_first_message_binds_a_material_first_draft_to_the_new_conversation(client):
+    registered = client.post(
+        "/api/session/register",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "email": f"material-first-{uuid4()}@example.com",
+            "password": "research-passphrase",
+        },
+    )
+    assert registered.status_code == 201
+    draft = client.post(
+        "/api/research-tasks",
+        headers={"Idempotency-Key": "material-first-draft"},
+        json={
+            "entry_type": "material_input",
+            "entry_mode": "from_scratch",
+            "project_title": "社区访谈材料",
+        },
+    )
+    assert draft.status_code == 201
+
+    response = client.post(
+        "/api/agent/turns",
+        headers={"Idempotency-Key": "material-first-message"},
+        json={
+            "conversation_id": None,
+            "message": "请根据我的材料帮我界定研究问题",
+            "workspace": "research",
+            "task_id": draft.json()["task_id"],
+        },
+    )
+
+    assert response.status_code == 200
+    assert 'event: turn_completed' in response.text
+    started_line = next(
+        line for line in response.text.splitlines() if '"conversation_id"' in line
+    )
+    conversation_id = started_line.split('"conversation_id": "', 1)[1].split('"', 1)[0]
+    journey = client.get(f"/api/agent/conversations/{conversation_id}/journey")
+    assert journey.status_code == 200
+    assert journey.json()["task_id"] == draft.json()["task_id"]
