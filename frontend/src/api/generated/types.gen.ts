@@ -2289,16 +2289,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -6213,34 +6203,6 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -9249,9 +9211,9 @@ export type GetProfessionalMaterialArchiveData = {
 
 export type GetProfessionalMaterialArchiveErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetProfessionalMaterialArchiveError = GetProfessionalMaterialArchiveErrors[keyof GetProfessionalMaterialArchiveErrors];
@@ -9267,6 +9229,12 @@ export type GetProfessionalMaterialArchiveResponse = GetProfessionalMaterialArch
 
 export type CreateMaterialBatchData = {
     body: CreateMaterialBatchRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9279,9 +9247,9 @@ export type CreateMaterialBatchData = {
 
 export type CreateMaterialBatchErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateMaterialBatchError = CreateMaterialBatchErrors[keyof CreateMaterialBatchErrors];
@@ -9319,9 +9287,9 @@ export type BatchUploadMaterialsData = {
 
 export type BatchUploadMaterialsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type BatchUploadMaterialsError = BatchUploadMaterialsErrors[keyof BatchUploadMaterialsErrors];
@@ -9337,6 +9305,12 @@ export type BatchUploadMaterialsResponse = BatchUploadMaterialsResponses[keyof B
 
 export type CreateResearchCaseData = {
     body: CreateResearchCaseRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9349,9 +9323,9 @@ export type CreateResearchCaseData = {
 
 export type CreateResearchCaseErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateResearchCaseError = CreateResearchCaseErrors[keyof CreateResearchCaseErrors];
@@ -9367,6 +9341,12 @@ export type CreateResearchCaseResponse = CreateResearchCaseResponses[keyof Creat
 
 export type CreateMaterialCollectionData = {
     body: CreateMaterialCollectionRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9379,9 +9359,9 @@ export type CreateMaterialCollectionData = {
 
 export type CreateMaterialCollectionErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateMaterialCollectionError = CreateMaterialCollectionErrors[keyof CreateMaterialCollectionErrors];
@@ -9414,9 +9394,9 @@ export type ResolveDoiMetadataData = {
 
 export type ResolveDoiMetadataErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
     /**
      * Service Unavailable
      */
@@ -9436,6 +9416,12 @@ export type ResolveDoiMetadataResponse = ResolveDoiMetadataResponses[keyof Resol
 
 export type CreateLiteratureEntryData = {
     body: CreateLiteratureEntryRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9448,9 +9434,9 @@ export type CreateLiteratureEntryData = {
 
 export type CreateLiteratureEntryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateLiteratureEntryError = CreateLiteratureEntryErrors[keyof CreateLiteratureEntryErrors];
@@ -9480,9 +9466,9 @@ export type ExportLiteratureEntriesData = {
 
 export type ExportLiteratureEntriesErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ExportLiteratureEntriesError = ExportLiteratureEntriesErrors[keyof ExportLiteratureEntriesErrors];
@@ -9496,6 +9482,12 @@ export type ExportLiteratureEntriesResponses = {
 
 export type ImportLiteratureEntriesData = {
     body: BodyImportLiteratureEntries;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9508,9 +9500,9 @@ export type ImportLiteratureEntriesData = {
 
 export type ImportLiteratureEntriesErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ImportLiteratureEntriesError = ImportLiteratureEntriesErrors[keyof ImportLiteratureEntriesErrors];
@@ -9528,6 +9520,12 @@ export type ImportLiteratureEntriesResponse = ImportLiteratureEntriesResponses[k
 
 export type UpdateProfessionalMaterialProfileData = {
     body: UpdateMaterialArchiveProfileRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9544,9 +9542,9 @@ export type UpdateProfessionalMaterialProfileData = {
 
 export type UpdateProfessionalMaterialProfileErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateProfessionalMaterialProfileError = UpdateProfessionalMaterialProfileErrors[keyof UpdateProfessionalMaterialProfileErrors];
@@ -9562,6 +9560,12 @@ export type UpdateProfessionalMaterialProfileResponse = UpdateProfessionalMateri
 
 export type CreateMaterialRelationData = {
     body: CreateMaterialRelationRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9574,9 +9578,9 @@ export type CreateMaterialRelationData = {
 
 export type CreateMaterialRelationErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateMaterialRelationError = CreateMaterialRelationErrors[keyof CreateMaterialRelationErrors];

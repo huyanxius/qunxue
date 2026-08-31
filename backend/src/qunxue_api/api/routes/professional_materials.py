@@ -43,6 +43,7 @@ from qunxue_api.modules.research_materials import (
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}/material-archive",
     tags=["professional-materials"],
+    responses={422: {"model": ErrorResponse}},
 )
 
 
@@ -110,6 +111,7 @@ def update_professional_material_profile(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> MaterialArchiveProfileResponse:
     return MaterialArchiveProfileResponse.from_domain(
         application.update_profile(
@@ -142,6 +144,7 @@ def create_material_batch(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> MaterialBatchResponse:
     return MaterialBatchResponse.from_domain(
         application.create_batch(
@@ -162,6 +165,7 @@ def create_material_collection(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> MaterialCollectionResponse:
     return MaterialCollectionResponse.from_domain(
         application.create_collection(
@@ -186,6 +190,7 @@ def create_literature_entry(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> LiteratureEntryResponse:
     return LiteratureEntryResponse.from_domain(
         application.create_literature(
@@ -212,6 +217,7 @@ async def import_literature_entries_route(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
     exchange_format: Annotated[LiteratureExchangeFormat, Form()],
     file: Annotated[UploadFile, File()],
 ) -> list[LiteratureEntryResponse]:
@@ -264,6 +270,7 @@ def create_research_case(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> ResearchCaseResponse:
     return ResearchCaseResponse.from_domain(
         application.create_case(
@@ -289,6 +296,7 @@ def create_material_relation(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ProfessionalMaterialsApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> MaterialRelationResponse:
     return MaterialRelationResponse.from_domain(
         application.create_relation(
