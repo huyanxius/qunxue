@@ -134,6 +134,35 @@
 .research-document-node__actions button:nth-of-type(2) { color: #fff; background: var(--rdw-ink); }
 .research-document-node__actions button:nth-of-type(2):disabled { color: #8b877f; background: #ece9e3; }
 .research-document-node__actions .research-document-node__collapse { color: #8e8981; background: transparent; }
+.document-export-menu { position: relative; }
+.document-export-menu > summary {
+  display: inline-flex;
+  min-height: 1.9rem;
+  align-items: center;
+  gap: .28rem;
+  padding: .34rem .55rem;
+  border-radius: .3rem;
+  color: var(--rdw-muted);
+  font-size: .64rem;
+  list-style: none;
+  cursor: pointer;
+}
+.document-export-menu > summary::-webkit-details-marker { display: none; }
+.document-export-menu[open] > summary { color: var(--rdw-ink); background: #efede8; }
+.document-export-menu > div {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + .35rem);
+  right: 0;
+  display: grid;
+  width: 10.5rem;
+  padding: .35rem;
+  border: 1px solid var(--rdw-line);
+  border-radius: .45rem;
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(43 40 34 / 14%);
+}
+.document-export-menu > div button { justify-content: flex-start; width: 100%; }
 .document-save-status { color: var(--rdw-muted); font-size: .61rem; white-space: nowrap; }
 .document-save-status--unsaved { color: #91621e; }
 .document-save-status--saving { color: var(--rdw-accent); }
@@ -169,6 +198,31 @@
 .document-loading { display: grid; min-height: 12rem; place-content: center; gap: .6rem; color: var(--rdw-muted); font-size: .72rem; }
 .document-empty { padding: .8rem 0; color: var(--rdw-muted); font-family: var(--serif, Georgia, 'Times New Roman', serif); font-size: .82rem; line-height: 1.7; }
 
+.document-formatting {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  margin-bottom: 1.1rem;
+  padding: .7rem;
+  border: 1px solid var(--rdw-line);
+  border-radius: .48rem;
+  background: #f7f5f0;
+}
+.document-formatting label { display: grid; gap: .22rem; color: var(--rdw-muted); font-size: .57rem; }
+.document-formatting select {
+  min-width: 0;
+  height: 1.9rem;
+  padding: 0 .4rem;
+  border: 1px solid #d5d0c7;
+  border-radius: .3rem;
+  color: var(--rdw-ink);
+  background: #fff;
+  font: inherit;
+}
+.document-formatting__file { position: relative; place-content: center; min-height: 1.9rem; padding: .3rem .5rem; border: 1px dashed #c8c2b7; border-radius: .3rem; text-align: center; cursor: pointer; }
+.document-formatting__file input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.document-formatting > button { min-height: 1.9rem; padding: .34rem .55rem; border: 0; border-radius: .3rem; color: #fff; background: var(--rdw-ink); font-size: .61rem; }
+
 .document-boundary { display: flex; align-items: flex-start; gap: .5rem; margin: 0 0 1rem; padding: .2rem 0 .2rem .75rem; border-left: 2px solid #c8b27f; color: #705a31; font-size: .68rem; }
 .document-boundary--action > div { display: grid; flex: 1; gap: .45rem; }
 .document-boundary--action strong { color: #554625; }
@@ -197,6 +251,16 @@
 .document-evidence span { font-weight: 680; letter-spacing: .08em; text-transform: uppercase; }
 .document-evidence code { width: fit-content; padding: .2rem .34rem; border: 1px solid #dedad2; border-radius: .25rem; color: #625e57; background: #f7f5f0; }
 .document-evidence em { color: #927b56; font-style: normal; }
+.document-citations { display: grid; gap: .45rem; margin-top: 1.3rem; padding-top: .75rem; border-top: 1px solid var(--rdw-line); font-size: .6rem; }
+.document-citations > span,
+.document-analysis-basis > span { color: var(--rdw-muted); font-weight: 680; letter-spacing: .08em; text-transform: uppercase; }
+.document-citations ul { display: grid; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+.document-citations li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .45rem; padding: .4rem .5rem; border: 1px solid #dedad2; border-radius: .3rem; background: #f7f5f0; }
+.document-citations code { overflow: hidden; color: #514d47; text-overflow: ellipsis; white-space: nowrap; }
+.document-citations small { color: var(--rdw-muted); }
+.document-citations em { color: #8a6428; font-style: normal; }
+.document-analysis-basis { display: flex; align-items: center; gap: .55rem; margin-top: .6rem; color: var(--rdw-muted); font-size: .58rem; }
+.document-analysis-basis code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .document-versions { margin-top: .85rem; color: var(--rdw-muted); font-size: .62rem; }
 .document-versions ol { display: grid; gap: .32rem; padding-left: 1rem; }
 .document-versions li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -210,8 +274,14 @@
 .document-proposals > header span { font-size: .67rem; font-weight: 680; }
 .document-proposals > header small { color: var(--rdw-muted); font-size: .57rem; }
 .proposal-card { display: grid; gap: .55rem; padding-top: .55rem; border-top: 1px solid var(--rdw-line); font-size: .65rem; }
+.proposal-card > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem .7rem; }
+.proposal-card > header strong { font-size: .61rem; }
+.proposal-card__conflict { color: #8b2c2c; font-size: .59rem; }
 .proposal-card p { color: #5f5a53; line-height: 1.5; }
 .proposal-card > div { display: flex; gap: .4rem; }
+.proposal-card .proposal-card__diff { display: block; padding: .65rem .7rem; border: 1px solid var(--rdw-line); border-radius: .35rem; background: #fff; font-family: var(--serif, Georgia, serif); line-height: 1.65; white-space: pre-wrap; }
+.proposal-card__diff del { padding: .06rem .12rem; color: #7d3434; background: #f4dddd; text-decoration-thickness: 1px; }
+.proposal-card__diff ins { padding: .06rem .12rem; color: #315f47; background: #dcecdf; text-decoration: none; }
 .proposal-card button { padding: .32rem .52rem; border: 1px solid #d5d0c7; border-radius: .32rem; color: var(--rdw-ink); background: transparent; font-size: .6rem; }
 .proposal-card button:first-child { border-color: var(--rdw-ink); color: #fff; background: var(--rdw-ink); }
 
@@ -221,6 +291,7 @@
 
 @media (max-width: 1080px) {
   .research-document-node__actions { flex-wrap: wrap; }
+  .document-formatting { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 780px) {
