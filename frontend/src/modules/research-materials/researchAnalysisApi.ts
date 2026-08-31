@@ -1,25 +1,46 @@
 import { apiClient } from '../../api/client'
 import {
+  configureResearchCodebookEntry,
+  confirmResearchAnalysisTheme,
+  createResearchAnalysisMemoLink,
   createResearchAnalysisAnnotation,
   createResearchAnalysisCode,
   createResearchAnalysisMemo,
+  createResearchAnalysisTheme,
   createResearchCaseComparison,
   decideResearchAnalysisCode,
   decideResearchAnalysisMemo,
   decideResearchCaseComparison,
   getResearchAnalysis,
+  saveResearchAnalysisCaseProfile,
+  saveResearchCaseThemeMatrixCell,
+  setResearchQualitativeMethod,
+  transitionResearchCodebookEntry,
 } from '../../api/generated'
 import type {
+  AnalysisCaseProfile,
   AnalysisAnnotation,
   AnalysisCode,
   AnalysisMemo,
+  AnalysisMemoLink,
+  AnalysisTheme,
   CaseComparison,
+  CaseThemeMatrixCell,
+  CodebookEntry,
+  ConfigureCodebookEntryInput,
   CreateAnalysisAnnotationInput,
   CreateAnalysisCodeInput,
+  CreateAnalysisMemoLinkInput,
   CreateAnalysisMemoInput,
+  CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
   DecideAnalysisRecordInput,
+  MethodPresetSelection,
   ResearchAnalysisSnapshot,
+  SaveAnalysisCaseProfileInput,
+  SaveCaseThemeMatrixCellInput,
+  SetQualitativeMethodInput,
+  TransitionCodebookEntryInput,
 } from './researchAnalysisModel'
 
 export class ResearchAnalysisApiError extends Error {
@@ -190,4 +211,128 @@ export async function decideCaseComparison(
     signal,
   })
   return requireData(result, '案例比较判断未保存。')
+}
+
+export async function configureCodebookEntry(
+  taskId: string,
+  codeId: string,
+  body: ConfigureCodebookEntryInput,
+  signal?: AbortSignal,
+): Promise<CodebookEntry> {
+  const result = await configureResearchCodebookEntry({
+    client: apiClient,
+    path: { task_id: taskId, code_id: codeId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '代码本边界未保存。')
+}
+
+export async function transitionCodebookEntry(
+  taskId: string,
+  codeId: string,
+  body: TransitionCodebookEntryInput,
+  signal?: AbortSignal,
+): Promise<CodebookEntry> {
+  const result = await transitionResearchCodebookEntry({
+    client: apiClient,
+    path: { task_id: taskId, code_id: codeId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '代码本状态未保存。')
+}
+
+export async function createAnalysisTheme(
+  taskId: string,
+  body: CreateAnalysisThemeInput,
+  signal?: AbortSignal,
+): Promise<AnalysisTheme> {
+  const result = await createResearchAnalysisTheme({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '分析主题未保存。')
+}
+
+export async function confirmAnalysisTheme(
+  taskId: string,
+  themeId: string,
+  reason: string,
+  expectedVersion: number,
+  signal?: AbortSignal,
+): Promise<AnalysisTheme> {
+  const result = await confirmResearchAnalysisTheme({
+    client: apiClient,
+    path: { task_id: taskId, theme_id: themeId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body: { decision: 'confirmed', reason, expected_version: expectedVersion },
+    signal,
+  })
+  return requireData(result, '主题确认未保存。')
+}
+
+export async function attachAnalysisMemo(
+  taskId: string,
+  body: CreateAnalysisMemoLinkInput,
+  signal?: AbortSignal,
+): Promise<AnalysisMemoLink> {
+  const result = await createResearchAnalysisMemoLink({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '备忘挂接未保存。')
+}
+
+export async function saveAnalysisCaseProfile(
+  taskId: string,
+  body: SaveAnalysisCaseProfileInput,
+  signal?: AbortSignal,
+): Promise<AnalysisCaseProfile> {
+  const result = await saveResearchAnalysisCaseProfile({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '个案档案未保存。')
+}
+
+export async function saveCaseThemeMatrixCell(
+  taskId: string,
+  body: SaveCaseThemeMatrixCellInput,
+  signal?: AbortSignal,
+): Promise<CaseThemeMatrixCell> {
+  const result = await saveResearchCaseThemeMatrixCell({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '比较矩阵单元未保存。')
+}
+
+export async function setQualitativeMethod(
+  taskId: string,
+  body: SetQualitativeMethodInput,
+  signal?: AbortSignal,
+): Promise<MethodPresetSelection> {
+  const result = await setResearchQualitativeMethod({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '方法取向未保存。')
 }

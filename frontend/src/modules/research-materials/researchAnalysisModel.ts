@@ -2,6 +2,10 @@ export type AnalysisAnnotationKind = 'descriptive' | 'researcher_reflection'
 export type AnalysisRecordStatus = 'candidate' | 'confirmed' | 'rejected'
 export type AnalysisMemoKind = 'descriptive' | 'reflexive' | 'analytic' | 'methodological'
 export type ComparisonFindingKind = 'support' | 'counterexample' | 'contradict' | 'competing_explanation' | 'evidence_gap'
+export type CodebookLifecycle = 'active' | 'merged' | 'split' | 'retired'
+export type MemoTargetKind = 'project' | 'material' | 'source' | 'code' | 'case' | 'comparison' | 'draft'
+export type MatrixSubjectKind = 'code' | 'theme'
+export type QualitativeMethod = 'thematic_analysis' | 'grounded_theory' | 'ethnography' | 'case_study' | 'narrative_research' | 'discourse_conversation_analysis' | 'literature_review'
 
 export type ResearchAnalysisLocator = {
   block_index: number | null
@@ -117,6 +121,99 @@ export type ResearchAnalysisSnapshot = {
   comparisons: CaseComparison[]
   memos: AnalysisMemo[]
   task_id: string
+  workspace?: QualitativeWorkspaceSnapshot
+  method_presets?: QualitativeMethodPreset[]
+}
+
+export type CodebookEntry = {
+  code_id: string
+  inclusion_rules: string[]
+  exclusion_rules: string[]
+  parent_code_id: string | null
+  positive_example_annotation_ids: string[]
+  negative_example_annotation_ids: string[]
+  lifecycle: CodebookLifecycle
+  related_code_ids: string[]
+  version: number
+  updated_at: string
+  revision_reason: string
+}
+
+export type AnalysisTheme = {
+  theme_id: string
+  label: string
+  central_concept: string
+  code_ids: string[]
+  annotation_ids: string[]
+  source: string
+  status: AnalysisRecordStatus
+  version: number
+  created_at: string
+  decided_at: string | null
+  decision_reason: string | null
+}
+
+export type AnalysisMemoLink = {
+  link_id: string
+  memo_id: string
+  target_kind: MemoTargetKind
+  target_ref: string
+  annotation_ids: string[]
+  created_at: string
+}
+
+export type AnalysisCaseAttribute = { name: string; value: string }
+
+export type AnalysisCaseProfile = {
+  profile_id: string
+  case_ref: string
+  display_label: string
+  attributes: AnalysisCaseAttribute[]
+  summary: string
+  annotation_ids: string[]
+  memo_ids: string[]
+  version: number
+  updated_at: string
+}
+
+export type CaseThemeMatrixCell = {
+  cell_id: string
+  case_profile_id: string
+  subject_kind: MatrixSubjectKind
+  subject_id: string
+  summary: string
+  annotation_ids: string[]
+  memo_ids: string[]
+  finding_kinds: ComparisonFindingKind[]
+  version: number
+  updated_at: string
+}
+
+export type MethodPresetSelection = {
+  method: QualitativeMethod
+  version: number
+  updated_at: string
+}
+
+export type QualitativeMethodPreset = {
+  method: QualitativeMethod
+  label: string
+  primary_view: string
+  matrix_axes: string[]
+  prompts: string
+  guardrails: string
+}
+
+export type QualitativeWorkspaceSnapshot = {
+  schema_version: string
+  content_hash: string
+  method_preset: MethodPresetSelection
+  codebook_entries: CodebookEntry[]
+  memo_links: AnalysisMemoLink[]
+  case_profiles: AnalysisCaseProfile[]
+  formal_themes: AnalysisTheme[]
+  candidate_themes: AnalysisTheme[]
+  matrix_cells: CaseThemeMatrixCell[]
 }
 
 export type CreateAnalysisAnnotationInput = {
@@ -163,4 +260,60 @@ export type DecideAnalysisRecordInput = {
   decision: AnalysisRecordStatus
   expected_version: number
   reason: string
+}
+
+export type ConfigureCodebookEntryInput = {
+  expected_version: number | null
+  inclusion_rules: string[]
+  exclusion_rules: string[]
+  parent_code_id: string | null
+  positive_example_annotation_ids: string[]
+  negative_example_annotation_ids: string[]
+}
+
+export type TransitionCodebookEntryInput = {
+  expected_version: number
+  lifecycle: CodebookLifecycle
+  related_code_ids: string[]
+  reason: string
+}
+
+export type CreateAnalysisThemeInput = {
+  label: string
+  central_concept: string
+  code_ids: string[]
+  annotation_ids: string[]
+}
+
+export type CreateAnalysisMemoLinkInput = {
+  memo_id: string
+  target_kind: MemoTargetKind
+  target_ref: string
+  annotation_ids: string[]
+}
+
+export type SaveAnalysisCaseProfileInput = {
+  expected_version: number | null
+  case_ref: string
+  display_label: string
+  attributes: AnalysisCaseAttribute[]
+  summary: string
+  annotation_ids: string[]
+  memo_ids: string[]
+}
+
+export type SaveCaseThemeMatrixCellInput = {
+  expected_version: number | null
+  case_profile_id: string
+  subject_kind: MatrixSubjectKind
+  subject_id: string
+  summary: string
+  annotation_ids: string[]
+  memo_ids: string[]
+  finding_kinds: ComparisonFindingKind[]
+}
+
+export type SetQualitativeMethodInput = {
+  method: QualitativeMethod
+  expected_version: number | null
 }
