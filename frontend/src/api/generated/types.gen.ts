@@ -495,6 +495,62 @@ export type AnalysisAnnotationResponse = {
 };
 
 /**
+ * AnalysisCaseAttributeContract
+ */
+export type AnalysisCaseAttributeContract = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
+ * AnalysisCaseProfileResponse
+ */
+export type AnalysisCaseProfileResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Attributes
+     */
+    attributes: Array<AnalysisCaseAttributeContract>;
+    /**
+     * Case Ref
+     */
+    case_ref: string;
+    /**
+     * Display Label
+     */
+    display_label: string;
+    /**
+     * Memo Ids
+     */
+    memo_ids: Array<string>;
+    /**
+     * Profile Id
+     */
+    profile_id: string;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * AnalysisCodeResponse
  */
 export type AnalysisCodeResponse = {
@@ -572,6 +628,33 @@ export type AnalysisCodeStatus = 'candidate' | 'confirmed' | 'rejected';
 export type AnalysisMemoKind = 'descriptive' | 'reflexive' | 'analytic' | 'methodological';
 
 /**
+ * AnalysisMemoLinkResponse
+ */
+export type AnalysisMemoLinkResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Link Id
+     */
+    link_id: string;
+    /**
+     * Memo Id
+     */
+    memo_id: string;
+    target_kind: MemoTargetKind;
+    /**
+     * Target Ref
+     */
+    target_ref: string;
+};
+
+/**
  * AnalysisMemoResponse
  */
 export type AnalysisMemoResponse = {
@@ -643,6 +726,53 @@ export type AnalysisMemoResponse = {
  * AnalysisRecordStatus
  */
 export type AnalysisRecordStatus = 'candidate' | 'confirmed' | 'rejected';
+
+/**
+ * AnalysisThemeResponse
+ */
+export type AnalysisThemeResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Central Concept
+     */
+    central_concept: string;
+    /**
+     * Code Ids
+     */
+    code_ids: Array<string>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Source
+     */
+    source: string;
+    status: AnalysisRecordStatus;
+    /**
+     * Theme Id
+     */
+    theme_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
 
 /**
  * AuditFindingResponse
@@ -921,6 +1051,101 @@ export type CaseComparisonResponse = {
 };
 
 /**
+ * CaseThemeMatrixCellResponse
+ */
+export type CaseThemeMatrixCellResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Case Profile Id
+     */
+    case_profile_id: string;
+    /**
+     * Cell Id
+     */
+    cell_id: string;
+    /**
+     * Finding Kinds
+     */
+    finding_kinds: Array<ComparisonFindingKind>;
+    /**
+     * Memo Ids
+     */
+    memo_ids: Array<string>;
+    /**
+     * Subject Id
+     */
+    subject_id: string;
+    subject_kind: MatrixSubjectKind;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * CodebookEntryResponse
+ */
+export type CodebookEntryResponse = {
+    /**
+     * Code Id
+     */
+    code_id: string;
+    /**
+     * Exclusion Rules
+     */
+    exclusion_rules: Array<string>;
+    /**
+     * Inclusion Rules
+     */
+    inclusion_rules: Array<string>;
+    lifecycle: CodebookLifecycle;
+    /**
+     * Negative Example Annotation Ids
+     */
+    negative_example_annotation_ids: Array<string>;
+    /**
+     * Parent Code Id
+     */
+    parent_code_id: string | null;
+    /**
+     * Positive Example Annotation Ids
+     */
+    positive_example_annotation_ids: Array<string>;
+    /**
+     * Related Code Ids
+     */
+    related_code_ids: Array<string>;
+    /**
+     * Revision Reason
+     */
+    revision_reason: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * CodebookLifecycle
+ */
+export type CodebookLifecycle = 'active' | 'merged' | 'split' | 'retired';
+
+/**
  * ComparisonFindingContract
  */
 export type ComparisonFindingContract = {
@@ -964,6 +1189,36 @@ export type ConceptMappingContract = {
      * Unresolved Questions
      */
     unresolved_questions: Array<string>;
+};
+
+/**
+ * ConfigureCodebookEntryRequest
+ */
+export type ConfigureCodebookEntryRequest = {
+    /**
+     * Exclusion Rules
+     */
+    exclusion_rules: Array<string>;
+    /**
+     * Expected Version
+     */
+    expected_version?: number | null;
+    /**
+     * Inclusion Rules
+     */
+    inclusion_rules: Array<string>;
+    /**
+     * Negative Example Annotation Ids
+     */
+    negative_example_annotation_ids: Array<string>;
+    /**
+     * Parent Code Id
+     */
+    parent_code_id?: string | null;
+    /**
+     * Positive Example Annotation Ids
+     */
+    positive_example_annotation_ids: Array<string>;
 };
 
 /**
@@ -1251,6 +1506,25 @@ export type CreateAnalysisCodeRequest = {
 };
 
 /**
+ * CreateAnalysisMemoLinkRequest
+ */
+export type CreateAnalysisMemoLinkRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Memo Id
+     */
+    memo_id: string;
+    target_kind: MemoTargetKind;
+    /**
+     * Target Ref
+     */
+    target_ref: string;
+};
+
+/**
  * CreateAnalysisMemoRequest
  */
 export type CreateAnalysisMemoRequest = {
@@ -1271,6 +1545,28 @@ export type CreateAnalysisMemoRequest = {
      * Title
      */
     title: string;
+};
+
+/**
+ * CreateAnalysisThemeRequest
+ */
+export type CreateAnalysisThemeRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Central Concept
+     */
+    central_concept: string;
+    /**
+     * Code Ids
+     */
+    code_ids: Array<string>;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -2742,6 +3038,16 @@ export type MaterialIntakeRunResponse = {
 export type MaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other';
 
 /**
+ * MatrixSubjectKind
+ */
+export type MatrixSubjectKind = 'code' | 'theme';
+
+/**
+ * MemoTargetKind
+ */
+export type MemoTargetKind = 'project' | 'material' | 'source' | 'code' | 'case' | 'comparison' | 'draft';
+
+/**
  * MethodIntentContract
  */
 export type MethodIntentContract = {
@@ -3031,6 +3337,21 @@ export type MethodPlanVersionListResponse = {
      * Plan Id
      */
     plan_id: string;
+};
+
+/**
+ * MethodPresetSelectionResponse
+ */
+export type MethodPresetSelectionResponse = {
+    method: QualitativeMethod;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -3339,6 +3660,77 @@ export type PhenomenonSnapshotResponse = {
 };
 
 /**
+ * QualitativeMethod
+ */
+export type QualitativeMethod = 'thematic_analysis' | 'grounded_theory' | 'ethnography' | 'case_study' | 'narrative_research' | 'discourse_conversation_analysis' | 'literature_review';
+
+/**
+ * QualitativeMethodPresetResponse
+ */
+export type QualitativeMethodPresetResponse = {
+    /**
+     * Guardrails
+     */
+    guardrails: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Matrix Axes
+     */
+    matrix_axes: Array<string>;
+    method: QualitativeMethod;
+    /**
+     * Primary View
+     */
+    primary_view: string;
+    /**
+     * Prompts
+     */
+    prompts: string;
+};
+
+/**
+ * QualitativeWorkspaceSnapshotResponse
+ */
+export type QualitativeWorkspaceSnapshotResponse = {
+    /**
+     * Candidate Themes
+     */
+    candidate_themes: Array<AnalysisThemeResponse>;
+    /**
+     * Case Profiles
+     */
+    case_profiles: Array<AnalysisCaseProfileResponse>;
+    /**
+     * Codebook Entries
+     */
+    codebook_entries: Array<CodebookEntryResponse>;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Formal Themes
+     */
+    formal_themes: Array<AnalysisThemeResponse>;
+    /**
+     * Matrix Cells
+     */
+    matrix_cells: Array<CaseThemeMatrixCellResponse>;
+    /**
+     * Memo Links
+     */
+    memo_links: Array<AnalysisMemoLinkResponse>;
+    method_preset: MethodPresetSelectionResponse;
+    /**
+     * Schema Version
+     */
+    schema_version: string;
+};
+
+/**
  * RegisterSessionRequest
  */
 export type RegisterSessionRequest = {
@@ -3579,9 +3971,14 @@ export type ResearchAnalysisSnapshotResponse = {
      */
     memos: Array<AnalysisMemoResponse>;
     /**
+     * Method Presets
+     */
+    method_presets: Array<QualitativeMethodPresetResponse>;
+    /**
      * Task Id
      */
     task_id: string;
+    workspace: QualitativeWorkspaceSnapshotResponse;
 };
 
 /**
@@ -4711,6 +5108,75 @@ export type ReviewMethodPlanRequest = {
 };
 
 /**
+ * SaveAnalysisCaseProfileRequest
+ */
+export type SaveAnalysisCaseProfileRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Attributes
+     */
+    attributes?: Array<AnalysisCaseAttributeContract>;
+    /**
+     * Case Ref
+     */
+    case_ref: string;
+    /**
+     * Display Label
+     */
+    display_label: string;
+    /**
+     * Expected Version
+     */
+    expected_version?: number | null;
+    /**
+     * Memo Ids
+     */
+    memo_ids?: Array<string>;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
+ * SaveCaseThemeMatrixCellRequest
+ */
+export type SaveCaseThemeMatrixCellRequest = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Case Profile Id
+     */
+    case_profile_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version?: number | null;
+    /**
+     * Finding Kinds
+     */
+    finding_kinds?: Array<ComparisonFindingKind>;
+    /**
+     * Memo Ids
+     */
+    memo_ids?: Array<string>;
+    /**
+     * Subject Id
+     */
+    subject_id: string;
+    subject_kind: MatrixSubjectKind;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
  * SaveTheoryDecisionDraftRequest
  */
 export type SaveTheoryDecisionDraftRequest = {
@@ -4799,6 +5265,17 @@ export type SessionUserResponse = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * SetQualitativeMethodRequest
+ */
+export type SetQualitativeMethodRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version?: number | null;
+    method: QualitativeMethod;
 };
 
 /**
@@ -5499,6 +5976,25 @@ export type TraceMetadata = {
      * Trace Id
      */
     trace_id: string;
+};
+
+/**
+ * TransitionCodebookEntryRequest
+ */
+export type TransitionCodebookEntryRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    lifecycle: CodebookLifecycle;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Related Code Ids
+     */
+    related_code_ids?: Array<string>;
 };
 
 /**
@@ -8322,6 +8818,322 @@ export type DecideResearchAnalysisMemoResponses = {
 };
 
 export type DecideResearchAnalysisMemoResponse = DecideResearchAnalysisMemoResponses[keyof DecideResearchAnalysisMemoResponses];
+
+export type SaveResearchAnalysisCaseProfileData = {
+    body: SaveAnalysisCaseProfileRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/cases';
+};
+
+export type SaveResearchAnalysisCaseProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type SaveResearchAnalysisCaseProfileError = SaveResearchAnalysisCaseProfileErrors[keyof SaveResearchAnalysisCaseProfileErrors];
+
+export type SaveResearchAnalysisCaseProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisCaseProfileResponse;
+};
+
+export type SaveResearchAnalysisCaseProfileResponse = SaveResearchAnalysisCaseProfileResponses[keyof SaveResearchAnalysisCaseProfileResponses];
+
+export type ConfigureResearchCodebookEntryData = {
+    body: ConfigureCodebookEntryRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Code Id
+         */
+        code_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/codebook/{code_id}';
+};
+
+export type ConfigureResearchCodebookEntryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ConfigureResearchCodebookEntryError = ConfigureResearchCodebookEntryErrors[keyof ConfigureResearchCodebookEntryErrors];
+
+export type ConfigureResearchCodebookEntryResponses = {
+    /**
+     * Successful Response
+     */
+    200: CodebookEntryResponse;
+};
+
+export type ConfigureResearchCodebookEntryResponse = ConfigureResearchCodebookEntryResponses[keyof ConfigureResearchCodebookEntryResponses];
+
+export type TransitionResearchCodebookEntryData = {
+    body: TransitionCodebookEntryRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Code Id
+         */
+        code_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/codebook/{code_id}/transition';
+};
+
+export type TransitionResearchCodebookEntryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type TransitionResearchCodebookEntryError = TransitionResearchCodebookEntryErrors[keyof TransitionResearchCodebookEntryErrors];
+
+export type TransitionResearchCodebookEntryResponses = {
+    /**
+     * Successful Response
+     */
+    200: CodebookEntryResponse;
+};
+
+export type TransitionResearchCodebookEntryResponse = TransitionResearchCodebookEntryResponses[keyof TransitionResearchCodebookEntryResponses];
+
+export type SaveResearchCaseThemeMatrixCellData = {
+    body: SaveCaseThemeMatrixCellRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/matrix-cell';
+};
+
+export type SaveResearchCaseThemeMatrixCellErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type SaveResearchCaseThemeMatrixCellError = SaveResearchCaseThemeMatrixCellErrors[keyof SaveResearchCaseThemeMatrixCellErrors];
+
+export type SaveResearchCaseThemeMatrixCellResponses = {
+    /**
+     * Successful Response
+     */
+    200: CaseThemeMatrixCellResponse;
+};
+
+export type SaveResearchCaseThemeMatrixCellResponse = SaveResearchCaseThemeMatrixCellResponses[keyof SaveResearchCaseThemeMatrixCellResponses];
+
+export type CreateResearchAnalysisMemoLinkData = {
+    body: CreateAnalysisMemoLinkRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/memo-links';
+};
+
+export type CreateResearchAnalysisMemoLinkErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type CreateResearchAnalysisMemoLinkError = CreateResearchAnalysisMemoLinkErrors[keyof CreateResearchAnalysisMemoLinkErrors];
+
+export type CreateResearchAnalysisMemoLinkResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisMemoLinkResponse;
+};
+
+export type CreateResearchAnalysisMemoLinkResponse = CreateResearchAnalysisMemoLinkResponses[keyof CreateResearchAnalysisMemoLinkResponses];
+
+export type SetResearchQualitativeMethodData = {
+    body: SetQualitativeMethodRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/method';
+};
+
+export type SetResearchQualitativeMethodErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type SetResearchQualitativeMethodError = SetResearchQualitativeMethodErrors[keyof SetResearchQualitativeMethodErrors];
+
+export type SetResearchQualitativeMethodResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodPresetSelectionResponse;
+};
+
+export type SetResearchQualitativeMethodResponse = SetResearchQualitativeMethodResponses[keyof SetResearchQualitativeMethodResponses];
+
+export type CreateResearchAnalysisThemeData = {
+    body: CreateAnalysisThemeRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/themes';
+};
+
+export type CreateResearchAnalysisThemeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type CreateResearchAnalysisThemeError = CreateResearchAnalysisThemeErrors[keyof CreateResearchAnalysisThemeErrors];
+
+export type CreateResearchAnalysisThemeResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisThemeResponse;
+};
+
+export type CreateResearchAnalysisThemeResponse = CreateResearchAnalysisThemeResponses[keyof CreateResearchAnalysisThemeResponses];
+
+export type ConfirmResearchAnalysisThemeData = {
+    body: DecideAnalysisRecordRequest;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Theme Id
+         */
+        theme_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/workspace/themes/{theme_id}/decision';
+};
+
+export type ConfirmResearchAnalysisThemeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ConfirmResearchAnalysisThemeError = ConfirmResearchAnalysisThemeErrors[keyof ConfirmResearchAnalysisThemeErrors];
+
+export type ConfirmResearchAnalysisThemeResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisThemeResponse;
+};
+
+export type ConfirmResearchAnalysisThemeResponse = ConfirmResearchAnalysisThemeResponses[keyof ConfirmResearchAnalysisThemeResponses];
 
 export type ExportResearchTraceData = {
     body?: never;
