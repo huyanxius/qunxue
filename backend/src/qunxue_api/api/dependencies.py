@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import Depends, Request
 
 from qunxue_api.application import (
+    ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
@@ -114,6 +115,19 @@ def get_research_material_application(
 ResearchMaterialApplicationDependency = Annotated[
     ResearchMaterialApplication,
     Depends(get_research_material_application),
+]
+
+
+def get_professional_materials_application(
+    request: Request,
+) -> Iterator[ProfessionalMaterialsApplication]:
+    with request.app.state.professional_materials_application_scope() as application:
+        yield application
+
+
+ProfessionalMaterialsApplicationDependency = Annotated[
+    ProfessionalMaterialsApplication,
+    Depends(get_professional_materials_application),
 ]
 
 
