@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from copy import deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Protocol
@@ -52,6 +52,81 @@ class ResearchDocumentEvidenceSourceKind(StrEnum):
     PERSONAL_MATERIAL = "personal_material"
 
 
+class ResearchDocumentCitationKind(StrEnum):
+    EMPIRICAL = "empirical"
+    SCHOLARLY = "scholarly"
+    ANALYSIS = "analysis"
+
+
+class ResearchDocumentCitationState(StrEnum):
+    VERIFIED = "verified"
+    NEEDS_VERIFICATION = "needs_verification"
+    BROKEN = "broken"
+    TOMBSTONED = "tombstoned"
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchDocumentCitationRef:
+    """Version-pinned pointer; source modules remain responsible for metadata."""
+
+    citation_id: str
+    kind: ResearchDocumentCitationKind
+    source_id: str
+    source_version: str | None
+    locator: dict[str, object] | None
+    state: ResearchDocumentCitationState
+
+    def __post_init__(self) -> None:
+        citation_id = self.citation_id.strip()
+        source_id = self.source_id.strip()
+        if not citation_id or not source_id:
+            raise ValueError("citation and source ids are required")
+        kind = ResearchDocumentCitationKind(self.kind)
+        state = ResearchDocumentCitationState(self.state)
+        if kind in {
+            ResearchDocumentCitationKind.EMPIRICAL,
+            ResearchDocumentCitationKind.SCHOLARLY,
+        } and not self.locator:
+            raise ValueError("empirical and scholarly citations require an exact locator")
+        object.__setattr__(self, "citation_id", citation_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(
+            self,
+            "source_version",
+            self.source_version.strip() if self.source_version else None,
+        )
+        object.__setattr__(self, "kind", kind)
+        object.__setattr__(self, "state", state)
+        object.__setattr__(self, "locator", deepcopy(self.locator) if self.locator else None)
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchDocumentFormatting:
+    template_id: str
+    csl_style_id: str
+    locale: str
+    custom_csl: str | None = None
+    custom_css: str | None = None
+
+    def __post_init__(self) -> None:
+        values = (self.template_id.strip(), self.csl_style_id.strip(), self.locale.strip())
+        if not all(values):
+            raise ValueError("document formatting requires a template, CSL style, and locale")
+        object.__setattr__(self, "template_id", values[0])
+        object.__setattr__(self, "csl_style_id", values[1])
+        object.__setattr__(self, "locale", values[2])
+        object.__setattr__(self, "custom_csl", self.custom_csl.strip() if self.custom_csl else None)
+        object.__setattr__(self, "custom_css", self.custom_css.strip() if self.custom_css else None)
+
+
+def _default_formatting() -> ResearchDocumentFormatting:
+    return ResearchDocumentFormatting(
+        template_id="chinese-social-science",
+        csl_style_id="china-national-standard-gb-t-7714-2015-author-date",
+        locale="zh-CN",
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchDocumentEvidenceRef:
     evidence_ref_id: str
@@ -97,6 +172,7 @@ class ResearchDocumentSection:
     content: str
     status: ResearchDocumentSectionStatus
     evidence_refs: tuple[ResearchDocumentEvidenceRef, ...]
+    citation_refs: tuple[ResearchDocumentCitationRef, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +192,7 @@ class ResearchDocumentSnapshot:
     analysis_handoff: dict[str, object] | None = None
     restored_from_version: int | None = None
     confirmed_at: datetime | None = None
+    formatting: ResearchDocumentFormatting = field(default_factory=_default_formatting)
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,6 +326,7 @@ class ResearchDocumentService:
         change_summary: str,
         actor: str,
         analysis_handoff: dict[str, object] | None = None,
+        formatting: ResearchDocumentFormatting | None = None,
     ) -> ResearchDocumentSnapshot:
         current = self.get(document_id)
         self._assert_current_version(current, expected_version)
@@ -271,6 +349,7 @@ class ResearchDocumentService:
                     if analysis_handoff is None
                     else _analysis_handoff(analysis_handoff)
                 ),
+                formatting=current.formatting if formatting is None else formatting,
                 restored_from_version=None,
             )
         persisted = self._repository.add(candidate)
@@ -497,22 +576,33 @@ class ResearchDocumentService:
         )
         def render_section(section: ResearchDocumentSection) -> str:
             rendered = f"## {section.title}\n\n{section.content.strip()}"
-            if not section.evidence_refs:
-                return rendered
-            evidence_lines = "\n".join(
-                (
-                    "- "
-                    f"`{evidence.evidence_ref_id}` — personal material "
-                    f"`{evidence.material_id}`; segment `{evidence.segment_id}`"
-                    if evidence.source_kind
-                    is ResearchDocumentEvidenceSourceKind.PERSONAL_MATERIAL
-                    else "- "
-                    f"`{evidence.evidence_ref_id}` — source `{evidence.source_id}`; "
-                    f"release `{evidence.knowledge_release_id}`"
+            blocks = [rendered]
+            if section.evidence_refs:
+                evidence_lines = "\n".join(
+                    (
+                        "- "
+                        f"`{evidence.evidence_ref_id}` — personal material "
+                        f"`{evidence.material_id}`; segment `{evidence.segment_id}`"
+                        if evidence.source_kind
+                        is ResearchDocumentEvidenceSourceKind.PERSONAL_MATERIAL
+                        else "- "
+                        f"`{evidence.evidence_ref_id}` — source `{evidence.source_id}`; "
+                        f"release `{evidence.knowledge_release_id}`"
+                    )
+                    for evidence in section.evidence_refs
                 )
-                for evidence in section.evidence_refs
-            )
-            return f"{rendered}\n\n### 证据引用\n\n{evidence_lines}"
+                blocks.append(f"### 证据引用\n\n{evidence_lines}")
+            if section.citation_refs:
+                citation_lines = "\n".join(
+                    "- "
+                    f"`{citation.citation_id}` — {citation.kind.value} source "
+                    f"`{citation.source_id}`; version "
+                    f"`{citation.source_version or 'unversioned'}`; "
+                    f"locator `{citation.locator}`; state `{citation.state.value}`"
+                    for citation in section.citation_refs
+                )
+                blocks.append(f"### 文稿引用审计\n\n{citation_lines}")
+            return "\n\n".join(blocks)
 
         body = "\n\n".join(render_section(section) for section in snapshot.sections)
         markdown = f"{metadata}# {snapshot.title}\n\n{body}\n"

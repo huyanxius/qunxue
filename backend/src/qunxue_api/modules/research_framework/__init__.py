@@ -2,10 +2,14 @@
 
 from qunxue_api.modules.research_framework.document import (
     REQUIRED_FRAMEWORK_SECTION_KEYS,
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationRef,
+    ResearchDocumentCitationState,
     ResearchDocumentCompletionCheck,
     ResearchDocumentCompletionGate,
     ResearchDocumentEvidenceRef,
     ResearchDocumentEvidenceSourceKind,
+    ResearchDocumentFormatting,
     ResearchDocumentMarkdownExport,
     ResearchDocumentRepository,
     ResearchDocumentSection,
@@ -52,10 +56,14 @@ from qunxue_api.modules.research_framework.public import (
 
 __all__ = [
     "REQUIRED_FRAMEWORK_SECTION_KEYS",
+    "ResearchDocumentCitationKind",
+    "ResearchDocumentCitationRef",
+    "ResearchDocumentCitationState",
     "ResearchDocumentCompletionCheck",
     "ResearchDocumentCompletionGate",
     "ResearchDocumentEvidenceRef",
     "ResearchDocumentEvidenceSourceKind",
+    "ResearchDocumentFormatting",
     "ResearchDocumentMarkdownExport",
     "ResearchDocumentRepository",
     "ResearchDocumentSection",
