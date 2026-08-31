@@ -20,6 +20,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "research_intake": set(),
     "research_analysis": {"research_materials"},
     "research_materials": set(),
+    "research_method": set(),
     "theory_matching": {"knowledge_catalog", "research_intake"},
     "research_framework": {"theory_matching"},
 }
@@ -370,6 +371,10 @@ def _architecture_violations(
 def test_backend_obeys_registered_architecture() -> None:
     assert not _module_layout_violations(MODULES_ROOT)
     assert not _architecture_violations(PACKAGE_ROOT)
+
+
+def test_research_method_is_registered_as_a_dependency_free_module() -> None:
+    assert ALLOWED_MODULE_DEPENDENCIES["research_method"] == set()
 
 
 def test_sqlite_repository_implements_the_public_research_intake_port() -> None:

@@ -318,12 +318,31 @@ class ResearchAnalysisApplication:
         *,
         user_id: UUID,
         task_id: UUID,
+        idempotency_key: str,
         code_id: UUID,
         expected_version: int,
         decision: AnalysisCodeStatus,
         reason: str,
     ) -> AnalysisCode:
         self._require_task(user_id=user_id, task_id=task_id)
+        replay = self._reserve_decision_write(
+            user_id=user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            operation="decide_code",
+            result_kind="code",
+            record_id=code_id,
+            expected_version=expected_version,
+            decision=decision,
+            reason=reason,
+            get_record=lambda: self._analysis.get_code(
+                user_id=user_id,
+                task_id=task_id,
+                code_id=code_id,
+            ),
+        )
+        if replay is not None:
+            return cast(AnalysisCode, replay)
         if decision is AnalysisCodeStatus.CONFIRMED:
             value = self._analysis.confirm_code(
                 user_id=user_id,
@@ -494,12 +513,31 @@ class ResearchAnalysisApplication:
         *,
         user_id: UUID,
         task_id: UUID,
+        idempotency_key: str,
         memo_id: UUID,
         expected_version: int,
         decision: AnalysisRecordStatus,
         reason: str,
     ) -> AnalysisMemo:
         self._require_task(user_id=user_id, task_id=task_id)
+        replay = self._reserve_decision_write(
+            user_id=user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            operation="decide_memo",
+            result_kind="memo",
+            record_id=memo_id,
+            expected_version=expected_version,
+            decision=decision,
+            reason=reason,
+            get_record=lambda: self._analysis.get_memo(
+                user_id=user_id,
+                task_id=task_id,
+                memo_id=memo_id,
+            ),
+        )
+        if replay is not None:
+            return cast(AnalysisMemo, replay)
         if decision is AnalysisRecordStatus.CONFIRMED:
             value = self._analysis.confirm_memo(
                 user_id=user_id,
@@ -751,12 +789,31 @@ class ResearchAnalysisApplication:
         *,
         user_id: UUID,
         task_id: UUID,
+        idempotency_key: str,
         comparison_id: UUID,
         expected_version: int,
         decision: AnalysisRecordStatus,
         reason: str,
     ) -> CaseComparison:
         self._require_task(user_id=user_id, task_id=task_id)
+        replay = self._reserve_decision_write(
+            user_id=user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            operation="decide_comparison",
+            result_kind="comparison",
+            record_id=comparison_id,
+            expected_version=expected_version,
+            decision=decision,
+            reason=reason,
+            get_record=lambda: self._analysis.get_comparison(
+                user_id=user_id,
+                task_id=task_id,
+                comparison_id=comparison_id,
+            ),
+        )
+        if replay is not None:
+            return cast(CaseComparison, replay)
         if decision is AnalysisRecordStatus.CONFIRMED:
             value = self._analysis.confirm_comparison(
                 user_id=user_id,
@@ -895,6 +952,7 @@ class ResearchAnalysisApplication:
         operation: str,
         result_kind: str,
         payload: dict[str, object],
+        result_id: UUID | None = None,
     ) -> AnalysisWriteRequest:
         return self._analysis.reserve_write(
             AnalysisWriteRequest.create(
@@ -905,10 +963,59 @@ class ResearchAnalysisApplication:
                 operation=operation,
                 request_hash=_request_hash(payload),
                 result_kind=result_kind,
-                result_id=uuid4(),
+                result_id=result_id or uuid4(),
                 now=self._clock(),
             )
         )
+
+    def _reserve_decision_write(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        idempotency_key: str,
+        operation: str,
+        result_kind: str,
+        record_id: UUID,
+        expected_version: int,
+        decision: AnalysisCodeStatus | AnalysisRecordStatus,
+        reason: str,
+        get_record: Callable[[], AnalysisCode | AnalysisMemo | CaseComparison | None],
+    ) -> AnalysisCode | AnalysisMemo | CaseComparison | None:
+        """Reserve a decision before CAS; replay returns the already decided record.
+
+        A fresh random result identity lets a concurrent request distinguish a new
+        reservation from an existing one without making the decision itself
+        non-durable.  If a reservation exists but the record is still a candidate,
+        the operation is retried so a transaction interrupted between reservation
+        and the record update can safely recover.
+        """
+
+        proposed_result_id = uuid4()
+        write = self._reserve_write(
+            user_id=user_id,
+            task_id=task_id,
+            namespace="api",
+            idempotency_key=idempotency_key,
+            operation=operation,
+            result_kind=result_kind,
+            result_id=proposed_result_id,
+            payload={
+                "record_id": record_id,
+                "expected_version": expected_version,
+                "decision": decision,
+                "reason": reason,
+            },
+        )
+        if write.result_id == proposed_result_id:
+            return None
+        existing = get_record()
+        if existing is None:
+            raise LookupError(record_id)
+        if existing.status.value != "candidate":
+            self._commit()
+            return existing
+        return None
 
     def _validate_links(
         self,

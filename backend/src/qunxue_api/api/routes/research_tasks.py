@@ -233,9 +233,15 @@ def _navigation_response(
             ResearchTaskNavigationAction.REVIEW_FRAMEWORK,
         ),
         ResearchTaskStatus.FRAMEWORK_CONFIRMED: (
-            ResearchTaskLifecycleStatus.COMPLETED,
-            ResearchTaskStage.COMPLETED,
-            ResearchTaskNavigationAction.EXPORT,
+            ResearchTaskLifecycleStatus.IN_PROGRESS
+            if getattr(task, "current_method_plan_status", None) != "confirmed"
+            else ResearchTaskLifecycleStatus.COMPLETED,
+            ResearchTaskStage.METHOD_DESIGN
+            if getattr(task, "current_method_plan_status", None) != "confirmed"
+            else ResearchTaskStage.COMPLETED,
+            ResearchTaskNavigationAction.DESIGN_METHOD
+            if getattr(task, "current_method_plan_status", None) != "confirmed"
+            else ResearchTaskNavigationAction.EXPORT,
         ),
     }
     lifecycle_status, current_stage, action = navigation_by_status[task.status]
@@ -252,6 +258,7 @@ def _navigation_response(
         ResearchTaskStage.THEORY_DECISION: "理论决策",
         ResearchTaskStage.FRAMEWORK_DRAFTING: "研究方案",
         ResearchTaskStage.FRAMEWORK_REVIEW: "方案确认",
+        ResearchTaskStage.METHOD_DESIGN: "研究方法",
         ResearchTaskStage.COMPLETED: "已完成",
     }[current_stage]
     next_action_label = {
@@ -263,6 +270,7 @@ def _navigation_response(
         ResearchTaskNavigationAction.CREATE_FRAMEWORK: "生成研究方案",
         ResearchTaskNavigationAction.REVIEW_FRAMEWORK: "审阅研究方案",
         ResearchTaskNavigationAction.CONFIRM_FRAMEWORK: "确认研究方案",
+        ResearchTaskNavigationAction.DESIGN_METHOD: "制定研究方法",
         ResearchTaskNavigationAction.EXPORT: "查看并导出成果",
     }[action]
     phenomenon_summary = None
@@ -287,6 +295,8 @@ def _navigation_response(
             ResearchTaskStatus.MATCH_GENERATING,
             ResearchTaskStatus.DECISIONS_RECORDED,
         }
+        else f"/research/{task.task_id}/method"
+        if task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED
         else f"/research/{task.task_id}/framework"
     )
     blocker = None
@@ -326,6 +336,8 @@ def _navigation_response(
         current_match_run_id=task.current_match_run_id,
         current_theory_plan_id=task.current_theory_plan_id,
         current_framework_id=task.current_framework_id,
+        current_method_plan_id=getattr(task, "current_method_plan_id", None),
+        current_method_plan_status=getattr(task, "current_method_plan_status", None),
         resume_path=resume_path,
         blocker=blocker,
         retry=retry,

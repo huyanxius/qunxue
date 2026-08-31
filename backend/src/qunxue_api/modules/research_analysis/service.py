@@ -44,6 +44,16 @@ class _MemoryRepository:
             )
         return existing
 
+    def get_write(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        namespace: str,
+        idempotency_key: str,
+    ) -> AnalysisWriteRequest | None:
+        return self.write_requests.get((user_id, task_id, namespace, idempotency_key))
+
     def add_annotation(self, value):
         self.annotations[value.annotation_id] = value
         return value
@@ -106,6 +116,21 @@ class ResearchAnalysisService:
 
     def reserve_write(self, value: AnalysisWriteRequest) -> AnalysisWriteRequest:
         return self._repository.reserve_write(value)
+
+    def get_write(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        namespace: str,
+        idempotency_key: str,
+    ) -> AnalysisWriteRequest | None:
+        return self._repository.get_write(
+            user_id=user_id,
+            task_id=task_id,
+            namespace=namespace,
+            idempotency_key=idempotency_key,
+        )
 
     def get_annotation(
         self,

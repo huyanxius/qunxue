@@ -38,6 +38,7 @@ class ResearchTaskStage(StrEnum):
     THEORY_DECISION = "theory_decision"
     FRAMEWORK_DRAFTING = "framework_drafting"
     FRAMEWORK_REVIEW = "framework_review"
+    METHOD_DESIGN = "method_design"
     COMPLETED = "completed"
 
 
@@ -50,6 +51,7 @@ class ResearchTaskNavigationAction(StrEnum):
     CREATE_FRAMEWORK = "create_framework"
     REVIEW_FRAMEWORK = "review_framework"
     CONFIRM_FRAMEWORK = "confirm_framework"
+    DESIGN_METHOD = "design_method"
     EXPORT = "export"
 
 
@@ -120,6 +122,8 @@ class ResearchTaskNavigationResponse(BaseModel):
     current_match_run_id: UUID | None
     current_theory_plan_id: UUID | None
     current_framework_id: UUID | None
+    current_method_plan_id: UUID | None = None
+    current_method_plan_status: str | None = None
     resume_path: str
     blocker: ResearchTaskNavigationBlockerResponse | None
     retry: ResearchTaskNavigationRetryResponse | None

@@ -57,6 +57,7 @@ from qunxue_api.adapters.sqlite.research_document_proposal import (
 from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
 )
+from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
 )
@@ -83,6 +84,7 @@ from qunxue_api.api.routes.phenomena import router as phenomena_router
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_materials import router as research_materials_router
+from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.application import (
@@ -93,6 +95,7 @@ from qunxue_api.application import (
     ResearchJourney,
     ResearchJourneyDependencies,
     ResearchMaterialApplication,
+    ResearchMethodPlanApplication,
     ResearchStartApplication,
     TheoryMatchingApplication,
 )
@@ -123,6 +126,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
+from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.theory_matching import TheoryMatchingService
 from qunxue_api.settings import (
     DEFAULT_MODEL_BASE_URL,
@@ -271,6 +275,7 @@ def create_app(
         with app.state.matching_start_lock, resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
             analysis_application = build_research_analysis_application(session)
+            method_plan_service = MethodPlanService(SqliteMethodPlanRepository(session))
             matching = TheoryMatchingService(
                 evidence_source=build_catalog_evidence_source(
                     analysis_application=analysis_application,
@@ -288,6 +293,11 @@ def create_app(
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 rollback=session.rollback,
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
 
     app.state.research_task_service_scope = research_task_service_scope
@@ -312,6 +322,21 @@ def create_app(
             yield build_research_analysis_application(session)
 
     app.state.research_analysis_application_scope = research_analysis_application_scope
+
+    @contextmanager
+    def research_method_plan_application_scope() -> Iterator[ResearchMethodPlanApplication]:
+        with resolved_database.session() as session:
+            documents = SqliteResearchDocumentRepository(session)
+            matches = SqliteMatchRunRepository(session)
+            yield ResearchMethodPlanApplication(
+                plans=MethodPlanService(SqliteMethodPlanRepository(session)),
+                research_tasks=SqliteResearchTaskRepository(session),
+                mutations=SqliteResearchDocumentMutationRepository(session),
+                get_framework=documents.latest,
+                get_theory_plan=matches.get_confirmed_plan,
+            )
+
+    app.state.research_method_plan_application_scope = research_method_plan_application_scope
 
     @contextmanager
     def research_navigation_match_reader_scope() -> Iterator[SqliteMatchRunRepository]:
@@ -339,6 +364,8 @@ def create_app(
     def research_document_application_scope() -> Iterator[ResearchDocumentApplication]:
         with resolved_database.session() as session:
             match_runs = SqliteMatchRunRepository(session)
+            method_plans = SqliteMethodPlanRepository(session)
+            method_plan_service = MethodPlanService(method_plans)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposals = SqliteResearchDocumentProposalRepository(session)
             analysis_application = build_research_analysis_application(session)
@@ -354,6 +381,12 @@ def create_app(
                 list_actionable_proposals_for_task=proposals.list_actionable_for_task,
                 owns_match_run=matching_requests.owns,
                 formal_analysis_handoff=analysis_application.formal_handoff,
+                get_method_plan=method_plans.latest_for_task,
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
 
     app.state.research_document_application_scope = research_document_application_scope
@@ -367,6 +400,8 @@ def create_app(
                 repository=SqliteResearchDocumentRepository(session)
             )
             match_runs = SqliteMatchRunRepository(session)
+            method_plans = SqliteMethodPlanRepository(session)
+            method_plan_service = MethodPlanService(method_plans)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposal_repository = SqliteResearchDocumentProposalRepository(session)
             analysis_application = build_research_analysis_application(session)
@@ -380,6 +415,12 @@ def create_app(
                 list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
                 formal_analysis_handoff=analysis_application.formal_handoff,
+                get_method_plan=method_plans.latest_for_task,
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
             yield ResearchDocumentProposalApplication(
                 ResearchDocumentProposalService(
@@ -390,6 +431,11 @@ def create_app(
                 ),
                 research_tasks=SqliteResearchTaskRepository(session),
                 mutations=SqliteResearchDocumentMutationRepository(session),
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
 
     app.state.research_document_proposal_application_scope = (
@@ -410,6 +456,8 @@ def create_app(
                 repository=SqliteResearchDocumentRepository(session)
             )
             match_runs = SqliteMatchRunRepository(session)
+            method_plans = SqliteMethodPlanRepository(session)
+            method_plan_service = MethodPlanService(method_plans)
             matching_requests = SqliteMatchingRequestRepository(session)
             proposal_repository = SqliteResearchDocumentProposalRepository(session)
             material_repository = SqliteResearchMaterialRepository(session)
@@ -435,6 +483,11 @@ def create_app(
                 matching_requests=matching_requests,
                 research_tasks=task_repository,
                 rollback=session.rollback,
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
             research_start_application = ResearchStartApplication(
                 proposals=SqliteResearchStartProposalRepository(session),
@@ -460,6 +513,12 @@ def create_app(
                 list_actionable_proposals_for_task=(proposal_repository.list_actionable_for_task),
                 owns_match_run=matching_requests.owns,
                 formal_analysis_handoff=analysis_application.formal_handoff,
+                get_method_plan=method_plans.latest_for_task,
+                invalidate_method_plan=(
+                    lambda task_id, reason: method_plan_service.mark_stale_for_task(
+                        task_id=task_id, reason=reason
+                    )
+                ),
             )
             proposal_service = ResearchDocumentProposalService(
                 repository=proposal_repository,
@@ -533,6 +592,7 @@ def create_app(
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
     app.include_router(research_materials_router)
+    app.include_router(research_method_router)
     app.include_router(research_analysis_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)

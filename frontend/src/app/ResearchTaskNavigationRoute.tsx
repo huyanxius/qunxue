@@ -26,6 +26,7 @@ function isTaskResumePath(taskId: string, resumePath: string) {
     `/research/${taskId}/phenomenon`,
     `/research/${taskId}/match`,
     `/research/${taskId}/framework`,
+    `/research/${taskId}/method`,
   ]).has(resumePath)
 }
 

@@ -316,6 +316,7 @@ def test_agent_analysis_stays_candidate_until_user_decides(analysis_context) -> 
     confirmed = app.decide_code(
         user_id=user_id,
         task_id=task_id,
+        idempotency_key="legacy-code-confirm",
         code_id=candidate.code_id,
         expected_version=1,
         decision=AnalysisCodeStatus.CONFIRMED,
@@ -327,11 +328,130 @@ def test_agent_analysis_stays_candidate_until_user_decides(analysis_context) -> 
         app.decide_code(
             user_id=user_id,
             task_id=task_id,
+            idempotency_key="legacy-code-reject",
             code_id=candidate.code_id,
             expected_version=1,
             decision=AnalysisCodeStatus.REJECTED,
             reason="重复决定",
         )
+
+
+def test_analysis_decision_replays_by_idempotency_key(analysis_context) -> None:
+    app, _, _, user_id, task_id, _ = analysis_context
+    annotation = _annotate(analysis_context)
+    provenance = {
+        "conversation_id": uuid4(),
+        "agent_run_id": uuid4(),
+        "agent_turn_id": uuid4(),
+        "tool_call_id": "decision-idempotency-code",
+    }
+    code = app.propose_code_from_agent(
+        user_id=user_id,
+        task_id=task_id,
+        label="照护责任集中",
+        definition="照护责任集中于单一家庭成员。",
+        annotation_ids=(annotation.annotation_id,),
+        rationale="需要用户核对。",
+        **provenance,
+    )
+
+    first = app.decide_code(
+        user_id=user_id,
+        task_id=task_id,
+        code_id=code.code_id,
+        expected_version=1,
+        decision=AnalysisCodeStatus.CONFIRMED,
+        reason="核对原文后确认",
+        idempotency_key="decision-code-1",
+    )
+    replay = app.decide_code(
+        user_id=user_id,
+        task_id=task_id,
+        code_id=code.code_id,
+        expected_version=1,
+        decision=AnalysisCodeStatus.CONFIRMED,
+        reason="核对原文后确认",
+        idempotency_key="decision-code-1",
+    )
+    assert replay == first
+    assert replay.version == 2
+
+    memo = app.propose_memo_from_agent(
+        user_id=user_id,
+        task_id=task_id,
+        title="替代解释",
+        content="资源差异可能影响照护分工。",
+        memo_kind="analytic",
+        annotation_ids=(annotation.annotation_id,),
+        code_ids=(code.code_id,),
+        conversation_id=uuid4(),
+        agent_run_id=uuid4(),
+        agent_turn_id=uuid4(),
+        tool_call_id="decision-idempotency-memo",
+    )
+    memo_first = app.decide_memo(
+        user_id=user_id,
+        task_id=task_id,
+        memo_id=memo.memo_id,
+        expected_version=1,
+        decision=AnalysisRecordStatus.REJECTED,
+        reason="证据不足，暂不采纳",
+        idempotency_key="decision-memo-1",
+    )
+    memo_replay = app.decide_memo(
+        user_id=user_id,
+        task_id=task_id,
+        memo_id=memo.memo_id,
+        expected_version=1,
+        decision=AnalysisRecordStatus.REJECTED,
+        reason="证据不足，暂不采纳",
+        idempotency_key="decision-memo-1",
+    )
+    assert memo_replay == memo_first
+
+
+def test_comparison_decision_replays_by_idempotency_key(comparison_context) -> None:
+    app, _, _, _, _, user_id, task_id, _ = comparison_context
+    annotation_a, annotation_b = _annotate_comparison_cases(comparison_context)
+    candidate = app.propose_comparison_from_agent(
+        user_id=user_id,
+        task_id=task_id,
+        title="候选跨案例比较",
+        question="照护责任如何变化？",
+        case_labels=("家庭 A", "家庭 B"),
+        time_labels=("迁移前", "迁移后"),
+        findings=(
+            ComparisonFinding(
+                kind=ComparisonFindingKind.SUPPORT,
+                statement="两个家庭都发生了责任协商。",
+                annotation_ids=(annotation_a.annotation_id, annotation_b.annotation_id),
+            ),
+        ),
+        theory_implication="需要检验家庭外支持的条件作用。",
+        conversation_id=uuid4(),
+        agent_run_id=uuid4(),
+        agent_turn_id=uuid4(),
+        tool_call_id="decision-idempotency-comparison",
+    )
+    first = app.decide_comparison(
+        user_id=user_id,
+        task_id=task_id,
+        comparison_id=candidate.comparison_id,
+        expected_version=1,
+        decision=AnalysisRecordStatus.CONFIRMED,
+        reason="核对两个案例后确认",
+        idempotency_key="decision-comparison-1",
+    )
+    replay = app.decide_comparison(
+        user_id=user_id,
+        task_id=task_id,
+        comparison_id=candidate.comparison_id,
+        expected_version=1,
+        decision=AnalysisRecordStatus.CONFIRMED,
+        reason="核对两个案例后确认",
+        idempotency_key="decision-comparison-1",
+    )
+    assert replay == first
 
 
 def test_user_write_idempotency_replays_and_rejects_cross_operation_reuse(
@@ -562,6 +682,7 @@ def test_agent_comparison_is_idempotent_candidate_with_complete_provenance(
     confirmed = app.decide_comparison(
         user_id=user_id,
         task_id=task_id,
+        idempotency_key="legacy-comparison-confirm",
         comparison_id=candidate.comparison_id,
         expected_version=1,
         decision=AnalysisRecordStatus.CONFIRMED,
@@ -574,6 +695,7 @@ def test_agent_comparison_is_idempotent_candidate_with_complete_provenance(
         app.decide_comparison(
             user_id=user_id,
             task_id=task_id,
+            idempotency_key="legacy-comparison-reject",
             comparison_id=candidate.comparison_id,
             expected_version=1,
             decision=AnalysisRecordStatus.REJECTED,
@@ -679,6 +801,7 @@ def test_confirmed_projection_excludes_candidate_and_rejected_comparisons(
     rejected = app.decide_comparison(
         user_id=user_id,
         task_id=task_id,
+        idempotency_key="projection-comparison-reject",
         comparison_id=rejected_candidate.comparison_id,
         expected_version=1,
         decision=AnalysisRecordStatus.REJECTED,

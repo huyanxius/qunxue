@@ -76,6 +76,7 @@ class TheoryMatchingApplication:
         matching_requests: MatchingRequestRepository,
         research_tasks: ResearchTaskRepository,
         rollback: Callable[[], None] | None = None,
+        invalidate_method_plan: Callable[[UUID, str], None] | None = None,
         id_factory: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -84,6 +85,7 @@ class TheoryMatchingApplication:
         self._matching_requests = matching_requests
         self._research_tasks = research_tasks
         self._rollback = rollback
+        self._invalidate_method_plan = invalidate_method_plan
         self._id_factory = id_factory
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -223,6 +225,7 @@ class TheoryMatchingApplication:
                 version=current_task.version + 1,
                 updated_at=now,
                 current_match_run_id=match_run.match_run_id,
+                current_method_plan_status=None,
             )
         )
         if saved_task is None:
@@ -383,6 +386,7 @@ class TheoryMatchingApplication:
                     status=ResearchTaskStatus.DECISIONS_RECORDED,
                     version=task.version + 1,
                     updated_at=self._clock(),
+                    current_method_plan_status=None,
                 )
             )
             if saved_task is None:
@@ -544,6 +548,11 @@ class TheoryMatchingApplication:
                 }
             ),
         )
+        if self._invalidate_method_plan is not None:
+            self._invalidate_method_plan(
+                confirmed.task_id,
+                "理论方案版本已变化，旧方法计划需要重新确认。",
+            )
         task = self._research_tasks.get(confirmed.task_id, user_id)
         if task is None:
             raise RuntimeError("owned research task disappeared while confirming theory plan")
@@ -556,6 +565,7 @@ class TheoryMatchingApplication:
                     updated_at=self._clock(),
                     adopted_theory_count=len(confirmed.candidates),
                     current_theory_plan_id=confirmed.theory_plan_id,
+                    current_method_plan_status=None,
                 )
             )
             if saved_task is None:

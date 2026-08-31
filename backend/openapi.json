@@ -1867,6 +1867,27 @@
         "title": "ConfirmFrameworkRequest",
         "type": "object"
       },
+      "ConfirmMethodPlanRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "reason"
+        ],
+        "title": "ConfirmMethodPlanRequest",
+        "type": "object"
+      },
       "ConfirmPhenomenonCandidateRequest": {
         "properties": {
           "expected_version": {
@@ -2533,6 +2554,30 @@
           "phenomenon_version"
         ],
         "title": "CreateMatchRunRequest",
+        "type": "object"
+      },
+      "CreateMethodPlanRequest": {
+        "properties": {
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "method_kind": {
+            "$ref": "#/components/schemas/MethodKind"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "framework_id",
+          "theory_plan_id",
+          "method_kind"
+        ],
+        "title": "CreateMethodPlanRequest",
         "type": "object"
       },
       "CreateResearchDocumentRequest": {
@@ -4930,6 +4975,47 @@
         "title": "MethodIntentContract",
         "type": "object"
       },
+      "MethodKind": {
+        "enum": [
+          "qualitative",
+          "quantitative",
+          "mixed",
+          "undecided"
+        ],
+        "title": "MethodKind",
+        "type": "string"
+      },
+      "MethodPlanContextItemContract": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanEvidenceRefContract"
+            },
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "content",
+          "evidence_refs"
+        ],
+        "title": "MethodPlanContextItemContract",
+        "type": "object"
+      },
       "MethodPlanContract": {
         "properties": {
           "analysis_plan": {
@@ -4970,6 +5056,406 @@
           "integration_points"
         ],
         "title": "MethodPlanContract",
+        "type": "object"
+      },
+      "MethodPlanEvidenceRefContract": {
+        "properties": {
+          "annotation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "evidence_ref_id": {
+            "title": "Evidence Ref Id",
+            "type": "string"
+          },
+          "knowledge_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "material_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Id"
+          },
+          "parse_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Id"
+          },
+          "segment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment Id"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_ref_id",
+          "source_id",
+          "source_kind"
+        ],
+        "title": "MethodPlanEvidenceRefContract",
+        "type": "object"
+      },
+      "MethodPlanResponse": {
+        "properties": {
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "change_summary": {
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision_source": {
+            "title": "Decision Source",
+            "type": "string"
+          },
+          "ethical_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ethical Constraints",
+            "type": "array"
+          },
+          "evidence_ref_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ref Ids",
+            "type": "array"
+          },
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          },
+          "framework_version": {
+            "title": "Framework Version",
+            "type": "integer"
+          },
+          "knowledge_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Release Id"
+          },
+          "material_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Material Constraints",
+            "type": "array"
+          },
+          "method_kind": {
+            "$ref": "#/components/schemas/MethodKind"
+          },
+          "plan_id": {
+            "format": "uuid",
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "research_question": {
+            "title": "Research Question",
+            "type": "string"
+          },
+          "restored_from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored From Version"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanReviewContract"
+            },
+            "title": "Reviews",
+            "type": "array"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanSectionContract"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "shared_context": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanContextItemContract"
+            },
+            "title": "Shared Context",
+            "type": "array"
+          },
+          "stale_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MethodPlanStatus"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Theory Concepts",
+            "type": "array"
+          },
+          "theory_plan_id": {
+            "format": "uuid",
+            "title": "Theory Plan Id",
+            "type": "string"
+          },
+          "theory_plan_version": {
+            "title": "Theory Plan Version",
+            "type": "integer"
+          },
+          "theory_summary": {
+            "title": "Theory Summary",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan_id",
+          "task_id",
+          "framework_id",
+          "framework_version",
+          "theory_plan_id",
+          "theory_plan_version",
+          "method_kind",
+          "decision_source",
+          "rationale",
+          "research_question",
+          "theory_summary",
+          "material_constraints",
+          "ethical_constraints",
+          "theory_concepts",
+          "evidence_ref_ids",
+          "knowledge_release_id",
+          "shared_context",
+          "sections",
+          "reviews",
+          "status",
+          "version",
+          "revision_id",
+          "change_summary",
+          "actor",
+          "created_at",
+          "restored_from_version",
+          "stale_reason",
+          "confirmed_at"
+        ],
+        "title": "MethodPlanResponse",
+        "type": "object"
+      },
+      "MethodPlanReviewContract": {
+        "properties": {
+          "blocking": {
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "review_id",
+          "note",
+          "blocking",
+          "created_at"
+        ],
+        "title": "MethodPlanReviewContract",
+        "type": "object"
+      },
+      "MethodPlanSectionContract": {
+        "properties": {
+          "content": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "source": {
+            "pattern": "^(system|user)$",
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "content",
+          "source"
+        ],
+        "title": "MethodPlanSectionContract",
+        "type": "object"
+      },
+      "MethodPlanStatus": {
+        "enum": [
+          "draft",
+          "under_review",
+          "confirmed",
+          "stale"
+        ],
+        "title": "MethodPlanStatus",
+        "type": "string"
+      },
+      "MethodPlanVersionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "plan_id": {
+            "format": "uuid",
+            "title": "Plan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_id",
+          "items"
+        ],
+        "title": "MethodPlanVersionListResponse",
         "type": "object"
       },
       "ModelCapability": {
@@ -6132,6 +6618,16 @@
             "title": "Knowledge Release",
             "type": "object"
           },
+          "method_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MethodPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "model": {
             "anyOf": [
               {
@@ -6208,6 +6704,7 @@
           "theory_relations",
           "evidence",
           "research_analysis",
+          "method_plan",
           "agent_proposals",
           "document_versions",
           "formal_document"
@@ -7213,6 +7710,7 @@
           "create_framework",
           "review_framework",
           "confirm_framework",
+          "design_method",
           "export"
         ],
         "title": "ResearchTaskNavigationAction",
@@ -7327,6 +7825,29 @@
               }
             ],
             "title": "Current Material Intake Run Id"
+          },
+          "current_method_plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Method Plan Id"
+          },
+          "current_method_plan_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Method Plan Status"
           },
           "current_phenomenon_candidate_id": {
             "anyOf": [
@@ -7671,6 +8192,7 @@
           "theory_decision",
           "framework_drafting",
           "framework_review",
+          "method_design",
           "completed"
         ],
         "title": "ResearchTaskStage",
@@ -7794,6 +8316,54 @@
           "contract_version"
         ],
         "title": "ResearchTraceResponse",
+        "type": "object"
+      },
+      "ResolveMethodPlanReviewRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "reason"
+        ],
+        "title": "ResolveMethodPlanReviewRequest",
+        "type": "object"
+      },
+      "RestoreMethodPlanRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "source_version": {
+            "minimum": 1.0,
+            "title": "Source Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_version",
+          "expected_version",
+          "reason"
+        ],
+        "title": "RestoreMethodPlanRequest",
         "type": "object"
       },
       "RestoreResearchDocumentRequest": {
@@ -7930,6 +8500,32 @@
           "expected_candidate_version"
         ],
         "title": "RetryMatchCandidateRequest",
+        "type": "object"
+      },
+      "ReviewMethodPlanRequest": {
+        "properties": {
+          "blocking": {
+            "default": false,
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "note"
+        ],
+        "title": "ReviewMethodPlanRequest",
         "type": "object"
       },
       "SaveTheoryDecisionDraftRequest": {
@@ -9341,6 +9937,48 @@
           "revision_reason"
         ],
         "title": "UpdateFrameworkRequest",
+        "type": "object"
+      },
+      "UpdateMethodPlanRequest": {
+        "properties": {
+          "change_summary": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "method_kind": {
+            "$ref": "#/components/schemas/MethodKind"
+          },
+          "rationale": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/MethodPlanSectionContract"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_version",
+          "method_kind",
+          "rationale",
+          "change_summary",
+          "sections"
+        ],
+        "title": "UpdateMethodPlanRequest",
         "type": "object"
       },
       "UpdatePhenomenonCandidateRequest": {
@@ -12291,6 +12929,420 @@
         ]
       }
     },
+    "/api/method-plans/{plan_id}": {
+      "get": {
+        "operationId": "get_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      },
+      "patch": {
+        "operationId": "update_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMethodPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/method-plans/{plan_id}/confirm": {
+      "post": {
+        "operationId": "confirm_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmMethodPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Confirm Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/method-plans/{plan_id}/restore": {
+      "post": {
+        "operationId": "restore_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreMethodPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Restore Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/method-plans/{plan_id}/reviews": {
+      "post": {
+        "operationId": "review_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewMethodPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Review Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/method-plans/{plan_id}/reviews/{review_id}/resolve": {
+      "post": {
+        "operationId": "resolve_method_plan_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveMethodPlanReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resolve Method Plan Review",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/method-plans/{plan_id}/versions": {
+      "get": {
+        "operationId": "list_method_plan_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanVersionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Method Plan Versions",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
     "/api/phenomenon-examples": {
       "get": {
         "operationId": "list_phenomenon_examples",
@@ -15015,6 +16067,121 @@
         "summary": "Get Research Material Segment",
         "tags": [
           "research-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/method-plans": {
+      "post": {
+        "operationId": "create_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMethodPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Method Plan",
+        "tags": [
+          "research-method-plans"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/method-plans/current": {
+      "get": {
+        "operationId": "get_current_method_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodPlanResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Current Method Plan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Current Method Plan",
+        "tags": [
+          "research-method-plans"
         ]
       }
     },

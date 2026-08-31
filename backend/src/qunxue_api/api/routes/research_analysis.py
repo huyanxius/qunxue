@@ -159,6 +159,7 @@ def decide_research_analysis_code(
         value = application.decide_code(
             user_id=current.user.user_id,
             task_id=task_id,
+            idempotency_key=_idempotency_key,
             code_id=code_id,
             expected_version=payload.expected_version,
             decision=AnalysisCodeStatus(payload.decision.value),
@@ -221,6 +222,7 @@ def decide_research_analysis_memo(
         value = application.decide_memo(
             user_id=current.user.user_id,
             task_id=task_id,
+            idempotency_key=_idempotency_key,
             memo_id=memo_id,
             expected_version=payload.expected_version,
             decision=payload.decision,
@@ -287,6 +289,7 @@ def decide_research_case_comparison(
         value = application.decide_comparison(
             user_id=current.user.user_id,
             task_id=task_id,
+            idempotency_key=_idempotency_key,
             comparison_id=comparison_id,
             expected_version=payload.expected_version,
             decision=payload.decision,

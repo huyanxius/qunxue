@@ -605,6 +605,7 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
           {statusText ? <span className={`document-save-status document-save-status--${saveState}`} role="status">{statusText}</span> : null}
           <button type="button" onClick={() => void downloadDocument()} disabled={!document} aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</button>
           <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
+          {mode === 'framework' && document?.status === 'confirmed' && taskId ? <a href={`/research/${taskId}/method`}>制定研究方法</a> : null}
           <button type="button" className="research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
         </div>
       </div>

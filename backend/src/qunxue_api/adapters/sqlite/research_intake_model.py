@@ -57,6 +57,8 @@ class ResearchTaskRow(Base):
     current_match_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_theory_plan_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     current_framework_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    current_method_plan_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    current_method_plan_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     knowledge_release_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     conversation_id: Mapped[str | None] = mapped_column(
         ForeignKey("agent_conversations.conversation_id", ondelete="SET NULL"),

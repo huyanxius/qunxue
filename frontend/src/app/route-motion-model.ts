@@ -23,9 +23,9 @@ function describeRoute(pathname: string): RouteDescription {
     return { section: 'research-materials', order: 2, depth: 0 }
   }
 
-  const researchRoute = pathname.match(/^\/research\/([^/]+)(?:\/(phenomenon|match|framework))?$/)
+  const researchRoute = pathname.match(/^\/research\/([^/]+)(?:\/(phenomenon|match|framework|method))?$/)
   if (researchRoute) {
-    const stageDepth = { phenomenon: 1, match: 2, framework: 3 } as const
+    const stageDepth = { phenomenon: 1, match: 2, framework: 3, method: 4 } as const
     const stage = researchRoute[2] as keyof typeof stageDepth | undefined
     return {
       section: `research:${researchRoute[1]}`,
