@@ -1,20 +1,145 @@
-import type {
-  ConsentScope,
-  DeidentificationStatus,
-  LiteratureExchangeFormat,
-  MaterialArchiveProfileResponse,
-  ModelProcessingScope,
-  ProfessionalMaterialArchiveResponse,
-  ResearchRole,
-  ResearchStage,
-  SensitivityLevel,
-  UpdateMaterialArchiveProfileRequest,
-} from '../../api/generated'
+export type ResearchRole = 'empirical_material' | 'literature' | 'research_process' | 'prior_draft' | 'dataset' | 'result' | 'other'
+export type ResearchStage = 'intake' | 'collection' | 'analysis' | 'writing' | 'archived'
+export type SensitivityLevel = 'public' | 'internal' | 'sensitive' | 'highly_sensitive'
+export type ConsentScope = 'public_use' | 'project_only' | 'team_only' | 'manual_review_only' | 'withdrawn'
+export type DeidentificationStatus = 'not_required' | 'pending' | 'partial' | 'complete'
+export type ModelProcessingScope = 'not_assessed' | 'manual_only' | 'local_only' | 'external_allowed'
+export type LiteratureFormat = 'bibtex' | 'ris' | 'csl_json'
+export type MaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other'
+export type MaterialRelationType = 'derived_from' | 'supplements' | 'translation_of' | 'version_of' | 'describes' | 'related'
+export type CaseAttributeValue = string | number | boolean | null
 
-export type ProfessionalMaterialArchive = ProfessionalMaterialArchiveResponse
-export type ProfessionalMaterialProfile = MaterialArchiveProfileResponse
-export type ProfessionalMaterialProfileUpdate = UpdateMaterialArchiveProfileRequest
-export type LiteratureFormat = LiteratureExchangeFormat
+export type ProfessionalMaterialProfile = {
+  material_id: string
+  research_role: ResearchRole
+  specific_type: string
+  stage: ResearchStage
+  batch_id: string | null
+  tags: string[]
+  collection_ids: string[]
+  sensitivity: SensitivityLevel
+  consent_scope: ConsentScope
+  deidentification_status: DeidentificationStatus
+  model_processing_scope: ModelProcessingScope
+  allows_manual_reading: boolean
+  allows_external_model_processing: boolean
+  updated_at: string
+}
+
+export type ProfessionalMaterialProfileUpdate = {
+  research_role: ResearchRole
+  specific_type: string
+  stage: ResearchStage
+  batch_id?: string | null
+  tags?: string[]
+  collection_ids?: string[]
+  sensitivity: SensitivityLevel
+  consent_scope: ConsentScope
+  deidentification_status: DeidentificationStatus
+  model_processing_scope: ModelProcessingScope
+}
+
+export type MaterialBatch = { batch_id: string; name: string; created_at: string }
+export type MaterialCollection = {
+  collection_id: string
+  name: string
+  description: string | null
+  parent_collection_id: string | null
+  created_at: string
+}
+export type LiteratureEntry = {
+  literature_id: string
+  item_type: string
+  title: string
+  doi: string | null
+  csl_data: Record<string, unknown>
+  attachment_material_ids: string[]
+  collection_ids: string[]
+  created_at: string
+}
+export type ResearchCase = {
+  case_id: string
+  name: string
+  description: string | null
+  attributes: Record<string, CaseAttributeValue>
+  material_ids: string[]
+  created_at: string
+}
+export type MaterialRelation = {
+  relation_id: string
+  source_material_id: string
+  target_material_id: string
+  relation_type: MaterialRelationType
+  note: string | null
+  created_at: string
+}
+export type LiteratureDuplicateHint = {
+  literature_id: string
+  candidate_id: string
+  reasons: string[]
+}
+export type MaterialArchiveInventory = {
+  catalog_pending_material_ids: string[]
+  parse_failed_material_ids: string[]
+  suspected_duplicate_literature_ids: string[]
+  pending_deidentification_material_ids: string[]
+  restricted_material_ids: string[]
+}
+export type ProfessionalMaterialArchive = {
+  task_id: string
+  profiles: ProfessionalMaterialProfile[]
+  batches: MaterialBatch[]
+  collections: MaterialCollection[]
+  literature: LiteratureEntry[]
+  cases: ResearchCase[]
+  relations: MaterialRelation[]
+  duplicate_hints: LiteratureDuplicateHint[]
+  inventory: MaterialArchiveInventory
+}
+
+export type CreateMaterialCollectionInput = {
+  name: string
+  description?: string | null
+  parent_collection_id?: string | null
+}
+export type CreateResearchCaseInput = {
+  name: string
+  description?: string | null
+  attributes?: Record<string, CaseAttributeValue>
+  material_ids?: string[]
+}
+export type CreateMaterialRelationInput = {
+  source_material_id: string
+  target_material_id: string
+  relation_type: MaterialRelationType
+  note?: string | null
+}
+export type CreateLiteratureEntryInput = {
+  item_type: string
+  title: string
+  doi?: string | null
+  csl_data?: Record<string, unknown>
+  attachment_material_ids?: string[]
+  collection_ids?: string[]
+}
+export type DoiMetadataCandidate = {
+  doi: string
+  item_type: string
+  title: string
+  source: string
+  verified_at: string
+  csl_data: Record<string, unknown>
+}
+export type BatchUploadResult = {
+  batch_id: string
+  items: Array<{
+    filename: string
+    status: string
+    material_id?: string | null
+    error_code?: string | null
+    message?: string | null
+  }>
+}
 
 export const RESEARCH_ROLES: readonly ResearchRole[] = [
   'empirical_material', 'literature', 'research_process', 'prior_draft',

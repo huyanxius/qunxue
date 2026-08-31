@@ -11,11 +11,6 @@ import {
 } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 
-import type {
-  MaterialKind,
-  MaterialRelationType,
-  UpdateMaterialArchiveProfileRequest,
-} from '../../api/generated'
 import {
   createLiteratureEntry,
   createMaterialBatch,
@@ -39,7 +34,10 @@ import {
   RESEARCH_STAGES,
   SENSITIVITY_LEVELS,
   type LiteratureFormat,
+  type MaterialKind,
+  type MaterialRelationType,
   type ProfessionalMaterialArchive,
+  type ProfessionalMaterialProfileUpdate,
 } from './professionalMaterialsModel'
 import type { ResearchMaterial } from './researchMaterialsModel'
 
@@ -83,7 +81,7 @@ export function ProfessionalMaterialArchivePanel({
   onMaterialsChanged,
 }: ProfessionalMaterialArchiveProps) {
   const [archive, setArchive] = useState<ProfessionalMaterialArchive | null>(null)
-  const [draft, setDraft] = useState<UpdateMaterialArchiveProfileRequest | null>(null)
+  const [draft, setDraft] = useState<ProfessionalMaterialProfileUpdate | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
