@@ -303,8 +303,11 @@ def _navigation_response(
         action = ResearchTaskNavigationAction.START_MATCHING
     if task.lifecycle_status is ProjectLifecycleStatus.ARCHIVED:
         lifecycle_status = ResearchTaskLifecycleStatus.ARCHIVED
-    elif lifecycle_status is not ResearchTaskLifecycleStatus.COMPLETED:
-        lifecycle_status = ResearchTaskLifecycleStatus(task.lifecycle_status.value)
+    elif (
+        lifecycle_status is not ResearchTaskLifecycleStatus.COMPLETED
+        and task.lifecycle_status is ProjectLifecycleStatus.IN_PROGRESS
+    ):
+        lifecycle_status = ResearchTaskLifecycleStatus.IN_PROGRESS
     stage_label = {
         ResearchTaskStage.PHENOMENON_INPUT: "现象输入",
         ResearchTaskStage.PHENOMENON_CONFIRMATION: "现象确认",
