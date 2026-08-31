@@ -91,6 +91,7 @@ export async function updateProfessionalMaterialProfile(
 ): Promise<ProfessionalMaterialProfile> {
   const result = await updateProfessionalMaterialProfileRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId, material_id: materialId },
     body,
   })
@@ -103,6 +104,7 @@ export async function createMaterialBatch(
 ): Promise<MaterialBatch> {
   const result = await createMaterialBatchRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body: { name },
   })
@@ -115,6 +117,7 @@ export async function createMaterialCollection(
 ): Promise<MaterialCollection> {
   const result = await createMaterialCollectionRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body,
   })
@@ -127,6 +130,7 @@ export async function createResearchCase(
 ): Promise<ResearchCase> {
   const result = await createResearchCaseRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body,
   })
@@ -139,6 +143,7 @@ export async function createMaterialRelation(
 ): Promise<MaterialRelation> {
   const result = await createMaterialRelationRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body,
   })
@@ -151,6 +156,7 @@ export async function createLiteratureEntry(
 ): Promise<LiteratureEntry> {
   const result = await createLiteratureEntryRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body,
   })
@@ -179,6 +185,7 @@ export async function importLiteratureEntries(
 ): Promise<LiteratureEntry[]> {
   const result = await importLiteratureEntriesRequest({
     client: apiClient,
+    headers: { 'Idempotency-Key': idempotencyKey() },
     path: { task_id: taskId },
     body: { file, exchange_format: exchangeFormat },
   })

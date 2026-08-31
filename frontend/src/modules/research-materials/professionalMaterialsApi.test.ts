@@ -50,6 +50,7 @@ describe('professional material archive API boundary', () => {
       '/api/research-tasks/task-1/material-archive/materials/material-1',
     ])
     expect(requests[1].method).toBe('PATCH')
+    expect(requests[1].headers.get('Idempotency-Key')).toEqual(expect.any(String))
   })
 
   it('keeps every file result from a 207 batch upload', async () => {
