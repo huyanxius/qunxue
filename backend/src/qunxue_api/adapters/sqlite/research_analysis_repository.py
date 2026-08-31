@@ -110,6 +110,25 @@ class SqliteResearchAnalysisRepository:
             )
         return persisted
 
+    def get_write(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        namespace: str,
+        idempotency_key: str,
+    ) -> AnalysisWriteRequest | None:
+        return _write_request(
+            self._session.scalar(
+                select(ResearchAnalysisWriteRequestRow).where(
+                    ResearchAnalysisWriteRequestRow.user_id == str(user_id),
+                    ResearchAnalysisWriteRequestRow.task_id == str(task_id),
+                    ResearchAnalysisWriteRequestRow.namespace == namespace,
+                    ResearchAnalysisWriteRequestRow.idempotency_key == idempotency_key,
+                )
+            )
+        )
+
     def add_annotation(self, value: AnalysisAnnotation) -> AnalysisAnnotation:
         self._session.execute(
             insert(ResearchAnnotationRow)
