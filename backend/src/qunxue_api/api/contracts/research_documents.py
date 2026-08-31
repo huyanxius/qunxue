@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from qunxue_api.api.contracts.research_method import MethodPlanResponse
 from qunxue_api.modules.research_framework import (
     ResearchDocumentEvidenceSourceKind,
     ResearchDocumentProposalKind,
@@ -177,6 +178,7 @@ class ResearchDocumentExportManifest(BaseModel):
     theory_relations: list[dict[str, object]]
     evidence: list[dict[str, object]]
     research_analysis: ResearchAnalysisHandoffContract | None
+    method_plan: MethodPlanResponse | None
     agent_proposals: list[dict[str, object]]
     document_versions: list[dict[str, object]]
     formal_document: dict[str, object]

@@ -30,6 +30,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskRepository,
     ResearchTaskStatus,
 )
+from qunxue_api.modules.research_method import MethodPlanSnapshot, MethodPlanStatus
 from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
     EvidenceItemSnapshot,
@@ -67,6 +68,8 @@ class ResearchDocumentApplication:
         ],
         owns_match_run: Callable[..., bool],
         formal_analysis_handoff: Callable[..., ResearchAnalysisHandoff] | None = None,
+        get_method_plan: Callable[[UUID], MethodPlanSnapshot | None] | None = None,
+        invalidate_method_plan: Callable[[UUID, str], None] | None = None,
     ) -> None:
         self._documents = documents
         self._research_tasks = research_tasks
@@ -79,6 +82,8 @@ class ResearchDocumentApplication:
         )
         self._owns_match_run = owns_match_run
         self._formal_analysis_handoff = formal_analysis_handoff
+        self._get_method_plan = get_method_plan
+        self._invalidate_method_plan = invalidate_method_plan
 
     def create(
         self,
@@ -131,6 +136,9 @@ class ResearchDocumentApplication:
                 actor="user",
                 analysis_handoff=analysis_handoff,
             )
+            self._invalidate_method_plan_if_needed(
+                task.task_id, "研究框架正在重建，旧方法计划需要重新确认。"
+            )
             if task.current_framework_id != snapshot.document_id:
                 saved_task = self._research_tasks.save_progress(
                     replace(
@@ -139,6 +147,7 @@ class ResearchDocumentApplication:
                         version=task.version + 1,
                         updated_at=datetime.now(UTC),
                         current_framework_id=snapshot.document_id,
+                        current_method_plan_status=None,
                     )
                 )
                 if saved_task is None:
@@ -285,6 +294,27 @@ class ResearchDocumentApplication:
                 actor=actor,
                 analysis_handoff=analysis_handoff,
             )
+            self._invalidate_method_plan_if_needed(
+                current.task_id, "研究框架版本已变化，旧方法计划需要重新确认。"
+            )
+            task = self._research_tasks.get(current.task_id, user_id)
+            if task is None:
+                raise LookupError(current.task_id)
+            if (
+                task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED
+                or task.current_method_plan_status is not None
+            ):
+                saved_task = self._research_tasks.save_progress(
+                    replace(
+                        task,
+                        status=ResearchTaskStatus.FRAMEWORK_DRAFT,
+                        version=task.version + 1,
+                        updated_at=datetime.now(UTC),
+                        current_method_plan_status=None,
+                    )
+                )
+                if saved_task is None:
+                    raise ValueError("research task changed while revising document")
             self._mutations.complete(
                 request_id=receipt.request_id,
                 result_id=snapshot.document_id,
@@ -332,14 +362,25 @@ class ResearchDocumentApplication:
                 expected_version=expected_version,
                 reason=reason,
             )
+            self._invalidate_method_plan_if_needed(
+                current.task_id, "研究框架已恢复到新版本，旧方法计划需要重新确认。"
+            )
             task = self._research_tasks.get(current.task_id, user_id)
-            if task is not None and task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED:
+            if task is not None and (
+                task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED
+                or task.current_method_plan_status is not None
+            ):
                 saved_task = self._research_tasks.save_progress(
                     replace(
                         task,
-                        status=ResearchTaskStatus.FRAMEWORK_DRAFT,
+                        status=(
+                            ResearchTaskStatus.FRAMEWORK_DRAFT
+                            if task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED
+                            else task.status
+                        ),
                         version=task.version + 1,
                         updated_at=datetime.now(UTC),
+                        current_method_plan_status=None,
                     )
                 )
                 if saved_task is None:
@@ -394,10 +435,16 @@ class ResearchDocumentApplication:
                 pending_proposal_count=pending_proposal_count,
                 analysis_handoff=analysis_handoff,
             )
+            self._invalidate_method_plan_if_needed(
+                current.task_id, "研究框架版本已确认变化，旧方法计划需要重新确认。"
+            )
             task = self._research_tasks.get(current.task_id, user_id)
             if task is None:
                 raise LookupError(current.task_id)
-            if task.status is not ResearchTaskStatus.FRAMEWORK_CONFIRMED:
+            if (
+                task.status is not ResearchTaskStatus.FRAMEWORK_CONFIRMED
+                or task.current_method_plan_status is not None
+            ):
                 saved_task = self._research_tasks.save_progress(
                     replace(
                         task,
@@ -405,6 +452,7 @@ class ResearchDocumentApplication:
                         version=task.version + 1,
                         updated_at=datetime.now(UTC),
                         current_framework_id=confirmed.document_id,
+                        current_method_plan_status=None,
                     )
                 )
                 if saved_task is None:
@@ -426,6 +474,7 @@ class ResearchDocumentApplication:
             pending_proposal_count=self._pending_proposal_count(current),
         )
         package_ready = False
+        package_blocker = "完整研究成果包暂时无法生成，请重新加载后再试。"
         try:
             plan = self.get_theory_plan_for_agent(
                 user_id=user_id,
@@ -440,12 +489,22 @@ class ResearchDocumentApplication:
                 match_run=match_run,
                 proposals=self._document_proposals(current),
                 versions=self._documents.list_versions(document_id),
+                method_plan=self._method_plan_for_export(
+                    current, theory_plan=plan
+                ),
             )
+            method_plan = manifest.get("method_plan")
+            if (
+                method_plan is not None
+                and method_plan.get("status") != MethodPlanStatus.CONFIRMED.value
+            ):
+                package_ready = False
+                package_blocker = "方法计划尚未确认，确认后才能导出完整研究成果包。"
+            else:
+                package_ready = True
             json.dumps(manifest, ensure_ascii=False, sort_keys=True)
-            package_ready = True
         except (LookupError, TypeError, ValueError):
             package_ready = False
-        package_blocker = "完整研究成果包暂时无法生成，请重新加载后再试。"
         return replace(
             gate,
             ready=gate.ready and package_ready,
@@ -480,6 +539,9 @@ class ResearchDocumentApplication:
         match_run = self._get_match_run(plan.match_run_id)
         if match_run is None:
             raise LookupError(plan.match_run_id)
+        method_plan = self._method_plan_for_export(requested, theory_plan=plan)
+        if method_plan is not None and method_plan.status is not MethodPlanStatus.CONFIRMED:
+            raise ValueError("confirmed method plan is required before export")
         versions = self._documents.list_versions(document_id)
         proposals = self._document_proposals(requested)
         manifest = _export_manifest(
@@ -488,6 +550,7 @@ class ResearchDocumentApplication:
             match_run=match_run,
             proposals=proposals,
             versions=versions,
+            method_plan=method_plan,
         )
         return ResearchDocumentDeliveryExport(
             document_id=base.document_id,
@@ -527,6 +590,36 @@ class ResearchDocumentApplication:
         handoff = self._formal_analysis_handoff(user_id=user_id, task_id=task_id)
         return _analysis_handoff_payload(handoff, expected_task_id=task_id)
 
+    def _method_plan_for_export(
+        self,
+        document: ResearchDocumentSnapshot,
+        *,
+        theory_plan: ConfirmedTheoryPlanSnapshot,
+    ) -> MethodPlanSnapshot | None:
+        """Resolve the plan pinned to the exact framework/theory being exported.
+
+        A callback is optional to keep historical document readers compatible,
+        but when configured it must return a plan belonging to this task and
+        the same immutable framework and theory versions.  Otherwise an
+        unrelated or outdated method decision could be presented as part of a
+        formal M5 package.
+        """
+
+        if self._get_method_plan is None:
+            return None
+        method_plan = self._get_method_plan(document.task_id)
+        if method_plan is None:
+            return None
+        if (
+            method_plan.task_id != document.task_id
+            or method_plan.framework_id != document.document_id
+            or method_plan.framework_version != document.version
+            or method_plan.theory_plan_id != theory_plan.theory_plan_id
+            or method_plan.theory_plan_version != theory_plan.version
+        ):
+            raise ValueError("method plan does not match the exported framework and theory")
+        return method_plan
+
     def _with_live_analysis_availability(
         self,
         snapshot: ResearchDocumentSnapshot,
@@ -549,6 +642,10 @@ class ResearchDocumentApplication:
             raise LookupError(snapshot.document_id)
         if task.current_framework_id != snapshot.document_id:
             raise ValueError("research document is not the task's current framework")
+
+    def _invalidate_method_plan_if_needed(self, task_id: UUID, reason: str) -> None:
+        if self._invalidate_method_plan is not None:
+            self._invalidate_method_plan(task_id, reason)
 
     def _document_proposals(
         self, snapshot: ResearchDocumentSnapshot
@@ -775,6 +872,94 @@ def _sections_payload(
     ]
 
 
+def _method_plan_payload(
+    value: MethodPlanSnapshot | None,
+) -> dict[str, object] | None:
+    """Flatten a method snapshot into the stable export shape.
+
+    The method module keeps shared constraints as a value object, while the
+    delivery manifest deliberately exposes each field at the top level so a
+    consumer can inspect the exported JSON without knowing internal domain
+    nesting.  This also preserves the actor/source distinction for every
+    generated or user-edited section.
+    """
+
+    if value is None:
+        return None
+    return {
+        "plan_id": str(value.plan_id),
+        "task_id": str(value.task_id),
+        "framework_id": str(value.framework_id),
+        "framework_version": value.framework_version,
+        "theory_plan_id": str(value.theory_plan_id),
+        "theory_plan_version": value.theory_plan_version,
+        "method_kind": value.method_kind.value,
+        "decision_source": value.decision_source,
+        "rationale": value.rationale,
+        "research_question": value.research_question,
+        "theory_summary": value.theory_summary,
+        "material_constraints": list(value.shared_constraints.material_constraints),
+        "ethical_constraints": list(value.shared_constraints.ethical_constraints),
+        "theory_concepts": list(value.shared_constraints.theory_concepts),
+        "evidence_ref_ids": list(value.shared_constraints.evidence_ref_ids),
+        "knowledge_release_id": value.shared_constraints.knowledge_release_id,
+        "shared_context": [
+            {
+                "key": item.key,
+                "title": item.title,
+                "content": item.content,
+                "evidence_refs": [
+                    {
+                        "evidence_ref_id": ref.evidence_ref_id,
+                        "source_id": ref.source_id,
+                        "source_kind": ref.source_kind,
+                        "knowledge_release_id": ref.knowledge_release_id,
+                        "annotation_id": ref.annotation_id,
+                        "material_id": ref.material_id,
+                        "parse_id": ref.parse_id,
+                        "segment_id": ref.segment_id,
+                        "locator": ref.locator,
+                    }
+                    for ref in item.evidence_refs
+                ],
+            }
+            for item in value.shared_context
+        ],
+        "sections": [
+            {
+                "key": item.key,
+                "title": item.title,
+                "content": item.content,
+                "source": item.source,
+            }
+            for item in value.sections
+        ],
+        "reviews": [
+            {
+                "review_id": str(item.review_id),
+                "note": item.note,
+                "blocking": item.blocking,
+                "created_at": item.created_at.isoformat(),
+                "resolved_at": item.resolved_at.isoformat()
+                if item.resolved_at
+                else None,
+            }
+            for item in value.reviews
+        ],
+        "status": value.status.value,
+        "version": value.version,
+        "revision_id": str(value.revision_id),
+        "change_summary": value.change_summary,
+        "actor": value.actor,
+        "created_at": value.created_at.isoformat(),
+        "restored_from_version": value.restored_from_version,
+        "stale_reason": value.stale_reason,
+        "confirmed_at": value.confirmed_at.isoformat()
+        if value.confirmed_at
+        else None,
+    }
+
+
 def _unavailable_personal_source_ids(
     analysis_handoff: dict[str, object] | None,
 ) -> tuple[set[str], set[str], set[str]]:
@@ -892,6 +1077,7 @@ def _export_manifest(
     match_run: MatchRunSnapshot,
     proposals: tuple[ResearchDocumentProposalSnapshot, ...],
     versions: tuple[ResearchDocumentSnapshot, ...],
+    method_plan: MethodPlanSnapshot | None = None,
 ) -> dict[str, object]:
     phenomenon = plan.phenomenon
     model = match_run.model
@@ -1028,6 +1214,7 @@ def _export_manifest(
             for item in plan.evidence_bundle.evidence_items
         ],
         "research_analysis": document.analysis_handoff,
+        "method_plan": _method_plan_payload(method_plan),
         "agent_proposals": [
             {
                 "proposal_id": str(item.proposal_id),
@@ -1106,6 +1293,7 @@ def _export_markdown(
     relations = manifest["theory_relations"]
     evidence = manifest["evidence"]
     research_analysis = manifest["research_analysis"]
+    method_plan = manifest.get("method_plan")
     proposals = manifest["agent_proposals"]
     versions = manifest["document_versions"]
     formal_document = manifest["formal_document"]
@@ -1221,6 +1409,61 @@ def _export_markdown(
         )
     else:
         lines.append("- 本版未纳入已确认的个人材料分析。")
+    lines.extend(["", "## 正式研究方法计划", ""])
+    if isinstance(method_plan, dict):
+        lines.extend(
+            [
+                f"- 方法路径：{method_plan.get('method_kind') or '未记录'}",
+                f"- 计划状态：{method_plan.get('status') or '未记录'}",
+                f"- 决定来源：{method_plan.get('decision_source') or '未记录'}",
+                f"- 计划版本：v{method_plan.get('version')}",
+                f"- 研究问题：{method_plan.get('research_question') or '未记录'}",
+                f"- 理论摘要：{method_plan.get('theory_summary') or '未记录'}",
+                f"- 用户理由：{method_plan.get('rationale') or '未记录'}",
+            ]
+        )
+        concepts = method_plan.get("theory_concepts")
+        if isinstance(concepts, list):
+            lines.append(f"- 共用理论概念：{'、'.join(str(item) for item in concepts) or '未记录'}")
+        evidence_ids = method_plan.get("evidence_ref_ids")
+        if isinstance(evidence_ids, list):
+            lines.append(
+                f"- 共用证据引用：{ '、'.join(str(item) for item in evidence_ids) or '未记录'}"
+            )
+        constraints = (
+            ("材料约束", method_plan.get("material_constraints")),
+            ("伦理约束", method_plan.get("ethical_constraints")),
+        )
+        for label, values in constraints:
+            if isinstance(values, list):
+                lines.append(f"- {label}：{'；'.join(str(item) for item in values) or '未记录'}")
+        lines.extend(["", "### 方法计划章节", ""])
+        sections = method_plan.get("sections")
+        if isinstance(sections, list):
+            for section in sections:
+                if not isinstance(section, dict):
+                    continue
+                source = "用户决定" if section.get("source") == "user" else "系统建议"
+                lines.extend(
+                    [
+                        "#### "
+                        f"{section.get('title') or section.get('key') or '未命名章节'}"
+                        f"（{source}）",
+                        str(section.get("content") or ""),
+                        "",
+                    ]
+                )
+        reviews = method_plan.get("reviews")
+        if isinstance(reviews, list) and reviews:
+            lines.extend(["### 方法计划审校", ""])
+            for review in reviews:
+                if not isinstance(review, dict):
+                    continue
+                state = "已解决" if review.get("resolved_at") else "未解决"
+                blocking = "阻断" if review.get("blocking") else "非阻断"
+                lines.append(f"- {state} / {blocking}：{review.get('note') or '未记录'}")
+    else:
+        lines.append("- 本版未附已确认的 MethodPlan。")
     lines.extend(["", "## 正式研究框架", ""])
     formal_sections = formal_document.get("sections")
     if isinstance(formal_sections, list):

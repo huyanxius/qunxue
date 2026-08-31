@@ -1252,7 +1252,11 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
                 review_record.get("attestation"), "human review attestation"
             ),
         }
-        expected_status = KnowledgeReviewStatus.REVIEWED.value if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+        expected_status = (
+            KnowledgeReviewStatus.REVIEWED.value
+            if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA
+            else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+        )
         if review["review_status"] != expected_status:
             raise ValueError(f"human review status must be {expected_status}")
         if review["decision"] != "approved_for_internal_match":

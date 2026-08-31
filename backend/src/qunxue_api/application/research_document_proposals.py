@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
@@ -22,10 +23,12 @@ class ResearchDocumentProposalApplication:
         proposals: ResearchDocumentProposalService,
         research_tasks: ResearchTaskRepository,
         mutations: ResearchDocumentMutationRepository,
+        invalidate_method_plan: Callable[[UUID, str], None] | None = None,
     ) -> None:
         self._proposals = proposals
         self._research_tasks = research_tasks
         self._mutations = mutations
+        self._invalidate_method_plan = invalidate_method_plan
 
     def get(self, *, user_id: UUID, proposal_id: UUID) -> ResearchDocumentProposalSnapshot:
         return self._proposals.get(proposal_id, user_id=user_id)
@@ -73,6 +76,11 @@ class ResearchDocumentProposalApplication:
             accepted.proposal.result_document_id is not None
             and task.current_framework_id != accepted.proposal.result_document_id
         ):
+            if self._invalidate_method_plan is not None:
+                self._invalidate_method_plan(
+                    task.task_id,
+                    "研究框架建议已采纳，旧方法计划需要重新确认。",
+                )
             saved_task = self._research_tasks.save_progress(
                 replace(
                     task,
@@ -80,6 +88,7 @@ class ResearchDocumentProposalApplication:
                     version=task.version + 1,
                     updated_at=datetime.now(UTC),
                     current_framework_id=accepted.proposal.result_document_id,
+                    current_method_plan_status=None,
                 )
             )
             if saved_task is None:

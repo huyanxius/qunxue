@@ -182,6 +182,10 @@ class ResearchTask:
     current_match_run_id: UUID | None = None
     current_theory_plan_id: UUID | None = None
     current_framework_id: UUID | None = None
+    current_method_plan_id: UUID | None = None
+    # Keep the method-plan projection in the task aggregate so task-only
+    # navigation can resume the same plan without loading a second module.
+    current_method_plan_status: str | None = None
     knowledge_release_id: str | None = None
     conversation_id: UUID | None = None
     source_turn_id: UUID | None = None
