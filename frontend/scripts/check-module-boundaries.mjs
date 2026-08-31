@@ -14,6 +14,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'knowledge-explorer': Object.freeze([]),
     'm4-theory-judgment': Object.freeze([]),
     'research-agent': Object.freeze([]),
+    'research-document': Object.freeze([]),
     'research-materials': Object.freeze([]),
     'research-method': Object.freeze([]),
     'research-workspace': Object.freeze(['research-agent']),
