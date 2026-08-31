@@ -10,8 +10,12 @@ from qunxue_api.adapters.sqlite.research_document_model import (
     ResearchDocumentVersionRow,
 )
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationRef,
+    ResearchDocumentCitationState,
     ResearchDocumentEvidenceRef,
     ResearchDocumentEvidenceSourceKind,
+    ResearchDocumentFormatting,
     ResearchDocumentSection,
     ResearchDocumentSectionStatus,
     ResearchDocumentSnapshot,
@@ -62,6 +66,13 @@ class SqliteResearchDocumentRepository:
                 revision_id=str(snapshot.revision_id),
                 title=snapshot.title,
                 sections=[_section_payload(section) for section in snapshot.sections],
+                formatting={
+                    "template_id": snapshot.formatting.template_id,
+                    "csl_style_id": snapshot.formatting.csl_style_id,
+                    "locale": snapshot.formatting.locale,
+                    "custom_csl": snapshot.formatting.custom_csl,
+                    "custom_css": snapshot.formatting.custom_css,
+                },
                 analysis_handoff=snapshot.analysis_handoff,
                 status=snapshot.status.value,
                 change_summary=snapshot.change_summary,
@@ -171,6 +182,17 @@ def _section_payload(section: ResearchDocumentSection) -> dict[str, object]:
                 }
             for item in section.evidence_refs
         ],
+        "citation_refs": [
+            {
+                "citation_id": item.citation_id,
+                "kind": item.kind.value,
+                "source_id": item.source_id,
+                "source_version": item.source_version,
+                "locator": item.locator,
+                "state": item.state.value,
+            }
+            for item in section.citation_refs
+        ],
     }
 
 
@@ -232,6 +254,25 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
                     )
                     for item in section.get("evidence_refs", [])
                 ),
+                citation_refs=tuple(
+                    ResearchDocumentCitationRef(
+                        citation_id=str(item["citation_id"]),
+                        kind=ResearchDocumentCitationKind(str(item["kind"])),
+                        source_id=str(item["source_id"]),
+                        source_version=(
+                            str(item["source_version"])
+                            if item.get("source_version") is not None
+                            else None
+                        ),
+                        locator=(
+                            dict(item["locator"])
+                            if isinstance(item.get("locator"), dict)
+                            else None
+                        ),
+                        state=ResearchDocumentCitationState(str(item["state"])),
+                    )
+                    for item in section.get("citation_refs", [])
+                ),
             )
             for section in row.sections
         ),
@@ -244,6 +285,21 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
         ),
         restored_from_version=row.restored_from_version,
         confirmed_at=_utc(row.confirmed_at) if row.confirmed_at is not None else None,
+        formatting=ResearchDocumentFormatting(
+            template_id=str(row.formatting["template_id"]),
+            csl_style_id=str(row.formatting["csl_style_id"]),
+            locale=str(row.formatting["locale"]),
+            custom_csl=(
+                str(row.formatting["custom_csl"])
+                if row.formatting.get("custom_csl")
+                else None
+            ),
+            custom_css=(
+                str(row.formatting["custom_css"])
+                if row.formatting.get("custom_css")
+                else None
+            ),
+        ),
     )
 
 
