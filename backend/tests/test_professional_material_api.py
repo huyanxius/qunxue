@@ -7,6 +7,10 @@ from fastapi.testclient import TestClient
 from qunxue_api.modules.research_materials import DoiMetadataUnavailable
 
 
+def _write_headers() -> dict[str, str]:
+    return {"Idempotency-Key": str(uuid4())}
+
+
 def _authenticate(client: TestClient) -> None:
     response = client.post(
         "/api/session/register",
@@ -54,6 +58,7 @@ def test_upload_creates_restricted_archive_profile_then_explicit_policy_unlocks_
 
     updated = client.patch(
         f"/api/research-tasks/{task_id}/material-archive/materials/{material['material_id']}",
+        headers=_write_headers(),
         json={
             "research_role": "empirical_material",
             "specific_type": "interview_transcript",
@@ -83,12 +88,15 @@ def test_archive_keeps_many_to_many_cases_collections_and_literature_duplicates_
     second = _upload(client, task_id, "访谈二.txt")
     root = f"/api/research-tasks/{task_id}/material-archive"
     collection = client.post(
-        f"{root}/collections", json={"name": "照护", "description": "相关经验材料"}
+        f"{root}/collections",
+        headers=_write_headers(),
+        json={"name": "照护", "description": "相关经验材料"},
     )
     assert collection.status_code == 201
     collection_id = collection.json()["collection_id"]
     case = client.post(
         f"{root}/cases",
+        headers=_write_headers(),
         json={
             "name": "家庭 A", "attributes": {"迁移阶段": "两年内"},
             "material_ids": [first["material_id"], second["material_id"]],
@@ -97,6 +105,7 @@ def test_archive_keeps_many_to_many_cases_collections_and_literature_duplicates_
     assert case.status_code == 201
     relation = client.post(
         f"{root}/relations",
+        headers=_write_headers(),
         json={
             "source_material_id": second["material_id"],
             "target_material_id": first["material_id"],
@@ -107,6 +116,7 @@ def test_archive_keeps_many_to_many_cases_collections_and_literature_duplicates_
     for title in ("Care after Migration", "Imported title differs"):
         response = client.post(
             f"{root}/literature",
+            headers=_write_headers(),
             json={
                 "item_type": "article-journal", "title": title, "doi": "10.1234/ABC.1",
                 "csl_data": {}, "attachment_material_ids": [first["material_id"]],
@@ -128,7 +138,9 @@ def test_batch_upload_is_partial_success_and_literature_exchange_round_trips(
     _authenticate(client)
     task_id = _task(client)
     root = f"/api/research-tasks/{task_id}/material-archive"
-    batch = client.post(f"{root}/batches", json={"name": "春季田野"})
+    batch = client.post(
+        f"{root}/batches", headers=_write_headers(), json={"name": "春季田野"}
+    )
     assert batch.status_code == 201
     batch_id = batch.json()["batch_id"]
 
@@ -147,6 +159,7 @@ def test_batch_upload_is_partial_success_and_literature_exchange_round_trips(
 
     imported = client.post(
         f"{root}/literature/import",
+        headers=_write_headers(),
         data={"exchange_format": "ris"},
         files={
             "file": (
