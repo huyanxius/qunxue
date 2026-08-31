@@ -338,6 +338,7 @@ def configure_research_codebook_entry(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> CodebookEntryResponse | JSONResponse:
     try:
         value = application.configure_codebook_entry(
@@ -368,6 +369,7 @@ def transition_research_codebook_entry(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> CodebookEntryResponse | JSONResponse:
     try:
         value = application.transition_codebook_entry(
@@ -396,6 +398,7 @@ def create_research_analysis_theme(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisThemeResponse | JSONResponse:
     try:
         value = application.create_user_theme(
@@ -423,6 +426,7 @@ def confirm_research_analysis_theme(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisThemeResponse | JSONResponse:
     if payload.decision is not payload.decision.CONFIRMED:
         return _error(422, ErrorCode.VALIDATION_ERROR, "主题候选当前只能确认；拒绝仍保留原记录。")
@@ -451,6 +455,7 @@ def create_research_analysis_memo_link(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisMemoLinkResponse | JSONResponse:
     try:
         value = application.attach_memo(
@@ -477,6 +482,7 @@ def save_research_analysis_case_profile(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> AnalysisCaseProfileResponse | JSONResponse:
     try:
         value = application.save_case_profile(
@@ -506,6 +512,7 @@ def save_research_case_theme_matrix_cell(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> CaseThemeMatrixCellResponse | JSONResponse:
     try:
         value = application.save_matrix_cell(
@@ -536,6 +543,7 @@ def set_research_qualitative_method(
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchAnalysisApplicationDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> MethodPresetSelectionResponse | JSONResponse:
     try:
         value = application.set_method_preset(

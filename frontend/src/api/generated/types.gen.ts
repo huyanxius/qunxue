@@ -8821,6 +8821,12 @@ export type DecideResearchAnalysisMemoResponse = DecideResearchAnalysisMemoRespo
 
 export type SaveResearchAnalysisCaseProfileData = {
     body: SaveAnalysisCaseProfileRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -8859,6 +8865,12 @@ export type SaveResearchAnalysisCaseProfileResponse = SaveResearchAnalysisCasePr
 
 export type ConfigureResearchCodebookEntryData = {
     body: ConfigureCodebookEntryRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -8901,6 +8913,12 @@ export type ConfigureResearchCodebookEntryResponse = ConfigureResearchCodebookEn
 
 export type TransitionResearchCodebookEntryData = {
     body: TransitionCodebookEntryRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -8943,6 +8961,12 @@ export type TransitionResearchCodebookEntryResponse = TransitionResearchCodebook
 
 export type SaveResearchCaseThemeMatrixCellData = {
     body: SaveCaseThemeMatrixCellRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -8981,6 +9005,12 @@ export type SaveResearchCaseThemeMatrixCellResponse = SaveResearchCaseThemeMatri
 
 export type CreateResearchAnalysisMemoLinkData = {
     body: CreateAnalysisMemoLinkRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9019,6 +9049,12 @@ export type CreateResearchAnalysisMemoLinkResponse = CreateResearchAnalysisMemoL
 
 export type SetResearchQualitativeMethodData = {
     body: SetQualitativeMethodRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9057,6 +9093,12 @@ export type SetResearchQualitativeMethodResponse = SetResearchQualitativeMethodR
 
 export type CreateResearchAnalysisThemeData = {
     body: CreateAnalysisThemeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
@@ -9095,6 +9137,12 @@ export type CreateResearchAnalysisThemeResponse = CreateResearchAnalysisThemeRes
 
 export type ConfirmResearchAnalysisThemeData = {
     body: DecideAnalysisRecordRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Task Id
