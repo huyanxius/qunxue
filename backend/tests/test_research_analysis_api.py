@@ -467,6 +467,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
 
     codebook = client.put(
         f"/api/research-tasks/{task_id}/analysis/workspace/codebook/{code['code_id']}",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "expected_version": None,
             "inclusion_rules": ["明确说出信息或资源进入渠道"],
@@ -479,6 +480,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
     assert codebook.status_code == 200, codebook.text
     theme = client.post(
         f"/api/research-tasks/{task_id}/analysis/workspace/themes",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "label": "制度资源的多重入口",
             "central_concept": "正式组织与非正式网络都可能构成资源入口。",
@@ -490,6 +492,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
     assert theme.json()["status"] == "confirmed"
     memo_link = client.post(
         f"/api/research-tasks/{task_id}/analysis/workspace/memo-links",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "memo_id": memo["memo_id"],
             "target_kind": "code",
@@ -500,6 +503,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
     assert memo_link.status_code == 201, memo_link.text
     profile = client.post(
         f"/api/research-tasks/{task_id}/analysis/workspace/cases",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "expected_version": None,
             "case_ref": "opaque-case-county",
@@ -513,6 +517,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
     assert profile.status_code == 200, profile.text
     matrix = client.put(
         f"/api/research-tasks/{task_id}/analysis/workspace/matrix-cell",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "expected_version": None,
             "case_profile_id": profile.json()["profile_id"],
@@ -527,6 +532,7 @@ def test_qualitative_workspace_api_persists_grounded_codebook_cases_matrix_and_m
     assert matrix.status_code == 200, matrix.text
     method = client.put(
         f"/api/research-tasks/{task_id}/analysis/workspace/method",
+        headers={"Idempotency-Key": str(uuid4())},
         json={"method": "case_study", "expected_version": None},
     )
     assert method.status_code == 200, method.text
