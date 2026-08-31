@@ -12,6 +12,9 @@ from qunxue_api.adapters.sqlite.research_document_proposal_model import (
     ResearchDocumentProposalRow,
 )
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationRef,
+    ResearchDocumentCitationState,
     ResearchDocumentProposalKind,
     ResearchDocumentProposalSnapshot,
     ResearchDocumentProposalStatus,
@@ -165,6 +168,34 @@ def _proposal_row(snapshot: ResearchDocumentProposalSnapshot) -> ResearchDocumen
         created_at=snapshot.created_at,
         decided_at=snapshot.decided_at,
     )
+
+
+def test_repository_preserves_structured_citations_in_proposed_sections() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    _create_proposal_table(engine)
+    pending = _pending_proposal()
+    citation = ResearchDocumentCitationRef(
+        citation_id="citation-1",
+        kind=ResearchDocumentCitationKind.SCHOLARLY,
+        source_id="literature-entry-1",
+        source_version="v2",
+        locator={"label": "page", "value": "42"},
+        state=ResearchDocumentCitationState.VERIFIED,
+    )
+    proposal = replace(
+        pending,
+        proposed_sections=(replace(pending.proposed_sections[0], citation_refs=(citation,)),),
+    )
+
+    with Session(engine) as session:
+        SqliteResearchDocumentProposalRepository(session).add(proposal)
+        session.commit()
+    with Session(engine) as session:
+        restored = SqliteResearchDocumentProposalRepository(session).get(proposal.proposal_id)
+
+    assert restored is not None
+    assert restored.proposed_sections[0].citation_refs == (citation,)
+    engine.dispose()
 
 
 def test_repository_keeps_the_first_proposal_decision_when_a_stale_decision_arrives() -> None:
