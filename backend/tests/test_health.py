@@ -24,6 +24,8 @@ def test_health_reports_runtime_contract(client: TestClient) -> None:
         "status": "ok",
         "service": "群学致知 API",
         "runtime_mode": "mock",
+        "provider": "deterministic-mock",
+        "model_version": "mock-sociology-v1",
         "persistence": "sqlite",
         "contract_version": "2026-07-foundation",
         "capability": "mock",
