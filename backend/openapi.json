@@ -931,6 +931,94 @@
         "title": "AnalysisAnnotationResponse",
         "type": "object"
       },
+      "AnalysisCaseAttributeContract": {
+        "properties": {
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "AnalysisCaseAttributeContract",
+        "type": "object"
+      },
+      "AnalysisCaseProfileResponse": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "attributes": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCaseAttributeContract"
+            },
+            "title": "Attributes",
+            "type": "array"
+          },
+          "case_ref": {
+            "title": "Case Ref",
+            "type": "string"
+          },
+          "display_label": {
+            "title": "Display Label",
+            "type": "string"
+          },
+          "memo_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Memo Ids",
+            "type": "array"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profile_id",
+          "case_ref",
+          "display_label",
+          "attributes",
+          "summary",
+          "annotation_ids",
+          "memo_ids",
+          "version",
+          "updated_at"
+        ],
+        "title": "AnalysisCaseProfileResponse",
+        "type": "object"
+      },
       "AnalysisCodeResponse": {
         "properties": {
           "agent_run_id": {
@@ -1090,6 +1178,50 @@
         "title": "AnalysisMemoKind",
         "type": "string"
       },
+      "AnalysisMemoLinkResponse": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "link_id": {
+            "format": "uuid",
+            "title": "Link Id",
+            "type": "string"
+          },
+          "memo_id": {
+            "format": "uuid",
+            "title": "Memo Id",
+            "type": "string"
+          },
+          "target_kind": {
+            "$ref": "#/components/schemas/MemoTargetKind"
+          },
+          "target_ref": {
+            "title": "Target Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "link_id",
+          "memo_id",
+          "target_kind",
+          "target_ref",
+          "annotation_ids",
+          "created_at"
+        ],
+        "title": "AnalysisMemoLinkResponse",
+        "type": "object"
+      },
       "AnalysisMemoResponse": {
         "properties": {
           "agent_run_id": {
@@ -1246,6 +1378,93 @@
         ],
         "title": "AnalysisRecordStatus",
         "type": "string"
+      },
+      "AnalysisThemeResponse": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "central_concept": {
+            "title": "Central Concept",
+            "type": "string"
+          },
+          "code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Code Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisRecordStatus"
+          },
+          "theme_id": {
+            "format": "uuid",
+            "title": "Theme Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "theme_id",
+          "label",
+          "central_concept",
+          "code_ids",
+          "annotation_ids",
+          "source",
+          "status",
+          "version",
+          "created_at",
+          "decided_at",
+          "decision_reason"
+        ],
+        "title": "AnalysisThemeResponse",
+        "type": "object"
       },
       "AuditFindingResponse": {
         "properties": {
@@ -1750,6 +1969,178 @@
         "title": "CaseComparisonResponse",
         "type": "object"
       },
+      "CaseThemeMatrixCellResponse": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "case_profile_id": {
+            "format": "uuid",
+            "title": "Case Profile Id",
+            "type": "string"
+          },
+          "cell_id": {
+            "format": "uuid",
+            "title": "Cell Id",
+            "type": "string"
+          },
+          "finding_kinds": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonFindingKind"
+            },
+            "title": "Finding Kinds",
+            "type": "array"
+          },
+          "memo_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Memo Ids",
+            "type": "array"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_kind": {
+            "$ref": "#/components/schemas/MatrixSubjectKind"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cell_id",
+          "case_profile_id",
+          "subject_kind",
+          "subject_id",
+          "summary",
+          "annotation_ids",
+          "memo_ids",
+          "finding_kinds",
+          "version",
+          "updated_at"
+        ],
+        "title": "CaseThemeMatrixCellResponse",
+        "type": "object"
+      },
+      "CodebookEntryResponse": {
+        "properties": {
+          "code_id": {
+            "format": "uuid",
+            "title": "Code Id",
+            "type": "string"
+          },
+          "exclusion_rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Rules",
+            "type": "array"
+          },
+          "inclusion_rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Inclusion Rules",
+            "type": "array"
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/CodebookLifecycle"
+          },
+          "negative_example_annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Negative Example Annotation Ids",
+            "type": "array"
+          },
+          "parent_code_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Code Id"
+          },
+          "positive_example_annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Positive Example Annotation Ids",
+            "type": "array"
+          },
+          "related_code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Related Code Ids",
+            "type": "array"
+          },
+          "revision_reason": {
+            "title": "Revision Reason",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code_id",
+          "inclusion_rules",
+          "exclusion_rules",
+          "parent_code_id",
+          "positive_example_annotation_ids",
+          "negative_example_annotation_ids",
+          "lifecycle",
+          "related_code_ids",
+          "version",
+          "updated_at",
+          "revision_reason"
+        ],
+        "title": "CodebookEntryResponse",
+        "type": "object"
+      },
+      "CodebookLifecycle": {
+        "enum": [
+          "active",
+          "merged",
+          "split",
+          "retired"
+        ],
+        "title": "CodebookLifecycle",
+        "type": "string"
+      },
       "ComparisonFindingContract": {
         "properties": {
           "annotation_ids": {
@@ -1827,6 +2218,80 @@
           "unresolved_questions"
         ],
         "title": "ConceptMappingContract",
+        "type": "object"
+      },
+      "ConfigureCodebookEntryRequest": {
+        "properties": {
+          "exclusion_rules": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Exclusion Rules",
+            "type": "array"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "inclusion_rules": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Inclusion Rules",
+            "type": "array"
+          },
+          "negative_example_annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Negative Example Annotation Ids",
+            "type": "array"
+          },
+          "parent_code_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Code Id"
+          },
+          "positive_example_annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Positive Example Annotation Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "inclusion_rules",
+          "exclusion_rules",
+          "positive_example_annotation_ids",
+          "negative_example_annotation_ids"
+        ],
+        "title": "ConfigureCodebookEntryRequest",
         "type": "object"
       },
       "ConfirmFrameworkRequest": {
@@ -2316,6 +2781,42 @@
         "title": "CreateAnalysisCodeRequest",
         "type": "object"
       },
+      "CreateAnalysisMemoLinkRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "memo_id": {
+            "format": "uuid",
+            "title": "Memo Id",
+            "type": "string"
+          },
+          "target_kind": {
+            "$ref": "#/components/schemas/MemoTargetKind"
+          },
+          "target_ref": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Target Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "memo_id",
+          "target_kind",
+          "target_ref",
+          "annotation_ids"
+        ],
+        "title": "CreateAnalysisMemoLinkRequest",
+        "type": "object"
+      },
       "CreateAnalysisMemoRequest": {
         "properties": {
           "annotation_ids": {
@@ -2358,6 +2859,50 @@
           "memo_kind"
         ],
         "title": "CreateAnalysisMemoRequest",
+        "type": "object"
+      },
+      "CreateAnalysisThemeRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "central_concept": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Central Concept",
+            "type": "string"
+          },
+          "code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Code Ids",
+            "type": "array"
+          },
+          "label": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "central_concept",
+          "code_ids",
+          "annotation_ids"
+        ],
+        "title": "CreateAnalysisThemeRequest",
         "type": "object"
       },
       "CreateCaseComparisonRequest": {
@@ -4942,6 +5487,27 @@
         "title": "MaterialKind",
         "type": "string"
       },
+      "MatrixSubjectKind": {
+        "enum": [
+          "code",
+          "theme"
+        ],
+        "title": "MatrixSubjectKind",
+        "type": "string"
+      },
+      "MemoTargetKind": {
+        "enum": [
+          "project",
+          "material",
+          "source",
+          "code",
+          "case",
+          "comparison",
+          "draft"
+        ],
+        "title": "MemoTargetKind",
+        "type": "string"
+      },
       "MethodIntentContract": {
         "properties": {
           "constraints": {
@@ -5456,6 +6022,29 @@
           "items"
         ],
         "title": "MethodPlanVersionListResponse",
+        "type": "object"
+      },
+      "MethodPresetSelectionResponse": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/QualitativeMethod"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "method",
+          "version",
+          "updated_at"
+        ],
+        "title": "MethodPresetSelectionResponse",
         "type": "object"
       },
       "ModelCapability": {
@@ -6013,6 +6602,129 @@
         "title": "PhenomenonSnapshotResponse",
         "type": "object"
       },
+      "QualitativeMethod": {
+        "enum": [
+          "thematic_analysis",
+          "grounded_theory",
+          "ethnography",
+          "case_study",
+          "narrative_research",
+          "discourse_conversation_analysis",
+          "literature_review"
+        ],
+        "title": "QualitativeMethod",
+        "type": "string"
+      },
+      "QualitativeMethodPresetResponse": {
+        "properties": {
+          "guardrails": {
+            "title": "Guardrails",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "matrix_axes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matrix Axes",
+            "type": "array"
+          },
+          "method": {
+            "$ref": "#/components/schemas/QualitativeMethod"
+          },
+          "primary_view": {
+            "title": "Primary View",
+            "type": "string"
+          },
+          "prompts": {
+            "title": "Prompts",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "label",
+          "primary_view",
+          "matrix_axes",
+          "prompts",
+          "guardrails"
+        ],
+        "title": "QualitativeMethodPresetResponse",
+        "type": "object"
+      },
+      "QualitativeWorkspaceSnapshotResponse": {
+        "properties": {
+          "candidate_themes": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisThemeResponse"
+            },
+            "title": "Candidate Themes",
+            "type": "array"
+          },
+          "case_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCaseProfileResponse"
+            },
+            "title": "Case Profiles",
+            "type": "array"
+          },
+          "codebook_entries": {
+            "items": {
+              "$ref": "#/components/schemas/CodebookEntryResponse"
+            },
+            "title": "Codebook Entries",
+            "type": "array"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "formal_themes": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisThemeResponse"
+            },
+            "title": "Formal Themes",
+            "type": "array"
+          },
+          "matrix_cells": {
+            "items": {
+              "$ref": "#/components/schemas/CaseThemeMatrixCellResponse"
+            },
+            "title": "Matrix Cells",
+            "type": "array"
+          },
+          "memo_links": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisMemoLinkResponse"
+            },
+            "title": "Memo Links",
+            "type": "array"
+          },
+          "method_preset": {
+            "$ref": "#/components/schemas/MethodPresetSelectionResponse"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "content_hash",
+          "method_preset",
+          "codebook_entries",
+          "memo_links",
+          "case_profiles",
+          "formal_themes",
+          "candidate_themes",
+          "matrix_cells"
+        ],
+        "title": "QualitativeWorkspaceSnapshotResponse",
+        "type": "object"
+      },
       "RegisterSessionRequest": {
         "properties": {
           "display_name": {
@@ -6384,10 +7096,20 @@
             "title": "Memos",
             "type": "array"
           },
+          "method_presets": {
+            "items": {
+              "$ref": "#/components/schemas/QualitativeMethodPresetResponse"
+            },
+            "title": "Method Presets",
+            "type": "array"
+          },
           "task_id": {
             "format": "uuid",
             "title": "Task Id",
             "type": "string"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/QualitativeWorkspaceSnapshotResponse"
           }
         },
         "required": [
@@ -6395,7 +7117,9 @@
           "annotations",
           "codes",
           "memos",
-          "comparisons"
+          "comparisons",
+          "workspace",
+          "method_presets"
         ],
         "title": "ResearchAnalysisSnapshotResponse",
         "type": "object"
@@ -8528,6 +9252,146 @@
         "title": "ReviewMethodPlanRequest",
         "type": "object"
       },
+      "SaveAnalysisCaseProfileRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "attributes": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCaseAttributeContract"
+            },
+            "maxItems": 100,
+            "title": "Attributes",
+            "type": "array"
+          },
+          "case_ref": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Case Ref",
+            "type": "string"
+          },
+          "display_label": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Display Label",
+            "type": "string"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "memo_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Memo Ids",
+            "type": "array"
+          },
+          "summary": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_ref",
+          "display_label",
+          "summary",
+          "annotation_ids"
+        ],
+        "title": "SaveAnalysisCaseProfileRequest",
+        "type": "object"
+      },
+      "SaveCaseThemeMatrixCellRequest": {
+        "properties": {
+          "annotation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Annotation Ids",
+            "type": "array"
+          },
+          "case_profile_id": {
+            "format": "uuid",
+            "title": "Case Profile Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "finding_kinds": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonFindingKind"
+            },
+            "maxItems": 10,
+            "title": "Finding Kinds",
+            "type": "array"
+          },
+          "memo_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Memo Ids",
+            "type": "array"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_kind": {
+            "$ref": "#/components/schemas/MatrixSubjectKind"
+          },
+          "summary": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_profile_id",
+          "subject_kind",
+          "subject_id",
+          "summary",
+          "annotation_ids"
+        ],
+        "title": "SaveCaseThemeMatrixCellRequest",
+        "type": "object"
+      },
       "SaveTheoryDecisionDraftRequest": {
         "properties": {
           "acknowledged_candidate_ids": {
@@ -8686,6 +9550,30 @@
           "display_name"
         ],
         "title": "SessionUserResponse",
+        "type": "object"
+      },
+      "SetQualitativeMethodRequest": {
+        "properties": {
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "method": {
+            "$ref": "#/components/schemas/QualitativeMethod"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "SetQualitativeMethodRequest",
         "type": "object"
       },
       "SourceRecordResponse": {
@@ -9906,6 +10794,40 @@
           "contract_version"
         ],
         "title": "TraceMetadata",
+        "type": "object"
+      },
+      "TransitionCodebookEntryRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/CodebookLifecycle"
+          },
+          "reason": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "related_code_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Related Code Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_version",
+          "lifecycle",
+          "reason"
+        ],
+        "title": "TransitionCodebookEntryRequest",
         "type": "object"
       },
       "UpdateFrameworkRequest": {
@@ -15098,6 +16020,620 @@
           }
         },
         "summary": "Decide Research Analysis Memo",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/cases": {
+      "post": {
+        "operationId": "save_research_analysis_case_profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAnalysisCaseProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCaseProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Save Research Analysis Case Profile",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/codebook/{code_id}": {
+      "put": {
+        "operationId": "configure_research_codebook_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "code_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Code Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureCodebookEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodebookEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Configure Research Codebook Entry",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/codebook/{code_id}/transition": {
+      "post": {
+        "operationId": "transition_research_codebook_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "code_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Code Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionCodebookEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodebookEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Transition Research Codebook Entry",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/matrix-cell": {
+      "put": {
+        "operationId": "save_research_case_theme_matrix_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCaseThemeMatrixCellRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseThemeMatrixCellResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Save Research Case Theme Matrix Cell",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/memo-links": {
+      "post": {
+        "operationId": "create_research_analysis_memo_link",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalysisMemoLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisMemoLinkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Research Analysis Memo Link",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/method": {
+      "put": {
+        "operationId": "set_research_qualitative_method",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetQualitativeMethodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodPresetSelectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Set Research Qualitative Method",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/themes": {
+      "post": {
+        "operationId": "create_research_analysis_theme",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalysisThemeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisThemeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Research Analysis Theme",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/workspace/themes/{theme_id}/decision": {
+      "post": {
+        "operationId": "confirm_research_analysis_theme",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "theme_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Theme Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAnalysisRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisThemeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Confirm Research Analysis Theme",
         "tags": [
           "research-analysis"
         ]
