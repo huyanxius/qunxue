@@ -22,7 +22,7 @@
 .research-materials-workbench__header p { margin: 0; color: var(--app-muted); font-size: 12px; }
 .research-materials-workbench__header label { display: grid; gap: 5px; flex: 0 0 min(300px, 38%); color: var(--app-muted); font-size: 10px; }
 .research-materials-workbench__header select { width: 100%; padding: 9px 11px; border: 1px solid var(--app-border); border-radius: 8px; color: var(--app-ink); background: var(--app-sidebar); font: inherit; font-size: 12px; }
-.research-materials-workbench__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); height: min(760px, calc(100vh - 250px)); min-height: 620px; gap: 14px; align-items: stretch; }
+.research-materials-workbench__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); height: min(760px, calc(100vh - 250px)); min-height: 620px; gap: 14px; align-items: stretch; }
 .research-materials-workbench__body > .research-materials__overlay--workspace { min-width: 0; min-height: 0; }
 .research-materials-workbench__body > .research-agent-conversation--embedded { height: 100%; min-height: 0; border: 1px solid var(--app-border); border-radius: 14px; }
 .research-materials-workbench__resume { display: inline-flex; margin-top: 12px; color: var(--app-muted); font-size: 11px; text-decoration: none; }
