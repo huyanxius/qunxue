@@ -14,6 +14,28 @@ class EntryInputType(StrEnum):
     MATERIAL_INPUT = "material_input"
 
 
+class ResearchEntryMode(StrEnum):
+    FROM_SCRATCH = "from_scratch"
+    EXISTING_RESEARCH = "existing_research"
+    LEGACY = "legacy"
+
+
+class ProjectLifecycleStatus(StrEnum):
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    ARCHIVED = "archived"
+
+
+class ResearchCentralTool(StrEnum):
+    AGENT = "agent"
+    RESEARCH_MAP = "research_map"
+    MATERIALS = "materials"
+    PHENOMENON = "phenomenon"
+    THEORY_MATCHING = "theory_matching"
+    FRAMEWORK = "framework"
+    METHOD = "method"
+
+
 class ResearchTaskStatus(StrEnum):
     DRAFT = "draft"
     PHENOMENON_CONFIRMED = "phenomenon_confirmed"
@@ -170,6 +192,12 @@ class ResearchTask:
     idempotency_key: str
     created_at: datetime
     updated_at: datetime
+    entry_mode: ResearchEntryMode = ResearchEntryMode.FROM_SCRATCH
+    lifecycle_status: ProjectLifecycleStatus = ProjectLifecycleStatus.DRAFT
+    project_title: str = "未命名研究"
+    project_stage: str | None = None
+    method_orientation: str | None = None
+    last_central_tool: ResearchCentralTool | None = None
     seed_theory_id: str | None = None
     seed_theory_name: str | None = None
     phenomenon_query_id: UUID | None = None
@@ -205,6 +233,12 @@ class ResearchTask:
         user_id: UUID,
         entry_type: EntryType,
         idempotency_key: str,
+        entry_mode: ResearchEntryMode = ResearchEntryMode.FROM_SCRATCH,
+        lifecycle_status: ProjectLifecycleStatus = ProjectLifecycleStatus.DRAFT,
+        project_title: str = "未命名研究",
+        project_stage: str | None = None,
+        method_orientation: str | None = None,
+        last_central_tool: ResearchCentralTool | None = None,
         seed_theory_id: str | None,
         seed_theory_name: str | None,
         now: datetime,
@@ -222,6 +256,12 @@ class ResearchTask:
             status=ResearchTaskStatus.DRAFT,
             version=1,
             idempotency_key=idempotency_key,
+            entry_mode=entry_mode,
+            lifecycle_status=lifecycle_status,
+            project_title=project_title,
+            project_stage=project_stage,
+            method_orientation=method_orientation,
+            last_central_tool=last_central_tool,
             seed_theory_id=seed_theory_id,
             seed_theory_name=seed_theory_name,
             created_at=now,

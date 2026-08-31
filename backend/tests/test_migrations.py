@@ -236,6 +236,127 @@ def test_research_task_progress_projection_is_persisted(
         database.engine.dispose()
 
 
+def test_research_project_lifecycle_upgrade_preserves_task_conversation_and_material(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    alembic_config: Config,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'research-project-lifecycle.db'}"
+    monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
+    command.upgrade(alembic_config, "20260831_0001")
+
+    database = Database(database_url)
+    try:
+        with database.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO users (
+                        user_id, email, password_hash, display_name, role, status,
+                        version, created_at, updated_at
+                    ) VALUES (
+                        'user-lifecycle', 'lifecycle@example.com', 'hash', 'Researcher',
+                        'member', 'active', 1, :created_at, :created_at
+                    )
+                    """
+                ),
+                {"created_at": "2026-08-30 09:00:00"},
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO agent_conversations (
+                        conversation_id, user_id, title, current_research_task_id,
+                        version, created_at, updated_at
+                    ) VALUES (
+                        'conversation-lifecycle', 'user-lifecycle', '社区照护研究', NULL,
+                        1, :created_at, :created_at
+                    )
+                    """
+                ),
+                {"created_at": "2026-08-30 09:01:00"},
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO research_tasks (
+                        task_id, user_id, entry_type, status, version, idempotency_key,
+                        phenomenon_summary, adopted_theory_count, conversation_id,
+                        created_at, updated_at
+                    ) VALUES (
+                        'task-lifecycle', 'user-lifecycle', 'material_input',
+                        'phenomenon_confirmed', 4, 'legacy-lifecycle-task',
+                        '社区照护中的代际协作', 0, 'conversation-lifecycle',
+                        :created_at, :created_at
+                    )
+                    """
+                ),
+                {"created_at": "2026-08-30 09:02:00"},
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE agent_conversations
+                    SET current_research_task_id = 'task-lifecycle'
+                    WHERE conversation_id = 'conversation-lifecycle'
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO research_materials (
+                        material_id, user_id, task_id, idempotency_key,
+                        original_filename, display_name, media_type, material_format,
+                        material_kind, size_bytes, content_hash, status,
+                        processing_policy_version, created_at, updated_at
+                    ) VALUES (
+                        'material-lifecycle', 'user-lifecycle', 'task-lifecycle',
+                        'legacy-lifecycle-material', 'interview.txt', 'interview.txt',
+                        'text/plain', 'txt', 'interview_transcript', 12,
+                        'content-hash', 'ready', 'v1', :created_at, :created_at
+                    )
+                    """
+                ),
+                {"created_at": "2026-08-30 09:03:00"},
+            )
+    finally:
+        database.engine.dispose()
+
+    command.upgrade(alembic_config, "20260831_0002")
+    database = Database(database_url)
+    try:
+        with database.engine.connect() as connection:
+            task = connection.execute(
+                text(
+                    """
+                    SELECT task_id, entry_mode, lifecycle_status, project_title
+                    FROM research_tasks WHERE task_id = 'task-lifecycle'
+                    """
+                )
+            ).mappings().one()
+            assert dict(task) == {
+                "task_id": "task-lifecycle",
+                "entry_mode": "legacy",
+                "lifecycle_status": "in_progress",
+                "project_title": "社区照护中的代际协作",
+            }
+            assert connection.scalar(
+                text(
+                    "SELECT current_research_task_id FROM agent_conversations "
+                    "WHERE conversation_id = 'conversation-lifecycle'"
+                )
+            ) == "task-lifecycle"
+            assert connection.scalar(
+                text(
+                    "SELECT task_id FROM research_materials "
+                    "WHERE material_id = 'material-lifecycle'"
+                )
+            ) == "task-lifecycle"
+    finally:
+        database.engine.dispose()
+
+
 def test_database_url_override_drives_offline_migrations(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

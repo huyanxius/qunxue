@@ -2613,9 +2613,52 @@
       },
       "CreateResearchTaskRequest": {
         "properties": {
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode",
+            "default": "from_scratch"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType",
             "default": "direct_input"
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
           },
           "seed_theory_id": {
             "anyOf": [
@@ -6013,6 +6056,15 @@
         "title": "PhenomenonSnapshotResponse",
         "type": "object"
       },
+      "ProjectLifecycleStatus": {
+        "enum": [
+          "draft",
+          "in_progress",
+          "archived"
+        ],
+        "title": "ProjectLifecycleStatus",
+        "type": "string"
+      },
       "RegisterSessionRequest": {
         "properties": {
           "display_name": {
@@ -6399,6 +6451,19 @@
         ],
         "title": "ResearchAnalysisSnapshotResponse",
         "type": "object"
+      },
+      "ResearchCentralTool": {
+        "enum": [
+          "agent",
+          "research_map",
+          "materials",
+          "phenomenon",
+          "theory_matching",
+          "framework",
+          "method"
+        ],
+        "title": "ResearchCentralTool",
+        "type": "string"
       },
       "ResearchDocumentCompletionCheckResponse": {
         "properties": {
@@ -7253,6 +7318,15 @@
         "title": "ResearchDocumentVersionListResponse",
         "type": "object"
       },
+      "ResearchEntryMode": {
+        "enum": [
+          "from_scratch",
+          "existing_research",
+          "legacy"
+        ],
+        "title": "ResearchEntryMode",
+        "type": "string"
+      },
       "ResearchMaterialListResponse": {
         "properties": {
           "items": {
@@ -7695,7 +7769,8 @@
         "enum": [
           "draft",
           "in_progress",
-          "completed"
+          "completed",
+          "archived"
         ],
         "title": "ResearchTaskLifecycleStatus",
         "type": "string"
@@ -7876,6 +7951,9 @@
             ],
             "title": "Current Theory Plan Id"
           },
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
           },
@@ -7890,6 +7968,27 @@
             ],
             "title": "Knowledge Release Id"
           },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
           "next_action_label": {
             "title": "Next Action Label",
             "type": "string"
@@ -7903,6 +8002,21 @@
                 "type": "null"
               }
             ]
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "title": "Project Title",
+            "type": "string"
           },
           "resume_path": {
             "title": "Resume Path",
@@ -7989,6 +8103,11 @@
         "required": [
           "task_id",
           "entry_type",
+          "entry_mode",
+          "project_title",
+          "project_stage",
+          "method_orientation",
+          "last_central_tool",
           "status",
           "current_stage",
           "stage_label",
@@ -8127,8 +8246,50 @@
             "title": "Created At",
             "type": "string"
           },
+          "entry_mode": {
+            "$ref": "#/components/schemas/ResearchEntryMode"
+          },
           "entry_type": {
             "$ref": "#/components/schemas/EntryType"
+          },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lifecycle_status": {
+            "$ref": "#/components/schemas/ProjectLifecycleStatus"
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "title": "Project Title",
+            "type": "string"
           },
           "seed_theory_id": {
             "anyOf": [
@@ -8174,6 +8335,12 @@
           "task_id",
           "entry_type",
           "status",
+          "entry_mode",
+          "lifecycle_status",
+          "project_title",
+          "project_stage",
+          "method_orientation",
+          "last_central_tool",
           "version",
           "allowed_actions",
           "seed_theory_id",
@@ -10061,6 +10228,79 @@
           "source"
         ],
         "title": "UpdateResearchDocumentRequest",
+        "type": "object"
+      },
+      "UpdateResearchTaskRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "last_central_tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchCentralTool"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lifecycle_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectLifecycleStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method_orientation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Orientation"
+          },
+          "project_stage": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Stage"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "UpdateResearchTaskRequest",
         "type": "object"
       }
     }
@@ -14417,6 +14657,88 @@
           }
         },
         "summary": "Get Research Task",
+        "tags": [
+          "research-tasks"
+        ]
+      },
+      "patch": {
+        "operationId": "update_research_task",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResearchTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Research Task",
         "tags": [
           "research-tasks"
         ]

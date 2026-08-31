@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Protocol
@@ -13,6 +13,9 @@ from qunxue_api.modules.research_intake import (
     PhenomenonModelSnapshot,
     PhenomenonProgress,
     PhenomenonService,
+    ProjectLifecycleStatus,
+    ResearchCentralTool,
+    ResearchEntryMode,
     ResearchStartConfirmation,
     ResearchStartIdempotencyConflict,
     ResearchStartProposal,
@@ -98,6 +101,73 @@ class ResearchStartApplication:
             status=ResearchStartProposalStatus.PENDING_CONFIRMATION,
             created_at=self._clock(),
         )
+
+    def ensure_draft_project(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        project_title: str,
+    ) -> ResearchTask:
+        bound_task_id = self._bindings.get_research_task_id(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+        if bound_task_id is not None:
+            return self._tasks.get(bound_task_id, user_id=user_id)
+        task = self._tasks.create(
+            user_id=user_id,
+            entry_type=EntryType.DIRECT_INPUT,
+            entry_mode=ResearchEntryMode.FROM_SCRATCH,
+            lifecycle_status=ProjectLifecycleStatus.DRAFT,
+            project_title=project_title.strip()[:300] or "未命名研究",
+            last_central_tool=ResearchCentralTool.AGENT,
+            idempotency_key=f"research-entry:{conversation_id}",
+            conversation_id=conversation_id,
+        )
+        self._bindings.link_research_task(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            task_id=task.task_id,
+        )
+        return task
+
+    def bind_material_first_draft(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        task_id: UUID,
+    ) -> ResearchTask:
+        task = self._tasks.get(task_id, user_id=user_id)
+        if (
+            task.entry_mode is not ResearchEntryMode.FROM_SCRATCH
+            or task.status is not ResearchTaskStatus.DRAFT
+            or task.lifecycle_status is not ProjectLifecycleStatus.DRAFT
+            or task.conversation_id not in {None, conversation_id}
+        ):
+            raise ValueError("Only an unbound from-scratch draft can adopt a conversation.")
+        if task.conversation_id is None:
+            saved = self._tasks.save_progress(
+                replace(
+                    task,
+                    version=task.version + 1,
+                    updated_at=self._clock(),
+                    conversation_id=conversation_id,
+                    last_central_tool=ResearchCentralTool.AGENT,
+                )
+            )
+            if saved is None:
+                raise ResearchStartProposalConflict(
+                    "The material-first draft changed before conversation binding."
+                )
+            task = saved
+        self._bindings.link_research_task(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            task_id=task.task_id,
+        )
+        return task
 
     def persist_completed_turn_proposal(
         self, proposal: ResearchStartProposal
@@ -235,13 +305,41 @@ class ResearchStartApplication:
             )
         )
         if task.status is ResearchTaskStatus.DRAFT:
-            task = self._confirm_phenomenon(
-                task=task,
-                proposal=proposal,
-                phenomenon=normalized_phenomenon,
-                research_intent=normalized_intent,
-                context=normalized_context,
-            )
+            if task.source_agent_run_id is None:
+                saved = self._tasks.save_progress(
+                    replace(
+                        task,
+                        version=task.version + 1,
+                        updated_at=self._clock(),
+                        knowledge_release_id=proposal.knowledge_release_id,
+                        conversation_id=proposal.conversation_id,
+                        source_turn_id=proposal.source_turn_id,
+                        source_agent_run_id=proposal.source_run_id,
+                    )
+                )
+                if saved is None:
+                    task = self._tasks.get(task.task_id, user_id=user_id)
+                    if task.status is ResearchTaskStatus.DRAFT:
+                        raise ResearchStartProposalConflict(
+                            "The draft research task changed before confirmation."
+                        )
+                else:
+                    task = saved
+            if task.status is ResearchTaskStatus.DRAFT:
+                task = self._confirm_phenomenon(
+                    task=task,
+                    proposal=proposal,
+                    phenomenon=normalized_phenomenon,
+                    research_intent=normalized_intent,
+                    context=normalized_context,
+                )
+            else:
+                _validate_replayed_task(
+                    task=task,
+                    proposal=proposal,
+                    phenomenon=normalized_phenomenon,
+                    research_intent=normalized_intent,
+                )
         else:
             _validate_replayed_task(
                 task=task,

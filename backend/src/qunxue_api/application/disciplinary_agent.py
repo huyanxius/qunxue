@@ -86,12 +86,16 @@ class DisciplinaryAgentApplication:
         tools_factory: Callable[[], AgentToolContext],
         credits: CreditService | None = None,
         atomic: Callable[[], AbstractContextManager[object]] | None = None,
+        ensure_research_draft: Callable[..., UUID] | None = None,
+        bind_research_draft: Callable[..., UUID] | None = None,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
         self._tools_factory = tools_factory
         self._credits = credits
         self._atomic = atomic or nullcontext
+        self._ensure_research_draft = ensure_research_draft
+        self._bind_research_draft = bind_research_draft
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
@@ -190,12 +194,15 @@ class DisciplinaryAgentApplication:
                 raise ValueError("idempotency key belongs to another conversation")
             conversation = existing_conversation
         else:
-            if conversation_id is None:
-                if task_id is not None:
-                    raise ConversationTaskBindingConflict(
-                        "A new conversation cannot be started with an unbound research task."
-                    )
-            else:
+            if (
+                conversation_id is None
+                and task_id is not None
+                and (workspace != "research" or self._bind_research_draft is None)
+            ):
+                raise ConversationTaskBindingConflict(
+                    "A new conversation cannot be started with an unbound research task."
+                )
+            if conversation_id is not None:
                 conversation = self.get_conversation(
                     user_id=user_id,
                     conversation_id=conversation_id,
@@ -209,11 +216,25 @@ class DisciplinaryAgentApplication:
         if self._credits is not None:
             self._credits.ensure_can_start(user_id=user_id)
             self._conversations.commit()
+        conversation_was_created = conversation is None
         if conversation is None:
             conversation = self._conversations.create_conversation(
                 user_id=user_id,
                 title=prompt,
             )
+        if workspace == "research":
+            if conversation_was_created and task_id is not None and self._bind_research_draft:
+                task_id = self._bind_research_draft(
+                    user_id=user_id,
+                    conversation_id=conversation.conversation_id,
+                    task_id=task_id,
+                )
+            elif task_id is None and self._ensure_research_draft:
+                task_id = self._ensure_research_draft(
+                    user_id=user_id,
+                    conversation_id=conversation.conversation_id,
+                    project_title=prompt,
+                )
         tools = self._tools_factory()
         enable_research_handoff_tools = getattr(
             tools, "enable_research_handoff_tools", None

@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field
 
 from qunxue_api.modules.research_intake import (
     EntryType,
+    ProjectLifecycleStatus,
+    ResearchCentralTool,
+    ResearchEntryMode,
     ResearchTask,
     ResearchTaskAction,
     ResearchTaskStatus,
@@ -15,7 +18,20 @@ from qunxue_api.modules.research_intake import (
 
 class CreateResearchTaskRequest(BaseModel):
     entry_type: EntryType = EntryType.DIRECT_INPUT
+    entry_mode: ResearchEntryMode = ResearchEntryMode.FROM_SCRATCH
+    project_title: str | None = Field(default=None, min_length=1, max_length=300)
+    project_stage: str | None = Field(default=None, min_length=1, max_length=120)
+    method_orientation: str | None = Field(default=None, min_length=1, max_length=300)
     seed_theory_id: str | None = Field(default=None, min_length=1, max_length=128)
+
+
+class UpdateResearchTaskRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+    lifecycle_status: ProjectLifecycleStatus | None = None
+    project_title: str | None = Field(default=None, min_length=1, max_length=300)
+    project_stage: str | None = Field(default=None, min_length=1, max_length=120)
+    method_orientation: str | None = Field(default=None, min_length=1, max_length=300)
+    last_central_tool: ResearchCentralTool | None = None
 
 
 class ResearchTraceActor(StrEnum):
@@ -29,6 +45,7 @@ class ResearchTaskLifecycleStatus(StrEnum):
     DRAFT = "draft"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    ARCHIVED = "archived"
 
 
 class ResearchTaskStage(StrEnum):
@@ -73,6 +90,12 @@ class ResearchTaskResponse(BaseModel):
     task_id: UUID
     entry_type: EntryType
     status: ResearchTaskStatus
+    entry_mode: ResearchEntryMode
+    lifecycle_status: ProjectLifecycleStatus
+    project_title: str
+    project_stage: str | None
+    method_orientation: str | None
+    last_central_tool: ResearchCentralTool | None
     version: int
     allowed_actions: list[ResearchTaskAction]
     seed_theory_id: str | None
@@ -86,6 +109,12 @@ class ResearchTaskResponse(BaseModel):
             task_id=task.task_id,
             entry_type=task.entry_type,
             status=task.status,
+            entry_mode=task.entry_mode,
+            lifecycle_status=task.lifecycle_status,
+            project_title=task.project_title,
+            project_stage=task.project_stage,
+            method_orientation=task.method_orientation,
+            last_central_tool=task.last_central_tool,
             version=task.version,
             allowed_actions=list(task.allowed_actions),
             seed_theory_id=task.seed_theory_id,
@@ -107,6 +136,11 @@ class ResearchTaskNavigationResponse(BaseModel):
 
     task_id: UUID
     entry_type: EntryType
+    entry_mode: ResearchEntryMode
+    project_title: str
+    project_stage: str | None
+    method_orientation: str | None
+    last_central_tool: ResearchCentralTool | None
     status: ResearchTaskLifecycleStatus
     current_stage: ResearchTaskStage
     stage_label: str

@@ -569,6 +569,16 @@ def create_app(
                         ),
                     ),
                     atomic=session.begin_nested,
+                    ensure_research_draft=(
+                        lambda **payload: research_start_application.ensure_draft_project(
+                            **payload
+                        ).task_id
+                    ),
+                    bind_research_draft=(
+                        lambda **payload: research_start_application.bind_material_first_draft(
+                            **payload
+                        ).task_id
+                    ),
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,

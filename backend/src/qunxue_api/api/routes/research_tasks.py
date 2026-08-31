@@ -19,6 +19,7 @@ from qunxue_api.api.contracts.research_tasks import (
     ResearchTaskResponse,
     ResearchTaskStage,
     ResearchTraceResponse,
+    UpdateResearchTaskRequest,
 )
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
@@ -30,6 +31,9 @@ from qunxue_api.api.routes.stubs import IdempotencyKey, not_implemented_response
 from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 from qunxue_api.modules.research_intake import (
     PhenomenonProgress,
+    ProjectLifecycleStatus,
+    ResearchCentralTool,
+    ResearchEntryMode,
     ResearchTask,
     ResearchTaskStatus,
 )
@@ -76,10 +80,56 @@ def create_research_task(
         user_id=current.user.user_id,
         entry_type=payload.entry_type,
         idempotency_key=idempotency_key,
+        entry_mode=payload.entry_mode,
+        lifecycle_status=(
+            ProjectLifecycleStatus.IN_PROGRESS
+            if payload.entry_mode is ResearchEntryMode.EXISTING_RESEARCH
+            else ProjectLifecycleStatus.DRAFT
+        ),
+        project_title=payload.project_title or seed_theory_name or "未命名研究",
+        project_stage=payload.project_stage,
+        method_orientation=payload.method_orientation,
+        last_central_tool=(
+            ResearchCentralTool.MATERIALS
+            if payload.entry_mode is ResearchEntryMode.EXISTING_RESEARCH
+            else ResearchCentralTool.PHENOMENON
+        ),
         seed_theory_id=payload.seed_theory_id,
         seed_theory_name=seed_theory_name,
     )
     return ResearchTaskResponse.from_domain(task)
+
+
+@router.patch(
+    "/{task_id}",
+    operation_id="update_research_task",
+    response_model=ResearchTaskResponse,
+    responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+def update_research_task(
+    task_id: UUID,
+    payload: UpdateResearchTaskRequest,
+    _owned_task: OwnedResearchTaskDependency,
+    _idempotency_key: IdempotencyKey,
+    service: ResearchTaskServiceDependency,
+    current: CurrentSessionDependency,
+) -> ResearchTaskResponse:
+    updated = service.update_project(
+        task_id,
+        user_id=current.user.user_id,
+        expected_version=payload.expected_version,
+        lifecycle_status=payload.lifecycle_status,
+        project_title=payload.project_title,
+        project_stage=payload.project_stage,
+        method_orientation=payload.method_orientation,
+        last_central_tool=payload.last_central_tool,
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Research task version changed; reload before updating the project.",
+        )
+    return ResearchTaskResponse.from_domain(updated)
 
 
 @router.get(
@@ -251,6 +301,10 @@ def _navigation_response(
         action = ResearchTaskNavigationAction.CONFIRM_PHENOMENON
     if match_status == "no_reliable_candidate":
         action = ResearchTaskNavigationAction.START_MATCHING
+    if task.lifecycle_status is ProjectLifecycleStatus.ARCHIVED:
+        lifecycle_status = ResearchTaskLifecycleStatus.ARCHIVED
+    elif lifecycle_status is not ResearchTaskLifecycleStatus.COMPLETED:
+        lifecycle_status = ResearchTaskLifecycleStatus(task.lifecycle_status.value)
     stage_label = {
         ResearchTaskStage.PHENOMENON_INPUT: "现象输入",
         ResearchTaskStage.PHENOMENON_CONFIRMATION: "现象确认",
@@ -285,7 +339,7 @@ def _navigation_response(
             phenomenon=task.phenomenon_summary,
             research_intent=task.phenomenon_research_intent,
         )
-    resume_path = (
+    workflow_resume_path = (
         f"/research/{task.task_id}/phenomenon"
         if task.status is ResearchTaskStatus.DRAFT
         else f"/research/{task.task_id}/match"
@@ -298,6 +352,14 @@ def _navigation_response(
         else f"/research/{task.task_id}/method"
         if task.status is ResearchTaskStatus.FRAMEWORK_CONFIRMED
         else f"/research/{task.task_id}/framework"
+    )
+    resume_path = (
+        f"/research/new?conversation_id={task.conversation_id}"
+        if task.last_central_tool in {ResearchCentralTool.AGENT, ResearchCentralTool.RESEARCH_MAP}
+        and task.conversation_id is not None
+        else f"/research/materials?task_id={task.task_id}"
+        if task.last_central_tool is ResearchCentralTool.MATERIALS
+        else workflow_resume_path
     )
     blocker = None
     retry = None
@@ -318,6 +380,11 @@ def _navigation_response(
     return ResearchTaskNavigationResponse(
         task_id=task.task_id,
         entry_type=task.entry_type,
+        entry_mode=task.entry_mode,
+        project_title=task.project_title,
+        project_stage=task.project_stage,
+        method_orientation=task.method_orientation,
+        last_central_tool=task.last_central_tool,
         status=lifecycle_status,
         current_stage=current_stage,
         stage_label=stage_label,
