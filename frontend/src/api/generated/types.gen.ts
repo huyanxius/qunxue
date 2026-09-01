@@ -5166,15 +5166,15 @@ export type ResearchMaterialLocatorResponse = {
     /**
      * Speaker
      */
-    speaker: string | null;
+    speaker?: string | null;
     /**
      * Time End Ms
      */
-    time_end_ms: number | null;
+    time_end_ms?: number | null;
     /**
      * Time Start Ms
      */
-    time_start_ms: number | null;
+    time_start_ms?: number | null;
 };
 
 /**

@@ -41,9 +41,9 @@ class ResearchMaterialLocatorResponse(BaseModel):
     char_start: int | None
     char_end: int | None
     block_index: int | None
-    time_start_ms: int | None
-    time_end_ms: int | None
-    speaker: str | None
+    time_start_ms: int | None = None
+    time_end_ms: int | None = None
+    speaker: str | None = None
 
     @classmethod
     def from_domain(cls, locator: MaterialLocator) -> "ResearchMaterialLocatorResponse":

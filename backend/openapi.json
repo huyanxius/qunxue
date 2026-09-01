@@ -9397,10 +9397,7 @@
           "line_end",
           "char_start",
           "char_end",
-          "block_index",
-          "time_start_ms",
-          "time_end_ms",
-          "speaker"
+          "block_index"
         ],
         "title": "ResearchMaterialLocatorResponse",
         "type": "object"
