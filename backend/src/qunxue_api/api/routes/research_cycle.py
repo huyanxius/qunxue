@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
+from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.research_cycle import (
     ResearchCycleResponse,
     ResearchCycleVersionListResponse,
@@ -12,7 +13,10 @@ from qunxue_api.api.dependencies import (
     ResearchCycleApplicationDependency,
 )
 
-router = APIRouter(tags=["research-cycle"])
+router = APIRouter(
+    tags=["research-cycle"],
+    responses={422: {"model": ErrorResponse}},
+)
 
 
 @router.get(
