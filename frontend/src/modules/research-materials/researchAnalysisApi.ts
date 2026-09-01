@@ -12,6 +12,7 @@ import {
   decideResearchAnalysisMemo,
   decideResearchCaseComparison,
   getResearchAnalysis,
+  getResearchCycle,
   saveResearchAnalysisCaseProfile,
   saveResearchCaseThemeMatrixCell,
   setResearchQualitativeMethod,
@@ -42,6 +43,7 @@ import type {
   SetQualitativeMethodInput,
   TransitionCodebookEntryInput,
 } from './researchAnalysisModel'
+import type { ResearchCycleSnapshot } from './researchCycleModel'
 
 export class ResearchAnalysisApiError extends Error {
   readonly status: number
@@ -103,6 +105,25 @@ export async function getAnalysisSnapshot(
     signal,
   })
   return requireData(result, '质性分析记录暂时无法加载。')
+}
+
+export async function getResearchCycleSnapshot(
+  taskId: string,
+  signal?: AbortSignal,
+): Promise<ResearchCycleSnapshot> {
+  const result = await getResearchCycle({
+    client: apiClient,
+    path: { task_id: taskId },
+    signal,
+  })
+  const snapshot = requireData(result, '研究循环暂时无法加载。')
+  if (snapshot.schema_version !== 'research-cycle-v1') {
+    throw new ResearchAnalysisApiError(
+      '研究循环返回了不受支持的版本。',
+      result.response?.status ?? 0,
+    )
+  }
+  return snapshot
 }
 
 export async function createAnalysisAnnotation(
