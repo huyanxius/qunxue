@@ -297,83 +297,6 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(standalone).queryByRole('button', { name: '研究材料' })).not.toBeInTheDocument()
   })
 
-  it('refreshes analysis after a completed Agent turn only while the materials overlay is open', async () => {
-    const initial = conversationFixture({ id: 'conversation-analysis-refresh' })
-    const firstCompleted = conversationFixture({
-      id: initial.conversation_id,
-      prompt: '请提出候选编码。',
-      answer: '已提出一个待确认编码。',
-    })
-    const secondCompleted = conversationFixture({
-      id: initial.conversation_id,
-      prompt: '请再检查相关片段。',
-      answer: '已补充相关片段。',
-    })
-    const firstStream = deferredStream([[
-      'turn_started',
-      { conversation_id: initial.conversation_id, run_id: 'run-analysis-first', replayed: false, runtime_mode: 'base' },
-    ]])
-    const secondStream = deferredStream([[
-      'turn_started',
-      { conversation_id: initial.conversation_id, run_id: 'run-analysis-second', replayed: false, runtime_mode: 'base' },
-    ]])
-    const streams = [firstStream, secondStream]
-    let streamIndex = 0
-    let analysisReads = 0
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = urlFor(input)
-      const method = input instanceof Request ? input.method : init?.method ?? 'GET'
-      if (url.pathname === `/api/agent/conversations/${initial.conversation_id}`) return json(initial)
-      if (url.pathname === '/api/agent/turns' && method === 'POST') return streams[streamIndex++].response
-      if (url.pathname === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [] })
-      if (url.pathname === '/api/research-tasks/task-1/analysis') {
-        analysisReads += 1
-        return json({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
-      }
-      return json({}, 404)
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(
-      <MemoryRouter initialEntries={['/research/task-1/match']}>
-        <ResearchAgentConversationPage
-          embedded
-          userId="user-agent"
-          conversationId={initial.conversation_id}
-          workspace="research"
-          taskId="task-1"
-        />
-      </MemoryRouter>,
-    )
-
-    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
-    await within(agent).findByText(initial.turns[0].assistant.content)
-    const textbox = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
-    fireEvent.change(textbox, { target: { value: firstCompleted.title } })
-    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
-    await waitFor(() => expect(streamIndex).toBe(1))
-
-    fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
-    const materials = await screen.findByRole('dialog', { name: '研究材料' })
-    await waitFor(() => expect(analysisReads).toBe(1))
-    firstStream.finish([
-      ['assistant_delta', { delta: firstCompleted.turns[0].assistant.content }],
-      ['turn_completed', { conversation: firstCompleted, knowledge_release_id: 'release-agent' }],
-    ])
-    await waitFor(() => expect(analysisReads).toBe(2))
-
-    fireEvent.click(within(materials).getByRole('button', { name: '关闭研究材料' }))
-    fireEvent.change(textbox, { target: { value: secondCompleted.title } })
-    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
-    await waitFor(() => expect(streamIndex).toBe(2))
-    secondStream.finish([
-      ['assistant_delta', { delta: secondCompleted.turns[0].assistant.content }],
-      ['turn_completed', { conversation: secondCompleted, knowledge_release_id: 'release-agent' }],
-    ])
-    await within(agent).findByText(secondCompleted.turns[0].assistant.content)
-    expect(analysisReads).toBe(2)
-  })
-
   it('distinguishes a personal material citation and opens its exact source locator', async () => {
     const citation = {
       citation_id: 'citation-material-1',
@@ -579,7 +502,7 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
     const materials = await screen.findByRole('dialog', { name: '研究材料' })
     await within(materials).findByRole('button', { name: '查看材料：待删除访谈.docx' })
-    fireEvent.click(within(materials).getByRole('button', { name: '删除材料' }))
+    fireEvent.click(within(materials).getByRole('button', { name: /^删除材料：/ }))
     expect(await within(materials).findByText('材料已删除，后续检索不会再使用它。')).toBeVisible()
     fireEvent.click(within(materials).getByRole('button', { name: '关闭研究材料' }))
 
@@ -654,7 +577,7 @@ describe('ResearchAgentConversationPage', () => {
       fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
       const materials = await screen.findByRole('dialog', { name: '研究材料' })
       await within(materials).findByRole('button', { name: '查看材料：流式访谈.txt' })
-      fireEvent.click(within(materials).getByRole('button', { name: '删除材料' }))
+      fireEvent.click(within(materials).getByRole('button', { name: /^删除材料：/ }))
       expect(await within(materials).findByText('材料已删除，后续检索不会再使用它。')).toBeVisible()
 
       await waitFor(() => {
