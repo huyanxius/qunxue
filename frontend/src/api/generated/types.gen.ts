@@ -2609,16 +2609,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -7000,34 +6990,6 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -11163,9 +11125,9 @@ export type GetMaterialTranscriptionData = {
 
 export type GetMaterialTranscriptionErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetMaterialTranscriptionError = GetMaterialTranscriptionErrors[keyof GetMaterialTranscriptionErrors];
@@ -11203,9 +11165,9 @@ export type ImportMaterialTranscriptData = {
 
 export type ImportMaterialTranscriptErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ImportMaterialTranscriptError = ImportMaterialTranscriptErrors[keyof ImportMaterialTranscriptErrors];
@@ -11243,9 +11205,9 @@ export type StartMaterialTranscriptionData = {
 
 export type StartMaterialTranscriptionErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type StartMaterialTranscriptionError = StartMaterialTranscriptionErrors[keyof StartMaterialTranscriptionErrors];
@@ -11283,9 +11245,9 @@ export type CreateCorrectedTranscriptVersionData = {
 
 export type CreateCorrectedTranscriptVersionErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateCorrectedTranscriptVersionError = CreateCorrectedTranscriptVersionErrors[keyof CreateCorrectedTranscriptVersionErrors];
