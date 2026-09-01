@@ -7,7 +7,7 @@ import {
   WarningCircleIcon,
   XIcon,
 } from '@phosphor-icons/react'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 
 import {
   formatMaterialLocator,
@@ -18,6 +18,12 @@ import {
   type ResearchMaterial,
   type ResearchMaterialSegment,
 } from './researchMaterialsModel'
+
+/**
+ * 中央栏被 Agent 栏挤到这个宽度以下时，208px 的章节栏会吃掉三分之一，正文一行只剩十几个
+ * 字。低于阈值目录改成浮层，并且初次进入时不展开——先让人看见文档，要目录再叫它出来。
+ */
+const OUTLINE_COLUMN_MIN_WIDTH = 720
 
 type ReaderHeading = {
   readonly segment: ResearchMaterialSegment
@@ -80,6 +86,26 @@ export function MaterialReaderView({
   onTextSelection,
   onPageChange,
 }: MaterialReaderViewProps) {
+  const frameRef = useRef<HTMLElement | null>(null)
+  const [narrow, setNarrow] = useState(false)
+  const narrowMeasured = useRef(false)
+
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame || typeof ResizeObserver !== 'function') return
+    const observer = new ResizeObserver(([entry]) => {
+      const isNarrow = entry.contentRect.width > 0 && entry.contentRect.width < OUTLINE_COLUMN_MIN_WIDTH
+      setNarrow(isNarrow)
+      // 只在第一次量出来时替用户收一次目录；之后他自己开了就一直开着。
+      if (!narrowMeasured.current && entry.contentRect.width > 0) {
+        narrowMeasured.current = true
+        if (isNarrow && outlineOpen) onToggleOutline()
+      }
+    })
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [onToggleOutline, outlineOpen])
+
   const identity = [
     material.materialKind ? materialKindLabel(material.materialKind) : materialMediaLabel(material.mediaType, material.filename),
     formatMaterialSize(material.sizeBytes),
@@ -103,7 +129,7 @@ export function MaterialReaderView({
   }
 
   return (
-    <section className="qx-reader" aria-label="材料阅读台">
+    <section className={`qx-reader${narrow ? ' is-narrow' : ''}`} aria-label="材料阅读台" ref={frameRef}>
       <header className="qx-reader__bar">
         <button type="button" className="qx-reader__back" onClick={onBack}>
           <ArrowLeftIcon size={16} aria-hidden="true" />
@@ -185,12 +211,20 @@ export function MaterialReaderView({
               className={segment.segmentId === selectedSegmentId ? 'is-current' : undefined}
               title={label}
               tabIndex={outlineOpen ? undefined : -1}
-              onClick={() => onSelectSegment(segment)}
+              onClick={() => {
+                onSelectSegment(segment)
+                // 浮层里的目录选完就该让路，不然跳过去的那一段正被它盖着。
+                if (narrow) onToggleOutline()
+              }}
             >
               {label}
             </button>
           )) : <small>解析出章节后会显示在这里。</small>}
         </nav>
+
+        {narrow && outlineOpen ? (
+          <button type="button" className="qx-reader__outline-scrim" aria-label="收起章节目录" onClick={onToggleOutline} />
+        ) : null}
 
         <div className="qx-reader__scroll" role="region" aria-label="文档阅读器">
           {detailLoading ? (
