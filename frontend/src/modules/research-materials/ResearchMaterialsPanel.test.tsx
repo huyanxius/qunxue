@@ -33,6 +33,39 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('opens the current evidence-gap loop from the analysis view', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/research-cycle')) return response({
+        schema_version: 'research-cycle-v1', task_id: 'task-1', version: 2,
+        content_hash: 'sha256:cycle-2', analysis_content_hash: 'sha256:analysis-1',
+        theory_plan_id: null, theory_plan_version: null, evidence: [],
+        gaps: [{
+          gap_id: 'gap-1', source_kind: 'analysis', source_id: 'comparison-1',
+          description: '缺少未迁移家庭作为对照。', suggested_action: '下一轮纳入一个未迁移家庭。',
+          destination: 'sampling', priority: 'high', analysis_content_hash: 'sha256:analysis-1',
+          theory_plan_id: null, theory_plan_version: null, status: 'open',
+        }],
+        project_facts: {
+          material_count: 1, material_kinds: [['interview_transcript', 1]], case_count: 1,
+          case_material_coverage: [['家庭甲', 1]], consent_scopes: [], sensitivity_levels: [],
+          pending_deidentification_count: 0, sampling_batches: [],
+          analysis_counts: [['codes', 0], ['memos', 0], ['comparisons', 1]],
+        },
+        reporting_hints: [], research_map_patch: { nodes: [], relations: [] },
+      })
+      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
+      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
+      return response({ task_id: 'task-1', items: [material] })
+    }))
+
+    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
+    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+    fireEvent.click(await within(dialog).findByRole('button', { name: '分析' }))
+
+    expect(await within(dialog).findByRole('region', { name: '证据缺口与下一轮材料' })).toHaveTextContent('缺少未迁移家庭作为对照。')
+  })
+
   it('persists a qualitative method choice and refreshes the stable workspace snapshot', async () => {
     const analysisSnapshot = {
       task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [],

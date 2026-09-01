@@ -3644,6 +3644,101 @@
         "title": "CreateTranscriptVersionRequest",
         "type": "object"
       },
+      "CycleEvidenceResponse": {
+        "properties": {
+          "annotation_id": {
+            "format": "uuid",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "case_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Label"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "evidence_ref_id": {
+            "title": "Evidence Ref Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "locator": {
+            "title": "Locator",
+            "type": "string"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_ref_id",
+          "kind",
+          "statement",
+          "source_kind",
+          "source_id",
+          "annotation_id",
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "quote",
+          "locator",
+          "case_label",
+          "observed_at",
+          "confirmed"
+        ],
+        "title": "CycleEvidenceResponse",
+        "type": "object"
+      },
       "DecideAnalysisRecordRequest": {
         "properties": {
           "decision": {
@@ -4061,6 +4156,84 @@
           "error"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "EvidenceGapResponse": {
+        "properties": {
+          "analysis_content_hash": {
+            "title": "Analysis Content Hash",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "gap_id": {
+            "title": "Gap Id",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_action": {
+            "title": "Suggested Action",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Id"
+          },
+          "theory_plan_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Version"
+          }
+        },
+        "required": [
+          "gap_id",
+          "source_kind",
+          "source_id",
+          "description",
+          "suggested_action",
+          "destination",
+          "priority",
+          "analysis_content_hash",
+          "theory_plan_id",
+          "theory_plan_version",
+          "status"
+        ],
+        "title": "EvidenceGapResponse",
         "type": "object"
       },
       "EvidenceReferenceResponse": {
@@ -7536,6 +7709,127 @@
         "title": "ProjectLifecycleStatus",
         "type": "string"
       },
+      "ProjectResearchFactsResponse": {
+        "properties": {
+          "analysis_counts": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Analysis Counts",
+            "type": "array"
+          },
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "case_material_coverage": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Case Material Coverage",
+            "type": "array"
+          },
+          "consent_scopes": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Consent Scopes",
+            "type": "array"
+          },
+          "material_count": {
+            "title": "Material Count",
+            "type": "integer"
+          },
+          "material_kinds": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Material Kinds",
+            "type": "array"
+          },
+          "pending_deidentification_count": {
+            "title": "Pending Deidentification Count",
+            "type": "integer"
+          },
+          "sampling_batches": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sampling Batches",
+            "type": "array"
+          },
+          "sensitivity_levels": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Sensitivity Levels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "material_count",
+          "material_kinds",
+          "case_count",
+          "case_material_coverage",
+          "consent_scopes",
+          "sensitivity_levels",
+          "pending_deidentification_count",
+          "sampling_batches",
+          "analysis_counts"
+        ],
+        "title": "ProjectResearchFactsResponse",
+        "type": "object"
+      },
       "QualitativeMethod": {
         "enum": [
           "thematic_analysis",
@@ -7930,6 +8224,44 @@
         "title": "RelationCandidateResponse",
         "type": "object"
       },
+      "ReportingCoverageResponse": {
+        "properties": {
+          "blocking": {
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "guideline": {
+            "title": "Guideline",
+            "type": "string"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "guideline",
+          "item_key",
+          "label",
+          "status",
+          "message",
+          "blocking"
+        ],
+        "title": "ReportingCoverageResponse",
+        "type": "object"
+      },
       "ResearchAnalysisHandoffContract": {
         "properties": {
           "annotations": {
@@ -8140,6 +8472,127 @@
         ],
         "title": "ResearchCentralTool",
         "type": "string"
+      },
+      "ResearchCycleResponse": {
+        "properties": {
+          "analysis_content_hash": {
+            "title": "Analysis Content Hash",
+            "type": "string"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CycleEvidenceResponse"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGapResponse"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "project_facts": {
+            "$ref": "#/components/schemas/ProjectResearchFactsResponse"
+          },
+          "reporting_hints": {
+            "items": {
+              "$ref": "#/components/schemas/ReportingCoverageResponse"
+            },
+            "title": "Reporting Hints",
+            "type": "array"
+          },
+          "research_map_patch": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "title": "Research Map Patch",
+            "type": "object"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "theory_plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Id"
+          },
+          "theory_plan_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Version"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "version",
+          "content_hash",
+          "analysis_content_hash",
+          "theory_plan_id",
+          "theory_plan_version",
+          "evidence",
+          "gaps",
+          "project_facts",
+          "reporting_hints",
+          "research_map_patch"
+        ],
+        "title": "ResearchCycleResponse",
+        "type": "object"
+      },
+      "ResearchCycleVersionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchCycleResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "items"
+        ],
+        "title": "ResearchCycleVersionListResponse",
+        "type": "object"
       },
       "ResearchDocumentCitationAuditContract": {
         "properties": {
@@ -21288,6 +21741,92 @@
         "summary": "List Phenomenon Snapshots",
         "tags": [
           "phenomena"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/research-cycle": {
+      "get": {
+        "operationId": "get_research_cycle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCycleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Cycle",
+        "tags": [
+          "research-cycle"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/research-cycle/versions": {
+      "get": {
+        "operationId": "list_research_cycle_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCycleVersionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Cycle Versions",
+        "tags": [
+          "research-cycle"
         ]
       }
     },

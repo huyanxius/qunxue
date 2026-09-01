@@ -129,9 +129,7 @@ class TheoryMatchingService:
             candidate_evidence = tuple(
                 item
                 for item in evidence_bundle.evidence_items
-                if item.source is None
-                or item.source.source_type == "confirmed_phenomenon_evidence"
-                or item.source.source_id in content.source_ids
+                if _evidence_applies_to_candidate(item, content.source_ids)
             )
             items.append(
                 TheoryJudgementBatchItem(
@@ -228,8 +226,7 @@ class TheoryMatchingService:
         elif candidates:
             run_status = MatchRunStatus.PARTIAL_FAILURE
         elif candidate_failures and all(
-            item.failure_code == "no_reliable_candidate"
-            for item in candidate_failures
+            item.failure_code == "no_reliable_candidate" for item in candidate_failures
         ):
             run_status = MatchRunStatus.NO_RELIABLE_CANDIDATE
         else:
@@ -295,9 +292,7 @@ class TheoryMatchingService:
             raise ValueError("stale match run version")
         if match_run.partial_completion_acknowledged:
             raise ValueError("acknowledged partial runs cannot retry a candidate")
-        failure_by_id = {
-            item.candidate_id: item for item in match_run.candidate_failures
-        }
+        failure_by_id = {item.candidate_id: item for item in match_run.candidate_failures}
         failure = failure_by_id.get(candidate_id)
         if failure is None:
             raise LookupError(candidate_id)
@@ -313,9 +308,7 @@ class TheoryMatchingService:
         evidence = tuple(
             item
             for item in match_run.evidence_bundle.evidence_items
-            if item.source is None
-            or item.source.source_type == "confirmed_phenomenon_evidence"
-            or item.source.source_id in failure.content.source_ids
+            if _evidence_applies_to_candidate(item, failure.content.source_ids)
         )
         retry_version = failure.candidate_version + 1
         result = self._judge.judge_and_rerank(
@@ -351,16 +344,19 @@ class TheoryMatchingService:
             and retry_result.status is CandidateJudgementRunStatus.SUCCEEDED
             and retry_result.judgement is not None
         ):
-            candidates = (*candidates, TheoryCandidateSnapshot(
-                candidate_id=candidate_id,
-                candidate_version=retry_result.candidate_version,
-                content=failure.content,
-                judgement=retry_result.judgement,
-                trace_id=retry_result.trace_id,
-                request_id=retry_result.request_id,
-                contract_version=retry_result.contract_version,
-                judgement_run_status=retry_result.status,
-            ))
+            candidates = (
+                *candidates,
+                TheoryCandidateSnapshot(
+                    candidate_id=candidate_id,
+                    candidate_version=retry_result.candidate_version,
+                    content=failure.content,
+                    judgement=retry_result.judgement,
+                    trace_id=retry_result.trace_id,
+                    request_id=retry_result.request_id,
+                    contract_version=retry_result.contract_version,
+                    judgement_run_status=retry_result.status,
+                ),
+            )
             theory_order = {
                 profile.theory_id: index
                 for index, profile in enumerate(match_run.evidence_bundle.theory_profiles)
@@ -374,38 +370,41 @@ class TheoryMatchingService:
                 )
             )
         else:
-            remaining_failures = (*remaining_failures, TheoryCandidateFailureSnapshot(
-                candidate_id=candidate_id,
-                candidate_version=retry_version,
-                content=failure.content,
-                judgement_run_status=(
-                    retry_result.status
-                    if retry_result is not None
-                    else CandidateJudgementRunStatus.FAILED
+            remaining_failures = (
+                *remaining_failures,
+                TheoryCandidateFailureSnapshot(
+                    candidate_id=candidate_id,
+                    candidate_version=retry_version,
+                    content=failure.content,
+                    judgement_run_status=(
+                        retry_result.status
+                        if retry_result is not None
+                        else CandidateJudgementRunStatus.FAILED
+                    ),
+                    failure_code=(
+                        retry_result.failure_code
+                        if retry_result is not None and retry_result.failure_code is not None
+                        else "judgement_missing"
+                    ),
+                    retryable=(
+                        candidate_id in set(result.retryable_candidate_ids)
+                        if retry_result is not None
+                        else False
+                    ),
+                    trace_id=(
+                        retry_result.trace_id if retry_result is not None else self._id_factory()
+                    ),
+                    request_id=(
+                        retry_result.request_id if retry_result is not None else self._id_factory()
+                    ),
+                    contract_version=(
+                        retry_result.contract_version
+                        if retry_result is not None
+                        else self._contract_version
+                    ),
+                    attempt=failure.attempt + 1,
                 ),
-                failure_code=(
-                    retry_result.failure_code
-                    if retry_result is not None and retry_result.failure_code is not None
-                    else "judgement_missing"
-                ),
-                retryable=(
-                    candidate_id in set(result.retryable_candidate_ids)
-                    if retry_result is not None
-                    else False
-                ),
-                trace_id=(
-                    retry_result.trace_id if retry_result is not None else self._id_factory()
-                ),
-                request_id=(
-                    retry_result.request_id if retry_result is not None else self._id_factory()
-                ),
-                contract_version=(
-                    retry_result.contract_version
-                    if retry_result is not None
-                    else self._contract_version
-                ),
-                attempt=failure.attempt + 1,
-            ))
+            )
 
         if not remaining_failures:
             status = MatchRunStatus.AWAITING_DECISION
@@ -413,10 +412,7 @@ class TheoryMatchingService:
         elif candidates:
             status = MatchRunStatus.PARTIAL_FAILURE
             completion_basis = MatchCompletionBasis.PARTIAL
-        elif all(
-            item.failure_code == "no_reliable_candidate"
-            for item in remaining_failures
-        ):
+        elif all(item.failure_code == "no_reliable_candidate" for item in remaining_failures):
             status = MatchRunStatus.NO_RELIABLE_CANDIDATE
             completion_basis = MatchCompletionBasis.PARTIAL
         else:
@@ -424,13 +420,16 @@ class TheoryMatchingService:
             completion_basis = MatchCompletionBasis.PARTIAL
         retry_records = match_run.candidate_retry_records
         if idempotency_key is not None and request_hash is not None:
-            retry_records = (*retry_records, TheoryCandidateRetryRecord(
-                candidate_id=candidate_id,
-                expected_candidate_version=expected_candidate_version,
-                idempotency_key=idempotency_key,
-                request_hash=request_hash,
-                resulting_match_run_version=match_run.version + 1,
-            ))
+            retry_records = (
+                *retry_records,
+                TheoryCandidateRetryRecord(
+                    candidate_id=candidate_id,
+                    expected_candidate_version=expected_candidate_version,
+                    idempotency_key=idempotency_key,
+                    request_hash=request_hash,
+                    resulting_match_run_version=match_run.version + 1,
+                ),
+            )
         saved = self._repository.save(
             replace(
                 match_run,
@@ -438,14 +437,10 @@ class TheoryMatchingService:
                 status=status,
                 candidates=candidates,
                 completion_basis=completion_basis,
-                failed_candidate_ids=tuple(
-                    item.candidate_id for item in remaining_failures
-                ),
+                failed_candidate_ids=tuple(item.candidate_id for item in remaining_failures),
                 candidate_failures=remaining_failures,
                 candidate_retry_records=retry_records,
-                stable_candidate_order=tuple(
-                    item.candidate_id for item in candidates
-                ),
+                stable_candidate_order=tuple(item.candidate_id for item in candidates),
                 model=(
                     replace(match_run.model, degraded=bool(remaining_failures))
                     if match_run.model is not None
@@ -525,9 +520,7 @@ class TheoryMatchingService:
             raise ValueError("partial completion was already acknowledged")
         return saved
 
-    def get_decision_draft(
-        self, match_run_id: UUID
-    ) -> TheoryDecisionDraftSnapshot | None:
+    def get_decision_draft(self, match_run_id: UUID) -> TheoryDecisionDraftSnapshot | None:
         self.get(match_run_id)
         return self._repository.get_decision_draft(match_run_id)
 
@@ -583,9 +576,7 @@ class TheoryMatchingService:
         return self._repository.save_decision_draft(
             TheoryDecisionDraftSnapshot(
                 draft_id=(
-                    current_draft.draft_id
-                    if current_draft is not None
-                    else self._id_factory()
+                    current_draft.draft_id if current_draft is not None else self._id_factory()
                 ),
                 match_run_id=match_run_id,
                 version=expected_draft_version + 1,
@@ -738,9 +729,7 @@ class TheoryMatchingService:
             if not command.reason.strip():
                 raise ValueError("decision reason is required")
             if not set(command.related_source_ids) <= set(candidate.content.source_ids):
-                raise ValueError(
-                    "decision source IDs must belong to the selected candidate"
-                )
+                raise ValueError("decision source IDs must belong to the selected candidate")
             seen.add(command.candidate_id)
             records.append(
                 TheoryDecisionRecord(
@@ -803,9 +792,7 @@ class TheoryMatchingService:
             if command.candidate_version != candidate.candidate_version:
                 raise ValueError("stale candidate version")
             if not set(command.related_source_ids) <= set(candidate.content.source_ids):
-                raise ValueError(
-                    "decision source IDs must belong to the selected candidate"
-                )
+                raise ValueError("decision source IDs must belong to the selected candidate")
             if not set(command.related_candidate_ids) <= set(candidate_by_id):
                 raise ValueError("related candidate IDs must belong to the match run")
             decision_ids.add(command.candidate_id)
@@ -865,13 +852,8 @@ class TheoryMatchingService:
             raise ValueError("stale decision set version")
         if decision_set.draft_version > 0:
             current_draft = self._repository.get_decision_draft(decision_set.match_run_id)
-            if (
-                current_draft is None
-                or current_draft.version != decision_set.draft_version
-            ):
-                raise ValueError(
-                    "theory decision set was superseded by a newer draft"
-                )
+            if current_draft is None or current_draft.version != decision_set.draft_version:
+                raise ValueError("theory decision set was superseded by a newer draft")
         existing = self._repository.get_confirmed_plan_for_decision_set(decision_set_id)
         if existing is not None:
             if existing.request_hash == request_hash:
@@ -925,9 +907,7 @@ class TheoryMatchingService:
     ) -> TheoryDecisionSetSnapshot | None:
         return self._repository.get_decision_set_for_match_run(match_run_id)
 
-    def list_decision_sets(
-        self, match_run_id: UUID
-    ) -> tuple[TheoryDecisionSetSnapshot, ...]:
+    def list_decision_sets(self, match_run_id: UUID) -> tuple[TheoryDecisionSetSnapshot, ...]:
         return self._repository.list_decision_sets(match_run_id)
 
     def get_confirmed_plan(self, theory_plan_id: UUID) -> ConfirmedTheoryPlanSnapshot:
@@ -935,3 +915,14 @@ class TheoryMatchingService:
         if snapshot is None:
             raise LookupError(theory_plan_id)
         return snapshot
+
+
+def _evidence_applies_to_candidate(item, candidate_source_ids: tuple[str, ...]) -> bool:
+    """Project evidence by provenance, not by similarity or candidate score."""
+
+    if item.source is None:
+        return True
+    return (
+        item.source.source_type in {"confirmed_phenomenon_evidence", "personal_research_material"}
+        or item.source.source_id in candidate_source_ids
+    )

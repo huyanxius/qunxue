@@ -28,7 +28,6 @@ from qunxue_api.modules.research_intake import (
     PhenomenonEvidenceRefSnapshot,
     PhenomenonEvidenceVerificationStatus,
 )
-from qunxue_api.modules.research_materials import MaterialLocator
 
 RELEASE = KnowledgeReleaseRef(
     knowledge_release_id="release-reviewed-v1",
@@ -82,9 +81,7 @@ class _CatalogFixture:
     ) -> tuple[TheoryProfileSnapshot, ...]:
         assert release_id == RELEASE.knowledge_release_id
         return tuple(
-            entry.theory_profile
-            for entry in self.entries
-            if entry.theory_profile is not None
+            entry.theory_profile for entry in self.entries if entry.theory_profile is not None
         )
 
     def browse(
@@ -113,9 +110,7 @@ class _CatalogFixture:
 
     def get_entry(self, *, knowledge_id: str, release_id: str) -> KnowledgeEntryDetail:
         assert release_id == RELEASE.knowledge_release_id
-        return next(
-            item for item in self.entries if item.summary.knowledge_id == knowledge_id
-        )
+        return next(item for item in self.entries if item.summary.knowledge_id == knowledge_id)
 
     def get_theory_profile(
         self,
@@ -127,8 +122,7 @@ class _CatalogFixture:
         return next(
             item.theory_profile
             for item in self.entries
-            if item.theory_profile is not None
-            and item.theory_profile.theory_id == theory_id
+            if item.theory_profile is not None and item.theory_profile.theory_id == theory_id
         )
 
     def get_sources(
@@ -138,11 +132,7 @@ class _CatalogFixture:
         release_id: str,
     ) -> tuple[SourceRecordSnapshot, ...]:
         assert release_id == RELEASE.knowledge_release_id
-        by_id = {
-            source.source_id: source
-            for item in self.entries
-            for source in item.sources
-        }
+        by_id = {source.source_id: source for item in self.entries for source in item.sources}
         return tuple(by_id[source_id] for source_id in source_ids)
 
 
@@ -329,35 +319,33 @@ def test_recall_adds_only_owner_scoped_confirmed_comparison_evidence() -> None:
     owner_id = UUID(int=77)
     calls: list[tuple[UUID, UUID]] = []
 
-    def confirmed_projection(*, user_id: UUID, task_id: UUID):
+    def confirmed_analysis_evidence(*, user_id: UUID, task_id: UUID):
         calls.append((user_id, task_id))
-        return SimpleNamespace(
-            content_hash="sha256:confirmed-comparison",
-            evidence_items=(
-                SimpleNamespace(
-                    evidence_ref_id="analysis-comparison:1:finding:0:annotation:1",
-                    finding_kind=SimpleNamespace(value="counterexample"),
-                    statement="第二个案例并未因成员流动而减少互助。",
-                    quote="新成员仍会轮流照看孩子。",
-                    material_id=UUID(int=81),
-                    parse_id=UUID(int=82),
-                    segment_id="segment-12",
-                    locator=MaterialLocator(page=4, paragraph=12),
-                    case_label="社区 B",
-                    observed_at="2026-08",
-                ),
+        return (
+            SimpleNamespace(
+                evidence_ref_id="analysis-comparison:1:finding:0:annotation:1",
+                kind=SimpleNamespace(value="counterexample"),
+                statement="第二个案例并未因成员流动而减少互助。",
+                quote="新成员仍会轮流照看孩子。",
+                material_id=UUID(int=81),
+                parse_id=UUID(int=82),
+                segment_id="segment-12",
+                locator="第4页，第12段",
+                case_label="社区 B",
+                observed_at="2026-08",
             ),
         )
 
     bundle = CatalogTheoryEvidenceSource(
         _CatalogFixture(entries=(_entry(1),)),
         retriever=_retriever(1),
-        get_confirmed_comparison_projection=confirmed_projection,
+        get_confirmed_analysis_evidence=confirmed_analysis_evidence,
     ).retrieve(user_id=owner_id, phenomenon=PHENOMENON, release=RELEASE)
 
     assert calls == [(owner_id, PHENOMENON.task_id)]
     evidence = next(
-        item for item in bundle.evidence_items
+        item
+        for item in bundle.evidence_items
         if item.evidence_ref_id == "analysis-comparison:1:finding:0:annotation:1"
     )
     assert evidence.claim == "第二个案例并未因成员流动而减少互助。"

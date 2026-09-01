@@ -46,6 +46,9 @@ import {
   ResearchAnalysisWorkspace,
 } from './ResearchAnalysisWorkspace'
 import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
+import { ResearchCyclePanel } from './ResearchCyclePanel'
+import { getResearchCycleSnapshot } from './researchAnalysisApi'
+import type { ResearchCycleSnapshot } from './researchCycleModel'
 import { ProfessionalMaterialArchivePanel } from './ProfessionalMaterialArchive'
 import type { ResearchAnalysisDecision } from './ResearchAnalysisCandidateCard'
 import {
@@ -170,6 +173,9 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [analysisLoading, setAnalysisLoading] = useState(true)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisNotice, setAnalysisNotice] = useState<string | null>(null)
+  const [researchCycle, setResearchCycle] = useState<ResearchCycleSnapshot | null>(null)
+  const [cycleLoading, setCycleLoading] = useState(false)
+  const [cycleError, setCycleError] = useState<string | null>(null)
   const [savingAnnotation, setSavingAnnotation] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const materialsLoadGeneration = useRef(0)
@@ -179,6 +185,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const segmentGeneration = useRef(0)
   const segmentAbortController = useRef<AbortController | null>(null)
   const analysisAbortController = useRef<AbortController | null>(null)
+  const cycleAbortController = useRef<AbortController | null>(null)
   const analysisLoadGeneration = useRef(0)
   const initialSelectionApplied = useRef(false)
   const segmentButtonRefs = useRef(new Map<string, HTMLButtonElement>())
@@ -249,11 +256,34 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   }, [taskId, analysisRefreshKey])
 
   useEffect(() => {
+    if (detailMode !== 'analysis') return
+    const controller = new AbortController()
+    cycleAbortController.current?.abort()
+    cycleAbortController.current = controller
+    setCycleLoading(true)
+    setCycleError(null)
+    void getResearchCycleSnapshot(taskId, controller.signal).then((snapshot) => {
+      if (!controller.signal.aborted) setResearchCycle(snapshot)
+    }).catch((cause: unknown) => {
+      if ((cause as { name?: string } | null)?.name !== 'AbortError' && !controller.signal.aborted) {
+        setCycleError(cause instanceof Error ? cause.message : '研究循环暂时无法加载。')
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setCycleLoading(false)
+    })
+    return () => {
+      controller.abort()
+      if (cycleAbortController.current === controller) cycleAbortController.current = null
+    }
+  }, [analysisSnapshot, detailMode, taskId])
+
+  useEffect(() => {
     return () => {
       materialsLoadAbortController.current?.abort()
       materialDetailAbortController.current?.abort()
       segmentAbortController.current?.abort()
       analysisAbortController.current?.abort()
+      cycleAbortController.current?.abort()
       materialsLoadGeneration.current += 1
       materialDetailGeneration.current += 1
       segmentGeneration.current += 1
@@ -274,6 +304,8 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setReaderFilter('all')
     setMediaLocation(null)
     setAnalysisSnapshot(null)
+    setResearchCycle(null)
+    setCycleError(null)
     setAnalysisNotice(null)
     clearSelectionDraft()
   }, [initialDetailMode, taskId])
@@ -903,25 +935,30 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                 ) : analysisLoading ? (
                   <p className="research-materials__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在加载分析记录</p>
                 ) : analysisSnapshot ? (
-                  <ResearchAnalysisWorkspace
-                    snapshot={analysisSnapshot}
-                    selectedMaterialId={selectedMaterial.materialId}
-                    materialNames={Object.fromEntries(materials.map((material) => [material.materialId, material.filename]))}
-                    onCreateCode={saveCode}
-                    onCreateMemo={saveMemo}
-                    onDecideCode={decideCode}
-                    onDecideMemo={decideMemo}
-                    onCreateComparison={saveComparison}
-                    onDecideComparison={decideComparison}
-                    onConfigureCodebook={configureCodebook}
-                    onTransitionCodebook={transitionCodebook}
-                    onCreateTheme={saveTheme}
-                    onConfirmTheme={confirmTheme}
-                    onAttachMemo={attachMemo}
-                    onSaveCaseProfile={saveCaseProfile}
-                    onSaveMatrixCell={saveMatrixCell}
-                    onSetMethod={saveQualitativeMethod}
-                  />
+                  <>
+                    {cycleLoading && !researchCycle ? <p className="research-materials__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在整理证据缺口</p> : null}
+                    {cycleError ? <p className="research-materials__detail-note is-error" role="alert"><WarningCircleIcon size={15} />{cycleError}</p> : null}
+                    {researchCycle ? <ResearchCyclePanel snapshot={researchCycle} /> : null}
+                    <ResearchAnalysisWorkspace
+                      snapshot={analysisSnapshot}
+                      selectedMaterialId={selectedMaterial.materialId}
+                      materialNames={Object.fromEntries(materials.map((material) => [material.materialId, material.filename]))}
+                      onCreateCode={saveCode}
+                      onCreateMemo={saveMemo}
+                      onDecideCode={decideCode}
+                      onDecideMemo={decideMemo}
+                      onCreateComparison={saveComparison}
+                      onDecideComparison={decideComparison}
+                      onConfigureCodebook={configureCodebook}
+                      onTransitionCodebook={transitionCodebook}
+                      onCreateTheme={saveTheme}
+                      onConfirmTheme={confirmTheme}
+                      onAttachMemo={attachMemo}
+                      onSaveCaseProfile={saveCaseProfile}
+                      onSaveMatrixCell={saveMatrixCell}
+                      onSetMethod={saveQualitativeMethod}
+                    />
+                  </>
                 ) : (
                   <p className="research-analysis__empty">质性分析记录暂时无法加载。</p>
                 )}

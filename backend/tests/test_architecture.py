@@ -19,6 +19,11 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "knowledge_catalog": set(),
     "research_intake": set(),
     "research_analysis": {"research_materials"},
+    "research_cycle": {
+        "research_analysis",
+        "research_materials",
+        "theory_matching",
+    },
     "research_materials": set(),
     "research_method": set(),
     "transcription": set(),
@@ -27,6 +32,18 @@ ALLOWED_MODULE_DEPENDENCIES = {
 }
 ALLOWED_CROSS_MODULE_SYMBOLS = {
     ("research_analysis", "research_materials"): {"MaterialLocator"},
+    ("research_cycle", "research_analysis"): {
+        "AnalysisCodeStatus",
+        "AnalysisRecordStatus",
+        "ComparisonFindingKind",
+        "ResearchAnalysisHandoff",
+    },
+    ("research_cycle", "research_materials"): {
+        "MaterialKind",
+        "ProfessionalMaterialArchiveView",
+        "ResearchMaterial",
+    },
+    ("research_cycle", "theory_matching"): {"ConfirmedTheoryPlanSnapshot"},
     ("account_management", "identity"): {
         "AccountRole",
         "AccountStatus",

@@ -149,4 +149,42 @@ describe('formal research canvas projection', () => {
     expect(projection.nodes.some((node) => node.title.includes('Agent'))).toBe(false)
     expect(projection.nodes.some((node) => node.title.includes('已拒绝'))).toBe(false)
   })
+
+  it('consumes the research-cycle map patch without mutating upstream map facts', () => {
+    const researchCycle = {
+      version: 5,
+      content_hash: 'sha256:cycle-5',
+      research_map_patch: {
+        nodes: [{
+          id: 'gap:comparison-1',
+          kind: 'gap',
+          title: '缺少对照个案。',
+          summary: '下一轮纳入一个未迁移家庭。',
+          status: 'open',
+          citation_ids: [],
+        }],
+        relations: [],
+      },
+    }
+    const original = structuredClone(researchCycle)
+    const projection = projectFormalResearchCanvas({
+      taskId: 'task-1',
+      mode: 'framework',
+      agentProjection: createEmptyResearchCanvasProjection(),
+      navigation: null,
+      matchRun: null,
+      pendingTheoryDecisions: {},
+      sections: [],
+      researchCycle,
+    })
+
+    expect(projection.nodes.find((node) => node.id === 'gap:comparison-1')).toMatchObject({
+      kind: 'gap',
+      title: '缺少对照个案。',
+      summary: '下一轮纳入一个未迁移家庭。',
+      status: 'open',
+      provenance: 'user',
+    })
+    expect(researchCycle).toEqual(original)
+  })
 })

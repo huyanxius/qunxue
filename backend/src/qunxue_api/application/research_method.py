@@ -12,6 +12,7 @@ from qunxue_api.application.research_document_mutations import (
     ResearchDocumentMutationRepository,
     mutation_request_hash,
 )
+from qunxue_api.modules.research_cycle import ResearchCycleSnapshot
 from qunxue_api.modules.research_framework import ResearchDocumentSnapshot, ResearchDocumentStatus
 from qunxue_api.modules.research_intake import (
     ResearchTask,
@@ -38,12 +39,14 @@ class ResearchMethodPlanApplication:
         mutations: ResearchDocumentMutationRepository,
         get_framework: Callable[[UUID], ResearchDocumentSnapshot | None],
         get_theory_plan: Callable[[UUID], ConfirmedTheoryPlanSnapshot | None],
+        get_cycle_snapshot: (Callable[[UUID, UUID], ResearchCycleSnapshot] | None) = None,
     ) -> None:
         self._plans = plans
         self._tasks = research_tasks
         self._mutations = mutations
         self._get_framework = get_framework
         self._get_theory_plan = get_theory_plan
+        self._get_cycle_snapshot = get_cycle_snapshot
 
     def create(
         self,
@@ -116,7 +119,15 @@ class ResearchMethodPlanApplication:
             theory_concepts=_shared_theory_concepts(framework, theory),
             evidence_ref_ids=_shared_evidence_refs(framework, theory),
             knowledge_release_id=theory.knowledge_release.knowledge_release_id,
-            shared_context=_shared_context(framework, theory),
+            shared_context=_shared_context(
+                framework,
+                theory,
+                cycle_snapshot=(
+                    self._get_cycle_snapshot(task.user_id, task.task_id)
+                    if self._get_cycle_snapshot is not None
+                    else None
+                ),
+            ),
             method_kind=method_kind,
             framework_confirmed=True,
         )
@@ -370,9 +381,7 @@ class ResearchMethodPlanApplication:
         if task is None:
             raise LookupError(task_id)
 
-    def _save_task_method_state(
-        self, *, user_id: UUID, plan: MethodPlanSnapshot
-    ) -> ResearchTask:
+    def _save_task_method_state(self, *, user_id: UUID, plan: MethodPlanSnapshot) -> ResearchTask:
         """Project the immutable plan version into task navigation atomically."""
 
         task = self._tasks.get(plan.task_id, user_id)
@@ -421,6 +430,8 @@ def _framework_section(framework: ResearchDocumentSnapshot, key: str) -> str:
 def _shared_context(
     framework: ResearchDocumentSnapshot,
     theory: ConfirmedTheoryPlanSnapshot,
+    *,
+    cycle_snapshot: object | None = None,
 ) -> tuple[MethodPlanContextItem, ...]:
     """Copy the exact framework/theory inputs into one immutable handoff.
 
@@ -452,9 +463,7 @@ def _shared_context(
         )
         theory_lines.extend(f"局限：{item}" for item in candidate.judgement.limitations)
     for assignment in getattr(theory, "use_assignments", ()):
-        theory_lines.append(
-            f"理论分工（{assignment.role_code}）：{assignment.responsibility}"
-        )
+        theory_lines.append(f"理论分工（{assignment.role_code}）：{assignment.responsibility}")
     for relation in getattr(theory, "relations", ()):
         theory_lines.append(f"理论关系（{relation.relation_kind}）：{relation.explanation}")
     items.append(
@@ -468,7 +477,73 @@ def _shared_context(
             ),
         )
     )
+    if cycle_snapshot is not None:
+        items.extend(_cycle_context(cycle_snapshot))
     return tuple(items)
+
+
+def _cycle_context(cycle: object) -> tuple[MethodPlanContextItem, ...]:
+    facts = cycle.project_facts
+    material_lines = [f"材料总数：{facts.material_count}"]
+    material_lines.extend(f"{kind}：{count}" for kind, count in facts.material_kinds)
+    case_lines = [f"个案总数：{facts.case_count}"]
+    case_lines.extend(f"{label}：{count} 份材料" for label, count in facts.case_material_coverage)
+    ethics_lines = [
+        *[f"同意范围 {key}：{count}" for key, count in facts.consent_scopes],
+        *[f"敏感度 {key}：{count}" for key, count in facts.sensitivity_levels],
+        f"待去标识化：{facts.pending_deidentification_count}",
+    ]
+    sampling_lines = [f"取样批次：{item}" for item in facts.sampling_batches] or [
+        "尚未记录取样批次。"
+    ]
+    analysis_labels = {"codes": "已确认代码", "memos": "已确认备忘", "comparisons": "已确认比较"}
+    analysis_lines = [f"{analysis_labels[key]}：{count}" for key, count in facts.analysis_counts]
+    analysis_lines.extend(f"{item.kind.value}：{item.statement}" for item in cycle.evidence)
+    analysis_refs = tuple(
+        MethodPlanEvidenceRef(
+            evidence_ref_id=item.evidence_ref_id,
+            source_id=item.source_id,
+            source_kind=item.source_kind,
+            annotation_id=_string_or_none(item.annotation_id),
+            material_id=_string_or_none(item.material_id),
+            parse_id=_string_or_none(item.parse_id),
+            segment_id=item.segment_id,
+            locator=item.locator,
+        )
+        for item in cycle.evidence
+    )
+    gap_lines = [
+        f"[{item.priority}] {item.description} → {item.suggested_action}"
+        f"（{item.destination.value}）"
+        for item in cycle.gaps
+    ] or ["当前没有开放的证据缺口建议。"]
+    guideline_lines: dict[str, list[str]] = {}
+    for hint in cycle.reporting_hints:
+        guideline_lines.setdefault(hint.guideline, []).append(
+            f"{hint.label}：{hint.status.value}；{hint.message}"
+        )
+    values = [
+        MethodPlanContextItem("project_materials", "项目材料事实", "\n".join(material_lines)),
+        MethodPlanContextItem("project_cases", "项目个案事实", "\n".join(case_lines)),
+        MethodPlanContextItem("project_ethics", "项目伦理事实", "\n".join(ethics_lines)),
+        MethodPlanContextItem("project_sampling", "项目取样事实", "\n".join(sampling_lines)),
+        MethodPlanContextItem(
+            "confirmed_analysis", "已确认分析事实", "\n".join(analysis_lines), analysis_refs
+        ),
+        MethodPlanContextItem("evidence_gaps", "证据缺口与下一轮材料", "\n".join(gap_lines)),
+        MethodPlanContextItem("research_cycle_basis", "研究循环依据版本", cycle.content_hash),
+    ]
+    for guideline, lines in sorted(guideline_lines.items()):
+        values.append(
+            MethodPlanContextItem(
+                key=f"reporting_{guideline.lower()}",
+                title=f"{guideline} 报告覆盖提示",
+                content=(
+                    "仅提示报告事实覆盖，不评价方法质量，不阻止研究继续。\n" + "\n".join(lines)
+                ),
+            )
+        )
+    return tuple(values)
 
 
 def _framework_evidence_ref(value: object) -> MethodPlanEvidenceRef:

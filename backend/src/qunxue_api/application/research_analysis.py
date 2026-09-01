@@ -37,6 +37,7 @@ from qunxue_api.modules.research_analysis import (
     ResearchAnalysisHandoff,
     ResearchAnalysisService,
 )
+from qunxue_api.modules.research_cycle import CycleEvidence, ResearchCycleService
 from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskRepository,
@@ -1118,6 +1119,18 @@ class ResearchAnalysisApplication:
             unavailable_annotation_ids=unavailable,
         )
 
+    def confirmed_cycle_evidence(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+    ) -> tuple[CycleEvidence, ...]:
+        """Expose confirmed analysis to M4 through the immutable public handoff."""
+
+        return ResearchCycleService().analysis_evidence(
+            self.formal_handoff(user_id=user_id, task_id=task_id)
+        )
+
     def _annotation_is_readable(self, annotation: AnalysisAnnotation) -> bool:
         material = self._materials.get(
             annotation.material_id,
@@ -1284,9 +1297,7 @@ class ResearchAnalysisApplication:
     ) -> None:
         annotation_ids = tuple(
             dict.fromkeys(
-                annotation_id
-                for finding in findings
-                for annotation_id in finding.annotation_ids
+                annotation_id for finding in findings for annotation_id in finding.annotation_ids
             )
         )
         self._validate_links(
@@ -1295,8 +1306,7 @@ class ResearchAnalysisApplication:
             annotation_ids=annotation_ids,
         )
         if any(
-            finding.kind is not ComparisonFindingKind.EVIDENCE_GAP
-            and not finding.annotation_ids
+            finding.kind is not ComparisonFindingKind.EVIDENCE_GAP and not finding.annotation_ids
             for finding in findings
         ):
             raise ValueError("comparison evidence finding requires an annotation anchor")

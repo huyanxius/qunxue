@@ -1,6 +1,8 @@
 export { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
+export { getResearchCycleSnapshot } from './researchCycle'
+export { ResearchCyclePanel } from './ResearchCyclePanel'
 export {
   formatMaterialLocator,
   formatMaterialSize,
@@ -24,4 +26,5 @@ export type {
   ResearchMaterialStatus,
 } from './researchMaterialsModel'
 export type { ResearchAnalysisSnapshot } from './researchAnalysisModel'
+export type { ResearchCycleSnapshot } from './researchCycleModel'
 export type { ResearchMaterialsPanelProps } from './ResearchMaterialsPanel'

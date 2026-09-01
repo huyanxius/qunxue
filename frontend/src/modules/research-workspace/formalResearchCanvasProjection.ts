@@ -65,6 +65,15 @@ type FormalAnalysisSnapshot = {
   comparisons: FormalCaseComparisonSnapshot[]
 } | null
 
+type FormalResearchCycleSnapshot = {
+  version: number
+  content_hash: string
+  research_map_patch: {
+    nodes?: ReadonlyArray<Record<string, unknown>>
+    relations?: ReadonlyArray<Record<string, unknown>>
+  }
+} | null
+
 export type FormalResearchCanvasInput = {
   taskId: string | null
   mode: 'match' | 'framework'
@@ -75,6 +84,7 @@ export type FormalResearchCanvasInput = {
   sections: readonly FormalSectionSnapshot[]
   documentTitle?: string | null
   analysisSnapshot?: FormalAnalysisSnapshot
+  researchCycle?: FormalResearchCycleSnapshot
 }
 
 /** Derive formal M3/M4/M5 canvas state only from recoverable server snapshots. */
@@ -88,6 +98,7 @@ export function projectFormalResearchCanvas({
   sections,
   documentTitle,
   analysisSnapshot,
+  researchCycle,
 }: FormalResearchCanvasInput): ResearchCanvasProjection {
   const taskIdentity = taskId ?? 'unknown'
   const questionNode = agentProjection.nodes.find((node) => node.kind === 'question')
@@ -230,6 +241,9 @@ export function projectFormalResearchCanvas({
     source,
   )
   nodes.push(...comparisonProjection.nodes)
+  const cycleProjection = projectResearchCyclePatch(researchCycle)
+  const existingNodeIds = new Set(nodes.map((node) => node.id))
+  nodes.push(...cycleProjection.nodes.filter((node) => !existingNodeIds.has(node.id)))
 
   const firstLayerSize = Math.ceil(sectionNodes.length / 2)
   const sectionEdges: ResearchCanvasProjection['edges'] = sectionNodes.map((node, index) => ({
@@ -252,9 +266,61 @@ export function projectFormalResearchCanvas({
       ...agentProjection.edges,
       ...stageEdges,
       ...comparisonProjection.edges,
+      ...cycleProjection.edges,
       ...sectionEdges,
     ],
   }
+}
+
+function projectResearchCyclePatch(
+  cycle: FormalResearchCycleSnapshot | undefined,
+): Pick<ResearchCanvasProjection, 'nodes' | 'edges'> {
+  if (!cycle) return { nodes: [], edges: [] }
+  const allowedKinds = new Set(['question', 'phenomenon', 'theory', 'claim', 'evidence', 'gap', 'synthesis', 'document'])
+  const allowedStatuses = new Set(['developing', 'grounded', 'open', 'verified', 'challenged', 'complete'])
+  const nodes = (cycle.research_map_patch.nodes ?? []).flatMap((raw) => {
+    if (
+      typeof raw.id !== 'string'
+      || typeof raw.kind !== 'string'
+      || !allowedKinds.has(raw.kind)
+      || typeof raw.title !== 'string'
+    ) return []
+    return [{
+      id: raw.id,
+      kind: raw.kind as ResearchCanvasProjection['nodes'][number]['kind'],
+      title: raw.title,
+      summary: typeof raw.summary === 'string' ? raw.summary : null,
+      excerpt: typeof raw.summary === 'string' ? raw.summary : null,
+      status: typeof raw.status === 'string' && allowedStatuses.has(raw.status)
+        ? raw.status as ResearchCanvasProjection['nodes'][number]['status']
+        : 'open' as const,
+      provenance: 'user' as const,
+      citationIds: Array.isArray(raw.citation_ids)
+        ? raw.citation_ids.filter((item): item is string => typeof item === 'string')
+        : [],
+    }]
+  })
+  const nodeIds = new Set(nodes.map((node) => node.id))
+  const allowedRelations = new Set(['explains', 'supports', 'challenges', 'derives', 'refines'])
+  const edges = (cycle.research_map_patch.relations ?? []).flatMap((raw) => {
+    if (
+      typeof raw.id !== 'string'
+      || typeof raw.source !== 'string'
+      || typeof raw.target !== 'string'
+      || !nodeIds.has(raw.source)
+      || !nodeIds.has(raw.target)
+      || typeof raw.relation !== 'string'
+      || !allowedRelations.has(raw.relation)
+    ) return []
+    return [{
+      id: raw.id,
+      source: raw.source,
+      target: raw.target,
+      relation: raw.relation as ResearchCanvasProjection['edges'][number]['relation'],
+      label: typeof raw.label === 'string' ? raw.label : null,
+    }]
+  })
+  return { nodes, edges }
 }
 
 function projectConfirmedComparisons(
