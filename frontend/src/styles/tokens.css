@@ -1,29 +1,97 @@
+/*
+ * 两层令牌：`--qx-*` 是语义层，是新代码唯一应该引用的名字；下方那组短名是兼容别名，
+ * 留给尚未迁移的模块，指向同一批值。
+ *
+ * 这一层是「只改名、不改值」的：每个 `--qx-*` 的取值都等于改名前那个短名的取值。
+ * 已完成的界面（分析空态、文稿工作台、研究地图）都是照这批值调过版的，改名时顺手换色或
+ * 换圆角，会在没人碰那些文件的情况下把它们整体重新皮肤化——看上去就像同一个产品里混进了
+ * 半成品。要调色调是一次独立的设计决定，得连着那些页面一起重做，不能搭改名的车。
+ */
 :root {
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --surface-2: #f7f7f7;
-  --surface-3: #ededed;
-  --ink-strong: #111111;
-  --ink: #303030;
-  --ink-soft: #6c6c6c;
-  --quiet: #969696;
-  --rule: #e3e3e3;
-  --rule-strong: #cccccc;
-  --accent: #111111;
-  --accent-soft: #ececec;
-  --accent-dark: #191919;
+  /* 表面从浅到深：canvas 是工作区底色，surface 是浮起的纸面，subtle/strong 用于分区和填充。 */
+  --qx-color-canvas: #f5f5f5;
+  --qx-color-surface: #ffffff;
+  --qx-color-surface-subtle: #f7f7f7;
+  --qx-color-surface-strong: #ededed;
+
+  /* 墨色从重到轻。ink 是正文，ink-soft 是次要正文，muted 是元信息，quiet 是几乎不看的定位符。 */
+  --qx-color-ink: #111111;
+  --qx-color-ink-soft: #303030;
+  --qx-color-muted: #6c6c6c;
+  --qx-color-quiet: #969696;
+
+  --qx-color-rule: #e3e3e3;
+  --qx-color-rule-strong: #cccccc;
+
+  /* 强调色就是墨黑本身：这套界面靠字号、留白和分隔线分层级，不靠彩色。 */
+  --qx-color-accent: #111111;
+  --qx-color-accent-soft: #ececec;
+  --qx-color-accent-strong: #191919;
+  --qx-color-danger: #98434b;
+  --qx-color-danger-soft: #f8edef;
+
+  /* reading 是宋体，只给原文和文稿正文用；界面文字一律 ui，混用会让工具栏看着像内容。 */
+  --qx-font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --qx-font-reading: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+
+  /* locator 是段落定位符（第几行、第几个字符）专用的字号，小于 caption，默认不显示。 */
+  --qx-text-locator: 11px;
+  --qx-text-caption: 12px;
+  --qx-text-body: 14px;
+  --qx-text-reading: 16px;
+  --qx-text-title: 18px;
+  --qx-text-section: 24px;
+
+  --qx-space-1: 4px;
+  --qx-space-2: 8px;
+  --qx-space-3: 12px;
+  --qx-space-4: 16px;
+  --qx-space-6: 24px;
+  --qx-space-8: 32px;
+  --qx-space-12: 48px;
+
+  /* control 是按钮和输入框，overlay 是抽屉和弹层，feature 是整块浮起的卡片。 */
+  --qx-radius-control: 10px;
+  --qx-radius-overlay: 16px;
+  --qx-radius-feature: 24px;
+  --qx-radius-pill: 999px;
+
+  --qx-control-height: 36px;
+  --qx-icon-control-size: 32px;
+
+  /* 阅读宽度按字数定，不按像素：中文一行 40 字上下最好跟读，76ch 是含标点的换算值。 */
+  --qx-reading-measure: 76ch;
+  --qx-outline-width: 208px;
+  --qx-outline-width-collapsed: 44px;
+
+  --qx-shadow-overlay: 0 18px 52px rgb(17 17 17 / 12%);
+
+  /* 兼容别名：老模块继续用短名，等迁移完再删。新代码不要引用这一段。 */
+  --bg: var(--qx-color-canvas);
+  --surface: var(--qx-color-surface);
+  --surface-2: var(--qx-color-surface-subtle);
+  --surface-3: var(--qx-color-surface-strong);
+  --ink-strong: var(--qx-color-ink);
+  --ink: var(--qx-color-ink-soft);
+  --ink-soft: var(--qx-color-muted);
+  --quiet: var(--qx-color-quiet);
+  --rule: var(--qx-color-rule);
+  --rule-strong: var(--qx-color-rule-strong);
+  --accent: var(--qx-color-accent);
+  --accent-soft: var(--qx-color-accent-soft);
+  --accent-dark: var(--qx-color-accent-strong);
   --signal: #3f3f3f;
   --signal-soft: #efefef;
   --warning: #4b4b4b;
   --warning-soft: #f1f1f1;
-  --danger: #98434b;
-  --danger-soft: #f8edef;
+  --danger: var(--qx-color-danger);
+  --danger-soft: var(--qx-color-danger-soft);
   --paper: var(--bg);
-  --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
-  --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --radius: 16px;
-  --radius-control: 10px;
-  --radius-large: 24px;
+  --serif: var(--qx-font-reading);
+  --sans: var(--qx-font-ui);
+  --radius: var(--qx-radius-overlay);
+  --radius-control: var(--qx-radius-control);
+  --radius-large: var(--qx-radius-feature);
   --shadow-sm: 0 1px 2px rgb(20 40 55 / 5%), 0 10px 30px rgb(20 40 55 / 5%);
   --motion-fast: 140ms;
   --motion-base: 240ms;
