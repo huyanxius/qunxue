@@ -6,6 +6,7 @@ from qunxue_api.application.disciplinary_agent import (
 )
 from qunxue_api.application.professional_materials import ProfessionalMaterialsApplication
 from qunxue_api.application.research_analysis import ResearchAnalysisApplication
+from qunxue_api.application.research_cycle import ResearchCycleApplication
 from qunxue_api.application.research_document_proposals import (
     ResearchDocumentProposalApplication,
 )
@@ -39,6 +40,7 @@ __all__ = [
     "ResearchMaterialApplication",
     "ProfessionalMaterialsApplication",
     "ResearchMethodPlanApplication",
+    "ResearchCycleApplication",
     "ResearchStartApplication",
     "ResearchStartConfirmationResult",
     "ResearchStartJourneyState",

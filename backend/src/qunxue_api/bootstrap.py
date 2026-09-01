@@ -49,6 +49,7 @@ from qunxue_api.adapters.sqlite.professional_material_repository import (
 from qunxue_api.adapters.sqlite.research_analysis_repository import (
     SqliteResearchAnalysisRepository,
 )
+from qunxue_api.adapters.sqlite.research_cycle_repository import SqliteResearchCycleRepository
 from qunxue_api.adapters.sqlite.research_document import (
     SqliteResearchDocumentRepository,
 )
@@ -89,6 +90,7 @@ from qunxue_api.api.routes.professional_materials import (
     router as professional_materials_router,
 )
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
+from qunxue_api.api.routes.research_cycle import router as research_cycle_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_materials import router as research_materials_router
 from qunxue_api.api.routes.research_method import router as research_method_router
@@ -98,6 +100,7 @@ from qunxue_api.application import (
     DisciplinaryAgentApplication,
     ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
+    ResearchCycleApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
     ResearchJourney,
@@ -173,11 +176,14 @@ def create_app(
             parameters = signature(CatalogTheoryEvidenceSource).parameters
         except (TypeError, ValueError):
             parameters = {}
-        accepts_projection = (
-            "get_confirmed_comparison_projection" in parameters
-            or any(parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters.values())
+        accepts_analysis = "get_confirmed_analysis_evidence" in parameters or any(
+            parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters.values()
         )
-        if accepts_projection:
+        if accepts_analysis:
+            kwargs["get_confirmed_analysis_evidence"] = (
+                analysis_application.confirmed_cycle_evidence
+            )
+        elif "get_confirmed_comparison_projection" in parameters:
             kwargs["get_confirmed_comparison_projection"] = (
                 analysis_application.get_confirmed_comparison_projection
             )
@@ -216,9 +222,7 @@ def create_app(
         resolved_settings
     )
     if resolved_knowledge_retriever is None and resolved_settings.has_model_api_key:
-        resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(
-            app.state.knowledge_catalog
-        )
+        resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(app.state.knowledge_catalog)
     app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
     resolved_model_provider = model_provider or _model_provider_from_settings(
@@ -335,9 +339,7 @@ def create_app(
                 doi_resolver=CrossrefDoiMetadataResolver(),
             )
 
-    app.state.professional_materials_application_scope = (
-        professional_materials_application_scope
-    )
+    app.state.professional_materials_application_scope = professional_materials_application_scope
 
     @contextmanager
     def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
@@ -351,15 +353,61 @@ def create_app(
         with resolved_database.session() as session:
             documents = SqliteResearchDocumentRepository(session)
             matches = SqliteMatchRunRepository(session)
+            task_repository = SqliteResearchTaskRepository(session)
+            material_repository = SqliteResearchMaterialRepository(session)
+            analysis_application = build_research_analysis_application(
+                session,
+                task_repository=task_repository,
+            )
+            professional_application = ProfessionalMaterialsApplication(
+                archive=SqliteProfessionalMaterialRepository(session),
+                materials=material_repository,
+                research_tasks=task_repository,
+            )
+            cycle_application = ResearchCycleApplication(
+                analysis=analysis_application,
+                materials=material_repository,
+                professional_materials=professional_application,
+                get_theory_plan_for_task=matches.get_confirmed_plan_for_task,
+                snapshots=SqliteResearchCycleRepository(session),
+            )
             yield ResearchMethodPlanApplication(
                 plans=MethodPlanService(SqliteMethodPlanRepository(session)),
-                research_tasks=SqliteResearchTaskRepository(session),
+                research_tasks=task_repository,
                 mutations=SqliteResearchDocumentMutationRepository(session),
                 get_framework=documents.latest,
                 get_theory_plan=matches.get_confirmed_plan,
+                get_cycle_snapshot=lambda user_id, task_id: cycle_application.current(
+                    user_id=user_id,
+                    task_id=task_id,
+                ),
             )
 
     app.state.research_method_plan_application_scope = research_method_plan_application_scope
+
+    @contextmanager
+    def research_cycle_application_scope() -> Iterator[ResearchCycleApplication]:
+        with resolved_database.session() as session:
+            task_repository = SqliteResearchTaskRepository(session)
+            material_repository = SqliteResearchMaterialRepository(session)
+            yield ResearchCycleApplication(
+                analysis=build_research_analysis_application(
+                    session,
+                    task_repository=task_repository,
+                ),
+                materials=material_repository,
+                professional_materials=ProfessionalMaterialsApplication(
+                    archive=SqliteProfessionalMaterialRepository(session),
+                    materials=material_repository,
+                    research_tasks=task_repository,
+                ),
+                get_theory_plan_for_task=SqliteMatchRunRepository(
+                    session
+                ).get_confirmed_plan_for_task,
+                snapshots=SqliteResearchCycleRepository(session),
+            )
+
+    app.state.research_cycle_application_scope = research_cycle_application_scope
 
     @contextmanager
     def research_navigation_match_reader_scope() -> Iterator[SqliteMatchRunRepository]:
@@ -593,14 +641,14 @@ def create_app(
                     ),
                     atomic=session.begin_nested,
                     ensure_research_draft=(
-                        lambda **payload: research_start_application.ensure_draft_project(
-                            **payload
-                        ).task_id
+                        lambda **payload: (
+                            research_start_application.ensure_draft_project(**payload).task_id
+                        )
                     ),
                     bind_research_draft=(
-                        lambda **payload: research_start_application.bind_material_first_draft(
-                            **payload
-                        ).task_id
+                        lambda **payload: (
+                            research_start_application.bind_material_first_draft(**payload).task_id
+                        )
                     ),
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
@@ -628,6 +676,7 @@ def create_app(
     app.include_router(professional_materials_router)
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)
+    app.include_router(research_cycle_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)
     app.include_router(material_intakes_router)
@@ -910,9 +959,7 @@ def _model_provider_from_settings(
     model_base_url = settings.model_base_url or (
         DEFAULT_MODEL_BASE_URL if settings.has_model_api_key else None
     )
-    model_name = settings.model_name or (
-        DEFAULT_MODEL_NAME if settings.has_model_api_key else None
-    )
+    model_name = settings.model_name or (DEFAULT_MODEL_NAME if settings.has_model_api_key else None)
     if model_base_url is None or model_name is None:
         raise ValueError(
             "QUNXUE_MODEL_BASE_URL (model_base_url) and "

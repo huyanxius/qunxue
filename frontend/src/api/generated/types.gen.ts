@@ -1931,6 +1931,68 @@ export type CreateTheoryDecisionsRequest = {
 };
 
 /**
+ * CycleEvidenceResponse
+ */
+export type CycleEvidenceResponse = {
+    /**
+     * Annotation Id
+     */
+    annotation_id: string;
+    /**
+     * Case Label
+     */
+    case_label: string | null;
+    /**
+     * Confirmed
+     */
+    confirmed: boolean;
+    /**
+     * Evidence Ref Id
+     */
+    evidence_ref_id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Locator
+     */
+    locator: string;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Observed At
+     */
+    observed_at: string | null;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+    /**
+     * Statement
+     */
+    statement: string;
+};
+
+/**
  * DecideAnalysisRecordRequest
  */
 export type DecideAnalysisRecordRequest = {
@@ -2163,6 +2225,56 @@ export type ErrorDetail = {
  */
 export type ErrorResponse = {
     error: ErrorDetail;
+};
+
+/**
+ * EvidenceGapResponse
+ */
+export type EvidenceGapResponse = {
+    /**
+     * Analysis Content Hash
+     */
+    analysis_content_hash: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Destination
+     */
+    destination: string;
+    /**
+     * Gap Id
+     */
+    gap_id: string;
+    /**
+     * Priority
+     */
+    priority: string;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Suggested Action
+     */
+    suggested_action: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string | null;
+    /**
+     * Theory Plan Version
+     */
+    theory_plan_version: number | null;
 };
 
 /**
@@ -4138,6 +4250,48 @@ export type ProfessionalMaterialArchiveResponse = {
 export type ProjectLifecycleStatus = 'draft' | 'in_progress' | 'archived';
 
 /**
+ * ProjectResearchFactsResponse
+ */
+export type ProjectResearchFactsResponse = {
+    /**
+     * Analysis Counts
+     */
+    analysis_counts: Array<Array<string | number>>;
+    /**
+     * Case Count
+     */
+    case_count: number;
+    /**
+     * Case Material Coverage
+     */
+    case_material_coverage: Array<Array<string | number>>;
+    /**
+     * Consent Scopes
+     */
+    consent_scopes: Array<Array<string | number>>;
+    /**
+     * Material Count
+     */
+    material_count: number;
+    /**
+     * Material Kinds
+     */
+    material_kinds: Array<Array<string | number>>;
+    /**
+     * Pending Deidentification Count
+     */
+    pending_deidentification_count: number;
+    /**
+     * Sampling Batches
+     */
+    sampling_batches: Array<string>;
+    /**
+     * Sensitivity Levels
+     */
+    sensitivity_levels: Array<Array<string | number>>;
+};
+
+/**
  * QualitativeMethod
  */
 export type QualitativeMethod = 'thematic_analysis' | 'grounded_theory' | 'ethnography' | 'case_study' | 'narrative_research' | 'discourse_conversation_analysis' | 'literature_review';
@@ -4383,6 +4537,36 @@ export type RelationCandidateResponse = {
 };
 
 /**
+ * ReportingCoverageResponse
+ */
+export type ReportingCoverageResponse = {
+    /**
+     * Blocking
+     */
+    blocking: boolean;
+    /**
+     * Guideline
+     */
+    guideline: string;
+    /**
+     * Item Key
+     */
+    item_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * ResearchAnalysisHandoffContract
  */
 export type ResearchAnalysisHandoffContract = {
@@ -4495,6 +4679,75 @@ export type ResearchCaseResponse = {
  * ResearchCentralTool
  */
 export type ResearchCentralTool = 'agent' | 'research_map' | 'materials' | 'phenomenon' | 'theory_matching' | 'framework' | 'method';
+
+/**
+ * ResearchCycleResponse
+ */
+export type ResearchCycleResponse = {
+    /**
+     * Analysis Content Hash
+     */
+    analysis_content_hash: string;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Evidence
+     */
+    evidence: Array<CycleEvidenceResponse>;
+    /**
+     * Gaps
+     */
+    gaps: Array<EvidenceGapResponse>;
+    project_facts: ProjectResearchFactsResponse;
+    /**
+     * Reporting Hints
+     */
+    reporting_hints: Array<ReportingCoverageResponse>;
+    /**
+     * Research Map Patch
+     */
+    research_map_patch: {
+        [key: string]: Array<{
+            [key: string]: unknown;
+        }>;
+    };
+    /**
+     * Schema Version
+     */
+    schema_version: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Theory Plan Id
+     */
+    theory_plan_id: string | null;
+    /**
+     * Theory Plan Version
+     */
+    theory_plan_version: number | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ResearchCycleVersionListResponse
+ */
+export type ResearchCycleVersionListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchCycleResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
 
 /**
  * ResearchDocumentCitationAuditContract
@@ -11231,6 +11484,66 @@ export type ListPhenomenonSnapshotsResponses = {
 };
 
 export type ListPhenomenonSnapshotsResponse = ListPhenomenonSnapshotsResponses[keyof ListPhenomenonSnapshotsResponses];
+
+export type GetResearchCycleData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/research-cycle';
+};
+
+export type GetResearchCycleErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchCycleError = GetResearchCycleErrors[keyof GetResearchCycleErrors];
+
+export type GetResearchCycleResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchCycleResponse;
+};
+
+export type GetResearchCycleResponse = GetResearchCycleResponses[keyof GetResearchCycleResponses];
+
+export type ListResearchCycleVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/research-cycle/versions';
+};
+
+export type ListResearchCycleVersionsErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchCycleVersionsError = ListResearchCycleVersionsErrors[keyof ListResearchCycleVersionsErrors];
+
+export type ListResearchCycleVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchCycleVersionListResponse;
+};
+
+export type ListResearchCycleVersionsResponse = ListResearchCycleVersionsResponses[keyof ListResearchCycleVersionsResponses];
 
 export type ListResearchTaskDocumentProposalsData = {
     body?: never;

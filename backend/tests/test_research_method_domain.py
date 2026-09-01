@@ -6,6 +6,11 @@ import pytest
 
 from qunxue_api.application.research_document_mutations import ResearchDocumentMutationReceipt
 from qunxue_api.application.research_method import ResearchMethodPlanApplication, _shared_context
+from qunxue_api.modules.research_cycle import (
+    CycleEvidenceKind,
+    GapDestination,
+    ReportingCoverageStatus,
+)
 from qunxue_api.modules.research_framework import ResearchDocumentStatus
 from qunxue_api.modules.research_intake import ResearchTaskStatus
 from qunxue_api.modules.research_method import (
@@ -133,11 +138,70 @@ def test_shared_context_keeps_every_framework_section_and_evidence_locator() -> 
         relations=(),
         evidence_bundle=SimpleNamespace(evidence_items=()),
     )
-    context = _shared_context(framework, theory)
+    cycle = SimpleNamespace(
+        content_hash="sha256:cycle-1",
+        analysis_content_hash="sha256:analysis-1",
+        project_facts=SimpleNamespace(
+            material_count=4,
+            material_kinds=(("interview_transcript", 3), ("field_note", 1)),
+            case_count=2,
+            case_material_coverage=(("家庭甲", 2), ("家庭乙", 2)),
+            consent_scopes=(("project_only", 4),),
+            sensitivity_levels=(("sensitive", 4),),
+            pending_deidentification_count=1,
+            sampling_batches=("首轮访谈",),
+            analysis_counts=(("codes", 3), ("memos", 1), ("comparisons", 1)),
+        ),
+        evidence=(
+            SimpleNamespace(
+                evidence_ref_id="cycle-evidence-1",
+                source_id="comparison-1",
+                source_kind="case_comparison",
+                annotation_id=UUID(int=61),
+                material_id=UUID(int=62),
+                parse_id=UUID(int=63),
+                segment_id="segment-9",
+                locator="第2页，第3段",
+                kind=CycleEvidenceKind.COUNTEREXAMPLE,
+                statement="资源相近但参与结果不同。",
+            ),
+        ),
+        gaps=(
+            SimpleNamespace(
+                gap_id="gap-1",
+                description="缺少其他家庭成员叙述",
+                suggested_action="追访其他家庭成员",
+                destination=GapDestination.NEXT_ROUND_SAMPLING,
+                priority="high",
+            ),
+        ),
+        reporting_hints=(
+            SimpleNamespace(
+                guideline="SRQR",
+                item_key="ethics",
+                label="伦理与同意",
+                status=ReportingCoverageStatus.PRESENT,
+                message="已有项目事实。",
+                blocking=False,
+            ),
+        ),
+    )
+    context = _shared_context(framework, theory, cycle_snapshot=cycle)
     sample = next(item for item in context if item.key == "sample_and_sources")
     assert sample.evidence_refs[0].evidence_ref_id == "framework-ref-1"
     assert sample.evidence_refs[0].locator == '{"paragraph": 2, "section": "访谈 A"}'
-    assert {item.key for item in context} == {"sample_and_sources", "ethics", "theory_plan"}
+    by_key = {item.key: item for item in context}
+    assert {"sample_and_sources", "ethics", "theory_plan"} < set(by_key)
+    assert by_key["project_materials"].content.startswith("材料总数：4")
+    assert "家庭甲：2 份材料" in by_key["project_cases"].content
+    assert "待去标识化：1" in by_key["project_ethics"].content
+    assert "首轮访谈" in by_key["project_sampling"].content
+    assert "已确认代码：3" in by_key["confirmed_analysis"].content
+    assert by_key["confirmed_analysis"].evidence_refs[0].annotation_id == str(UUID(int=61))
+    assert "追访其他家庭成员" in by_key["evidence_gaps"].content
+    assert "不阻止研究继续" in by_key["reporting_srqr"].content
+    assert by_key["research_cycle_basis"].content == "sha256:cycle-1"
+
 
 def test_method_plan_rejects_creation_without_confirmed_framework() -> None:
     service = MethodPlanService.in_memory()

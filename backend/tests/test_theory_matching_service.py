@@ -1,3 +1,4 @@
+from dataclasses import replace
 from itertools import count
 from uuid import UUID
 
@@ -179,8 +180,7 @@ def test_three_pre_reviewed_profiles_become_stably_ordered_judged_candidates() -
     )
     assert all(
         candidate.content.origin is CandidateOrigin.PRE_REVIEWED_KNOWLEDGE
-        and candidate.content.content_status
-        is CandidateContentStatus.PRE_REVIEW_COMPLETED
+        and candidate.content.content_status is CandidateContentStatus.PRE_REVIEW_COMPLETED
         and candidate.content.formal_adoption_eligible
         for candidate in run.candidates
     )
@@ -191,6 +191,88 @@ def test_three_pre_reviewed_profiles_become_stably_ordered_judged_candidates() -
     assert run.model is not None
     assert run.model.degraded is False
     assert run.model.trace_id == run.candidates[0].trace_id
+
+
+def test_confirmed_personal_analysis_evidence_reaches_every_theory_judgement() -> None:
+    bundle = _bundle(3)
+    personal_source = SourceRecordSnapshot(
+        source_id="research-material:1:2:segment-3",
+        source_type="personal_research_material",
+        title="家庭乙访谈",
+        authors_or_institution=(),
+        year=None,
+        publication=None,
+        locator="第4页，第12段",
+        url=None,
+        verification_status=SourceVerificationStatus.VERIFIED,
+        use_boundary="用户已确认的反例，仅用于限制或修订理论解释。",
+    )
+    personal = EvidenceItemSnapshot(
+        evidence_ref_id="cycle:case-comparison:counterexample",
+        claim="家庭乙不符合资源决定参与的预期。",
+        excerpt="经济资源相近，但晚班家庭仍无法参与。",
+        locator=personal_source.locator,
+        source=personal_source,
+        verification_status=SourceVerificationStatus.VERIFIED,
+        use_boundary=personal_source.use_boundary,
+    )
+    judge = _CapturingJudge()
+    service = TheoryMatchingService(
+        evidence_source=_EvidenceSource(
+            replace(bundle, evidence_items=(*bundle.evidence_items, personal))
+        ),
+        judge=judge,
+        repository=_MatchRunRepository(),
+        provider="test",
+        model_version="test",
+        capability="test",
+        contract_version="matching.v1",
+        id_factory=_ids(),
+    )
+
+    service.start(user_id=UUID(int=188), phenomenon=PHENOMENON, release=RELEASE)
+
+    assert len(judge.inputs) == 1
+    assert all(personal in item.judgement_input.evidence_items for item in judge.inputs[0].items)
+
+
+class _CapturingJudge:
+    def __init__(self) -> None:
+        self.inputs = []
+
+    def judge_and_rerank(self, *, input):
+        self.inputs.append(input)
+        return TheoryJudgementBatchResult(
+            results=tuple(
+                TheoryJudgementBatchItemResult(
+                    candidate_id=item.candidate_id,
+                    candidate_version=item.candidate_version,
+                    status=CandidateJudgementRunStatus.SUCCEEDED,
+                    judgement=TheoryJudgementDraft(
+                        verdict=TheoryJudgementVerdict.CONDITIONAL,
+                        match_rationale="待用户判断。",
+                        applicable_conditions=(),
+                        limitations=(),
+                        material_requirements=(),
+                        evidence_gaps=(),
+                        alternative_explanations=(),
+                        evidence_ref_ids=tuple(
+                            evidence.evidence_ref_id
+                            for evidence in item.judgement_input.evidence_items
+                        ),
+                    ),
+                    failure_code=None,
+                    trace_id=UUID(int=100 + index),
+                    request_id=UUID(int=200 + index),
+                    contract_version="matching.v1",
+                )
+                for index, item in enumerate(input.items, start=1)
+            ),
+            input_candidate_order=tuple(item.candidate_id for item in input.items),
+            ranked_candidate_order=tuple(item.candidate_id for item in input.items),
+            completion_basis=MatchCompletionBasis.COMPLETE,
+            retryable_candidate_ids=(),
+        )
 
 
 def test_fewer_than_three_profiles_persist_empty_without_invoking_the_judge() -> None:
@@ -302,9 +384,7 @@ class _OneFailureThenSuccessJudge:
                             else CandidateJudgementRunStatus.SUCCEEDED
                         ),
                         judgement=(
-                            None
-                            if failed
-                            else _judgement(item.judgement_input.candidate.title)
+                            None if failed else _judgement(item.judgement_input.candidate.title)
                         ),
                         failure_code="model_timeout" if failed else None,
                         trace_id=UUID(int=700 + len(results)),
@@ -320,9 +400,7 @@ class _OneFailureThenSuccessJudge:
                 retryable_candidate_ids=(failed_id,),
             )
 
-        item = next(
-            item for item in input.items if item.candidate_id in input.target_candidate_ids
-        )
+        item = next(item for item in input.items if item.candidate_id in input.target_candidate_ids)
         return TheoryJudgementBatchResult(
             results=(
                 TheoryJudgementBatchItemResult(
@@ -378,9 +456,12 @@ def test_partial_failure_keeps_reason_and_content_then_retry_recovers() -> None:
     assert recovered.status is MatchRunStatus.AWAITING_DECISION
     assert recovered.candidate_failures == ()
     assert len(recovered.candidates) == 3
-    assert next(
-        item for item in recovered.candidates if item.candidate_id == failure.candidate_id
-    ).candidate_version == 2
+    assert (
+        next(
+            item for item in recovered.candidates if item.candidate_id == failure.candidate_id
+        ).candidate_version
+        == 2
+    )
 
 
 class _AllFailuresJudge:

@@ -27,7 +27,12 @@ import {
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
 import { ResearchMapCanvas } from './ResearchMapCanvas'
 import { projectFormalResearchCanvas, projectResearchCanvas, type ResearchCanvasProjection } from '../../modules/research-workspace'
-import { getAnalysisSnapshot, type ResearchAnalysisSnapshot } from '../../modules/research-materials'
+import {
+  getAnalysisSnapshot,
+  getResearchCycleSnapshot,
+  type ResearchAnalysisSnapshot,
+  type ResearchCycleSnapshot,
+} from '../../modules/research-materials'
 import type { AgentConversation } from '../../modules/research-agent'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { M5ResearchDeliveryController } from './M5ResearchDeliveryController'
@@ -206,6 +211,7 @@ export function ResearchDocumentWorkbench({
   const [pendingTheoryDecisions, setPendingTheoryDecisions] = useState<Record<string, { candidate_version: number; action: TheoryDecisionAction }>>({})
   const [decisionSet, setDecisionSet] = useState<TheoryDecisionSetResponse | null>(null)
   const [analysisSnapshot, setAnalysisSnapshot] = useState<ResearchAnalysisSnapshot | null>(null)
+  const [researchCycle, setResearchCycle] = useState<ResearchCycleSnapshot | null>(null)
   const [relationDraft, setRelationDraft] = useState({ explanation: '', premise: '', supporting: '', excluding: '', distinguishing: '' })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved')
   const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
@@ -238,7 +244,8 @@ export function ResearchDocumentWorkbench({
     sections,
     documentTitle: document?.title,
     analysisSnapshot: mode === 'match' ? analysisSnapshot : null,
-  }), [analysisSnapshot, document?.title, mapConversation, matchRun, mode, navigation, pendingTheoryDecisions, sections, taskId])
+    researchCycle,
+  }), [analysisSnapshot, document?.title, mapConversation, matchRun, mode, navigation, pendingTheoryDecisions, researchCycle, sections, taskId])
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
     content: activeContent || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。',
@@ -292,11 +299,13 @@ export function ResearchDocumentWorkbench({
       mode === 'match'
         ? Promise.resolve().then(() => getAnalysisSnapshot(taskId)).catch(() => null)
         : Promise.resolve(null),
-    ]).then(async ([nav, docs, analysis]) => {
+      Promise.resolve().then(() => getResearchCycleSnapshot(taskId)).catch(() => null),
+    ]).then(async ([nav, docs, analysis, cycle]) => {
       if (disposed) return
       if (!nav.data || !docs.data) throw new Error('研究工作区暂时无法加载。')
       setNavigation(nav.data)
       setAnalysisSnapshot(analysis)
+      setResearchCycle(cycle)
       if (mode === 'match' && (nav.data.allowed_actions?.includes('start_matching') || nav.data.current_match_run_id)) {
         setActiveSectionId('candidate_theories')
       }
@@ -417,13 +426,15 @@ export function ResearchDocumentWorkbench({
 
   const refreshDocumentState = useCallback(async () => {
     if (!taskId) return
-    const [navigationResult, result, analysis] = await Promise.all([
+    const [navigationResult, result, analysis, cycle] = await Promise.all([
       getResearchTaskNavigation({ path: { task_id: taskId } }),
       listResearchDocuments({ path: { task_id: taskId } }),
       mode === 'match' ? getAnalysisSnapshot(taskId).catch(() => null) : Promise.resolve(null),
+      getResearchCycleSnapshot(taskId).catch(() => null),
     ])
     if (navigationResult.data) setNavigation(navigationResult.data)
     if (mode === 'match' && analysis) setAnalysisSnapshot(analysis)
+    if (cycle) setResearchCycle(cycle)
     const refreshedMatchRunId = navigationResult.data?.current_match_run_id
     if (mode === 'match' && refreshedMatchRunId) {
       const [matchResult, decisionsResult] = await Promise.all([
