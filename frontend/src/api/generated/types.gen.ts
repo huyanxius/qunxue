@@ -2697,16 +2697,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -7082,34 +7072,6 @@ export type UpdateResearchTaskRequest = {
      * Project Title
      */
     project_title?: string | null;
-};
-
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -11537,9 +11499,9 @@ export type GetResearchCycleData = {
 
 export type GetResearchCycleErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetResearchCycleError = GetResearchCycleErrors[keyof GetResearchCycleErrors];
@@ -11567,9 +11529,9 @@ export type ListResearchCycleVersionsData = {
 
 export type ListResearchCycleVersionsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListResearchCycleVersionsError = ListResearchCycleVersionsErrors[keyof ListResearchCycleVersionsErrors];
