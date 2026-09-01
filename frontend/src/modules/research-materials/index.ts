@@ -1,4 +1,5 @@
 export { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
+export { ResearchAnalysisPanel } from './ResearchAnalysisPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
 export { getResearchCycleSnapshot } from './researchCycle'
@@ -28,3 +29,4 @@ export type {
 export type { ResearchAnalysisSnapshot } from './researchAnalysisModel'
 export type { ResearchCycleSnapshot } from './researchCycleModel'
 export type { ResearchMaterialsPanelProps } from './ResearchMaterialsPanel'
+export type { ResearchAnalysisPanelProps } from './ResearchAnalysisPanel'

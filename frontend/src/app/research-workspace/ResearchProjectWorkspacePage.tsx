@@ -21,7 +21,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
 import type { AgentConversation } from '../../modules/research-agent'
 import { ResearchArchivePanel } from '../../modules/research-exchange'
-import { ResearchMaterialsPanel } from '../../modules/research-materials'
+import { ResearchAnalysisPanel, ResearchMaterialsPanel } from '../../modules/research-materials'
 import { MethodPlanWorkspace } from '../../modules/research-method'
 import { useResearchTask, type ResearchTask } from '../../modules/socio-match-workspace'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
@@ -160,12 +160,11 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   }
 
   const updateMaterialLocation = useCallback((next: {
-    mode: 'source' | 'analysis'
     materialId: string | null
     parseId: string | null
     segmentId: string | null
   }) => {
-    const destination = researchWorkspaceDestination(taskId, next.mode === 'analysis' ? 'analysis' : 'materials', next)
+    const destination = researchWorkspaceDestination(taskId, 'materials', next)
     if (`${location.pathname}${location.search}` !== destination) navigate(destination, { replace: true })
   }, [location.pathname, location.search, navigate, taskId])
 
@@ -219,20 +218,20 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       : null,
   }
 
-  const center = tool === 'materials' || tool === 'analysis'
+  const center = tool === 'materials'
     ? (
         <ResearchMaterialsPanel
-          key={`${taskId}:${tool}`}
+          key={`${taskId}:materials`}
           taskId={taskId}
           presentation="workspace"
-          initialDetailMode={tool === 'analysis' ? 'analysis' : 'source'}
           initialMaterialId={position.materialId ?? null}
           initialParseId={position.parseId ?? null}
           initialSegmentId={position.segmentId ?? null}
-          analysisRefreshKey={centerRefreshKey}
           onWorkspaceLocationChange={updateMaterialLocation}
         />
       )
+    : tool === 'analysis'
+      ? <ResearchAnalysisPanel key={`${taskId}:analysis`} taskId={taskId} refreshKey={centerRefreshKey} />
     : tool === 'method'
       ? <MethodPlanWorkspace taskId={taskId} />
       : tool === 'archive'
