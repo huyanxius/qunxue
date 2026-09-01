@@ -33,78 +33,6 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
-  it('opens the current evidence-gap loop from the analysis view', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(requestOf(input, init).url).pathname
-      if (path.endsWith('/research-cycle')) return response({
-        schema_version: 'research-cycle-v1', task_id: 'task-1', version: 2,
-        content_hash: 'sha256:cycle-2', analysis_content_hash: 'sha256:analysis-1',
-        theory_plan_id: null, theory_plan_version: null, evidence: [],
-        gaps: [{
-          gap_id: 'gap-1', source_kind: 'analysis', source_id: 'comparison-1',
-          description: '缺少未迁移家庭作为对照。', suggested_action: '下一轮纳入一个未迁移家庭。',
-          destination: 'sampling', priority: 'high', analysis_content_hash: 'sha256:analysis-1',
-          theory_plan_id: null, theory_plan_version: null, status: 'open',
-        }],
-        project_facts: {
-          material_count: 1, material_kinds: [['interview_transcript', 1]], case_count: 1,
-          case_material_coverage: [['家庭甲', 1]], consent_scopes: [], sensitivity_levels: [],
-          pending_deidentification_count: 0, sampling_batches: [],
-          analysis_counts: [['codes', 0], ['memos', 0], ['comparisons', 1]],
-        },
-        reporting_hints: [], research_map_patch: { nodes: [], relations: [] },
-      })
-      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
-      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
-      return response({ task_id: 'task-1', items: [material] })
-    }))
-
-    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
-    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(await within(dialog).findByRole('button', { name: '分析' }))
-
-    expect(await within(dialog).findByRole('region', { name: '证据缺口与下一轮材料' })).toHaveTextContent('缺少未迁移家庭作为对照。')
-  })
-
-  it('persists a qualitative method choice and refreshes the stable workspace snapshot', async () => {
-    const analysisSnapshot = {
-      task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [],
-      method_presets: [
-        { method: 'thematic_analysis', label: '主题分析', primary_view: 'themes', matrix_axes: ['个案', '主题'], prompts: '发展共享意义模式。', guardrails: '代码不等于主题。' },
-        { method: 'case_study', label: '个案研究', primary_view: 'case_matrix', matrix_axes: ['个案', '分析命题'], prompts: '先做个案内解释。', guardrails: '属性不代替个案解释。' },
-      ],
-      workspace: {
-        schema_version: 'qualitative-workspace-v1', content_hash: 'f'.repeat(64),
-        method_preset: { method: 'thematic_analysis', version: 0, updated_at: '1970-01-01T00:00:00Z' },
-        codebook_entries: [], memo_links: [], case_profiles: [], formal_themes: [], candidate_themes: [], matrix_cells: [],
-      },
-    }
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = requestOf(input, init)
-      const path = new URL(request.url).pathname
-      if (path.endsWith('/analysis/workspace/method') && request.method === 'PUT') {
-        return response({ method: 'case_study', version: 1, updated_at: '2026-08-31T00:00:00Z' })
-      }
-      if (path.endsWith('/analysis')) return response(analysisSnapshot)
-      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
-      return response({ task_id: 'task-1', items: [material] })
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
-    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
-    fireEvent.click(await within(dialog).findByRole('button', { name: '分析' }))
-    const method = await within(dialog).findByRole('combobox', { name: '方法取向' })
-    fireEvent.change(method, { target: { value: 'case_study' } })
-
-    await waitFor(() => expect(fetchMock.mock.calls.some((call) => {
-      const request = requestOf(...call)
-      return request.method === 'PUT' && new URL(request.url).pathname.endsWith('/analysis/workspace/method')
-    })).toBe(true))
-    await waitFor(() => expect(fetchMock.mock.calls.filter((call) => new URL(requestOf(...call).url).pathname.endsWith('/analysis'))).toHaveLength(2))
-  })
-
   it('paginates long source text and exposes document search instead of rendering every segment at once', async () => {
     const segments = Array.from({ length: 42 }, (_, index) => ({
       segment_id: `segment-${index + 1}`,
@@ -123,11 +51,13 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.docx' }))
 
-    const reader = await within(dialog).findByRole('region', { name: '文档阅读器' })
-    expect(within(reader).getByRole('searchbox', { name: '在材料中查找' })).toBeVisible()
-    expect(within(reader).getByRole('navigation', { name: '章节导航' })).toBeVisible()
+    const desk = await within(dialog).findByRole('region', { name: '材料阅读台' })
+    const reader = within(desk).getByRole('region', { name: '文档阅读器' })
+    fireEvent.click(within(desk).getByRole('button', { name: '在材料中查找' }))
+    expect(await within(desk).findByRole('searchbox', { name: '在材料中查找' })).toBeVisible()
+    expect(within(desk).getByRole('navigation', { name: '章节导航' })).toBeVisible()
     expect(within(reader).getByText('第 2 段：研究材料中的连续原文。')).toBeVisible()
     expect(within(reader).queryByText('第 42 段：研究材料中的连续原文。')).not.toBeInTheDocument()
     expect(within(reader).getByRole('button', { name: '下一页' })).toBeVisible()
@@ -145,7 +75,7 @@ describe('ResearchMaterialsPanel', () => {
     expect(within(workspace).getByRole('button', { name: '选择文件' })).toBeVisible()
   })
 
-  it('restores the center mode and exact source location through the workspace adapter', async () => {
+  it('opens the reading desk on the exact source location carried by the workspace route', async () => {
     const onWorkspaceLocationChange = vi.fn()
     const segment = {
       segment_id: 'segment-1', material_id: 'material-1', parse_id: 'parse-1', ordinal: 0,
@@ -153,7 +83,6 @@ describe('ResearchMaterialsPanel', () => {
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(requestOf(input, init).url).pathname
-      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
       if (path.endsWith('/materials/material-1/segments/segment-1')) return response(segment)
       if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [segment] })
       return response({ task_id: 'task-1', items: [material] })
@@ -163,7 +92,6 @@ describe('ResearchMaterialsPanel', () => {
       <ResearchMaterialsPanel
         taskId="task-1"
         presentation="workspace"
-        initialDetailMode="analysis"
         initialMaterialId="material-1"
         initialParseId="parse-1"
         initialSegmentId="segment-1"
@@ -172,57 +100,47 @@ describe('ResearchMaterialsPanel', () => {
     )
 
     const workspace = await screen.findByRole('region', { name: '研究材料' })
-    expect(await within(workspace).findByRole('button', { name: '分析', pressed: true })).toBeVisible()
+    const reader = await within(workspace).findByRole('region', { name: '材料阅读台' })
+    expect(within(reader).getByRole('heading', { name: '社区访谈.docx' })).toBeVisible()
+    expect(within(reader).getByText('受访者描述了工作时间的变化。')).toBeVisible()
     await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
-      mode: 'analysis',
       materialId: 'material-1',
       parseId: 'parse-1',
       segmentId: 'segment-1',
     }))
   })
 
-  it('does not publish a stale center mode while the workspace route changes', async () => {
+  it('does not publish a location before the material named by the route has loaded', async () => {
     const onWorkspaceLocationChange = vi.fn()
+    let releaseDetail: (() => void) | null = null
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(requestOf(input, init).url).pathname
-      if (path.endsWith('/analysis')) {
-        return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
+      if (path.endsWith('/materials/material-1')) {
+        await new Promise<void>((resolve) => { releaseDetail = resolve })
+        return response({ ...material, segments: [] })
       }
-      return response({ task_id: 'task-1', items: [] })
+      return response({ task_id: 'task-1', items: [material] })
     }))
 
-    const view = render(
+    render(
       <ResearchMaterialsPanel
         taskId="task-1"
         presentation="workspace"
-        initialDetailMode="source"
-        onWorkspaceLocationChange={onWorkspaceLocationChange}
-      />,
-    )
-    await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
-      mode: 'source',
-      materialId: null,
-      parseId: null,
-      segmentId: null,
-    }))
-    onWorkspaceLocationChange.mockClear()
-
-    view.rerender(
-      <ResearchMaterialsPanel
-        taskId="task-1"
-        presentation="workspace"
-        initialDetailMode="analysis"
+        initialMaterialId="material-1"
         onWorkspaceLocationChange={onWorkspaceLocationChange}
       />,
     )
 
+    await screen.findByRole('region', { name: '研究材料' })
+    // 路由指名了一份材料，它还没读回来之前不能先报一个 materialId: null 的位置——
+    // 那会把地址栏改回材料库，等详情到了又跳回来，看起来像界面自己在乱跳。
+    expect(onWorkspaceLocationChange).not.toHaveBeenCalledWith(expect.objectContaining({ materialId: null }))
+    releaseDetail?.()
     await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
-      mode: 'analysis',
-      materialId: null,
+      materialId: 'material-1',
       parseId: null,
       segmentId: null,
     }))
-    expect(onWorkspaceLocationChange).not.toHaveBeenCalledWith(expect.objectContaining({ mode: 'source' }))
   })
 
   it('opens media materials in the transcript timeline instead of the document reader', async () => {
@@ -262,13 +180,13 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} onWorkspaceLocationChange={onWorkspaceLocationChange} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.wav' }))
 
     expect(await within(dialog).findByRole('region', { name: '媒体转录时间轴' })).toBeVisible()
-    expect(within(dialog).getByRole('button', { name: '媒体与转录' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(dialog).queryByRole('region', { name: '文档阅读器' })).not.toBeInTheDocument()
     fireEvent.click(await within(dialog).findByRole('button', { name: /00:01\.250.*主持人/ }))
     await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
-      mode: 'source', materialId: 'media-1', parseId: 'parse-media-1', segmentId: 'media-segment-1',
+      materialId: 'media-1', parseId: 'parse-media-1', segmentId: 'media-segment-1',
     }))
   })
 
@@ -283,7 +201,7 @@ describe('ResearchMaterialsPanel', () => {
 
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
     expect(within(dialog).getByText('社区访谈.docx')).toBeVisible()
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.docx' }))
     expect(await within(dialog).findByText('受访者描述了工作时间的变化。')).toBeVisible()
     expect(within(dialog).getByText('第 4 页 · 第 12 段')).toBeVisible()
   })
@@ -305,7 +223,7 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.docx' }))
     const source = await within(dialog).findByText('甲😀乙丙')
     const text = source.firstChild as Text
     const range = document.createRange()
@@ -340,7 +258,7 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.docx' }))
     const first = await within(dialog).findByText('第一个原文片段')
     const second = within(dialog).getByText('第二个原文片段')
     const firstRange = document.createRange()
@@ -386,7 +304,7 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：社区访谈.docx' }))
     const source = await within(dialog).findByText('甲😀乙丙')
     const range = document.createRange()
     range.setStart(source.firstChild as Text, 1)
@@ -417,96 +335,7 @@ describe('ResearchMaterialsPanel', () => {
     expect(await within(dialog).findByText('片段标记已保存。')).toBeVisible()
   })
 
-  it('persists a user-confirmed case comparison through the analysis boundary', async () => {
-    const annotations = [
-      {
-        annotation_id: 'annotation-a', task_id: 'task-1', material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-a',
-        segment_content_hash: 'a'.repeat(64), quote: '姐姐承担了大部分照护', quote_hash: 'b'.repeat(64), quote_start: 0, quote_end: 11,
-        locator: { page: 4, section_path: [], paragraph: 12, line_start: null, line_end: null, char_start: null, char_end: null, block_index: null },
-        annotation_kind: 'descriptive', case_label: '家庭 A', observed_at: '迁移后', note: '责任集中', reflection: null, created_at: '2026-08-30T00:00:00Z',
-      },
-      {
-        annotation_id: 'annotation-b', task_id: 'task-1', material_id: 'material-2', parse_id: 'parse-2', segment_id: 'segment-b',
-        segment_content_hash: 'c'.repeat(64), quote: '弟弟与父亲仍在分担照护', quote_hash: 'd'.repeat(64), quote_start: 0, quote_end: 12,
-        locator: { page: 7, section_path: [], paragraph: 8, line_start: null, line_end: null, char_start: null, char_end: null, block_index: null },
-        annotation_kind: 'descriptive', case_label: '家庭 B', observed_at: '迁移后', note: '多人分担', reflection: null, created_at: '2026-08-30T00:00:00Z',
-      },
-    ]
-    const created = {
-      comparison_id: 'comparison-user', task_id: 'task-1', title: '照护责任比较', question: '迁移是否必然导致责任集中？',
-      case_labels: ['案例：家庭 A', '案例：家庭 B'], time_labels: [],
-      findings: [{ kind: 'support', statement: '家庭 A 的责任集中。', annotation_ids: ['annotation-a'] }],
-      competing_explanations: [], evidence_gaps: [], next_steps: [], theory_implication: '需要加入家庭资源条件。',
-      source: 'user', status: 'confirmed', version: 2, created_at: '2026-08-30T00:00:00Z', decided_at: '2026-08-30T00:00:01Z', decision_reason: '用户创建并确认',
-    }
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = requestOf(input, init)
-      const path = new URL(request.url).pathname
-      if (path.endsWith('/analysis/comparisons') && request.method === 'POST') return response(created, 201)
-      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations, codes: [], memos: [], comparisons: [] })
-      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
-      return response({ task_id: 'task-1', items: [material] })
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
-    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
-    fireEvent.click(within(dialog).getByRole('button', { name: '分析' }))
-    fireEvent.click(await within(dialog).findByRole('button', { name: '建立案例比较' }))
-    const form = within(dialog).getByRole('form', { name: '建立案例比较' })
-    fireEvent.click(within(form).getByRole('checkbox', { name: '案例：家庭 A' }))
-    fireEvent.click(within(form).getByRole('checkbox', { name: '案例：家庭 B' }))
-    fireEvent.click(within(form).getByRole('checkbox', { name: /姐姐承担了大部分照护/ }))
-    fireEvent.change(within(form).getByRole('textbox', { name: '比较标题' }), { target: { value: created.title } })
-    fireEvent.change(within(form).getByRole('textbox', { name: '比较问题' }), { target: { value: created.question } })
-    fireEvent.change(within(form).getByRole('textbox', { name: '支持证据' }), { target: { value: created.findings[0].statement } })
-    fireEvent.change(within(form).getByRole('textbox', { name: '理论含义' }), { target: { value: created.theory_implication } })
-    fireEvent.click(within(form).getByRole('button', { name: '保存案例比较' }))
-
-    await waitFor(() => expect(fetchMock.mock.calls.some(([input, init]) => {
-      const request = requestOf(input, init)
-      return request.method === 'POST' && new URL(request.url).pathname.endsWith('/analysis/comparisons')
-    })).toBe(true))
-    expect(await within(dialog).findByRole('article', { name: '已确认案例比较：照护责任比较' })).toBeVisible()
-  })
-
-  it('sends a reason and visible version when confirming an Agent comparison', async () => {
-    const candidate = {
-      comparison_id: 'comparison-agent', task_id: 'task-1', title: '两个家庭的责任重组', question: '家庭资源是否改变迁移影响？',
-      case_labels: ['案例：家庭 A', '案例：家庭 B'], time_labels: [],
-      findings: [{ kind: 'support', statement: '两个家庭呈现不同变化。', annotation_ids: [] }],
-      competing_explanations: ['经济资源差异'], evidence_gaps: ['缺少家庭成员追访'],
-      next_steps: [{ kind: 'interview', action: '追访家庭成员', priority: 'high' }], theory_implication: '需加入资源边界。',
-      source: 'agent', status: 'candidate', version: 4, created_at: '2026-08-30T00:00:00Z', decided_at: null, decision_reason: null,
-    }
-    const confirmed = { ...candidate, status: 'confirmed', version: 5, decided_at: '2026-08-30T00:00:01Z', decision_reason: '已核对原文' }
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = requestOf(input, init)
-      const path = new URL(request.url).pathname
-      if (path.endsWith('/analysis/comparisons/comparison-agent/decision') && request.method === 'POST') return response(confirmed)
-      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [candidate] })
-      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [] })
-      return response({ task_id: 'task-1', items: [material] })
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
-    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: /社区访谈\.docx/ }))
-    fireEvent.click(within(dialog).getByRole('button', { name: '分析' }))
-    const comparison = await within(dialog).findByRole('article', { name: '案例比较候选：两个家庭的责任重组' })
-    fireEvent.change(within(comparison).getByRole('textbox', { name: '案例比较判断依据' }), { target: { value: '已核对原文' } })
-    fireEvent.click(within(comparison).getByRole('button', { name: '确认案例比较' }))
-
-    await waitFor(async () => {
-      const call = fetchMock.mock.calls.find(([input, init]) => new URL(requestOf(input, init).url).pathname.endsWith('/comparison-agent/decision'))
-      expect(call).toBeDefined()
-      expect(await requestOf(...call!).json()).toEqual({ decision: 'confirmed', reason: '已核对原文', expected_version: 4 })
-    })
-  })
-
-  it('loads source segments after upload when the upload response only contains a segment count', async () => {
+  it('stays in the library after upload and carries the fetched source segments into the new row', async () => {
     const uploaded = {
       ...material,
       material_id: 'uploaded-material',
@@ -540,11 +369,15 @@ describe('ResearchMaterialsPanel', () => {
       target: { files: [new File(['观察记录'], '观察记录.txt', { type: 'text/plain' })] },
     })
 
-    expect(await within(dialog).findByText('志愿者先听取居民的叙述，再调整服务安排。')).toBeVisible()
-    expect(fetchMock.mock.calls.some(([input, init]) => {
+    // 上传是材料库这一层的动作，加完仍然停在库里；补详情是为了这一行立刻说得清自己有多少
+    // 可引用位置，而不是把人推进一份可能还在解析的文档。
+    expect(await within(dialog).findByRole('button', { name: '查看材料：观察记录.txt' })).toBeVisible()
+    await waitFor(() => expect(fetchMock.mock.calls.some(([input, init]) => {
       const request = requestOf(input, init)
       return request.method === 'GET' && new URL(request.url).pathname.endsWith('/materials/uploaded-material')
-    })).toBe(true)
+    })).toBe(true))
+    fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：观察记录.txt' }))
+    expect(await within(dialog).findByText('志愿者先听取居民的叙述，再调整服务安排。')).toBeVisible()
   })
 
   it('keeps an uploaded material when the initial list response arrives late', async () => {
@@ -601,6 +434,7 @@ describe('ResearchMaterialsPanel', () => {
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
     await within(dialog).findByText('第一份访谈.txt')
     fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：第一份访谈.txt' }))
+    fireEvent.click(await within(dialog).findByRole('button', { name: '材料库' }))
     fireEvent.click(within(dialog).getByRole('button', { name: '查看材料：第二份访谈.txt' }))
 
     expect(await within(dialog).findByText('第二份材料的原文。')).toBeVisible()
@@ -646,7 +480,7 @@ describe('ResearchMaterialsPanel', () => {
 
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
     expect(await within(dialog).findByText('此片段没有可显示的正文。')).toBeVisible()
-    fireEvent.click(within(dialog).getByRole('button', { name: /此片段没有可显示的正文/ }))
+    fireEvent.click(within(dialog).getByText('此片段没有可显示的正文。'))
     expect(await within(dialog).findByText('旧版本原文。')).toBeVisible()
 
     const requests = fetchMock.mock.calls.map(([input, init]) => requestOf(input, init))
@@ -708,10 +542,10 @@ describe('ResearchMaterialsPanel', () => {
 
       const dialog = await screen.findByRole('dialog', { name: '研究材料' })
       const targetText = await within(dialog).findByText('需要自动滚动到这里的目标片段。')
-      const targetButton = targetText.closest('button')
-      expect(targetButton).not.toBeNull()
-      await waitFor(() => expect(scrolledElements).toContain(targetButton))
-      expect(targetButton).toHaveAttribute('aria-current', 'location')
+      const targetSegment = targetText.closest('.qx-segment')
+      expect(targetSegment).not.toBeNull()
+      await waitFor(() => expect(scrolledElements).toContain(targetSegment))
+      expect(targetSegment).toHaveAttribute('aria-current', 'location')
     } finally {
       if (originalScrollIntoView) Object.defineProperty(Element.prototype, 'scrollIntoView', originalScrollIntoView)
       else Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
@@ -744,9 +578,9 @@ describe('ResearchMaterialsPanel', () => {
     vi.stubGlobal('confirm', vi.fn(() => true))
     render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} />)
     const dialog = await screen.findByRole('dialog', { name: '研究材料' })
-    fireEvent.click(within(dialog).getByRole('button', { name: '重新解析' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^重新解析：/ }))
     await waitFor(() => expect(fetchMock.mock.calls.some(([input, init]) => new URL(requestOf(input, init).url).pathname.endsWith('/reparse'))).toBe(true))
-    fireEvent.click(within(dialog).getByRole('button', { name: '删除材料' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^删除材料：/ }))
     await waitFor(() => expect(fetchMock.mock.calls.some(([input, init]) => requestOf(input, init).method === 'DELETE')).toBe(true))
   })
 })
