@@ -79,6 +79,11 @@ class Settings(BaseSettings):
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
     model_sft_resource_header: str = "X-LoRA-ID"
     model_sft_resource_id: SecretStr | None = None
+    transcription_base_url: str | None = None
+    transcription_api_key: SecretStr | None = None
+    transcription_model: str | None = None
+    transcription_processing_location: Literal["local", "external"] = "external"
+    transcription_timeout_seconds: float = Field(default=180, gt=0)
     embedding_base_url: str | None = None
     embedding_api_key: SecretStr | None = None
     embedding_model: str | None = None
@@ -110,6 +115,17 @@ class Settings(BaseSettings):
     def has_resend_api_key(self) -> bool:
         return self.resend_api_key is not None and bool(
             self.resend_api_key.get_secret_value().strip()
+        )
+
+    @property
+    def has_transcription_provider(self) -> bool:
+        return bool(
+            self.transcription_base_url
+            and self.transcription_base_url.strip()
+            and self.transcription_api_key
+            and self.transcription_api_key.get_secret_value().strip()
+            and self.transcription_model
+            and self.transcription_model.strip()
         )
 
     def require_retrieval_config(self) -> RetrievalConfig:

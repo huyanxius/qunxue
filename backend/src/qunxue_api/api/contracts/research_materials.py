@@ -41,6 +41,9 @@ class ResearchMaterialLocatorResponse(BaseModel):
     char_start: int | None
     char_end: int | None
     block_index: int | None
+    time_start_ms: int | None
+    time_end_ms: int | None
+    speaker: str | None
 
     @classmethod
     def from_domain(cls, locator: MaterialLocator) -> "ResearchMaterialLocatorResponse":
@@ -107,9 +110,13 @@ class ResearchMaterialResponse(BaseModel):
             material_kind=material.material_kind,
             size_bytes=material.size_bytes,
             status=(
-                "processing"
-                if material.status.value in {"uploaded", "parsing"}
-                else material.status.value
+                "uploaded"
+                if material.status.value == "uploaded" and material.material_format.is_media
+                else (
+                    "processing"
+                    if material.status.value in {"uploaded", "parsing"}
+                    else material.status.value
+                )
             ),
             version=material.current_parse_version or 1,
             parse_id=parse_id,

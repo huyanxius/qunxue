@@ -75,6 +75,11 @@ class MaterialFormat(StrEnum):
     DOCX = "docx"
     TXT = "txt"
     MARKDOWN = "markdown"
+    MP3 = "mp3"
+    M4A = "m4a"
+    WAV = "wav"
+    MP4 = "mp4"
+    WEBM = "webm"
 
     @property
     def canonical_media_type(self) -> str:
@@ -87,7 +92,22 @@ class MaterialFormat(StrEnum):
             ),
             MaterialFormat.TXT: "text/plain",
             MaterialFormat.MARKDOWN: "text/markdown",
+            MaterialFormat.MP3: "audio/mpeg",
+            MaterialFormat.M4A: "audio/mp4",
+            MaterialFormat.WAV: "audio/wav",
+            MaterialFormat.MP4: "video/mp4",
+            MaterialFormat.WEBM: "video/webm",
         }[self]
+
+    @property
+    def is_media(self) -> bool:
+        return self in {
+            MaterialFormat.MP3,
+            MaterialFormat.M4A,
+            MaterialFormat.WAV,
+            MaterialFormat.MP4,
+            MaterialFormat.WEBM,
+        }
 
     @classmethod
     def from_media_type(cls, media_type: str | None) -> MaterialFormat:
@@ -99,6 +119,14 @@ class MaterialFormat(StrEnum):
             "text/markdown": cls.MARKDOWN,
             "text/x-markdown": cls.MARKDOWN,
             "application/markdown": cls.MARKDOWN,
+            "audio/mpeg": cls.MP3,
+            "audio/mp3": cls.MP3,
+            "audio/mp4": cls.M4A,
+            "audio/x-m4a": cls.M4A,
+            "audio/wav": cls.WAV,
+            "audio/x-wav": cls.WAV,
+            "video/mp4": cls.MP4,
+            "video/webm": cls.WEBM,
         }
         try:
             return mapping[normalized]
@@ -114,6 +142,11 @@ class MaterialFormat(StrEnum):
             "txt": cls.TXT,
             "md": cls.MARKDOWN,
             "markdown": cls.MARKDOWN,
+            "mp3": cls.MP3,
+            "m4a": cls.M4A,
+            "wav": cls.WAV,
+            "mp4": cls.MP4,
+            "webm": cls.WEBM,
         }
         try:
             return mapping[suffix]
@@ -168,6 +201,9 @@ class MaterialLocator:
     char_start: int | None = None
     char_end: int | None = None
     block_index: int | None = None
+    time_start_ms: int | None = None
+    time_end_ms: int | None = None
+    speaker: str | None = None
 
     def __post_init__(self) -> None:
         for name in (
@@ -178,6 +214,8 @@ class MaterialLocator:
             "char_start",
             "char_end",
             "block_index",
+            "time_start_ms",
+            "time_end_ms",
         ):
             value = getattr(self, name)
             if value is not None and value < 0:
@@ -196,6 +234,14 @@ class MaterialLocator:
             and self.char_end < self.char_start
         ):
             raise ValueError("char_end must not precede char_start")
+        if (
+            self.time_start_ms is not None
+            and self.time_end_ms is not None
+            and self.time_end_ms <= self.time_start_ms
+        ):
+            raise ValueError("time_end_ms must follow time_start_ms")
+        if self.speaker is not None and not self.speaker.strip():
+            raise ValueError("speaker must not be blank")
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -207,6 +253,9 @@ class MaterialLocator:
             "char_start": self.char_start,
             "char_end": self.char_end,
             "block_index": self.block_index,
+            "time_start_ms": self.time_start_ms,
+            "time_end_ms": self.time_end_ms,
+            "speaker": self.speaker,
         }
 
     @classmethod
@@ -221,6 +270,9 @@ class MaterialLocator:
             char_start=_optional_int(value.get("char_start")),
             char_end=_optional_int(value.get("char_end")),
             block_index=_optional_int(value.get("block_index")),
+            time_start_ms=_optional_int(value.get("time_start_ms")),
+            time_end_ms=_optional_int(value.get("time_end_ms")),
+            speaker=(str(value["speaker"]) if value.get("speaker") is not None else None),
         )
 
     def stable_key(self) -> str:
@@ -240,6 +292,11 @@ class MaterialLocator:
         if self.char_start is not None:
             end = self.char_end if self.char_end is not None else self.char_start
             pieces.append(f"字符{self.char_start}-{end}")
+        if self.time_start_ms is not None:
+            end = self.time_end_ms if self.time_end_ms is not None else self.time_start_ms
+            pieces.append(f"{_display_timecode(self.time_start_ms)}-{_display_timecode(end)}")
+        if self.speaker is not None:
+            pieces.append(self.speaker)
         return "，".join(pieces) or "原文位置未提供"
 
 
@@ -247,6 +304,15 @@ def _optional_int(value: object) -> int | None:
     if value is None:
         return None
     return int(value)
+
+
+def _display_timecode(milliseconds: int) -> str:
+    minutes, remainder = divmod(milliseconds, 60_000)
+    seconds, millis = divmod(remainder, 1_000)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
+    return f"{minutes:02d}:{seconds:02d}.{millis:03d}"
 
 
 @dataclass(frozen=True, slots=True)
