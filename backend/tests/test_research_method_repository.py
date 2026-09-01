@@ -89,6 +89,23 @@ def test_method_plan_mutations_replay_and_reject_idempotency_conflicts() -> None
         candidates=(),
         evidence_bundle=SimpleNamespace(evidence_items=()),
     )
+    cycle = SimpleNamespace(
+        content_hash="sha256:cycle-method-create",
+        project_facts=SimpleNamespace(
+            material_count=2,
+            material_kinds=(("interview_transcript", 2),),
+            case_count=1,
+            case_material_coverage=(("家庭甲", 2),),
+            consent_scopes=(("project_only", 2),),
+            sensitivity_levels=(("sensitive", 2),),
+            pending_deidentification_count=0,
+            sampling_batches=("首轮访谈",),
+            analysis_counts=(("codes", 1), ("memos", 1), ("comparisons", 0)),
+        ),
+        evidence=(),
+        gaps=(),
+        reporting_hints=(),
+    )
 
     class TaskRepository:
         def __init__(self, value: ResearchTask) -> None:
@@ -115,6 +132,11 @@ def test_method_plan_mutations_replay_and_reject_idempotency_conflicts() -> None
             mutations=SqliteResearchDocumentMutationRepository(session),
             get_framework=lambda _id: framework,
             get_theory_plan=lambda _id: theory,
+            get_cycle_snapshot=lambda requested_user, requested_task: (
+                cycle
+                if (requested_user, requested_task) == (user_id, task_id)
+                else None
+            ),
         )
         first = application.create(
             user_id=user_id,
@@ -137,6 +159,11 @@ def test_method_plan_mutations_replay_and_reject_idempotency_conflicts() -> None
         assert first.version == replay.version == 1
         assert task_repository.value.current_method_plan_id == first.plan_id
         assert task_repository.value.current_method_plan_status == "draft"
+        context = {item.key: item for item in first.shared_context}
+        assert context["project_materials"].content == (
+            "材料总数：2\ninterview_transcript：2"
+        )
+        assert context["research_cycle_basis"].content == cycle.content_hash
         with pytest.raises(ValueError, match="Idempotency-Key"):
             application.create(
                 user_id=user_id,

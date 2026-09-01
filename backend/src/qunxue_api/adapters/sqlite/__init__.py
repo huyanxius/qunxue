@@ -93,6 +93,8 @@ from qunxue_api.adapters.sqlite.research_method_model import (
     ResearchMethodPlanVersionRow,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
+from qunxue_api.adapters.sqlite.research_cycle_model import ResearchCycleSnapshotRow
+from qunxue_api.adapters.sqlite.research_cycle_repository import SqliteResearchCycleRepository
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
 )

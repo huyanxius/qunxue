@@ -23,6 +23,7 @@ from qunxue_api.modules.knowledge_catalog import (
     SourceVerificationStatus,
 )
 from qunxue_api.modules.research_analysis import ConfirmedComparisonProjection
+from qunxue_api.modules.research_cycle import CycleEvidence
 from qunxue_api.modules.research_intake import (
     ConfirmedPhenomenonSnapshot,
     PhenomenonEvidenceVerificationStatus,
@@ -116,9 +117,7 @@ class CatalogTheoryLexicalRetriever:
             ],
             key=lambda item: (-item[0], item[1].chunk_id),
         )
-        selected = [
-            (score, chunk) for score, chunk in ranked if score > 0
-        ][: max(1, limit)]
+        selected = [(score, chunk) for score, chunk in ranked if score > 0][: max(1, limit)]
         # A short or unfamiliar phenomenon should still expose the audited
         # candidate set to the real judge instead of fabricating a no-match.
         if not selected:
@@ -159,14 +158,10 @@ class CatalogTheoryLexicalRetriever:
                 sorted(
                     (
                         *build_knowledge_entry_chunks(
-                            self._catalog.list_rag_entries(
-                                release_id=knowledge_release_id
-                            )
+                            self._catalog.list_rag_entries(release_id=knowledge_release_id)
                         ),
                         *build_theory_profile_chunks(
-                            self._catalog.list_match_profiles(
-                                release_id=knowledge_release_id
-                            )
+                            self._catalog.list_match_profiles(release_id=knowledge_release_id)
                         ),
                     ),
                     key=lambda item: item.chunk_id,
@@ -186,10 +181,12 @@ class CatalogTheoryEvidenceSource:
         get_confirmed_comparison_projection: (
             Callable[..., ConfirmedComparisonProjection] | None
         ) = None,
+        get_confirmed_analysis_evidence: (Callable[..., tuple[CycleEvidence, ...]] | None) = None,
     ) -> None:
         self._catalog = catalog
         self._retriever = retriever
         self._get_confirmed_comparison_projection = get_confirmed_comparison_projection
+        self._get_confirmed_analysis_evidence = get_confirmed_analysis_evidence
 
     def retrieve(
         self,
@@ -201,9 +198,7 @@ class CatalogTheoryEvidenceSource:
         if release.level is not KnowledgeReleaseLevel.FINAL:
             raise ValueError("theory recall requires a final MATCH knowledge release")
 
-        profiles = self._catalog.list_match_profiles(
-            release_id=release.knowledge_release_id
-        )
+        profiles = self._catalog.list_match_profiles(release_id=release.knowledge_release_id)
         query = _phenomenon_retrieval_query(phenomenon)
         selected_profiles, retrieval = self._select_profiles(
             profiles=profiles,
@@ -255,8 +250,7 @@ class CatalogTheoryEvidenceSource:
             used_evidence_ids.add(item.evidence_ref_id)
             verification_status = (
                 SourceVerificationStatus.VERIFIED
-                if item.verification_status
-                is PhenomenonEvidenceVerificationStatus.VERIFIED
+                if item.verification_status is PhenomenonEvidenceVerificationStatus.VERIFIED
                 else SourceVerificationStatus.PENDING
             )
             evidence_items.append(
@@ -282,7 +276,19 @@ class CatalogTheoryEvidenceSource:
                 )
             )
 
-        if self._get_confirmed_comparison_projection is not None:
+        if self._get_confirmed_analysis_evidence is not None:
+            if user_id is None:
+                raise ValueError("personal analysis evidence requires an authenticated owner")
+            analysis_evidence = self._get_confirmed_analysis_evidence(
+                user_id=user_id,
+                task_id=phenomenon.task_id,
+            )
+            self._append_analysis_evidence(
+                evidence_items=evidence_items,
+                used_evidence_ids=used_evidence_ids,
+                analysis_evidence=analysis_evidence,
+            )
+        elif self._get_confirmed_comparison_projection is not None:
             if user_id is None:
                 raise ValueError("personal comparison evidence requires an authenticated owner")
             projection = self._get_confirmed_comparison_projection(
@@ -311,9 +317,7 @@ class CatalogTheoryEvidenceSource:
                     source_id=source_id,
                     source_type="personal_research_material",
                     title=(
-                        f"{item.case_label} · 个人研究材料"
-                        if item.case_label
-                        else "个人研究材料"
+                        f"{item.case_label} · 个人研究材料" if item.case_label else "个人研究材料"
                     ),
                     authors_or_institution=(),
                     year=None,
@@ -358,6 +362,57 @@ class CatalogTheoryEvidenceSource:
             evidence_items=tuple(evidence_items),
             retrieval=retrieval,
         )
+
+    @staticmethod
+    def _append_analysis_evidence(
+        *,
+        evidence_items: list[EvidenceItemSnapshot],
+        used_evidence_ids: set[str],
+        analysis_evidence: tuple[CycleEvidence, ...],
+    ) -> None:
+        boundaries = {
+            "analytic_code": "用户已确认的分析代码，仅作为理论判断的正式分析依据。",
+            "analytic_memo": "用户已确认的分析备忘，仅作为理论判断的正式分析依据。",
+            "support": "用户已确认的支持证据，仅支持其来源判断。",
+            "counterexample": "用户已确认的反例，仅用于限制或修订理论解释。",
+            "contradiction": "用户已确认的矛盾材料，仅用于检验理论边界。",
+            "competing_explanation": "用户已确认的竞争解释，不代表最终理论结论。",
+        }
+        for item in analysis_evidence:
+            if item.evidence_ref_id in used_evidence_ids:
+                raise ValueError(
+                    f"analysis evidence id conflicts with existing evidence: {item.evidence_ref_id}"
+                )
+            used_evidence_ids.add(item.evidence_ref_id)
+            kind = item.kind.value
+            boundary = boundaries[kind]
+            source_id = f"research-material:{item.material_id}:{item.parse_id}:{item.segment_id}"
+            evidence_items.append(
+                EvidenceItemSnapshot(
+                    evidence_ref_id=item.evidence_ref_id,
+                    claim=item.statement,
+                    excerpt=item.quote,
+                    locator=item.locator,
+                    source=SourceRecordSnapshot(
+                        source_id=source_id,
+                        source_type="personal_research_material",
+                        title=(
+                            f"{item.case_label} · 个人研究材料"
+                            if item.case_label
+                            else "个人研究材料"
+                        ),
+                        authors_or_institution=(),
+                        year=None,
+                        publication=None,
+                        locator=item.locator,
+                        url=None,
+                        verification_status=SourceVerificationStatus.VERIFIED,
+                        use_boundary=boundary,
+                    ),
+                    verification_status=SourceVerificationStatus.VERIFIED,
+                    use_boundary=boundary,
+                )
+            )
 
     def _select_profiles(
         self,

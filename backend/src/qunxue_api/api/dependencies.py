@@ -11,6 +11,7 @@ from qunxue_api.application import (
     ResearchDocumentProposalApplication,
     ResearchMaterialApplication,
     ResearchMethodPlanApplication,
+    ResearchCycleApplication,
     TheoryMatchingApplication,
 )
 from qunxue_api.modules.identity import AuthenticatedSession, IdentityService
@@ -154,6 +155,19 @@ def get_research_method_plan_application(
 ResearchMethodPlanApplicationDependency = Annotated[
     ResearchMethodPlanApplication,
     Depends(get_research_method_plan_application),
+]
+
+
+def get_research_cycle_application(
+    request: Request,
+) -> Iterator[ResearchCycleApplication]:
+    with request.app.state.research_cycle_application_scope() as application:
+        yield application
+
+
+ResearchCycleApplicationDependency = Annotated[
+    ResearchCycleApplication,
+    Depends(get_research_cycle_application),
 ]
 
 

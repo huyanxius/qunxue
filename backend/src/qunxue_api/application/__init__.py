@@ -17,6 +17,7 @@ from qunxue_api.application.research_journey import (
 )
 from qunxue_api.application.research_materials import ResearchMaterialApplication
 from qunxue_api.application.research_method import ResearchMethodPlanApplication
+from qunxue_api.application.research_cycle import ResearchCycleApplication
 from qunxue_api.application.research_start import (
     ResearchStartApplication,
     ResearchStartConfirmationResult,
@@ -39,6 +40,7 @@ __all__ = [
     "ResearchMaterialApplication",
     "ProfessionalMaterialsApplication",
     "ResearchMethodPlanApplication",
+    "ResearchCycleApplication",
     "ResearchStartApplication",
     "ResearchStartConfirmationResult",
     "ResearchStartJourneyState",
