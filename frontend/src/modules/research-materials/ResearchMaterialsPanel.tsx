@@ -1,56 +1,12 @@
-import {
-  ArrowClockwiseIcon,
-  CheckCircleIcon,
-  CircleNotchIcon,
-  FilePlusIcon,
-  FileTextIcon,
-  MagnifyingGlassIcon,
-  TrashIcon,
-  WarningCircleIcon,
-  XIcon,
-} from '@phosphor-icons/react'
-import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { CheckCircleIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 
-import type {
-  ConfigureCodebookEntryInput,
-  CreateAnalysisCodeInput,
-  CreateAnalysisMemoLinkInput,
-  CreateAnalysisMemoInput,
-  CreateAnalysisThemeInput,
-  CreateCaseComparisonInput,
-  ResearchAnalysisSnapshot,
-  SaveAnalysisCaseProfileInput,
-  SaveCaseThemeMatrixCellInput,
-  SetQualitativeMethodInput,
-  TransitionCodebookEntryInput,
-} from './researchAnalysisModel'
-import {
-  attachAnalysisMemo,
-  configureCodebookEntry,
-  confirmAnalysisTheme,
-  createAnalysisAnnotation,
-  createAnalysisCode,
-  createAnalysisMemo,
-  createAnalysisTheme,
-  createCaseComparison,
-  decideAnalysisCode,
-  decideAnalysisMemo,
-  decideCaseComparison,
-  getAnalysisSnapshot,
-  saveAnalysisCaseProfile,
-  saveCaseThemeMatrixCell,
-  setQualitativeMethod,
-  transitionCodebookEntry,
-} from './researchAnalysisApi'
-import {
-  ResearchAnalysisWorkspace,
-} from './ResearchAnalysisWorkspace'
+import { MaterialAnnotationDrawer, type AnnotationKind } from './MaterialAnnotationDrawer'
+import { MaterialLibraryView } from './MaterialLibraryView'
+import { MaterialReaderView, type ReaderHeading } from './MaterialReaderView'
 import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
-import { ResearchCyclePanel } from './ResearchCyclePanel'
-import { getResearchCycleSnapshot } from './researchAnalysisApi'
-import type { ResearchCycleSnapshot } from './researchCycleModel'
 import { ProfessionalMaterialArchivePanel } from './ProfessionalMaterialArchive'
-import type { ResearchAnalysisDecision } from './ResearchAnalysisCandidateCard'
+import { createAnalysisAnnotation } from './researchAnalysisApi'
 import {
   deleteResearchMaterial,
   getResearchMaterial,
@@ -61,13 +17,8 @@ import {
 } from './researchMaterialsApi'
 import {
   formatMaterialLocator,
-  formatMaterialSize,
   isMediaResearchMaterial,
   isSupportedResearchMaterialFile,
-  materialKindLabel,
-  materialMediaLabel,
-  materialStatusLabel,
-  RESEARCH_MATERIAL_ACCEPT,
   type ResearchMaterial,
   type ResearchMaterialKind,
   type ResearchMaterialSegment,
@@ -77,14 +28,6 @@ import {
   type ResearchMaterialSelectionDraft,
 } from './researchMaterialSelection'
 import './research-materials.css'
-
-const MATERIAL_KINDS: readonly ResearchMaterialKind[] = [
-  'paper',
-  'interview_transcript',
-  'observation_record',
-  'field_note',
-  'other',
-]
 
 const READER_PAGE_SIZE = 24
 
@@ -96,57 +39,31 @@ type ResearchMaterialsPanelProps = {
   readonly initialMaterialId?: string | null
   readonly initialSegmentId?: string | null
   readonly initialParseId?: string | null
-  readonly initialDetailMode?: 'source' | 'analysis'
-  readonly analysisRefreshKey?: number
   readonly onWorkspaceLocationChange?: (location: {
-    readonly mode: 'source' | 'analysis'
     readonly materialId: string | null
     readonly parseId: string | null
     readonly segmentId: string | null
   }) => void
 }
 
-function materialStatusIcon(status: ResearchMaterial['status']) {
-  if (status === 'processing') return <CircleNotchIcon className="research-materials__status-icon is-processing" size={15} aria-hidden="true" />
-  if (status === 'failed') return <WarningCircleIcon className="research-materials__status-icon is-failed" size={15} aria-hidden="true" />
-  if (status === 'ready') return <CheckCircleIcon className="research-materials__status-icon is-ready" size={15} aria-hidden="true" />
-  return <FileTextIcon className="research-materials__status-icon" size={15} aria-hidden="true" />
-}
-
-function formatUpdatedAt(value: string) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric' }).format(date)
-}
-
-function SegmentCard({
-  segment,
-  selected,
-  onTextSelection,
-}: {
-  segment: ResearchMaterialSegment
-  selected: boolean
-  onTextSelection: (segment: ResearchMaterialSegment, container: HTMLParagraphElement, range: Range) => void
-}) {
-  function handleMouseUp(event: MouseEvent<HTMLParagraphElement>) {
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount !== 1 || selection.isCollapsed) return
-    onTextSelection(segment, event.currentTarget, selection.getRangeAt(0))
-  }
-
-  return (
-    <article className={`research-materials__segment${selected ? ' is-selected' : ''}${segment.kind === 'heading' ? ' is-heading' : ''}`} data-segment-id={segment.segmentId}>
-      <div className="research-materials__segment-meta">
-        <span>{formatMaterialLocator(segment.locator)}</span>
-        <small>{segment.kind === 'heading' ? '标题' : '正文'}</small>
-      </div>
-      <p onMouseUp={handleMouseUp}>{segment.text || '此片段没有可显示的正文。'}</p>
-    </article>
-  )
-}
-
-export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog', onMaterialDeleted, initialMaterialId = null, initialSegmentId = null, initialParseId = null, initialDetailMode = 'source', analysisRefreshKey = 0, onWorkspaceLocationChange }: ResearchMaterialsPanelProps) {
+/**
+ * 材料工具的容器：只管两件事——材料库和阅读台之间的切换，以及数据的读写。
+ *
+ * 页面身份由 `selectedMaterial` 一个值决定：没选是库，选了是阅读台。以前这里靠
+ * `presentation` × `detailMode` 两组开关交叉出六种形态，同一份界面在弹窗里和工作区里长得
+ * 不一样，工作区那一版还得把半数控件藏掉——那是层级混乱的根，不是样式问题。现在两种呈现
+ * 走同一套结构，弹窗只是多包一层模态外壳。
+ */
+export function ResearchMaterialsPanel({
+  taskId,
+  onClose,
+  presentation = 'dialog',
+  onMaterialDeleted,
+  initialMaterialId = null,
+  initialSegmentId = null,
+  initialParseId = null,
+  onWorkspaceLocationChange,
+}: ResearchMaterialsPanelProps) {
   const [materials, setMaterials] = useState<ResearchMaterial[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<ResearchMaterial | null>(null)
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(initialSegmentId)
@@ -159,24 +76,20 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [uploadNotice, setUploadNotice] = useState<string | null>(null)
   const [selectionDraft, setSelectionDraft] = useState<ResearchMaterialSelectionDraft | null>(null)
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null)
-  const [annotationKind, setAnnotationKind] = useState<'descriptive' | 'researcher_reflection'>('descriptive')
+  const [annotationKind, setAnnotationKind] = useState<AnnotationKind>('descriptive')
   const [annotationNote, setAnnotationNote] = useState('')
   const [annotationReflection, setAnnotationReflection] = useState('')
   const [annotationCaseLabel, setAnnotationCaseLabel] = useState('')
   const [annotationObservedAt, setAnnotationObservedAt] = useState('')
-  const [detailMode, setDetailMode] = useState<'source' | 'analysis' | 'archive'>(initialDetailMode)
+  const [savingAnnotation, setSavingAnnotation] = useState(false)
+  const [annotationNotice, setAnnotationNotice] = useState<string | null>(null)
+  const [annotationError, setAnnotationError] = useState<string | null>(null)
   const [readerPage, setReaderPage] = useState(0)
   const [readerQuery, setReaderQuery] = useState('')
-  const [readerFilter, setReaderFilter] = useState<'all' | 'headings'>('all')
+  const [outlineOpen, setOutlineOpen] = useState(true)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const [mediaLocation, setMediaLocation] = useState<{ versionId: string | null; segmentId: string | null } | null>(null)
-  const [analysisSnapshot, setAnalysisSnapshot] = useState<ResearchAnalysisSnapshot | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(true)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
-  const [analysisNotice, setAnalysisNotice] = useState<string | null>(null)
-  const [researchCycle, setResearchCycle] = useState<ResearchCycleSnapshot | null>(null)
-  const [cycleLoading, setCycleLoading] = useState(false)
-  const [cycleError, setCycleError] = useState<string | null>(null)
-  const [savingAnnotation, setSavingAnnotation] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const materialsLoadGeneration = useRef(0)
   const materialsLoadAbortController = useRef<AbortController | null>(null)
@@ -184,11 +97,8 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const materialDetailAbortController = useRef<AbortController | null>(null)
   const segmentGeneration = useRef(0)
   const segmentAbortController = useRef<AbortController | null>(null)
-  const analysisAbortController = useRef<AbortController | null>(null)
-  const cycleAbortController = useRef<AbortController | null>(null)
-  const analysisLoadGeneration = useRef(0)
   const initialSelectionApplied = useRef(false)
-  const segmentButtonRefs = useRef(new Map<string, HTMLButtonElement>())
+  const segmentRefs = useRef(new Map<string, HTMLElement>())
   const scrolledCitationTarget = useRef<string | null>(null)
 
   async function loadMaterials(signal?: AbortSignal) {
@@ -212,25 +122,6 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     }
   }
 
-  async function loadAnalysis(signal?: AbortSignal) {
-    const requestGeneration = ++analysisLoadGeneration.current
-    setAnalysisLoading(true)
-    setAnalysisError(null)
-    try {
-      const result = await getAnalysisSnapshot(taskId, signal)
-      if (signal?.aborted || requestGeneration !== analysisLoadGeneration.current) return
-      setAnalysisSnapshot(result)
-    } catch (cause: unknown) {
-      if (
-        (cause as { name?: string } | null)?.name !== 'AbortError'
-        && !signal?.aborted
-        && requestGeneration === analysisLoadGeneration.current
-      ) setAnalysisError(cause instanceof Error ? cause.message : '质性分析记录暂时无法加载。')
-    } finally {
-      if (!signal?.aborted && requestGeneration === analysisLoadGeneration.current) setAnalysisLoading(false)
-    }
-  }
-
   useEffect(() => {
     const controller = new AbortController()
     materialsLoadAbortController.current?.abort()
@@ -244,50 +135,13 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   }, [taskId])
 
   useEffect(() => {
-    const controller = new AbortController()
-    analysisAbortController.current?.abort()
-    analysisAbortController.current = controller
-    void loadAnalysis(controller.signal)
-    return () => {
-      controller.abort()
-      if (analysisAbortController.current === controller) analysisAbortController.current = null
-      analysisLoadGeneration.current += 1
-    }
-  }, [taskId, analysisRefreshKey])
-
-  useEffect(() => {
-    if (detailMode !== 'analysis') return
-    const controller = new AbortController()
-    cycleAbortController.current?.abort()
-    cycleAbortController.current = controller
-    setCycleLoading(true)
-    setCycleError(null)
-    void getResearchCycleSnapshot(taskId, controller.signal).then((snapshot) => {
-      if (!controller.signal.aborted) setResearchCycle(snapshot)
-    }).catch((cause: unknown) => {
-      if ((cause as { name?: string } | null)?.name !== 'AbortError' && !controller.signal.aborted) {
-        setCycleError(cause instanceof Error ? cause.message : '研究循环暂时无法加载。')
-      }
-    }).finally(() => {
-      if (!controller.signal.aborted) setCycleLoading(false)
-    })
-    return () => {
-      controller.abort()
-      if (cycleAbortController.current === controller) cycleAbortController.current = null
-    }
-  }, [analysisSnapshot, detailMode, taskId])
-
-  useEffect(() => {
     return () => {
       materialsLoadAbortController.current?.abort()
       materialDetailAbortController.current?.abort()
       segmentAbortController.current?.abort()
-      analysisAbortController.current?.abort()
-      cycleAbortController.current?.abort()
       materialsLoadGeneration.current += 1
       materialDetailGeneration.current += 1
       segmentGeneration.current += 1
-      analysisLoadGeneration.current += 1
     }
   }, [])
 
@@ -298,22 +152,27 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     segmentGeneration.current += 1
     setSelectedMaterial(null)
     setSelectedSegmentId(null)
-    setDetailMode(initialDetailMode)
     setReaderPage(0)
     setReaderQuery('')
-    setReaderFilter('all')
+    setSearchOpen(false)
+    setArchiveOpen(false)
     setMediaLocation(null)
-    setAnalysisSnapshot(null)
-    setResearchCycle(null)
-    setCycleError(null)
-    setAnalysisNotice(null)
+    setAnnotationNotice(null)
+    setAnnotationError(null)
     clearSelectionDraft()
-  }, [initialDetailMode, taskId])
+  }, [taskId])
 
   useEffect(() => {
     initialSelectionApplied.current = false
     scrolledCitationTarget.current = null
   }, [taskId, initialMaterialId, initialSegmentId, initialParseId])
+
+  // 保存成功的提示说完就该走。留在屏幕上的旧回执会让人以为刚才那次操作还没结束。
+  useEffect(() => {
+    if (!annotationNotice) return
+    const timer = window.setTimeout(() => setAnnotationNotice(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [annotationNotice])
 
   useEffect(() => {
     if (!initialMaterialId || initialSelectionApplied.current || !materials.length) return
@@ -325,13 +184,6 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   }, [initialMaterialId, initialParseId, initialSegmentId, materials])
 
   useEffect(() => {
-    // A material workbench opens on usable content; an empty detail pane makes
-    // the library look broken when the research already has imported files.
-    if (initialMaterialId || !materials.length || selectedMaterial || detailLoading) return
-    void selectMaterial(materials[0])
-  }, [detailLoading, initialMaterialId, materials, selectedMaterial])
-
-  useEffect(() => {
     if (
       detailLoading
       || !initialMaterialId
@@ -341,7 +193,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     ) return
     const targetKey = `${taskId}:${initialMaterialId}:${initialParseId ?? ''}:${initialSegmentId}`
     if (scrolledCitationTarget.current === targetKey) return
-    const target = segmentButtonRefs.current.get(initialSegmentId)
+    const target = segmentRefs.current.get(initialSegmentId)
     if (!target || typeof target.scrollIntoView !== 'function') return
     const reducedMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -357,12 +209,10 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
 
   useEffect(() => {
     if (!onWorkspaceLocationChange) return
-    if (detailMode === 'archive') return
     if (initialMaterialId && !selectedMaterial) return
     const selectedSegment = selectedMaterial?.segments?.find((segment) => segment.segmentId === selectedSegmentId)
     const mediaSelected = selectedMaterial ? isMediaResearchMaterial(selectedMaterial) : false
     onWorkspaceLocationChange({
-      mode: detailMode,
       materialId: selectedMaterial?.materialId ?? null,
       parseId: mediaSelected
         ? mediaLocation?.versionId ?? null
@@ -370,7 +220,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
           ?? (selectedMaterial?.materialId === initialMaterialId ? initialParseId : null),
       segmentId: mediaSelected ? mediaLocation?.segmentId ?? null : selectedSegmentId,
     })
-  }, [detailMode, initialMaterialId, initialParseId, mediaLocation, onWorkspaceLocationChange, selectedMaterial, selectedSegmentId])
+  }, [initialMaterialId, initialParseId, mediaLocation, onWorkspaceLocationChange, selectedMaterial, selectedSegmentId])
 
   async function selectMaterial(material: ResearchMaterial, parseId: string | null = null, segmentId: string | null = null) {
     const requestGeneration = ++materialDetailGeneration.current
@@ -388,7 +238,8 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setSelectedSegmentId(segmentId)
     setReaderPage(segmentId && material.segments ? Math.floor(Math.max(0, material.segments.findIndex((item) => item.segmentId === segmentId)) / READER_PAGE_SIZE) : 0)
     setReaderQuery('')
-    setReaderFilter('all')
+    setSearchOpen(false)
+    setArchiveOpen(false)
     if (material.segments && !parseId) {
       setDetailLoading(false)
       if (materialDetailAbortController.current === controller) materialDetailAbortController.current = null
@@ -415,6 +266,22 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
       if (!controller.signal.aborted && requestGeneration === materialDetailGeneration.current) setDetailLoading(false)
       if (materialDetailAbortController.current === controller) materialDetailAbortController.current = null
     }
+  }
+
+  function returnToLibrary() {
+    materialDetailAbortController.current?.abort()
+    segmentAbortController.current?.abort()
+    materialDetailGeneration.current += 1
+    segmentGeneration.current += 1
+    initialSelectionApplied.current = true
+    clearSelectionDraft()
+    setSelectedMaterial(null)
+    setSelectedSegmentId(null)
+    setArchiveOpen(false)
+    setSearchOpen(false)
+    setReaderQuery('')
+    setReaderPage(0)
+    setDetailLoading(false)
   }
 
   async function selectSegment(segment: ResearchMaterialSegment) {
@@ -448,6 +315,13 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     }
   }
 
+  function jumpToHeading(segment: ResearchMaterialSegment) {
+    const index = (selectedMaterial?.segments ?? []).findIndex((item) => item.segmentId === segment.segmentId)
+    setReaderQuery('')
+    setReaderPage(Math.floor(Math.max(0, index) / READER_PAGE_SIZE))
+    void selectSegment(segment)
+  }
+
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -468,15 +342,25 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     try {
       const created = await uploadResearchMaterial(taskId, file, kind)
       setMaterials((current) => [created, ...current.filter((item) => item.materialId !== created.materialId)])
-      // Upload responses may only carry the segment count. Reuse the same
-      // detail-loading path as an explicit selection so a newly added source
-      // immediately exposes its stable locators instead of an empty panel.
-      await selectMaterial(created)
+      // 上传响应可能只带片段数不带片段本身，补一次详情把可定位片段数补齐，让新加进来的这行
+      // 立刻说得出自己有多少可引用位置。补完仍然留在材料库：加材料是库这一层的动作，刚上传
+      // 就把人甩进阅读台，多半还在解析中，等于推开一扇空门。
+      await refreshMaterialDetail(created)
       setUploadNotice('材料已加入，解析完成后即可检索。')
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : '研究材料上传失败。')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function refreshMaterialDetail(material: ResearchMaterial) {
+    if (material.segments) return
+    try {
+      const detail = await getResearchMaterial(taskId, material.materialId)
+      setMaterials((current) => current.map((item) => item.materialId === detail.materialId ? { ...item, ...detail } : item))
+    } catch {
+      // 列表行退回上传响应里的信息即可，补详情失败不该把刚加进来的材料判成出错。
     }
   }
 
@@ -521,10 +405,10 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
       || savingAnnotation
     ) return
     setSavingAnnotation(true)
-    setAnalysisError(null)
-    setAnalysisNotice(null)
+    setAnnotationError(null)
+    setAnnotationNotice(null)
     try {
-      const created = await createAnalysisAnnotation(taskId, {
+      await createAnalysisAnnotation(taskId, {
         material_id: selectionDraft.materialId,
         parse_id: selectionDraft.parseId,
         segment_id: selectionDraft.segmentId,
@@ -536,145 +420,14 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
         case_label: annotationCaseLabel.trim() || null,
         observed_at: annotationObservedAt.trim() || null,
       })
-      setAnalysisSnapshot((current) => current
-        ? { ...current, annotations: [...current.annotations, created] }
-        : { task_id: taskId, annotations: [created], codes: [], memos: [], comparisons: [] })
       clearSelectionDraft()
-      setAnalysisNotice('片段标记已保存。')
+      setAnnotationNotice('片段标记已保存。')
     } catch (cause: unknown) {
-      setAnalysisError(cause instanceof Error ? cause.message : '片段标记未保存。')
+      setAnnotationError(cause instanceof Error ? cause.message : '片段标记未保存。')
     } finally {
       setSavingAnnotation(false)
     }
   }
-
-  async function saveCode(body: CreateAnalysisCodeInput) {
-    const created = await createAnalysisCode(taskId, body)
-    setAnalysisSnapshot((current) => current
-      ? { ...current, codes: [...current.codes, created] }
-      : { task_id: taskId, annotations: [], codes: [created], memos: [], comparisons: [] })
-    setAnalysisNotice('编码已保存。')
-  }
-
-  async function saveMemo(body: CreateAnalysisMemoInput) {
-    const created = await createAnalysisMemo(taskId, body)
-    setAnalysisSnapshot((current) => current
-      ? { ...current, memos: [...current.memos, created] }
-      : { task_id: taskId, annotations: [], codes: [], memos: [created], comparisons: [] })
-    setAnalysisNotice('分析备忘已保存。')
-  }
-
-  async function decideCode(codeId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) {
-    const updated = await decideAnalysisCode(taskId, codeId, {
-      decision,
-      reason,
-      expected_version: expectedVersion,
-    })
-    setAnalysisSnapshot((current) => current
-      ? { ...current, codes: current.codes.map((code) => code.code_id === updated.code_id ? updated : code) }
-      : current)
-    setAnalysisNotice(decision === 'confirmed' ? '候选编码已确认。' : '候选编码已拒绝。')
-  }
-
-  async function decideMemo(memoId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) {
-    const updated = await decideAnalysisMemo(taskId, memoId, {
-      decision,
-      reason,
-      expected_version: expectedVersion,
-    })
-    setAnalysisSnapshot((current) => current
-      ? { ...current, memos: current.memos.map((memo) => memo.memo_id === updated.memo_id ? updated : memo) }
-      : current)
-    setAnalysisNotice(decision === 'confirmed' ? '备忘草稿已确认。' : '备忘草稿已拒绝。')
-  }
-
-  async function saveComparison(body: CreateCaseComparisonInput) {
-    const created = await createCaseComparison(taskId, body)
-    setAnalysisSnapshot((current) => current
-      ? { ...current, comparisons: [...current.comparisons, created] }
-      : { task_id: taskId, annotations: [], codes: [], memos: [], comparisons: [created] })
-    setAnalysisNotice('案例比较已保存。')
-  }
-
-  async function decideComparison(comparisonId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) {
-    const updated = await decideCaseComparison(taskId, comparisonId, {
-      decision,
-      reason,
-      expected_version: expectedVersion,
-    })
-    setAnalysisSnapshot((current) => current
-      ? { ...current, comparisons: current.comparisons.map((comparison) => comparison.comparison_id === updated.comparison_id ? updated : comparison) }
-      : current)
-    setAnalysisNotice(decision === 'confirmed' ? '案例比较已确认。' : '案例比较已拒绝。')
-  }
-
-  async function refreshWorkspaceAfter(operation: () => Promise<unknown>, notice: string) {
-    setAnalysisError(null)
-    setAnalysisNotice(null)
-    await operation()
-    await loadAnalysis()
-    setAnalysisNotice(notice)
-  }
-
-  async function configureCodebook(codeId: string, body: ConfigureCodebookEntryInput) {
-    await refreshWorkspaceAfter(
-      () => configureCodebookEntry(taskId, codeId, body),
-      '代码本边界已保存。',
-    )
-  }
-
-  async function transitionCodebook(codeId: string, body: TransitionCodebookEntryInput) {
-    await refreshWorkspaceAfter(
-      () => transitionCodebookEntry(taskId, codeId, body),
-      '代码本状态已更新。',
-    )
-  }
-
-  async function saveTheme(body: CreateAnalysisThemeInput) {
-    await refreshWorkspaceAfter(() => createAnalysisTheme(taskId, body), '分析主题已保存。')
-  }
-
-  async function confirmTheme(themeId: string, reason: string, expectedVersion: number) {
-    await refreshWorkspaceAfter(
-      () => confirmAnalysisTheme(taskId, themeId, reason, expectedVersion),
-      '候选主题已确认。',
-    )
-  }
-
-  async function attachMemo(body: CreateAnalysisMemoLinkInput) {
-    await refreshWorkspaceAfter(() => attachAnalysisMemo(taskId, body), '备忘挂接已保存。')
-  }
-
-  async function saveCaseProfile(body: SaveAnalysisCaseProfileInput) {
-    await refreshWorkspaceAfter(() => saveAnalysisCaseProfile(taskId, body), '个案档案已保存。')
-  }
-
-  async function saveMatrixCell(body: SaveCaseThemeMatrixCellInput) {
-    await refreshWorkspaceAfter(() => saveCaseThemeMatrixCell(taskId, body), '比较矩阵单元已保存。')
-  }
-
-  async function saveQualitativeMethod(body: SetQualitativeMethodInput) {
-    await refreshWorkspaceAfter(() => setQualitativeMethod(taskId, body), '方法取向已保存。')
-  }
-
-  const segments = selectedMaterial?.segments ?? []
-  const normalizedReaderQuery = readerQuery.trim().toLocaleLowerCase()
-  const readerSegments = segments.filter((segment) => {
-    if (readerFilter === 'headings' && segment.kind !== 'heading' && !segment.locator.headingPath.length) return false
-    if (!normalizedReaderQuery) return true
-    return `${segment.text} ${formatMaterialLocator(segment.locator)}`.toLocaleLowerCase().includes(normalizedReaderQuery)
-  })
-  const readerPageCount = Math.max(1, Math.ceil(readerSegments.length / READER_PAGE_SIZE))
-  const activeReaderPage = Math.min(readerPage, readerPageCount - 1)
-  const pagedReaderSegments = readerSegments.slice(activeReaderPage * READER_PAGE_SIZE, (activeReaderPage + 1) * READER_PAGE_SIZE)
-  const readerHeadings = segments.filter((segment, index, all) => {
-    if (segment.kind !== 'heading' && !segment.locator.headingPath.length) return false
-    const key = segment.kind === 'heading' ? segment.segmentId : segment.locator.headingPath.join(' / ')
-    return all.findIndex((candidate) => {
-      const candidateKey = candidate.kind === 'heading' ? candidate.segmentId : candidate.locator.headingPath.join(' / ')
-      return candidateKey === key
-    }) === index
-  })
 
   function clearSelectionDraft() {
     setSelectionDraft(null)
@@ -687,7 +440,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     window.getSelection()?.removeAllRanges()
   }
 
-  function captureSelection(segment: ResearchMaterialSegment, container: HTMLParagraphElement, range: Range) {
+  function captureSelection(segment: ResearchMaterialSegment, container: HTMLElement, range: Range) {
     const draft = selectionDraftFromDomRange(segment, container, range)
     if (!draft) {
       setSelectionDraft(null)
@@ -708,266 +461,180 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setAnnotationReflection('')
     setAnnotationCaseLabel('')
     setAnnotationObservedAt('')
+    setAnnotationNotice(null)
   }
 
+  const segments = selectedMaterial?.segments ?? []
+  const normalizedReaderQuery = readerQuery.trim().toLocaleLowerCase()
+  const readerSegments = normalizedReaderQuery
+    ? segments.filter((segment) => `${segment.text} ${formatMaterialLocator(segment.locator)}`.toLocaleLowerCase().includes(normalizedReaderQuery))
+    : segments
+  const readerPageCount = Math.max(1, Math.ceil(readerSegments.length / READER_PAGE_SIZE))
+  const activeReaderPage = Math.min(readerPage, readerPageCount - 1)
+  const pagedReaderSegments = readerSegments.slice(activeReaderPage * READER_PAGE_SIZE, (activeReaderPage + 1) * READER_PAGE_SIZE)
+  /*
+   * 一个章节在片段流里出现两次：标题片段自己，和它下面第一个带 headingPath 的正文片段。
+   * 按标题文字去重而不是按片段 id，否则目录里每一章都会列两遍——之前就是这样。标题片段
+   * 排在正文之前，所以先到先得正好保证跳转落在标题上。
+   */
+  const readerHeadings: ReaderHeading[] = []
+  const seenHeadings = new Set<string>()
+  segments.forEach((segment, index) => {
+    if (segment.kind !== 'heading' && !segment.locator.headingPath.length) return
+    const label = (segment.kind === 'heading' ? segment.text : segment.locator.headingPath.at(-1))?.trim()
+      || `第 ${index + 1} 段`
+    if (seenHeadings.has(label)) return
+    seenHeadings.add(label)
+    readerHeadings.push({ segment, label })
+  })
+
+  const mediaSelected = selectedMaterial ? isMediaResearchMaterial(selectedMaterial) : false
+  const readerNote = !detailLoading && selectedMaterial
+    ? selectedMaterial.status === 'failed'
+      ? { tone: 'error' as const, text: '解析失败后，原材料仍保留；重新解析成功前不会进入检索。' }
+      : selectedMaterial.status === 'processing'
+        ? { tone: 'plain' as const, text: '解析完成后，这里会显示章节、段落和可引用位置。' }
+        : null
+    : null
+
+  const body = selectedMaterial ? (
+    <div className="qx-materials__workbench">
+      {mediaSelected ? (
+        <section className="qx-reader qx-reader--media" aria-label="材料阅读台">
+          <header className="qx-reader__bar">
+            <button type="button" className="qx-reader__back" onClick={returnToLibrary}>材料库</button>
+            <div className="qx-reader__identity">
+              <h2>{selectedMaterial.filename}</h2>
+              <p>媒体转录</p>
+            </div>
+            <div className="qx-reader__tools">
+              <button type="button" className="qx-icon-button" aria-label="材料档案" title="材料档案" onClick={() => setArchiveOpen(true)}>档案</button>
+            </div>
+          </header>
+          <MediaTranscriptWorkspace
+            taskId={taskId}
+            materialId={selectedMaterial.materialId}
+            mediaType={selectedMaterial.mediaType}
+            initialParseId={initialMaterialId === selectedMaterial.materialId ? initialParseId : null}
+            initialSegmentId={initialMaterialId === selectedMaterial.materialId ? initialSegmentId : null}
+            onLocationChange={setMediaLocation}
+          />
+        </section>
+      ) : (
+        <MaterialReaderView
+          material={selectedMaterial}
+          segments={pagedReaderSegments}
+          totalSegmentCount={segments.length}
+          headings={readerHeadings}
+          selectedSegmentId={selectedSegmentId}
+          detailLoading={detailLoading}
+          note={readerNote}
+          outlineOpen={outlineOpen}
+          searchOpen={searchOpen}
+          query={readerQuery}
+          matchCount={readerSegments.length}
+          page={activeReaderPage}
+          pageCount={readerPageCount}
+          registerSegment={(segmentId, element) => {
+            if (element) segmentRefs.current.set(segmentId, element)
+            else segmentRefs.current.delete(segmentId)
+          }}
+          onBack={returnToLibrary}
+          onToggleOutline={() => setOutlineOpen((open) => !open)}
+          onToggleSearch={() => setSearchOpen((open) => !open)}
+          onQueryChange={(next) => { setReaderQuery(next); setReaderPage(0) }}
+          onOpenArchive={() => setArchiveOpen(true)}
+          onSelectSegment={(segment) => { void (segment.kind === 'heading' ? jumpToHeading(segment) : selectSegment(segment)) }}
+          onTextSelection={captureSelection}
+          onPageChange={setReaderPage}
+        />
+      )}
+
+      {selectionDraft ? (
+        <MaterialAnnotationDrawer
+          draft={selectionDraft}
+          kind={annotationKind}
+          note={annotationNote}
+          reflection={annotationReflection}
+          caseLabel={annotationCaseLabel}
+          observedAt={annotationObservedAt}
+          saving={savingAnnotation}
+          onKindChange={setAnnotationKind}
+          onNoteChange={setAnnotationNote}
+          onReflectionChange={setAnnotationReflection}
+          onCaseLabelChange={setAnnotationCaseLabel}
+          onObservedAtChange={setAnnotationObservedAt}
+          onCancel={clearSelectionDraft}
+          onSave={() => { void saveAnnotation() }}
+        />
+      ) : null}
+    </div>
+  ) : (
+    <MaterialLibraryView
+      materials={materials}
+      loading={loading}
+      error={error}
+      notice={uploadNotice}
+      uploading={uploading}
+      busyMaterialId={busyMaterialId}
+      kind={kind}
+      fileInputRef={fileInputRef}
+      onKindChange={setKind}
+      onFileChange={(event) => { void handleFileChange(event) }}
+      onOpenMaterial={(material) => { void selectMaterial(material) }}
+      onOpenArchive={(material) => { void selectMaterial(material).then(() => setArchiveOpen(true)) }}
+      onRetry={(material) => { void retry(material) }}
+      onDelete={(material) => { void remove(material) }}
+    />
+  )
+
   const workspacePresentation = presentation === 'workspace'
+
   return (
-    <div className={`research-materials__overlay${workspacePresentation ? ' research-materials__overlay--workspace' : ''}`} role={workspacePresentation ? undefined : 'presentation'}>
-      <section className="research-materials" role={workspacePresentation ? 'region' : 'dialog'} aria-modal={workspacePresentation ? undefined : 'true'} aria-labelledby="research-materials-heading">
-        <header className="research-materials__header">
-          <div>
-            <span className="research-materials__eyebrow">当前研究</span>
-            <h2 id="research-materials-heading">研究材料</h2>
-            <p>{materials.length ? `${materials.length} 份材料` : '把论文、访谈和田野记录放在同一处'}</p>
-          </div>
-          {onClose ? <button type="button" className="research-materials__close" aria-label="关闭研究材料" onClick={onClose}><XIcon size={18} /></button> : null}
-        </header>
+    <div className={`qx-materials__shell${workspacePresentation ? ' is-workspace' : ''}`} role={workspacePresentation ? undefined : 'presentation'}>
+      <section
+        className="qx-materials"
+        role={workspacePresentation ? 'region' : 'dialog'}
+        aria-modal={workspacePresentation ? undefined : 'true'}
+        aria-label="研究材料"
+      >
+        {onClose ? (
+          <button type="button" className="qx-materials__close qx-icon-button" aria-label="关闭研究材料" onClick={onClose}>
+            <XIcon size={18} aria-hidden="true" />
+          </button>
+        ) : null}
 
-        <div className="research-materials__body">
-          <section className="research-materials__library" aria-label="材料列表">
-            <div className="research-materials__add-row">
-              <div>
-                <strong>加入材料</strong>
-                <small>支持文档、MP3、M4A、WAV、MP4、WebM</small>
-              </div>
-              <div className="research-materials__add-actions">
-                <label className="research-materials__kind-label" htmlFor="research-material-kind">类型</label>
-                <select id="research-material-kind" value={kind} onChange={(event) => setKind(event.target.value as ResearchMaterialKind)} aria-label="材料类型">
-                  {MATERIAL_KINDS.map((item) => <option key={item} value={item}>{materialKindLabel(item)}</option>)}
-                </select>
-                <button type="button" className="research-materials__add-button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                  {uploading ? <CircleNotchIcon className="is-spinning" size={16} /> : <FilePlusIcon size={16} />}
-                  {uploading ? '正在上传' : '选择文件'}
-                </button>
-                <input ref={fileInputRef} className="research-materials__file-input" type="file" accept={RESEARCH_MATERIAL_ACCEPT} aria-label="选择研究材料文件" onChange={(event) => { void handleFileChange(event) }} />
-              </div>
-            </div>
-            {error ? <p className="research-materials__message is-error" role="alert"><WarningCircleIcon size={15} />{error}</p> : null}
-            {uploadNotice ? <p className="research-materials__message is-success" role="status"><CheckCircleIcon size={15} />{uploadNotice}</p> : null}
-            {loading ? <p className="research-materials__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在加载材料</p> : null}
-            {!loading && !materials.length ? <div className="research-materials__empty"><FilePlusIcon size={24} /><strong>还没有研究材料</strong><p>先加入一份论文、访谈转录或田野笔记，Agent 才能在本次研究中引用它。</p></div> : null}
-            <div className="research-materials__list">
-              {materials.map((material) => (
-                <article className={`research-materials__item${selectedMaterial?.materialId === material.materialId ? ' is-selected' : ''}`} key={material.materialId} data-status={material.status}>
-                  <button type="button" className="research-materials__item-main" aria-label={`查看材料：${material.filename}`} onClick={() => { void selectMaterial(material) }}>
-                    <span className="research-materials__file-mark">{materialMediaLabel(material.mediaType, material.filename)}</span>
-                    <span className="research-materials__item-copy">
-                      <strong>{material.filename}</strong>
-                      <small>{material.materialKind ? materialKindLabel(material.materialKind) : '研究材料'} · {formatMaterialSize(material.sizeBytes)}{formatUpdatedAt(material.updatedAt) ? ` · ${formatUpdatedAt(material.updatedAt)}` : ''}</small>
-                    </span>
-                    <span className="research-materials__item-status">{materialStatusIcon(material.status)}{materialStatusLabel(material.status)}</span>
-                  </button>
-                  <div className="research-materials__item-actions">
-                    {material.status === 'failed' ? <button type="button" aria-label="重新解析" onClick={() => { void retry(material) }} disabled={busyMaterialId === material.materialId}>{busyMaterialId === material.materialId ? <CircleNotchIcon className="is-spinning" size={14} /> : <ArrowClockwiseIcon size={14} />}</button> : null}
-                    <button type="button" aria-label="删除材料" onClick={() => { void remove(material) }} disabled={busyMaterialId === material.materialId}><TrashIcon size={14} /></button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+        {selectedMaterial && error ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{error}</p> : null}
+        {selectionNotice ? <p className="qx-message is-error" role="alert">{selectionNotice}</p> : null}
+        {annotationError ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{annotationError}</p> : null}
+        {annotationNotice ? <p className="qx-message is-success" role="status"><CheckCircleIcon size={15} aria-hidden="true" />{annotationNotice}</p> : null}
 
-          <section className="research-materials__detail" aria-label="材料详情">
-            {selectedMaterial ? (
-              <>
-                <header className="research-materials__detail-header">
-                  <div>
-                    <span>{selectedMaterial.materialKind ? materialKindLabel(selectedMaterial.materialKind) : materialMediaLabel(selectedMaterial.mediaType, selectedMaterial.filename)}</span>
-                    <h3>{selectedMaterial.filename}</h3>
-                  </div>
-                  <small>{selectedMaterial.segmentCount ? `${selectedMaterial.segmentCount} 个可定位片段` : materialStatusLabel(selectedMaterial.status)}</small>
-                </header>
-                <div className="research-materials__detail-modes" aria-label="材料视图">
-                  <button type="button" aria-pressed={detailMode === 'source'} onClick={() => setDetailMode('source')}>{isMediaResearchMaterial(selectedMaterial) ? '媒体与转录' : '原文'}</button>
-                  <button type="button" aria-pressed={detailMode === 'analysis'} onClick={() => setDetailMode('analysis')}>分析</button>
-                  <button type="button" aria-pressed={detailMode === 'archive'} onClick={() => setDetailMode('archive')}>档案</button>
+        {body}
+
+        {archiveOpen && selectedMaterial ? (
+          <>
+            <button type="button" className="qx-drawer__scrim" aria-label="关闭材料档案" onClick={() => setArchiveOpen(false)} />
+            <aside className="qx-drawer" role="region" aria-label="材料档案">
+              <header className="qx-drawer__head">
+                <div>
+                  <span className="qx-eyebrow">材料档案</span>
+                  <strong>{selectedMaterial.filename}</strong>
                 </div>
-                {analysisNotice ? <p className="research-materials__analysis-notice" role="status">{analysisNotice}</p> : null}
-                {analysisError ? <p className="research-materials__detail-note is-error" role="alert"><WarningCircleIcon size={15} />{analysisError}</p> : null}
-                {detailMode === 'archive' ? (
-                  <ProfessionalMaterialArchivePanel
-                    taskId={taskId}
-                    selectedMaterial={selectedMaterial}
-                    materials={materials}
-                    onMaterialsChanged={() => { void loadMaterials() }}
-                  />
-                ) : detailMode === 'source' ? (
-                  isMediaResearchMaterial(selectedMaterial) ? (
-                    <MediaTranscriptWorkspace
-                      taskId={taskId}
-                      materialId={selectedMaterial.materialId}
-                      mediaType={selectedMaterial.mediaType}
-                      initialParseId={initialMaterialId === selectedMaterial.materialId ? initialParseId : null}
-                      initialSegmentId={initialMaterialId === selectedMaterial.materialId ? initialSegmentId : null}
-                      onLocationChange={setMediaLocation}
-                    />
-                  ) : <>
-                    {detailLoading ? <p className="research-materials__loading"><CircleNotchIcon className="is-spinning" size={16} />正在读取原文结构</p> : null}
-                    {!detailLoading && selectedMaterial.status === 'failed' ? <p className="research-materials__detail-note is-error"><WarningCircleIcon size={15} />解析失败后，原材料仍保留；重新解析成功前不会进入检索。</p> : null}
-                    {!detailLoading && selectedMaterial.status === 'processing' ? <p className="research-materials__detail-note"><CircleNotchIcon className="is-spinning" size={15} />解析完成后，这里会显示章节、段落和可引用位置。</p> : null}
-                    {!detailLoading && selectedMaterial.status === 'ready' && !segments.length ? <p className="research-materials__detail-note">暂时没有可展示的片段。</p> : null}
-                    <section className="research-materials__reader" role="region" aria-label="文档阅读器">
-                      <div className="research-materials__reader-toolbar">
-                        <label className="research-materials__reader-search">
-                          <MagnifyingGlassIcon size={15} aria-hidden="true" />
-                          <span className="sr-only">在材料中查找</span>
-                          <input
-                            type="search"
-                            role="searchbox"
-                            aria-label="在材料中查找"
-                            value={readerQuery}
-                            onChange={(event) => { setReaderQuery(event.target.value); setReaderPage(0) }}
-                            placeholder="查找原文或定位"
-                          />
-                          {readerQuery ? <button type="button" aria-label="清除材料查找" onClick={() => { setReaderQuery(''); setReaderPage(0) }}><XIcon size={13} /></button> : null}
-                        </label>
-                        <label className="research-materials__reader-filter">
-                          <span>显示</span>
-                          <select aria-label="段落筛选" value={readerFilter} onChange={(event) => { setReaderFilter(event.target.value as typeof readerFilter); setReaderPage(0) }}>
-                            <option value="all">全部原文</option>
-                            <option value="headings">只看章节</option>
-                          </select>
-                        </label>
-                        <span className="research-materials__reader-count">
-                          {normalizedReaderQuery ? `${readerSegments.length} 处命中` : `${segments.length} 段原文`}
-                        </span>
-                      </div>
-                      <div className="research-materials__reader-layout">
-                        <nav className="research-materials__outline" aria-label="章节导航">
-                          <span>章节</span>
-                          {readerHeadings.length ? readerHeadings.map((heading) => {
-                            const headingIndex = segments.findIndex((segment) => segment.segmentId === heading.segmentId)
-                            return (
-                              <button
-                                type="button"
-                                key={heading.segmentId}
-                                onClick={() => {
-                                  setReaderQuery('')
-                                  setReaderFilter('all')
-                                  setReaderPage(Math.floor(Math.max(0, headingIndex) / READER_PAGE_SIZE))
-                                  void selectSegment(heading)
-                                }}
-                                title={heading.text}
-                              >
-                                {heading.text || heading.locator.headingPath.at(-1) || `第 ${headingIndex + 1} 段`}
-                              </button>
-                            )
-                          }) : <small>解析出章节后会显示在这里。</small>}
-                        </nav>
-                        <div className="research-materials__reader-main">
-                          <div className="research-materials__reader-page-meta">
-                            <span>{readerPageCount > 1 ? `第 ${activeReaderPage + 1} / ${readerPageCount} 页` : '连续阅读'}</span>
-                            {normalizedReaderQuery ? <span>按查找结果分页</span> : <span>每页 {READER_PAGE_SIZE} 段</span>}
-                          </div>
-                          <div className="research-materials__segments">
-                            {pagedReaderSegments.map((segment) => {
-                              const selected = segment.segmentId === selectedSegmentId
-                              return (
-                                <button
-                                  type="button"
-                                  className="research-materials__segment-button"
-                                  key={segment.segmentId}
-                                  aria-current={selected ? 'location' : undefined}
-                                  ref={(element) => {
-                                    if (element) segmentButtonRefs.current.set(segment.segmentId, element)
-                                    else segmentButtonRefs.current.delete(segment.segmentId)
-                                  }}
-                                  onClick={() => { void selectSegment(segment) }}
-                                >
-                                  <SegmentCard segment={segment} selected={selected} onTextSelection={captureSelection} />
-                                </button>
-                              )
-                            })}
-                            {!pagedReaderSegments.length ? <p className="research-materials__reader-no-results">没有匹配的原文。换个词试试。</p> : null}
-                          </div>
-                          {readerPageCount > 1 ? (
-                            <footer className="research-materials__reader-pagination" aria-label="文档分页">
-                              <button type="button" aria-label="上一页" onClick={() => setReaderPage((page) => Math.max(0, page - 1))} disabled={activeReaderPage === 0}>上一页</button>
-                              <span>{activeReaderPage + 1} / {readerPageCount}</span>
-                              <button type="button" aria-label="下一页" onClick={() => setReaderPage((page) => Math.min(readerPageCount - 1, page + 1))} disabled={activeReaderPage >= readerPageCount - 1}>下一页</button>
-                            </footer>
-                          ) : null}
-                        </div>
-                      </div>
-                    </section>
-                    {selectionNotice ? <p className="research-materials__selection-notice" role="alert">{selectionNotice}</p> : null}
-                    {selectionDraft ? (
-                      <section className="research-materials__annotation-draft" role="region" aria-label="片段标记">
-                        <header>
-                          <div>
-                            <span>已选原文</span>
-                            <strong>{selectionDraft.quote}</strong>
-                          </div>
-                          <button type="button" aria-label="取消片段标记" onClick={clearSelectionDraft}><XIcon size={14} /></button>
-                        </header>
-                        <label>
-                          <span>标记类型</span>
-                          <select value={annotationKind} onChange={(event) => setAnnotationKind(event.target.value as typeof annotationKind)} aria-label="标记类型">
-                            <option value="descriptive">描述性材料</option>
-                            <option value="researcher_reflection">研究者反思</option>
-                          </select>
-                        </label>
-                        <label>
-                          <span>材料描述</span>
-                          <textarea aria-label="材料描述" value={annotationNote} onChange={(event) => setAnnotationNote(event.target.value)} rows={2} />
-                        </label>
-                        <label>
-                          <span>研究者反思</span>
-                          <textarea aria-label="研究者反思" value={annotationReflection} onChange={(event) => setAnnotationReflection(event.target.value)} rows={2} />
-                        </label>
-                        <div className="research-materials__annotation-context">
-                          <label>
-                            <span>案例 <small>可选</small></span>
-                            <input aria-label="案例" value={annotationCaseLabel} onChange={(event) => setAnnotationCaseLabel(event.target.value)} placeholder="如：家庭 A" />
-                          </label>
-                          <label>
-                            <span>时间 <small>可选</small></span>
-                            <input aria-label="时间" value={annotationObservedAt} onChange={(event) => setAnnotationObservedAt(event.target.value)} placeholder="如：迁移后" />
-                          </label>
-                        </div>
-                        <footer>
-                          <button type="button" disabled={savingAnnotation || !annotationNote.trim() || (annotationKind === 'researcher_reflection' && !annotationReflection.trim())} onClick={() => { void saveAnnotation() }}>
-                            {savingAnnotation ? '正在保存' : '保存片段标记'}
-                          </button>
-                        </footer>
-                      </section>
-                    ) : null}
-                  </>
-                ) : analysisLoading ? (
-                  <p className="research-materials__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在加载分析记录</p>
-                ) : analysisSnapshot ? (
-                  <>
-                    {cycleLoading && !researchCycle ? <p className="research-materials__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在整理证据缺口</p> : null}
-                    {cycleError ? <p className="research-materials__detail-note is-error" role="alert"><WarningCircleIcon size={15} />{cycleError}</p> : null}
-                    {researchCycle ? <ResearchCyclePanel snapshot={researchCycle} /> : null}
-                    <ResearchAnalysisWorkspace
-                      snapshot={analysisSnapshot}
-                      selectedMaterialId={selectedMaterial.materialId}
-                      materialNames={Object.fromEntries(materials.map((material) => [material.materialId, material.filename]))}
-                      onCreateCode={saveCode}
-                      onCreateMemo={saveMemo}
-                      onDecideCode={decideCode}
-                      onDecideMemo={decideMemo}
-                      onCreateComparison={saveComparison}
-                      onDecideComparison={decideComparison}
-                      onConfigureCodebook={configureCodebook}
-                      onTransitionCodebook={transitionCodebook}
-                      onCreateTheme={saveTheme}
-                      onConfirmTheme={confirmTheme}
-                      onAttachMemo={attachMemo}
-                      onSaveCaseProfile={saveCaseProfile}
-                      onSaveMatrixCell={saveMatrixCell}
-                      onSetMethod={saveQualitativeMethod}
-                    />
-                  </>
-                ) : (
-                  <p className="research-analysis__empty">质性分析记录暂时无法加载。</p>
-                )}
-              </>
-            ) : (
-              <div className="research-materials__detail-empty"><MagnifyingGlassIcon size={25} /><strong>选择一份材料</strong><p>查看原文片段与页码、章节或行号。Agent 的引用会回到这里。</p></div>
-            )}
-          </section>
-        </div>
+                <button type="button" className="qx-icon-button" aria-label="收起材料档案" onClick={() => setArchiveOpen(false)}>
+                  <XIcon size={15} aria-hidden="true" />
+                </button>
+              </header>
+              <div className="qx-drawer__body">
+                <ProfessionalMaterialArchivePanel
+                  taskId={taskId}
+                  selectedMaterial={selectedMaterial}
+                  materials={materials}
+                  onMaterialsChanged={() => { void loadMaterials() }}
+                />
+              </div>
+            </aside>
+          </>
+        ) : null}
       </section>
     </div>
   )
