@@ -1359,7 +1359,6 @@ export function ResearchAgentConversationPage({
   const [contextOpen, setContextOpen] = useState(false)
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
-  const [materialsAnalysisRefreshKey, setMaterialsAnalysisRefreshKey] = useState(0)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -1739,9 +1738,6 @@ export function ResearchAgentConversationPage({
             ])
             setStreamingTurn(null)
             setStatus('idle')
-            if (materialsOpenRef.current) {
-              setMaterialsAnalysisRefreshKey((current) => current + 1)
-            }
             if (!embedded) {
               setSearchParams((current) => {
                 const next = new URLSearchParams(current)
@@ -2148,7 +2144,6 @@ export function ResearchAgentConversationPage({
               initialMaterialId={materialLocatorTarget?.materialId ?? null}
               initialParseId={materialLocatorTarget?.parseId ?? null}
               initialSegmentId={materialLocatorTarget?.segmentId ?? null}
-              analysisRefreshKey={materialsAnalysisRefreshKey}
               onMaterialDeleted={handleMaterialDeleted}
               onClose={() => {
                 closeMaterials()
