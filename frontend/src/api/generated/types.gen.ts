@@ -942,6 +942,16 @@ export type BodyImportLiteratureEntries = {
 };
 
 /**
+ * Body_import_material_transcript
+ */
+export type BodyImportMaterialTranscript = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_research_material
  */
 export type BodyUploadResearchMaterial = {
@@ -1931,6 +1941,20 @@ export type CreateTheoryDecisionsRequest = {
 };
 
 /**
+ * CreateTranscriptVersionRequest
+ */
+export type CreateTranscriptVersionRequest = {
+    /**
+     * Base Version Id
+     */
+    base_version_id: string;
+    /**
+     * Segments
+     */
+    segments: Array<TranscriptSegmentInput>;
+};
+
+/**
  * DecideAnalysisRecordRequest
  */
 export type DecideAnalysisRecordRequest = {
@@ -2583,6 +2607,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
+
+/**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
 
 /**
  * HealthResponse
@@ -5139,6 +5173,18 @@ export type ResearchMaterialLocatorResponse = {
      * Section Path
      */
     section_path: Array<string>;
+    /**
+     * Speaker
+     */
+    speaker: string | null;
+    /**
+     * Time End Ms
+     */
+    time_end_ms: number | null;
+    /**
+     * Time Start Ms
+     */
+    time_start_ms: number | null;
 };
 
 /**
@@ -6664,6 +6710,139 @@ export type TraceMetadata = {
 };
 
 /**
+ * TranscriptSegmentInput
+ */
+export type TranscriptSegmentInput = {
+    /**
+     * End Ms
+     */
+    end_ms?: number | null;
+    /**
+     * Ordinal
+     */
+    ordinal: number;
+    /**
+     * Segment Id
+     */
+    segment_id?: string | null;
+    /**
+     * Speaker
+     */
+    speaker?: string | null;
+    /**
+     * Start Ms
+     */
+    start_ms?: number | null;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TranscriptSegmentResponse
+ */
+export type TranscriptSegmentResponse = {
+    /**
+     * End Ms
+     */
+    end_ms: number | null;
+    /**
+     * Ordinal
+     */
+    ordinal: number;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Speaker
+     */
+    speaker: string | null;
+    /**
+     * Start Ms
+     */
+    start_ms: number | null;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TranscriptVersionResponse
+ */
+export type TranscriptVersionResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created From Version Id
+     */
+    created_from_version_id: string | null;
+    /**
+     * Is Current
+     */
+    is_current: boolean;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Provider
+     */
+    provider: string | null;
+    /**
+     * Segments
+     */
+    segments: Array<TranscriptSegmentResponse>;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * TranscriptionWorkspaceResponse
+ */
+export type TranscriptionWorkspaceResponse = {
+    /**
+     * Automatic Available
+     */
+    automatic_available: boolean;
+    /**
+     * Automatic Provider
+     */
+    automatic_provider: string | null;
+    current_version: TranscriptVersionResponse | null;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Versions
+     */
+    versions: Array<TranscriptVersionResponse>;
+};
+
+/**
  * TransitionCodebookEntryRequest
  */
 export type TransitionCodebookEntryRequest = {
@@ -6819,6 +6998,34 @@ export type UpdateResearchTaskRequest = {
      * Project Title
      */
     project_title?: string | null;
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -10793,6 +11000,52 @@ export type GetResearchMaterialResponses = {
 
 export type GetResearchMaterialResponse = GetResearchMaterialResponses[keyof GetResearchMaterialResponses];
 
+export type GetResearchMaterialContentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Range
+         */
+        Range?: string | null;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/content';
+};
+
+export type GetResearchMaterialContentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchMaterialContentError = GetResearchMaterialContentErrors[keyof GetResearchMaterialContentErrors];
+
+export type GetResearchMaterialContentResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ReparseResearchMaterialData = {
     body?: never;
     headers: {
@@ -10891,6 +11144,160 @@ export type GetResearchMaterialSegmentResponses = {
 };
 
 export type GetResearchMaterialSegmentResponse = GetResearchMaterialSegmentResponses[keyof GetResearchMaterialSegmentResponses];
+
+export type GetMaterialTranscriptionData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/transcription';
+};
+
+export type GetMaterialTranscriptionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMaterialTranscriptionError = GetMaterialTranscriptionErrors[keyof GetMaterialTranscriptionErrors];
+
+export type GetMaterialTranscriptionResponses = {
+    /**
+     * Successful Response
+     */
+    200: TranscriptionWorkspaceResponse;
+};
+
+export type GetMaterialTranscriptionResponse = GetMaterialTranscriptionResponses[keyof GetMaterialTranscriptionResponses];
+
+export type ImportMaterialTranscriptData = {
+    body: BodyImportMaterialTranscript;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/transcription/imports';
+};
+
+export type ImportMaterialTranscriptErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportMaterialTranscriptError = ImportMaterialTranscriptErrors[keyof ImportMaterialTranscriptErrors];
+
+export type ImportMaterialTranscriptResponses = {
+    /**
+     * Successful Response
+     */
+    201: TranscriptVersionResponse;
+};
+
+export type ImportMaterialTranscriptResponse = ImportMaterialTranscriptResponses[keyof ImportMaterialTranscriptResponses];
+
+export type StartMaterialTranscriptionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/transcription/runs';
+};
+
+export type StartMaterialTranscriptionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StartMaterialTranscriptionError = StartMaterialTranscriptionErrors[keyof StartMaterialTranscriptionErrors];
+
+export type StartMaterialTranscriptionResponses = {
+    /**
+     * Successful Response
+     */
+    201: TranscriptVersionResponse;
+};
+
+export type StartMaterialTranscriptionResponse = StartMaterialTranscriptionResponses[keyof StartMaterialTranscriptionResponses];
+
+export type CreateCorrectedTranscriptVersionData = {
+    body: CreateTranscriptVersionRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/transcription/versions';
+};
+
+export type CreateCorrectedTranscriptVersionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateCorrectedTranscriptVersionError = CreateCorrectedTranscriptVersionErrors[keyof CreateCorrectedTranscriptVersionErrors];
+
+export type CreateCorrectedTranscriptVersionResponses = {
+    /**
+     * Successful Response
+     */
+    201: TranscriptVersionResponse;
+};
+
+export type CreateCorrectedTranscriptVersionResponse = CreateCorrectedTranscriptVersionResponses[keyof CreateCorrectedTranscriptVersionResponses];
 
 export type CreateMethodPlanData = {
     body: CreateMethodPlanRequest;
