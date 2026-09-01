@@ -244,7 +244,7 @@ class MaterialLocator:
             raise ValueError("speaker must not be blank")
 
     def as_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "page": self.page,
             "section_path": list(self.section_path),
             "paragraph": self.paragraph,
@@ -253,10 +253,16 @@ class MaterialLocator:
             "char_start": self.char_start,
             "char_end": self.char_end,
             "block_index": self.block_index,
-            "time_start_ms": self.time_start_ms,
-            "time_end_ms": self.time_end_ms,
-            "speaker": self.speaker,
         }
+        # Omit absent media fields so existing document locators keep their
+        # serialized shape and stable keys across the schema extension.
+        if self.time_start_ms is not None:
+            payload["time_start_ms"] = self.time_start_ms
+        if self.time_end_ms is not None:
+            payload["time_end_ms"] = self.time_end_ms
+        if self.speaker is not None:
+            payload["speaker"] = self.speaker
+        return payload
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any] | None) -> MaterialLocator:

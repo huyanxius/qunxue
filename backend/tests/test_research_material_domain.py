@@ -64,6 +64,19 @@ def test_media_locator_round_trips_original_timecode_and_speaker() -> None:
     )
 
     assert MaterialLocator.from_dict(locator.as_dict()) == locator
+    assert locator.as_dict() == {
+        "page": None,
+        "section_path": [],
+        "paragraph": None,
+        "line_start": None,
+        "line_end": None,
+        "char_start": None,
+        "char_end": None,
+        "block_index": None,
+        "time_start_ms": 1_250,
+        "time_end_ms": 3_800,
+        "speaker": "主持人",
+    }
     assert locator.display() == "00:01.250-00:03.800，主持人"
 
 
@@ -152,9 +165,6 @@ def test_parse_version_has_stable_block_locators_and_deterministic_ids() -> None
         "char_start": 15,
         "char_end": 42,
         "block_index": None,
-        "time_start_ms": None,
-        "time_end_ms": None,
-        "speaker": None,
     }
 
     parsed = MaterialParseVersion.create(
