@@ -333,13 +333,17 @@
 
 .qx-reader { display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
 
+/*
+ * 文档栏用跟工作区顶栏同一种底色，两行连成一块 chrome，正文那块白才是内容。
+ * 之前文档栏是白底，跟顶栏一深一浅叠着，看起来像两个各自独立的头。
+ */
 .qx-reader__bar {
   display: flex;
   gap: var(--qx-space-4);
   align-items: center;
-  padding: var(--qx-space-3) var(--qx-space-6);
+  padding: var(--qx-space-2) var(--qx-space-6);
   border-bottom: 1px solid var(--qx-color-rule);
-  background: var(--qx-color-surface);
+  background: var(--qx-color-surface-subtle);
 }
 
 .qx-reader__back {
@@ -361,7 +365,7 @@
 .qx-reader__back:hover { color: var(--qx-color-ink); background: var(--qx-color-surface-subtle); }
 
 .qx-reader__identity { display: grid; flex: 1; gap: 1px; min-width: 0; }
-.qx-reader__identity h2 { margin: 0; overflow: hidden; font-family: var(--qx-font-reading); font-size: var(--qx-text-title); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.qx-reader__identity h2 { margin: 0; overflow: hidden; font-family: var(--qx-font-reading); font-size: var(--qx-text-title); font-weight: 580; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
 .qx-reader__identity p { margin: 0; color: var(--qx-color-muted); font-size: var(--qx-text-caption); }
 
 .qx-reader__tools { display: flex; flex: none; gap: var(--qx-space-1); align-items: center; }
@@ -457,21 +461,32 @@
 
 .qx-reader__doc { display: grid; justify-items: center; }
 
-.qx-segment { position: relative; width: min(100%, var(--qx-reading-measure)); padding: var(--qx-space-1) var(--qx-space-3); border-left: 2px solid transparent; }
+/*
+ * 每段自带一条留给定位符的顶槽，定位符绝对定位在槽里，露出与否都不改变正文位置。
+ * 原先把它塞进正文左侧的页边距，只有在栏够宽、正文又没占满时才有地方放——侧栏一收，
+ * 中央栏变宽走了「宽栏」分支，正文却仍占满整行，定位符就直接压在字上。
+ */
+.qx-segment {
+  position: relative;
+  width: min(100%, var(--qx-reading-measure));
+  padding: var(--qx-space-4) var(--qx-space-3) 0;
+  border-left: 2px solid transparent;
+}
 .qx-segment.is-selected { border-left-color: var(--qx-color-accent); background: var(--qx-color-surface-subtle); }
 
 .qx-segment p,
 .qx-segment h3 {
   margin: 0;
-  padding: var(--qx-space-2) 0;
+  padding: 0 0 var(--qx-space-2);
   font-family: var(--qx-font-reading);
   font-size: var(--qx-text-reading);
   line-height: 1.9;
   cursor: text;
 }
 
-.qx-segment h3 { padding-top: var(--qx-space-8); font-size: 19px; font-weight: 700; }
-.qx-segment:first-child h3 { padding-top: 0; }
+.qx-segment.is-heading { padding-top: var(--qx-space-8); }
+.qx-segment.is-heading:first-child { padding-top: var(--qx-space-4); }
+.qx-segment h3 { font-size: 19px; font-weight: 700; }
 .qx-segment ::selection { background: var(--qx-color-accent-soft); }
 
 /*
@@ -481,19 +496,19 @@
  */
 .qx-segment__anchor {
   position: absolute;
-  top: var(--qx-space-2);
-  right: 100%;
-  width: 92px;
-  margin-right: var(--qx-space-3);
-  padding: 2px var(--qx-space-1);
+  top: 0;
+  left: var(--qx-space-3);
+  max-width: calc(100% - var(--qx-space-6));
+  padding: 0;
   border: 0;
-  border-radius: var(--qx-radius-control);
   color: var(--qx-color-quiet);
   background: transparent;
   font: inherit;
   font-size: var(--qx-text-locator);
-  line-height: 1.6;
-  text-align: right;
+  line-height: var(--qx-space-4);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
   white-space: nowrap;
   opacity: 0;
   cursor: pointer;
@@ -504,16 +519,6 @@
 .qx-segment.is-selected .qx-segment__anchor,
 .qx-segment__anchor:focus-visible { opacity: 1; }
 .qx-segment__anchor:hover { color: var(--qx-color-ink); }
-
-/*
- * 栏窄到左边没有页边距时，定位符只能回到正文流里。这时它改成「只在当前定位的那一段显示」：
- * 跟着鼠标悬停出现会让光标底下的文字一行行往下跳，读着比看不见定位符更难受。
- */
-@container (max-width: 760px) {
-  .qx-segment__anchor { position: static; width: auto; margin: 0 0 var(--qx-space-1); padding: 0; text-align: left; }
-  .qx-segment:not(.is-selected) .qx-segment__anchor { display: none; }
-  .qx-segment:not(.is-selected):focus-within .qx-segment__anchor { display: block; }
-}
 
 .qx-reader__no-results { max-width: var(--qx-reading-measure); margin: 0 auto; color: var(--qx-color-muted); font-size: var(--qx-text-body); }
 
