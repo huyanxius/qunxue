@@ -112,6 +112,86 @@ describe('ResearchMaterialsPanel', () => {
     expect(within(workspace).getByRole('button', { name: '选择文件' })).toBeVisible()
   })
 
+  it('restores the center mode and exact source location through the workspace adapter', async () => {
+    const onWorkspaceLocationChange = vi.fn()
+    const segment = {
+      segment_id: 'segment-1', material_id: 'material-1', parse_id: 'parse-1', ordinal: 0,
+      kind: 'paragraph', text: '受访者描述了工作时间的变化。', locator: { page: 4, paragraph: 12 },
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/analysis')) return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
+      if (path.endsWith('/materials/material-1/segments/segment-1')) return response(segment)
+      if (path.endsWith('/materials/material-1')) return response({ ...material, segments: [segment] })
+      return response({ task_id: 'task-1', items: [material] })
+    }))
+
+    render(
+      <ResearchMaterialsPanel
+        taskId="task-1"
+        presentation="workspace"
+        initialDetailMode="analysis"
+        initialMaterialId="material-1"
+        initialParseId="parse-1"
+        initialSegmentId="segment-1"
+        onWorkspaceLocationChange={onWorkspaceLocationChange}
+      />,
+    )
+
+    const workspace = await screen.findByRole('region', { name: '研究材料' })
+    expect(await within(workspace).findByRole('button', { name: '分析', pressed: true })).toBeVisible()
+    await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
+      mode: 'analysis',
+      materialId: 'material-1',
+      parseId: 'parse-1',
+      segmentId: 'segment-1',
+    }))
+  })
+
+  it('does not publish a stale center mode while the workspace route changes', async () => {
+    const onWorkspaceLocationChange = vi.fn()
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/analysis')) {
+        return response({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
+      }
+      return response({ task_id: 'task-1', items: [] })
+    }))
+
+    const view = render(
+      <ResearchMaterialsPanel
+        taskId="task-1"
+        presentation="workspace"
+        initialDetailMode="source"
+        onWorkspaceLocationChange={onWorkspaceLocationChange}
+      />,
+    )
+    await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
+      mode: 'source',
+      materialId: null,
+      parseId: null,
+      segmentId: null,
+    }))
+    onWorkspaceLocationChange.mockClear()
+
+    view.rerender(
+      <ResearchMaterialsPanel
+        taskId="task-1"
+        presentation="workspace"
+        initialDetailMode="analysis"
+        onWorkspaceLocationChange={onWorkspaceLocationChange}
+      />,
+    )
+
+    await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
+      mode: 'analysis',
+      materialId: null,
+      parseId: null,
+      segmentId: null,
+    }))
+    expect(onWorkspaceLocationChange).not.toHaveBeenCalledWith(expect.objectContaining({ mode: 'source' }))
+  })
+
   it('shows persisted materials and opens an exact source locator in the detail view', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(requestOf(input, init).url).pathname
