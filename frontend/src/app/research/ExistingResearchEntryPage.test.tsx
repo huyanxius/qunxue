@@ -86,7 +86,7 @@ describe('ExistingResearchEntryPage', () => {
 
     await waitFor(
       () => expect(screen.getByLabelText('当前路径')).toHaveTextContent(
-        `/research/materials?task_id=${taskId}`,
+        `/research/${taskId}/workspace/materials`,
       ),
       { timeout: 10_000 },
     )
