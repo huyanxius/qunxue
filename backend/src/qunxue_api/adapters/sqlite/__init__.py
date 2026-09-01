@@ -55,6 +55,8 @@ from qunxue_api.adapters.sqlite.research_analysis_model import (
 from qunxue_api.adapters.sqlite.research_analysis_repository import (
     SqliteResearchAnalysisRepository,
 )
+from qunxue_api.adapters.sqlite.research_cycle_model import ResearchCycleSnapshotRow
+from qunxue_api.adapters.sqlite.research_cycle_repository import SqliteResearchCycleRepository
 from qunxue_api.adapters.sqlite.research_document import SqliteResearchDocumentRepository
 from qunxue_api.adapters.sqlite.research_document_model import (
     ResearchDocumentMutationRequestRow,
@@ -93,8 +95,6 @@ from qunxue_api.adapters.sqlite.research_method_model import (
     ResearchMethodPlanVersionRow,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
-from qunxue_api.adapters.sqlite.research_cycle_model import ResearchCycleSnapshotRow
-from qunxue_api.adapters.sqlite.research_cycle_repository import SqliteResearchCycleRepository
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
 )
@@ -156,7 +156,9 @@ __all__ = [
     "SqliteResearchAnalysisRepository",
     "ResearchMethodPlanIdentityRow",
     "ResearchMethodPlanVersionRow",
+    "ResearchCycleSnapshotRow",
     "SqliteMethodPlanRepository",
+    "SqliteResearchCycleRepository",
     "ResearchDocumentVersionRow",
     "ResearchDocumentMutationRequestRow",
     "SqliteResearchDocumentMutationRepository",

@@ -7,11 +7,11 @@ from fastapi import Depends, Request
 from qunxue_api.application import (
     ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
+    ResearchCycleApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
     ResearchMaterialApplication,
     ResearchMethodPlanApplication,
-    ResearchCycleApplication,
     TheoryMatchingApplication,
 )
 from qunxue_api.modules.identity import AuthenticatedSession, IdentityService
