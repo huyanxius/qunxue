@@ -18,6 +18,12 @@ from qunxue_api.application.research_journey import (
 )
 from qunxue_api.application.research_materials import ResearchMaterialApplication
 from qunxue_api.application.research_method import ResearchMethodPlanApplication
+from qunxue_api.application.research_project_exchange import (
+    ResearchExchangeIdempotencyConflict,
+    ResearchProjectArchiveExport,
+    ResearchProjectExchangeApplication,
+    ResearchProjectImportPreview,
+)
 from qunxue_api.application.research_start import (
     ResearchStartApplication,
     ResearchStartConfirmationResult,
@@ -42,6 +48,10 @@ __all__ = [
     "ProfessionalMaterialsApplication",
     "ResearchMethodPlanApplication",
     "ResearchCycleApplication",
+    "ResearchProjectExchangeApplication",
+    "ResearchProjectArchiveExport",
+    "ResearchProjectImportPreview",
+    "ResearchExchangeIdempotencyConflict",
     "ResearchStartApplication",
     "ResearchStartConfirmationResult",
     "ResearchStartJourneyState",

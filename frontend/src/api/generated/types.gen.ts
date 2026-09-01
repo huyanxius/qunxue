@@ -775,6 +775,11 @@ export type AnalysisThemeResponse = {
 };
 
 /**
+ * AuditActorType
+ */
+export type AuditActorType = 'user' | 'agent' | 'system';
+
+/**
  * AuditFindingResponse
  */
 export type AuditFindingResponse = {
@@ -945,6 +950,16 @@ export type BodyImportLiteratureEntries = {
  * Body_import_material_transcript
  */
 export type BodyImportMaterialTranscript = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_preview_research_project_qdpx_import
+ */
+export type BodyPreviewResearchProjectQdpxImport = {
     /**
      * File
      */
@@ -4316,6 +4331,63 @@ export type ProjectResearchFactsResponse = {
 };
 
 /**
+ * QdpxImportPreviewResponse
+ */
+export type QdpxImportPreviewResponse = {
+    /**
+     * Exchange Id
+     */
+    exchange_id: string;
+    project: QdpxProjectPreviewResponse;
+    /**
+     * Restored
+     */
+    restored?: false;
+    /**
+     * Specification Version
+     */
+    specification_version?: '1.0';
+    /**
+     * Valid
+     */
+    valid?: true;
+    /**
+     * Validation Scope
+     */
+    validation_scope?: 'official-xsd';
+};
+
+/**
+ * QdpxProjectPreviewResponse
+ */
+export type QdpxProjectPreviewResponse = {
+    /**
+     * Case Count
+     */
+    case_count: number;
+    /**
+     * Code Count
+     */
+    code_count: number;
+    /**
+     * Memo Count
+     */
+    memo_count: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Origin
+     */
+    origin: string;
+    /**
+     * Source Count
+     */
+    source_count: number;
+};
+
+/**
  * QualitativeMethod
  */
 export type QualitativeMethod = 'thematic_analysis' | 'grounded_theory' | 'ethnography' | 'case_study' | 'narrative_research' | 'discourse_conversation_analysis' | 'literature_review';
@@ -4666,6 +4738,63 @@ export type ResearchAnalysisSnapshotResponse = {
     task_id: string;
     workspace: QualitativeWorkspaceSnapshotResponse;
 };
+
+/**
+ * ResearchAuditEventListResponse
+ */
+export type ResearchAuditEventListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchAuditEventResponse>;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
+ * ResearchAuditEventResponse
+ */
+export type ResearchAuditEventResponse = {
+    /**
+     * Actor Id
+     */
+    actor_id: string | null;
+    actor_type: AuditActorType;
+    /**
+     * Event Id
+     */
+    event_id: string;
+    event_type: ResearchAuditEventType;
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Object Type
+     */
+    object_type: string;
+    /**
+     * Object Version
+     */
+    object_version: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Payload
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * ResearchAuditEventType
+ */
+export type ResearchAuditEventType = 'material.deleted' | 'material.permission_changed' | 'material.parsed' | 'transcript.version_created' | 'analysis.candidate_created' | 'analysis.confirmed' | 'analysis.rejected' | 'citation.created' | 'citation.state_changed' | 'document.version_created' | 'project.exported' | 'project.imported' | 'project.import_previewed';
 
 /**
  * ResearchCaseResponse
@@ -10386,6 +10515,136 @@ export type ConfirmResearchAnalysisThemeResponses = {
 };
 
 export type ConfirmResearchAnalysisThemeResponse = ConfirmResearchAnalysisThemeResponses[keyof ConfirmResearchAnalysisThemeResponses];
+
+export type ExportResearchProjectArchiveData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/exchange/archive';
+};
+
+export type ExportResearchProjectArchiveErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ExportResearchProjectArchiveError = ExportResearchProjectArchiveErrors[keyof ExportResearchProjectArchiveErrors];
+
+export type ExportResearchProjectArchiveResponses = {
+    /**
+     * A BagIt research archive containing QDPX and native recovery data.
+     */
+    200: Blob | File;
+};
+
+export type ExportResearchProjectArchiveResponse = ExportResearchProjectArchiveResponses[keyof ExportResearchProjectArchiveResponses];
+
+export type ListResearchProjectAuditEventsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/exchange/audit';
+};
+
+export type ListResearchProjectAuditEventsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListResearchProjectAuditEventsError = ListResearchProjectAuditEventsErrors[keyof ListResearchProjectAuditEventsErrors];
+
+export type ListResearchProjectAuditEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchAuditEventListResponse;
+};
+
+export type ListResearchProjectAuditEventsResponse = ListResearchProjectAuditEventsResponses[keyof ListResearchProjectAuditEventsResponses];
+
+export type PreviewResearchProjectQdpxImportData = {
+    body: BodyPreviewResearchProjectQdpxImport;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/exchange/qdpx-preview';
+};
+
+export type PreviewResearchProjectQdpxImportErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type PreviewResearchProjectQdpxImportError = PreviewResearchProjectQdpxImportErrors[keyof PreviewResearchProjectQdpxImportErrors];
+
+export type PreviewResearchProjectQdpxImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: QdpxImportPreviewResponse;
+};
+
+export type PreviewResearchProjectQdpxImportResponse = PreviewResearchProjectQdpxImportResponses[keyof PreviewResearchProjectQdpxImportResponses];
 
 export type ExportResearchTraceData = {
     body?: never;

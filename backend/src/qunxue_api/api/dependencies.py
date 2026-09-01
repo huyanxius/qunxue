@@ -12,6 +12,7 @@ from qunxue_api.application import (
     ResearchDocumentProposalApplication,
     ResearchMaterialApplication,
     ResearchMethodPlanApplication,
+    ResearchProjectExchangeApplication,
     TheoryMatchingApplication,
     TranscriptionApplication,
 )
@@ -156,6 +157,19 @@ def get_research_analysis_application(
 ResearchAnalysisApplicationDependency = Annotated[
     ResearchAnalysisApplication,
     Depends(get_research_analysis_application),
+]
+
+
+def get_research_project_exchange_application(
+    request: Request,
+) -> Iterator[ResearchProjectExchangeApplication]:
+    with request.app.state.research_project_exchange_application_scope() as application:
+        yield application
+
+
+ResearchProjectExchangeApplicationDependency = Annotated[
+    ResearchProjectExchangeApplication,
+    Depends(get_research_project_exchange_application),
 ]
 
 

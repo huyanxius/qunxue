@@ -95,6 +95,13 @@ from qunxue_api.adapters.sqlite.research_method_model import (
     ResearchMethodPlanVersionRow,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
+from qunxue_api.adapters.sqlite.research_project_audit import (
+    SqliteResearchProjectAuditRepository,
+)
+from qunxue_api.adapters.sqlite.research_project_audit_model import (
+    ResearchProjectAuditEventRow,
+    ResearchProjectExchangeRunRow,
+)
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
 )
@@ -148,6 +155,9 @@ __all__ = [
     "ResearchMaterialReparseRequestRow",
     "ResearchMaterialBlockRow",
     "SqliteResearchMaterialRepository",
+    "ResearchProjectAuditEventRow",
+    "ResearchProjectExchangeRunRow",
+    "SqliteResearchProjectAuditRepository",
     "ResearchAnnotationRow",
     "ResearchAnalysisWriteRequestRow",
     "ResearchCodeRow",

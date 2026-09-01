@@ -37,6 +37,10 @@ vi.mock('../../modules/research-method', () => ({
   MethodPlanWorkspace: () => <section aria-label="方法中心">方法</section>,
 }))
 
+vi.mock('../../modules/research-exchange', () => ({
+  ResearchArchivePanel: () => <section aria-label="项目归档与交换">归档</section>,
+}))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -130,12 +134,17 @@ describe('ResearchProjectWorkspacePage', () => {
     expect(screen.getByRole('region', { name: '材料中心' })).toBeVisible()
   })
 
-  it('exposes exactly the six existing center tools as project navigation', async () => {
+  it('adds project archive through the unified workspace public route', async () => {
     renderWorkspace('/research/task-1/workspace/map')
 
     const navigation = await screen.findByRole('navigation', { name: '研究中心工具' })
-    expect(navigation.querySelectorAll('a')).toHaveLength(6)
+    expect(navigation.querySelectorAll('a')).toHaveLength(7)
     expect(screen.getByRole('link', { name: '地图' })).toHaveAttribute('href', '/research/task-1/workspace/map')
     expect(screen.getByRole('link', { name: '文稿' })).toHaveAttribute('href', '/research/task-1/workspace/writing')
+    expect(screen.getByRole('link', { name: '归档' })).toHaveAttribute('href', '/research/task-1/workspace/archive')
+
+    fireEvent.click(screen.getByRole('link', { name: '归档' }))
+    expect(await screen.findByRole('region', { name: '项目归档与交换' })).toBeVisible()
+    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveAttribute('data-instance', '1')
   })
 })
