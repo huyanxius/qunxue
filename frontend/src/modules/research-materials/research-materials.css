@@ -204,16 +204,27 @@
 .qx-library__summary { margin: 0; color: var(--qx-color-muted); font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
 .qx-library > .qx-message { width: 100%; max-width: 720px; margin: 0 auto; }
 
-.qx-library__list { display: grid; gap: 0; width: 100%; max-width: 720px; margin: 0 auto; padding: 0; list-style: none; }
+.qx-library__list { display: grid; gap: var(--qx-space-2); width: 100%; max-width: 720px; margin: 0 auto; padding: 0; list-style: none; }
 
+/*
+ * 一行材料是一张卡，不是被分割线切开的一条。通栏细线把列表压成表格，每一行都在说
+ * 「我是一张表的第 n 行」；材料是一个个可以打开的东西，卡片才对得上这件事。
+ * 表面处理照 Windup：内容表面圆角 + 描边 + 抬起的纸面，悬停时边框提到强调色。
+ */
 .qx-library__row {
   display: flex;
   gap: var(--qx-space-2);
   align-items: center;
-  border-top: 1px solid var(--qx-color-rule);
+  border: 1px solid var(--qx-color-rule);
+  border-radius: var(--qx-radius-surface);
+  background: var(--qx-color-surface-raised);
+  transition:
+    border-color var(--qx-motion-fast) ease,
+    box-shadow var(--qx-motion-base) var(--qx-ease);
 }
 
-.qx-library__row:last-of-type { border-bottom: 1px solid var(--qx-color-rule); }
+.qx-library__row:hover { border-color: var(--qx-color-rule-strong); box-shadow: var(--qx-shadow-card); }
+.qx-library__row:focus-within { border-color: var(--qx-color-accent); box-shadow: var(--qx-shadow-card); }
 
 .qx-library__open {
   display: flex;
@@ -221,7 +232,8 @@
   gap: var(--qx-space-3);
   align-items: center;
   min-width: 0;
-  padding: var(--qx-space-3) var(--qx-space-2);
+  padding: var(--qx-space-4);
+  border-radius: var(--qx-radius-surface);
   border: 0;
   color: inherit;
   background: transparent;
@@ -259,7 +271,7 @@
  * 危险动作。悬停或键盘聚焦到行内任一控件时才显形，聚焦态必须一起处理，否则键盘用户永远
  * 够不到它们。
  */
-.qx-library__row-actions { display: flex; flex: none; gap: 2px; padding-right: var(--qx-space-2); opacity: 0; }
+.qx-library__row-actions { display: flex; flex: none; gap: 2px; padding-right: var(--qx-space-3); opacity: 0; }
 .qx-library__row:hover .qx-library__row-actions,
 .qx-library__row:focus-within .qx-library__row-actions { opacity: 1; }
 
