@@ -255,13 +255,15 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       <PageContent>
         <main className="research-project-workspace" aria-label="研究项目工作区">
           <header className="research-project-workspace__header">
+            {/*
+              顶栏只留一行：返回入口和项目名。原先还有「已有研究」这类分类词和阶段副标题，
+              它们跟中心工具自己的标题栏结构一模一样（返回 | 眉标+标题 / 副行 + 右侧控件），
+              两条叠在一起就成了同一个模板出现两遍。阶段和方法在地图与方法页里都看得到，
+              这里不必重复。
+            */}
             <div className="research-project-workspace__identity">
               <Link to="/app?research=all">全部研究</Link>
-              <div>
-                <span>{taskData.entryMode === 'existing_research' ? '已有研究' : '研究项目'}</span>
-                <h1>{projectTitle(taskData, navigationData)}</h1>
-              </div>
-              <p>{[taskData.projectStage, taskData.methodOrientation].filter(Boolean).join(' · ') || navigationData.stage_label}</p>
+              <h1>{projectTitle(taskData, navigationData)}</h1>
             </div>
             <nav className="research-project-workspace__tools" aria-label="研究中心工具">
               {tools.map(({ id, label, icon: Icon }) => (
