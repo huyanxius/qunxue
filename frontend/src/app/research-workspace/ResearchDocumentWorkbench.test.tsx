@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import * as researchApi from '../../api/researchWorkspace'
 import * as researchAnalysisApi from '../../modules/research-materials'
+import type { AgentConversation } from '../../modules/research-agent'
 import { ResearchDocumentWorkbench } from './ResearchDocumentWorkbench'
 
 vi.mock('../../api/client', () => ({ apiClient: {} }))
@@ -708,5 +709,166 @@ describe('ResearchDocumentWorkbench', () => {
 
     expect(await screen.findByRole('heading', { name: 'M5 服务端恢复目标' })).toBeVisible()
     await waitFor(() => expect(researchApi.readResearchTaskNavigationViaApi).toHaveBeenCalledWith('task-1'))
+  })
+
+  it('embeds the requested document section without mounting a second page shell or Agent', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      conversation_id: 'conversation-1',
+      allowed_actions: [],
+      current_match_run_id: null,
+      current_theory_plan_id: 'theory-plan-1',
+      current_framework_id: 'document-1',
+      knowledge_release_id: 'release-1',
+      phenomenon_summary: { phenomenon: '社区照护如何分配？' },
+    }
+    const document = {
+      document_id: 'document-1',
+      theory_plan_id: 'theory-plan-1',
+      knowledge_release_id: 'release-1',
+      revision_id: 'revision-3',
+      title: '社区照护研究框架',
+      version: 3,
+      actor: 'user',
+      status: 'draft',
+      sections: [
+        { section_id: 'research_question', key: 'research_question', title: '研究问题', content: '谁承担照护？', status: 'reviewed', evidence_refs: [] },
+        { section_id: 'methodology', key: 'methodology', title: '研究方法', content: '半结构访谈', status: 'needs_user_decision', evidence_refs: [] },
+      ],
+    }
+    const conversation: AgentConversation = {
+      conversation_id: 'conversation-1',
+      title: '社区照护',
+      created_at: '2026-08-31T00:00:00Z',
+      updated_at: '2026-08-31T00:01:00Z',
+      turn_count: 0,
+      research_map: {
+        schema_version: 1,
+        nodes: [{ id: 'claim-care', kind: 'claim', title: '照护责任向家庭回流', summary: '公共供给不足时家庭承担更多照护。', status: 'developing', citation_ids: [] }],
+        relations: [],
+      },
+      turns: [],
+    }
+    const onWorkspaceContextChange = vi.fn()
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments').mockResolvedValue({ data: { items: [document] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchDocumentVersions').mockResolvedValue({ data: { items: [document] } } as never)
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/research/task-1/workspace/writing?section_id=methodology']}>
+        <Routes>
+          <Route
+            path="/research/:task_id/workspace/:tool"
+            element={(
+              <ResearchDocumentWorkbench
+                embedded
+                workspaceMode="framework"
+                focusDocument
+                initialSectionId="methodology"
+                conversation={conversation}
+                onWorkspaceContextChange={onWorkspaceContextChange}
+              />
+            )}
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('region', { name: '研究文档节点' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '研究文档正文' })).toHaveTextContent('研究方法')
+    expect(screen.getByRole('button', { name: '研究节点：照护责任向家庭回流' })).toBeVisible()
+    expect(screen.queryByRole('complementary', { name: '研究 Agent 对话栏' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('separator', { name: '调整 Agent 对话栏宽度' })).not.toBeInTheDocument()
+    expect(container.querySelector('.page-shell')).not.toBeInTheDocument()
+    await waitFor(() => expect(onWorkspaceContextChange).toHaveBeenLastCalledWith({
+      mode: 'framework',
+      documentId: 'document-1',
+      sectionId: 'methodology',
+      documentVersion: 3,
+      theoryPlanId: 'theory-plan-1',
+    }))
+  })
+
+  it('refreshes the embedded document context in place when the shared Agent completes a turn', async () => {
+    const navigation = {
+      task_id: 'task-1',
+      conversation_id: 'conversation-1',
+      allowed_actions: [],
+      current_match_run_id: null,
+      current_theory_plan_id: 'theory-plan-1',
+      current_framework_id: null,
+      knowledge_release_id: 'release-1',
+      phenomenon_summary: { phenomenon: '社区照护如何分配？' },
+    }
+    const document = (version: number) => ({
+      document_id: 'document-1',
+      theory_plan_id: 'theory-plan-1',
+      knowledge_release_id: 'release-1',
+      revision_id: `revision-${version}`,
+      title: '理论判断文档',
+      version,
+      actor: 'agent',
+      status: 'draft',
+      sections: [{ section_id: 'theory_fit', key: 'theory_fit', title: '理论适配与张力', content: `第 ${version} 版`, status: 'reviewed', evidence_refs: [] }],
+    })
+    const onWorkspaceContextChange = vi.fn()
+    vi.spyOn(researchApi, 'getResearchTaskNavigation').mockResolvedValue({ data: navigation } as never)
+    vi.spyOn(researchApi, 'listResearchDocuments')
+      .mockResolvedValueOnce({ data: { items: [document(1)] } } as never)
+      .mockResolvedValue({ data: { items: [document(2)] } } as never)
+    vi.spyOn(researchApi, 'listResearchTaskDocumentProposals').mockResolvedValue({ data: { items: [] } } as never)
+    vi.spyOn(researchApi, 'listResearchDocumentVersions').mockImplementation(async ({ path }) => ({
+      data: { items: [path.document_id === 'document-1' ? document(2) : document(1)] },
+    }) as never)
+    vi.spyOn(researchAnalysisApi, 'getAnalysisSnapshot').mockResolvedValue(null)
+
+    const view = render(
+      <MemoryRouter initialEntries={['/research/task-1/workspace/theory']}>
+        <Routes>
+          <Route
+            path="/research/:task_id/workspace/:tool"
+            element={(
+              <ResearchDocumentWorkbench
+                embedded
+                workspaceMode="match"
+                focusDocument
+                initialSectionId="theory_fit"
+                refreshKey={0}
+                onWorkspaceContextChange={onWorkspaceContextChange}
+              />
+            )}
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(onWorkspaceContextChange).toHaveBeenLastCalledWith(expect.objectContaining({ documentVersion: 1 })))
+    view.rerender(
+      <MemoryRouter initialEntries={['/research/task-1/workspace/theory']}>
+        <Routes>
+          <Route
+            path="/research/:task_id/workspace/:tool"
+            element={(
+              <ResearchDocumentWorkbench
+                embedded
+                workspaceMode="match"
+                focusDocument
+                initialSectionId="theory_fit"
+                refreshKey={1}
+                onWorkspaceContextChange={onWorkspaceContextChange}
+              />
+            )}
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(onWorkspaceContextChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      documentId: 'document-1',
+      sectionId: 'theory_fit',
+      documentVersion: 2,
+    })))
+    expect(screen.getAllByRole('region', { name: '研究文档节点' })).toHaveLength(1)
   })
 })
