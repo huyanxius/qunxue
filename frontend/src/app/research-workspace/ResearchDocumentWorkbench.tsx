@@ -31,6 +31,15 @@ import { getAnalysisSnapshot, type ResearchAnalysisSnapshot } from '../../module
 import type { AgentConversation } from '../../modules/research-agent'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { M5ResearchDeliveryController } from './M5ResearchDeliveryController'
+import {
+  buildPrintableDocument,
+  createDocumentDiff,
+  createDocxExport,
+  formatBibliography,
+  registerCustomCslStyle,
+  type DocumentTemplateId,
+  type ExportCitation,
+} from '../../modules/research-document'
 import './research-document-workbench.css'
 
 const M4_SECTIONS = [
@@ -90,8 +99,21 @@ type ResearchDocumentProposalResponse = NonNullable<Awaited<ReturnType<typeof li
 type ResearchDocumentResponse = NonNullable<Awaited<ReturnType<typeof listResearchDocuments>>['data']>['items'][number]
 type ResearchTaskNavigationResponse = NonNullable<Awaited<ReturnType<typeof getResearchTaskNavigation>>['data']>
 type MatchRunResponse = NonNullable<Awaited<ReturnType<typeof getMatchRun>>['data']>
+type ResearchDocumentExportResponse = NonNullable<Awaited<ReturnType<typeof exportResearchDocument>>['data']>
 type TheoryDecisionSetResponse = NonNullable<Awaited<ReturnType<typeof listTheoryDecisions>>['data']>['decision_sets'][number]
 type TheoryDecisionAction = TheoryDecisionSetResponse['decisions'][number]['action']
+type CitationMetadataResolver = (
+  sourceId: string,
+  sourceVersion: string | null,
+) => ({ id: string } & Record<string, unknown>) | null
+
+type FormattingDraft = {
+  template_id: string
+  csl_style_id: string
+  locale: string
+  custom_csl?: string | null
+  custom_css?: string | null
+}
 
 function key() {
   return globalThis.crypto?.randomUUID?.() ?? `m4-m5-${Date.now()}`
@@ -106,6 +128,7 @@ function sectionFallback(stage: 'match' | 'framework') {
     content: '',
     status: 'needs_user_decision' as const,
     evidence_refs: [],
+    citation_refs: [],
   }))
 }
 
@@ -114,7 +137,13 @@ function selectCurrentDocument(items: ResearchDocumentResponse[], navigation: Re
   return (currentId ? items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? items[0] ?? null
 }
 
-export function ResearchDocumentWorkbench({ userId = null }: { userId?: string | null }) {
+export function ResearchDocumentWorkbench({
+  userId = null,
+  citationMetadataResolver = () => null,
+}: {
+  userId?: string | null
+  citationMetadataResolver?: CitationMetadataResolver
+}) {
   const { task_id: taskId, stage: stageParam } = useParams<{ task_id: string; stage?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
@@ -124,6 +153,15 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
   const [document, setDocument] = useState<ResearchDocumentResponse | null>(null)
   const [proposals, setProposals] = useState<ResearchDocumentProposalResponse[]>([])
   const [versions, setVersions] = useState<ResearchDocumentResponse[]>([])
+  const [rebasedProposalIds, setRebasedProposalIds] = useState<Set<string>>(() => new Set())
+  const [formattingDraft, setFormattingDraft] = useState<FormattingDraft>({
+    template_id: 'chinese-social-science',
+    csl_style_id: 'china-national-standard-gb-t-7714-2015-author-date',
+    locale: 'zh-CN',
+    custom_csl: null,
+    custom_css: null,
+  })
+  const [exportState, setExportState] = useState<'idle' | 'working'>('idle')
   const [activeSectionId, setActiveSectionId] = useState<SectionKey>(mode === 'match' ? M4_SECTIONS[0][0] : M5_SECTIONS[0][0])
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -179,6 +217,10 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
     editor.commands.setContent(activeSection.content || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。', { contentType: 'markdown' })
     setSaveState('saved')
   }, [activeSectionId, document?.revision_id, editor])
+
+  useEffect(() => {
+    if (document?.formatting) setFormattingDraft(document.formatting)
+  }, [document?.revision_id, document?.formatting])
 
   useEffect(() => {
     if (!taskId) {
@@ -470,6 +512,7 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
   async function acceptProposal(proposal: ResearchDocumentProposalResponse) {
     if (proposal.status !== 'pending') return
     if (proposal.kind !== 'create' && !document) return
+    if (proposal.kind !== 'create' && proposal.base_document_version !== document!.version) return
     const result = await acceptResearchDocumentProposal({
       path: { proposal_id: proposal.proposal_id },
       headers: { 'Idempotency-Key': key() },
@@ -513,6 +556,141 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
     if (result.data) {
       setDocument(result.data)
       setVersions((current) => [result.data!, ...current.filter((item) => item.version !== result.data!.version)])
+    }
+  }
+
+  async function applyFormatting() {
+    if (!document) return
+    const latestDocument = await saveSection() ?? document
+    if (
+      latestDocument.formatting.template_id === formattingDraft.template_id
+      && latestDocument.formatting.csl_style_id === formattingDraft.csl_style_id
+      && latestDocument.formatting.locale === formattingDraft.locale
+      && latestDocument.formatting.custom_csl === formattingDraft.custom_csl
+      && latestDocument.formatting.custom_css === formattingDraft.custom_css
+    ) return
+    const result = await updateResearchDocument({
+      path: { document_id: latestDocument.document_id },
+      headers: { 'Idempotency-Key': key() },
+      body: {
+        expected_version: latestDocument.version,
+        sections: latestDocument.sections,
+        change_summary: '切换论文模板与引用格式',
+        source: 'user_edit',
+        formatting: formattingDraft,
+      },
+    })
+    if (result.data) {
+      setDocument(result.data)
+      setVersions((current) => [result.data!, ...current.filter((item) => item.version !== result.data!.version)])
+    }
+  }
+
+  async function importCsl(file: File | undefined) {
+    if (!file) return
+    const xml = await file.text()
+    const styleId = registerCustomCslStyle(`custom-${file.name.replace(/\.csl$/i, '')}`, xml)
+    setFormattingDraft((current) => ({ ...current, csl_style_id: styleId, custom_csl: xml }))
+  }
+
+  async function importPrintCss(file: File | undefined) {
+    if (!file) return
+    const css = await file.text()
+    setFormattingDraft((current) => ({ ...current, template_id: 'custom', custom_css: css }))
+  }
+
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const anchor = globalThis.document.createElement('a')
+    anchor.href = url
+    anchor.download = filename
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function loadFormalExport() {
+    if (!document) return null
+    const result = await exportResearchDocument({ path: { document_id: document.document_id }, query: { version: document.version } })
+    return result.data ?? null
+  }
+
+  function citationsFromManifest(manifest: ResearchDocumentExportResponse['manifest']) {
+    return manifest.citation_audit.map<ExportCitation>((citation) => {
+      const csl = citationMetadataResolver(citation.source_id, citation.source_version)
+      return {
+        citationId: citation.citation_id,
+        sourceId: citation.source_id,
+        sourceVersion: citation.source_version,
+        locator: citation.locator ?? {},
+        state: citation.state === 'verified' && !csl ? 'needs_verification' : citation.state,
+        csl,
+      }
+    })
+  }
+
+  async function exportFormalDocument(kind: 'markdown' | 'docx' | 'pdf' | 'audit') {
+    if (!document || exportState === 'working') return
+    setExportState('working')
+    try {
+      const exported = await loadFormalExport()
+      if (!exported) return
+      if (kind === 'markdown') {
+        downloadBlob(new Blob([exported.markdown], { type: 'text/markdown;charset=utf-8' }), exported.filename)
+        return
+      }
+      if (kind === 'audit') {
+        downloadBlob(
+          new Blob([JSON.stringify(exported.manifest, null, 2)], { type: 'application/json;charset=utf-8' }),
+          exported.filename.replace(/\.md$/i, '.audit.json'),
+        )
+        return
+      }
+      const formal = exported.manifest.formal_document
+      const citations = citationsFromManifest(exported.manifest)
+      const bibliographyHtml = formatBibliography(citations, {
+        styleId: exported.manifest.formatting.csl_style_id,
+        locale: exported.manifest.formatting.locale,
+        customStyleXml: exported.manifest.formatting.custom_csl ?? undefined,
+      })
+      const sections = Array.isArray(formal.sections)
+        ? formal.sections.flatMap((section) => {
+            if (!section || typeof section !== 'object') return []
+            const item = section as { title?: unknown; content?: unknown }
+            return [{ title: String(item.title ?? ''), markdown: String(item.content ?? '') }]
+          })
+        : []
+      const templateId = (exported.manifest.formatting.template_id === 'asa'
+        || exported.manifest.formatting.template_id === 'custom')
+        ? exported.manifest.formatting.template_id
+        : 'chinese-social-science'
+      if (kind === 'docx') {
+        const textContainer = globalThis.document.createElement('div')
+        textContainer.innerHTML = bibliographyHtml
+        const blob = await createDocxExport({
+          title: String(formal.title ?? document.title),
+          templateId: templateId as DocumentTemplateId,
+          sections,
+          citationAudit: citations,
+          bibliographyText: textContainer.textContent ?? '',
+        })
+        downloadBlob(blob, exported.filename.replace(/\.md$/i, '.docx'))
+        return
+      }
+      const preview = window.open('', '_blank')
+      if (!preview) throw new Error('浏览器阻止了打印预览窗口。')
+      preview.document.write(buildPrintableDocument({
+        title: String(formal.title ?? document.title),
+        templateId: templateId as DocumentTemplateId,
+        sections,
+        citationAudit: citations,
+        bibliographyHtml,
+        customCss: exported.manifest.formatting.custom_css ?? undefined,
+      }))
+      preview.document.close()
+      preview.focus()
+      preview.print()
+    } finally {
+      setExportState('idle')
     }
   }
 
@@ -580,19 +758,6 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
     }
   }
 
-  async function downloadDocument() {
-    if (!document) return
-    const result = await exportResearchDocument({ path: { document_id: document.document_id }, query: { version: document.version } })
-    if (!result.data) return
-    const blob = new Blob([result.data.markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const anchor = globalThis.document.createElement('a')
-    anchor.href = url
-    anchor.download = result.data.filename
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }
-
   const runtimeBoundary = loadState === 'error'
   const statusText = saveState === 'saving' ? '正在保存…' : saveState === 'unsaved' ? '有未保存更改' : null
   const documentNodeContent = (
@@ -603,7 +768,15 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
         </span>
         <div className="research-document-node__actions">
           {statusText ? <span className={`document-save-status document-save-status--${saveState}`} role="status">{statusText}</span> : null}
-          <button type="button" onClick={() => void downloadDocument()} disabled={!document} aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</button>
+          <details className="document-export-menu">
+            <summary aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</summary>
+            <div>
+              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('markdown')}>下载 Markdown</button>
+              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('docx')}>下载 DOCX</button>
+              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('pdf')}>打印或另存 PDF</button>
+              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('audit')}>下载审计 JSON</button>
+            </div>
+          </details>
           <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
           {mode === 'framework' && document?.status === 'confirmed' && taskId ? <a href={`/research/${taskId}/method`}>制定研究方法</a> : null}
           <button type="button" className="research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
@@ -627,10 +800,32 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
             <header><span>Agent 修订建议</span><small>修改只会在你确认后写入正文</small></header>
             {proposals.filter((proposal) => proposal.status === 'pending').map((proposal) => (
               <article className="proposal-card" key={proposal.proposal_id}>
+                <header>
+                  <strong>建议基线 v{proposal.base_document_version ?? '新建'}</strong>
+                  {proposal.kind !== 'create' && proposal.base_document_version !== document?.version
+                    ? <span className="proposal-card__conflict">当前文稿已是 v{document?.version}，建议基线发生冲突。</span>
+                    : null}
+                </header>
                 <p>{proposal.rationale}</p>
+                {proposal.proposed_sections.map((proposedSection) => {
+                  const baseVersion = rebasedProposalIds.has(proposal.proposal_id)
+                    ? document
+                    : versions.find((version) => version.version === proposal.base_document_version) ?? document
+                  const baseSection = baseVersion?.sections.find((section) => section.section_id === proposedSection.section_id)
+                  return <div className="proposal-card__diff" key={proposedSection.section_id} aria-label={`${proposedSection.title}局部差异`}>
+                    {createDocumentDiff(baseSection?.content ?? '', proposedSection.content).map((part, index) => part.kind === 'deleted'
+                      ? <del key={index}>{part.text}</del>
+                      : part.kind === 'inserted'
+                        ? <ins key={index}>{part.text}</ins>
+                        : <span key={index}>{part.text}</span>)}
+                  </div>
+                })}
                 <div>
-                  <button type="button" onClick={() => void acceptProposal(proposal)}>接受局部修改</button>
+                  <button type="button" disabled={proposal.kind !== 'create' && proposal.base_document_version !== document?.version} onClick={() => void acceptProposal(proposal)}>接受局部修改</button>
                   <button type="button" onClick={() => void rejectProposal(proposal)}>拒绝建议</button>
+                  {proposal.kind !== 'create' && proposal.base_document_version !== document?.version
+                    ? <button type="button" onClick={() => setRebasedProposalIds((current) => new Set(current).add(proposal.proposal_id))}>按当前版本重新比较</button>
+                    : null}
                 </div>
               </article>
             ))}
@@ -671,7 +866,27 @@ export function ResearchDocumentWorkbench({ userId = null }: { userId?: string |
               {decisionSet ? <button type="button" disabled={!decisionSet.allowed_actions.includes('confirm_theory_plan')} onClick={() => void confirmTheoryPlanChoice()}>确认理论方案，进入 M5</button> : null}
             </section> : null}
             {document ? <>
+              <section className="document-formatting" aria-label="论文与引用格式">
+                <label>论文模板<select aria-label="论文模板" value={formattingDraft.template_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, template_id: event.target.value }))}><option value="chinese-social-science">中文社会科学</option><option value="asa">ASA</option><option value="custom">自定义 CSS</option></select></label>
+                <label>引用样式<select aria-label="引用样式" value={formattingDraft.csl_style_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, csl_style_id: event.target.value }))}><option value="china-national-standard-gb-t-7714-2015-author-date">GB/T 7714</option><option value="american-sociological-association">ASA</option><option value="chicago-author-date">Chicago</option>{formattingDraft.csl_style_id.startsWith('custom-') ? <option value={formattingDraft.csl_style_id}>自定义 CSL</option> : null}</select></label>
+                <label>引用语言<select aria-label="引用语言" value={formattingDraft.locale} onChange={(event) => setFormattingDraft((current) => ({ ...current, locale: event.target.value }))}><option value="zh-CN">简体中文</option><option value="en-US">English (US)</option></select></label>
+                <label className="document-formatting__file">导入 .csl<input aria-label="导入 CSL 样式" type="file" accept=".csl,application/xml,text/xml" onChange={(event) => void importCsl(event.target.files?.[0])} /></label>
+                <label className="document-formatting__file">导入模板 CSS<input aria-label="导入模板 CSS" type="file" accept=".css,text/css" onChange={(event) => void importPrintCss(event.target.files?.[0])} /></label>
+                <button type="button" onClick={() => void applyFormatting()}>应用格式并形成新版本</button>
+              </section>
               <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" />
+              {activeSection?.citation_refs?.length ? <aside className="document-citations" aria-label="结构化引用">
+                <span>结构化引用</span>
+                <ul>{activeSection.citation_refs.map((citation) => <li key={citation.citation_id}>
+                  <strong>{citation.kind === 'scholarly' ? '学术' : citation.kind === 'empirical' ? '经验' : '分析'}</strong>
+                  <code>{citation.source_id}</code>
+                  {citation.locator ? <small>{Object.entries(citation.locator).map(([label, value]) => `${label}: ${String(value)}`).join(' · ')}</small> : null}
+                  <em>{citation.state === 'verified' ? '已核实' : citation.state === 'needs_verification' ? '待核实' : citation.state === 'broken' ? '断链' : '来源已删除'}</em>
+                </li>)}</ul>
+              </aside> : null}
+              {document.research_analysis ? <aside className="document-analysis-basis" role="note" aria-label="分析依据">
+                <span>分析依据</span><code>{document.research_analysis.content_hash}</code>
+              </aside> : null}
               <div className="document-evidence">
                 <span>证据边注</span>
                 {activeSection?.evidence_refs?.length ? activeSection.evidence_refs.map((ref) => <code key={ref.evidence_ref_id}>{ref.source_id}</code>) : <em>本节尚未引用来源</em>}

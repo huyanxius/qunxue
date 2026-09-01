@@ -78,6 +78,13 @@ def _document() -> SimpleNamespace:
         confirmed_at=NOW,
         created_at=NOW,
         analysis_handoff=None,
+        formatting=SimpleNamespace(
+            template_id="chinese-social-science",
+            csl_style_id="china-national-standard-gb-t-7714-2015-author-date",
+            locale="zh-CN",
+            custom_csl=None,
+            custom_css=None,
+        ),
         revision_id=UUID("00000000-0000-0000-0000-000000000207"),
         change_summary="确认研究框架。",
         actor="user",

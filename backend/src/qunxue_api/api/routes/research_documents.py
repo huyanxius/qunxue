@@ -31,7 +31,9 @@ from qunxue_api.api.dependencies import (
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationRef,
     ResearchDocumentEvidenceRef,
+    ResearchDocumentFormatting,
     ResearchDocumentProposalSnapshot,
     ResearchDocumentProposalStatus,
     ResearchDocumentSection,
@@ -339,6 +341,17 @@ def update_research_document(
                 change_summary=payload.change_summary,
                 actor="user",
                 idempotency_key=idempotency_key,
+                formatting=(
+                    ResearchDocumentFormatting(
+                        template_id=payload.formatting.template_id,
+                        csl_style_id=payload.formatting.csl_style_id,
+                        locale=payload.formatting.locale,
+                        custom_csl=payload.formatting.custom_csl,
+                        custom_css=payload.formatting.custom_css,
+                    )
+                    if payload.formatting is not None
+                    else None
+                ),
             )
         )
     except LookupError:
@@ -463,6 +476,17 @@ def _section(item: ResearchDocumentSectionContract) -> ResearchDocumentSection:
             )
             for evidence in item.evidence_refs
         ),
+        citation_refs=tuple(
+            ResearchDocumentCitationRef(
+                citation_id=citation.citation_id,
+                kind=citation.kind,
+                source_id=citation.source_id,
+                source_version=citation.source_version,
+                locator=citation.locator,
+                state=citation.state,
+            )
+            for citation in item.citation_refs
+        ),
     )
 
 
@@ -496,6 +520,17 @@ def _response(snapshot: ResearchDocumentSnapshot) -> ResearchDocumentResponse:
                     }
                     for evidence in section.evidence_refs
                 ],
+                citation_refs=[
+                    {
+                        "citation_id": citation.citation_id,
+                        "kind": citation.kind,
+                        "source_id": citation.source_id,
+                        "source_version": citation.source_version,
+                        "locator": citation.locator,
+                        "state": citation.state,
+                    }
+                    for citation in section.citation_refs
+                ],
             )
             for section in snapshot.sections
         ],
@@ -506,6 +541,13 @@ def _response(snapshot: ResearchDocumentSnapshot) -> ResearchDocumentResponse:
         created_at=snapshot.created_at,
         confirmed_at=snapshot.confirmed_at,
         research_analysis=snapshot.analysis_handoff,
+        formatting={
+            "template_id": snapshot.formatting.template_id,
+            "csl_style_id": snapshot.formatting.csl_style_id,
+            "locale": snapshot.formatting.locale,
+            "custom_csl": snapshot.formatting.custom_csl,
+            "custom_css": snapshot.formatting.custom_css,
+        },
     )
 
 
@@ -545,6 +587,17 @@ def _proposal_response(
                         "locator": evidence.locator,
                     }
                     for evidence in section.evidence_refs
+                ],
+                citation_refs=[
+                    {
+                        "citation_id": citation.citation_id,
+                        "kind": citation.kind,
+                        "source_id": citation.source_id,
+                        "source_version": citation.source_version,
+                        "locator": citation.locator,
+                        "state": citation.state,
+                    }
+                    for citation in section.citation_refs
                 ],
             )
             for section in snapshot.proposed_sections

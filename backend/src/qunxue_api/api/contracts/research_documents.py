@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 from qunxue_api.api.contracts.research_method import MethodPlanResponse
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationState,
     ResearchDocumentEvidenceSourceKind,
     ResearchDocumentProposalKind,
     ResearchDocumentProposalStatus,
@@ -28,6 +30,33 @@ class ResearchDocumentEvidenceRefContract(BaseModel):
     locator: dict[str, object] | None = None
 
 
+class ResearchDocumentCitationRefContract(BaseModel):
+    citation_id: str = Field(min_length=1, max_length=256)
+    kind: ResearchDocumentCitationKind
+    source_id: str = Field(min_length=1, max_length=256)
+    source_version: str | None = Field(default=None, min_length=1, max_length=256)
+    locator: dict[str, object] | None = None
+    state: ResearchDocumentCitationState
+
+
+class ResearchDocumentCitationAuditContract(ResearchDocumentCitationRefContract):
+    section_id: str = Field(min_length=1, max_length=128)
+
+
+class ResearchDocumentFormattingContract(BaseModel):
+    template_id: str = Field(min_length=1, max_length=256)
+    csl_style_id: str = Field(min_length=1, max_length=256)
+    locale: str = Field(min_length=2, max_length=32)
+    custom_csl: str | None = Field(default=None, min_length=1, max_length=1_000_000)
+    custom_css: str | None = Field(default=None, min_length=1, max_length=1_000_000)
+
+
+class ResearchDocumentVersionIdentityContract(BaseModel):
+    document_id: UUID
+    revision_id: UUID
+    version: int = Field(ge=1)
+
+
 class ResearchAnalysisHandoffContract(BaseModel):
     schema_version: Literal["research-analysis-v1"]
     task_id: UUID
@@ -46,6 +75,7 @@ class ResearchDocumentSectionContract(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
     status: ResearchDocumentSectionStatus
     evidence_refs: list[ResearchDocumentEvidenceRefContract] = Field(default_factory=list)
+    citation_refs: list[ResearchDocumentCitationRefContract] = Field(default_factory=list)
 
 
 class CreateResearchDocumentRequest(BaseModel):
@@ -59,6 +89,7 @@ class UpdateResearchDocumentRequest(BaseModel):
     sections: list[ResearchDocumentSectionContract] = Field(min_length=1, max_length=32)
     change_summary: str = Field(min_length=1, max_length=2_000)
     source: Literal["user_edit"]
+    formatting: ResearchDocumentFormattingContract | None = None
 
 
 class RestoreResearchDocumentRequest(BaseModel):
@@ -95,6 +126,7 @@ class ResearchDocumentResponse(BaseModel):
     created_at: datetime
     confirmed_at: datetime | None
     research_analysis: ResearchAnalysisHandoffContract | None
+    formatting: ResearchDocumentFormattingContract
 
 
 class ResearchDocumentVersionListResponse(BaseModel):
@@ -169,6 +201,9 @@ class ResearchDocumentExportManifest(BaseModel):
     """Versioned, machine-readable audit package for one formal M5 delivery."""
 
     schema_version: Literal["research-delivery-v2"]
+    document_identity: ResearchDocumentVersionIdentityContract
+    formatting: ResearchDocumentFormattingContract
+    citation_audit: list[ResearchDocumentCitationAuditContract]
     phenomenon: dict[str, object]
     knowledge_release: dict[str, object]
     model: dict[str, object] | None

@@ -4497,6 +4497,72 @@ export type ResearchCaseResponse = {
 export type ResearchCentralTool = 'agent' | 'research_map' | 'materials' | 'phenomenon' | 'theory_matching' | 'framework' | 'method';
 
 /**
+ * ResearchDocumentCitationAuditContract
+ */
+export type ResearchDocumentCitationAuditContract = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    kind: ResearchDocumentCitationKind;
+    /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Section Id
+     */
+    section_id: string;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Version
+     */
+    source_version?: string | null;
+    state: ResearchDocumentCitationState;
+};
+
+/**
+ * ResearchDocumentCitationKind
+ */
+export type ResearchDocumentCitationKind = 'empirical' | 'scholarly' | 'analysis';
+
+/**
+ * ResearchDocumentCitationRefContract
+ */
+export type ResearchDocumentCitationRefContract = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    kind: ResearchDocumentCitationKind;
+    /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Version
+     */
+    source_version?: string | null;
+    state: ResearchDocumentCitationState;
+};
+
+/**
+ * ResearchDocumentCitationState
+ */
+export type ResearchDocumentCitationState = 'verified' | 'needs_verification' | 'broken' | 'tombstoned';
+
+/**
  * ResearchDocumentCompletionCheckResponse
  */
 export type ResearchDocumentCompletionCheckResponse = {
@@ -4607,6 +4673,11 @@ export type ResearchDocumentExportManifest = {
         [key: string]: unknown;
     }>;
     /**
+     * Citation Audit
+     */
+    citation_audit: Array<ResearchDocumentCitationAuditContract>;
+    document_identity: ResearchDocumentVersionIdentityContract;
+    /**
      * Document Versions
      */
     document_versions: Array<{
@@ -4624,6 +4695,7 @@ export type ResearchDocumentExportManifest = {
     formal_document: {
         [key: string]: unknown;
     };
+    formatting: ResearchDocumentFormattingContract;
     /**
      * Knowledge Release
      */
@@ -4711,6 +4783,32 @@ export type ResearchDocumentExportResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * ResearchDocumentFormattingContract
+ */
+export type ResearchDocumentFormattingContract = {
+    /**
+     * Csl Style Id
+     */
+    csl_style_id: string;
+    /**
+     * Custom Csl
+     */
+    custom_csl?: string | null;
+    /**
+     * Custom Css
+     */
+    custom_css?: string | null;
+    /**
+     * Locale
+     */
+    locale: string;
+    /**
+     * Template Id
+     */
+    template_id: string;
 };
 
 /**
@@ -4876,6 +4974,7 @@ export type ResearchDocumentResponse = {
      * Document Id
      */
     document_id: string;
+    formatting: ResearchDocumentFormattingContract;
     /**
      * Knowledge Release Id
      */
@@ -4917,6 +5016,10 @@ export type ResearchDocumentResponse = {
  */
 export type ResearchDocumentSectionContract = {
     /**
+     * Citation Refs
+     */
+    citation_refs?: Array<ResearchDocumentCitationRefContract>;
+    /**
      * Content
      */
     content: string;
@@ -4948,6 +5051,24 @@ export type ResearchDocumentSectionStatus = 'draft' | 'reviewed' | 'evidence_gap
  * ResearchDocumentStatus
  */
 export type ResearchDocumentStatus = 'draft' | 'confirmed';
+
+/**
+ * ResearchDocumentVersionIdentityContract
+ */
+export type ResearchDocumentVersionIdentityContract = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Revision Id
+     */
+    revision_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
 
 /**
  * ResearchDocumentVersionListResponse
@@ -6665,6 +6786,7 @@ export type UpdateResearchDocumentRequest = {
      * Expected Version
      */
     expected_version: number;
+    formatting?: ResearchDocumentFormattingContract | null;
     /**
      * Sections
      */

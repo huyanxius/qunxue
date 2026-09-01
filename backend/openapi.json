@@ -8104,6 +8104,142 @@
         "title": "ResearchCentralTool",
         "type": "string"
       },
+      "ResearchDocumentCitationAuditContract": {
+        "properties": {
+          "citation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Citation Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResearchDocumentCitationKind"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "section_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Section Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ResearchDocumentCitationState"
+          }
+        },
+        "required": [
+          "citation_id",
+          "kind",
+          "source_id",
+          "state",
+          "section_id"
+        ],
+        "title": "ResearchDocumentCitationAuditContract",
+        "type": "object"
+      },
+      "ResearchDocumentCitationKind": {
+        "enum": [
+          "empirical",
+          "scholarly",
+          "analysis"
+        ],
+        "title": "ResearchDocumentCitationKind",
+        "type": "string"
+      },
+      "ResearchDocumentCitationRefContract": {
+        "properties": {
+          "citation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Citation Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResearchDocumentCitationKind"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locator"
+          },
+          "source_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ResearchDocumentCitationState"
+          }
+        },
+        "required": [
+          "citation_id",
+          "kind",
+          "source_id",
+          "state"
+        ],
+        "title": "ResearchDocumentCitationRefContract",
+        "type": "object"
+      },
+      "ResearchDocumentCitationState": {
+        "enum": [
+          "verified",
+          "needs_verification",
+          "broken",
+          "tombstoned"
+        ],
+        "title": "ResearchDocumentCitationState",
+        "type": "string"
+      },
       "ResearchDocumentCompletionCheckResponse": {
         "properties": {
           "code": {
@@ -8296,6 +8432,16 @@
             "title": "Agent Proposals",
             "type": "array"
           },
+          "citation_audit": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentCitationAuditContract"
+            },
+            "title": "Citation Audit",
+            "type": "array"
+          },
+          "document_identity": {
+            "$ref": "#/components/schemas/ResearchDocumentVersionIdentityContract"
+          },
           "document_versions": {
             "items": {
               "additionalProperties": true,
@@ -8316,6 +8462,9 @@
             "additionalProperties": true,
             "title": "Formal Document",
             "type": "object"
+          },
+          "formatting": {
+            "$ref": "#/components/schemas/ResearchDocumentFormattingContract"
           },
           "knowledge_release": {
             "additionalProperties": true,
@@ -8399,6 +8548,9 @@
         },
         "required": [
           "schema_version",
+          "document_identity",
+          "formatting",
+          "citation_audit",
           "phenomenon",
           "knowledge_release",
           "model",
@@ -8470,6 +8622,61 @@
           "manifest"
         ],
         "title": "ResearchDocumentExportResponse",
+        "type": "object"
+      },
+      "ResearchDocumentFormattingContract": {
+        "properties": {
+          "csl_style_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Csl Style Id",
+            "type": "string"
+          },
+          "custom_csl": {
+            "anyOf": [
+              {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Csl"
+          },
+          "custom_css": {
+            "anyOf": [
+              {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Css"
+          },
+          "locale": {
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Locale",
+            "type": "string"
+          },
+          "template_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "csl_style_id",
+          "locale"
+        ],
+        "title": "ResearchDocumentFormattingContract",
         "type": "object"
       },
       "ResearchDocumentListResponse": {
@@ -8790,6 +8997,9 @@
             "title": "Document Id",
             "type": "string"
           },
+          "formatting": {
+            "$ref": "#/components/schemas/ResearchDocumentFormattingContract"
+          },
           "knowledge_release_id": {
             "title": "Knowledge Release Id",
             "type": "string"
@@ -8864,13 +9074,21 @@
           "restored_from_version",
           "created_at",
           "confirmed_at",
-          "research_analysis"
+          "research_analysis",
+          "formatting"
         ],
         "title": "ResearchDocumentResponse",
         "type": "object"
       },
       "ResearchDocumentSectionContract": {
         "properties": {
+          "citation_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocumentCitationRefContract"
+            },
+            "title": "Citation Refs",
+            "type": "array"
+          },
           "content": {
             "maxLength": 100000,
             "minLength": 1,
@@ -8934,6 +9152,32 @@
         ],
         "title": "ResearchDocumentStatus",
         "type": "string"
+      },
+      "ResearchDocumentVersionIdentityContract": {
+        "properties": {
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document_id",
+          "revision_id",
+          "version"
+        ],
+        "title": "ResearchDocumentVersionIdentityContract",
+        "type": "object"
       },
       "ResearchDocumentVersionListResponse": {
         "properties": {
@@ -12144,6 +12388,16 @@
             "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
+          },
+          "formatting": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchDocumentFormattingContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "sections": {
             "items": {

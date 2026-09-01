@@ -15,6 +15,9 @@ from qunxue_api.adapters.sqlite.research_document_proposal_model import (
 )
 from qunxue_api.adapters.sqlite.research_intake_model import ResearchTaskRow
 from qunxue_api.modules.research_framework import (
+    ResearchDocumentCitationKind,
+    ResearchDocumentCitationRef,
+    ResearchDocumentCitationState,
     ResearchDocumentEvidenceRef,
     ResearchDocumentEvidenceSourceKind,
     ResearchDocumentProposalKind,
@@ -343,6 +346,17 @@ def _section_payload(section: ResearchDocumentSection) -> dict[str, object]:
             }
             for item in section.evidence_refs
         ],
+        "citation_refs": [
+            {
+                "citation_id": item.citation_id,
+                "kind": item.kind.value,
+                "source_id": item.source_id,
+                "source_version": item.source_version,
+                "locator": item.locator,
+                "state": item.state.value,
+            }
+            for item in section.citation_refs
+        ],
     }
 
 
@@ -408,6 +422,25 @@ def _snapshot(
                         ),
                     )
                     for evidence in item.get("evidence_refs", [])
+                ),
+                citation_refs=tuple(
+                    ResearchDocumentCitationRef(
+                        citation_id=str(citation["citation_id"]),
+                        kind=ResearchDocumentCitationKind(str(citation["kind"])),
+                        source_id=str(citation["source_id"]),
+                        source_version=(
+                            str(citation["source_version"])
+                            if citation.get("source_version") is not None
+                            else None
+                        ),
+                        locator=(
+                            dict(citation["locator"])
+                            if isinstance(citation.get("locator"), dict)
+                            else None
+                        ),
+                        state=ResearchDocumentCitationState(str(citation["state"])),
+                    )
+                    for citation in item.get("citation_refs", [])
                 ),
             )
             for item in row.proposed_sections
