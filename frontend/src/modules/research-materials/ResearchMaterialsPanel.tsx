@@ -45,6 +45,7 @@ import {
 import {
   ResearchAnalysisWorkspace,
 } from './ResearchAnalysisWorkspace'
+import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
 import { ResearchCyclePanel } from './ResearchCyclePanel'
 import { getResearchCycleSnapshot } from './researchAnalysisApi'
 import type { ResearchCycleSnapshot } from './researchCycleModel'
@@ -61,6 +62,7 @@ import {
 import {
   formatMaterialLocator,
   formatMaterialSize,
+  isMediaResearchMaterial,
   isSupportedResearchMaterialFile,
   materialKindLabel,
   materialMediaLabel,
@@ -166,6 +168,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [readerPage, setReaderPage] = useState(0)
   const [readerQuery, setReaderQuery] = useState('')
   const [readerFilter, setReaderFilter] = useState<'all' | 'headings'>('all')
+  const [mediaLocation, setMediaLocation] = useState<{ versionId: string | null; segmentId: string | null } | null>(null)
   const [analysisSnapshot, setAnalysisSnapshot] = useState<ResearchAnalysisSnapshot | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(true)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -299,6 +302,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setReaderPage(0)
     setReaderQuery('')
     setReaderFilter('all')
+    setMediaLocation(null)
     setAnalysisSnapshot(null)
     setResearchCycle(null)
     setCycleError(null)
@@ -356,14 +360,17 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     if (detailMode === 'archive') return
     if (initialMaterialId && !selectedMaterial) return
     const selectedSegment = selectedMaterial?.segments?.find((segment) => segment.segmentId === selectedSegmentId)
+    const mediaSelected = selectedMaterial ? isMediaResearchMaterial(selectedMaterial) : false
     onWorkspaceLocationChange({
       mode: detailMode,
       materialId: selectedMaterial?.materialId ?? null,
-      parseId: selectedSegment?.parseId
-        ?? (selectedMaterial?.materialId === initialMaterialId ? initialParseId : null),
-      segmentId: selectedSegmentId,
+      parseId: mediaSelected
+        ? mediaLocation?.versionId ?? null
+        : selectedSegment?.parseId
+          ?? (selectedMaterial?.materialId === initialMaterialId ? initialParseId : null),
+      segmentId: mediaSelected ? mediaLocation?.segmentId ?? null : selectedSegmentId,
     })
-  }, [detailMode, initialMaterialId, initialParseId, onWorkspaceLocationChange, selectedMaterial, selectedSegmentId])
+  }, [detailMode, initialMaterialId, initialParseId, mediaLocation, onWorkspaceLocationChange, selectedMaterial, selectedSegmentId])
 
   async function selectMaterial(material: ResearchMaterial, parseId: string | null = null, segmentId: string | null = null) {
     const requestGeneration = ++materialDetailGeneration.current
@@ -377,6 +384,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
       && (selectionDraft.materialId !== material.materialId || (parseId && selectionDraft.parseId !== parseId))
     ) clearSelectionDraft()
     setSelectedMaterial(material)
+    setMediaLocation(null)
     setSelectedSegmentId(segmentId)
     setReaderPage(segmentId && material.segments ? Math.floor(Math.max(0, material.segments.findIndex((item) => item.segmentId === segmentId)) / READER_PAGE_SIZE) : 0)
     setReaderQuery('')
@@ -447,7 +455,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setError(null)
     setUploadNotice(null)
     if (!isSupportedResearchMaterialFile(file)) {
-      setError('暂不支持图片或此文件格式。请上传 PDF、DOCX、TXT 或 Markdown。')
+      setError('暂不支持图片或此文件格式。请上传文档或 MP3、M4A、WAV、MP4、WebM。')
       return
     }
     // A list response that started before the upload must not erase the
@@ -720,7 +728,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
             <div className="research-materials__add-row">
               <div>
                 <strong>加入材料</strong>
-                <small>支持 PDF、DOCX、TXT、Markdown</small>
+                <small>支持文档、MP3、M4A、WAV、MP4、WebM</small>
               </div>
               <div className="research-materials__add-actions">
                 <label className="research-materials__kind-label" htmlFor="research-material-kind">类型</label>
@@ -769,7 +777,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                   <small>{selectedMaterial.segmentCount ? `${selectedMaterial.segmentCount} 个可定位片段` : materialStatusLabel(selectedMaterial.status)}</small>
                 </header>
                 <div className="research-materials__detail-modes" aria-label="材料视图">
-                  <button type="button" aria-pressed={detailMode === 'source'} onClick={() => setDetailMode('source')}>原文</button>
+                  <button type="button" aria-pressed={detailMode === 'source'} onClick={() => setDetailMode('source')}>{isMediaResearchMaterial(selectedMaterial) ? '媒体与转录' : '原文'}</button>
                   <button type="button" aria-pressed={detailMode === 'analysis'} onClick={() => setDetailMode('analysis')}>分析</button>
                   <button type="button" aria-pressed={detailMode === 'archive'} onClick={() => setDetailMode('archive')}>档案</button>
                 </div>
@@ -783,7 +791,16 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                     onMaterialsChanged={() => { void loadMaterials() }}
                   />
                 ) : detailMode === 'source' ? (
-                  <>
+                  isMediaResearchMaterial(selectedMaterial) ? (
+                    <MediaTranscriptWorkspace
+                      taskId={taskId}
+                      materialId={selectedMaterial.materialId}
+                      mediaType={selectedMaterial.mediaType}
+                      initialParseId={initialMaterialId === selectedMaterial.materialId ? initialParseId : null}
+                      initialSegmentId={initialMaterialId === selectedMaterial.materialId ? initialSegmentId : null}
+                      onLocationChange={setMediaLocation}
+                    />
+                  ) : <>
                     {detailLoading ? <p className="research-materials__loading"><CircleNotchIcon className="is-spinning" size={16} />正在读取原文结构</p> : null}
                     {!detailLoading && selectedMaterial.status === 'failed' ? <p className="research-materials__detail-note is-error"><WarningCircleIcon size={15} />解析失败后，原材料仍保留；重新解析成功前不会进入检索。</p> : null}
                     {!detailLoading && selectedMaterial.status === 'processing' ? <p className="research-materials__detail-note"><CircleNotchIcon className="is-spinning" size={15} />解析完成后，这里会显示章节、段落和可引用位置。</p> : null}

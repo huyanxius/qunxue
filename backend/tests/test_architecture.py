@@ -26,6 +26,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
     },
     "research_materials": set(),
     "research_method": set(),
+    "transcription": set(),
     "theory_matching": {"knowledge_catalog", "research_intake"},
     "research_framework": {"theory_matching"},
 }

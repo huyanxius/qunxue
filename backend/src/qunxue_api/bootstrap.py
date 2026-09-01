@@ -77,6 +77,10 @@ from qunxue_api.adapters.theory_evidence import (
     CatalogTheoryEvidenceSource,
     CatalogTheoryLexicalRetriever,
 )
+from qunxue_api.adapters.transcription import (
+    OpenAICompatibleTranscriptionProvider,
+    parse_imported_transcript,
+)
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.routes.agent import router as agent_router
 from qunxue_api.api.routes.frameworks import router as frameworks_router
@@ -96,6 +100,7 @@ from qunxue_api.api.routes.research_materials import router as research_material
 from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
+from qunxue_api.api.routes.transcription import router as transcription_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
     ProfessionalMaterialsApplication,
@@ -109,6 +114,7 @@ from qunxue_api.application import (
     ResearchMethodPlanApplication,
     ResearchStartApplication,
     TheoryMatchingApplication,
+    TranscriptionApplication,
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
@@ -139,6 +145,7 @@ from qunxue_api.modules.research_intake import (
 )
 from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.theory_matching import TheoryMatchingService
+from qunxue_api.modules.transcription import ProcessingLocation, UnavailableTranscriptionProvider
 from qunxue_api.settings import (
     DEFAULT_MODEL_BASE_URL,
     DEFAULT_MODEL_NAME,
@@ -339,7 +346,40 @@ def create_app(
                 doi_resolver=CrossrefDoiMetadataResolver(),
             )
 
-    app.state.professional_materials_application_scope = professional_materials_application_scope
+    app.state.professional_materials_application_scope = (
+        professional_materials_application_scope
+    )
+    transcription_provider = (
+        OpenAICompatibleTranscriptionProvider(
+            base_url=resolved_settings.transcription_base_url or "",
+            api_key=(
+                resolved_settings.transcription_api_key.get_secret_value()
+                if resolved_settings.transcription_api_key
+                else ""
+            ),
+            model=resolved_settings.transcription_model or "",
+            processing_location=ProcessingLocation(
+                resolved_settings.transcription_processing_location
+            ),
+            timeout_seconds=resolved_settings.transcription_timeout_seconds,
+        )
+        if resolved_settings.has_transcription_provider
+        else UnavailableTranscriptionProvider()
+    )
+
+    @contextmanager
+    def transcription_application_scope() -> Iterator[TranscriptionApplication]:
+        with resolved_database.session() as session:
+            yield TranscriptionApplication(
+                materials=SqliteResearchMaterialRepository(session),
+                archive=SqliteProfessionalMaterialRepository(session),
+                research_tasks=SqliteResearchTaskRepository(session),
+                provider=transcription_provider,
+                importer=parse_imported_transcript,
+                commit=session.commit,
+            )
+
+    app.state.transcription_application_scope = transcription_application_scope
 
     @contextmanager
     def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
@@ -673,6 +713,7 @@ def create_app(
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
     app.include_router(research_materials_router)
+    app.include_router(transcription_router)
     app.include_router(professional_materials_router)
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)

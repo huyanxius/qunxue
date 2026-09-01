@@ -1069,7 +1069,9 @@ dependencies = [
     { name = "resend" },
     { name = "rispy" },
     { name = "sqlalchemy" },
+    { name = "srt" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "webvtt-py" },
 ]
 
 [package.dev-dependencies]
@@ -1093,7 +1095,9 @@ requires-dist = [
     { name = "resend", specifier = ">=2.0" },
     { name = "rispy", specifier = ">=0.10.0,<1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.51" },
+    { name = "srt", specifier = ">=3.5,<4.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.51.0" },
+    { name = "webvtt-py", specifier = ">=0.5,<1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1302,6 +1306,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/c6/673e618e6f4f297e126d9b56ea2f6478708f6c1af4e3223835c22e2c3697/sqlalchemy-2.0.51-cp314-cp314t-win_amd64.whl", hash = "sha256:159bb6ba32059f57ad7375a8f50d844dd2f19d14954ecf820cd33e20debd46b2", size = 2186280, upload-time = "2026-06-15T16:03:40.569Z" },
     { url = "https://files.pythonhosted.org/packages/e2/22/dbf013a12ec759e54a34a119e9e217435b3f71b2dd5c61a7ade0a25dae87/sqlalchemy-2.0.51-py3-none-any.whl", hash = "sha256:bb024d8b621d0be75f4f44ecc7c950450026e76d66dc8f791bb5331d7fed59d5", size = 1944334, upload-time = "2026-06-15T16:09:22.418Z" },
 ]
+
+[[package]]
+name = "srt"
+version = "3.5.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/b7/4a1bc231e0681ebf339337b0cd05b91dc6a0d701fa852bb812e244b7a030/srt-3.5.3.tar.gz", hash = "sha256:4884315043a4f0740fd1f878ed6caa376ac06d70e135f306a6dc44632eed0cc0", size = 28296, upload-time = "2023-03-28T02:35:44.007Z" }
 
 [[package]]
 name = "starlette"
@@ -1630,4 +1640,13 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/49/b2/b6987faf330f5af5c787a2610124c2e8403d51724f9001ec4fff6311fe7a/websockets-16.1.1-cp314-cp314t-win32.whl", hash = "sha256:8483c2096363120eea8b07c06ae7304d520f686665fffd4811fad423930a65d7", size = 179729, upload-time = "2026-07-17T22:50:53.269Z" },
     { url = "https://files.pythonhosted.org/packages/a2/6e/fbac6ed878dd362fbad7d415fa4f84d38e3e33fed8cde45c64e783acf826/websockets-16.1.1-cp314-cp314t-win_amd64.whl", hash = "sha256:bcce07e23e5769375158f5efdcdafa8d5cd014b93c6683865b840ed65b96f231", size = 180072, upload-time = "2026-07-17T22:50:54.969Z" },
     { url = "https://files.pythonhosted.org/packages/be/4d/2d0d67834092e354d2b0498f014a41249a89556bc406cf86f3e1557bb463/websockets-16.1.1-py3-none-any.whl", hash = "sha256:6abbd3e82c731c8e531714466acd5d87b5e88ac3243465337ba71d68e23ae7e3", size = 173814, upload-time = "2026-07-17T22:51:04.184Z" },
+]
+
+[[package]]
+name = "webvtt-py"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/f6/7c9c964681fb148e0293e6860108d378e09ccab2218f9063fd3eb87f840a/webvtt-py-0.5.1.tar.gz", hash = "sha256:2040dd325277ddadc1e0c6cc66cbc4a1d9b6b49b24c57a0c3364374c3e8a3dc1", size = 55128, upload-time = "2024-05-30T13:40:17.189Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/ed/aad7e0f5a462d679f7b4d2e0d8502c3096740c883b5bbed5103146480937/webvtt_py-0.5.1-py3-none-any.whl", hash = "sha256:9d517d286cfe7fc7825e9d4e2079647ce32f5678eb58e39ef544ffbb932610b7", size = 19802, upload-time = "2024-05-30T13:40:14.661Z" },
 ]

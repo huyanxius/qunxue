@@ -13,6 +13,7 @@ from qunxue_api.application import (
     ResearchMaterialApplication,
     ResearchMethodPlanApplication,
     TheoryMatchingApplication,
+    TranscriptionApplication,
 )
 from qunxue_api.modules.identity import AuthenticatedSession, IdentityService
 from qunxue_api.modules.research_intake import PhenomenonService, ResearchTask, ResearchTaskService
@@ -129,6 +130,19 @@ def get_professional_materials_application(
 ProfessionalMaterialsApplicationDependency = Annotated[
     ProfessionalMaterialsApplication,
     Depends(get_professional_materials_application),
+]
+
+
+def get_transcription_application(
+    request: Request,
+) -> Iterator[TranscriptionApplication]:
+    with request.app.state.transcription_application_scope() as application:
+        yield application
+
+
+TranscriptionApplicationDependency = Annotated[
+    TranscriptionApplication,
+    Depends(get_transcription_application),
 ]
 
 

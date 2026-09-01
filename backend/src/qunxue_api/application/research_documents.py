@@ -797,6 +797,11 @@ def _analysis_handoff_payload(
     for annotation in annotations:
         if not isinstance(annotation, dict):
             raise ValueError("research analysis annotation must be an object")
+        locator = annotation.get("locator")
+        if isinstance(locator, dict):
+            for media_field in ("time_start_ms", "time_end_ms", "speaker"):
+                if locator.get(media_field) is None:
+                    locator.pop(media_field, None)
         annotation.pop("quote", None)
     unavailable = payload.get("unavailable_annotation_ids")
     if not isinstance(unavailable, list):

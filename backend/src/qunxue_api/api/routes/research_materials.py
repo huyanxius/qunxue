@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, Header, Query, UploadFile, status
 from fastapi.responses import JSONResponse, Response
 
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
@@ -19,6 +19,7 @@ from qunxue_api.api.dependencies import (
 )
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.research_materials import (
+    MaterialFormat,
     MaterialIdempotencyConflict,
     MaterialKind,
     MaterialNotFound,
@@ -39,7 +40,45 @@ router = APIRouter(
     },
 )
 
-MAX_MATERIAL_BYTES = 25 * 1024 * 1024
+MAX_DOCUMENT_BYTES = 25 * 1024 * 1024
+MAX_MEDIA_BYTES = 100 * 1024 * 1024
+# Professional-material document imports share the established document cap.
+MAX_MATERIAL_BYTES = MAX_DOCUMENT_BYTES
+
+
+def _upload_limit(*, filename: str, media_type: str | None) -> int:
+    """Bound in-memory uploads while allowing ordinary interview recordings."""
+
+    try:
+        material_format = MaterialFormat.resolve(
+            filename=filename,
+            media_type=media_type,
+        )
+    except UnsupportedMaterialFormat:
+        return MAX_DOCUMENT_BYTES
+    return MAX_MEDIA_BYTES if material_format.is_media else MAX_DOCUMENT_BYTES
+
+
+def _parse_byte_range(value: str, *, total: int) -> tuple[int, int]:
+    """Resolve one HTTP byte range for native audio/video seeking."""
+
+    if not value.startswith("bytes=") or "," in value:
+        raise ValueError("unsupported byte range")
+    start_text, separator, end_text = value.removeprefix("bytes=").partition("-")
+    if not separator or (not start_text and not end_text):
+        raise ValueError("invalid byte range")
+    if start_text:
+        start = int(start_text)
+        end = int(end_text) if end_text else total - 1
+    else:
+        suffix = int(end_text)
+        if suffix <= 0:
+            raise ValueError("invalid suffix range")
+        start = max(0, total - suffix)
+        end = total - 1
+    if start < 0 or start >= total or end < start:
+        raise ValueError("byte range is outside the material")
+    return start, min(end, total - 1)
 
 
 _PARSE_ERROR_CODE_MAP: dict[str, ErrorCode] = {
@@ -115,10 +154,16 @@ async def upload_research_material(
     file: Annotated[UploadFile, File()],
     material_kind: Annotated[ResearchMaterialKindInput, Form()] = MaterialKind.OTHER,
 ) -> ResearchMaterialResponse | JSONResponse:
-    content = await file.read(MAX_MATERIAL_BYTES + 1)
+    upload_limit = _upload_limit(filename=file.filename or "", media_type=file.content_type)
+    content = await file.read(upload_limit + 1)
     await file.close()
-    if len(content) > MAX_MATERIAL_BYTES:
-        return _error(413, "research_material_too_large", "单份研究材料不能超过 25 MB。")
+    if len(content) > upload_limit:
+        limit_mb = upload_limit // (1024 * 1024)
+        return _error(
+            413,
+            "research_material_too_large",
+            f"单份研究材料不能超过 {limit_mb} MB。",
+        )
     if not content:
         return _error(422, ErrorCode.NO_EXTRACTABLE_TEXT, "材料为空，无法解析。")
     try:
@@ -132,7 +177,11 @@ async def upload_research_material(
             material_kind=material_kind,
         )
     except UnsupportedMaterialFormat as error:
-        return _error(422, error.code, "仅支持 PDF、DOCX、TXT 和 Markdown。")
+        return _error(
+            422,
+            error.code,
+            "仅支持 PDF、DOCX、TXT、Markdown、MP3、M4A、WAV、MP4 和 WebM。",
+        )
     except DomainMaterialParseError as error:
         return _error(422, error.code, str(error).split(": ", 1)[-1])
     except MaterialIdempotencyConflict as error:
@@ -165,6 +214,49 @@ def list_research_materials(
     return ResearchMaterialListResponse(
         task_id=task_id,
         items=[_material_response(application, item) for item in materials],
+    )
+
+
+@router.get(
+    "/{material_id}/content",
+    operation_id="get_research_material_content",
+    response_class=Response,
+    response_model=None,
+)
+def get_research_material_content(
+    task_id: UUID,
+    material_id: UUID,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchMaterialApplicationDependency,
+    range_header: Annotated[str | None, Header(alias="Range")] = None,
+) -> Response | JSONResponse:
+    try:
+        material, content = application.get_original(
+            user_id=current.user.user_id,
+            task_id=task_id,
+            material_id=material_id,
+        )
+    except MaterialNotFound:
+        return _error(404, "research_material_not_found", "研究材料不存在或无权访问。")
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Disposition": f'inline; filename="{material.material_id}"',
+    }
+    if range_header is None:
+        return Response(content=content, media_type=material.media_type, headers=headers)
+    try:
+        start, end = _parse_byte_range(range_header, total=len(content))
+    except (TypeError, ValueError):
+        return Response(
+            status_code=416,
+            headers={**headers, "Content-Range": f"bytes */{len(content)}"},
+        )
+    return Response(
+        content=content[start : end + 1],
+        status_code=206,
+        media_type=material.media_type,
+        headers={**headers, "Content-Range": f"bytes {start}-{end}/{len(content)}"},
     )
 
 

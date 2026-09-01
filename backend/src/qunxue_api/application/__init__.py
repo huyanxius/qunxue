@@ -29,6 +29,7 @@ from qunxue_api.application.theory_matching import (
     MatchingSnapshotConflict,
     TheoryMatchingApplication,
 )
+from qunxue_api.application.transcription import TranscriptionApplication
 
 __all__ = [
     "ResearchJourney",
@@ -48,6 +49,7 @@ __all__ = [
     "MatchingCatalogNotReady",
     "MatchingSnapshotConflict",
     "TheoryMatchingApplication",
+    "TranscriptionApplication",
     "AgentTurnExecution",
     "DisciplinaryAgentApplication",
 ]

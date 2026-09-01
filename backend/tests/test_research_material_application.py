@@ -109,3 +109,47 @@ def test_upload_commits_before_returning_so_follow_up_reads_see_the_material() -
     )
 
     assert commits == ["committed"]
+
+
+def test_media_upload_preserves_original_without_invoking_document_parser() -> None:
+    user_id = UUID(int=11)
+    task_id = UUID(int=12)
+    now = datetime(2026, 9, 1, 9, tzinfo=UTC)
+    material = ResearchMaterial.create(
+        material_id=UUID(int=13),
+        user_id=user_id,
+        task_id=task_id,
+        idempotency_key="upload-audio",
+        original_filename="访谈.mp3",
+        media_type="audio/mpeg",
+        content=b"real-media-bytes",
+        material_kind=MaterialKind.INTERVIEW_TRANSCRIPT,
+        now=now,
+    )
+    repository = _MaterialRepository(material)
+    commits: list[str] = []
+
+    def parser(**_kwargs: object) -> ParsedMaterial:
+        raise AssertionError("document parser must not receive media")
+
+    application = ResearchMaterialApplication(
+        materials=repository,  # type: ignore[arg-type]
+        research_tasks=_TaskRepository(),  # type: ignore[arg-type]
+        parser=parser,
+        clock=lambda: now,
+        commit=lambda: commits.append("committed"),
+    )
+
+    uploaded = application.upload(
+        user_id=user_id,
+        task_id=task_id,
+        idempotency_key="upload-audio",
+        filename="访谈.mp3",
+        media_type="audio/mpeg",
+        content=b"real-media-bytes",
+        material_kind=MaterialKind.INTERVIEW_TRANSCRIPT,
+    )
+
+    assert uploaded.status.value == "uploaded"
+    assert uploaded.current_parse_id is None
+    assert commits == ["committed"]

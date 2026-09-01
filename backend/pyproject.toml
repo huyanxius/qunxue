@@ -17,7 +17,9 @@ dependencies = [
     "resend>=2.0",
     "rispy>=0.10.0,<1.0",
     "sqlalchemy>=2.0.51",
+    "srt>=3.5,<4.0",
     "uvicorn[standard]>=0.51.0",
+    "webvtt-py>=0.5,<1.0",
 ]
 
 [project.scripts]

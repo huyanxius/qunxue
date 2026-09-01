@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  formatMaterialLocator,
   isSupportedResearchMaterialFile,
   materialKindLabel,
   materialStatusLabel,
@@ -15,6 +16,11 @@ describe('research material model', () => {
     expect(isSupportedResearchMaterialFile(new File(['docx'], '访谈.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))).toBe(true)
     expect(isSupportedResearchMaterialFile(new File(['text'], '记录.txt', { type: 'text/plain' }))).toBe(true)
     expect(isSupportedResearchMaterialFile(new File(['markdown'], '方法.md', { type: 'text/markdown' }))).toBe(true)
+    expect(isSupportedResearchMaterialFile(new File(['audio'], '访谈.mp3', { type: 'audio/mpeg' }))).toBe(true)
+    expect(isSupportedResearchMaterialFile(new File(['audio'], '访谈.m4a', { type: 'audio/x-m4a' }))).toBe(true)
+    expect(isSupportedResearchMaterialFile(new File(['audio'], '访谈.wav', { type: 'audio/wav' }))).toBe(true)
+    expect(isSupportedResearchMaterialFile(new File(['video'], '田野.mp4', { type: 'video/mp4' }))).toBe(true)
+    expect(isSupportedResearchMaterialFile(new File(['video'], '田野.webm', { type: 'video/webm' }))).toBe(true)
     expect(isSupportedResearchMaterialFile(new File(['image'], '照片.png', { type: 'image/png' }))).toBe(false)
   })
 
@@ -30,6 +36,17 @@ describe('research material model', () => {
     })
   })
 
+  it('keeps speaker and media timecodes in material locators', () => {
+    const locator = normalizeMaterialLocator({
+      time_start_ms: 1_250,
+      time_end_ms: 3_800,
+      speaker: '主持人',
+    })
+
+    expect(locator).toMatchObject({ timeStartMs: 1_250, timeEndMs: 3_800, speaker: '主持人' })
+    expect(formatMaterialLocator(locator)).toBe('00:01.250–00:03.800 · 主持人')
+  })
+
   it('keeps the section path returned by the research-material API', () => {
     expect(normalizeMaterialLocator({ section_path: ['访谈一', '工作经历'], paragraph: 12 })).toMatchObject({
       headingPath: ['访谈一', '工作经历'],
@@ -42,6 +59,7 @@ describe('research material model', () => {
     const kinds: ResearchMaterialKind[] = ['paper', 'interview_transcript', 'observation_record', 'field_note', 'other']
     expect(kinds.map(materialKindLabel)).toEqual(['论文', '访谈转录', '观察记录', '田野笔记', '其他'])
     expect(materialStatusLabel('processing')).toBe('正在解析')
+    expect(materialStatusLabel('uploaded')).toBe('原件已保存')
     expect(materialStatusLabel('ready')).toBe('可检索')
     expect(materialStatusLabel('failed')).toBe('解析失败')
   })

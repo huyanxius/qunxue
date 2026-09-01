@@ -76,6 +76,13 @@ class ResearchMaterialApplication:
         if material.current_parse_id is not None:
             self._commit()
             return material
+        if material.material_format.is_media:
+            # Media is already durable in the material blob store.  A
+            # transcription adapter, manual import, or researcher correction
+            # creates the first text version later; the document parser must
+            # never pretend the binary media itself is parsed text.
+            self._commit()
+            return material
         return self._parse_and_save(
             material=material,
             user_id=user_id,
@@ -95,6 +102,19 @@ class ResearchMaterialApplication:
         if material is None:
             raise MaterialNotFound(str(material_id))
         return material
+
+    def get_original(
+        self, *, user_id: UUID, task_id: UUID, material_id: UUID
+    ) -> tuple[ResearchMaterial, bytes]:
+        material = self.get(user_id=user_id, task_id=task_id, material_id=material_id)
+        content = self._materials.get_original(
+            material_id,
+            user_id=user_id,
+            task_id=task_id,
+        )
+        if content is None:
+            raise MaterialNotFound(str(material_id))
+        return material, content
 
     def current_segments(
         self,

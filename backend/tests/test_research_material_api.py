@@ -7,7 +7,17 @@ from fastapi.testclient import TestClient
 from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
 )
+from qunxue_api.api.routes.research_materials import (
+    MAX_DOCUMENT_BYTES,
+    MAX_MEDIA_BYTES,
+    _upload_limit,
+)
 from qunxue_api.modules.research_materials import MaterialVersionConflict
+
+
+def test_media_uploads_use_a_larger_bounded_limit() -> None:
+    assert _upload_limit(filename="访谈.wav", media_type="audio/wav") == MAX_MEDIA_BYTES
+    assert _upload_limit(filename="访谈.pdf", media_type="application/pdf") == MAX_DOCUMENT_BYTES
 
 
 def _authenticate(client: TestClient, *, email: str | None = None) -> dict[str, object]:

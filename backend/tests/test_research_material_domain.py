@@ -33,6 +33,53 @@ def test_supported_formats_are_limited_to_research_documents_without_images() ->
         MaterialFormat.from_media_type("application/octet-stream")
 
 
+def test_audio_and_video_formats_are_media_materials_without_accepting_images() -> None:
+    assert (
+        MaterialFormat.resolve(filename="访谈.mp3", media_type="audio/mpeg") is MaterialFormat.MP3
+    )
+    assert (
+        MaterialFormat.resolve(filename="焦点小组.m4a", media_type="audio/mp4")
+        is MaterialFormat.M4A
+    )
+    assert (
+        MaterialFormat.resolve(filename="观察录像.mp4", media_type="video/mp4")
+        is MaterialFormat.MP4
+    )
+    assert (
+        MaterialFormat.resolve(filename="线上访谈.webm", media_type="video/webm")
+        is MaterialFormat.WEBM
+    )
+    assert MaterialFormat.MP3.is_media is True
+    assert MaterialFormat.PDF.is_media is False
+
+    with pytest.raises(UnsupportedMaterialFormat):
+        MaterialFormat.resolve(filename="现场.png", media_type="image/png")
+
+
+def test_media_locator_round_trips_original_timecode_and_speaker() -> None:
+    locator = MaterialLocator(
+        time_start_ms=1_250,
+        time_end_ms=3_800,
+        speaker="主持人",
+    )
+
+    assert MaterialLocator.from_dict(locator.as_dict()) == locator
+    assert locator.as_dict() == {
+        "page": None,
+        "section_path": [],
+        "paragraph": None,
+        "line_start": None,
+        "line_end": None,
+        "char_start": None,
+        "char_end": None,
+        "block_index": None,
+        "time_start_ms": 1_250,
+        "time_end_ms": 3_800,
+        "speaker": "主持人",
+    }
+    assert locator.display() == "00:01.250-00:03.800，主持人"
+
+
 def test_legacy_observation_kind_is_normalized_to_observation_record() -> None:
     assert MaterialKind("observation") is MaterialKind.OBSERVATION_RECORD
 
