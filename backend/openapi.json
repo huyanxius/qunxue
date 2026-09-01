@@ -1466,6 +1466,15 @@
         "title": "AnalysisThemeResponse",
         "type": "object"
       },
+      "AuditActorType": {
+        "enum": [
+          "user",
+          "agent",
+          "system"
+        ],
+        "title": "AuditActorType",
+        "type": "string"
+      },
       "AuditFindingResponse": {
         "properties": {
           "blocking": {
@@ -1758,6 +1767,20 @@
           "file"
         ],
         "title": "Body_import_material_transcript",
+        "type": "object"
+      },
+      "Body_preview_research_project_qdpx_import": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_preview_research_project_qdpx_import",
         "type": "object"
       },
       "Body_upload_research_material": {
@@ -7830,6 +7853,86 @@
         "title": "ProjectResearchFactsResponse",
         "type": "object"
       },
+      "QdpxImportPreviewResponse": {
+        "properties": {
+          "exchange_id": {
+            "format": "uuid",
+            "title": "Exchange Id",
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/QdpxProjectPreviewResponse"
+          },
+          "restored": {
+            "const": false,
+            "default": false,
+            "title": "Restored",
+            "type": "boolean"
+          },
+          "specification_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Specification Version",
+            "type": "string"
+          },
+          "valid": {
+            "const": true,
+            "default": true,
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "validation_scope": {
+            "const": "official-xsd",
+            "default": "official-xsd",
+            "title": "Validation Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exchange_id",
+          "project"
+        ],
+        "title": "QdpxImportPreviewResponse",
+        "type": "object"
+      },
+      "QdpxProjectPreviewResponse": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "code_count": {
+            "title": "Code Count",
+            "type": "integer"
+          },
+          "memo_count": {
+            "title": "Memo Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "source_count": {
+            "title": "Source Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "origin",
+          "source_count",
+          "code_count",
+          "memo_count",
+          "case_count"
+        ],
+        "title": "QdpxProjectPreviewResponse",
+        "type": "object"
+      },
       "QualitativeMethod": {
         "enum": [
           "thematic_analysis",
@@ -8389,6 +8492,115 @@
         ],
         "title": "ResearchAnalysisSnapshotResponse",
         "type": "object"
+      },
+      "ResearchAuditEventListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchAuditEventResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "items"
+        ],
+        "title": "ResearchAuditEventListResponse",
+        "type": "object"
+      },
+      "ResearchAuditEventResponse": {
+        "properties": {
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor_type": {
+            "$ref": "#/components/schemas/AuditActorType"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/ResearchAuditEventType"
+          },
+          "object_id": {
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "title": "Object Type",
+            "type": "string"
+          },
+          "object_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Version"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_type",
+          "object_type",
+          "object_id",
+          "object_version",
+          "actor_type",
+          "actor_id",
+          "payload",
+          "occurred_at"
+        ],
+        "title": "ResearchAuditEventResponse",
+        "type": "object"
+      },
+      "ResearchAuditEventType": {
+        "enum": [
+          "material.deleted",
+          "material.permission_changed",
+          "material.parsed",
+          "transcript.version_created",
+          "analysis.candidate_created",
+          "analysis.confirmed",
+          "analysis.rejected",
+          "citation.created",
+          "citation.state_changed",
+          "document.version_created",
+          "project.exported",
+          "project.imported",
+          "project.import_previewed"
+        ],
+        "title": "ResearchAuditEventType",
+        "type": "string"
       },
       "ResearchCaseResponse": {
         "properties": {
@@ -19106,6 +19318,238 @@
         "summary": "Confirm Research Analysis Theme",
         "tags": [
           "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/exchange/archive": {
+      "post": {
+        "operationId": "export_research_project_archive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A BagIt research archive containing QDPX and native recovery data."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Export Research Project Archive",
+        "tags": [
+          "research-project-exchange"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/exchange/audit": {
+      "get": {
+        "operationId": "list_research_project_audit_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchAuditEventListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Research Project Audit Events",
+        "tags": [
+          "research-project-exchange"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/exchange/qdpx-preview": {
+      "post": {
+        "operationId": "preview_research_project_qdpx_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_preview_research_project_qdpx_import"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QdpxImportPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Preview Research Project Qdpx Import",
+        "tags": [
+          "research-project-exchange"
         ]
       }
     },

@@ -29,6 +29,7 @@ from qunxue_api.adapters.research_agent import (
     ResearchDocumentToolRegistry,
     SiliconFlowRerankerProvider,
 )
+from qunxue_api.adapters.research_exchange import map_published_qunxue_project
 from qunxue_api.adapters.research_materials import parse_material
 from qunxue_api.adapters.research_materials.doi import CrossrefDoiMetadataResolver
 from qunxue_api.adapters.retrieval import (
@@ -63,6 +64,9 @@ from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
+from qunxue_api.adapters.sqlite.research_project_audit import (
+    SqliteResearchProjectAuditRepository,
+)
 from qunxue_api.adapters.sqlite.research_start_proposal import (
     SqliteResearchStartProposalRepository,
 )
@@ -96,6 +100,7 @@ from qunxue_api.api.routes.professional_materials import (
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
 from qunxue_api.api.routes.research_cycle import router as research_cycle_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
+from qunxue_api.api.routes.research_exchange import router as research_exchange_router
 from qunxue_api.api.routes.research_materials import router as research_materials_router
 from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
@@ -112,6 +117,7 @@ from qunxue_api.application import (
     ResearchJourneyDependencies,
     ResearchMaterialApplication,
     ResearchMethodPlanApplication,
+    ResearchProjectExchangeApplication,
     ResearchStartApplication,
     TheoryMatchingApplication,
     TranscriptionApplication,
@@ -387,6 +393,27 @@ def create_app(
             yield build_research_analysis_application(session)
 
     app.state.research_analysis_application_scope = research_analysis_application_scope
+
+    @contextmanager
+    def research_project_exchange_application_scope() -> Iterator[
+        ResearchProjectExchangeApplication
+    ]:
+        with resolved_database.session() as session:
+            yield ResearchProjectExchangeApplication(
+                research_tasks=SqliteResearchTaskRepository(session),
+                materials=SqliteResearchMaterialRepository(session),
+                professional_archive=SqliteProfessionalMaterialRepository(session),
+                analysis=SqliteResearchAnalysisRepository(session),
+                documents=SqliteResearchDocumentRepository(session),
+                cycles=SqliteResearchCycleRepository(session),
+                audit=SqliteResearchProjectAuditRepository(session),
+                project_mapper=map_published_qunxue_project,
+                commit=session.commit,
+            )
+
+    app.state.research_project_exchange_application_scope = (
+        research_project_exchange_application_scope
+    )
 
     @contextmanager
     def research_method_plan_application_scope() -> Iterator[ResearchMethodPlanApplication]:
@@ -718,6 +745,7 @@ def create_app(
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)
     app.include_router(research_cycle_router)
+    app.include_router(research_exchange_router)
     app.include_router(phenomena_router)
     app.include_router(phenomenon_examples_router)
     app.include_router(material_intakes_router)
