@@ -420,3 +420,59 @@
   .professional-archive__operations form:has(> select:nth-of-type(2)),
   .professional-archive__inline-controls { grid-template-columns: 1fr; }
 }
+
+/* Media remains the primary evidence. The narrow time rail makes transcript
+   locations scannable without suggesting that an automatic result is final. */
+.media-transcript { display: grid; gap: 14px; padding: 15px 0 8px; }
+.media-transcript__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.media-transcript__header > div:first-child { display: grid; gap: 4px; }
+.media-transcript__header span, .media-transcript__version-bar label > span { color: var(--materials-muted); font-size: 9px; letter-spacing: .07em; }
+.media-transcript__header p, .media-transcript__empty p { max-width: 52ch; margin: 0; color: var(--materials-muted); font-size: 10px; line-height: 1.55; }
+.media-transcript__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.media-transcript button { padding: 7px 9px; border: 1px solid var(--materials-border); border-radius: 6px; color: var(--materials-ink); background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
+.media-transcript button:hover:not(:disabled) { border-color: var(--materials-ink); }
+.media-transcript button:disabled { cursor: not-allowed; opacity: .46; }
+.media-transcript button:focus-visible, .media-transcript input:focus-visible, .media-transcript textarea:focus-visible, .media-transcript select:focus-visible { outline: 2px solid color-mix(in srgb, #9c7a31 50%, transparent); outline-offset: 2px; }
+.media-transcript__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.media-transcript__player { width: 100%; max-height: 420px; border-radius: 7px; background: #20201e; }
+audio.media-transcript__player { min-height: 54px; background: transparent; }
+.media-transcript__notice { margin: 0; padding: 8px 10px; border-left: 2px solid #9c7a31; color: #68551f; background: color-mix(in srgb, #d4bd76 13%, transparent); font-size: 10px; line-height: 1.5; }
+.media-transcript__notice.is-error { border-left-color: #b96043; color: #8f4939; background: color-mix(in srgb, #b96043 8%, transparent); }
+.media-transcript__version-bar { display: grid; grid-template-columns: minmax(150px, .55fr) minmax(0, 1fr) auto; align-items: end; gap: 10px; padding: 11px 0; border-top: 1px solid var(--materials-border); border-bottom: 1px solid var(--materials-border); }
+.media-transcript__version-bar label { display: grid; gap: 4px; }
+.media-transcript__version-bar select, .media-transcript__editor input, .media-transcript__editor textarea { min-width: 0; width: 100%; padding: 7px 8px; border: 1px solid var(--materials-border); border-radius: 6px; color: var(--materials-ink); background: color-mix(in srgb, white 62%, transparent); font: inherit; font-size: 10px; }
+.media-transcript__version-bar small { align-self: center; color: var(--materials-muted); font-size: 9px; }
+.media-transcript__timeline { display: grid; }
+.media-transcript__cue { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 13px; padding: 13px 0 !important; border: 0 !important; border-bottom: 1px solid var(--materials-border) !important; border-radius: 0 !important; text-align: left; }
+.media-transcript__cue time { position: relative; padding-right: 13px; color: #806522; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
+.media-transcript__cue time::after { position: absolute; top: -13px; right: 0; bottom: -13px; width: 1px; background: color-mix(in srgb, #9c7a31 46%, var(--materials-border)); content: ''; }
+.media-transcript__cue > span { display: grid; gap: 5px; }
+.media-transcript__cue strong { font-size: 10px; font-weight: 650; }
+.media-transcript__cue > span > span { font-family: var(--serif, Georgia, serif); font-size: 13px; line-height: 1.65; }
+.media-transcript__cue:hover:not(:disabled) { background: color-mix(in srgb, #9c7a31 5%, transparent); }
+.media-transcript__cue[aria-current="location"] { background: color-mix(in srgb, #9c7a31 9%, transparent); }
+.media-transcript__editor { display: grid; gap: 12px; }
+.media-transcript__editor fieldset { display: grid; grid-template-columns: minmax(100px, .35fr) minmax(0, 1fr); gap: 9px 11px; min-width: 0; margin: 0; padding: 12px 0; border: 0; border-bottom: 1px solid var(--materials-border); }
+.media-transcript__editor legend { grid-column: 1 / -1; padding: 0; color: #806522; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px; }
+.media-transcript__editor label { display: grid; align-content: start; gap: 4px; color: var(--materials-muted); font-size: 9px; }
+.media-transcript__editor label:last-child { grid-column: 2; }
+.media-transcript__editor textarea { resize: vertical; line-height: 1.55; }
+.media-transcript__time-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.media-transcript__editor footer { display: flex; justify-content: flex-end; gap: 7px; }
+.media-transcript__editor footer button:last-child { color: var(--materials-surface); background: var(--materials-ink); }
+.media-transcript__empty { display: grid; gap: 5px; padding: 20px 0; border-bottom: 1px solid var(--materials-border); }
+.media-transcript__empty strong { font-size: 12px; }
+
+@media (max-width: 620px) {
+  .media-transcript__header { display: grid; }
+  .media-transcript__actions { justify-content: flex-start; }
+  .media-transcript__version-bar { grid-template-columns: 1fr; align-items: start; }
+  .media-transcript__version-bar button { justify-self: start; }
+  .media-transcript__cue { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+  .media-transcript__editor fieldset { grid-template-columns: 1fr; }
+  .media-transcript__editor label:last-child { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-transcript * { scroll-behavior: auto !important; transition: none !important; }
+}

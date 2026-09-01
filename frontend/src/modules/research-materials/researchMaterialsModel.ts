@@ -4,18 +4,25 @@
  * swapped in without changing the research workspace components.
  */
 
-export const RESEARCH_MATERIAL_ACCEPT = '.pdf,.docx,.txt,.md,.markdown,application/pdf,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+export const RESEARCH_MATERIAL_ACCEPT = '.pdf,.docx,.txt,.md,.markdown,.mp3,.m4a,.wav,.mp4,.webm,application/pdf,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,video/mp4,video/webm'
 
 export const RESEARCH_MATERIAL_MEDIA_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
   'text/markdown',
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/wav',
+  'audio/x-wav',
+  'video/mp4',
+  'video/webm',
 ] as const
 
 export type ResearchMaterialMediaType = typeof RESEARCH_MATERIAL_MEDIA_TYPES[number]
 export type ResearchMaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other'
-export type ResearchMaterialStatus = 'processing' | 'ready' | 'failed' | 'deleted'
+export type ResearchMaterialStatus = 'uploaded' | 'processing' | 'ready' | 'failed' | 'deleted'
 
 export type ResearchMaterialLocator = {
   page: number | null
@@ -27,6 +34,9 @@ export type ResearchMaterialLocator = {
   charEnd: number | null
   blockIndex?: number | null
   blockId?: string | null
+  timeStartMs?: number | null
+  timeEndMs?: number | null
+  speaker?: string | null
 }
 
 export type ResearchMaterialSegment = {
@@ -85,7 +95,7 @@ function nullableString(value: unknown): string | null {
 }
 
 function normalizeStatus(value: unknown): ResearchMaterialStatus {
-  if (value === 'ready' || value === 'failed' || value === 'deleted') return value
+  if (value === 'uploaded' || value === 'ready' || value === 'failed' || value === 'deleted') return value
   return 'processing'
 }
 
@@ -114,8 +124,15 @@ export function normalizeMaterialLocator(value: unknown): ResearchMaterialLocato
   }
   const blockIndex = nullableNumber(raw.block_index ?? raw.blockIndex)
   const blockId = nullableString(raw.block_id ?? raw.blockId)
-  if (blockIndex !== null) return blockId ? { ...locator, blockIndex, blockId } : { ...locator, blockIndex }
-  return blockId ? { ...locator, blockId } : locator
+  const timeStartMs = nullableNumber(raw.time_start_ms ?? raw.timeStartMs)
+  const timeEndMs = nullableNumber(raw.time_end_ms ?? raw.timeEndMs)
+  const speaker = nullableString(raw.speaker)
+  if (blockIndex !== null) locator.blockIndex = blockIndex
+  if (blockId !== null) locator.blockId = blockId
+  if (timeStartMs !== null) locator.timeStartMs = timeStartMs
+  if (timeEndMs !== null) locator.timeEndMs = timeEndMs
+  if (speaker !== null) locator.speaker = speaker
+  return locator
 }
 
 function normalizeSegment(value: unknown, materialId: string, index: number): ResearchMaterialSegment {
@@ -183,7 +200,7 @@ function fileName(file: Pick<File, 'name'>): string {
 
 export function isSupportedResearchMaterialFile(file: Pick<File, 'name' | 'type'>): boolean {
   const name = fileName(file)
-  const extension = ['.pdf', '.docx', '.txt', '.md', '.markdown']
+  const extension = ['.pdf', '.docx', '.txt', '.md', '.markdown', '.mp3', '.m4a', '.wav', '.mp4', '.webm']
     .find((candidate) => name.endsWith(candidate))
   if (!extension) return false
 
@@ -200,6 +217,11 @@ export function isSupportedResearchMaterialFile(file: Pick<File, 'name' | 'type'
     '.txt': ['text/plain'],
     '.md': ['text/markdown', 'text/x-markdown', 'application/markdown', 'text/plain'],
     '.markdown': ['text/markdown', 'text/x-markdown', 'application/markdown', 'text/plain'],
+    '.mp3': ['audio/mpeg', 'audio/mp3'],
+    '.m4a': ['audio/mp4', 'audio/x-m4a'],
+    '.wav': ['audio/wav', 'audio/x-wav', 'audio/vnd.wave'],
+    '.mp4': ['video/mp4'],
+    '.webm': ['video/webm'],
   }
   return expected[extension]?.includes(mediaType) ?? false
 }
@@ -216,6 +238,7 @@ export function materialKindLabel(kind: ResearchMaterialKind): string {
 
 export function materialStatusLabel(status: ResearchMaterialStatus): string {
   return {
+    uploaded: '原件已保存',
     processing: '正在解析',
     ready: '可检索',
     failed: '解析失败',
@@ -224,6 +247,12 @@ export function materialStatusLabel(status: ResearchMaterialStatus): string {
 }
 
 export function materialMediaLabel(mediaType: string, filename = ''): string {
+  const lowerName = filename.toLowerCase()
+  if (mediaType === 'audio/mpeg' || lowerName.endsWith('.mp3')) return 'MP3'
+  if (mediaType === 'audio/mp4' || mediaType === 'audio/x-m4a' || lowerName.endsWith('.m4a')) return 'M4A'
+  if (mediaType === 'audio/wav' || mediaType === 'audio/x-wav' || lowerName.endsWith('.wav')) return 'WAV'
+  if (mediaType === 'video/mp4' || lowerName.endsWith('.mp4')) return 'MP4'
+  if (mediaType === 'video/webm' || lowerName.endsWith('.webm')) return 'WebM'
   if (mediaType === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) return 'PDF'
   if (mediaType.includes('wordprocessingml') || filename.toLowerCase().endsWith('.docx')) return 'DOCX'
   if (mediaType === 'text/markdown' || /\.(md|markdown)$/i.test(filename)) return 'Markdown'
@@ -238,6 +267,14 @@ export function formatMaterialSize(sizeBytes: number): string {
 
 export function formatMaterialLocator(locator: ResearchMaterialLocator): string {
   const parts: string[] = []
+  if (locator.timeStartMs !== undefined && locator.timeStartMs !== null) {
+    const start = formatMediaTime(locator.timeStartMs)
+    const end = locator.timeEndMs !== undefined && locator.timeEndMs !== null
+      ? formatMediaTime(locator.timeEndMs)
+      : null
+    parts.push(end ? `${start}–${end}` : start)
+  }
+  if (locator.speaker) parts.push(locator.speaker)
   if (locator.page !== null) parts.push(`第 ${locator.page} 页`)
   if (locator.headingPath.length) parts.push(locator.headingPath.join(' / '))
   if (locator.paragraph !== null) parts.push(`第 ${locator.paragraph} 段`)
@@ -250,4 +287,20 @@ export function formatMaterialLocator(locator: ResearchMaterialLocator): string 
     parts.push(locator.charEnd !== null ? `字符 ${locator.charStart}–${locator.charEnd}` : `字符 ${locator.charStart}`)
   }
   return parts.join(' · ') || '原文位置未提供'
+}
+
+function formatMediaTime(milliseconds: number): string {
+  const totalSeconds = Math.floor(milliseconds / 1_000)
+  const hours = Math.floor(totalSeconds / 3_600)
+  const minutes = Math.floor((totalSeconds % 3_600) / 60)
+  const seconds = totalSeconds % 60
+  const millis = milliseconds % 1_000
+  const base = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
+  return hours ? `${String(hours).padStart(2, '0')}:${base}` : base
+}
+
+export function isMediaResearchMaterial(material: Pick<ResearchMaterial, 'mediaType' | 'filename'>): boolean {
+  return material.mediaType.startsWith('audio/')
+    || material.mediaType.startsWith('video/')
+    || /\.(mp3|m4a|wav|mp4|webm)$/i.test(material.filename)
 }
