@@ -12,20 +12,35 @@ import {
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
 
 import type {
+  ConfigureCodebookEntryInput,
   CreateAnalysisCodeInput,
+  CreateAnalysisMemoLinkInput,
   CreateAnalysisMemoInput,
+  CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
   ResearchAnalysisSnapshot,
+  SaveAnalysisCaseProfileInput,
+  SaveCaseThemeMatrixCellInput,
+  SetQualitativeMethodInput,
+  TransitionCodebookEntryInput,
 } from './researchAnalysisModel'
 import {
+  attachAnalysisMemo,
+  configureCodebookEntry,
+  confirmAnalysisTheme,
   createAnalysisAnnotation,
   createAnalysisCode,
   createAnalysisMemo,
+  createAnalysisTheme,
   createCaseComparison,
   decideAnalysisCode,
   decideAnalysisMemo,
   decideCaseComparison,
   getAnalysisSnapshot,
+  saveAnalysisCaseProfile,
+  saveCaseThemeMatrixCell,
+  setQualitativeMethod,
+  transitionCodebookEntry,
 } from './researchAnalysisApi'
 import {
   ResearchAnalysisWorkspace,
@@ -532,6 +547,55 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     setAnalysisNotice(decision === 'confirmed' ? '案例比较已确认。' : '案例比较已拒绝。')
   }
 
+  async function refreshWorkspaceAfter(operation: () => Promise<unknown>, notice: string) {
+    setAnalysisError(null)
+    setAnalysisNotice(null)
+    await operation()
+    await loadAnalysis()
+    setAnalysisNotice(notice)
+  }
+
+  async function configureCodebook(codeId: string, body: ConfigureCodebookEntryInput) {
+    await refreshWorkspaceAfter(
+      () => configureCodebookEntry(taskId, codeId, body),
+      '代码本边界已保存。',
+    )
+  }
+
+  async function transitionCodebook(codeId: string, body: TransitionCodebookEntryInput) {
+    await refreshWorkspaceAfter(
+      () => transitionCodebookEntry(taskId, codeId, body),
+      '代码本状态已更新。',
+    )
+  }
+
+  async function saveTheme(body: CreateAnalysisThemeInput) {
+    await refreshWorkspaceAfter(() => createAnalysisTheme(taskId, body), '分析主题已保存。')
+  }
+
+  async function confirmTheme(themeId: string, reason: string, expectedVersion: number) {
+    await refreshWorkspaceAfter(
+      () => confirmAnalysisTheme(taskId, themeId, reason, expectedVersion),
+      '候选主题已确认。',
+    )
+  }
+
+  async function attachMemo(body: CreateAnalysisMemoLinkInput) {
+    await refreshWorkspaceAfter(() => attachAnalysisMemo(taskId, body), '备忘挂接已保存。')
+  }
+
+  async function saveCaseProfile(body: SaveAnalysisCaseProfileInput) {
+    await refreshWorkspaceAfter(() => saveAnalysisCaseProfile(taskId, body), '个案档案已保存。')
+  }
+
+  async function saveMatrixCell(body: SaveCaseThemeMatrixCellInput) {
+    await refreshWorkspaceAfter(() => saveCaseThemeMatrixCell(taskId, body), '比较矩阵单元已保存。')
+  }
+
+  async function saveQualitativeMethod(body: SetQualitativeMethodInput) {
+    await refreshWorkspaceAfter(() => setQualitativeMethod(taskId, body), '方法取向已保存。')
+  }
+
   const segments = selectedMaterial?.segments ?? []
   const normalizedReaderQuery = readerQuery.trim().toLocaleLowerCase()
   const readerSegments = segments.filter((segment) => {
@@ -811,6 +875,14 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
                     onDecideMemo={decideMemo}
                     onCreateComparison={saveComparison}
                     onDecideComparison={decideComparison}
+                    onConfigureCodebook={configureCodebook}
+                    onTransitionCodebook={transitionCodebook}
+                    onCreateTheme={saveTheme}
+                    onConfirmTheme={confirmTheme}
+                    onAttachMemo={attachMemo}
+                    onSaveCaseProfile={saveCaseProfile}
+                    onSaveMatrixCell={saveMatrixCell}
+                    onSetMethod={saveQualitativeMethod}
                   />
                 ) : (
                   <p className="research-analysis__empty">质性分析记录暂时无法加载。</p>

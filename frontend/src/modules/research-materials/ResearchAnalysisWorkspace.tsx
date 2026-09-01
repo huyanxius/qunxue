@@ -2,11 +2,19 @@ import { useMemo, useState } from 'react'
 
 import type {
   AnalysisMemoKind,
+  ConfigureCodebookEntryInput,
   CreateAnalysisCodeInput,
+  CreateAnalysisMemoLinkInput,
   CreateAnalysisMemoInput,
+  CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
   ResearchAnalysisSnapshot,
+  SaveAnalysisCaseProfileInput,
+  SaveCaseThemeMatrixCellInput,
+  SetQualitativeMethodInput,
+  TransitionCodebookEntryInput,
 } from './researchAnalysisModel'
+import { QualitativeWorkspacePanel } from './QualitativeWorkspacePanel'
 import {
   ResearchAnalysisCandidateCard,
   type ResearchAnalysisDecision,
@@ -27,6 +35,14 @@ type ResearchAnalysisWorkspaceProps = {
   readonly onDecideMemo: (memoId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) => void | Promise<void>
   readonly onCreateComparison?: (body: CreateCaseComparisonInput) => void | Promise<void>
   readonly onDecideComparison?: (comparisonId: string, decision: CaseComparisonDecision, reason: string, expectedVersion: number) => void | Promise<void>
+  readonly onConfigureCodebook?: (codeId: string, body: ConfigureCodebookEntryInput) => void | Promise<void>
+  readonly onTransitionCodebook?: (codeId: string, body: TransitionCodebookEntryInput) => void | Promise<void>
+  readonly onCreateTheme?: (body: CreateAnalysisThemeInput) => void | Promise<void>
+  readonly onConfirmTheme?: (themeId: string, reason: string, expectedVersion: number) => void | Promise<void>
+  readonly onAttachMemo?: (body: CreateAnalysisMemoLinkInput) => void | Promise<void>
+  readonly onSaveCaseProfile?: (body: SaveAnalysisCaseProfileInput) => void | Promise<void>
+  readonly onSaveMatrixCell?: (body: SaveCaseThemeMatrixCellInput) => void | Promise<void>
+  readonly onSetMethod?: (body: SetQualitativeMethodInput) => void | Promise<void>
 }
 
 const memoKindLabels: Record<AnalysisMemoKind, string> = {
@@ -46,6 +62,14 @@ export function ResearchAnalysisWorkspace({
   onDecideMemo,
   onCreateComparison,
   onDecideComparison,
+  onConfigureCodebook,
+  onTransitionCodebook,
+  onCreateTheme,
+  onConfirmTheme,
+  onAttachMemo,
+  onSaveCaseProfile,
+  onSaveMatrixCell,
+  onSetMethod,
 }: ResearchAnalysisWorkspaceProps) {
   const [scope, setScope] = useState<'material' | 'task'>(selectedMaterialId ? 'material' : 'task')
   const [composer, setComposer] = useState<'code' | 'memo' | null>(null)
@@ -210,6 +234,28 @@ export function ResearchAnalysisWorkspace({
         onCreate={onCreateComparison}
         onDecide={onDecideComparison}
       />
+
+      {snapshot.workspace
+        && onConfigureCodebook
+        && onTransitionCodebook
+        && onCreateTheme
+        && onConfirmTheme
+        && onAttachMemo
+        && onSaveCaseProfile
+        && onSaveMatrixCell
+        && onSetMethod ? (
+          <QualitativeWorkspacePanel
+            snapshot={snapshot}
+            onConfigureCodebook={onConfigureCodebook}
+            onTransitionCodebook={onTransitionCodebook}
+            onCreateTheme={onCreateTheme}
+            onConfirmTheme={onConfirmTheme}
+            onAttachMemo={onAttachMemo}
+            onSaveCaseProfile={onSaveCaseProfile}
+            onSaveMatrixCell={onSaveMatrixCell}
+            onSetMethod={onSetMethod}
+          />
+        ) : null}
 
       <div className="research-analysis__actions">
         <button type="button" onClick={() => { resetComposer(); setComposer('code') }}>建立编码</button>

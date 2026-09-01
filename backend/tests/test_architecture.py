@@ -67,6 +67,7 @@ ALLOWED_MODULE_INTERNAL_DEPENDENCIES = {
     "service": {"domain", "errors", "ports", "service"},
 }
 MODULE_INTERNAL_ROLE_ALIASES = {
+    "qualitative_workspace": "domain",
     "research_map": "domain",
 }
 FORBIDDEN_INTERNAL_PREFIXES = (

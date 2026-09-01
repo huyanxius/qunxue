@@ -13,17 +13,27 @@ from uuid import UUID, uuid4
 from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisCaseProfile,
     AnalysisCode,
     AnalysisCodeStatus,
     AnalysisMemo,
     AnalysisMemoKind,
+    AnalysisMemoLink,
     AnalysisRecordStatus,
+    AnalysisTheme,
     AnalysisWriteRequest,
     CaseComparison,
+    CaseThemeMatrixCell,
+    CodebookEntry,
+    CodebookLifecycle,
     ComparisonFinding,
     ComparisonFindingKind,
     ConfirmedComparisonProjection,
+    MatrixSubjectKind,
+    MemoTargetKind,
+    MethodPresetSelection,
     NextResearchStep,
+    QualitativeMethod,
     ResearchAnalysisHandoff,
     ResearchAnalysisService,
 )
@@ -234,6 +244,10 @@ class ResearchAnalysisApplication:
         annotations = cast(tuple[AnalysisAnnotation, ...], snapshot["annotations"])
         return {
             **snapshot,
+            "workspace": self._analysis.qualitative_workspace_snapshot(
+                user_id=user_id,
+                task_id=task_id,
+            ),
             "annotations": tuple(
                 annotation
                 if self._annotation_is_readable(annotation)
@@ -246,6 +260,231 @@ class ResearchAnalysisApplication:
 
     def get_for_agent(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]:
         return self.list_snapshot(user_id=user_id, task_id=task_id)
+
+    def configure_codebook_entry(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_id: UUID,
+        inclusion_rules: tuple[str, ...],
+        exclusion_rules: tuple[str, ...],
+        positive_example_annotation_ids: tuple[UUID, ...],
+        negative_example_annotation_ids: tuple[UUID, ...],
+        parent_code_id: UUID | None,
+        expected_version: int | None,
+    ) -> CodebookEntry:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.configure_codebook_entry(
+            user_id=user_id,
+            task_id=task_id,
+            code_id=code_id,
+            inclusion_rules=inclusion_rules,
+            exclusion_rules=exclusion_rules,
+            positive_example_annotation_ids=positive_example_annotation_ids,
+            negative_example_annotation_ids=negative_example_annotation_ids,
+            parent_code_id=parent_code_id,
+            expected_version=expected_version,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def transition_codebook_entry(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_id: UUID,
+        lifecycle: CodebookLifecycle,
+        related_code_ids: tuple[UUID, ...],
+        expected_version: int,
+        reason: str,
+    ) -> CodebookEntry:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.transition_codebook_entry(
+            user_id=user_id,
+            task_id=task_id,
+            code_id=code_id,
+            lifecycle=lifecycle,
+            related_code_ids=related_code_ids,
+            expected_version=expected_version,
+            reason=reason,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def create_user_theme(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        label: str,
+        central_concept: str,
+        code_ids: tuple[UUID, ...],
+        annotation_ids: tuple[UUID, ...],
+    ) -> AnalysisTheme:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.create_theme(
+            user_id=user_id,
+            task_id=task_id,
+            label=label,
+            central_concept=central_concept,
+            code_ids=code_ids,
+            annotation_ids=annotation_ids,
+            source="user",
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def propose_theme_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        label: str,
+        central_concept: str,
+        code_ids: tuple[UUID, ...],
+        annotation_ids: tuple[UUID, ...],
+    ) -> AnalysisTheme:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.create_theme(
+            user_id=user_id,
+            task_id=task_id,
+            label=label,
+            central_concept=central_concept,
+            code_ids=code_ids,
+            annotation_ids=annotation_ids,
+            source="agent",
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def confirm_theme(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        theme_id: UUID,
+        expected_version: int,
+        reason: str,
+    ) -> AnalysisTheme:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.confirm_theme(
+            user_id=user_id,
+            task_id=task_id,
+            theme_id=theme_id,
+            expected_version=expected_version,
+            user_confirmed=True,
+            reason=reason,
+        )
+        self._commit()
+        return value
+
+    def attach_memo(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        memo_id: UUID,
+        target_kind: MemoTargetKind,
+        target_ref: str,
+        annotation_ids: tuple[UUID, ...],
+    ) -> AnalysisMemoLink:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.attach_memo(
+            user_id=user_id,
+            task_id=task_id,
+            memo_id=memo_id,
+            target_kind=target_kind,
+            target_ref=target_ref,
+            annotation_ids=annotation_ids,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def save_case_profile(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        case_ref: str,
+        display_label: str,
+        attributes: tuple[tuple[str, str], ...],
+        summary: str,
+        annotation_ids: tuple[UUID, ...],
+        memo_ids: tuple[UUID, ...],
+        expected_version: int | None,
+    ) -> AnalysisCaseProfile:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.save_case_profile(
+            user_id=user_id,
+            task_id=task_id,
+            case_ref=case_ref,
+            display_label=display_label,
+            attributes=attributes,
+            summary=summary,
+            annotation_ids=annotation_ids,
+            memo_ids=memo_ids,
+            expected_version=expected_version,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def save_matrix_cell(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        case_profile_id: UUID,
+        subject_kind: MatrixSubjectKind,
+        subject_id: UUID,
+        summary: str,
+        annotation_ids: tuple[UUID, ...],
+        memo_ids: tuple[UUID, ...],
+        finding_kinds: tuple[ComparisonFindingKind, ...],
+        expected_version: int | None,
+    ) -> CaseThemeMatrixCell:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.save_matrix_cell(
+            user_id=user_id,
+            task_id=task_id,
+            case_profile_id=case_profile_id,
+            subject_kind=subject_kind,
+            subject_id=subject_id,
+            summary=summary,
+            annotation_ids=annotation_ids,
+            memo_ids=memo_ids,
+            finding_kinds=finding_kinds,
+            expected_version=expected_version,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
+
+    def set_method_preset(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        method: QualitativeMethod,
+        expected_version: int | None,
+    ) -> MethodPresetSelection:
+        self._require_task(user_id=user_id, task_id=task_id)
+        value = self._analysis.set_method_preset(
+            user_id=user_id,
+            task_id=task_id,
+            method=method,
+            expected_version=expected_version,
+            now=self._clock(),
+        )
+        self._commit()
+        return value
 
     def create_user_code(
         self,
