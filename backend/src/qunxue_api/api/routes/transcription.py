@@ -28,6 +28,7 @@ from qunxue_api.modules.transcription import (
 router = APIRouter(
     prefix="/api/research-tasks/{task_id}/materials/{material_id}/transcription",
     tags=["transcription"],
+    responses={422: {"model": ErrorResponse}},
 )
 
 MAX_TRANSCRIPT_BYTES = 10 * 1024 * 1024
