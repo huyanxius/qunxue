@@ -1,8 +1,10 @@
 .research-project-workspace {
-  --research-shell-ink: #252823;
-  --research-shell-muted: #6f756e;
-  --research-shell-line: #d9ddd7;
-  --research-shell-paper: #f8f9f6;
+  /* 工作区外壳原本自带一组带绿的灰，跟中心工具用的 --qx-* 冷灰并不是同一批颜色，
+     两条栏叠在一起时能明显看出是两种材质。这里改成同一套语义令牌，取值由外壳决定。 */
+  --research-shell-ink: var(--qx-color-ink);
+  --research-shell-muted: var(--qx-color-muted);
+  --research-shell-line: var(--qx-color-rule);
+  --research-shell-paper: var(--qx-color-surface-subtle);
   height: calc(100dvh - var(--app-rail-height, 0px));
   min-height: 0;
   display: grid;
@@ -20,23 +22,21 @@
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px 20px 0;
+  padding: 10px 20px 0;
   border-bottom: 1px solid var(--research-shell-line);
   background: color-mix(in srgb, var(--research-shell-paper) 96%, transparent);
 }
 
 .research-project-workspace__identity {
-  min-width: 220px;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 2px 12px;
-  align-items: baseline;
-  padding-bottom: 12px;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 10px;
 }
 
 .research-project-workspace__identity > a {
-  grid-row: 1 / 3;
-  align-self: center;
+  flex: none;
   padding-right: 12px;
   border-right: 1px solid var(--research-shell-line);
   color: var(--research-shell-muted);
@@ -44,22 +44,9 @@
   text-decoration: none;
 }
 
-.research-project-workspace__identity > div {
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.research-project-workspace__identity span {
-  flex: 0 0 auto;
-  color: #667269;
-  font-size: 10px;
-  font-weight: 680;
-  letter-spacing: .08em;
-}
 
 .research-project-workspace__identity h1 {
+  min-width: 0;
   overflow: hidden;
   margin: 0;
   color: var(--research-shell-ink);
@@ -67,16 +54,6 @@
   font-size: 18px;
   font-weight: 580;
   letter-spacing: -.025em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.research-project-workspace__identity > p {
-  grid-column: 2;
-  margin: 0;
-  overflow: hidden;
-  color: var(--research-shell-muted);
-  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
