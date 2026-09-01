@@ -20,6 +20,7 @@ dependencies = [
     "srt>=3.5,<4.0",
     "uvicorn[standard]>=0.51.0",
     "webvtt-py>=0.5,<1.0",
+    "xmlschema>=4.2,<5",
 ]
 
 [project.scripts]

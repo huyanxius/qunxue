@@ -24,6 +24,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
         "research_materials",
         "theory_matching",
     },
+    "research_exchange": set(),
     "research_materials": set(),
     "research_method": set(),
     "transcription": set(),
