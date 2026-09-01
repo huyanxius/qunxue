@@ -32,6 +32,12 @@ describe('research project workspace routes', () => {
     )
   })
 
+  it('recognizes the stable archive tool as a project workspace destination', () => {
+    expect(researchWorkspaceDestination('task-1', 'archive')).toBe(
+      '/research/task-1/workspace/archive',
+    )
+  })
+
   it.each([
     ['/research/task-1/phenomenon?focus=evidence#quote', '/research/task-1/workspace/map?focus=evidence#quote'],
     ['/research/task-1/match?section_id=evidence', '/research/task-1/workspace/theory?section_id=evidence'],

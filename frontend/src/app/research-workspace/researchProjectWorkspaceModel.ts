@@ -7,6 +7,7 @@ export type ResearchWorkspaceTool =
   | 'theory'
   | 'method'
   | 'writing'
+  | 'archive'
 
 export type ResearchWorkspacePosition = Readonly<{
   materialId?: string | null
@@ -41,6 +42,7 @@ const workspaceTools = new Set<ResearchWorkspaceTool>([
   'theory',
   'method',
   'writing',
+  'archive',
 ])
 
 const RESUME_STORAGE_PREFIX = 'qunxue.research-workspace.resume.v1:'

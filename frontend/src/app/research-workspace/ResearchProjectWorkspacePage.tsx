@@ -1,5 +1,6 @@
 import {
   ChartBarIcon,
+  ArchiveBoxIcon,
   FileTextIcon,
   FolderOpenIcon,
   MapTrifoldIcon,
@@ -19,6 +20,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 
 import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
 import type { AgentConversation } from '../../modules/research-agent'
+import { ResearchArchivePanel } from '../../modules/research-exchange'
 import { ResearchMaterialsPanel } from '../../modules/research-materials'
 import { MethodPlanWorkspace } from '../../modules/research-method'
 import { useResearchTask, type ResearchTask } from '../../modules/socio-match-workspace'
@@ -51,6 +53,7 @@ const tools: ReadonlyArray<{
   { id: 'theory', label: '理论', icon: ScalesIcon },
   { id: 'method', label: '方法', icon: WrenchIcon },
   { id: 'writing', label: '文稿', icon: FileTextIcon },
+  { id: 'archive', label: '归档', icon: ArchiveBoxIcon },
 ]
 
 const toolIds = new Set(tools.map((tool) => tool.id))
@@ -232,6 +235,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       )
     : tool === 'method'
       ? <MethodPlanWorkspace taskId={taskId} />
+      : tool === 'archive'
+        ? <ResearchArchivePanel taskId={taskId} />
       : (
           <ResearchDocumentWorkbench
             embedded
