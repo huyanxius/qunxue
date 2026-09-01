@@ -39,6 +39,7 @@ import {
 } from '../../modules/research-materials'
 import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
+import { legacyResearchWorkspaceDestination } from '../research-workspace/researchProjectWorkspaceModel'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
 import './new-research-workspace.css'
@@ -285,7 +286,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
       setJourneyError('研究已建立，但下一阶段暂时无法打开。请稍后重试恢复研究状态。')
       return
     }
-    navigate(resumePath)
+    navigate(legacyResearchWorkspaceDestination(resumePath) ?? resumePath)
   }
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
