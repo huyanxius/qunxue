@@ -192,6 +192,53 @@ describe('ResearchMaterialsPanel', () => {
     expect(onWorkspaceLocationChange).not.toHaveBeenCalledWith(expect.objectContaining({ mode: 'source' }))
   })
 
+  it('opens media materials in the transcript timeline instead of the document reader', async () => {
+    const onWorkspaceLocationChange = vi.fn()
+    const mediaMaterial = {
+      ...material,
+      material_id: 'media-1',
+      filename: '社区访谈.wav',
+      media_type: 'audio/wav',
+      status: 'uploaded',
+      parse_version: null,
+      segment_count: 0,
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/materials/media-1/transcription')) {
+        return response({
+          material_id: 'media-1', status: 'ready', automatic_available: false,
+          automatic_provider: null, error_code: null,
+          current_version: {
+            version_id: 'parse-media-1', material_id: 'media-1', version: 1,
+            source: 'imported', provider: null, created_from_version_id: null,
+            created_at: '2026-09-01T00:00:00Z', is_current: true,
+            segments: [{ segment_id: 'media-segment-1', ordinal: 0, speaker: '主持人', start_ms: 1250, end_ms: 3800, text: '请介绍一下。' }],
+          },
+          versions: [{
+            version_id: 'parse-media-1', material_id: 'media-1', version: 1,
+            source: 'imported', provider: null, created_from_version_id: null,
+            created_at: '2026-09-01T00:00:00Z', is_current: true,
+            segments: [{ segment_id: 'media-segment-1', ordinal: 0, speaker: '主持人', start_ms: 1250, end_ms: 3800, text: '请介绍一下。' }],
+          }],
+        })
+      }
+      if (path.endsWith('/materials/media-1')) return response({ ...mediaMaterial, segments: [] })
+      return response({ task_id: 'task-1', items: [mediaMaterial] })
+    }))
+
+    render(<ResearchMaterialsPanel taskId="task-1" onClose={() => undefined} onWorkspaceLocationChange={onWorkspaceLocationChange} />)
+    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+
+    expect(await within(dialog).findByRole('region', { name: '媒体转录时间轴' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: '媒体与转录' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(dialog).queryByRole('region', { name: '文档阅读器' })).not.toBeInTheDocument()
+    fireEvent.click(await within(dialog).findByRole('button', { name: /00:01\.250.*主持人/ }))
+    await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
+      mode: 'source', materialId: 'media-1', parseId: 'parse-media-1', segmentId: 'media-segment-1',
+    }))
+  })
+
   it('shows persisted materials and opens an exact source locator in the detail view', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(requestOf(input, init).url).pathname
