@@ -229,8 +229,26 @@ function researchNavigationFixture(resumePath: string) {
 function researchWorkspaceResponse(input: RequestInfo | URL, resumePath: string) {
   const request = requestUrl(input)
   if (request.pathname.endsWith('/navigation')) return json(researchNavigationFixture(resumePath))
+  if (request.pathname === '/api/research-tasks/task-1') return json({
+    task_id: 'task-1',
+    entry_type: 'direct_input',
+    entry_mode: 'from_scratch',
+    lifecycle_status: 'in_progress',
+    project_title: '社区互助研究',
+    project_stage: '理论分析',
+    method_orientation: null,
+    last_central_tool: 'theory_matching',
+    status: 'in_progress',
+    version: 3,
+    allowed_actions: [],
+    seed_theory_id: null,
+    seed_theory_name: null,
+    created_at: '2026-08-21T08:00:00Z',
+    updated_at: '2026-08-21T09:00:00Z',
+  })
   if (request.pathname.endsWith('/research-documents')) return json({ items: [] })
   if (request.pathname.endsWith('/document-proposals')) return json({ items: [] })
+  if (request.pathname.endsWith('/analysis')) return json({ annotations: [], codes: [], memos: [], comparisons: [] })
   return json({}, 404)
 }
 
@@ -456,7 +474,7 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent('/app')
   })
 
-  it('resumes a task-only research entry from the server navigation path', async () => {
+  it('resumes a task-only research entry inside the unified project workspace', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       return researchWorkspaceResponse(input, '/research/task-1/match')
     }))
@@ -465,10 +483,11 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
     expect(document.querySelector('main.research-document-workbench[data-stage="match"]')).toBeInTheDocument()
-    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/theory')
+    expect(screen.getAllByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveLength(1)
   })
 
-  it('keeps M4 inside the continuous document workbench on the match route', async () => {
+  it('restores the legacy M4 deep link inside the unified project workspace', async () => {
     const path = '/research/task-1/match'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       return researchWorkspaceResponse(input, path)
@@ -478,10 +497,11 @@ describe('App routes', () => {
     expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
     expect(document.querySelector('main.research-document-workbench[data-stage="match"]')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: '研究章节' })).not.toBeInTheDocument()
-    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toBeVisible()
+    expect(screen.getAllByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveLength(1)
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/theory')
   })
 
-  it('keeps the complete document workbench on the M5 framework route', async () => {
+  it('restores the legacy M5 deep link inside the unified project workspace', async () => {
     const path = '/research/task-1/framework'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       return researchWorkspaceResponse(input, path)
@@ -490,6 +510,36 @@ describe('App routes', () => {
 
     expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
     expect(document.querySelector('main.research-document-workbench[data-stage="framework"]')).toBeInTheDocument()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/writing')
+  })
+
+  it('preserves a material position while upgrading the legacy material deep link', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/match')
+    }))
+
+    renderRoute('/research/materials?task_id=task-1&material_id=material-1&segment_id=segment-2', { status: 'authenticated' })
+
+    await waitFor(() => expect(screen.getByTestId('route-location')).toHaveTextContent(
+      '/research/task-1/workspace/materials?material_id=material-1&segment_id=segment-2',
+    ))
+  })
+
+  it('switches from materials to analysis without bouncing between workspace routes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      return researchWorkspaceResponse(input, '/research/task-1/match')
+    }))
+
+    renderRoute('/research/task-1/workspace/materials', { status: 'authenticated' })
+
+    expect(await screen.findByRole('heading', { name: '社区互助研究' })).toBeVisible()
+    fireEvent.click(screen.getByRole('link', { name: '分析' }))
+
+    await waitFor(() => expect(screen.getByTestId('route-location')).toHaveTextContent(
+      '/research/task-1/workspace/analysis',
+    ))
+    expect(screen.getAllByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveLength(1)
+    expect(screen.queryByRole('heading', { name: '页面没有安全地完成渲染。' })).not.toBeInTheDocument()
   })
 
   it('opens the work-home complete research column from the legacy /my address', async () => {
@@ -536,7 +586,7 @@ describe('App routes', () => {
     ['/app', '工作台'],
     ['/agent', '你想研究什么？'],
     ['/research/new', '从一个社会学问题开始'],
-    ['/research/task-1/phenomenon', '确认现象'],
+    ['/research/task-1/phenomenon', '理论判断文档'],
     ['/research/task-1/match', '理论判断文档'],
     ['/research/task-1/framework', '研究框架文档'],
   ])('renders %s from a direct entry for an authenticated visitor', async (path, title) => {
@@ -1118,9 +1168,10 @@ describe('App routes', () => {
     renderRoute('/research/task-1/phenomenon', { status: 'authenticated' })
 
     expect(
-      await screen.findByRole('heading', { name: '确认现象' }),
+      await screen.findByRole('heading', { name: '理论判断文档' }),
     ).toBeVisible()
     expect(screen.queryByRole('heading', { name: '登录' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/map')
   })
 
   it('waits for the session boundary before deciding on a protected route', async () => {
@@ -1213,7 +1264,7 @@ describe('App routes', () => {
     fireEvent.click(screen.getByRole('button', { name: '登录并继续' }))
 
     expect(await screen.findByRole('heading', { name: '研究框架文档' })).toBeVisible()
-    expect(screen.getByTestId('route-location')).toHaveTextContent(destination)
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/writing?from=my#methods')
   })
 
   it('returns home after logging out from my research', async () => {
@@ -1318,7 +1369,7 @@ describe('App routes', () => {
     fireEvent.click(screen.getByRole('button', { name: '返回研究任务' }))
 
     expect(await screen.findByRole('heading', { name: '理论判断文档' })).toBeVisible()
-    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/match')
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/theory')
   })
 
   it('returns from a detail to a safe graph workspace context', async () => {

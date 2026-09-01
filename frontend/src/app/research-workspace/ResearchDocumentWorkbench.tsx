@@ -115,6 +115,27 @@ type FormattingDraft = {
   custom_css?: string | null
 }
 
+export type ResearchDocumentWorkspaceContext = {
+  readonly mode: 'match' | 'framework'
+  readonly documentId: string | null
+  readonly sectionId: string | null
+  readonly documentVersion: number | null
+  readonly theoryPlanId: string | null
+}
+
+type ResearchDocumentWorkbenchProps = {
+  readonly userId?: string | null
+  readonly citationMetadataResolver?: CitationMetadataResolver
+  readonly embedded?: boolean
+  readonly workspaceMode?: 'match' | 'framework'
+  readonly focusDocument?: boolean
+  readonly initialDocumentId?: string | null
+  readonly initialSectionId?: string | null
+  readonly conversation?: AgentConversation | null
+  readonly refreshKey?: number
+  readonly onWorkspaceContextChange?: (context: ResearchDocumentWorkspaceContext) => void
+}
+
 function key() {
   return globalThis.crypto?.randomUUID?.() ?? `m4-m5-${Date.now()}`
 }
@@ -132,22 +153,36 @@ function sectionFallback(stage: 'match' | 'framework') {
   }))
 }
 
-function selectCurrentDocument(items: ResearchDocumentResponse[], navigation: ResearchTaskNavigationResponse, mode: 'match' | 'framework') {
+function selectCurrentDocument(
+  items: ResearchDocumentResponse[],
+  navigation: ResearchTaskNavigationResponse,
+  mode: 'match' | 'framework',
+  preferredDocumentId?: string | null,
+) {
+  const preferred = preferredDocumentId ? items.find((item) => item.document_id === preferredDocumentId) : undefined
   const currentId = mode === 'framework' ? navigation.current_framework_id : navigation.current_theory_plan_id
-  return (currentId ? items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? items[0] ?? null
+  return preferred
+    ?? (currentId ? items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined)
+    ?? items[0]
+    ?? null
 }
 
 export function ResearchDocumentWorkbench({
   userId = null,
   citationMetadataResolver = () => null,
-}: {
-  userId?: string | null
-  citationMetadataResolver?: CitationMetadataResolver
-}) {
+  embedded = false,
+  workspaceMode,
+  focusDocument = false,
+  initialDocumentId = null,
+  initialSectionId = null,
+  conversation = null,
+  refreshKey = 0,
+  onWorkspaceContextChange,
+}: ResearchDocumentWorkbenchProps) {
   const { task_id: taskId, stage: stageParam } = useParams<{ task_id: string; stage?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  const stage = stageParam ?? (location.pathname.endsWith('/framework') ? 'framework' : 'match')
+  const stage = workspaceMode ?? stageParam ?? (location.pathname.endsWith('/framework') ? 'framework' : 'match')
   const mode = stage === 'framework' ? 'framework' : 'match'
   const [navigation, setNavigation] = useState<ResearchTaskNavigationResponse | null>(null)
   const [document, setDocument] = useState<ResearchDocumentResponse | null>(null)
@@ -192,17 +227,18 @@ export function ResearchDocumentWorkbench({
   const activeContent = activeSection?.content ?? ''
   const selectedTheoryIds = Object.entries(pendingTheoryDecisions).filter(([, value]) => value.action === 'adopt' || value.action === 'combine').map(([candidateId]) => candidateId)
   const multiTheoryRelationReady = selectedTheoryIds.length < 2 || Object.values(relationDraft).every((value) => value.trim())
+  const mapConversation = embedded ? conversation : agentConversation
   const mapProjection = useMemo<ResearchCanvasProjection>(() => projectFormalResearchCanvas({
     taskId: taskId ?? null,
     mode,
-    agentProjection: projectResearchCanvas({ conversation: agentConversation }),
+    agentProjection: projectResearchCanvas({ conversation: mapConversation }),
     navigation,
     matchRun,
     pendingTheoryDecisions,
     sections,
     documentTitle: document?.title,
     analysisSnapshot: mode === 'match' ? analysisSnapshot : null,
-  }), [agentConversation, analysisSnapshot, document?.title, matchRun, mode, navigation, pendingTheoryDecisions, sections, taskId])
+  }), [analysisSnapshot, document?.title, mapConversation, matchRun, mode, navigation, pendingTheoryDecisions, sections, taskId])
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
     content: activeContent || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。',
@@ -221,6 +257,26 @@ export function ResearchDocumentWorkbench({
   useEffect(() => {
     if (document?.formatting) setFormattingDraft(document.formatting)
   }, [document?.revision_id, document?.formatting])
+
+  useEffect(() => {
+    const requestedSection = initialSectionId && sections.some((section) => section.section_id === initialSectionId)
+      ? initialSectionId
+      : sections[0]?.section_id
+    if (!requestedSection) return
+    setActiveSectionId(requestedSection)
+    if (focusDocument) setSelectedMapNodeId(`${sectionNodePrefix}${requestedSection}`)
+  }, [focusDocument, initialSectionId, sectionNodePrefix, sections])
+
+  useEffect(() => {
+    if (loadState !== 'ready') return
+    onWorkspaceContextChange?.({
+      mode,
+      documentId: document?.document_id ?? null,
+      sectionId: activeSection?.section_id ?? null,
+      documentVersion: document?.version ?? null,
+      theoryPlanId: navigation?.current_theory_plan_id ?? document?.theory_plan_id ?? null,
+    })
+  }, [activeSection?.section_id, document?.document_id, document?.theory_plan_id, document?.version, loadState, mode, navigation?.current_theory_plan_id, onWorkspaceContextChange])
 
   useEffect(() => {
     if (!taskId) {
@@ -254,7 +310,7 @@ export function ResearchDocumentWorkbench({
           setPendingTheoryDecisions(Object.fromEntries(restoredDecisionSet.decisions.map((decision) => [decision.candidate_id, { candidate_version: decision.candidate_version, action: decision.action }])))
         }
       }
-      const current = selectCurrentDocument(docs.data.items, nav.data, mode)
+      const current = selectCurrentDocument(docs.data.items, nav.data, mode, initialDocumentId)
       setDocument(current)
       setLoadState('ready')
       const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
@@ -271,7 +327,7 @@ export function ResearchDocumentWorkbench({
       }
     })
     return () => { disposed = true }
-  }, [mode, taskId])
+  }, [initialDocumentId, mode, taskId])
 
   const availableAgentPanelWidth = useCallback(() => {
     const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width || window.innerWidth
@@ -395,8 +451,9 @@ export function ResearchDocumentWorkbench({
     }
     if (!result.data) return
     const latestNavigation = navigationResult.data ?? navigation
-    const currentId = mode === 'framework' ? latestNavigation?.current_framework_id : latestNavigation?.current_theory_plan_id
-    const current = (currentId ? result.data.items.find((item) => mode === 'framework' ? item.document_id === currentId : item.theory_plan_id === currentId) : undefined) ?? result.data.items[0] ?? null
+    const current = latestNavigation
+      ? selectCurrentDocument(result.data.items, latestNavigation, mode, initialDocumentId)
+      : (initialDocumentId ? result.data.items.find((item) => item.document_id === initialDocumentId) : undefined) ?? result.data.items[0] ?? null
     setDocument(current)
     const taskProposals = await listResearchTaskDocumentProposals({ path: { task_id: taskId } })
     if (taskProposals.data) setProposals(taskProposals.data.items)
@@ -404,16 +461,23 @@ export function ResearchDocumentWorkbench({
       const versionsResult = await listResearchDocumentVersions({ path: { document_id: current.document_id } })
       if (versionsResult.data) setVersions(versionsResult.data.items)
     }
-  }, [mode, navigation, taskId])
+  }, [initialDocumentId, mode, navigation, taskId])
+
+  const previousRefreshKey = useRef(refreshKey)
+  useEffect(() => {
+    if (previousRefreshKey.current === refreshKey) return
+    previousRefreshKey.current = refreshKey
+    void refreshDocumentState()
+  }, [refreshDocumentState, refreshKey])
 
   const resumeFromServer = useCallback(async () => {
     if (!taskId) return
     const latest = await readResearchTaskNavigationViaApi(taskId)
     setNavigation(latest)
-    if (latest.resume_path !== location.pathname) {
+    if (!embedded && latest.resume_path !== location.pathname) {
       navigate(latest.resume_path, { replace: true })
     }
-  }, [location.pathname, navigate, taskId])
+  }, [embedded, location.pathname, navigate, taskId])
 
   const saveSection = useCallback((): Promise<ResearchDocumentResponse | null> => {
     if (!editor || !document || !activeSection) return Promise.resolve(document)
@@ -778,7 +842,7 @@ export function ResearchDocumentWorkbench({
             </div>
           </details>
           <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
-          {mode === 'framework' && document?.status === 'confirmed' && taskId ? <a href={`/research/${taskId}/method`}>制定研究方法</a> : null}
+          {mode === 'framework' && document?.status === 'confirmed' && taskId ? <a href={embedded ? `/research/${taskId}/workspace/method` : `/research/${taskId}/method`}>制定研究方法</a> : null}
           <button type="button" className="research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
         </div>
       </div>
@@ -908,10 +972,8 @@ export function ResearchDocumentWorkbench({
     </section>
   )
 
-  return (
-    <PageShell workspace wide>
-      <PageContent>
-        <main className="research-document-workbench" data-stage={mode}>
+  const workbench = (
+        <main className={`research-document-workbench${embedded ? ' research-document-workbench--embedded' : ''}`} data-stage={mode}>
           <h1 className="research-document-workbench__title">
             {mode === 'framework' ? '研究框架文档' : '理论判断文档'}
           </h1>
@@ -930,39 +992,51 @@ export function ResearchDocumentWorkbench({
               expandedNodeContent={selectedMapNodeId?.startsWith(sectionNodePrefix) ? { [selectedMapNodeId]: documentNodeContent } : {}}
             />
 
-            <div
-              className="research-document-workbench__resize-handle"
-              role="separator"
-              tabIndex={0}
-              aria-label="调整 Agent 对话栏宽度"
-              aria-orientation="vertical"
-              aria-valuemin={MIN_AGENT_PANEL_WIDTH}
-              aria-valuemax={agentPanelMaxWidth}
-              aria-valuenow={agentPanelWidth}
-              onKeyDown={handleResizeKey}
-              onMouseDown={startMouseResize}
-              onPointerDown={startPointerResize}
-              onPointerMove={movePointerResize}
-              onPointerUp={finishPointerResize}
-              onPointerCancel={finishPointerResize}
-            />
+            {!embedded ? (
+              <>
+                <div
+                  className="research-document-workbench__resize-handle"
+                  role="separator"
+                  tabIndex={0}
+                  aria-label="调整 Agent 对话栏宽度"
+                  aria-orientation="vertical"
+                  aria-valuemin={MIN_AGENT_PANEL_WIDTH}
+                  aria-valuemax={agentPanelMaxWidth}
+                  aria-valuenow={agentPanelWidth}
+                  onKeyDown={handleResizeKey}
+                  onMouseDown={startMouseResize}
+                  onPointerDown={startPointerResize}
+                  onPointerMove={movePointerResize}
+                  onPointerUp={finishPointerResize}
+                  onPointerCancel={finishPointerResize}
+                />
 
-            <ResearchAgentConversationPage
-              embedded
-              userId={userId}
-              conversationId={navigation?.conversation_id ?? null}
-              knowledgeReleaseId={navigation?.knowledge_release_id ?? document?.knowledge_release_id ?? null}
-              workspace="research"
-              taskId={taskId ?? null}
-              documentId={document?.document_id ?? null}
-              sectionId={activeSection?.section_id ?? null}
-              documentVersion={document?.version ?? null}
-              theoryPlanId={navigation?.current_theory_plan_id ?? null}
-              onConversationChange={setAgentConversation}
-              onTurnCompleted={() => { void refreshDocumentState() }}
-            />
+                <ResearchAgentConversationPage
+                  embedded
+                  userId={userId}
+                  conversationId={navigation?.conversation_id ?? null}
+                  knowledgeReleaseId={navigation?.knowledge_release_id ?? document?.knowledge_release_id ?? null}
+                  workspace="research"
+                  taskId={taskId ?? null}
+                  documentId={document?.document_id ?? null}
+                  sectionId={activeSection?.section_id ?? null}
+                  documentVersion={document?.version ?? null}
+                  theoryPlanId={navigation?.current_theory_plan_id ?? null}
+                  onConversationChange={setAgentConversation}
+                  onTurnCompleted={() => { void refreshDocumentState() }}
+                />
+              </>
+            ) : null}
           </div>
         </main>
+  )
+
+  if (embedded) return workbench
+
+  return (
+    <PageShell workspace wide>
+      <PageContent>
+        {workbench}
       </PageContent>
     </PageShell>
   )

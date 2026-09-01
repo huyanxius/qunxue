@@ -14,6 +14,7 @@ import {
   uploadInitialResearchMaterials,
 } from '../../modules/research-materials'
 import { createExistingResearchProject } from '../../modules/socio-match-workspace'
+import { researchWorkspaceDestination } from '../research-workspace/researchProjectWorkspaceModel'
 import { PageContent, PageShell } from '../ui/PageShell'
 import './existing-research-entry.css'
 
@@ -56,7 +57,7 @@ export function ExistingResearchEntryPage() {
       })).taskId
       setCreatedTaskId(taskId)
       await uploadInitialResearchMaterials(taskId, files)
-      navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}`, { replace: true })
+      navigate(researchWorkspaceDestination(taskId, 'materials'), { replace: true })
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : '项目暂时无法建立，请重试。')
     } finally {

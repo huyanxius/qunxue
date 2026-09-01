@@ -91,7 +91,14 @@ type ResearchMaterialsPanelProps = {
   readonly initialMaterialId?: string | null
   readonly initialSegmentId?: string | null
   readonly initialParseId?: string | null
+  readonly initialDetailMode?: 'source' | 'analysis'
   readonly analysisRefreshKey?: number
+  readonly onWorkspaceLocationChange?: (location: {
+    readonly mode: 'source' | 'analysis'
+    readonly materialId: string | null
+    readonly parseId: string | null
+    readonly segmentId: string | null
+  }) => void
 }
 
 function materialStatusIcon(status: ResearchMaterial['status']) {
@@ -134,7 +141,7 @@ function SegmentCard({
   )
 }
 
-export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog', onMaterialDeleted, initialMaterialId = null, initialSegmentId = null, initialParseId = null, analysisRefreshKey = 0 }: ResearchMaterialsPanelProps) {
+export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog', onMaterialDeleted, initialMaterialId = null, initialSegmentId = null, initialParseId = null, initialDetailMode = 'source', analysisRefreshKey = 0, onWorkspaceLocationChange }: ResearchMaterialsPanelProps) {
   const [materials, setMaterials] = useState<ResearchMaterial[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<ResearchMaterial | null>(null)
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(initialSegmentId)
@@ -152,7 +159,7 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
   const [annotationReflection, setAnnotationReflection] = useState('')
   const [annotationCaseLabel, setAnnotationCaseLabel] = useState('')
   const [annotationObservedAt, setAnnotationObservedAt] = useState('')
-  const [detailMode, setDetailMode] = useState<'source' | 'analysis' | 'archive'>('source')
+  const [detailMode, setDetailMode] = useState<'source' | 'analysis' | 'archive'>(initialDetailMode)
   const [readerPage, setReaderPage] = useState(0)
   const [readerQuery, setReaderQuery] = useState('')
   const [readerFilter, setReaderFilter] = useState<'all' | 'headings'>('all')
@@ -258,14 +265,14 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     segmentGeneration.current += 1
     setSelectedMaterial(null)
     setSelectedSegmentId(null)
-    setDetailMode('source')
+    setDetailMode(initialDetailMode)
     setReaderPage(0)
     setReaderQuery('')
     setReaderFilter('all')
     setAnalysisSnapshot(null)
     setAnalysisNotice(null)
     clearSelectionDraft()
-  }, [taskId])
+  }, [initialDetailMode, taskId])
 
   useEffect(() => {
     initialSelectionApplied.current = false
@@ -311,6 +318,20 @@ export function ResearchMaterialsPanel({ taskId, onClose, presentation = 'dialog
     const targetIndex = (selectedMaterial.segments ?? []).findIndex((segment) => segment.segmentId === initialSegmentId)
     if (targetIndex >= 0) setReaderPage(Math.floor(targetIndex / READER_PAGE_SIZE))
   }, [detailLoading, initialMaterialId, initialSegmentId, selectedMaterial])
+
+  useEffect(() => {
+    if (!onWorkspaceLocationChange) return
+    if (detailMode === 'archive') return
+    if (initialMaterialId && !selectedMaterial) return
+    const selectedSegment = selectedMaterial?.segments?.find((segment) => segment.segmentId === selectedSegmentId)
+    onWorkspaceLocationChange({
+      mode: detailMode,
+      materialId: selectedMaterial?.materialId ?? null,
+      parseId: selectedSegment?.parseId
+        ?? (selectedMaterial?.materialId === initialMaterialId ? initialParseId : null),
+      segmentId: selectedSegmentId,
+    })
+  }, [detailMode, initialMaterialId, initialParseId, onWorkspaceLocationChange, selectedMaterial, selectedSegmentId])
 
   async function selectMaterial(material: ResearchMaterial, parseId: string | null = null, segmentId: string | null = null) {
     const requestGeneration = ++materialDetailGeneration.current

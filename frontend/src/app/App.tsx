@@ -37,14 +37,10 @@ import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { ExistingResearchEntryPage } from './research/ExistingResearchEntryPage'
 import { ResearchMaterialsPage } from './research/ResearchMaterialsPage'
-import { ResearchDocumentWorkbench } from './research-workspace/ResearchDocumentWorkbench'
-import { MethodPlanWorkspace } from '../modules/research-method'
+import { ResearchProjectWorkspacePage } from './research-workspace/ResearchProjectWorkspacePage'
+import { legacyResearchWorkspaceDestination } from './research-workspace/researchProjectWorkspaceModel'
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
-import {
-  PhenomenonWorkspace,
-  ResearchWorkspaceShell,
-} from '../modules/socio-match-workspace'
 import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 import { RouteMotionSurface } from './route-motion'
@@ -321,33 +317,24 @@ function PasswordResetRoute() {
   )
 }
 
-function PhenomenonRoute() {
-  const { task_id: taskId } = useParams<{ task_id: string }>()
-  return (
-    <PageShell wide>
-      <ResearchWorkspaceShell
-        currentStage="phenomenon"
-        eyebrow="研究任务"
-        title="确认现象"
-        lede="核对系统整理的表述、语境与依据。确认后会形成可恢复的现象快照。"
-        taskLabel={taskId ? `任务 ${taskId.slice(0, 8)}` : undefined}
-        context={(
-          <>
-            <p>当前步骤说明</p>
-            <h2>判断仍然属于你</h2>
-            <p>候选只是对输入的整理，不是已经成立的研究结论。确认前可以直接修改。</p>
-            <ul>
-              <li>检查研究对象与变化是否准确</li>
-              <li>确认依据能回到原始输入</li>
-              <li>缺失信息不会被系统自动补成事实</li>
-            </ul>
-          </>
-        )}
-      >
-        {taskId ? <PhenomenonWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}
-      </ResearchWorkspaceShell>
-    </PageShell>
+function LegacyResearchWorkspaceRedirect() {
+  const location = useLocation()
+  const destination = legacyResearchWorkspaceDestination(
+    `${location.pathname}${location.search}${location.hash}`,
   )
+  return destination
+    ? <Navigate replace to={destination} />
+    : <ErrorState detail="研究工作区地址无效。" />
+}
+
+function ResearchMaterialsRoute({ userId }: { userId: string | null }) {
+  const location = useLocation()
+  const destination = legacyResearchWorkspaceDestination(
+    `${location.pathname}${location.search}${location.hash}`,
+  )
+  return destination
+    ? <Navigate replace to={destination} />
+    : <ResearchMaterialsPage userId={userId} />
 }
 
 function ProtectedRoute({
@@ -408,34 +395,30 @@ export function AppRoutes({
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
       <Route path="/research/existing" element={protectedRoute(<ExistingResearchEntryPage />)} />
-      <Route path="/research/materials" element={protectedRoute(<ResearchMaterialsPage userId={authenticatedUserId} />)} />
+      <Route path="/research/materials" element={protectedRoute(<ResearchMaterialsRoute userId={authenticatedUserId} />)} />
       <Route
         path="/research/:task_id"
         element={protectedRoute(<ResearchTaskNavigationRoute>{null}</ResearchTaskNavigationRoute>)}
       />
       <Route
+        path="/research/:task_id/workspace/:tool?"
+        element={protectedRoute(<ResearchProjectWorkspacePage userId={authenticatedUserId} />)}
+      />
+      <Route
         path="/research/:task_id/phenomenon"
-        element={protectedRoute(
-          <ResearchTaskNavigationRoute><PhenomenonRoute /></ResearchTaskNavigationRoute>,
-        )}
+        element={protectedRoute(<LegacyResearchWorkspaceRedirect />)}
       />
       <Route
         path="/research/:task_id/match"
-        element={protectedRoute(
-          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench userId={authenticatedUserId} /></ResearchTaskNavigationRoute>,
-        )}
+        element={protectedRoute(<LegacyResearchWorkspaceRedirect />)}
       />
       <Route
         path="/research/:task_id/framework"
-        element={protectedRoute(
-          <ResearchTaskNavigationRoute><ResearchDocumentWorkbench userId={authenticatedUserId} /></ResearchTaskNavigationRoute>,
-        )}
+        element={protectedRoute(<LegacyResearchWorkspaceRedirect />)}
       />
       <Route
         path="/research/:task_id/method"
-        element={protectedRoute(
-          <ResearchTaskNavigationRoute><MethodPlanRoute /></ResearchTaskNavigationRoute>,
-        )}
+        element={protectedRoute(<LegacyResearchWorkspaceRedirect />)}
       />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
@@ -447,11 +430,6 @@ export function AppRoutes({
       </RouteMotionSurface>
     </RailStateProvider>
   )
-}
-
-function MethodPlanRoute() {
-  const { task_id: taskId } = useParams<{ task_id: string }>()
-  return <PageShell wide><PageContent>{taskId ? <MethodPlanWorkspace taskId={taskId} /> : <ErrorState detail="研究任务地址无效。" />}</PageContent></PageShell>
 }
 
 export function App() {

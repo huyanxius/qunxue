@@ -12,6 +12,11 @@
   font-family: var(--sans, Inter, ui-sans-serif, system-ui, -apple-system, sans-serif);
 }
 
+.research-document-workbench--embedded { height: 100%; }
+.research-document-workbench--embedded .research-document-workbench__workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .research-document-workbench__title {
   position: absolute;
   z-index: 3;
