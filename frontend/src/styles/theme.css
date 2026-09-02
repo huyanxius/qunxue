@@ -99,3 +99,11 @@
 @utility qx-surface {
   border-radius: var(--radius-surface);
 }
+
+/* 小型操作浮层统一使用紧凑圆角和菜单级阴影；颜色仍继承所在页面。 */
+@utility qx-popover-surface {
+  border: 1px solid var(--qx-color-rule-strong);
+  border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--qx-color-surface-raised) 96%, transparent);
+  box-shadow: var(--qx-shadow-menu);
+}
