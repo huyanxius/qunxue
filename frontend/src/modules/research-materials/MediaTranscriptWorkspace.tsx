@@ -43,6 +43,7 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   async function load(signal?: AbortSignal, selectCurrent = false) {
     setLoading(true)
@@ -151,10 +152,13 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
   async function startAutomatic() {
     setBusy(true)
     setError(null)
+    setNotice('正在转写音频，请稍候…')
     try {
       await startAutomaticTranscription(taskId, materialId)
       await load(undefined, true)
+      setNotice('转写完成')
     } catch (cause: unknown) {
+      setNotice(null)
       setError(errorMessage(cause, '自动转写未能完成。'))
     } finally {
       setBusy(false)
@@ -196,6 +200,7 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
       {mediaType.startsWith('video/') ? <video {...mediaProps} /> : <audio {...mediaProps} />}
 
       {loading ? <p className="media-transcript__notice" role="status">正在加载转录时间轴……</p> : null}
+      {notice ? <p className="media-transcript__notice" role="status">{notice}</p> : null}
       {error ? <p className="media-transcript__notice is-error" role="alert">{error}</p> : null}
       {!loading && workspace && !workspace.automaticAvailable ? (
         <p className="media-transcript__notice">自动转写服务未配置</p>

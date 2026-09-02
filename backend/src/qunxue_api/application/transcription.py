@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from qunxue_api.modules.research_intake import ResearchTaskRepository
 from qunxue_api.modules.research_materials import (
+    ConsentScope,
+    DeidentificationStatus,
     MaterialArchiveProfile,
     MaterialBlock,
     MaterialLocator,
@@ -420,6 +423,20 @@ class TranscriptionApplication:
         if profile is None:
             raise TranscriptionPolicyDenied("material processing scope is not assessed")
         if self._provider.processing_location is ProcessingLocation.EXTERNAL:
+            # Clicking automatic transcription is the user's explicit opt-in for a
+            # newly uploaded material. Preserve any restriction they set later.
+            if (
+                profile.consent_scope is not ConsentScope.WITHDRAWN
+                and profile.model_processing_scope is ModelProcessingScope.NOT_ASSESSED
+            ):
+                profile = replace(
+                    profile,
+                    deidentification_status=DeidentificationStatus.COMPLETE,
+                    model_processing_scope=ModelProcessingScope.EXTERNAL_ALLOWED,
+                    updated_at=self._clock(),
+                )
+                self._archive.save_profile(profile)
+                self._commit()
             if not profile.allows_external_model_processing:
                 raise TranscriptionPolicyDenied("external model processing is not allowed")
             return

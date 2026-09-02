@@ -49,6 +49,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   const [uploadTaskId, setUploadTaskId] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -116,11 +117,13 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     if (!uploadTaskId) return
     setUploading(true)
     setUploadError(null)
+    setUploadNotice(null)
     try {
       const material = await addResearchLibraryMaterial(uploadTaskId, file)
       const owner = research.find((item) => item.taskId === uploadTaskId)
       if (owner) setLibraryMaterials((current) => [{ material, research: owner }, ...current])
       setUploadOpen(false)
+      setUploadNotice('材料已添加')
     } catch {
       setUploadError('材料添加失败，请重试。')
     } finally {
@@ -166,12 +169,13 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
                   <select aria-label="材料所属研究" value={uploadTaskId} onChange={(event) => setUploadTaskId(event.target.value)}>
                     {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
                   </select>
-                  <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '添加中' : '选择文件'}</button>
+                  <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '正在上传…' : '选择文件'}</button>
                   <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void addMaterial(file) }} />
                   {uploadError ? <span role="alert">{uploadError}</span> : null}
                 </div>
               ) : null}
             </div>
+            {uploadNotice ? <p className="research-materials-page__status" role="status">{uploadNotice}</p> : null}
             {libraryLoading ? <p className="research-materials-page__status" role="status">正在整理材料库</p> : null}
             {!libraryLoading && libraryMaterials.length ? (
               <div className="research-materials-page__material-grid">
