@@ -154,12 +154,14 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   const [materialTaskId, setMaterialTaskId] = useState<string | null>(requestedTaskId)
   const [materialUploading, setMaterialUploading] = useState(false)
   const [materialEntryError, setMaterialEntryError] = useState<string | null>(null)
+  const [materialSourceNames, setMaterialSourceNames] = useState<string[]>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [suggestedPrompt, setSuggestedPrompt] = useState<string | null>(null)
   const [suggestedPromptKey, setSuggestedPromptKey] = useState(0)
   const [historyRailTarget, setHistoryRailTarget] = useState<HTMLDivElement | null>(null)
   const journeyAbortController = useRef<AbortController | null>(null)
   const workspaceRef = useRef<HTMLDivElement>(null)
+  const materialInputRef = useRef<HTMLInputElement>(null)
   const activeResizePointer = useRef<number | null>(null)
   const mouseResizeCleanup = useRef<(() => void) | null>(null)
   const panelWidthRef = useRef(readStoredAgentPanelWidth())
@@ -234,6 +236,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
       setMaterialEntryError(`${unsupported.name} 不是可导入的 PDF、DOCX、TXT 或 Markdown 文件。`)
       return
     }
+    setMaterialSourceNames(files.map((file) => file.name))
     setMaterialUploading(true)
     setMaterialEntryError(null)
     try {
@@ -414,30 +417,35 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
         <section className="new-research" aria-label="新建研究工作区">
           <div ref={workspaceRef} className="new-research__workspace" data-resizing={resizingAgentPanel} style={{ '--new-research-agent-width': `${agentPanelWidth}px` } as CSSProperties}>
             <div className="new-research__map-column">
-              {!activeTaskId ? (
-                <aside className="new-research__entry-strip" aria-label="研究起点">
-                  <div>
-                    <span>从零开始</span>
-                    <strong>直接提问，或先放入一批材料</strong>
-                  </div>
-                  <label className={materialUploading ? 'is-busy' : ''}>
-                    {materialUploading ? <CircleNotchIcon size={14} /> : <FileTextIcon size={14} />}
-                    <span>{materialUploading ? '正在导入…' : '从材料开始研究'}</span>
+              <ResearchMapCanvas
+                projection={projection}
+                idleActions={!activeTaskId ? (
+                  <div className="new-research__entry-actions" role="group" aria-label="研究起点">
+                    <p className="research-map__idle-guidance">直接提问，或先放入一批材料</p>
+                    <div>
+                      <button className={`qx-tool-control${materialUploading ? ' is-busy' : ''}`} type="button" disabled={materialUploading} onClick={() => materialInputRef.current?.click()}>
+                        {materialUploading ? <CircleNotchIcon size={13} /> : <FileTextIcon size={13} />}
+                        <span>{materialUploading ? '正在导入…' : '从材料开始研究'}</span>
+                      </button>
+                      <Link className="qx-tool-control" to="/research/existing"><FolderOpenIcon size={13} />接入已有研究</Link>
+                    </div>
                     <input
+                      ref={materialInputRef}
+                      className="new-research__material-input"
                       type="file"
                       multiple
                       accept={RESEARCH_MATERIAL_ACCEPT}
                       aria-label="从材料开始研究"
                       disabled={materialUploading}
-                      onChange={(event) => { void startFromMaterials(Array.from(event.target.files ?? [])) }}
+                      onChange={(event) => {
+                        const files = Array.from(event.target.files ?? [])
+                        event.target.value = ''
+                        void startFromMaterials(files)
+                      }}
                     />
-                  </label>
-                  <Link to="/research/existing"><FolderOpenIcon size={14} />接入已有研究</Link>
-                  {materialEntryError ? <p role="alert"><WarningCircleIcon size={13} />{materialEntryError}</p> : null}
-                </aside>
-              ) : null}
-              <ResearchMapCanvas
-                projection={projection}
+                    {materialEntryError ? <small role="alert"><WarningCircleIcon size={13} />{materialEntryError}</small> : null}
+                  </div>
+                ) : undefined}
                 selectedNodeId={selectedNodeId}
                 onSelectNode={(node) => setSelectedNodeId(node.id)}
                 onClearSelection={() => setSelectedNodeId(null)}
@@ -472,6 +480,15 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               workspace="research"
               taskId={activeTaskId ?? null}
               composerAriaLabel="和 Agent 讨论你的研究"
+              composerPrefix={materialSourceNames.length ? (
+                <div className="new-research__material-source" role="status" aria-label="材料来源">
+                  <FileTextIcon size={13} aria-hidden="true" />
+                  <span>材料来源</span>
+                  <strong title={materialSourceNames.join('、')}>{materialSourceNames[0]}</strong>
+                  {materialSourceNames.length > 1 ? <small>另 {materialSourceNames.length - 1} 份</small> : null}
+                  <em>{materialEntryError ? '导入失败' : materialUploading ? '导入中' : '已添加'}</em>
+                </div>
+              ) : null}
               suggestedPrompt={suggestedPrompt}
               suggestedPromptKey={suggestedPromptKey}
               onConversationChange={syncConversation}
