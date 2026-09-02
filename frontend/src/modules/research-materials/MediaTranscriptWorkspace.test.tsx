@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
@@ -76,13 +77,33 @@ describe('MediaTranscriptWorkspace', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '启动自动转写' }))
 
-    expect(screen.getByRole('status')).toHaveTextContent('正在转写音频')
+    expect(screen.getByRole('status', { name: '转写状态' })).toHaveTextContent('正在转写音频')
+    expect(screen.getByRole('status', { name: '转写状态' })).toHaveTextContent('预计约 1–3 分钟')
     getTranscriptionWorkspace.mockResolvedValue({
       materialId: 'material-1', status: 'ready', automaticAvailable: true,
       automaticProvider: 'dashscope:filetrans', errorCode: null, currentVersion: version, versions: [version],
     })
     finishTranscription(version)
     expect(await screen.findByText('转写完成')).toBeVisible()
+  })
+
+  it('does not reload when the selected transcript version is reflected in the URL', async () => {
+    function RoutedWorkspace() {
+      const [parseId, setParseId] = useState<string | null>(null)
+      return <MediaTranscriptWorkspace
+        taskId="task-1"
+        materialId="material-1"
+        mediaType="audio/wav"
+        initialParseId={parseId}
+        onLocationChange={({ versionId }) => setParseId(versionId)}
+      />
+    }
+
+    render(<RoutedWorkspace />)
+
+    expect(await screen.findByText('请先介绍一下自己。')).toBeVisible()
+    await waitFor(() => expect(getTranscriptionWorkspace).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('正在加载转录时间轴……')).not.toBeInTheDocument()
   })
 
   it('opens a material citation at its immutable transcript segment', async () => {

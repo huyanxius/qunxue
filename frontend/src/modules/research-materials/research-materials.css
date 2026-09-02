@@ -956,6 +956,13 @@
 audio.media-transcript__player { min-height: 54px; background: transparent; }
 .media-transcript__notice { margin: 0; padding: 8px 10px; border-left: 2px solid var(--qx-color-notice-line); color: var(--qx-color-notice); background: color-mix(in srgb, var(--qx-color-notice-line) 13%, transparent); font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); line-height: 1.5; }
 .media-transcript__notice.is-error { border-left-color: var(--qx-color-danger); color: var(--qx-color-danger); background: color-mix(in srgb, var(--qx-color-danger) 8%, transparent); }
+.media-transcript__status { display: grid; gap: 7px; min-height: 42px; padding: 11px 13px; border: 1px solid var(--materials-border); border-radius: var(--qx-radius-compact); color: var(--materials-ink); background: var(--qx-color-surface-subtle); }
+.media-transcript__status > div { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; }
+.media-transcript__status strong { font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
+.media-transcript__status span, .media-transcript__status p { margin: 0; color: var(--materials-muted); font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); }
+.media-transcript__progress { display: block; height: 2px; overflow: hidden; background: var(--materials-border); }
+.media-transcript__progress i { display: block; width: 36%; height: 100%; background: var(--qx-color-notice-line); animation: media-transcript-progress 1.6s ease-in-out infinite; }
+@keyframes media-transcript-progress { from { transform: translateX(-110%); } to { transform: translateX(310%); } }
 .media-transcript__version-bar { display: grid; grid-template-columns: minmax(150px, .55fr) minmax(0, 1fr) auto; align-items: end; gap: 10px; padding: 11px 0; border-top: 1px solid var(--materials-border); border-bottom: 1px solid var(--materials-border); }
 .media-transcript__version-bar label { display: grid; gap: 4px; }
 .media-transcript__version-bar select, .media-transcript__editor input, .media-transcript__editor textarea { min-width: 0; width: 100%; padding: 7px 8px; border: 1px solid var(--materials-border); border-radius: var(--qx-radius-compact); color: var(--materials-ink); background: color-mix(in srgb, white 62%, transparent); font: inherit; font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
@@ -993,4 +1000,5 @@ audio.media-transcript__player { min-height: 54px; background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   .media-transcript * { scroll-behavior: auto !important; transition: none !important; }
+  .media-transcript__progress i { width: 100%; animation: none; }
 }
