@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check:boundaries": "node --test scripts/check-module-boundaries-tests.mjs && node scripts/check-module-boundaries.mjs",
+    "check:styles": "node --test scripts/check-style-tokens-tests.mjs && node scripts/check-style-tokens.mjs src/app/research-workspace/research-document-workbench.css",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "generate:api": "openapi-ts -i ../backend/openapi.json -o src/api/generated",
