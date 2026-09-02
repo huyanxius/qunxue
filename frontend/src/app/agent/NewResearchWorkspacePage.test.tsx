@@ -919,10 +919,10 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：互惠规范/ }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: 'Sources' })
     fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
 
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: 'Basis' })
     expect(basis).toHaveTextContent('互惠规范描述了持续互动中信任与回报的关系。')
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
       'href',
@@ -949,12 +949,12 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：社区互助工作笔记/ }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: 'Sources' })
     expect(sources).toHaveTextContent('知识条目')
     expect(sources).not.toHaveTextContent('未审核')
     fireEvent.click(within(sources).getByRole('button', { name: /社区互助工作笔记/ }))
 
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: 'Basis' })
     expect(basis).toHaveTextContent('知识条目')
     expect(basis).not.toHaveTextContent('未审核')
     expect(basis).toHaveTextContent('这是一条知识库工作材料。')
@@ -979,10 +979,10 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：互惠规范/ }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: 'Sources' })
     fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
 
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: 'Basis' })
     expect(within(basis).queryByRole('link', { name: /打开知识条目/ })).not.toBeInTheDocument()
     expect(basis).toHaveTextContent('当前回合的知识版本尚未确认，暂不提供跳转。')
   })
@@ -1023,9 +1023,9 @@ describe('NewResearchWorkspacePage', () => {
     renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
     const refreshedWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(refreshedWorkspace).findByRole('button', { name: /查看证据：社会资本与互助/ }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: 'Sources' })
     fireEvent.click(within(sources).getByRole('button', { name: /社会资本与互助/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: 'Basis' })
 
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
       'href',
@@ -1131,7 +1131,7 @@ describe('NewResearchWorkspacePage', () => {
 
     expect(await within(workspace).findByText('Agent 已完成工具调用')).toBeVisible()
     fireEvent.click(within(workspace).getAllByRole('button', { name: '查看活动' })[0])
-    const activityPanel = await screen.findByRole('tabpanel', { name: 'Activity' })
+    const activityPanel = await screen.findByRole('region', { name: 'Activity' })
     expect(activityPanel).toHaveTextContent('检索知识库')
     expect(activityPanel).toHaveTextContent('找到 1 条知识条目')
     expect(activityPanel).not.toHaveTextContent('未审核')
