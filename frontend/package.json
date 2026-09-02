@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check:boundaries": "node --test scripts/check-module-boundaries-tests.mjs && node scripts/check-module-boundaries.mjs",
+    "check:styles": "node --test scripts/check-style-tokens-tests.mjs && node scripts/check-style-tokens.mjs src/app/research-workspace/research-document-workbench.css",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "generate:api": "openapi-ts -i ../backend/openapi.json -o src/api/generated",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.13.2",
@@ -48,6 +50,7 @@
     "jsdom": "^30.0.0",
     "oxlint": "^1.71.0",
     "patch-package": "^8.0.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "~5.9.3",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"

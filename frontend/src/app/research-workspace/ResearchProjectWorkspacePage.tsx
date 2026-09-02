@@ -21,7 +21,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
 import type { AgentConversation } from '../../modules/research-agent'
 import { ResearchArchivePanel } from '../../modules/research-exchange'
-import { ResearchMaterialsPanel } from '../../modules/research-materials'
+import { ResearchAnalysisPanel, ResearchMaterialsPanel } from '../../modules/research-materials'
 import { MethodPlanWorkspace } from '../../modules/research-method'
 import { useResearchTask, type ResearchTask } from '../../modules/socio-match-workspace'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
@@ -160,12 +160,11 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   }
 
   const updateMaterialLocation = useCallback((next: {
-    mode: 'source' | 'analysis'
     materialId: string | null
     parseId: string | null
     segmentId: string | null
   }) => {
-    const destination = researchWorkspaceDestination(taskId, next.mode === 'analysis' ? 'analysis' : 'materials', next)
+    const destination = researchWorkspaceDestination(taskId, 'materials', next)
     if (`${location.pathname}${location.search}` !== destination) navigate(destination, { replace: true })
   }, [location.pathname, location.search, navigate, taskId])
 
@@ -219,20 +218,20 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       : null,
   }
 
-  const center = tool === 'materials' || tool === 'analysis'
+  const center = tool === 'materials'
     ? (
         <ResearchMaterialsPanel
-          key={`${taskId}:${tool}`}
+          key={`${taskId}:materials`}
           taskId={taskId}
           presentation="workspace"
-          initialDetailMode={tool === 'analysis' ? 'analysis' : 'source'}
           initialMaterialId={position.materialId ?? null}
           initialParseId={position.parseId ?? null}
           initialSegmentId={position.segmentId ?? null}
-          analysisRefreshKey={centerRefreshKey}
           onWorkspaceLocationChange={updateMaterialLocation}
         />
       )
+    : tool === 'analysis'
+      ? <ResearchAnalysisPanel key={`${taskId}:analysis`} taskId={taskId} refreshKey={centerRefreshKey} />
     : tool === 'method'
       ? <MethodPlanWorkspace taskId={taskId} />
       : tool === 'archive'
@@ -256,13 +255,15 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       <PageContent>
         <main className="research-project-workspace" aria-label="研究项目工作区">
           <header className="research-project-workspace__header">
+            {/*
+              顶栏只留一行：返回入口和项目名。原先还有「已有研究」这类分类词和阶段副标题，
+              它们跟中心工具自己的标题栏结构一模一样（返回 | 眉标+标题 / 副行 + 右侧控件），
+              两条叠在一起就成了同一个模板出现两遍。阶段和方法在地图与方法页里都看得到，
+              这里不必重复。
+            */}
             <div className="research-project-workspace__identity">
               <Link to="/app?research=all">全部研究</Link>
-              <div>
-                <span>{taskData.entryMode === 'existing_research' ? '已有研究' : '研究项目'}</span>
-                <h1>{projectTitle(taskData, navigationData)}</h1>
-              </div>
-              <p>{[taskData.projectStage, taskData.methodOrientation].filter(Boolean).join(' · ') || navigationData.stage_label}</p>
+              <h1>{projectTitle(taskData, navigationData)}</h1>
             </div>
             <nav className="research-project-workspace__tools" aria-label="研究中心工具">
               {tools.map(({ id, label, icon: Icon }) => (

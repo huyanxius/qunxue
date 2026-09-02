@@ -30,6 +30,38 @@
   --radius-control: 8px;
   --radius-large: 14px;
   --shadow-sm: 0 0 0 1px rgb(17 17 17 / 8%);
+
+  /*
+   * 应用外壳自己有一套 `--app-*`，取值跟 tokens.css 的 `:root` 不完全一样（外壳偏亮、
+   * 圆角更小），而且它就地覆盖了 --bg / --ink / --radius 这些短名。也就是说，同一个变量名
+   * 在外壳里外解析出两种值——调 tokens.css 却看不到变化，多半是被这里盖住了。
+   *
+   * 下面把语义层 `--qx-*` 的色彩角色在外壳里重新映射一遍：新组件只写 `--qx-*` 一套名字，
+   * 进了外壳自动拿外壳的取值，出了外壳（登录页、独立预览）拿 :root 的取值。字阶、圆角、
+   * 阴影不在这里覆盖——那些是整套设计的骨架，外壳内外必须一致。
+   */
+  --qx-color-canvas: var(--app-canvas);
+  --qx-color-surface: var(--app-canvas);
+  --qx-color-surface-raised: var(--app-canvas);
+  --qx-color-surface-muted: var(--app-sidebar);
+  --qx-color-surface-strong: var(--app-surface);
+  --qx-color-ink: var(--app-ink);
+  --qx-color-ink-soft: var(--app-ink-soft);
+  --qx-color-muted: var(--app-muted);
+  --qx-color-faint: #929292;
+  --qx-color-rule: var(--app-border);
+  --qx-color-rule-strong: var(--app-border-strong);
+  --qx-color-accent: var(--app-ink);
+  --qx-color-accent-hover: var(--app-ink-soft);
+  --qx-color-accent-soft: var(--app-surface);
+  --qx-color-accent-muted: var(--app-surface-subtle);
+  --qx-color-on-accent: var(--app-canvas);
+  --qx-color-danger: var(--app-danger);
+  --qx-color-danger-line: #e2c2bd;
+  --qx-color-danger-soft: #fff1f0;
+  --qx-color-notice: var(--app-ink-soft);
+  --qx-color-notice-line: var(--app-border-strong);
+  --qx-color-notice-soft: var(--app-surface-subtle);
   position: relative;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);

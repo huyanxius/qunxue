@@ -1,0 +1,101 @@
+@layer theme, base, components, utilities;
+
+/*
+ * Tailwind 只提供令牌和布局工具类，不引入 Preflight。现有页面的基础元素、排版和交互
+ * 不会因为接入 Tailwind 被全局重置。
+ */
+@import 'tailwindcss/theme.css' layer(theme) theme(static);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * 全站视觉令牌的唯一取值源。先冻结已有视觉，再逐页把局部写法收回这套语义。
+ *
+ * 圆角只借鉴 Windup 的微观几何：8px 紧凑元素、12px 控件、16px 普通表面。群学致知自己的
+ * 中性灰、阅读字体和 24px 特征容器保留，不搬 Windup 的颜色和纸张风格。
+ */
+@theme static {
+  --*: initial;
+
+  --spacing: 0.25rem;
+  --spacing-control: 2.25rem;
+  --spacing-tool-control: 2rem;
+
+  /* 颜色继续由现有 tokens.css 和各页 shader 提供；Tailwind 只暴露同值工具类。 */
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-2);
+  --color-surface-strong: var(--surface-3);
+  --color-ink: var(--ink-strong);
+  --color-ink-soft: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-faint: var(--quiet);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-hover: var(--accent-dark);
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-ui: var(--sans);
+  --font-reading: var(--serif);
+
+  --text-locator: 0.625rem;
+  --text-meta: 0.75rem;
+  --text-body: 0.875rem;
+  --text-reading: 1rem;
+  --text-title: 1.125rem;
+  --text-section: 1.5rem;
+
+  --text-locator--line-height: 1.45;
+  --text-meta--line-height: 1.5;
+  --text-body--line-height: 1.6;
+  --text-reading--line-height: 1.9;
+  --text-title--line-height: 1.45;
+  --text-section--line-height: 1.3;
+
+  --text-heading: 0.9375rem;
+  --text-heading--line-height: 1.5;
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1.45;
+
+  --radius-compact: 8px;
+  --radius-field: 12px;
+  --radius-surface: 16px;
+  --radius-feature: 24px;
+  --radius-pill: 999px;
+
+  --shadow-surface: var(--shadow-sm);
+}
+
+:root {
+  --qx-motion-fast: 140ms;
+  --qx-motion-base: 240ms;
+  --qx-motion-slow: 420ms;
+  --qx-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --qx-ease-standard: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* 共享控件只统一几何和字阶；颜色仍由页面 shader 与状态语义决定。 */
+@utility qx-tool-control {
+  display: inline-flex;
+  min-height: var(--spacing-tool-control);
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--radius-compact);
+  font-size: var(--text-meta);
+}
+
+@utility qx-field-control {
+  min-height: var(--spacing-tool-control);
+  border-radius: var(--radius-compact);
+  font-size: var(--text-meta);
+}
+
+@utility qx-surface {
+  border-radius: var(--radius-surface);
+}
