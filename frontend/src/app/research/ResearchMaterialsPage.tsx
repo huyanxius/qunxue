@@ -1,35 +1,62 @@
-import { FolderOpenIcon, PlusIcon } from '@phosphor-icons/react'
-import { useEffect, useState } from 'react'
+import { FileDocIcon, FilePdfIcon, FileTextIcon, FolderOpenIcon, MarkdownLogoIcon, PlusIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
-import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
 import { listMyResearchViaApi, type MyResearchItem } from '../../modules/account'
-import { ResearchMaterialsPanel } from '../../modules/research-materials'
-import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
-import { PageContent, PageShell, PageTitle } from '../ui/PageShell'
+import {
+  formatMaterialSize,
+  listResearchMaterials,
+  materialMediaLabel,
+  materialStatusLabel,
+  RESEARCH_MATERIAL_ACCEPT,
+  ResearchMaterialsPanel,
+  uploadResearchMaterial,
+  type ResearchMaterial,
+} from '../../modules/research-materials'
+import { PageContent, PageShell } from '../ui/PageShell'
+import { ResearchMaterialsShader } from './ResearchMaterialsShader'
 import './research-materials-page.css'
 
-type ResearchNavigation = Awaited<ReturnType<typeof readResearchTaskNavigationViaApi>>
+type LibraryMaterial = { material: ResearchMaterial; research: MyResearchItem }
+
+function MaterialTypeIcon({ material }: { material: ResearchMaterial }) {
+  const format = materialMediaLabel(material.mediaType, material.filename)
+  if (format === 'PDF') return <FilePdfIcon size={24} />
+  if (format === 'DOCX') return <FileDocIcon size={24} />
+  if (format === 'Markdown') return <MarkdownLogoIcon size={24} />
+  if (format === 'MP3' || format === 'M4A' || format === 'WAV') return <WaveformIcon size={24} />
+  if (format === 'MP4' || format === 'WebM') return <VideoCameraIcon size={24} />
+  return <FileTextIcon size={24} />
+}
 
 /**
  * 材料始终属于一个 ResearchTask；页面只负责让用户找到该研究的材料面板。
  * 不在这里复制上传、解析或分析逻辑，避免出现第二套材料系统。
  */
-export function ResearchMaterialsPage({ userId = null }: { userId?: string | null }) {
+export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: string | null }) {
   const navigate = useNavigate()
+  const uploadInputRef = useRef<HTMLInputElement>(null)
   const [searchParams] = useSearchParams()
   const selectedTaskId = searchParams.get('task_id')
+  const selectedMaterialId = searchParams.get('material_id')
   const [research, setResearch] = useState<MyResearchItem[]>([])
+  const [libraryMaterials, setLibraryMaterials] = useState<LibraryMaterial[]>([])
   const [loading, setLoading] = useState(true)
+  const [libraryLoading, setLibraryLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [navigation, setNavigation] = useState<ResearchNavigation | null>(null)
-  const [navigationLoading, setNavigationLoading] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [uploadTaskId, setUploadTaskId] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
     void listMyResearchViaApi()
       .then((items) => {
-        if (active) setResearch(items)
+        if (active) {
+          setResearch(items)
+          setUploadTaskId((current) => current || items[0]?.taskId || '')
+        }
       })
       .catch(() => {
         if (active) setError('研究列表暂时无法加载，请稍后重试。')
@@ -43,38 +70,50 @@ export function ResearchMaterialsPage({ userId = null }: { userId?: string | nul
   }, [])
 
   useEffect(() => {
-    if (!selectedTaskId) {
-      setNavigation(null)
+    if (loading || selectedTaskId) return undefined
+    if (!research.length) {
+      setLibraryLoading(false)
       return undefined
     }
     let active = true
-    setNavigationLoading(true)
-    setNavigation(null)
-    void readResearchTaskNavigationViaApi(selectedTaskId)
-      .then((value) => {
-        if (active) setNavigation(value)
-      })
-      .catch(() => {
-        if (active) setError('这项研究的状态暂时无法恢复，请稍后重试。')
-      })
-      .finally(() => {
-        if (active) setNavigationLoading(false)
-      })
+    setLibraryLoading(true)
+    void Promise.allSettled(research.map(async (item) => {
+      const result = await listResearchMaterials(item.taskId)
+      return result.items.map((material) => ({ material, research: item }))
+    })).then((results) => {
+      if (!active) return
+      const materials = results.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+      materials.sort((left, right) => right.material.updatedAt.localeCompare(left.material.updatedAt))
+      setLibraryMaterials(materials)
+      setLibraryLoading(false)
+    })
     return () => {
       active = false
     }
-  }, [selectedTaskId])
+  }, [loading, research, selectedTaskId])
 
   const selectedResearch = research.find((item) => item.taskId === selectedTaskId) ?? null
 
+  async function addMaterial(file: File) {
+    if (!uploadTaskId) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const material = await uploadResearchMaterial(uploadTaskId, file, 'other')
+      const owner = research.find((item) => item.taskId === uploadTaskId)
+      if (owner) setLibraryMaterials((current) => [{ material, research: owner }, ...current])
+      setUploadOpen(false)
+    } catch {
+      setUploadError('材料添加失败，请重试。')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
-    <PageShell>
+    <PageShell workspace>
       <PageContent>
-        <PageTitle
-          eyebrow="研究材料"
-          title="导入与管理材料"
-          lede="把论文、访谈转录和田野记录放进对应研究，供 Agent 检索、引用与后续分析。"
-        />
+        {!selectedResearch ? <ResearchMaterialsShader /> : null}
         {loading ? <p className="research-materials-page__status" role="status">正在读取你的研究</p> : null}
         {error ? <p className="research-materials-page__status is-error" role="alert">{error}</p> : null}
 
@@ -88,62 +127,64 @@ export function ResearchMaterialsPage({ userId = null }: { userId?: string | nul
         ) : null}
 
         {!loading && !error && research.length && !selectedResearch ? (
-          <section className="research-materials-page__chooser" aria-label="选择研究">
-            <header>
-              <h2>选择一项研究</h2>
-              <p>材料只会在所选研究的 Agent 对话和分析中使用。</p>
+          <section className="research-materials-page__library" aria-label="全部研究材料" role="region">
+            <header className="research-materials-page__identity">
+              <FileTextIcon size={18} weight="regular" aria-hidden="true" />
+              <h1>研究材料</h1>
+              <small>{libraryMaterials.length}</small>
             </header>
-            <div className="research-materials-page__research-list">
-              {research.map((item) => (
-                <button
-                  type="button"
-                  key={item.taskId}
-                  onClick={() => navigate(`/research/materials?task_id=${encodeURIComponent(item.taskId)}`)}
-                >
-                  <strong>{item.phenomenonSummary || '未命名研究'}</strong>
-                  <span>{item.stageLabel || '研究进行中'} · {item.nextActionLabel || '打开材料'}</span>
-                </button>
-              ))}
-            </div>
+            {uploadOpen ? (
+              <div className="research-materials-page__upload" role="region" aria-label="添加材料">
+                <select aria-label="材料所属研究" value={uploadTaskId} onChange={(event) => setUploadTaskId(event.target.value)}>
+                  {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
+                </select>
+                <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '添加中' : '选择文件'}</button>
+                <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void addMaterial(file) }} />
+                {uploadError ? <span role="alert">{uploadError}</span> : null}
+              </div>
+            ) : null}
+            <button className="work-home__start research-materials-page__add-material" type="button" onClick={() => setUploadOpen((open) => !open)}><PlusIcon size={17} weight="regular" aria-hidden="true" />添加材料</button>
+            {libraryLoading ? <p className="research-materials-page__status" role="status">正在整理材料库</p> : null}
+            {!libraryLoading && libraryMaterials.length ? (
+              <div className="research-materials-page__material-grid">
+                {libraryMaterials.map(({ material, research: owner }) => (
+                  <Link
+                    className="research-materials-page__material-card"
+                    key={`${material.taskId}:${material.materialId}`}
+                    to={`/research/materials?task_id=${encodeURIComponent(material.taskId)}&material_id=${encodeURIComponent(material.materialId)}`}
+                    aria-label={`打开材料 ${material.filename}`}
+                  >
+                    <span className="research-materials-page__material-mark" aria-hidden="true"><MaterialTypeIcon material={material} /></span>
+                    <div className="research-materials-page__material-copy">
+                      <strong>{material.filename}</strong>
+                      <p>{owner.phenomenonSummary || '未命名研究'}</p>
+                    </div>
+                    <div className="research-materials-page__material-meta">
+                      <span>{materialMediaLabel(material.mediaType, material.filename)} · {formatMaterialSize(material.sizeBytes)}</span>
+                      <span className={`is-${material.status}`}>{materialStatusLabel(material.status)}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+            {!libraryLoading && !libraryMaterials.length ? (
+              <div className="research-materials-page__library-empty">
+                <FolderOpenIcon size={22} aria-hidden="true" />
+                <p>还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。</p>
+                <Link to="/research/new">去添加材料</Link>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
         {selectedResearch ? (
-          <section className="research-materials-workbench" aria-label="研究材料工作台" role="region">
-            <header className="research-materials-workbench__header">
-              <div>
-                <Link to="/research/materials">返回研究选择</Link>
-                <h2>{selectedResearch.phenomenonSummary || '未命名研究'}</h2>
-                <p>材料、原文定位、分析记录和 Agent 都属于这项研究。</p>
-              </div>
-              <label>
-                <span>当前研究</span>
-                <select
-                  aria-label="当前研究"
-                  value={selectedResearch.taskId}
-                  onChange={(event) => navigate(`/research/materials?task_id=${encodeURIComponent(event.target.value)}`)}
-                >
-                  {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
-                </select>
-              </label>
-            </header>
-            {navigationLoading ? <p className="research-materials-page__status" role="status">正在恢复研究上下文</p> : null}
-            {!navigationLoading && navigation ? (
-              <div className="research-materials-workbench__body">
-                <ResearchMaterialsPanel taskId={selectedResearch.taskId} presentation="workspace" />
-                <ResearchAgentConversationPage
-                  embedded
-                  userId={userId}
-                  conversationId={navigation.conversation_id}
-                  knowledgeReleaseId={navigation.knowledge_release_id}
-                  workspace="research"
-                  taskId={selectedResearch.taskId}
-                  theoryPlanId={navigation.current_theory_plan_id}
-                />
-              </div>
-            ) : null}
-            {!navigationLoading && !navigation && !error ? <p className="research-materials-page__status is-error" role="alert">研究上下文暂时无法打开。</p> : null}
-            {navigation ? <Link className="research-materials-workbench__resume" to={navigation.resume_path}>返回这项研究</Link> : null}
+          <section className="research-materials-page__reader" aria-label="材料阅读" role="region">
+            <ResearchMaterialsPanel
+              taskId={selectedResearch.taskId}
+              initialMaterialId={selectedMaterialId}
+              presentation="workspace"
+              onClose={() => navigate('/research/materials')}
+            />
           </section>
         ) : null}
       </PageContent>
