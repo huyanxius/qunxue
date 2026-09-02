@@ -437,6 +437,7 @@
 
 .qx-reader__outline {
   display: grid;
+  grid-auto-rows: max-content;
   align-content: start;
   gap: 2px;
   min-height: 0;
