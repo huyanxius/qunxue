@@ -87,6 +87,22 @@ describe('MediaTranscriptWorkspace', () => {
     expect(await screen.findByText('转写完成')).toBeVisible()
   })
 
+  it('separates media controls from transcript reading and labels a repeat run clearly', async () => {
+    getTranscriptionWorkspace.mockResolvedValue({
+      materialId: 'material-1', status: 'ready', automaticAvailable: true,
+      automaticProvider: 'dashscope:filetrans', errorCode: null,
+      currentVersion: { ...version, source: 'automatic' },
+      versions: [{ ...version, source: 'automatic' }],
+    })
+
+    render(<MediaTranscriptWorkspace taskId="task-1" materialId="material-1" mediaType="audio/wav" />)
+
+    expect(await screen.findByRole('region', { name: '录音与转写操作' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '转录文本' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '重新转写' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: '启动自动转写' })).not.toBeInTheDocument()
+  })
+
   it('does not reload when the selected transcript version is reflected in the URL', async () => {
     function RoutedWorkspace() {
       const [parseId, setParseId] = useState<string | null>(null)

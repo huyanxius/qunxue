@@ -201,76 +201,90 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
 
   return (
     <section className="media-transcript" aria-label="媒体转录时间轴">
-      <header className="media-transcript__header">
-        <div>
-          <span>原始媒体</span>
-          <p>点击时间码回到录音或视频原位。每次校订都保存为新版本。</p>
-        </div>
-        <div className="media-transcript__actions">
-          {workspace?.automaticAvailable ? (
-            <button type="button" onClick={() => { void startAutomatic() }} disabled={busy}>{transcriptionActive ? '正在转写…' : '启动自动转写'}</button>
-          ) : null}
-          <button type="button" onClick={() => importInputRef.current?.click()} disabled={busy}>导入转录稿</button>
-          <input
-            ref={importInputRef}
-            className="media-transcript__file-input"
-            type="file"
-            accept=".srt,.vtt,.txt,.docx,application/x-subrip,text/vtt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            aria-label="选择转录稿"
-            onChange={(event) => { void handleImport(event) }}
-          />
-        </div>
-      </header>
-
-      {mediaType.startsWith('video/') ? <video {...mediaProps} /> : <audio {...mediaProps} />}
-
-      {loading ? <p className="media-transcript__notice" role="status">正在加载转录时间轴……</p> : null}
-      {notice || transcriptionActive ? (
-        <div className={`media-transcript__status${transcriptionActive ? ' is-active' : ''}`} role="status" aria-label="转写状态">
+      <section className="media-transcript__source" aria-label="录音与转写操作">
+        <header className="media-transcript__header">
           <div>
-            <strong>{transcriptionActive ? '正在转写音频' : notice}</strong>
-            {transcriptionStartedAt !== null ? <span>已等待 {formatElapsed(elapsedSeconds)}</span> : null}
+            <span>原始媒体</span>
+            <h2>{mediaType.startsWith('video/') ? '视频' : '录音'}</h2>
+            <p>保留原始材料；转录文本中的时间码可直接回到对应位置。</p>
           </div>
-          {transcriptionActive ? <>
-            <p>预计约 1–3 分钟，长音频会更久。可以离开此页，完成后重新打开即可查看。</p>
-            <span className="media-transcript__progress" aria-hidden="true"><i /></span>
-          </> : null}
-        </div>
-      ) : null}
-      {error ? <p className="media-transcript__notice is-error" role="alert">{error}</p> : null}
-      {!loading && workspace && !workspace.automaticAvailable ? (
-        <p className="media-transcript__notice">自动转写服务未配置</p>
-      ) : null}
-      {!loading && workspace?.status === 'failed' ? (
-        <p className="media-transcript__notice is-error">自动转写失败。原始媒体已保留，可导入现成转录稿。</p>
-      ) : null}
+          <div className="media-transcript__actions">
+            {workspace?.automaticAvailable ? (
+              <button type="button" className="is-primary" onClick={() => { void startAutomatic() }} disabled={busy}>
+                {transcriptionActive ? '正在转写…' : selectedVersion ? '重新转写' : '启动自动转写'}
+              </button>
+            ) : null}
+            <button type="button" onClick={() => importInputRef.current?.click()} disabled={busy}>导入转录稿</button>
+            <input
+              ref={importInputRef}
+              className="media-transcript__file-input"
+              type="file"
+              accept=".srt,.vtt,.txt,.docx,application/x-subrip,text/vtt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              aria-label="选择转录稿"
+              onChange={(event) => { void handleImport(event) }}
+            />
+          </div>
+        </header>
 
-      {selectedVersion ? (
-        <div className="media-transcript__version-bar">
-          <label>
-            <span>转录版本</span>
-            <select
-              aria-label="转录版本"
-              value={selectedVersion.versionId}
-              disabled={editing}
-              onChange={(event) => {
-                setSelectedVersionId(event.target.value)
-                setActiveSegmentId(null)
-              }}
-            >
-              {workspace?.versions.map((version) => (
-                <option key={version.versionId} value={version.versionId}>
-                  版本 {version.version} · {transcriptSourceLabel(version.source)}{version.isCurrent ? ' · 当前' : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-          <small>{selectedVersion.source === 'automatic' ? '自动结果，需人工核对' : transcriptSourceLabel(selectedVersion.source)}</small>
-          {canCorrect ? <button type="button" onClick={beginCorrection}>校订当前版本</button> : null}
-        </div>
-      ) : null}
+        {mediaType.startsWith('video/') ? <video {...mediaProps} /> : <audio {...mediaProps} />}
 
-      {editing ? (
+        {loading ? <p className="media-transcript__notice" role="status">正在加载转录时间轴……</p> : null}
+        {notice || transcriptionActive ? (
+          <div className={`media-transcript__status${transcriptionActive ? ' is-active' : ''}`} role="status" aria-label="转写状态">
+            <div>
+              <strong>{transcriptionActive ? '正在转写音频' : notice}</strong>
+              {transcriptionStartedAt !== null ? <span>已等待 {formatElapsed(elapsedSeconds)}</span> : null}
+            </div>
+            {transcriptionActive ? <>
+              <p>预计约 1–3 分钟，长音频会更久。可以离开此页，完成后重新打开即可查看。</p>
+              <span className="media-transcript__progress" aria-hidden="true"><i /></span>
+            </> : null}
+          </div>
+        ) : null}
+        {error ? <p className="media-transcript__notice is-error" role="alert">{error}</p> : null}
+        {!loading && workspace && !workspace.automaticAvailable ? (
+          <p className="media-transcript__notice">自动转写服务未配置</p>
+        ) : null}
+        {!loading && workspace?.status === 'failed' ? (
+          <p className="media-transcript__notice is-error">自动转写失败。原始媒体已保留，可导入现成转录稿。</p>
+        ) : null}
+      </section>
+
+      <section className="media-transcript__document" aria-label="转录文本">
+        <header className="media-transcript__document-header">
+          <div>
+            <span>逐字记录</span>
+            <h2>转录文本</h2>
+          </div>
+          <p>点击时间码播放对应片段。校订会另存为新版本，不覆盖底稿。</p>
+        </header>
+
+        {selectedVersion ? (
+          <div className="media-transcript__version-bar">
+            <label>
+              <span>转录版本</span>
+              <select
+                aria-label="转录版本"
+                value={selectedVersion.versionId}
+                disabled={editing}
+                onChange={(event) => {
+                  setSelectedVersionId(event.target.value)
+                  setActiveSegmentId(null)
+                }}
+              >
+                {workspace?.versions.map((version) => (
+                  <option key={version.versionId} value={version.versionId}>
+                    版本 {version.version} · {transcriptSourceLabel(version.source)}{version.isCurrent ? ' · 当前' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <small>{selectedVersion.source === 'automatic' ? '机器底稿' : transcriptSourceLabel(selectedVersion.source)}</small>
+            {canCorrect ? <button type="button" onClick={beginCorrection}>校订当前版本</button> : null}
+          </div>
+        ) : null}
+
+        {editing ? (
         <form className="media-transcript__editor" onSubmit={(event) => { event.preventDefault(); void saveCorrection() }}>
           {draft.map((segment, index) => (
             <fieldset key={segment.segmentId}>
@@ -329,7 +343,8 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
           <strong>还没有转录版本</strong>
           <p>可导入 SRT、VTT、TXT 或 DOCX；即使自动服务不可用，原始媒体也不会丢失。</p>
         </div>
-      ) : null}
+        ) : null}
+      </section>
     </section>
   )
 }
