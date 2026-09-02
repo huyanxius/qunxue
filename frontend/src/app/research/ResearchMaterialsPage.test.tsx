@@ -58,9 +58,21 @@ describe('ResearchMaterialsPage', () => {
     expect(await within(library).findByRole('link', { name: /家庭照护访谈\.md/ })).toHaveAttribute('href', '/research/materials?task_id=task-1&material_id=material-1')
     expect(await within(library).findByRole('link', { name: /社区观察记录\.pdf/ })).toHaveAttribute('href', '/research/materials?task_id=task-2&material_id=material-2')
     expect(screen.queryByRole('region', { name: '选择研究' })).not.toBeInTheDocument()
-    fireEvent.click(within(library).getByRole('button', { name: '添加材料' }))
-    expect(within(library).getByRole('region', { name: '添加材料' })).toBeVisible()
+    const addMaterialButton = within(library).getByRole('button', { name: '添加材料' })
+    expect(addMaterialButton).toHaveAttribute('aria-expanded', 'false')
+    expect(within(library).queryByRole('dialog', { name: '添加材料' })).not.toBeInTheDocument()
+
+    fireEvent.click(addMaterialButton)
+
+    const uploadPopover = within(library).getByRole('dialog', { name: '添加材料' })
+    expect(uploadPopover).toBeVisible()
+    expect(uploadPopover).toHaveClass('qx-popover-surface')
+    expect(addMaterialButton).toHaveAttribute('aria-expanded', 'true')
     expect(within(library).getByRole('combobox', { name: '材料所属研究' })).toHaveValue('task-1')
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(within(library).queryByRole('dialog', { name: '添加材料' })).not.toBeInTheDocument()
+    expect(addMaterialButton).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('opens a selected material directly without another research workspace layer', async () => {
