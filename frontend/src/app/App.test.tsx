@@ -363,11 +363,12 @@ describe('App routes', () => {
       '工作台',
       '研究 Agent',
       '新建研究',
+      '研究工具',
       '研究材料',
       '知识库',
       '知识图谱',
     ])
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(6)
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(7)
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',
@@ -377,6 +378,23 @@ describe('App routes', () => {
       'href',
       '/knowledge/graph',
     )
+  })
+
+  it('opens a compact research tools catalog from the primary navigation', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+    renderRoute('/app', { status: 'authenticated' })
+
+    const desktopNavigation = await screen.findByRole('navigation', { name: '桌面主导航' })
+    fireEvent.click(within(desktopNavigation).getByRole('link', { name: '研究工具' }))
+
+    expect(screen.getByTestId('route-location')).toHaveTextContent('/research/tools')
+    expect(await screen.findByRole('heading', { level: 1, name: '研究工具' })).toBeVisible()
+    const catalog = screen.getByRole('region', { name: '研究工具列表' })
+    expect(within(catalog).getAllByRole('article')).toHaveLength(4)
+    expect(within(catalog).getByRole('heading', { name: '质性编码' })).toBeVisible()
+    expect(within(catalog).getByRole('heading', { name: '数据清洗' })).toBeVisible()
+    expect(within(catalog).getByRole('heading', { name: '问卷分析' })).toBeVisible()
+    expect(within(catalog).getByRole('heading', { name: '访谈整理' })).toBeVisible()
   })
 
   it('keeps the sidebar stationary and preserves its user-selected width across routes', async () => {

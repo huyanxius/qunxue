@@ -984,16 +984,6 @@
   pointer-events: none;
 }
 
-.app-frame:has(.research-agent-page__shader) .desktop-rail {
-  border-right-color: rgb(64 57 68 / 13%);
-  background: linear-gradient(180deg, rgb(249 247 246 / 76%), rgb(244 242 241 / 62%));
-  box-shadow:
-    inset -1px 0 rgb(255 255 255 / 58%),
-    12px 0 34px rgb(52 46 56 / 3%);
-  backdrop-filter: blur(18px) saturate(0.92);
-  -webkit-backdrop-filter: blur(18px) saturate(0.92);
-}
-
 .app-frame:has(.research-agent-page__shader) .desktop-navigation a:hover,
 .app-frame:has(.research-agent-page__shader) .desktop-navigation a[aria-current='page'],
 .app-frame:has(.research-agent-page__shader) .desktop-rail__collapse:hover,

@@ -1,0 +1,95 @@
+.app-frame:has(.research-tools-page__shader) .app-frame__backdrop {
+  background:
+    radial-gradient(ellipse at 8% 18%, rgb(185 195 108 / 24%), transparent 58%),
+    #f7f7f3;
+}
+
+.research-tools-page {
+  position: relative;
+  overflow: hidden;
+  min-height: 100dvh;
+  color: var(--app-ink);
+  background: #f7f7f3;
+}
+
+.research-tools-page__shader {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  background: #f7f7f3;
+  pointer-events: none;
+}
+
+.research-tools-page__shader-canvas {
+  opacity: .7;
+  filter: saturate(.7) contrast(1.01);
+  mask-image: radial-gradient(ellipse 92% 58% at 52% 10%, #000 0 32%, rgb(0 0 0 / 72%) 58%, transparent 88%);
+}
+
+.research-tools-page__shader::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent, rgb(247 247 243 / 28%) 52%, rgb(247 247 243 / 64%) 84%);
+  content: '';
+}
+
+.research-tools-page__identity {
+  position: relative;
+  z-index: 1;
+  width: min(326px, 100%);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+}
+
+.research-tools-page__identity h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 550;
+  letter-spacing: -.01em;
+}
+
+.research-tools-page__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px 24px 24px;
+}
+
+.research-tools-page__card {
+  width: 100%;
+}
+
+.research-tools-page__card .workbench-destination__image {
+  opacity: 1;
+  filter: none;
+}
+
+.research-tools-page__card .workbench-destination__copy h2 {
+  max-width: calc(100% - 42px);
+  margin: 0;
+  color: #111512;
+  font-size: clamp(23px, 2.3vw, 34px);
+  font-weight: 490;
+  line-height: 1;
+  letter-spacing: -.055em;
+  text-shadow: 0 1px 24px rgb(244 245 237 / 52%);
+}
+
+@media (max-width: 980px) {
+  .research-tools-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .research-tools-page__grid {
+    grid-template-columns: 1fr;
+    padding-inline: 16px;
+  }
+}
