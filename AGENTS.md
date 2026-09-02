@@ -3,6 +3,8 @@
 > 本文件供编程助手自动读取。人类协作规范见 CONTRIBUTING.md。
 > This file is auto-read by coding agents. Human collaboration rules: see CONTRIBUTING.md.
 
+群学致知的实现一律选择能完成当前目标的最简单方式：不扩大需求，不引入当前交付不需要的流程、抽象或工程。
+
 ## 中文
 
 每次提交代码必须走以下流程，禁止跳步：

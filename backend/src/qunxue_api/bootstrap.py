@@ -82,6 +82,7 @@ from qunxue_api.adapters.theory_evidence import (
     CatalogTheoryLexicalRetriever,
 )
 from qunxue_api.adapters.transcription import (
+    DashScopeTranscriptionProvider,
     OpenAICompatibleTranscriptionProvider,
     parse_imported_transcript,
 )
@@ -151,7 +152,11 @@ from qunxue_api.modules.research_intake import (
 )
 from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.theory_matching import TheoryMatchingService
-from qunxue_api.modules.transcription import ProcessingLocation, UnavailableTranscriptionProvider
+from qunxue_api.modules.transcription import (
+    ProcessingLocation,
+    TranscriptionProvider,
+    UnavailableTranscriptionProvider,
+)
 from qunxue_api.settings import (
     DEFAULT_MODEL_BASE_URL,
     DEFAULT_MODEL_NAME,
@@ -159,6 +164,28 @@ from qunxue_api.settings import (
     Settings,
     get_settings,
 )
+
+
+def _build_transcription_provider(settings: Settings) -> TranscriptionProvider:
+    if not settings.has_transcription_provider:
+        return UnavailableTranscriptionProvider()
+    provider_type = (
+        DashScopeTranscriptionProvider
+        if "dashscope" in (settings.transcription_base_url or "")
+        and (settings.transcription_model or "").endswith("filetrans")
+        else OpenAICompatibleTranscriptionProvider
+    )
+    return provider_type(
+        base_url=settings.transcription_base_url or "",
+        api_key=(
+            settings.transcription_api_key.get_secret_value()
+            if settings.transcription_api_key
+            else ""
+        ),
+        model=settings.transcription_model or "",
+        processing_location=ProcessingLocation(settings.transcription_processing_location),
+        timeout_seconds=settings.transcription_timeout_seconds,
+    )
 
 
 def create_app(
@@ -355,23 +382,7 @@ def create_app(
     app.state.professional_materials_application_scope = (
         professional_materials_application_scope
     )
-    transcription_provider = (
-        OpenAICompatibleTranscriptionProvider(
-            base_url=resolved_settings.transcription_base_url or "",
-            api_key=(
-                resolved_settings.transcription_api_key.get_secret_value()
-                if resolved_settings.transcription_api_key
-                else ""
-            ),
-            model=resolved_settings.transcription_model or "",
-            processing_location=ProcessingLocation(
-                resolved_settings.transcription_processing_location
-            ),
-            timeout_seconds=resolved_settings.transcription_timeout_seconds,
-        )
-        if resolved_settings.has_transcription_provider
-        else UnavailableTranscriptionProvider()
-    )
+    transcription_provider = _build_transcription_provider(resolved_settings)
 
     @contextmanager
     def transcription_application_scope() -> Iterator[TranscriptionApplication]:
