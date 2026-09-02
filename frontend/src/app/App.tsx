@@ -37,6 +37,7 @@ import { ResearchAgentPage } from './agent/ResearchAgentPage'
 import { NewResearchWorkspacePage } from './agent/NewResearchWorkspacePage'
 import { ExistingResearchEntryPage } from './research/ExistingResearchEntryPage'
 import { ResearchMaterialsPage } from './research/ResearchMaterialsPage'
+import { ResearchToolsPage } from './research-tools/ResearchToolsPage'
 import { ResearchProjectWorkspacePage } from './research-workspace/ResearchProjectWorkspacePage'
 import { legacyResearchWorkspaceDestination } from './research-workspace/researchProjectWorkspaceModel'
 import { FoundationPage } from './foundation/FoundationPage'
@@ -395,6 +396,7 @@ export function AppRoutes({
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
       <Route path="/research/existing" element={protectedRoute(<ExistingResearchEntryPage />)} />
+      <Route path="/research/tools" element={protectedRoute(<ResearchToolsPage />)} />
       <Route path="/research/materials" element={protectedRoute(<ResearchMaterialsRoute userId={authenticatedUserId} />)} />
       <Route
         path="/research/:task_id"
