@@ -34,20 +34,13 @@ const citation: ResearchCitation = {
 }
 
 describe('ResearchContextRail', () => {
-  it('provides keyboard-navigable context tabs and a close action', () => {
+  it('shows one direct panel without a second set of navigation controls', () => {
     const onClose = vi.fn()
-    const onPanelChange = vi.fn()
 
-    render(<ResearchContextRail onClose={onClose} onPanelChange={onPanelChange} />)
+    render(<ResearchContextRail activeTab="activity" onClose={onClose} />)
 
-    expect(screen.getAllByRole('tab')).toHaveLength(4)
-    expect(screen.getByRole('tab', { name: 'Agent' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel', { name: 'Agent' })).toBeVisible()
-
-    const agentTab = screen.getByRole('tab', { name: 'Agent' })
-    fireEvent.keyDown(agentTab, { key: 'ArrowRight' })
-    expect(screen.getByRole('tab', { name: 'Activity' })).toHaveFocus()
-    expect(onPanelChange).toHaveBeenCalledWith('activity')
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '活动' })).toBeVisible()
 
     fireEvent.click(screen.getByRole('button', { name: '关闭上下文栏' }))
     expect(onClose).toHaveBeenCalledOnce()
@@ -58,14 +51,13 @@ describe('ResearchContextRail', () => {
 
     render(
       <ResearchContextRail
+        activeTab="activity"
         activities={[activity]}
         onActivitySelect={onActivitySelect}
       />,
     )
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Activity' }))
-
-    const panel = screen.getByRole('tabpanel', { name: 'Activity' })
+    const panel = screen.getByRole('region', { name: '活动' })
     expect(panel).toHaveTextContent('检索知识库')
     expect(panel).toHaveTextContent('检索完成，返回 1 条结果。')
     expect(panel).toHaveTextContent('社会行动四类型')
@@ -80,15 +72,14 @@ describe('ResearchContextRail', () => {
 
     render(
       <ResearchContextRail
+        activeTab="sources"
         citations={[citation]}
         onCitationSelect={onCitationSelect}
         selectedCitationId={citation.id}
       />,
     )
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Sources' }))
-
-    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    const panel = screen.getByRole('region', { name: '来源' })
     expect(panel).toHaveTextContent('知识条目 · D1:C029')
     expect(panel.querySelector(`[data-citation-id="${citation.id}"]`)).toHaveAttribute(
       'aria-current',
@@ -101,17 +92,15 @@ describe('ResearchContextRail', () => {
 
   it('uses host-provided basis content and keeps the empty state honest', () => {
     const { rerender } = render(
-      <ResearchContextRail basisContent={<p>来自当前条目的证据正文。</p>} />,
+      <ResearchContextRail activeTab="basis" basisContent={<p>来自当前条目的证据正文。</p>} />,
     )
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Basis' }))
-    expect(screen.getByRole('tabpanel', { name: 'Basis' })).toHaveTextContent(
+    expect(screen.getByRole('region', { name: '依据' })).toHaveTextContent(
       '来自当前条目的证据正文。',
     )
 
-    rerender(<ResearchContextRail />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Basis' }))
-    expect(screen.getByRole('tabpanel', { name: 'Basis' })).toHaveTextContent(
+    rerender(<ResearchContextRail activeTab="basis" />)
+    expect(screen.getByRole('region', { name: '依据' })).toHaveTextContent(
       '选择一条来源后，这里会显示它的依据。',
     )
   })

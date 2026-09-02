@@ -140,7 +140,7 @@
   line-height: 1.62;
 }
 
-.research-map__idle-note p + p {
+.research-map__idle-guidance {
   color: color-mix(in srgb, var(--map-muted) 84%, transparent);
   font-size: 13px;
 }

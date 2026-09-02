@@ -1301,6 +1301,7 @@ type ResearchAgentConversationPageProps = {
   onConversationChange?: (conversation: AgentConversation) => void
   onStreamingTurnChange?: (turn: ResearchCanvasStreamingTurn | null) => void
   conversationTail?: ReactNode
+  composerPrefix?: ReactNode
   showConversationManagement?: boolean
   historyRailTarget?: HTMLElement | null
   composerAriaLabel?: string
@@ -1323,6 +1324,7 @@ export function ResearchAgentConversationPage({
   onConversationChange,
   onStreamingTurnChange,
   conversationTail,
+  composerPrefix,
   showConversationManagement = !embedded,
   historyRailTarget = null,
   composerAriaLabel,
@@ -2000,6 +2002,7 @@ export function ResearchAgentConversationPage({
                   <button
                     type="button"
                     aria-label={text('研究材料', 'Research materials')}
+                    aria-pressed={materialsOpen}
                     title={text('研究材料', 'Research materials')}
                     onClick={() => {
                       if (!taskId) {
@@ -2013,10 +2016,10 @@ export function ResearchAgentConversationPage({
                     <FileTextIcon size={16} />
                   </button>
                 ) : null}
-                <button type="button" aria-label={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                <button type="button" aria-label={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
-                {showConversationManagement ? <button type="button" aria-label={text('开始新对话', 'Start a new conversation')} onClick={newConversation}><PlusIcon size={16} /></button> : null}
+                <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
+                <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
+                {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
+                {showConversationManagement ? <button type="button" aria-label={text('开始新对话', 'Start a new conversation')} title={text('开始新对话', 'Start a new conversation')} onClick={newConversation}><PlusIcon size={16} /></button> : null}
               </div>
             </header>
           )}
@@ -2079,7 +2082,8 @@ export function ResearchAgentConversationPage({
               </div>
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
-              <div className="new-research__composer research-agent-composer">
+              <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}`}>
+                {composerPrefix}
                 <textarea
                   ref={composerInputRef}
                   aria-label={composerAriaLabel ?? text('问社会学 Agent', 'Ask the Sociology Agent')}

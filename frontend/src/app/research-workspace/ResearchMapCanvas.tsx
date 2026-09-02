@@ -38,6 +38,7 @@ import './research-map-canvas.css'
 
 type ResearchMapCanvasProps = {
   readonly projection: ResearchCanvasProjection
+  readonly idleActions?: ReactNode
   readonly selectedNodeId?: string | null
   readonly onSelectNode?: (node: ResearchCanvasNode) => void
   readonly onClearSelection?: () => void
@@ -138,7 +139,7 @@ function ArgumentNode({ data, selected }: NodeProps<ArgumentFlowNode>) {
 
 const nodeTypes = { argument: ArgumentNode }
 
-function MapIdleNote() {
+function MapIdleNote({ actions }: { readonly actions?: ReactNode }) {
   return (
     <div className="research-map__idle-state">
       <div className="research-map__idle-content">
@@ -146,7 +147,7 @@ function MapIdleNote() {
         <div className="research-map__idle-note" aria-label="画布说明">
           <h1>从一个社会学问题开始</h1>
           <p>对话中形成的研究结构会在这里展开。</p>
-          <p>问题、理论、主张与证据，将随着研究推进逐步出现。</p>
+          {actions}
         </div>
       </div>
     </div>
@@ -155,6 +156,7 @@ function MapIdleNote() {
 
 export function ResearchMapCanvas({
   projection,
+  idleActions,
   selectedNodeId = null,
   onSelectNode,
   onClearSelection,
@@ -299,7 +301,7 @@ export function ResearchMapCanvas({
         </ReactFlow>
         </ExpandedNodeContentContext.Provider>
         )}
-        {!projection.nodes.length ? <MapIdleNote /> : null}
+        {!projection.nodes.length ? <MapIdleNote actions={idleActions} /> : null}
         {projection.nodes.length && !hasDocumentNodes ? (
           <>
             {layoutPending ? <div className="research-map__layout-status" role="status">正在整理结构…</div> : null}

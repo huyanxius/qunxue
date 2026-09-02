@@ -66,13 +66,15 @@
   align-items: center;
   gap: 10px;
   padding: 0 17px;
-  border: 1px solid var(--work-home-ink);
+  border: 1px solid var(--work-home-ink, var(--app-ink));
   border-radius: 999px;
   color: #f9f8f3;
-  background: var(--work-home-ink);
+  background: var(--work-home-ink, var(--app-ink));
+  font-family: inherit;
   font-size: 13px;
   font-weight: 520;
   text-decoration: none;
+  cursor: pointer;
   transition: color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
@@ -351,7 +353,7 @@
 
 @media (hover: hover) {
   .work-home__start:hover {
-    color: var(--work-home-ink);
+    color: var(--work-home-ink, var(--app-ink));
     background: transparent;
     transform: translateY(-1px);
   }
