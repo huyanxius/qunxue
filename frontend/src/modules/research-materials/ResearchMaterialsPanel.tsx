@@ -1,4 +1,4 @@
-import { CheckCircleIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
+import { ArchiveBoxIcon, CheckCircleIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 
 import { MaterialAnnotationDrawer, type AnnotationKind } from './MaterialAnnotationDrawer'
@@ -163,9 +163,14 @@ export function ResearchMaterialsPanel({
   }, [taskId])
 
   useEffect(() => {
+    if (
+      selectedMaterial
+      && initialMaterialId === selectedMaterial.materialId
+      && isMediaResearchMaterial(selectedMaterial)
+    ) return
     initialSelectionApplied.current = false
     scrolledCitationTarget.current = null
-  }, [taskId, initialMaterialId, initialSegmentId, initialParseId])
+  }, [taskId, initialMaterialId, initialSegmentId, initialParseId, selectedMaterial])
 
   // 保存成功的提示说完就该走。留在屏幕上的旧回执会让人以为刚才那次操作还没结束。
   useEffect(() => {
@@ -212,6 +217,7 @@ export function ResearchMaterialsPanel({
     if (initialMaterialId && !selectedMaterial) return
     const selectedSegment = selectedMaterial?.segments?.find((segment) => segment.segmentId === selectedSegmentId)
     const mediaSelected = selectedMaterial ? isMediaResearchMaterial(selectedMaterial) : false
+    if (mediaSelected && !mediaLocation) return
     onWorkspaceLocationChange({
       materialId: selectedMaterial?.materialId ?? null,
       parseId: mediaSelected
@@ -511,7 +517,7 @@ export function ResearchMaterialsPanel({
               </div>
             </> : null}
             <div className="qx-reader__tools">
-              <button type="button" className="qx-icon-button" aria-label="材料档案" title="材料档案" onClick={() => setArchiveOpen(true)}>档案</button>
+              <button type="button" className="qx-icon-button" aria-label="材料档案" title="材料档案" onClick={() => setArchiveOpen(true)}><ArchiveBoxIcon size={17} aria-hidden="true" /></button>
             </div>
           </header>
           <MediaTranscriptWorkspace

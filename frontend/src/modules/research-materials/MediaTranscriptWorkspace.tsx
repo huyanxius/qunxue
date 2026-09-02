@@ -31,6 +31,11 @@ function copySegments(segments: TranscriptSegment[]): TranscriptSegment[] {
   return segments.map((segment) => ({ ...segment }))
 }
 
+function formatElapsed(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+  return `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+}
+
 export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initialParseId = null, initialSegmentId = null, onLocationChange }: MediaTranscriptWorkspaceProps) {
   const playerRef = useRef<HTMLMediaElement>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
@@ -44,6 +49,8 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [transcriptionStartedAt, setTranscriptionStartedAt] = useState<number | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   async function load(signal?: AbortSignal, selectCurrent = false) {
     setLoading(true)
@@ -75,12 +82,25 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
     setDraft([])
     void load(controller.signal)
     return () => controller.abort()
-  }, [taskId, materialId, initialParseId])
+  }, [taskId, materialId])
 
   const selectedVersion = workspace?.versions.find((version) => version.versionId === selectedVersionId)
     ?? workspace?.currentVersion
     ?? null
   const canCorrect = selectedVersion?.isCurrent === true && !editing
+
+  useEffect(() => {
+    if (!initialParseId || !workspace?.versions.some((version) => version.versionId === initialParseId)) return
+    setSelectedVersionId(initialParseId)
+  }, [initialParseId, workspace?.versions])
+
+  useEffect(() => {
+    if (transcriptionStartedAt === null) return
+    const updateElapsed = () => setElapsedSeconds(Math.floor((Date.now() - transcriptionStartedAt) / 1_000))
+    updateElapsed()
+    const timer = window.setInterval(updateElapsed, 1_000)
+    return () => window.clearInterval(timer)
+  }, [transcriptionStartedAt])
 
   useEffect(() => {
     onLocationChange?.({
@@ -153,11 +173,15 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
     setBusy(true)
     setError(null)
     setNotice('正在转写音频，请稍候…')
+    setElapsedSeconds(0)
+    setTranscriptionStartedAt(Date.now())
     try {
       await startAutomaticTranscription(taskId, materialId)
       await load(undefined, true)
+      setTranscriptionStartedAt(null)
       setNotice('转写完成')
     } catch (cause: unknown) {
+      setTranscriptionStartedAt(null)
       setNotice(null)
       setError(errorMessage(cause, '自动转写未能完成。'))
     } finally {
@@ -173,6 +197,7 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
     src: mediaContentUrl(taskId, materialId),
     'aria-label': '原始媒体',
   }
+  const transcriptionActive = transcriptionStartedAt !== null || (!loading && workspace?.status === 'processing')
 
   return (
     <section className="media-transcript" aria-label="媒体转录时间轴">
@@ -183,7 +208,7 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
         </div>
         <div className="media-transcript__actions">
           {workspace?.automaticAvailable ? (
-            <button type="button" onClick={() => { void startAutomatic() }} disabled={busy}>启动自动转写</button>
+            <button type="button" onClick={() => { void startAutomatic() }} disabled={busy}>{transcriptionActive ? '正在转写…' : '启动自动转写'}</button>
           ) : null}
           <button type="button" onClick={() => importInputRef.current?.click()} disabled={busy}>导入转录稿</button>
           <input
@@ -200,13 +225,21 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
       {mediaType.startsWith('video/') ? <video {...mediaProps} /> : <audio {...mediaProps} />}
 
       {loading ? <p className="media-transcript__notice" role="status">正在加载转录时间轴……</p> : null}
-      {notice ? <p className="media-transcript__notice" role="status">{notice}</p> : null}
+      {notice || transcriptionActive ? (
+        <div className={`media-transcript__status${transcriptionActive ? ' is-active' : ''}`} role="status" aria-label="转写状态">
+          <div>
+            <strong>{transcriptionActive ? '正在转写音频' : notice}</strong>
+            {transcriptionStartedAt !== null ? <span>已等待 {formatElapsed(elapsedSeconds)}</span> : null}
+          </div>
+          {transcriptionActive ? <>
+            <p>预计约 1–3 分钟，长音频会更久。可以离开此页，完成后重新打开即可查看。</p>
+            <span className="media-transcript__progress" aria-hidden="true"><i /></span>
+          </> : null}
+        </div>
+      ) : null}
       {error ? <p className="media-transcript__notice is-error" role="alert">{error}</p> : null}
       {!loading && workspace && !workspace.automaticAvailable ? (
         <p className="media-transcript__notice">自动转写服务未配置</p>
-      ) : null}
-      {!loading && workspace?.status === 'processing' ? (
-        <p className="media-transcript__notice" role="status">自动转写正在处理。原始媒体和导入路径仍可用。</p>
       ) : null}
       {!loading && workspace?.status === 'failed' ? (
         <p className="media-transcript__notice is-error">自动转写失败。原始媒体已保留，可导入现成转录稿。</p>
