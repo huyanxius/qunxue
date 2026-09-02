@@ -101,7 +101,8 @@ describe('ResearchMaterialsPanel', () => {
 
     const workspace = await screen.findByRole('region', { name: '研究材料' })
     const reader = await within(workspace).findByRole('region', { name: '材料阅读台' })
-    expect(within(reader).getByRole('heading', { name: '社区访谈.docx' })).toBeVisible()
+    expect(within(reader).queryByRole('heading', { name: '社区访谈.docx' })).not.toBeInTheDocument()
+    expect(within(reader).getByRole('button', { name: '在材料中查找' })).toBeVisible()
     expect(within(reader).getByText('受访者描述了工作时间的变化。')).toBeVisible()
     await waitFor(() => expect(onWorkspaceLocationChange).toHaveBeenLastCalledWith({
       materialId: 'material-1',
