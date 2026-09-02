@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -30,12 +30,43 @@ const research = {
   created_at: '2026-08-30T00:00:00Z', updated_at: '2026-08-30T01:00:00Z',
 }
 
+const secondResearch = {
+  ...research,
+  task_id: 'task-2',
+  phenomenon_summary: { ...research.phenomenon_summary, phenomenon_query_id: 'phenomenon-2', phenomenon: '社区互助网络如何形成' },
+  conversation_id: 'conversation-2',
+  resume_path: '/research/task-2/match',
+}
+
 describe('ResearchMaterialsPage', () => {
-  it('keeps project scope, source workspace, and the shared Agent visible together', async () => {
+  it('shows materials from every research as cards without a research-selection gate', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
+      if (path === '/api/research-tasks') return json({ items: [research, secondResearch], next_cursor: null })
+      if (path === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [{ material_id: 'material-1', task_id: 'task-1', filename: '家庭照护访谈.md', media_type: 'text/markdown', size_bytes: 2048, status: 'ready', version: 1, parse_version: 1, segment_count: 12, updated_at: '2026-09-01T10:00:00Z', error_code: null, material_kind: 'interview_transcript' }] })
+      if (path === '/api/research-tasks/task-2/materials') return json({ task_id: 'task-2', items: [{ material_id: 'material-2', task_id: 'task-2', filename: '社区观察记录.pdf', media_type: 'application/pdf', size_bytes: 4096, status: 'processing', version: 1, parse_version: null, segment_count: 0, updated_at: '2026-09-02T10:00:00Z', error_code: null, material_kind: 'observation_record' }] })
+      return json({}, 404)
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/research/materials']}>
+        <ResearchMaterialsPage userId="user-1" />
+      </MemoryRouter>,
+    )
+
+    const library = await screen.findByRole('region', { name: '全部研究材料' })
+    expect(await within(library).findByRole('link', { name: /家庭照护访谈\.md/ })).toHaveAttribute('href', '/research/materials?task_id=task-1&material_id=material-1')
+    expect(await within(library).findByRole('link', { name: /社区观察记录\.pdf/ })).toHaveAttribute('href', '/research/materials?task_id=task-2&material_id=material-2')
+    expect(screen.queryByRole('region', { name: '选择研究' })).not.toBeInTheDocument()
+    fireEvent.click(within(library).getByRole('button', { name: '添加材料' }))
+    expect(within(library).getByRole('region', { name: '添加材料' })).toBeVisible()
+    expect(within(library).getByRole('combobox', { name: '材料所属研究' })).toHaveValue('task-1')
+  })
+
+  it('opens a selected material directly without another research workspace layer', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
       if (path === '/api/research-tasks') return json({ items: [research], next_cursor: null })
-      if (path === '/api/research-tasks/task-1/navigation') return json(research)
       if (path === '/api/research-tasks/task-1/materials') return json({ task_id: 'task-1', items: [] })
       if (path === '/api/research-tasks/task-1/analysis') return json({ task_id: 'task-1', annotations: [], codes: [], memos: [], comparisons: [] })
       if (path === '/api/agent/conversations/conversation-1') return json({ conversation_id: 'conversation-1', title: '照护劳动研究', created_at: research.created_at, updated_at: research.updated_at, turn_count: 0, turns: [] })
@@ -49,12 +80,9 @@ describe('ResearchMaterialsPage', () => {
       </MemoryRouter>,
     )
 
-    const workbench = await screen.findByRole('region', { name: '研究材料工作台' })
-    expect(within(workbench).getByRole('combobox', { name: '当前研究' })).toHaveValue('task-1')
-    expect(within(workbench).getByRole('link', { name: '返回研究选择' })).toHaveAttribute('href', '/research/materials')
-    expect(within(workbench).getByRole('link', { name: '返回这项研究' })).toHaveAttribute('href', '/research/task-1/match')
-    expect(within(workbench).getByRole('region', { name: '研究材料' })).toBeVisible()
-    expect(within(workbench).getByRole('complementary', { name: '研究 Agent 对话栏' })).toBeVisible()
-    expect(within(workbench).queryByRole('dialog', { name: '研究材料' })).not.toBeInTheDocument()
+    const reader = await screen.findByRole('region', { name: '材料阅读' })
+    expect(within(reader).getByRole('region', { name: '研究材料' })).toBeVisible()
+    expect(within(reader).getByRole('button', { name: '关闭研究材料' })).toBeVisible()
+    expect(within(reader).queryByRole('complementary', { name: '研究 Agent 对话栏' })).not.toBeInTheDocument()
   })
 })

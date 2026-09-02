@@ -181,6 +181,20 @@ function renderPage(path = '/research/new', strict = false, userId = 'user-a') {
 }
 
 describe('NewResearchWorkspacePage', () => {
+  it('keeps the research entry actions inside the empty-map hierarchy', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+
+    renderPage()
+
+    const mapNote = await screen.findByLabelText('画布说明')
+    const entryActions = within(mapNote).getByRole('group', { name: '研究起点' })
+    expect(within(mapNote).queryByText('问题、理论、主张与证据，将随着研究推进逐步出现。')).not.toBeInTheDocument()
+    expect(within(entryActions).getByText('直接提问，或先放入一批材料')).toBeVisible()
+    expect(within(entryActions).getByRole('button', { name: '从材料开始研究' })).toBeVisible()
+    expect(within(entryActions).getByLabelText('从材料开始研究')).toBeInTheDocument()
+    expect(within(entryActions).getByRole('link', { name: '接入已有研究' })).toBeVisible()
+  })
+
   it('creates no empty task on open and keeps first materials on one draft task', async () => {
     const taskId = 'material-first-task'
     const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -244,6 +258,8 @@ describe('NewResearchWorkspacePage', () => {
     await waitFor(() => expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(
       `/research/new?task_id=${taskId}`,
     ))
+    expect(screen.getByRole('status', { name: '材料来源' })).toHaveTextContent('社区访谈.txt')
+    expect(screen.getByRole('status', { name: '材料来源' })).toHaveTextContent('另 1 份')
     const uploadRequests = fetch.mock.calls.filter(([input, init]) => {
       const request = input instanceof Request ? input : new Request(input, init)
       return new URL(request.url).pathname.endsWith('/materials')
