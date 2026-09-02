@@ -982,6 +982,7 @@ audio.media-transcript__player { min-height: 54px; background: var(--qx-color-su
 .media-transcript__version-bar label { display: grid; gap: 4px; }
 .media-transcript__version-bar select, .media-transcript__editor input, .media-transcript__editor textarea { min-width: 0; width: 100%; padding: var(--qx-space-2) var(--qx-space-3); border: 1px solid var(--qx-color-rule); border-radius: var(--qx-radius-control); color: var(--qx-color-ink); background: var(--qx-color-surface); font: inherit; font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
 .media-transcript__version-bar small { align-self: center; color: var(--materials-muted); font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); }
+.media-transcript__version-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--qx-space-2); }
 .media-transcript__timeline { display: grid; padding: 0 var(--qx-space-6) var(--qx-space-6); }
 .media-transcript__cue { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: var(--qx-space-4); min-height: auto !important; padding: var(--qx-space-4) 0 !important; border: 0 !important; border-bottom: 1px solid var(--qx-color-rule) !important; border-radius: 0 !important; text-align: left; }
 .media-transcript__cue time { position: relative; padding-right: var(--qx-space-4); color: var(--qx-color-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); font-variant-numeric: tabular-nums; }
@@ -1011,7 +1012,7 @@ audio.media-transcript__player { min-height: 54px; background: var(--qx-color-su
   .media-transcript__document-header { display: grid; padding: var(--qx-space-4); }
   .media-transcript__document-header > p { text-align: left; }
   .media-transcript__version-bar { grid-template-columns: 1fr; align-items: start; }
-  .media-transcript__version-bar button { justify-self: start; }
+  .media-transcript__version-actions { justify-content: flex-start; }
   .media-transcript__timeline { padding-inline: var(--qx-space-4); }
   .media-transcript__cue { grid-template-columns: 72px minmax(0, 1fr); gap: var(--qx-space-3); }
   .media-transcript__editor fieldset { grid-template-columns: 1fr; }
