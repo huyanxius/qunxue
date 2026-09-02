@@ -5,7 +5,7 @@
   --rail-surface: var(--app-sidebar, #f7f6f2);
   min-width: 0;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
   border-left: 1px solid var(--rail-border);
