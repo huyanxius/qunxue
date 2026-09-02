@@ -5,6 +5,7 @@ export {
   getResearchStartJourney,
   listAgentConversations,
   renameAgentConversation,
+  stopAgentRun,
   streamAgentTurn,
 } from './researchAgentGateway'
 export type {

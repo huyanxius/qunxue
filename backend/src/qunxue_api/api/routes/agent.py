@@ -51,24 +51,39 @@ router = APIRouter(
 )
 logger = logging.getLogger(__name__)
 AgentRuntimeMode = Literal["mock", "base", "sft"]
-_SSE_HEARTBEAT_SECONDS = 15.0
-_AGENT_TURN_TIMEOUT_SECONDS = 60.0
+_SSE_HEARTBEAT_SECONDS = 5.0
+_AGENT_TURN_TIMEOUT_SECONDS = 300.0
 _ACTIVE_RUNS_LOCK = threading.Lock()
-_ACTIVE_RUN_CANCEL_EVENTS: dict[UUID, threading.Event] = {}
+_ACTIVE_RUN_CANCEL_EVENTS: dict[tuple[UUID, UUID], threading.Event] = {}
 
 
-def _claim_active_run(user_id: UUID, cancel_event: threading.Event) -> None:
+def _register_active_run(
+    user_id: UUID,
+    run_id: UUID,
+    cancel_event: threading.Event,
+) -> None:
     with _ACTIVE_RUNS_LOCK:
-        previous = _ACTIVE_RUN_CANCEL_EVENTS.get(user_id)
-        _ACTIVE_RUN_CANCEL_EVENTS[user_id] = cancel_event
-    if previous is not None and previous is not cancel_event:
-        previous.set()
+        _ACTIVE_RUN_CANCEL_EVENTS[(user_id, run_id)] = cancel_event
 
 
-def _release_active_run(user_id: UUID, cancel_event: threading.Event) -> None:
+def _cancel_active_run(user_id: UUID, run_id: UUID) -> bool:
     with _ACTIVE_RUNS_LOCK:
-        if _ACTIVE_RUN_CANCEL_EVENTS.get(user_id) is cancel_event:
-            _ACTIVE_RUN_CANCEL_EVENTS.pop(user_id, None)
+        cancel_event = _ACTIVE_RUN_CANCEL_EVENTS.get((user_id, run_id))
+    if cancel_event is None:
+        return False
+    cancel_event.set()
+    return True
+
+
+def _release_active_run(
+    user_id: UUID,
+    run_id: UUID,
+    cancel_event: threading.Event,
+) -> None:
+    with _ACTIVE_RUNS_LOCK:
+        key = (user_id, run_id)
+        if _ACTIVE_RUN_CANCEL_EVENTS.get(key) is cancel_event:
+            _ACTIVE_RUN_CANCEL_EVENTS.pop(key, None)
 
 
 def _effective_agent_runtime_mode(request: Request) -> AgentRuntimeMode:
@@ -284,11 +299,15 @@ def stream_agent_turn(
         event_queue: queue.Queue[tuple[str, object]] = queue.Queue()
         cancel_event = threading.Event()
         user_id = current.user.user_id
-        _claim_active_run(user_id, cancel_event)
         deadline = time.monotonic() + _AGENT_TURN_TIMEOUT_SECONDS
         runtime_mode = _effective_agent_runtime_mode(request)
+        registered_run_id: UUID | None = None
 
         def on_run_started(run_id: UUID, conversation_id: UUID, replayed: bool) -> None:
+            nonlocal registered_run_id
+            registered_run_id = run_id
+            if not replayed:
+                _register_active_run(user_id, run_id, cancel_event)
             event_queue.put(
                 (
                     "started",
@@ -309,26 +328,42 @@ def stream_agent_turn(
 
         def run_agent() -> None:
             try:
-                with request.app.state.disciplinary_agent_scope() as app:
-                    execution = app.run_turn(
-                        user_id=user_id,
-                        conversation_id=payload.conversation_id,
-                        prompt=payload.message,
-                        idempotency_key=idempotency_key,
-                        workspace=payload.workspace,
-                        task_id=payload.task_id,
-                        document_id=payload.document_id,
-                        section_id=payload.section_id,
-                        document_version=payload.document_version,
-                        theory_plan_id=payload.theory_plan_id,
-                        on_run_started=on_run_started,
-                        on_delta=on_delta,
-                        on_tool_event=on_tool_event,
-                        is_cancelled=cancel_event.is_set,
-                    )
+                while True:
+                    try:
+                        with request.app.state.disciplinary_agent_scope() as app:
+                            execution = app.run_turn(
+                                user_id=user_id,
+                                conversation_id=payload.conversation_id,
+                                prompt=payload.message,
+                                idempotency_key=idempotency_key,
+                                workspace=payload.workspace,
+                                task_id=payload.task_id,
+                                document_id=payload.document_id,
+                                section_id=payload.section_id,
+                                document_version=payload.document_version,
+                                theory_plan_id=payload.theory_plan_id,
+                                on_run_started=on_run_started,
+                                on_delta=on_delta,
+                                on_tool_event=on_tool_event,
+                                is_cancelled=cancel_event.is_set,
+                            )
+                        break
+                    except RunAlreadyActive:
+                        with request.app.state.disciplinary_agent_scope() as app:
+                            existing = app.find_run(
+                                user_id=user_id,
+                                idempotency_key=idempotency_key,
+                            )
+                        if existing is None or existing.status != "running":
+                            raise
+                        if cancel_event.wait(0.5):
+                            raise AgentInterrupted("Agent run was stopped")
                 event_queue.put(("completed", execution))
             except Exception as error:
                 event_queue.put(("failed", error))
+            finally:
+                if registered_run_id is not None:
+                    _release_active_run(user_id, registered_run_id, cancel_event)
 
         worker = threading.Thread(target=run_agent, daemon=True)
         worker.start()
@@ -338,10 +373,12 @@ def stream_agent_turn(
             while True:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    cancel_event.set()
                     yield _event(
                         "turn_failed",
-                        {"code": "turn_timeout", "message": "本轮回答超时，已停止生成。"},
+                        {
+                            "code": "turn_timeout",
+                            "message": "连接等待超时，回答仍在后台生成，可重连恢复。",
+                        },
                     )
                     break
                 try:
@@ -474,14 +511,27 @@ def stream_agent_turn(
                 {"code": "agent_unavailable", "message": "Agent 暂时无法完成回答，请稍后重试。"},
             )
         finally:
-            cancel_event.set()
-            _release_active_run(user_id, cancel_event)
+            # Browser disconnects are transport events, not stop requests. The
+            # worker owns its lifecycle until completion or an explicit stop.
+            pass
 
     return StreamingResponse(
         events(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post(
+    "/runs/{run_id}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="stop_agent_run",
+)
+def stop_agent_run(
+    run_id: UUID,
+    current: CurrentSessionDependency,
+) -> None:
+    _cancel_active_run(current.user.user_id, run_id)
 
 
 def _event(name: str, payload: dict[str, object]) -> str:

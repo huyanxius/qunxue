@@ -7655,6 +7655,44 @@ export type ConfirmAgentResearchStartResponses = {
 
 export type ConfirmAgentResearchStartResponse = ConfirmAgentResearchStartResponses[keyof ConfirmAgentResearchStartResponses];
 
+export type StopAgentRunData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/agent/runs/{run_id}/stop';
+};
+
+export type StopAgentRunErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type StopAgentRunError = StopAgentRunErrors[keyof StopAgentRunErrors];
+
+export type StopAgentRunResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type StopAgentRunResponse = StopAgentRunResponses[keyof StopAgentRunResponses];
+
 export type StreamAgentTurnData = {
     body: AgentTurnRequest;
     headers: {

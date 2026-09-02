@@ -11,6 +11,7 @@ import {
   getResearchStartJourney,
   listAgentConversations,
   parseAgentEventStream,
+  stopAgentRun,
   streamAgentTurn,
 } from './researchAgentApi'
 
@@ -33,6 +34,18 @@ afterEach(() => {
 })
 
 describe('research agent SSE adapter', () => {
+  it('stops one server run explicitly instead of relying on stream disconnection', async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetch)
+
+    await stopAgentRun('run-mobile')
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.qunxue.test/api/agent/runs/run-mobile/stop',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    )
+  })
+
   it('sends the required idempotency key when deleting a conversation', async () => {
     const fetch = vi.fn(async () => new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', fetch)
@@ -239,18 +252,27 @@ describe('research agent SSE adapter', () => {
     ])
   })
 
-  it('rejects a truncated SSE response that never reaches a terminal event', async () => {
-    const fetch = vi.fn(async () => new Response(
-      'event: turn_started\ndata: {"conversation_id":"conversation-1","run_id":"run-1","replayed":false}\n\n'
-        + 'event: assistant_delta\ndata: {"delta":"半段回答"}\n\n',
-      { headers: { 'Content-Type': 'text/event-stream' } },
-    ))
+  it('reconnects a truncated mobile stream with the same idempotency key', async () => {
+    const events: string[] = []
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(
+        'event: turn_started\ndata: {"conversation_id":"conversation-1","run_id":"run-1","replayed":false}\n\n',
+        { headers: { 'Content-Type': 'text/event-stream' } },
+      ))
+      .mockResolvedValueOnce(new Response(
+        'event: turn_started\ndata: {"conversation_id":"conversation-1","run_id":"run-1","replayed":true}\n\n'
+          + 'event: turn_completed\ndata: {"conversation":{"conversation_id":"conversation-1","turns":[]},"knowledge_release_id":"release-1"}\n\n',
+        { headers: { 'Content-Type': 'text/event-stream' } },
+      ))
     vi.stubGlobal('fetch', fetch)
 
-    await expect(streamAgentTurn(
+    await streamAgentTurn(
       { conversation_id: null, message: '问题', idempotencyKey: 'truncated-1' },
-      () => undefined,
-    )).rejects.toThrow('Agent 流在完成前中断')
+      (event) => events.push(event.type),
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(events).toContain('turn_completed')
   })
 
   it('surfaces a validation response as an actionable input error', async () => {

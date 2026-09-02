@@ -261,7 +261,7 @@ export async function confirmResearchStartProposal(
   throw new Error('研究暂时未能建立，你的内容已保留。')
 }
 
-export async function streamAgentTurn(
+async function streamAgentTurnOnce(
   payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
@@ -318,4 +318,40 @@ export async function streamAgentTurn(
     }
   }
   if (!terminalEventSeen) throw new Error('Agent 流在完成前中断，请重试。')
+}
+
+export async function streamAgentTurn(
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  onEvent: (event: AgentEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  while (true) {
+    try {
+      await streamAgentTurnOnce(payload, onEvent, signal)
+      return
+    } catch (cause: unknown) {
+      if (signal?.aborted || (cause as { name?: string } | null)?.name === 'AbortError') throw cause
+      const recoverable = cause instanceof TypeError
+        || (cause instanceof Error && cause.message.includes('完成前中断'))
+      if (!recoverable) throw cause
+      await new Promise<void>((resolve, reject) => {
+        const timeout = globalThis.setTimeout(resolve, 250)
+        signal?.addEventListener('abort', () => {
+          globalThis.clearTimeout(timeout)
+          reject(new DOMException('Aborted', 'AbortError'))
+        }, { once: true })
+      })
+    }
+  }
+}
+
+export async function stopAgentRun(runId: string): Promise<void> {
+  const response = await fetch(apiClient.buildUrl({
+    url: '/api/agent/runs/{run_id}/stop',
+    path: { run_id: runId },
+  }), {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error('无法停止当前回答')
 }

@@ -58,6 +58,7 @@ import {
   getAgentConversation,
   listAgentConversations,
   renameAgentConversation,
+  stopAgentRun,
   streamAgentTurn,
   type AgentCitation,
   type AgentConversation,
@@ -222,6 +223,7 @@ type PendingTurnAttempt = {
   question: string
   idempotencyKey: string
   conversationId: string | null
+  runId?: string | null
 }
 
 type ResearchStartHandoff = {
@@ -389,6 +391,7 @@ function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | nul
       question: value.question,
       idempotencyKey: value.idempotencyKey,
       conversationId: value.conversationId ?? null,
+      runId: typeof value.runId === 'string' && value.runId ? value.runId : null,
     }
   } catch {
     return null
@@ -1366,6 +1369,8 @@ export function ResearchAgentConversationPage({
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const [landingBackdropPhase, setLandingBackdropPhase] = useState<'visible' | 'leaving' | 'hidden'>('visible')
   const streamAbortController = useRef<AbortController | null>(null)
+  const activeRunId = useRef<string | null>(null)
+  const pendingResumeStarted = useRef(false)
   const streamGeneration = useRef(0)
   const conversationLoadAbortController = useRef<AbortController | null>(null)
   const conversationLoadGeneration = useRef(0)
@@ -1634,10 +1639,14 @@ export function ResearchAgentConversationPage({
     const idempotencyKey = retryIdempotencyKey
       ?? globalThis.crypto?.randomUUID?.()
       ?? `agent-${Date.now()}`
+    const resumableAttempt = failedTurnAttempt.current?.idempotencyKey === idempotencyKey
+      ? failedTurnAttempt.current
+      : null
     const attempt: PendingTurnAttempt = {
       question,
       idempotencyKey,
       conversationId: activeConversation?.conversation_id ?? pendingConversationId.current,
+      runId: resumableAttempt?.runId ?? null,
     }
     activeTurnAttempt.current = attempt
     failedTurnAttempt.current = null
@@ -1672,13 +1681,28 @@ export function ResearchAgentConversationPage({
         (event: AgentEvent) => {
           if (streamGeneration.current !== runGeneration) return
           if (event.type === 'turn_started') {
+            activeRunId.current = event.run_id
             pendingConversationId.current = event.conversation_id
-            const startedAttempt = { ...attempt, conversationId: event.conversation_id }
+            const startedAttempt = {
+              ...attempt,
+              conversationId: event.conversation_id,
+              runId: event.run_id,
+            }
             activeTurnAttempt.current = startedAttempt
             persistPendingTurnAttempt(userId, startedAttempt)
             if (event.runtime_mode) {
               setRuntimeMode(event.runtime_mode)
               rememberRuntimeMode(event.conversation_id, event.runtime_mode)
+            }
+            if (event.replayed) {
+              pendingToolSteps.current = []
+              setStreamingTurn((current) => current ? {
+                ...current,
+                answer: '',
+                citations: [],
+                toolSteps: [],
+                canvasPatches: [],
+              } : current)
             }
             setStatus('thinking')
           } else if (event.type === 'agent_status') {
@@ -1707,6 +1731,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
+            activeRunId.current = null
             failedTurnAttempt.current = null
             activeTurnAttempt.current = null
             persistPendingTurnAttempt(userId, null)
@@ -1751,9 +1776,11 @@ export function ResearchAgentConversationPage({
             }
             onTurnCompleted?.()
           } else if (event.type === 'turn_interrupted') {
+            activeRunId.current = null
             settleInterruptedTurn()
           } else if (event.type === 'turn_failed') {
-            const failedAttempt = activeTurnAttempt.current ?? attempt
+            activeRunId.current = null
+            const failedAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: null }
             failedTurnAttempt.current = failedAttempt
             activeTurnAttempt.current = null
             persistPendingTurnAttempt(userId, failedAttempt)
@@ -1783,7 +1810,7 @@ export function ResearchAgentConversationPage({
             : causeMessage && causeMessage !== 'Agent 暂时无法连接'
               ? causeMessage
               : 'Agent 暂时无法连接。请检查模型服务后重试，这一轮不会伪造回答。'
-        const failedAttempt = activeTurnAttempt.current ?? attempt
+        const failedAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: null }
         failedTurnAttempt.current = failedAttempt
         activeTurnAttempt.current = null
         persistPendingTurnAttempt(userId, failedAttempt)
@@ -1796,6 +1823,16 @@ export function ResearchAgentConversationPage({
       if (streamAbortController.current === controller) streamAbortController.current = null
     }
   }
+
+  useEffect(() => {
+    if (pendingResumeStarted.current) return
+    const pending = restoredPendingTurn.current
+    if (!pending?.runId) return
+    pendingResumeStarted.current = true
+    void submitQuestion(pending.question, pending.idempotencyKey)
+    // A persisted run is resumed only on mount; conversation state changes must not resubmit it.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function submitDraft() {
     const normalized = draft.trim()
@@ -1828,6 +1865,9 @@ export function ResearchAgentConversationPage({
   }
 
   function stopGeneration() {
+    const runId = activeRunId.current
+    activeRunId.current = null
+    if (runId) void stopAgentRun(runId).catch(() => undefined)
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
