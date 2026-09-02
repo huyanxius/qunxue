@@ -4,13 +4,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { listMyResearchViaApi, type MyResearchItem } from '../../modules/account'
 import {
+  addResearchLibraryMaterial,
   formatMaterialSize,
-  listResearchMaterials,
+  listResearchLibraryMaterials,
   materialMediaLabel,
   materialStatusLabel,
   RESEARCH_MATERIAL_ACCEPT,
   ResearchMaterialsPanel,
-  uploadResearchMaterial,
   type ResearchMaterial,
 } from '../../modules/research-materials'
 import { PageContent, PageShell } from '../ui/PageShell'
@@ -78,7 +78,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     let active = true
     setLibraryLoading(true)
     void Promise.allSettled(research.map(async (item) => {
-      const result = await listResearchMaterials(item.taskId)
+      const result = await listResearchLibraryMaterials(item.taskId)
       return result.items.map((material) => ({ material, research: item }))
     })).then((results) => {
       if (!active) return
@@ -99,7 +99,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     setUploading(true)
     setUploadError(null)
     try {
-      const material = await uploadResearchMaterial(uploadTaskId, file, 'other')
+      const material = await addResearchLibraryMaterial(uploadTaskId, file)
       const owner = research.find((item) => item.taskId === uploadTaskId)
       if (owner) setLibraryMaterials((current) => [{ material, research: owner }, ...current])
       setUploadOpen(false)

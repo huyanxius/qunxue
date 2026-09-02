@@ -1,5 +1,5 @@
 export { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
-export { listResearchMaterials, uploadResearchMaterial } from './researchMaterialsApi'
+export { addResearchLibraryMaterial, listResearchLibraryMaterials } from './researchMaterialsLibrary'
 export { ResearchAnalysisPanel } from './ResearchAnalysisPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
