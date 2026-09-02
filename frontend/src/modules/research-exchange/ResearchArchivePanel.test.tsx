@@ -64,8 +64,12 @@ describe('ResearchArchivePanel', () => {
     render(<ResearchArchivePanel taskId="task-1" />)
 
     expect(await screen.findByText('project.exported')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: '导出研究归档' }))
+    expect(screen.getByRole('heading', { name: '研究归档' })).toBeVisible()
+    const exportButton = screen.getByRole('button', { name: '导出研究归档' })
+    expect(exportButton).toHaveClass('qx-button', 'qx-button--primary')
+    fireEvent.click(exportButton)
     expect(await screen.findByText(/4 项交换损失/)).toBeVisible()
+    expect(screen.getByText(/4 项交换损失/).closest('.research-exchange__notice')).toHaveClass('qx-notice-surface')
     expect(api.exportArchive).toHaveBeenCalledWith('task-1')
 
     const file = new File(['qdpx'], 'external.qdpx', { type: 'application/vnd.qdpx' })

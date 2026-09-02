@@ -159,8 +159,8 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
   if (!plan && error) {
     return (
       <section className="research-method" aria-label="研究方法计划">
-        <p className="research-method__error" role="alert">{error}</p>
-        <button type="button" onClick={() => void load()}>重新加载</button>
+        <p className="research-method__error qx-notice-surface" role="alert">{error}</p>
+        <button className="qx-button" type="button" onClick={() => void load()}>重新加载</button>
       </section>
     )
   }
@@ -169,8 +169,8 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
     return (
       <section className="research-method" aria-label="研究方法计划">
         <header className="research-method__intro">
-          <p className="research-method__eyebrow">METHOD PLAN · 研究设计</p>
-          <h1>研究方法计划</h1>
+          <p className="research-method__eyebrow">研究设计</p>
+          <h1>方法设计</h1>
           <p>在已确认的研究框架与理论方案基础上，选择质性、定量、混合，或暂缓决定。</p>
         </header>
         <div className="research-method__create-card">
@@ -181,11 +181,11 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
             </select>
           </label>
           <p>{METHOD_DESCRIPTIONS[kind]}</p>
-          <button className="research-method__primary" type="button" disabled={busy} onClick={() => void create()}>
+          <button className="qx-button qx-button--primary" type="button" disabled={busy} onClick={() => void create()}>
             建立方法计划草案
           </button>
         </div>
-        {error ? <p className="research-method__error" role="alert">{error}</p> : null}
+        {error ? <p className="research-method__error qx-notice-surface" role="alert">{error}</p> : null}
       </section>
     )
   }
@@ -195,8 +195,8 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
     <section className="research-method" aria-label="研究方法计划">
       <header className="research-method__header">
         <div className="research-method__intro">
-          <p className="research-method__eyebrow">METHOD PLAN · 研究设计</p>
-          <h1>研究方法计划</h1>
+          <p className="research-method__eyebrow">研究设计</p>
+          <h1>方法设计</h1>
           <p>{plan.research_question}</p>
         </div>
         <div className={`research-method__status research-method__status--${plan.status}`}>
@@ -207,9 +207,9 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
       </header>
 
       {plan.status === 'stale' ? (
-        <section className="research-method__stale-banner" role="status">
+        <section className="research-method__stale-banner qx-notice-surface" role="status">
           <div><strong>这份计划所依据的框架或理论已经变化。</strong><p>{plan.stale_reason || '旧版本仍可在历史中查看，但不能继续确认或编辑。'}</p></div>
-          <button className="research-method__primary" type="button" disabled={busy} onClick={() => void create()}>根据当前依据重新建立计划</button>
+          <button className="qx-button qx-button--primary" type="button" disabled={busy} onClick={() => void create()}>根据当前依据重新建立计划</button>
         </section>
       ) : null}
 
@@ -260,8 +260,8 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
               ))}
             </fieldset>
             <div className="research-method__actions">
-              <button className="research-method__primary" type="button" disabled={isLocked} onClick={() => void save()}>保存新版本</button>
-              <button type="button" disabled={!canConfirm || busy} onClick={() => void act(() => confirmMethodPlan(plan.plan_id, { expected_version: plan.version, reason: '用户确认方法计划' }))}>确认计划</button>
+              <button className="qx-button qx-button--primary" type="button" disabled={isLocked} onClick={() => void save()}>保存新版本</button>
+              <button className="qx-button" type="button" disabled={!canConfirm || busy} onClick={() => void act(() => confirmMethodPlan(plan.plan_id, { expected_version: plan.version, reason: '用户确认方法计划' }))}>确认计划</button>
             </div>
           </section>
 
@@ -314,6 +314,7 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
               阻断确认
             </label>
             <button
+              className="qx-button"
               type="button"
               disabled={isLocked || reviewNote.trim().length === 0}
               onClick={() => void act(async () => {
@@ -333,7 +334,7 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
                 <p>{review.note}</p>
                 {review.resolved_at
                   ? <small>已处理</small>
-                  : <button type="button" disabled={busy || plan.status === 'stale'} onClick={() => void act(() => resolveMethodPlanReview(plan.plan_id, review.review_id, { expected_version: plan.version, reason: '已处理审校意见' }))}>标记已处理</button>}
+                  : <button className="qx-button" type="button" disabled={busy || plan.status === 'stale'} onClick={() => void act(() => resolveMethodPlanReview(plan.plan_id, review.review_id, { expected_version: plan.version, reason: '已处理审校意见' }))}>标记已处理</button>}
               </article>
             ))}
           </section>
@@ -344,14 +345,14 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
               {versions.map((item) => (
                 <li key={`${item.plan_id}-${item.version}`}>
                   <div><strong>v{item.version}</strong><span>{item.change_summary}</span><small>{item.actor === 'user' ? '用户决定' : '系统记录'}</small></div>
-                  {item.version !== plan.version ? <button type="button" disabled={busy || plan.status === 'stale'} onClick={() => void act(() => restoreMethodPlan(plan.plan_id, { source_version: item.version, expected_version: plan.version, reason: `恢复版本 ${item.version}` }))}>恢复</button> : null}
+                  {item.version !== plan.version ? <button className="qx-button" type="button" disabled={busy || plan.status === 'stale'} onClick={() => void act(() => restoreMethodPlan(plan.plan_id, { source_version: item.version, expected_version: plan.version, reason: `恢复版本 ${item.version}` }))}>恢复</button> : null}
                 </li>
               ))}
             </ol>
           </section>
         </aside>
       </div>
-      {error ? <p className="research-method__error" role="alert">{error}</p> : null}
+      {error ? <p className="research-method__error qx-notice-surface" role="alert">{error}</p> : null}
     </section>
   )
 }

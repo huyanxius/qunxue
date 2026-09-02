@@ -220,8 +220,8 @@ export function ResearchAnalysisPanel({ taskId, refreshKey = 0 }: ResearchAnalys
   return (
     <section className="qx-analysis" role="region" aria-label="分析">
       <header className="qx-analysis__head">
-        <span className="qx-eyebrow">当前研究</span>
-        <h2>分析</h2>
+        <span className="qx-eyebrow">质性分析工作台</span>
+        <h2>从原文证据到社会学解释</h2>
         <p className="qx-analysis__summary">
           {snapshot
             ? `${snapshot.annotations.length} 条片段标记 · ${snapshot.codes.length} 个编码 · ${snapshot.memos.length} 条备忘`

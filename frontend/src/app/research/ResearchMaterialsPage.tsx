@@ -36,6 +36,7 @@ function MaterialTypeIcon({ material }: { material: ResearchMaterial }) {
 export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: string | null }) {
   const navigate = useNavigate()
   const uploadInputRef = useRef<HTMLInputElement>(null)
+  const uploadPopoverRef = useRef<HTMLDivElement>(null)
   const [searchParams] = useSearchParams()
   const selectedTaskId = searchParams.get('task_id')
   const selectedMaterialId = searchParams.get('material_id')
@@ -92,6 +93,23 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     }
   }, [loading, research, selectedTaskId])
 
+  useEffect(() => {
+    if (!uploadOpen) return undefined
+    function closeUpload(event: KeyboardEvent | PointerEvent) {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === 'Escape') setUploadOpen(false)
+        return
+      }
+      if (!uploadPopoverRef.current?.contains(event.target as Node)) setUploadOpen(false)
+    }
+    document.addEventListener('keydown', closeUpload)
+    document.addEventListener('pointerdown', closeUpload)
+    return () => {
+      document.removeEventListener('keydown', closeUpload)
+      document.removeEventListener('pointerdown', closeUpload)
+    }
+  }, [uploadOpen])
+
   const selectedResearch = research.find((item) => item.taskId === selectedTaskId) ?? null
 
   async function addMaterial(file: File) {
@@ -133,17 +151,27 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
               <h1>研究材料</h1>
               <small>{libraryMaterials.length}</small>
             </header>
-            {uploadOpen ? (
-              <div className="research-materials-page__upload" role="region" aria-label="添加材料">
-                <select aria-label="材料所属研究" value={uploadTaskId} onChange={(event) => setUploadTaskId(event.target.value)}>
-                  {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
-                </select>
-                <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '添加中' : '选择文件'}</button>
-                <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void addMaterial(file) }} />
-                {uploadError ? <span role="alert">{uploadError}</span> : null}
-              </div>
-            ) : null}
-            <button className="work-home__start research-materials-page__add-material" type="button" onClick={() => setUploadOpen((open) => !open)}><PlusIcon size={17} weight="regular" aria-hidden="true" />添加材料</button>
+            <div className="research-materials-page__add-entry" ref={uploadPopoverRef}>
+              <button
+                className="work-home__start research-materials-page__add-material"
+                type="button"
+                aria-expanded={uploadOpen}
+                aria-controls="research-materials-upload-popover"
+                onClick={() => setUploadOpen((open) => !open)}
+              >
+                <PlusIcon size={17} weight="regular" aria-hidden="true" />添加材料
+              </button>
+              {uploadOpen ? (
+                <div id="research-materials-upload-popover" className="qx-popover-surface research-materials-page__upload" role="dialog" aria-label="添加材料">
+                  <select aria-label="材料所属研究" value={uploadTaskId} onChange={(event) => setUploadTaskId(event.target.value)}>
+                    {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
+                  </select>
+                  <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '添加中' : '选择文件'}</button>
+                  <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void addMaterial(file) }} />
+                  {uploadError ? <span role="alert">{uploadError}</span> : null}
+                </div>
+              ) : null}
+            </div>
             {libraryLoading ? <p className="research-materials-page__status" role="status">正在整理材料库</p> : null}
             {!libraryLoading && libraryMaterials.length ? (
               <div className="research-materials-page__material-grid">

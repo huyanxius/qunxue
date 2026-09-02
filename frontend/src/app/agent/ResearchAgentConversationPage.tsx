@@ -1251,14 +1251,14 @@ function AssistantTurn({
         {answer ? <div className="new-research__markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer)}</ReactMarkdown></div> : null}
         {!streaming && !answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />{text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')}</p> : null}
         {interrupted ? (
-          <p className="new-research__turn-note is-interrupted">
+          <p className="qx-notice-surface new-research__turn-note is-interrupted">
             <WarningCircleIcon size={14} />
             {answer.trim() || embedded
               ? text(`本轮已停止，已保留生成内容和 ${completedStepCount} 个已完成步骤。`, `This turn was stopped. Its generated content and ${completedStepCount} completed steps were retained.`)
               : text('本轮已停止，未保存未完成的回答。', 'This turn was stopped before an unfinished answer was saved.')}
           </p>
         ) : null}
-        {failure ? <p className="new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
+        {failure ? <p className="qx-notice-surface new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
         {(failure || interrupted) && onRegenerate ? (
           <div className="new-research__assistant-actions">
             <button type="button" aria-label={text('重试本轮', 'Retry this turn')} onClick={onRegenerate}><ArrowClockwiseIcon size={14} />{text('从本轮问题重试', 'Retry this question')}</button>
@@ -2076,7 +2076,7 @@ export function ResearchAgentConversationPage({
 
           <footer className="research-agent-page__composer-dock new-research__composer-dock">
             {error ? (
-              <div className="new-research__error" role="alert">
+              <div className="qx-notice-surface new-research__error" role="alert">
                 <WarningCircleIcon size={16} /><span>{error}</span>
                 <button type="button" aria-label={text('关闭错误提示', 'Close error message')} onClick={() => setError(null)}><XIcon size={14} /></button>
               </div>

@@ -163,6 +163,11 @@ export function ResearchAnalysisWorkspace({
         </div>
       </header>
 
+      <div className="research-analysis__actions" aria-label="分析动作">
+        <button className="qx-button qx-button--primary" type="button" onClick={() => { resetComposer(); setComposer('code') }}>建立编码</button>
+        <button className="qx-button" type="button" onClick={() => { resetComposer(); setComposer('memo') }}>写分析备忘</button>
+      </div>
+
       <div className="research-analysis__annotations" aria-label="原文标记">
         {visibleAnnotations.map((annotation) => (
           <article key={annotation.annotation_id}>
@@ -180,7 +185,7 @@ export function ResearchAnalysisWorkspace({
             })].filter(Boolean).join(' · ')}</small>
           </article>
         ))}
-        {!visibleAnnotations.length ? <p className="research-analysis__empty">在原文中选中片段，建立第一处可追溯标记。</p> : null}
+        {!visibleAnnotations.length ? <p className="research-analysis__empty">先在材料原文中拖选关键片段。原文证据会在这里逐步形成编码、分析备忘、主题与案例比较。</p> : null}
       </div>
 
       {candidateCodes.length || candidateMemos.length ? (
@@ -257,11 +262,6 @@ export function ResearchAnalysisWorkspace({
           />
         ) : null}
 
-      <div className="research-analysis__actions">
-        <button type="button" onClick={() => { resetComposer(); setComposer('code') }}>建立编码</button>
-        <button type="button" onClick={() => { resetComposer(); setComposer('memo') }}>写分析备忘</button>
-      </div>
-
       {composer ? (
         <form className="research-analysis__composer" aria-label={composer === 'code' ? '建立编码' : '写分析备忘'} onSubmit={(event) => {
           event.preventDefault()
@@ -293,8 +293,8 @@ export function ResearchAnalysisWorkspace({
           )}
           {error ? <p role="alert">{error}</p> : null}
           <footer>
-            <button type="button" onClick={resetComposer}>取消</button>
-            <button type="submit" disabled={pending || (composer === 'code' ? !selectedAnnotationIds.length || !codeLabel.trim() || !codeDefinition.trim() || !codeRationale.trim() : !memoTitle.trim() || !memoContent.trim())}>{pending ? '正在保存' : composer === 'code' ? '保存编码' : '保存备忘'}</button>
+            <button className="qx-button" type="button" onClick={resetComposer}>取消</button>
+            <button className="qx-button qx-button--primary" type="submit" disabled={pending || (composer === 'code' ? !selectedAnnotationIds.length || !codeLabel.trim() || !codeDefinition.trim() || !codeRationale.trim() : !memoTitle.trim() || !memoContent.trim())}>{pending ? '正在保存' : composer === 'code' ? '保存编码' : '保存备忘'}</button>
           </footer>
         </form>
       ) : null}
