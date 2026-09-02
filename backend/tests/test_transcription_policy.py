@@ -77,6 +77,10 @@ class _Archive:
     def get_profile(self, *_args: object, **_kwargs: object) -> MaterialArchiveProfile:
         return self.profile
 
+    def save_profile(self, profile: MaterialArchiveProfile) -> MaterialArchiveProfile:
+        self.profile = profile
+        return profile
+
 
 class _ExternalProvider:
     available = True
@@ -95,7 +99,7 @@ class _FailingExternalProvider(_ExternalProvider):
         raise TranscriptionError("provider failed")
 
 
-def test_external_provider_is_denied_before_media_bytes_are_read() -> None:
+def test_explicit_external_transcription_authorizes_a_new_unassessed_material() -> None:
     material = ResearchMaterial.create(
         user_id=UUID(int=1),
         task_id=UUID(int=2),
@@ -116,6 +120,50 @@ def test_external_provider_is_denied_before_media_bytes_are_read() -> None:
         model_processing_scope=ModelProcessingScope.NOT_ASSESSED,
         now=NOW,
     )
+    archive = _Archive(profile)
+    application = TranscriptionApplication(
+        materials=materials,  # type: ignore[arg-type]
+        archive=archive,  # type: ignore[arg-type]
+        research_tasks=_Tasks(),  # type: ignore[arg-type]
+        provider=_ExternalProvider(),
+        importer=lambda **_kwargs: None,  # type: ignore[arg-type]
+        clock=lambda: NOW,
+    )
+
+    version = application.transcribe(
+        user_id=material.user_id,
+        task_id=material.task_id,
+        material_id=material.material_id,
+        idempotency_key="run",
+    )
+
+    assert version.segments[0].text == "不会被调用"
+    assert materials.read_count == 1
+    assert archive.profile.model_processing_scope is ModelProcessingScope.EXTERNAL_ALLOWED
+    assert archive.profile.deidentification_status is DeidentificationStatus.COMPLETE
+
+
+def test_explicit_external_transcription_keeps_manual_only_material_denied() -> None:
+    material = ResearchMaterial.create(
+        user_id=UUID(int=3),
+        task_id=UUID(int=4),
+        idempotency_key="restricted-media",
+        original_filename="访谈.wav",
+        media_type="audio/wav",
+        content=b"media",
+        material_kind=MaterialKind.INTERVIEW_TRANSCRIPT,
+        now=NOW,
+    )
+    materials = _Materials(material)
+    profile = MaterialArchiveProfile.create(
+        material_id=material.material_id,
+        user_id=material.user_id,
+        task_id=material.task_id,
+        consent_scope=ConsentScope.PROJECT_ONLY,
+        deidentification_status=DeidentificationStatus.COMPLETE,
+        model_processing_scope=ModelProcessingScope.MANUAL_ONLY,
+        now=NOW,
+    )
     application = TranscriptionApplication(
         materials=materials,  # type: ignore[arg-type]
         archive=_Archive(profile),  # type: ignore[arg-type]
@@ -129,7 +177,7 @@ def test_external_provider_is_denied_before_media_bytes_are_read() -> None:
             user_id=material.user_id,
             task_id=material.task_id,
             material_id=material.material_id,
-            idempotency_key="run",
+            idempotency_key="restricted-run",
         )
 
     assert materials.read_count == 0

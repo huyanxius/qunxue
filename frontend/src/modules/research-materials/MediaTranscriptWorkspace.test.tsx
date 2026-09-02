@@ -6,13 +6,14 @@ import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
 const getTranscriptionWorkspace = vi.fn()
 const importTranscript = vi.fn()
 const createCorrectedTranscriptVersion = vi.fn()
+const startAutomaticTranscription = vi.fn()
 
 vi.mock('./transcriptionApi', () => ({
   mediaContentUrl: (taskId: string, materialId: string) => `/api/research-tasks/${taskId}/materials/${materialId}/content`,
   getTranscriptionWorkspace: (...args: unknown[]) => getTranscriptionWorkspace(...args),
   importTranscript: (...args: unknown[]) => importTranscript(...args),
   createCorrectedTranscriptVersion: (...args: unknown[]) => createCorrectedTranscriptVersion(...args),
-  startAutomaticTranscription: vi.fn(),
+  startAutomaticTranscription: (...args: unknown[]) => startAutomaticTranscription(...args),
 }))
 
 const version = {
@@ -60,6 +61,28 @@ describe('MediaTranscriptWorkspace', () => {
 
     expect(await screen.findByText('自动转写服务未配置')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '导入转录稿' })).toBeEnabled()
+  })
+
+  it('shows automatic transcription progress and completion', async () => {
+    let finishTranscription!: (value: typeof version) => void
+    startAutomaticTranscription.mockImplementation(() => new Promise((resolve) => {
+      finishTranscription = resolve
+    }))
+    getTranscriptionWorkspace.mockResolvedValueOnce({
+      materialId: 'material-1', status: 'not_started', automaticAvailable: true,
+      automaticProvider: 'dashscope:filetrans', errorCode: null, currentVersion: null, versions: [],
+    })
+    render(<MediaTranscriptWorkspace taskId="task-1" materialId="material-1" mediaType="audio/wav" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: '启动自动转写' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('正在转写音频')
+    getTranscriptionWorkspace.mockResolvedValue({
+      materialId: 'material-1', status: 'ready', automaticAvailable: true,
+      automaticProvider: 'dashscope:filetrans', errorCode: null, currentVersion: version, versions: [version],
+    })
+    finishTranscription(version)
+    expect(await screen.findByText('转写完成')).toBeVisible()
   })
 
   it('opens a material citation at its immutable transcript segment', async () => {

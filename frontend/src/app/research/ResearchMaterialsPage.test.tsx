@@ -39,6 +39,42 @@ const secondResearch = {
 }
 
 describe('ResearchMaterialsPage', () => {
+  it('confirms when a material upload has finished', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init)
+      const path = new URL(request.url, 'http://localhost').pathname
+      if (path === '/api/research-tasks') return json({ items: [research], next_cursor: null })
+      if (path === '/api/research-tasks/task-1/materials' && request.method === 'GET') {
+        return json({ task_id: 'task-1', items: [] })
+      }
+      if (path === '/api/research-tasks/task-1/materials' && request.method === 'POST') {
+        return json({
+          material_id: 'material-audio', task_id: 'task-1', filename: '访谈.m4a',
+          media_type: 'audio/mp4', size_bytes: 1024, status: 'uploaded', version: 1,
+          parse_version: null, segment_count: 0, updated_at: '2026-09-02T10:00:00Z',
+          error_code: null, material_kind: 'other',
+        }, 201)
+      }
+      return json({}, 404)
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/research/materials']}>
+        <ResearchMaterialsPage userId="user-1" />
+      </MemoryRouter>,
+    )
+
+    const library = await screen.findByRole('region', { name: '全部研究材料' })
+    fireEvent.click(within(library).getByRole('button', { name: '添加材料' }))
+    const input = within(library).getByRole('dialog', { name: '添加材料' })
+      .querySelector<HTMLInputElement>('input[type="file"]')
+    expect(input).not.toBeNull()
+    fireEvent.change(input!, { target: { files: [new File(['audio'], '访谈.m4a', { type: 'audio/mp4' })] } })
+
+    expect(await within(library).findByText('材料已添加')).toBeVisible()
+    expect(within(library).getByRole('link', { name: /访谈\.m4a/ })).toBeVisible()
+  })
+
   it('shows materials from every research as cards without a research-selection gate', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
