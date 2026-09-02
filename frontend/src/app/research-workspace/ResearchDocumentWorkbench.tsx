@@ -836,7 +836,7 @@ export function ResearchDocumentWorkbench({
   const runtimeBoundary = loadState === 'error'
   const statusText = saveState === 'saving' ? '正在保存…' : saveState === 'unsaved' ? '有未保存更改' : null
   const documentNodeContent = (
-    <section className="research-document-node" aria-label="研究文档节点">
+    <section className="qx-surface research-document-node" aria-label="研究文档节点">
       <div className="research-document-node__topbar">
         <span className="research-document-node__chapter-status">
           {activeSection?.status === 'confirmed' || activeSection?.status === 'reviewed' ? <><CheckCircleIcon /> 已审阅</> : null}
@@ -844,17 +844,17 @@ export function ResearchDocumentWorkbench({
         <div className="research-document-node__actions">
           {statusText ? <span className={`document-save-status document-save-status--${saveState}`} role="status">{statusText}</span> : null}
           <details className="document-export-menu">
-            <summary aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</summary>
+            <summary className="qx-tool-control" aria-label="导出研究文档"><DownloadSimpleIcon /> 导出</summary>
             <div>
-              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('markdown')}>下载 Markdown</button>
-              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('docx')}>下载 DOCX</button>
-              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('pdf')}>打印或另存 PDF</button>
-              <button type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('audit')}>下载审计 JSON</button>
+              <button className="qx-tool-control" type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('markdown')}>下载 Markdown</button>
+              <button className="qx-tool-control" type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('docx')}>下载 DOCX</button>
+              <button className="qx-tool-control" type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('pdf')}>打印或另存 PDF</button>
+              <button className="qx-tool-control" type="button" disabled={!document || exportState === 'working'} onClick={() => void exportFormalDocument('audit')}>下载审计 JSON</button>
             </div>
           </details>
-          <button type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
+          <button className="qx-tool-control" type="button" onClick={() => void confirmDocument()} disabled={!document || document.status === 'confirmed'}>{document?.status === 'confirmed' ? '已确认' : '确认版本'}</button>
           {mode === 'framework' && document?.status === 'confirmed' && taskId ? <a href={embedded ? `/research/${taskId}/workspace/method` : `/research/${taskId}/method`}>制定研究方法</a> : null}
-          <button type="button" className="research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
+          <button type="button" className="qx-tool-control research-document-node__collapse" onClick={(event) => { event.stopPropagation(); setSelectedMapNodeId(null) }}>收起</button>
         </div>
       </div>
 
@@ -896,10 +896,10 @@ export function ResearchDocumentWorkbench({
                   </div>
                 })}
                 <div>
-                  <button type="button" disabled={proposal.kind !== 'create' && proposal.base_document_version !== document?.version} onClick={() => void acceptProposal(proposal)}>接受局部修改</button>
-                  <button type="button" onClick={() => void rejectProposal(proposal)}>拒绝建议</button>
+                  <button className="qx-tool-control" type="button" disabled={proposal.kind !== 'create' && proposal.base_document_version !== document?.version} onClick={() => void acceptProposal(proposal)}>接受局部修改</button>
+                  <button className="qx-tool-control" type="button" onClick={() => void rejectProposal(proposal)}>拒绝建议</button>
                   {proposal.kind !== 'create' && proposal.base_document_version !== document?.version
-                    ? <button type="button" onClick={() => setRebasedProposalIds((current) => new Set(current).add(proposal.proposal_id))}>按当前版本重新比较</button>
+                    ? <button className="qx-tool-control" type="button" onClick={() => setRebasedProposalIds((current) => new Set(current).add(proposal.proposal_id))}>按当前版本重新比较</button>
                     : null}
                 </div>
               </article>
@@ -917,7 +917,7 @@ export function ResearchDocumentWorkbench({
                 <div>
                   <strong>{navigation.blocker?.message ?? '现象已确认，可以开始理论匹配。'}</strong>
                   {matchingActionError ? <p role="alert">{matchingActionError}</p> : null}
-                  <button type="button" disabled={matchingActionState === 'loading'} onClick={() => void startMatching()}>
+                  <button className="qx-tool-control" type="button" disabled={matchingActionState === 'loading'} onClick={() => void startMatching()}>
                     {matchingActionState === 'loading' ? <><CircleNotchIcon className="spin" /> 正在匹配…</> : navigation.retry?.label ?? (matchRun?.status === 'no_reliable_candidate' ? '重新匹配' : '开始理论匹配')}
                   </button>
                 </div>
@@ -942,12 +942,12 @@ export function ResearchDocumentWorkbench({
             </section> : null}
             {document ? <>
               <section className="document-formatting" aria-label="论文与引用格式">
-                <label>论文模板<select aria-label="论文模板" value={formattingDraft.template_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, template_id: event.target.value }))}><option value="chinese-social-science">中文社会科学</option><option value="asa">ASA</option><option value="custom">自定义 CSS</option></select></label>
-                <label>引用样式<select aria-label="引用样式" value={formattingDraft.csl_style_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, csl_style_id: event.target.value }))}><option value="china-national-standard-gb-t-7714-2015-author-date">GB/T 7714</option><option value="american-sociological-association">ASA</option><option value="chicago-author-date">Chicago</option>{formattingDraft.csl_style_id.startsWith('custom-') ? <option value={formattingDraft.csl_style_id}>自定义 CSL</option> : null}</select></label>
-                <label>引用语言<select aria-label="引用语言" value={formattingDraft.locale} onChange={(event) => setFormattingDraft((current) => ({ ...current, locale: event.target.value }))}><option value="zh-CN">简体中文</option><option value="en-US">English (US)</option></select></label>
-                <label className="document-formatting__file">导入 .csl<input aria-label="导入 CSL 样式" type="file" accept=".csl,application/xml,text/xml" onChange={(event) => void importCsl(event.target.files?.[0])} /></label>
-                <label className="document-formatting__file">导入模板 CSS<input aria-label="导入模板 CSS" type="file" accept=".css,text/css" onChange={(event) => void importPrintCss(event.target.files?.[0])} /></label>
-                <button type="button" onClick={() => void applyFormatting()}>应用格式并形成新版本</button>
+                <label>论文模板<select className="qx-field-control" aria-label="论文模板" value={formattingDraft.template_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, template_id: event.target.value }))}><option value="chinese-social-science">中文社会科学</option><option value="asa">ASA</option><option value="custom">自定义 CSS</option></select></label>
+                <label>引用样式<select className="qx-field-control" aria-label="引用样式" value={formattingDraft.csl_style_id} onChange={(event) => setFormattingDraft((current) => ({ ...current, csl_style_id: event.target.value }))}><option value="china-national-standard-gb-t-7714-2015-author-date">GB/T 7714</option><option value="american-sociological-association">ASA</option><option value="chicago-author-date">Chicago</option>{formattingDraft.csl_style_id.startsWith('custom-') ? <option value={formattingDraft.csl_style_id}>自定义 CSL</option> : null}</select></label>
+                <label>引用语言<select className="qx-field-control" aria-label="引用语言" value={formattingDraft.locale} onChange={(event) => setFormattingDraft((current) => ({ ...current, locale: event.target.value }))}><option value="zh-CN">简体中文</option><option value="en-US">English (US)</option></select></label>
+                <label className="qx-field-control document-formatting__file">导入 .csl<input aria-label="导入 CSL 样式" type="file" accept=".csl,application/xml,text/xml" onChange={(event) => void importCsl(event.target.files?.[0])} /></label>
+                <label className="qx-field-control document-formatting__file">导入模板 CSS<input aria-label="导入模板 CSS" type="file" accept=".css,text/css" onChange={(event) => void importPrintCss(event.target.files?.[0])} /></label>
+                <button className="qx-tool-control" type="button" onClick={() => void applyFormatting()}>应用格式并形成新版本</button>
               </section>
               <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" />
               {activeSection?.citation_refs?.length ? <aside className="document-citations" aria-label="结构化引用">
