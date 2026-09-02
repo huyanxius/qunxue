@@ -304,7 +304,7 @@ export function ProfessionalMaterialArchivePanel({
       </section>
 
       {currentRestricted || currentPending ? (
-        <p className="professional-archive__guardrail" role="status">
+        <p className="qx-notice-surface professional-archive__guardrail" role="status">
           <ShieldCheckIcon size={17} />
           <span><strong>当前材料仍可人工阅读。</strong>{currentPending ? ' 完成去标识化，' : ''}{currentRestricted ? '明确模型处理范围后，才会进入 Agent 检索。' : ''}</span>
         </p>

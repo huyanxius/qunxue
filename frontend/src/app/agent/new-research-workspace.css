@@ -184,8 +184,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.new-research__turn-note { display: flex; align-items: flex-start; gap: 7px; margin: 10px 0 0; padding: 9px 10px; border: 1px solid var(--qx-color-notice-line); border-radius: var(--qx-radius-compact); color: var(--qx-color-notice); background: var(--qx-color-notice-soft); font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); }
-.new-research__turn-note.is-failed { border-color: var(--qx-color-danger-line); color: var(--qx-color-danger); background: var(--qx-color-danger-soft); }
+.new-research__turn-note { display: flex; align-items: flex-start; gap: 7px; margin: 10px 0 0; padding: 9px 10px; border: 0; border-radius: var(--radius-field); color: var(--qx-color-notice); background: var(--qx-color-notice-soft); font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); }
+.new-research__turn-note.is-failed { color: var(--qx-color-danger); background: var(--qx-color-danger-soft); }
 .new-research__provenance-note { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid #b9a36f; color: #756545; background: #fbf8ef; font-size: 10px; line-height: 1.55; }
 
 .new-research__trace { margin: 0 0 16px; padding: 10px 0 11px; border-top: 1px solid var(--research-rule); border-bottom: 1px solid var(--research-rule); }
@@ -287,7 +287,7 @@
 .new-research__composer-footer > button:active:not(:disabled) { transform: translateY(0) scale(.97); }
 .new-research__composer-footer > button:disabled { cursor: not-allowed; opacity: .3; }
 .new-research__composer-footer > button.is-stop { background: var(--research-accent); }
-.new-research__error { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; gap: 7px; align-items: start; margin: 0 0 7px; padding: 8px 9px; border-left: 2px solid var(--research-accent); color: #824a3d; background: #fff7f3; font-size: 9px; line-height: 1.55; }
+.new-research__error { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; gap: 7px; align-items: start; margin: 0 0 7px; padding: 8px 9px; color: var(--qx-color-danger); background: var(--qx-color-danger-soft); font-size: 9px; line-height: 1.55; }
 .new-research__error > button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; color: inherit; background: transparent; cursor: pointer; }
 
 .new-research__history { position: absolute; z-index: 10; inset: 0; display: grid; grid-template-rows: 58px auto minmax(0, 1fr); background: rgb(255 255 255 / 97%); animation: new-research-history-in 180ms cubic-bezier(.16,1,.3,1) both; }

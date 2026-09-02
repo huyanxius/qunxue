@@ -44,6 +44,7 @@ type MaterialReaderViewProps = {
   readonly matchCount: number
   readonly page: number
   readonly pageCount: number
+  readonly workspaceChrome?: boolean
   readonly registerSegment: (segmentId: string, element: HTMLElement | null) => void
   readonly onBack: () => void
   readonly onToggleOutline: () => void
@@ -76,6 +77,7 @@ export function MaterialReaderView({
   matchCount,
   page,
   pageCount,
+  workspaceChrome = false,
   registerSegment,
   onBack,
   onToggleOutline,
@@ -129,16 +131,18 @@ export function MaterialReaderView({
   }
 
   return (
-    <section className={`qx-reader${narrow ? ' is-narrow' : ''}`} aria-label="材料阅读台" ref={frameRef}>
-      <header className="qx-reader__bar">
-        <button type="button" className="qx-reader__back" onClick={onBack}>
-          <ArrowLeftIcon size={16} aria-hidden="true" />
-          材料库
-        </button>
-        <div className="qx-reader__identity">
-          <h2>{material.filename}</h2>
-          <p>{identity}</p>
-        </div>
+    <section className={`qx-reader${narrow ? ' is-narrow' : ''}${workspaceChrome ? ' is-workspace-chrome' : ''}`} aria-label="材料阅读台" ref={frameRef}>
+      <header className={`qx-reader__bar${workspaceChrome ? ' is-workspace-chrome' : ''}`}>
+        {!workspaceChrome ? <>
+          <button type="button" className="qx-reader__back" onClick={onBack}>
+            <ArrowLeftIcon size={16} aria-hidden="true" />
+            材料库
+          </button>
+          <div className="qx-reader__identity">
+            <h2>{material.filename}</h2>
+            <p>{identity}</p>
+          </div>
+        </> : null}
         <div className="qx-reader__tools">
           <button
             type="button"

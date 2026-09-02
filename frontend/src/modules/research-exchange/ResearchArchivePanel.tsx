@@ -106,11 +106,10 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
     <section className="research-exchange" role="region" aria-label="项目归档与交换">
       <header className="research-exchange__header">
         <div>
-          <span>PROJECT ARCHIVE</span>
-          <h2>项目归档与交换</h2>
-          <p>归档保留群学原生版本与审计事实；QDPX 只承载 REFI-QDA 1.0 能表达的部分。</p>
+          <h2>研究归档</h2>
+          <p>保存研究证据链、跨工具交换与审计记录。</p>
         </div>
-        <ShieldCheckIcon size={28} aria-hidden="true" />
+        <ShieldCheckIcon size={24} aria-hidden="true" />
       </header>
 
       <div className="research-exchange__actions">
@@ -120,7 +119,7 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
             <h3>完整研究归档</h3>
             <p>BagIt 校验包、QDPX、原生恢复 JSON、损失报告、审计与文稿成果。</p>
           </div>
-          <button type="button" disabled={exporting} onClick={() => void handleExport()}>
+          <button className="qx-button qx-button--primary" type="button" disabled={exporting} onClick={() => void handleExport()}>
             <DownloadSimpleIcon size={16} aria-hidden="true" />
             {exporting ? '正在归档…' : '导出研究归档'}
           </button>
@@ -132,7 +131,7 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
             <h3>QDPX 导入预览</h3>
             <p>按官方 XSD 校验并清点项目内容，不自动合并、重绑或写入当前研究。</p>
           </div>
-          <label className={previewing ? 'is-disabled' : undefined}>
+          <label className={`qx-button${previewing ? ' is-disabled' : ''}`}>
             <span>{previewing ? '正在校验…' : '选择 QDPX 文件'}</span>
             <input
               type="file"
@@ -146,14 +145,14 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
       </div>
 
       {error && (
-        <div className="research-exchange__notice is-error" role="alert">
+        <div className="research-exchange__notice qx-notice-surface is-error" role="alert">
           <WarningCircleIcon size={17} aria-hidden="true" />
           {error}
         </div>
       )}
 
       {exported && (
-        <div className="research-exchange__notice">
+        <div className="research-exchange__notice qx-notice-surface">
           <CheckCircleIcon size={17} aria-hidden="true" />
           <span>
             归档已生成：{exported.lossCount} 项交换损失，其中 {exported.blockingLossCount} 项阻断；
@@ -181,7 +180,6 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
 
       <section className="research-exchange__audit" aria-labelledby="research-exchange-audit-title">
         <div>
-          <span>AUDIT TRAIL</span>
           <h3 id="research-exchange-audit-title">交换审计</h3>
         </div>
         {auditLoading ? <p>正在读取审计记录…</p> : events.length === 0 ? (

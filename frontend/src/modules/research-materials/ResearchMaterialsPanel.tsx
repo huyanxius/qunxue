@@ -497,16 +497,19 @@ export function ResearchMaterialsPanel({
         : null
     : null
 
+  const workspacePresentation = presentation === 'workspace'
   const body = selectedMaterial ? (
     <div className="qx-materials__workbench">
       {mediaSelected ? (
         <section className="qx-reader qx-reader--media" aria-label="材料阅读台">
-          <header className="qx-reader__bar">
-            <button type="button" className="qx-reader__back" onClick={returnToLibrary}>材料库</button>
-            <div className="qx-reader__identity">
-              <h2>{selectedMaterial.filename}</h2>
-              <p>媒体转录</p>
-            </div>
+          <header className={`qx-reader__bar${workspacePresentation ? ' is-workspace-chrome' : ''}`}>
+            {!workspacePresentation ? <>
+              <button type="button" className="qx-reader__back" onClick={returnToLibrary}>材料库</button>
+              <div className="qx-reader__identity">
+                <h2>{selectedMaterial.filename}</h2>
+                <p>媒体转录</p>
+              </div>
+            </> : null}
             <div className="qx-reader__tools">
               <button type="button" className="qx-icon-button" aria-label="材料档案" title="材料档案" onClick={() => setArchiveOpen(true)}>档案</button>
             </div>
@@ -535,6 +538,7 @@ export function ResearchMaterialsPanel({
           matchCount={readerSegments.length}
           page={activeReaderPage}
           pageCount={readerPageCount}
+          workspaceChrome={workspacePresentation}
           registerSegment={(segmentId, element) => {
             if (element) segmentRefs.current.set(segmentId, element)
             else segmentRefs.current.delete(segmentId)
@@ -587,8 +591,6 @@ export function ResearchMaterialsPanel({
       onDelete={(material) => { void remove(material) }}
     />
   )
-
-  const workspacePresentation = presentation === 'workspace'
 
   return (
     <div className={`qx-materials__shell${workspacePresentation ? ' is-workspace' : ''}`} role={workspacePresentation ? undefined : 'presentation'}>

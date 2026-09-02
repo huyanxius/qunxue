@@ -107,3 +107,10 @@
   background: color-mix(in srgb, var(--qx-color-surface-raised) 96%, transparent);
   box-shadow: var(--qx-shadow-menu);
 }
+
+/* 状态强调只改变圆角背景和语义色，不再用左竖线制造另一套层级。 */
+.qx-notice-surface {
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--qx-color-notice-soft);
+}
