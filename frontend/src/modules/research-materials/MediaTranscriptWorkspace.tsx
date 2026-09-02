@@ -31,6 +31,46 @@ function copySegments(segments: TranscriptSegment[]): TranscriptSegment[] {
   return segments.map((segment) => ({ ...segment }))
 }
 
+const SAFE_FILLER_PATTERN = '(?:嗯+|呃+|额+|唔+)'
+const COMMA_PATTERN = '[，,、…]+'
+
+export function cleanTranscriptFillers(segments: TranscriptSegment[]): { segments: TranscriptSegment[]; removedCount: number } {
+  const fillerOnly = new RegExp(`^(?:\\s|[，,、。.!！?？；;：:\u2026]|${SAFE_FILLER_PATTERN})+$`)
+  const atStart = new RegExp(`^\\s*${SAFE_FILLER_PATTERN}\\s*${COMMA_PATTERN}\\s*`, 'g')
+  const afterPunctuation = new RegExp(`([，,、。.!！?？；;：:\u2026])\\s*${SAFE_FILLER_PATTERN}\\s*${COMMA_PATTERN}\\s*`, 'g')
+  let removedCount = 0
+
+  const cleaned = segments.flatMap((segment) => {
+    if (segment.text.trim() && fillerOnly.test(segment.text.trim())) {
+      removedCount += 1
+      return []
+    }
+
+    let nextText = segment.text.replace(atStart, () => {
+      removedCount += 1
+      return ''
+    })
+    nextText = nextText.replace(afterPunctuation, (_, punctuation: string) => {
+      removedCount += 1
+      return punctuation
+    })
+    return [{ ...segment, text: nextText }]
+  })
+
+  return {
+    segments: cleaned.map((segment, ordinal) => ({ ...segment, ordinal })),
+    removedCount,
+  }
+}
+
+export function displaySpeakerLabel(speaker: string | null): string {
+  if (!speaker) return '未标记说话人'
+  const match = /^SPEAKER_(\d+)$/.exec(speaker)
+  if (!match) return speaker
+  const index = Number(match[1])
+  return index >= 0 && index < 26 ? `说话人 ${String.fromCharCode(65 + index)}` : speaker
+}
+
 function formatElapsed(seconds: number): string {
   const minutes = Math.floor(seconds / 60)
   return `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
@@ -147,6 +187,27 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
       await load(undefined, true)
     } catch (cause: unknown) {
       setError(errorMessage(cause, '转录校订保存失败。'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function removeFillers() {
+    if (!selectedVersion?.isCurrent) return
+    const cleaned = cleanTranscriptFillers(selectedVersion.segments)
+    setError(null)
+    if (cleaned.removedCount === 0) {
+      setNotice('未发现可安全删除的语气词')
+      return
+    }
+
+    setBusy(true)
+    try {
+      await createCorrectedTranscriptVersion(taskId, materialId, selectedVersion.versionId, cleaned.segments)
+      await load(undefined, true)
+      setNotice(`已删除 ${cleaned.removedCount} 处语气词，已保存为新版本`)
+    } catch (cause: unknown) {
+      setError(errorMessage(cause, '语气词清理保存失败。'))
     } finally {
       setBusy(false)
     }
@@ -280,7 +341,12 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
               </select>
             </label>
             <small>{selectedVersion.source === 'automatic' ? '机器底稿' : transcriptSourceLabel(selectedVersion.source)}</small>
-            {canCorrect ? <button type="button" onClick={beginCorrection}>校订当前版本</button> : null}
+            {canCorrect ? (
+              <div className="media-transcript__version-actions">
+                <button type="button" onClick={() => { void removeFillers() }} disabled={busy}>自动删除语气词</button>
+                <button type="button" onClick={beginCorrection} disabled={busy}>校订当前版本</button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -328,11 +394,11 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
                 else cueRefs.current.delete(segment.segmentId)
               }}
               disabled={segment.startMs === null}
-              aria-label={`${formatTranscriptTime(segment.startMs)} ${segment.speaker ?? '未标记说话人'} ${segment.text}`}
+              aria-label={`${formatTranscriptTime(segment.startMs)} ${displaySpeakerLabel(segment.speaker)} ${segment.text}`}
             >
               <time>{formatTranscriptTime(segment.startMs)}</time>
               <span>
-                <strong>{segment.speaker ?? '未标记说话人'}</strong>
+                <strong>{displaySpeakerLabel(segment.speaker)}</strong>
                 <span>{segment.text}</span>
               </span>
             </button>

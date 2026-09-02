@@ -2,7 +2,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
+import {
+  cleanTranscriptFillers,
+  displaySpeakerLabel,
+  MediaTranscriptWorkspace,
+} from './MediaTranscriptWorkspace'
 
 const getTranscriptionWorkspace = vi.fn()
 const importTranscript = vi.fn()
@@ -46,6 +50,32 @@ describe('MediaTranscriptWorkspace', () => {
       currentVersion: version,
       versions: [version],
     })
+  })
+
+  it('removes only high-confidence fillers and keeps ambiguous spoken language', () => {
+    const result = cleanTranscriptFillers([
+      { ...version.segments[0], ordinal: 0, text: '嗯，那好。' },
+      { ...version.segments[0], ordinal: 1, segmentId: 'segment-2', text: '我想，呃，还是先看看。' },
+      { ...version.segments[0], ordinal: 2, segmentId: 'segment-3', text: '嗯。' },
+      { ...version.segments[0], ordinal: 3, segmentId: 'segment-4', text: '啊，这也太难了吧。' },
+      { ...version.segments[0], ordinal: 4, segmentId: 'segment-5', text: '那个学校就在这里。' },
+    ])
+
+    expect(result.removedCount).toBe(3)
+    expect(result.segments.map((segment) => segment.text)).toEqual([
+      '那好。',
+      '我想，还是先看看。',
+      '啊，这也太难了吧。',
+      '那个学校就在这里。',
+    ])
+    expect(result.segments.map((segment) => segment.ordinal)).toEqual([0, 1, 2, 3])
+  })
+
+  it('maps standard provider speaker numbers to distinct letter labels', () => {
+    expect(displaySpeakerLabel('SPEAKER_00')).toBe('说话人 A')
+    expect(displaySpeakerLabel('SPEAKER_03')).toBe('说话人 D')
+    expect(displaySpeakerLabel('主持人')).toBe('主持人')
+    expect(displaySpeakerLabel(null)).toBe('未标记说话人')
   })
 
   it('seeks the original media when a timed transcript segment is selected', async () => {
@@ -166,5 +196,43 @@ describe('MediaTranscriptWorkspace', () => {
       expect.arrayContaining([expect.objectContaining({ speaker: '访谈员', text: '请先简单介绍一下自己。' })]),
     ))
     await waitFor(() => expect(screen.getByRole('combobox', { name: '转录版本' })).toHaveValue('version-2'))
+  })
+
+  it('creates a new version when the user removes fillers', async () => {
+    const automatic = {
+      ...version,
+      source: 'automatic' as const,
+      segments: [
+        { ...version.segments[0], speaker: 'SPEAKER_00', text: '嗯，请先介绍一下自己。' },
+        { ...version.segments[1], speaker: 'SPEAKER_01', text: '我在这里住了十年。' },
+      ],
+    }
+    const cleaned = { ...automatic, versionId: 'version-2', version: 2, source: 'manual_correction' as const }
+    createCorrectedTranscriptVersion.mockResolvedValue(cleaned)
+    getTranscriptionWorkspace
+      .mockResolvedValueOnce({
+        materialId: 'material-1', status: 'ready', automaticAvailable: true,
+        automaticProvider: 'dashscope:filetrans', errorCode: null,
+        currentVersion: automatic, versions: [automatic],
+      })
+      .mockResolvedValueOnce({
+        materialId: 'material-1', status: 'ready', automaticAvailable: true,
+        automaticProvider: 'dashscope:filetrans', errorCode: null,
+        currentVersion: cleaned, versions: [cleaned, { ...automatic, isCurrent: false }],
+      })
+
+    render(<MediaTranscriptWorkspace taskId="task-1" materialId="material-1" mediaType="audio/wav" />)
+
+    expect(await screen.findByText('说话人 A')).toBeVisible()
+    expect(screen.getByText('说话人 B')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '自动删除语气词' }))
+
+    await waitFor(() => expect(createCorrectedTranscriptVersion).toHaveBeenCalledWith(
+      'task-1',
+      'material-1',
+      'version-1',
+      expect.arrayContaining([expect.objectContaining({ text: '请先介绍一下自己。' })]),
+    ))
+    expect(await screen.findByText('已删除 1 处语气词，已保存为新版本')).toBeVisible()
   })
 })
