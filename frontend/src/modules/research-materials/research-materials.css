@@ -974,7 +974,7 @@ audio.media-transcript__player { min-height: 54px; background: var(--qx-color-su
 .media-transcript__progress { display: block; height: 2px; overflow: hidden; background: var(--materials-border); }
 .media-transcript__progress i { display: block; width: 36%; height: 100%; background: var(--qx-color-notice-line); animation: media-transcript-progress 1.6s ease-in-out infinite; }
 @keyframes media-transcript-progress { from { transform: translateX(-110%); } to { transform: translateX(310%); } }
-.media-transcript__document { overflow: hidden; }
+.media-transcript__document { min-height: max-content; }
 .media-transcript__document-header { display: flex; align-items: end; justify-content: space-between; gap: var(--qx-space-6); padding: var(--qx-space-6); border-bottom: 1px solid var(--qx-color-rule); }
 .media-transcript__document-header > div { display: grid; gap: var(--qx-space-1); }
 .media-transcript__document-header > p { text-align: right; }
