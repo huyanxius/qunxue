@@ -131,6 +131,12 @@ class DisciplinaryAgentApplication:
             conversation_id=conversation_id,
         )
 
+    def find_run(self, *, user_id: UUID, idempotency_key: str):
+        return self._conversations.find_run(
+            user_id=user_id,
+            idempotency_key=idempotency_key,
+        )
+
     def run_turn(
         self,
         *,

@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -22,7 +23,12 @@ from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConve
 from qunxue_api.adapters.sqlite.research_document_proposal import (
     SqliteResearchDocumentProposalRepository,
 )
-from qunxue_api.api.routes.agent import _effective_agent_runtime_mode
+from qunxue_api.api.routes.agent import (
+    _cancel_active_run,
+    _effective_agent_runtime_mode,
+    _register_active_run,
+    _release_active_run,
+)
 from qunxue_api.application.disciplinary_agent import DisciplinaryAgentApplication
 from qunxue_api.bootstrap import create_app
 from qunxue_api.modules.agent_conversation import (
@@ -71,6 +77,26 @@ def test_agent_runtime_mode_treats_blank_api_key_as_unconfigured() -> None:
     )
 
     assert _effective_agent_runtime_mode(request) == "mock"
+
+
+def test_starting_another_conversation_does_not_cancel_the_current_run() -> None:
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+    first_cancel = threading.Event()
+    second_cancel = threading.Event()
+
+    first_run_id = UUID("00000000-0000-0000-0000-000000000011")
+    second_run_id = UUID("00000000-0000-0000-0000-000000000012")
+    _register_active_run(user_id, first_run_id, first_cancel)
+    _register_active_run(user_id, second_run_id, second_cancel)
+    try:
+        assert first_cancel.is_set() is False
+        assert second_cancel.is_set() is False
+        assert _cancel_active_run(user_id, first_run_id) is True
+        assert first_cancel.is_set() is True
+        assert second_cancel.is_set() is False
+    finally:
+        _release_active_run(user_id, first_run_id, first_cancel)
+        _release_active_run(user_id, second_run_id, second_cancel)
 
 
 class _FakeAgentTools:

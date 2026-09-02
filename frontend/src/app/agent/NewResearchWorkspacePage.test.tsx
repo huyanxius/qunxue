@@ -522,7 +522,7 @@ describe('NewResearchWorkspacePage', () => {
     ])
   })
 
-  it('retries a disconnected Agent turn with the original question and idempotency key', async () => {
+  it('reconnects a disconnected Agent turn with the original question and idempotency key', async () => {
     const question = '为什么青年在熟人社区里也会感到孤独？'
     const conversation = conversationFixture(question, '可以从关系稳定性与情感劳动继续分析。')
     const turnRequests: RequestInit[] = []
@@ -551,10 +551,6 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.change(textbox, { target: { value: question } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(workspace).findByRole('alert')).toHaveTextContent('回答完成前中断')
-    expect(textbox).toHaveValue(question)
-    fireEvent.click(within(workspace).getByRole('button', { name: '重试本轮' }))
-
     expect(await within(workspace).findByText(conversation.turns[0].assistant.content)).toBeVisible()
     expect(turnRequests).toHaveLength(2)
     expect(turnRequests.map((request) => new Headers(request.headers).get('Idempotency-Key'))).toEqual([
@@ -565,7 +561,7 @@ describe('NewResearchWorkspacePage', () => {
     expect(randomUUID).toHaveBeenCalledTimes(1)
   })
 
-  it('restores an interrupted request after refresh and reuses its idempotency key', async () => {
+  it('recovers an interrupted mobile request with the same idempotency key', async () => {
     const question = '刷新后继续研究社区照护为什么变弱'
     const conversation = conversationFixture(question, '可以继续从照护资源与关系网络分析。')
     const turnRequests: RequestInit[] = []
@@ -588,26 +584,49 @@ describe('NewResearchWorkspacePage', () => {
       return json({}, 404)
     }))
 
-    const firstPage = renderPage()
+    renderPage()
     const firstWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
     const firstTextbox = within(firstWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
     fireEvent.change(firstTextbox, { target: { value: question } })
     fireEvent.submit(firstTextbox.closest('form') as HTMLFormElement)
-    expect(await within(firstWorkspace).findByRole('alert')).toHaveTextContent('回答完成前中断')
-    firstPage.unmount()
-
-    renderPage()
-    const refreshedWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
-    const refreshedTextbox = within(refreshedWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
-    expect(refreshedTextbox).toHaveValue(question)
-    fireEvent.submit(refreshedTextbox.closest('form') as HTMLFormElement)
-
-    expect(await within(refreshedWorkspace).findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(await within(firstWorkspace).findByText(conversation.turns[0].assistant.content)).toBeVisible()
     expect(turnRequests.map((request) => new Headers(request.headers).get('Idempotency-Key'))).toEqual([
       'turn-survives-refresh',
       'turn-survives-refresh',
     ])
     expect(randomUUID).toHaveBeenCalledTimes(1)
+  })
+
+  it('resumes a started Agent run automatically after the mobile page is reopened', async () => {
+    const question = '切回微信后继续回答这个问题'
+    const conversation = conversationFixture(question, '后台生成的回答已经恢复。')
+    const first = pausableStream()
+    let turnRequests = 0
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'mobile-resume-key') })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
+      if (url.pathname === '/api/agent/turns') {
+        turnRequests += 1
+        return turnRequests === 1 ? first.response : streamResponse(conversation, 'base')
+      }
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname.endsWith('/journey')) return json(researchStartJourneyFixture({ proposal: null }))
+      return json({}, 404)
+    }))
+
+    const firstPage = renderPage()
+    const firstWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
+    const textbox = within(firstWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(textbox, { target: { value: question } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+    await within(firstWorkspace).findByRole('button', { name: '停止生成' })
+
+    firstPage.unmount()
+    first.close()
+    renderPage()
+
+    expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(turnRequests).toBe(2)
   })
 
   it('keeps a timed-out turn visible after leaving and returning', async () => {
@@ -859,6 +878,7 @@ describe('NewResearchWorkspacePage', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
       if (url.pathname === '/api/agent/turns') return stream.response
+      if (url.pathname.endsWith('/stop')) return new Response(null, { status: 204 })
       if (url.pathname === '/api/agent/conversations') return json({ items: [] })
       return json({}, 404)
     }))
@@ -878,9 +898,17 @@ describe('NewResearchWorkspacePage', () => {
   })
 
   it('turns a truncated Agent stream into a recoverable error instead of a stuck composer', async () => {
+    let attempts = 0
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input.toString())
       if (url.pathname === '/api/agent/turns') {
+        attempts += 1
+        if (attempts > 1) {
+          return new Response(
+            'event: turn_failed\ndata: {"code":"agent_unavailable","message":"Agent 暂时无法完成回答。"}\n\n',
+            { headers: { 'Content-Type': 'text/event-stream' } },
+          )
+        }
         return new Response(
           'event: turn_started\ndata: {"conversation_id":"conversation-research-new","run_id":"run-truncated","replayed":false,"runtime_mode":"mock"}\n\n'
             + 'event: assistant_delta\ndata: {"delta":"半段回答"}\n\n',
@@ -896,7 +924,7 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.change(textbox, { target: { value: '这个流会被截断吗？' } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(region).findByRole('alert')).toHaveTextContent('连接在回答完成前中断')
+    expect(await within(region).findByRole('alert')).toHaveTextContent('Agent 暂时无法完成回答')
     expect(within(region).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toBeEnabled()
   })
 

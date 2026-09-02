@@ -5,6 +5,7 @@ import {
   getResearchStartJourney as getStartJourney,
   listAgentConversations as listConversations,
   renameAgentConversation as renameConversation,
+  stopAgentRun as stopRun,
   streamAgentTurn as streamTurn,
 } from './researchAgentApi'
 import type {
@@ -28,6 +29,10 @@ export function renameAgentConversation(conversationId: string, title: string) {
 
 export function deleteAgentConversation(conversationId: string) {
   return deleteConversation(conversationId)
+}
+
+export function stopAgentRun(runId: string) {
+  return stopRun(runId)
 }
 
 export function getResearchStartJourney(conversationId: string, signal?: AbortSignal) {
