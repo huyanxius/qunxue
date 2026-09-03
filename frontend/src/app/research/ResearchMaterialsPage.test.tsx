@@ -39,6 +39,24 @@ const secondResearch = {
 }
 
 describe('ResearchMaterialsPage', () => {
+  it('keeps the new-research guidance above the materials background when no research exists', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
+      if (path === '/api/research-tasks') return json({ items: [], next_cursor: null })
+      return json({}, 404)
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/research/materials']}>
+        <ResearchMaterialsPage userId="user-1" />
+      </MemoryRouter>,
+    )
+
+    const emptyState = await screen.findByRole('region', { name: '还没有研究' })
+    expect(emptyState).toHaveTextContent('先建立一项研究')
+    expect(within(emptyState).getByRole('link', { name: '新建研究' })).toHaveAttribute('href', '/research/new')
+  })
+
   it('confirms when a material upload has finished', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const request = input instanceof Request ? input : new Request(String(input), init)

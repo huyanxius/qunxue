@@ -3,7 +3,7 @@
 .research-materials-page__shader::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(248 248 245 / 54%), rgb(248 248 245 / 72%)); content: ''; }
 .research-materials-page__status { margin: 30px 0; color: var(--app-muted); font-size: 13px; }
 .research-materials-page__status.is-error { color: #8f4939; }
-.research-materials-page__empty { display: grid; max-width: 760px; justify-items: start; gap: 9px; margin-top: 28px; padding: 28px; border: 1px solid var(--app-border); border-radius: 14px; background: color-mix(in srgb, var(--app-sidebar) 72%, white); }
+.research-materials-page__empty { position: relative; z-index: 1; display: grid; max-width: 760px; justify-items: start; gap: 9px; margin-top: 28px; padding: 28px; border: 1px solid var(--app-border); border-radius: 14px; background: color-mix(in srgb, var(--app-sidebar) 72%, white); }
 .research-materials-page__empty svg { color: var(--app-ink); }
 .research-materials-page__empty h2 { margin: 0; color: var(--app-ink); font-size: 18px; }
 .research-materials-page__empty p { max-width: 520px; margin: 0; color: var(--app-muted); font-size: 13px; line-height: 1.65; }
