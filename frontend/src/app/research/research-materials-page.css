@@ -38,6 +38,9 @@
 .research-materials-page__library-empty a { color: var(--app-ink); font-size: 12px; }
 .research-materials-page__reader { height: 100dvh; min-height: 0; }
 .research-materials-page__reader > .qx-materials__shell { height: 100%; }
+.research-materials-page__batch-status { position: absolute; z-index: 8; top: 12px; right: 18px; display: flex; align-items: center; gap: 10px; padding: 8px 11px; border: 1px solid var(--app-border); border-radius: 6px; color: var(--app-ink); background: rgb(255 255 255 / 94%); box-shadow: 0 4px 14px rgb(31 28 25 / 7%); font-size: 11px; }
+.research-materials-page__batch-status span { color: var(--app-muted); }
+.research-materials-page__batch-status button { border: 0; color: var(--app-ink); background: transparent; text-decoration: underline; cursor: pointer; font: inherit; }
 .research-materials-workbench { margin-top: 24px; }
 .research-materials-workbench__header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 16px; }
 .research-materials-workbench__header > div { display: grid; gap: 7px; min-width: 0; }

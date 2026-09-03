@@ -67,6 +67,49 @@ class ResearchAnalysisWriteRequestRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ResearchBatchCodingRunRow(Base):
+    __tablename__ = "research_batch_coding_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "task_id",
+            "material_id",
+            "idempotency_key",
+            name="uq_research_batch_coding_idempotency",
+        ),
+        CheckConstraint(
+            "status IN ('queued', 'processing', 'completed', 'failed')",
+            name="ck_research_batch_coding_status",
+        ),
+        Index("ix_research_batch_coding_owner_created", "user_id", "task_id", "created_at"),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    material_id: Mapped[str] = mapped_column(
+        ForeignKey("research_materials.material_id", ondelete="CASCADE"), nullable=False
+    )
+    parse_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    parse_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    total_segments: Mapped[int] = mapped_column(Integer, nullable=False)
+    processed_segments: Mapped[int] = mapped_column(Integer, nullable=False)
+    annotation_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    code_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    low_confidence_segments: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class ResearchAnnotationRow(Base):
     __tablename__ = "research_analysis_annotations"
     __table_args__ = (

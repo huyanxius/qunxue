@@ -15,6 +15,7 @@ const tools = [
     title: '质性编码',
     description: '标记原文，建立编码与主题',
     image: qualitativeCodingImage,
+    href: '/research/materials?entry=batch-coding',
   },
   {
     title: '数据清洗',

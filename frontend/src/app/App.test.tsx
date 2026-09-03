@@ -395,6 +395,10 @@ describe('App routes', () => {
     expect(within(catalog).getByRole('heading', { name: '数据清洗' })).toBeVisible()
     expect(within(catalog).getByRole('heading', { name: '问卷分析' })).toBeVisible()
     expect(within(catalog).getByRole('heading', { name: '访谈整理' })).toBeVisible()
+    expect(within(catalog).getByRole('link', { name: '打开质性编码' })).toHaveAttribute(
+      'href',
+      '/research/materials?entry=batch-coding',
+    )
   })
 
   it('keeps the sidebar stationary and preserves its user-selected width across routes', async () => {

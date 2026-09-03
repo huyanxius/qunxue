@@ -66,17 +66,8 @@
   width: 100%;
 }
 
-.research-tools-page__card-link {
-  position: absolute;
-  z-index: 4;
-  inset: 0;
-  border-radius: inherit;
-}
-
-.research-tools-page__card:has(.research-tools-page__card-link:focus-visible) {
-  outline: 2px solid #1c5f89;
-  outline-offset: 4px;
-}
+.research-tools-page__card-link { position: absolute; z-index: 4; inset: 0; border-radius: inherit; }
+.research-tools-page__card:has(.research-tools-page__card-link:focus-visible) { outline: 2px solid var(--app-ink); outline-offset: 4px; }
 
 .research-tools-page__card .workbench-destination__image {
   opacity: 1;
