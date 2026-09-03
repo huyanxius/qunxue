@@ -1,4 +1,5 @@
 import { ToolboxIcon } from '@phosphor-icons/react'
+import { Link } from 'react-router'
 
 import qualitativeCodingImage from '../../assets/research-tools/qualitative-coding.webp'
 import dataCleaningImage from '../../assets/research-tools/data-cleaning.webp'
@@ -14,6 +15,7 @@ const tools = [
     title: '质性编码',
     description: '标记原文，建立编码与主题',
     image: qualitativeCodingImage,
+    href: '/research/materials?entry=batch-coding',
   },
   {
     title: '数据清洗',
@@ -45,12 +47,13 @@ export function ResearchToolsPage() {
           </header>
 
           <div className="research-tools-page__grid">
-            {tools.map(({ title, description, image, disabled }) => (
+            {tools.map(({ title, description, image, disabled, href }) => (
               <article
                 className={`workbench-destination research-tools-page__card${disabled ? ' is-disabled' : ''}`}
                 key={title}
                 aria-disabled={disabled || undefined}
               >
+                {href ? <Link className="research-tools-page__card-link" to={href} aria-label={`打开${title}`} /> : null}
                 <img className="workbench-destination__image" src={image} alt="" aria-hidden="true" />
                 <span className="workbench-destination__shade" aria-hidden="true" />
                 <span className="workbench-destination__copy">
