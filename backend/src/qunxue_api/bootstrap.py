@@ -758,6 +758,7 @@ def create_app(
                             search_timeout_seconds=(
                                 resolved_settings.web_search_timeout_seconds
                             ),
+                            reranker=app.state.knowledge_retriever,
                         ),
                         documents=document_application,
                         proposals=proposal_service,

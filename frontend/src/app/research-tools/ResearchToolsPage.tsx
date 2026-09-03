@@ -32,6 +32,7 @@ const tools = [
     title: '访谈整理',
     description: '转写、分段并整理访谈',
     image: interviewNotesImage,
+    href: '/research/materials?view=interviews',
   },
 ]
 

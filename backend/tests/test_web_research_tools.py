@@ -78,7 +78,7 @@ def test_web_page_reader_rejects_urls_outside_the_current_search_results() -> No
 def test_open_web_client_normalizes_search_results_and_extracts_page_text() -> None:
     def search(query: str, max_results: int):
         assert query == "社会工作 政策"
-        assert max_results == 2
+        assert max_results == 8
         return [{
             "title": " 社会工作政策文件 ",
             "href": "https://example.gov.cn/policy",
@@ -152,3 +152,92 @@ def test_open_web_client_queries_bing_and_baidu_through_searxng() -> None:
         "language": ["zh-CN"],
         "engines": ["bing,baidu"],
     }
+
+
+def test_open_web_client_deduplicates_and_reranks_a_recall_pool_before_limiting() -> None:
+    calls: list[int] = []
+
+    def search(query: str, max_results: int):
+        assert query == "青年就业 政策"
+        calls.append(max_results)
+        return [
+            {
+                "title": "泛泛讨论",
+                "href": "https://example.com/article?utm_source=search",
+                "body": "就业背景",
+            },
+            {
+                "title": "官方政策",
+                "href": "https://www.gov.cn/policy#top",
+                "body": "高校毕业生就业支持政策原文",
+            },
+            {
+                "title": "官方政策重复",
+                "href": "https://www.gov.cn/policy?utm_medium=search",
+                "body": "重复结果",
+            },
+        ]
+
+    class Reranker:
+        def search_chunks(self, *, query, chunks, limit):
+            assert query == "青年就业 政策"
+            assert limit == 2
+            by_id = {chunk.chunk_id: chunk for chunk in chunks}
+            return SimpleNamespace(
+                hits=tuple(
+                    SimpleNamespace(chunk=by_id[chunk_id])
+                    for chunk_id in ("web:1", "web:0")
+                )
+            )
+
+    client = OpenWebResearchClient(search=search, reranker=Reranker())
+
+    assert client.search("青年就业 政策", limit=2) == [
+        {
+            "title": "官方政策",
+            "url": "https://www.gov.cn/policy#top",
+            "snippet": "高校毕业生就业支持政策原文",
+        },
+        {
+            "title": "泛泛讨论",
+            "url": "https://example.com/article?utm_source=search",
+            "snippet": "就业背景",
+        },
+    ]
+    assert calls == [8]
+
+
+def test_open_web_client_falls_back_to_provider_order_without_vector_retriever() -> None:
+    def search(_query: str, _max_results: int):
+        return [
+            {
+                "title": "第一条",
+                "href": "https://example.com/one",
+                "body": "摘要一",
+            },
+            {
+                "title": "第一条重复",
+                "href": "https://example.com/one?utm_source=search",
+                "body": "摘要一重复",
+            },
+            {
+                "title": "第二条",
+                "href": "https://example.com/two",
+                "body": "摘要二",
+            },
+        ]
+
+    client = OpenWebResearchClient(search=search)
+
+    assert client.search("社会政策", limit=2) == [
+        {
+            "title": "第一条",
+            "url": "https://example.com/one",
+            "snippet": "摘要一",
+        },
+        {
+            "title": "第二条",
+            "url": "https://example.com/two",
+            "snippet": "摘要二",
+        },
+    ]

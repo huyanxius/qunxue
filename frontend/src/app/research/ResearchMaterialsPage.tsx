@@ -47,6 +47,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   const [searchParams] = useSearchParams()
   const selectedTaskId = searchParams.get('task_id')
   const selectedMaterialId = searchParams.get('material_id')
+  const interviewView = searchParams.get('view') === 'interviews'
   const batchCodingEntry = searchParams.get('entry') === 'batch-coding'
   const batchRunId = searchParams.get('batch_run_id')
   const [research, setResearch] = useState<MyResearchItem[]>([])
@@ -140,6 +141,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   }, [uploadOpen])
 
   const selectedResearch = research.find((item) => item.taskId === selectedTaskId) ?? null
+  const visibleMaterials = interviewView
+    ? libraryMaterials.filter(({ material }) => material.materialKind === 'interview_transcript' || material.mediaType.startsWith('audio/') || material.mediaType.startsWith('video/'))
+    : libraryMaterials
 
   async function addMaterial(file: File) {
     if (!uploadTaskId) return
@@ -240,8 +244,8 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
           <section className="research-materials-page__library" aria-label="全部研究材料" role="region">
             <header className="research-materials-page__identity">
               <FileTextIcon size={18} weight="regular" aria-hidden="true" />
-              <h1>研究材料</h1>
-              <small>{libraryMaterials.length}</small>
+              <h1>{interviewView ? '访谈整理' : '研究材料'}</h1>
+              <small>{visibleMaterials.length}</small>
             </header>
             <div className="research-materials-page__add-entry" ref={uploadPopoverRef}>
               <button
@@ -266,9 +270,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
             </div>
             {uploadNotice ? <p className="research-materials-page__status" role="status">{uploadNotice}</p> : null}
             {libraryLoading ? <p className="research-materials-page__status" role="status">正在整理材料库</p> : null}
-            {!libraryLoading && libraryMaterials.length ? (
+            {!libraryLoading && visibleMaterials.length ? (
               <div className="research-materials-page__material-grid">
-                {libraryMaterials.map(({ material, research: owner }) => (
+                {visibleMaterials.map(({ material, research: owner }) => (
                   <Link
                     className="research-materials-page__material-card"
                     key={`${material.taskId}:${material.materialId}`}
@@ -288,9 +292,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
                 ))}
               </div>
             ) : null}
-            {!libraryLoading && !libraryMaterials.length ? (
+            {!libraryLoading && !visibleMaterials.length ? (
               <div className="research-materials-page__library-empty">
-                <p>还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。</p>
+                <p>{interviewView ? '还没有可整理的访谈录音、视频或转录稿。' : '还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。'}</p>
                 <Link to="/research/new">去添加材料</Link>
               </div>
             ) : null}
@@ -310,7 +314,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
               taskId={selectedResearch.taskId}
               initialMaterialId={selectedMaterialId}
               presentation="workspace"
-              onClose={() => navigate('/research/materials')}
+              onClose={() => navigate(interviewView ? '/research/materials?view=interviews' : '/research/materials')}
             />
           </section>
         ) : null}
