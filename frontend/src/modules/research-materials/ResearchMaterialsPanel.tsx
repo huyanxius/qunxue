@@ -6,8 +6,22 @@ import { MaterialLibraryView } from './MaterialLibraryView'
 import { MaterialReaderView, type ReaderHeading } from './MaterialReaderView'
 import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
 import { ProfessionalMaterialArchivePanel } from './ProfessionalMaterialArchive'
-import { createAnalysisAnnotation, getAnalysisSnapshot } from './researchAnalysisApi'
-import type { AnalysisAnnotation, AnalysisCode } from './researchAnalysisModel'
+import {
+  createAnalysisAnnotation,
+  createAnalysisCode,
+  createAnalysisMemo,
+  decideAnalysisCode,
+  decideAnalysisMemo,
+  getAnalysisSnapshot,
+} from './researchAnalysisApi'
+import type {
+  AnalysisAnnotation,
+  AnalysisCode,
+  AnalysisMemo,
+  CodebookEntry,
+  CreateAnalysisCodeInput,
+  CreateAnalysisMemoInput,
+} from './researchAnalysisModel'
 import {
   deleteResearchMaterial,
   getResearchMaterial,
@@ -93,6 +107,8 @@ export function ResearchMaterialsPanel({
   const [mediaLocation, setMediaLocation] = useState<{ versionId: string | null; segmentId: string | null } | null>(null)
   const [analysisAnnotations, setAnalysisAnnotations] = useState<AnalysisAnnotation[]>([])
   const [analysisCodes, setAnalysisCodes] = useState<AnalysisCode[]>([])
+  const [analysisMemos, setAnalysisMemos] = useState<AnalysisMemo[]>([])
+  const [analysisCodebook, setAnalysisCodebook] = useState<CodebookEntry[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const materialsLoadGeneration = useRef(0)
   const materialsLoadAbortController = useRef<AbortController | null>(null)
@@ -103,6 +119,7 @@ export function ResearchMaterialsPanel({
   const initialSelectionApplied = useRef(false)
   const segmentRefs = useRef(new Map<string, HTMLElement>())
   const scrolledCitationTarget = useRef<string | null>(null)
+  const analysisLoadGeneration = useRef(0)
 
   async function loadMaterials(signal?: AbortSignal) {
     const requestGeneration = ++materialsLoadGeneration.current
@@ -137,19 +154,32 @@ export function ResearchMaterialsPanel({
     }
   }, [taskId])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    void getAnalysisSnapshot(taskId, controller.signal).then((snapshot) => {
-      if (controller.signal.aborted) return
+  async function refreshAnalysis(signal?: AbortSignal) {
+    const generation = ++analysisLoadGeneration.current
+    try {
+      const snapshot = await getAnalysisSnapshot(taskId, signal)
+      if (signal?.aborted || generation !== analysisLoadGeneration.current) return
       setAnalysisAnnotations(snapshot.annotations)
       setAnalysisCodes(snapshot.codes)
-    }).catch(() => {
-      if (!controller.signal.aborted) {
+      setAnalysisMemos(snapshot.memos)
+      setAnalysisCodebook(snapshot.workspace?.codebook_entries ?? [])
+    } catch (cause: unknown) {
+      if ((cause as { name?: string } | null)?.name !== 'AbortError' && !signal?.aborted && generation === analysisLoadGeneration.current) {
         setAnalysisAnnotations([])
         setAnalysisCodes([])
+        setAnalysisMemos([])
+        setAnalysisCodebook([])
       }
-    })
-    return () => controller.abort()
+    }
+  }
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void refreshAnalysis(controller.signal)
+    return () => {
+      controller.abort()
+      analysisLoadGeneration.current += 1
+    }
   }, [taskId])
 
   useEffect(() => {
@@ -444,6 +474,7 @@ export function ResearchMaterialsPanel({
         case_label: annotationCaseLabel.trim() || null,
         observed_at: annotationObservedAt.trim() || null,
       })
+      await refreshAnalysis()
       clearSelectionDraft()
       setAnnotationNotice('片段标记已保存。')
     } catch (cause: unknown) {
@@ -451,6 +482,42 @@ export function ResearchMaterialsPanel({
     } finally {
       setSavingAnnotation(false)
     }
+  }
+
+  async function saveCode(input: CreateAnalysisCodeInput) {
+    await createAnalysisCode(taskId, input)
+    await refreshAnalysis()
+    setAnnotationNotice('编码已保存。')
+  }
+
+  async function decideCode(codeId: string, decision: 'confirmed' | 'rejected', reason: string) {
+    const code = analysisCodes.find((item) => item.code_id === codeId)
+    if (!code) throw new Error('编码已更新，请重新打开证据。')
+    await decideAnalysisCode(taskId, codeId, {
+      decision,
+      expected_version: code.version,
+      reason,
+    })
+    await refreshAnalysis()
+    setAnnotationNotice(decision === 'confirmed' ? '编码已确认。' : '候选编码已拒绝。')
+  }
+
+  async function saveMemo(input: CreateAnalysisMemoInput) {
+    await createAnalysisMemo(taskId, input)
+    await refreshAnalysis()
+    setAnnotationNotice('备忘已保存。')
+  }
+
+  async function decideMemo(memoId: string, decision: 'confirmed' | 'rejected', reason: string) {
+    const memo = analysisMemos.find((item) => item.memo_id === memoId)
+    if (!memo) throw new Error('备忘已更新，请重新打开证据。')
+    await decideAnalysisMemo(taskId, memoId, {
+      decision,
+      expected_version: memo.version,
+      reason,
+    })
+    await refreshAnalysis()
+    setAnnotationNotice(decision === 'confirmed' ? '备忘已确认。' : '候选备忘已拒绝。')
   }
 
   function clearSelectionDraft() {
@@ -551,6 +618,7 @@ export function ResearchMaterialsPanel({
         <MaterialReaderView
           material={selectedMaterial}
           segments={pagedReaderSegments}
+          allSegments={segments}
           totalSegmentCount={segments.length}
           headings={readerHeadings}
           selectedSegmentId={selectedSegmentId}
@@ -564,6 +632,8 @@ export function ResearchMaterialsPanel({
           pageCount={readerPageCount}
           annotations={analysisAnnotations.filter((annotation) => annotation.material_id === selectedMaterial.materialId)}
           codes={analysisCodes}
+          memos={analysisMemos}
+          codebook={analysisCodebook}
           workspaceChrome={workspacePresentation}
           registerSegment={(segmentId, element) => {
             if (element) segmentRefs.current.set(segmentId, element)
@@ -575,8 +645,13 @@ export function ResearchMaterialsPanel({
           onQueryChange={(next) => { setReaderQuery(next); setReaderPage(0) }}
           onOpenArchive={() => setArchiveOpen(true)}
           onSelectSegment={(segment) => { void (segment.kind === 'heading' ? jumpToHeading(segment) : selectSegment(segment)) }}
+          onLocateSegment={(segment) => { jumpToHeading(segment) }}
           onTextSelection={captureSelection}
           onPageChange={setReaderPage}
+          onCreateCode={saveCode}
+          onDecideCode={decideCode}
+          onCreateMemo={saveMemo}
+          onDecideMemo={decideMemo}
         />
       )}
 
