@@ -4,6 +4,8 @@ export { ResearchAnalysisPanel } from './ResearchAnalysisPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
 export { getResearchCycleSnapshot } from './researchCycle'
+export { startResearchBatchCoding, getResearchBatchCodingRun, retryResearchBatchCodingRun } from './researchBatchCodingApi'
+export type { ResearchBatchCodingRun } from './researchBatchCodingApi'
 export { ResearchCyclePanel } from './ResearchCyclePanel'
 export {
   formatMaterialLocator,
