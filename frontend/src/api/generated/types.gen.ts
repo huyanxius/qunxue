@@ -889,6 +889,76 @@ export type AuditResolutionSetResponse = {
 };
 
 /**
+ * BatchCodingRunResponse
+ */
+export type BatchCodingRunResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Code Ids
+     */
+    code_ids: Array<string>;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Low Confidence Segments
+     */
+    low_confidence_segments: Array<string>;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Parse Version
+     */
+    parse_version: number;
+    /**
+     * Processed Segments
+     */
+    processed_segments: number;
+    /**
+     * Retry Count
+     */
+    retry_count: number;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Total Segments
+     */
+    total_segments: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
  * BatchUploadItemResponse
  */
 export type BatchUploadItemResponse = {
@@ -2738,6 +2808,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
+
+/**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
 
 /**
  * HealthResponse
@@ -7376,6 +7456,34 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
+};
+
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -10557,6 +10665,121 @@ export type ConfirmResearchAnalysisThemeResponses = {
 };
 
 export type ConfirmResearchAnalysisThemeResponse = ConfirmResearchAnalysisThemeResponses[keyof ConfirmResearchAnalysisThemeResponses];
+
+export type StartResearchBatchCodingData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query: {
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    url: '/api/research-tasks/{task_id}/batch-coding';
+};
+
+export type StartResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StartResearchBatchCodingError = StartResearchBatchCodingErrors[keyof StartResearchBatchCodingErrors];
+
+export type StartResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    201: BatchCodingRunResponse;
+};
+
+export type StartResearchBatchCodingResponse = StartResearchBatchCodingResponses[keyof StartResearchBatchCodingResponses];
+
+export type GetResearchBatchCodingData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/batch-coding/{run_id}';
+};
+
+export type GetResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetResearchBatchCodingError = GetResearchBatchCodingErrors[keyof GetResearchBatchCodingErrors];
+
+export type GetResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    200: BatchCodingRunResponse;
+};
+
+export type GetResearchBatchCodingResponse = GetResearchBatchCodingResponses[keyof GetResearchBatchCodingResponses];
+
+export type RetryResearchBatchCodingData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/batch-coding/{run_id}/retry';
+};
+
+export type RetryResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RetryResearchBatchCodingError = RetryResearchBatchCodingErrors[keyof RetryResearchBatchCodingErrors];
+
+export type RetryResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    200: BatchCodingRunResponse;
+};
+
+export type RetryResearchBatchCodingResponse = RetryResearchBatchCodingResponses[keyof RetryResearchBatchCodingResponses];
 
 export type ExportResearchProjectArchiveData = {
     body?: never;
