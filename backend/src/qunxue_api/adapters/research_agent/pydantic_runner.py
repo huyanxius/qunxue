@@ -441,6 +441,9 @@ class PydanticAIKnowledgeRunner:
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
                 "每轮最多调用 3 次 search_knowledge；不要重复相同检索，也不要猜测 knowledge_id；"
                 "当本轮启用联网搜索时，可以调用 search_web 查找当前政策、新闻、报告或其他网页来源；"
+                "检索前先问自己：如果要用网页搜索引擎回答这个问题，我会在搜索框输入什么？"
+                "把真正的社会学概念、现象、群体、地点、时间或制度对象写成短而独立的查询；"
+                "需要不同角度时分次调用 search_web，不要把整句元问题、纠错或反馈原样当作 query；"
                 "采用网页信息前必须再调用 read_web_page 阅读正文，不得只根据搜索摘要下结论。"
                 "只能读取 search_web 本轮实际返回的网址，不能猜测或拼接 URL。"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
@@ -541,7 +544,11 @@ class PydanticAIKnowledgeRunner:
         def search_web(
             ctx: RunContext[KnowledgeToolRegistry], query: str, limit: int = 5
         ) -> list[dict[str, object]] | dict[str, object]:
-            """搜索公开网页。适合当前政策、新闻、报告与其他需要联网核对的信息。"""
+            """搜索公开网页。
+
+            先把要回答的问题改写成你会输入网页搜索框的短查询；不要把工具反馈、
+            元问题或整段聊天原样传入。需要互补角度时，分次调用本工具。
+            """
 
             safe_limit = max(1, min(int(limit), 8))
             call_id = _tool_call_id(ctx, "search_web")
