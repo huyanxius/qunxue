@@ -4,6 +4,7 @@ from asyncio import sleep as async_sleep
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
 from contextvars import ContextVar
 
+from openai import AsyncOpenAI
 from openai.types.shared import ReasoningEffort
 from pydantic_ai import (
     Agent,
@@ -14,7 +15,7 @@ from pydantic_ai import (
     RunContext,
     ToolDefinition,
 )
-from pydantic_ai.exceptions import ModelHTTPError
+from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
@@ -325,17 +326,31 @@ def _insufficient_evidence_answer() -> str:
 
 
 class _RetryingOpenAIChatModel(OpenAIChatModel):
-    _PROVIDER_RETRY_DELAYS = (1.0, 2.0)
+    _PROVIDER_RETRY_DELAYS = (0.5,)
+
+    def __init__(self, *args, fallback_models: Sequence[OpenAIChatModel] = (), **kwargs):
+        super().__init__(*args, **kwargs)
+        self._fallback_models = tuple(fallback_models)
 
     async def _completions_create(self, *args, **kwargs):
-        for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
-            try:
-                return await super()._completions_create(*args, **kwargs)
-            except ModelHTTPError as error:
-                if retry_delay is None or not _is_transient_unknown_provider(error):
-                    raise
-                await async_sleep(retry_delay)
-        raise RuntimeError("unreachable provider retry state")
+        models = (self, *self._fallback_models)
+        last_error: Exception | None = None
+        for model_index, model in enumerate(models):
+            for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
+                try:
+                    if model is self:
+                        return await super()._completions_create(*args, **kwargs)
+                    return await model._completions_create(*args, **kwargs)
+                except (ModelHTTPError, ModelAPIError) as error:
+                    last_error = error
+                    if not _is_retryable_model_error(error):
+                        raise
+                    if retry_delay is not None:
+                        await async_sleep(retry_delay)
+            if model_index < len(models) - 1:
+                continue
+        assert last_error is not None
+        raise last_error
 
 
 class PydanticAIKnowledgeRunner:
@@ -344,12 +359,12 @@ class PydanticAIKnowledgeRunner:
         *,
         base_url: str,
         api_key: str | None,
+        fallback_endpoints: Sequence[tuple[str, str]] = (),
         model: str,
         timeout_seconds: float,
         extra_headers: Mapping[str, str] | None = None,
         reasoning_effort: ReasoningEffort | None = None,
     ) -> None:
-        provider = OpenAIProvider(base_url=base_url, api_key=api_key)
         self._model = model
         self.runtime_identity = AgentRuntimeIdentity(
             provider="pydantic-ai",
@@ -366,10 +381,27 @@ class PydanticAIKnowledgeRunner:
         if _is_deepseek_flash(base_url=base_url, model=model):
             model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
+        def build_model(endpoint_url: str, endpoint_key: str | None) -> OpenAIChatModel:
+            provider = OpenAIProvider(
+                openai_client=AsyncOpenAI(
+                    base_url=endpoint_url,
+                    api_key=endpoint_key,
+                    max_retries=0,
+                )
+            )
+            return OpenAIChatModel(model, provider=provider, settings=model_settings)
+
         model_instance = _RetryingOpenAIChatModel(
             model,
-            provider=provider,
+            provider=OpenAIProvider(
+                openai_client=AsyncOpenAI(
+                    base_url=base_url,
+                    api_key=api_key,
+                    max_retries=0,
+                )
+            ),
             settings=model_settings,
+            fallback_models=tuple(build_model(url, key) for url, key in fallback_endpoints),
         )
         self._agent = Agent(
             model_instance,
@@ -1706,6 +1738,16 @@ def _is_transient_unknown_provider(error: ModelHTTPError) -> bool:
         if message is None and isinstance(nested_error, Mapping):
             message = nested_error.get("message")
     return isinstance(message, str) and "unknown provider for model" in message.lower()
+
+
+def _is_retryable_model_error(error: ModelHTTPError | ModelAPIError) -> bool:
+    if isinstance(error, ModelHTTPError):
+        return (
+            _is_transient_unknown_provider(error)
+            or error.status_code in {408, 409, 429}
+            or error.status_code >= 500
+        )
+    return True
 
 
 _EVIDENCE_REQUIRED_MARKERS = (

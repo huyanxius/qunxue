@@ -2122,6 +2122,55 @@ def test_agent_does_not_retry_other_bad_model_requests(
     assert attempts == 1
 
 
+def test_agent_fails_over_to_the_next_model_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://backup.example.test/v1", "backup-key"),
+        ),
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+    )
+    model = runner._agent.model
+    calls: list[str] = []
+    completed_request = object()
+
+    async def request_once(self, *args, **kwargs):
+        del args, kwargs
+        calls.append(self.base_url)
+        if self.base_url.startswith("https://primary"):
+            raise ModelHTTPError(
+                status_code=503,
+                model_name="gpt-5.6-sol",
+                body={"message": "Service temporarily unavailable"},
+            )
+        return completed_request
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+    monkeypatch.setattr(
+        "qunxue_api.adapters.research_agent.pydantic_runner.async_sleep",
+        no_sleep,
+        raising=False,
+    )
+
+    result = asyncio.run(
+        model._completions_create([], False, {}, ModelRequestParameters())
+    )
+
+    assert result is completed_request
+    assert calls == [
+        "https://primary.example.test/v1/",
+        "https://primary.example.test/v1/",
+        "https://backup.example.test/v1/",
+    ]
+
+
 def test_knowledge_directory_is_bounded_and_queryable() -> None:
     release = SimpleNamespace(knowledge_release_id="release-a")
     directory = SimpleNamespace(
