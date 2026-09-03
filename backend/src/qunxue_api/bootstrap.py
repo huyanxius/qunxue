@@ -702,6 +702,11 @@ def create_app(
                         else None
                     ),
                     model=model_name,
+                    fallback_endpoints=tuple(
+                        (item["base_url"], item["api_key"])
+                        for item in resolved_settings.model_fallbacks
+                        if item.get("base_url") and item.get("api_key")
+                    ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
                     extra_headers=_model_headers_from_settings(resolved_settings),
                     reasoning_effort=resolved_settings.model_reasoning_effort,

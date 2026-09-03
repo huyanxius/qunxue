@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     )
     model_base_url: str | None = None
     model_api_key: SecretStr | None = None
+    model_fallbacks: list[dict[str, str]] = Field(default_factory=list)
     model_name: str | None = None
     model_reasoning_effort: (
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
