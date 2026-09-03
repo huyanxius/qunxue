@@ -22,8 +22,9 @@ const tools = [
   },
   {
     title: '问卷分析',
-    description: '查看分布、交叉与量表结果',
+    description: '暂未开放',
     image: surveyAnalysisImage,
+    disabled: true,
   },
   {
     title: '访谈整理',
@@ -44,8 +45,12 @@ export function ResearchToolsPage() {
           </header>
 
           <div className="research-tools-page__grid">
-            {tools.map(({ title, description, image }) => (
-              <article className="workbench-destination research-tools-page__card" key={title}>
+            {tools.map(({ title, description, image, disabled }) => (
+              <article
+                className={`workbench-destination research-tools-page__card${disabled ? ' is-disabled' : ''}`}
+                key={title}
+                aria-disabled={disabled || undefined}
+              >
                 <img className="workbench-destination__image" src={image} alt="" aria-hidden="true" />
                 <span className="workbench-destination__shade" aria-hidden="true" />
                 <span className="workbench-destination__copy">

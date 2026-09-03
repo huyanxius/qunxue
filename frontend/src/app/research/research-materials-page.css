@@ -3,11 +3,14 @@
 .research-materials-page__shader::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(248 248 245 / 54%), rgb(248 248 245 / 72%)); content: ''; }
 .research-materials-page__status { margin: 30px 0; color: var(--app-muted); font-size: 13px; }
 .research-materials-page__status.is-error { color: #8f4939; }
-.research-materials-page__empty { position: relative; z-index: 1; display: grid; max-width: 760px; justify-items: start; gap: 9px; margin-top: 28px; padding: 28px; border: 1px solid var(--app-border); border-radius: 14px; background: color-mix(in srgb, var(--app-sidebar) 72%, white); }
-.research-materials-page__empty svg { color: var(--app-ink); }
-.research-materials-page__empty h2 { margin: 0; color: var(--app-ink); font-size: 18px; }
-.research-materials-page__empty p { max-width: 520px; margin: 0; color: var(--app-muted); font-size: 13px; line-height: 1.65; }
-.research-materials-page__primary { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; padding: 9px 13px; border-radius: 8px; color: var(--app-sidebar); background: var(--app-ink); font-size: 12px; font-weight: 650; text-decoration: none; }
+.research-materials-page__empty { position: relative; z-index: 1; display: grid; min-height: 100dvh; place-items: center; padding: 40px; }
+.research-materials-page__empty-copy { display: grid; width: min(480px, 100%); justify-items: center; gap: 7px; color: color-mix(in srgb, var(--app-ink) 76%, transparent); font-family: var(--serif); text-align: center; transform: translateY(-4%); }
+.research-materials-page__empty-copy h1 { margin: 0 0 3px; font-size: 1.5rem; font-weight: 560; letter-spacing: -.04em; line-height: 1.25; }
+.research-materials-page__empty-copy > p { max-width: 440px; margin: 0; font-size: 15px; font-weight: 500; letter-spacing: -.018em; line-height: 1.62; }
+.research-materials-page__empty-copy .research-materials-page__formats { margin-top: 13px; color: color-mix(in srgb, var(--app-muted) 84%, transparent); font-family: var(--sans); font-size: 12px; font-weight: 450; letter-spacing: .015em; line-height: 1.6; }
+.research-materials-page__empty-copy .work-home__start { margin-top: 15px; font-family: var(--sans); }
+.research-materials-page__empty-copy .work-home__start:disabled { cursor: default; opacity: .58; }
+.research-materials-page__empty-error { margin-top: 5px; color: #8f4939; font-family: var(--sans); font-size: 11px; }
 .research-materials-page__library { position: relative; z-index: 1; display: flex; height: 100dvh; overflow: hidden; flex-direction: column; }
 .research-materials-page__identity { width: min(326px, 100%); height: 56px; display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 0 14px; color: var(--app-ink); }
 .research-materials-page__identity h1 { margin: 0; font-size: 14px; font-weight: 550; letter-spacing: -.01em; }
@@ -53,6 +56,7 @@
   .research-materials-workbench__body { grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); }
 }
 @media (max-width: 840px) {
+  .research-materials-page__empty { padding: 28px 20px; }
   .research-materials-page__add-entry { margin-inline: 16px; }
   .research-materials-page__upload { width: min(320px, calc(100vw - 96px)); }
   .research-materials-page__material-grid { grid-template-columns: 1fr; }
