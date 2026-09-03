@@ -381,6 +381,7 @@ class PydanticAIKnowledgeRunner:
         if _is_deepseek_flash(base_url=base_url, model=model):
             model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
+
         def build_model(endpoint_url: str, endpoint_key: str | None) -> OpenAIChatModel:
             provider = OpenAIProvider(
                 openai_client=AsyncOpenAI(
@@ -545,80 +546,102 @@ class PydanticAIKnowledgeRunner:
             safe_limit = max(1, min(int(limit), 8))
             call_id = _tool_call_id(ctx, "search_web")
             tool_input = {"query": query, "limit": safe_limit}
-            self._emit_tool_event(AgentToolEvent(
-                tool="search_web",
-                phase="started",
-                call_id=call_id,
-                input=tool_input,
-                detail="正在搜索公开网页",
-            ))
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_web",
+                    phase="started",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="正在搜索公开网页",
+                )
+            )
             try:
                 result = ctx.deps.search_web(query, limit=safe_limit)
             except Exception:
-                self._emit_tool_event(AgentToolEvent(
-                    tool="search_web",
-                    phase="failed",
-                    call_id=call_id,
-                    input=tool_input,
-                    detail="联网搜索暂时失败",
-                    error="web_search_failed",
-                ))
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="search_web",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="联网搜索暂时失败",
+                        error="web_search_failed",
+                    )
+                )
                 return {
                     "error": "web_search_failed",
                     "message": "联网搜索暂时失败，本轮没有取得网页证据。",
-                    "retryable": True,
+                    "retryable": False,
                 }
+            if isinstance(result, dict):
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="search_web",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail=str(result.get("message") or "联网搜索未返回网页证据"),
+                        error=str(result.get("error") or "web_search_failed"),
+                    )
+                )
+                return result
             _select_result_evidence(ctx.deps, result)
-            self._emit_tool_event(AgentToolEvent(
-                tool="search_web",
-                phase="finished",
-                call_id=call_id,
-                input=tool_input,
-                output={"result_count": len(result), "items": _trace_items(result)},
-                detail=f"找到 {len(result)} 个网页结果",
-            ))
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="search_web",
+                    phase="finished",
+                    call_id=call_id,
+                    input=tool_input,
+                    output={"result_count": len(result), "items": _trace_items(result)},
+                    detail=f"找到 {len(result)} 个网页结果",
+                )
+            )
             return result
 
         @self._agent.tool(prepare=_prepare_web_tool)
-        def read_web_page(
-            ctx: RunContext[KnowledgeToolRegistry], url: str
-        ) -> dict[str, object]:
+        def read_web_page(ctx: RunContext[KnowledgeToolRegistry], url: str) -> dict[str, object]:
             """读取 search_web 本轮返回网页的正文，以便核对原始内容。"""
 
             call_id = _tool_call_id(ctx, "read_web_page")
             tool_input = {"url": url}
-            self._emit_tool_event(AgentToolEvent(
-                tool="read_web_page",
-                phase="started",
-                call_id=call_id,
-                input=tool_input,
-                detail="正在读取网页正文",
-            ))
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="read_web_page",
+                    phase="started",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="正在读取网页正文",
+                )
+            )
             try:
                 result = ctx.deps.read_web_page(url)
             except Exception:
-                self._emit_tool_event(AgentToolEvent(
-                    tool="read_web_page",
-                    phase="failed",
-                    call_id=call_id,
-                    input=tool_input,
-                    detail="网页正文暂时无法读取",
-                    error="web_page_read_failed",
-                ))
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="read_web_page",
+                        phase="failed",
+                        call_id=call_id,
+                        input=tool_input,
+                        detail="网页正文暂时无法读取",
+                        error="web_page_read_failed",
+                    )
+                )
                 return {
                     "error": "web_page_read_failed",
                     "message": "网页正文暂时无法读取，不能把搜索摘要当作原文。",
-                    "retryable": True,
+                    "retryable": False,
                 }
             _select_result_evidence(ctx.deps, [result])
-            self._emit_tool_event(AgentToolEvent(
-                tool="read_web_page",
-                phase="finished",
-                call_id=call_id,
-                input=tool_input,
-                output={"result_count": 1, "items": _trace_items([result])},
-                detail=f"已读取网页：{result.get('title') or url}",
-            ))
+            self._emit_tool_event(
+                AgentToolEvent(
+                    tool="read_web_page",
+                    phase="finished",
+                    call_id=call_id,
+                    input=tool_input,
+                    output={"result_count": 1, "items": _trace_items([result])},
+                    detail=f"已读取网页：{result.get('title') or url}",
+                )
+            )
             return result
 
         @self._agent.tool(prepare=_prepare_material_tool)
@@ -1591,9 +1614,7 @@ class PydanticAIKnowledgeRunner:
         if not _material_tools_available(tools) or not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
-            document_workspace=bool(
-                getattr(tools, "research_document_tools_enabled", False)
-            ),
+            document_workspace=bool(getattr(tools, "research_document_tools_enabled", False)),
             conversation=conversation,
         ):
             return None

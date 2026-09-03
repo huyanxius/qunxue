@@ -4,7 +4,10 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
-from qunxue_api.adapters.research_agent.web_research import OpenWebResearchClient
+from qunxue_api.adapters.research_agent.web_research import (
+    OpenWebResearchClient,
+    plan_web_queries,
+)
 
 
 class _Catalog:
@@ -47,14 +50,16 @@ def test_web_tools_are_opt_in_and_keep_results_inside_the_evidence_set() -> None
     tools.enable_web_search()
     results = tools.search_web("青年就业 政策", limit=3)
 
-    assert results == [{
-        "citation_id": "web:https://www.gov.cn/zhengce/example.html",
-        "title": "促进高校毕业生就业政策",
-        "url": "https://www.gov.cn/zhengce/example.html",
-        "excerpt": "国务院有关部门发布的就业政策摘要。",
-        "source_kind": "web",
-        "evidence_status": "retrieved",
-    }]
+    assert results == [
+        {
+            "citation_id": "web:https://www.gov.cn/zhengce/example.html",
+            "title": "促进高校毕业生就业政策",
+            "url": "https://www.gov.cn/zhengce/example.html",
+            "excerpt": "国务院有关部门发布的就业政策摘要。",
+            "source_kind": "web",
+            "evidence_status": "retrieved",
+        }
+    ]
     evidence = tools.evidence[results[0]["citation_id"]]
     assert evidence.label == "促进高校毕业生就业政策"
     assert evidence.source_id == "https://www.gov.cn/zhengce/example.html"
@@ -75,28 +80,48 @@ def test_web_page_reader_rejects_urls_outside_the_current_search_results() -> No
         tools.read_web_page("http://127.0.0.1/private")
 
 
+def test_web_search_does_not_retry_the_same_query_inside_one_tool_scope() -> None:
+    tools = KnowledgeToolRegistry(_Catalog(), web_research=_WebResearch())
+    tools.enable_web_search()
+
+    first = tools.search_web("青年就业 政策", limit=3)
+    second = tools.search_web("青年就业 政策", limit=3)
+
+    assert isinstance(first, list)
+    assert second == {
+        "error": "duplicate_web_query",
+        "message": "本轮已经搜索过相同问题，请直接使用已有网页证据。",
+        "retryable": False,
+    }
+
+
 def test_open_web_client_normalizes_search_results_and_extracts_page_text() -> None:
     def search(query: str, max_results: int):
         assert query == "社会工作 政策"
         assert max_results == 8
-        return [{
-            "title": " 社会工作政策文件 ",
-            "href": "https://example.gov.cn/policy",
-            "body": " 政策摘要 ",
-        }]
+        return [
+            {
+                "title": " 社会工作政策文件 ",
+                "href": "https://example.gov.cn/policy",
+                "body": " 政策摘要 ",
+            }
+        ]
 
     client = OpenWebResearchClient(
         search=search,
+        profile="generic",
         fetch=lambda url: f"<html><title>政策原文</title><body>{url} 正文</body></html>",
         extract=lambda html: "政策完整正文" if "example.gov.cn" in html else None,
         extract_title=lambda html: "政策原文" if html else None,
     )
 
-    assert client.search("社会工作 政策", limit=2) == [{
-        "title": "社会工作政策文件",
-        "url": "https://example.gov.cn/policy",
-        "snippet": "政策摘要",
-    }]
+    assert client.search("社会工作 政策", limit=2) == [
+        {
+            "title": "社会工作政策文件",
+            "url": "https://example.gov.cn/policy",
+            "snippet": "政策摘要",
+        }
+    ]
     assert client.read("https://example.gov.cn/policy") == {
         "title": "政策原文",
         "url": "https://example.gov.cn/policy",
@@ -104,7 +129,7 @@ def test_open_web_client_normalizes_search_results_and_extracts_page_text() -> N
     }
 
 
-def test_open_web_client_queries_bing_and_baidu_through_searxng() -> None:
+def test_open_web_client_uses_explicit_custom_json_provider() -> None:
     requests: list[tuple[str, float]] = []
 
     def search_transport(url: str, timeout: float):
@@ -136,22 +161,19 @@ def test_open_web_client_queries_bing_and_baidu_through_searxng() -> None:
         search_transport=search_transport,
     )
 
-    assert client.search("青年就业 政策", limit=2) == [{
-        "title": "国务院政策文件",
-        "url": "https://www.gov.cn/zhengce/example.html",
-        "snippet": "高校毕业生就业支持政策。",
-    }]
-    assert len(requests) == 1
+    assert client.search("青年就业 政策", limit=2) == [
+        {
+            "title": "国务院政策文件",
+            "url": "https://www.gov.cn/zhengce/example.html",
+            "snippet": "高校毕业生就业支持政策。",
+        }
+    ]
+    assert len(requests) == 3
     request_url, timeout = requests[0]
     assert timeout == 6
     assert urlparse(request_url).path == "/search"
-    assert parse_qs(urlparse(request_url).query) == {
-        "q": ["青年就业 政策"],
-        "format": ["json"],
-        "categories": ["general"],
-        "language": ["zh-CN"],
-        "engines": ["bing,baidu"],
-    }
+    assert parse_qs(urlparse(request_url).query)["q"] == ["青年就业 政策"]
+    assert parse_qs(urlparse(request_url).query)["limit"] == ["8"]
 
 
 def test_open_web_client_deduplicates_and_reranks_a_recall_pool_before_limiting() -> None:
@@ -185,12 +207,11 @@ def test_open_web_client_deduplicates_and_reranks_a_recall_pool_before_limiting(
             by_id = {chunk.chunk_id: chunk for chunk in chunks}
             return SimpleNamespace(
                 hits=tuple(
-                    SimpleNamespace(chunk=by_id[chunk_id])
-                    for chunk_id in ("web:1", "web:0")
+                    SimpleNamespace(chunk=by_id[chunk_id]) for chunk_id in ("web:0", "web:1")
                 )
             )
 
-    client = OpenWebResearchClient(search=search, reranker=Reranker())
+    client = OpenWebResearchClient(search=search, profile="generic", reranker=Reranker())
 
     assert client.search("青年就业 政策", limit=2) == [
         {
@@ -241,3 +262,25 @@ def test_open_web_client_falls_back_to_provider_order_without_vector_retriever()
             "snippet": "摘要二",
         },
     ]
+
+
+def test_web_query_planner_adds_sociology_context_after_generic_queries() -> None:
+    assert plan_web_queries("青年就业 政策", profile="generic") == [
+        "青年就业 政策",
+    ]
+    assert plan_web_queries("青年就业 政策", profile="sociology") == [
+        "青年就业 政策",
+        "青年就业 政策 社会学",
+        "青年就业 政策 官方 数据 报告",
+    ]
+
+
+def test_default_client_uses_public_search_provider_without_searxng() -> None:
+    client = OpenWebResearchClient(
+        search_provider="duckduckgo",
+        fetch=lambda url: "<html><title>结果</title><body>正文</body></html>",
+        extract=lambda _html: "正文",
+        extract_title=lambda _html: "结果",
+    )
+
+    assert client.search_provider_name == "duckduckgo"
