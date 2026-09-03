@@ -1383,7 +1383,7 @@ export function ResearchAgentConversationPage({
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
-  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
