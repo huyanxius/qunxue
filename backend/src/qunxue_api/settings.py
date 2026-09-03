@@ -78,6 +78,9 @@ class Settings(BaseSettings):
     ) = None
     model_timeout_seconds: float = Field(default=30, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
+    web_search_base_url: str = "http://127.0.0.1:8093"
+    web_search_engines: tuple[str, ...] = ("bing", "baidu")
+    web_search_timeout_seconds: float = Field(default=8, gt=0)
     model_sft_resource_header: str = "X-LoRA-ID"
     model_sft_resource_id: SecretStr | None = None
     transcription_base_url: str | None = None

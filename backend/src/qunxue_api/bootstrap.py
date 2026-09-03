@@ -737,7 +737,13 @@ def create_app(
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
-                        web_research=OpenWebResearchClient(),
+                        web_research=OpenWebResearchClient(
+                            search_base_url=resolved_settings.web_search_base_url,
+                            search_engines=resolved_settings.web_search_engines,
+                            search_timeout_seconds=(
+                                resolved_settings.web_search_timeout_seconds
+                            ),
+                        ),
                         documents=document_application,
                         proposals=proposal_service,
                         workflow=agent_research_workflow,
