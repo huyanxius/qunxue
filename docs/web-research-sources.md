@@ -13,7 +13,7 @@
 
 ## 自行实现部分
 
-- DuckDuckGo HTML、Tavily、Brave 和自定义 JSON provider 的群学适配器。
+- Bing RSS、Tavily、Brave 和自定义 JSON provider 的群学适配器。生产默认使用 Bing RSS，因为服务器实测可直接取得结果。
 - 中文查询规范化、社会学语境扩展、官方域名和来源等级排序。
 - URL 规范化、公开地址校验、网页正文读取和 Trafilatura 正文抽取。
 - 网页证据闭集、同轮重复查询阻断和终止性失败返回。

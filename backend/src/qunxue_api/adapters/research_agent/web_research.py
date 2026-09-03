@@ -4,10 +4,9 @@ from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from hashlib import sha256
 from html import unescape
-from html.parser import HTMLParser
 from ipaddress import ip_address
 from typing import Literal, Protocol
-from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from xml.etree import ElementTree
 
@@ -61,92 +60,8 @@ def _download_json(url: str, timeout: float) -> Mapping[str, object]:
     return parsed
 
 
-class _DuckDuckGoParser(HTMLParser):
-    """Parse public result cards without scraping answer prose."""
-
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.results: list[dict[str, str]] = []
-        self._in_result = False
-        self._depth = 0
-        self._link: dict[str, str] | None = None
-        self._snippet = False
-        self._text: list[str] = []
-
-    @staticmethod
-    def _classes(attrs: list[tuple[str, str | None]]) -> set[str]:
-        return set((dict(attrs).get("class") or "").split())
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        classes = self._classes(attrs)
-        if tag == "div" and "result" in classes:
-            self._in_result = True
-            self._depth = 1
-            return
-        if not self._in_result:
-            return
-        if tag == "div":
-            self._depth += 1
-        if tag == "a" and "result__a" in classes:
-            self._link = {"url": _decode_search_url(dict(attrs).get("href") or ""), "title": ""}
-            self._text = []
-        elif tag in {"a", "span", "div"} and "result__snippet" in classes:
-            self._snippet = True
-            self._text = []
-
-    def handle_endtag(self, tag: str) -> None:
-        if not self._in_result:
-            return
-        if tag == "a" and self._link is not None:
-            self._link["title"] = _clean_text("".join(self._text))
-            self._text = []
-        elif tag in {"a", "span", "div"} and self._snippet:
-            if self._link is not None:
-                self._link["snippet"] = _clean_text("".join(self._text))
-            self._snippet = False
-            self._text = []
-        if tag == "div":
-            self._depth -= 1
-            if self._depth == 0:
-                if self._link is not None and self._link.get("url"):
-                    self.results.append(self._link)
-                self._link = None
-                self._in_result = False
-
-    def handle_data(self, data: str) -> None:
-        if self._in_result and (self._link is not None or self._snippet):
-            self._text.append(data)
-
-
 def _clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", unescape(value)).strip()
-
-
-def _decode_search_url(url: str) -> str:
-    parsed = urlparse(url)
-    if parsed.path == "/l/" and parsed.query:
-        target = dict(parse_qsl(parsed.query)).get("uddg")
-        if target:
-            return unquote(target)
-    return url
-
-
-def _search_duckduckgo(
-    query: str, max_results: int, *, timeout: float
-) -> Iterable[Mapping[str, object]]:
-    url = "https://html.duckduckgo.com/html/?" + urlencode({"q": query, "kl": "cn-zh"})
-    request = Request(url, headers={"User-Agent": _USER_AGENT, "Accept-Language": "zh-CN,zh;q=0.9"})
-    with build_opener().open(request, timeout=timeout) as response:
-        html = response.read(5_000_001).decode(
-            response.headers.get_content_charset() or "utf-8", "replace"
-        )
-    parser = _DuckDuckGoParser()
-    parser.feed(html)
-    if parser.results:
-        return parser.results[:max_results]
-    # DDG may present a browser challenge to server-side callers. Bing's
-    # public RSS endpoint is a bounded fallback, not a second query family.
-    return _search_bing_rss(query, max_results, timeout=timeout)
 
 
 def _search_bing_rss(
@@ -331,7 +246,7 @@ class OpenWebResearchClient:
         self,
         *,
         search: SearchFunction | None = None,
-        search_provider: str = "duckduckgo",
+        search_provider: str = "bing",
         search_api_key: str | None = None,
         search_base_url: str | None = None,
         search_engines: tuple[str, ...] = (),
@@ -411,8 +326,8 @@ class OpenWebResearchClient:
     def _search_provider(
         query: str, max_results: int, *, provider: str, api_key: str | None, timeout: float
     ) -> Iterable[Mapping[str, object]]:
-        if provider == "duckduckgo":
-            return _search_duckduckgo(query, max_results, timeout=timeout)
+        if provider == "bing":
+            return _search_bing_rss(query, max_results, timeout=timeout)
         if provider == "tavily" and api_key:
             return _search_tavily(query, max_results, api_key=api_key, timeout=timeout)
         if provider == "brave" and api_key:

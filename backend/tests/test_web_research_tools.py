@@ -277,10 +277,9 @@ def test_web_query_planner_adds_sociology_context_after_generic_queries() -> Non
 
 def test_default_client_uses_public_search_provider_without_searxng() -> None:
     client = OpenWebResearchClient(
-        search_provider="duckduckgo",
         fetch=lambda url: "<html><title>结果</title><body>正文</body></html>",
         extract=lambda _html: "正文",
         extract_title=lambda _html: "结果",
     )
 
-    assert client.search_provider_name == "duckduckgo"
+    assert client.search_provider_name == "bing"
