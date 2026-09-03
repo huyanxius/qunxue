@@ -384,6 +384,10 @@ export type AgentTurnRequest = {
      */
     theory_plan_id?: string | null;
     /**
+     * Web Search
+     */
+    web_search?: boolean;
+    /**
      * Workspace
      */
     workspace?: 'agent' | 'research';

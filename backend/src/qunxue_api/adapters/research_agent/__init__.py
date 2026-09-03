@@ -14,6 +14,7 @@ from qunxue_api.adapters.research_agent.reranker import (
     RerankerProviderError,
     SiliconFlowRerankerProvider,
 )
+from qunxue_api.adapters.research_agent.web_research import OpenWebResearchClient
 from qunxue_api.modules.agent_conversation import AgentRunResult, SubjectAgentRunner
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "EmbeddingProviderError",
     "KnowledgeToolRegistry",
     "OpenAICompatibleEmbeddingProvider",
+    "OpenWebResearchClient",
     "PydanticAIKnowledgeRunner",
     "ResearchDocumentToolRegistry",
     "RerankerProviderError",

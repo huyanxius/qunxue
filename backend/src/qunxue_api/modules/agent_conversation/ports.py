@@ -69,12 +69,19 @@ class AgentToolContext(Protocol):
     evidence: Mapping[str, AgentEvidence]
     research_map_enabled: bool
     research_map: Mapping[str, object]
+    web_search_enabled: bool
 
     def search_knowledge(self, query: str, *, limit: int = 5) -> list[dict[str, object]]: ...
 
     def search_research_materials(
         self, query: str, *, limit: int = 5
     ) -> list[dict[str, object]]: ...
+
+    def enable_web_search(self) -> None: ...
+
+    def search_web(self, query: str, *, limit: int = 5) -> list[dict[str, object]]: ...
+
+    def read_web_page(self, url: str) -> dict[str, object]: ...
 
     def read_research_material_context(
         self,

@@ -13,6 +13,7 @@ import {
   FilePlusIcon,
   FileTextIcon,
   FolderOpenIcon,
+  GlobeHemisphereWestIcon,
   LinkSimpleIcon,
   ListIcon,
   MagnifyingGlassIcon,
@@ -114,6 +115,8 @@ const toolLabels: Record<string, string> = {
   browse_knowledge_directory: '浏览知识目录',
   search_research_materials: '检索研究材料',
   read_research_material_context: '读取研究材料原文',
+  search_web: '搜索公开网页',
+  read_web_page: '读取网页正文',
   update_research_map: '更新研究地图',
   propose_start_research: '整理研究起点',
   get_research_workflow_state: '读取研究进度',
@@ -131,6 +134,8 @@ const englishToolLabels: Record<string, string> = {
   browse_knowledge_directory: 'Browse knowledge directory',
   search_research_materials: 'Search research materials',
   read_research_material_context: 'Read research material context',
+  search_web: 'Search the web',
+  read_web_page: 'Read web page',
   update_research_map: 'Update research map',
   propose_start_research: 'Prepare research starting point',
   get_research_workflow_state: 'Read research progress',
@@ -148,6 +153,8 @@ const toolPurposes: Record<string, string> = {
   browse_knowledge_directory: '查看当前知识版本中可用于研究的内容范围',
   search_research_materials: '从当前研究任务的个人材料中寻找相关原文片段',
   read_research_material_context: '沿精确位置读取片段前后文，避免脱离整份材料解释',
+  search_web: '查找当前政策、新闻、报告与其他公开网页来源',
+  read_web_page: '读取网页正文，避免只根据搜索摘要形成结论',
   update_research_map: '把已确认的问题、理论与证据关系写入研究画布',
   propose_start_research: '把现象、研究意图与情境整理成待确认的研究起点',
   get_research_workflow_state: '读取当前研究任务的阶段与可继续操作',
@@ -165,6 +172,8 @@ const englishToolPurposes: Record<string, string> = {
   browse_knowledge_directory: 'Review the research material available in this knowledge release',
   search_research_materials: 'Find relevant passages in the personal materials bound to this research task',
   read_research_material_context: 'Read the surrounding context at the exact source position',
+  search_web: 'Find current policies, news, reports, and other public web sources',
+  read_web_page: 'Read the page text instead of relying on a search snippet',
   update_research_map: 'Record confirmed questions, theories, and evidence relationships',
   propose_start_research: 'Prepare the phenomenon and research intent for confirmation',
   get_research_workflow_state: 'Read the current research phase and available next actions',
@@ -1141,8 +1150,10 @@ function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
       && citation.kind !== 'material'
       && citation.kind !== 'research_material'
   )).length
-  if (!materialCount && !knowledgeCount) return null
-  const mixed = materialCount > 0 && knowledgeCount > 0
+  const webCount = citations.filter((citation) => citation.source_kind === 'web').length
+  if (!materialCount && !knowledgeCount && !webCount) return null
+  const originCount = [materialCount, knowledgeCount, webCount].filter(Boolean).length
+  const mixed = originCount > 1
   return (
     <div
       className={`new-research__evidence-origin${mixed ? ' is-mixed' : ''}`}
@@ -1160,13 +1171,20 @@ function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
         {materialCount ? (
           <span className="is-material"><span>{text('你的研究材料', 'Your research materials')}</span><b>{materialCount}</b></span>
         ) : null}
+        {webCount ? (
+          <span className="is-web"><span>{text('公开网页', 'Public web')}</span><b>{webCount}</b></span>
+        ) : null}
       </div>
       <p>
-        {mixed
+        {knowledgeCount && materialCount && !webCount
           ? text('本轮同时引用了群学知识库和你的研究材料', 'This answer cites both the Qunxue knowledge base and your research materials')
-          : materialCount
-            ? text('本轮引用了你的研究材料', 'This answer cites your research materials')
-            : text('本轮引用了群学知识库', 'This answer cites the Qunxue knowledge base')}
+          : mixed
+            ? text('本轮同时引用了多类证据来源', 'This answer cites multiple evidence sources')
+            : materialCount
+              ? text('本轮引用了你的研究材料', 'This answer cites your research materials')
+              : knowledgeCount
+                ? text('本轮引用了群学知识库', 'This answer cites the Qunxue knowledge base')
+                : text('本轮引用了公开网页', 'This answer cites the public web')}
       </p>
     </div>
   )
@@ -1364,6 +1382,8 @@ export function ResearchAgentConversationPage({
   const [contextOpen, setContextOpen] = useState(false)
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
+  const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -1384,6 +1404,8 @@ export function ResearchAgentConversationPage({
   const loadedConversationId = useRef<string | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
+  const materialMenuRef = useRef<HTMLDivElement>(null)
+  const materialMenuButtonRef = useRef<HTMLButtonElement>(null)
 
   const closeHistory = useCallback(() => setHistoryOpen(false), [])
 
@@ -1395,6 +1417,37 @@ export function ResearchAgentConversationPage({
   function closeMaterials() {
     materialsOpenRef.current = false
     setMaterialsOpen(false)
+  }
+
+  useEffect(() => {
+    if (!materialMenuOpen) return undefined
+
+    function closeMaterialMenu(event: globalThis.KeyboardEvent | PointerEvent) {
+      if (event instanceof globalThis.KeyboardEvent) {
+        if (event.key !== 'Escape') return
+        setMaterialMenuOpen(false)
+        materialMenuButtonRef.current?.focus()
+        return
+      }
+      if (!materialMenuRef.current?.contains(event.target as Node)) setMaterialMenuOpen(false)
+    }
+
+    document.addEventListener('keydown', closeMaterialMenu)
+    document.addEventListener('pointerdown', closeMaterialMenu)
+    return () => {
+      document.removeEventListener('keydown', closeMaterialMenu)
+      document.removeEventListener('pointerdown', closeMaterialMenu)
+    }
+  }, [materialMenuOpen])
+
+  function openResearchMaterials() {
+    setMaterialMenuOpen(false)
+    if (workspace === 'research' && taskId) {
+      setMaterialLocatorTarget(null)
+      openMaterials()
+      return
+    }
+    navigate('/research/materials')
   }
   const turns = useMemo(() => activeConversation?.turns ?? [], [activeConversation])
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
@@ -1672,6 +1725,7 @@ export function ResearchAgentConversationPage({
           message: question,
           idempotencyKey,
           workspace,
+          web_search: webSearchEnabled,
           task_id: workspace === 'research' ? taskId : null,
           document_id: workspace === 'research' ? documentId : null,
           section_id: workspace === 'research' ? sectionId : null,
@@ -1967,12 +2021,23 @@ export function ResearchAgentConversationPage({
     return `/knowledge/graph?${query.toString()}`
   }
 
+  function webSourceHref(citation: AgentCitation) {
+    if (citation.source_kind !== 'web' || !citation.source_id) return null
+    try {
+      const url = new URL(citation.source_id)
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null
+    } catch {
+      return null
+    }
+  }
+
   const selectedKnowledgeEntryHref = selectedCitation
     ? knowledgeEntryHref(selectedCitation, selectedCitationReleaseId)
     : null
   const selectedKnowledgeGraphHref = selectedCitation
     ? knowledgeGraphHref(selectedCitation, selectedCitationReleaseId)
     : null
+  const selectedWebSourceHref = selectedCitation ? webSourceHref(selectedCitation) : null
 
   const basisContent = selectedActivity ? (
     <div className="new-research__basis">
@@ -2020,6 +2085,11 @@ export function ResearchAgentConversationPage({
         : selectedCitation.knowledge_id
           ? <span className="new-research__basis-note">{text('当前回合的知识版本尚未确认，暂不提供跳转。', 'The knowledge release for this turn is not confirmed, so navigation is unavailable.')}</span>
           : null}
+      {selectedWebSourceHref
+        ? <div className="research-agent-basis-actions">
+            <a href={selectedWebSourceHref} target="_blank" rel="noreferrer">{text('打开网页', 'Open web page')} <ArrowUpIcon size={13} /></a>
+          </div>
+        : null}
     </div>
   ) : undefined
 
@@ -2135,6 +2205,51 @@ export function ResearchAgentConversationPage({
                   placeholder={text('问一个问题，或描述你正在理解的现象', 'Ask a question or describe a phenomenon you are trying to understand')}
                   rows={1}
                 />
+                <div className="research-agent-composer__controls">
+                  <div className="research-agent-composer__material-entry" ref={materialMenuRef}>
+                    <button
+                      ref={materialMenuButtonRef}
+                      type="button"
+                      className="research-agent-composer__add"
+                      aria-label={text('添加研究材料', 'Add research material')}
+                      aria-expanded={materialMenuOpen}
+                      aria-controls="research-agent-material-menu"
+                      disabled={isBusy}
+                      onClick={() => setMaterialMenuOpen((open) => !open)}
+                    >
+                      <PlusIcon size={18} />
+                    </button>
+                    {materialMenuOpen ? (
+                      <div
+                        id="research-agent-material-menu"
+                        className="research-agent-composer__material-menu"
+                        role="menu"
+                        aria-label={text('添加研究材料', 'Add research material')}
+                      >
+                        <button type="button" role="menuitem" onClick={openResearchMaterials}>
+                          <FilePlusIcon size={18} /><span>{text('上传文件', 'Upload a file')}</span>
+                        </button>
+                        <button type="button" role="menuitem" onClick={openResearchMaterials}>
+                          <FolderOpenIcon size={18} /><span>{text('从研究材料添加', 'Add from research materials')}</span>
+                        </button>
+                        <button type="button" role="menuitem" onClick={openResearchMaterials}>
+                          <LinkSimpleIcon size={18} /><span>{text('引用文件', 'Reference a file')}</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className={`research-agent-composer__web-search${webSearchEnabled ? ' is-active' : ''}`}
+                    aria-label={text('联网搜索', 'Web search')}
+                    aria-pressed={webSearchEnabled}
+                    disabled={isBusy}
+                    onClick={() => setWebSearchEnabled((enabled) => !enabled)}
+                  >
+                    <GlobeHemisphereWestIcon size={16} />
+                    <span>{text('联网搜索', 'Web search')}</span>
+                  </button>
+                </div>
                 <button
                   type={canStopGeneration ? 'button' : 'submit'}
                   aria-label={canStopGeneration ? text('停止生成', 'Stop generating') : isBusy ? text('Agent 正在加载', 'Agent is loading') : text('发送给社会学 Agent', 'Send to the Sociology Agent')}

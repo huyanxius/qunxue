@@ -25,6 +25,7 @@ from qunxue_api.adapters.model import (
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
     OpenAICompatibleEmbeddingProvider,
+    OpenWebResearchClient,
     PydanticAIKnowledgeRunner,
     ResearchDocumentToolRegistry,
     SiliconFlowRerankerProvider,
@@ -731,6 +732,7 @@ def create_app(
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
+                        web_research=OpenWebResearchClient(),
                         documents=document_application,
                         proposals=proposal_service,
                         workflow=agent_research_workflow,

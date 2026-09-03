@@ -407,6 +407,9 @@ class PydanticAIKnowledgeRunner:
                 "检索结果只限定知识库引用的依据，不限制你理解和回应用户的问题。"
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
                 "每轮最多调用 3 次 search_knowledge；不要重复相同检索，也不要猜测 knowledge_id；"
+                "当本轮启用联网搜索时，可以调用 search_web 查找当前政策、新闻、报告或其他网页来源；"
+                "采用网页信息前必须再调用 read_web_page 阅读正文，不得只根据搜索摘要下结论。"
+                "只能读取 search_web 本轮实际返回的网址，不能猜测或拼接 URL。"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
                 "凡是声称来自知识库的内容都必须来自本轮工具实际返回的闭集；来源卡片由结构化"
                 "证据选择生成，不要在正文中打印 citation_id 来伪造引用。"
@@ -499,6 +502,91 @@ class PydanticAIKnowledgeRunner:
                     detail=detail,
                 )
             )
+            return result
+
+        @self._agent.tool(prepare=_prepare_web_tool)
+        def search_web(
+            ctx: RunContext[KnowledgeToolRegistry], query: str, limit: int = 5
+        ) -> list[dict[str, object]] | dict[str, object]:
+            """搜索公开网页。适合当前政策、新闻、报告与其他需要联网核对的信息。"""
+
+            safe_limit = max(1, min(int(limit), 8))
+            call_id = _tool_call_id(ctx, "search_web")
+            tool_input = {"query": query, "limit": safe_limit}
+            self._emit_tool_event(AgentToolEvent(
+                tool="search_web",
+                phase="started",
+                call_id=call_id,
+                input=tool_input,
+                detail="正在搜索公开网页",
+            ))
+            try:
+                result = ctx.deps.search_web(query, limit=safe_limit)
+            except Exception:
+                self._emit_tool_event(AgentToolEvent(
+                    tool="search_web",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="联网搜索暂时失败",
+                    error="web_search_failed",
+                ))
+                return {
+                    "error": "web_search_failed",
+                    "message": "联网搜索暂时失败，本轮没有取得网页证据。",
+                    "retryable": True,
+                }
+            _select_result_evidence(ctx.deps, result)
+            self._emit_tool_event(AgentToolEvent(
+                tool="search_web",
+                phase="finished",
+                call_id=call_id,
+                input=tool_input,
+                output={"result_count": len(result), "items": _trace_items(result)},
+                detail=f"找到 {len(result)} 个网页结果",
+            ))
+            return result
+
+        @self._agent.tool(prepare=_prepare_web_tool)
+        def read_web_page(
+            ctx: RunContext[KnowledgeToolRegistry], url: str
+        ) -> dict[str, object]:
+            """读取 search_web 本轮返回网页的正文，以便核对原始内容。"""
+
+            call_id = _tool_call_id(ctx, "read_web_page")
+            tool_input = {"url": url}
+            self._emit_tool_event(AgentToolEvent(
+                tool="read_web_page",
+                phase="started",
+                call_id=call_id,
+                input=tool_input,
+                detail="正在读取网页正文",
+            ))
+            try:
+                result = ctx.deps.read_web_page(url)
+            except Exception:
+                self._emit_tool_event(AgentToolEvent(
+                    tool="read_web_page",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="网页正文暂时无法读取",
+                    error="web_page_read_failed",
+                ))
+                return {
+                    "error": "web_page_read_failed",
+                    "message": "网页正文暂时无法读取，不能把搜索摘要当作原文。",
+                    "retryable": True,
+                }
+            _select_result_evidence(ctx.deps, [result])
+            self._emit_tool_event(AgentToolEvent(
+                tool="read_web_page",
+                phase="finished",
+                call_id=call_id,
+                input=tool_input,
+                output={"result_count": 1, "items": _trace_items([result])},
+                detail=f"已读取网页：{result.get('title') or url}",
+            ))
             return result
 
         @self._agent.tool(prepare=_prepare_material_tool)
@@ -2250,6 +2338,20 @@ def _prepare_document_tool(
     )
 
 
+def _prepare_web_tool(
+    ctx: RunContext[KnowledgeToolRegistry],
+    definition: ToolDefinition,
+) -> ToolDefinition | None:
+    """Expose open-web tools only when the user enables them for this turn."""
+
+    return (
+        definition
+        if getattr(ctx.deps, "web_search_enabled", False)
+        and callable(getattr(ctx.deps, definition.name, None))
+        else None
+    )
+
+
 def _prepare_material_tool(
     ctx: RunContext[KnowledgeToolRegistry],
     definition: ToolDefinition,
@@ -2341,25 +2443,17 @@ def _select_result_evidence(
     # set, preserving the existing reformulation behavior.
     existing = tuple(getattr(tools, "selected_evidence_ids", ()))
     incoming_kinds = {_evidence_source_bucket(tools, citation_id) for citation_id in incoming}
-    existing_kinds = {_evidence_source_bucket(tools, citation_id) for citation_id in existing}
-    if existing and incoming_kinds == {"personal"} and "public" in existing_kinds:
-        # Reading a neighboring personal block should refine the personal
-        # selection without dropping a public concept retrieved earlier.
-        public = tuple(
+    if existing and len(incoming_kinds) == 1:
+        # A reformulation replaces candidates from its own evidence pool while
+        # retaining knowledge, personal material, and web evidence from the
+        # other pools used in the same answer.
+        incoming_bucket = next(iter(incoming_kinds))
+        preserved = tuple(
             citation_id
             for citation_id in existing
-            if _evidence_source_bucket(tools, citation_id) == "public"
+            if _evidence_source_bucket(tools, citation_id) != incoming_bucket
         )
-        selected = tuple(dict.fromkeys((*public[:7], *incoming)))
-    elif existing and incoming_kinds == {"public"} and "personal" in existing_kinds:
-        # A public reformulation replaces only the public candidates while
-        # preserving the task-scoped excerpts already selected this turn.
-        personal = tuple(
-            citation_id
-            for citation_id in existing
-            if _evidence_source_bucket(tools, citation_id) == "personal"
-        )
-        selected = tuple(dict.fromkeys((*personal[:7], *incoming)))
+        selected = tuple(dict.fromkeys((*preserved[:7], *incoming)))
     else:
         selected = incoming
     _set_selected_evidence(tools, selected[:8])
@@ -2389,7 +2483,12 @@ def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str])
 
 def _evidence_source_bucket(tools: AgentToolContext, citation_id: str) -> str:
     evidence = tools.evidence.get(citation_id)
-    return "personal" if getattr(evidence, "source_kind", None) == "personal_material" else "public"
+    source_kind = getattr(evidence, "source_kind", None)
+    if source_kind == "personal_material":
+        return "personal"
+    if source_kind == "web":
+        return "web"
+    return "public"
 
 
 def _tool_call_id(ctx: RunContext[KnowledgeToolRegistry], tool: str) -> str:

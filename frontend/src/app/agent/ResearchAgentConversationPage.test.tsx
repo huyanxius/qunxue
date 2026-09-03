@@ -128,6 +128,55 @@ function LocationProbe() {
 }
 
 describe('ResearchAgentConversationPage', () => {
+  it('opens the composer material menu and returns focus when Escape closes it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    const addButton = within(agent).getByRole('button', { name: '添加研究材料' })
+    fireEvent.click(addButton)
+
+    const menu = within(agent).getByRole('menu', { name: '添加研究材料' })
+    expect(within(menu).getByRole('menuitem', { name: '上传文件' })).toBeVisible()
+    expect(within(menu).getByRole('menuitem', { name: '从研究材料添加' })).toBeVisible()
+    expect(within(menu).getByRole('menuitem', { name: '引用文件' })).toBeVisible()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(within(agent).queryByRole('menu', { name: '添加研究材料' })).not.toBeInTheDocument()
+    expect(addButton).toHaveFocus()
+  })
+
+  it('sends the enabled web-search choice with the next question', async () => {
+    const completed = conversationFixture({
+      id: 'conversation-web-search',
+      prompt: '查找近期青年就业政策。',
+      answer: '我会核对最新网页来源。',
+    })
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlFor(input)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname === '/api/agent/turns' && init?.method === 'POST') return streamResponse(completed)
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    const webSearchButton = within(agent).getByRole('button', { name: '联网搜索' })
+    expect(webSearchButton).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(webSearchButton)
+    expect(webSearchButton).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.change(within(agent).getByRole('textbox', { name: '问社会学 Agent' }), {
+      target: { value: '查找近期青年就业政策。' },
+    })
+    fireEvent.submit(within(agent).getByRole('textbox', { name: '问社会学 Agent' }).closest('form') as HTMLFormElement)
+
+    await waitFor(() => expect(fetch.mock.calls.some(([input]) => urlFor(input).pathname === '/api/agent/turns')).toBe(true))
+    const turnCall = fetch.mock.calls.find(([input]) => urlFor(input).pathname === '/api/agent/turns')
+    expect(JSON.parse(String(turnCall?.[1]?.body))).toMatchObject({ web_search: true })
+  })
+
   it('keeps the conversation rail visible while the research history dialog is open', async () => {
     const conversation = conversationFixture({ id: 'conversation-history-rail' })
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -365,6 +414,36 @@ describe('ResearchAgentConversationPage', () => {
       expect(detailRequest).toBeDefined()
       expect(urlFor(detailRequest?.[0] as RequestInfo | URL).searchParams.get('parse_id')).toBe('parse-1')
     })
+  })
+
+  it('opens a selected web citation at its original page', async () => {
+    const citation: AgentCitation = {
+      citation_id: 'web:https://www.gov.cn/zhengce/example.html',
+      label: '高校毕业生就业政策',
+      kind: 'source',
+      excerpt: '政策正文说明了高校毕业生就业支持措施。',
+      source_id: 'https://www.gov.cn/zhengce/example.html',
+      source_kind: 'web',
+    }
+    const conversation = conversationFixture({ id: 'conversation-web-citation', citations: [citation] })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    expect(within(agent).getByRole('status', { name: '本轮证据来源' })).toHaveTextContent('公开网页')
+    fireEvent.click(within(agent).getByRole('button', { name: '查看证据：高校毕业生就业政策' }))
+    const sources = await screen.findByRole('region', { name: '来源' })
+    fireEvent.click(within(sources).getByRole('button', { name: /高校毕业生就业政策/ }))
+
+    expect(await screen.findByRole('link', { name: '打开网页' })).toHaveAttribute(
+      'href',
+      'https://www.gov.cn/zhengce/example.html',
+    )
   })
 
   it('makes mixed evidence visible when an answer cites both public knowledge and personal material', async () => {

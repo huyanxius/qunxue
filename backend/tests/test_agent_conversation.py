@@ -104,6 +104,43 @@ class _FakeAgentTools:
     evidence = {}
 
 
+def test_application_only_enables_web_tools_for_an_opted_in_turn() -> None:
+    created_tools: list[object] = []
+
+    class _WebAwareTools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+
+        def __init__(self) -> None:
+            self.evidence = {}
+            self.web_search_enabled = False
+            created_tools.append(self)
+
+        def enable_web_search(self) -> None:
+            self.web_search_enabled = True
+
+    class _WebAwareRunner(_CountingRunner):
+        def run(self, *, prompt, conversation, tools) -> AgentRunResult:
+            assert tools.web_search_enabled is True
+            return super().run(prompt=prompt, conversation=conversation, tools=tools)
+
+    application = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=_WebAwareRunner(),
+        tools_factory=_WebAwareTools,
+    )
+
+    application.run_turn(
+        user_id=UUID("00000000-0000-0000-0000-000000000001"),
+        conversation_id=None,
+        prompt="查找最新政策",
+        idempotency_key="web-search-enabled",
+        web_search=True,
+    )
+
+    assert len(created_tools) == 1
+    assert created_tools[0].web_search_enabled is True
+
+
 class _CountingRunner:
     def __init__(self) -> None:
         self.calls = 0
@@ -1386,6 +1423,100 @@ def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
 
     assert result.answer == "这是基于通用社会学知识的回答。"
     assert result.citations == ()
+
+
+def test_agent_can_search_and_read_web_pages_when_the_turn_opts_in() -> None:
+    url = "https://www.gov.cn/zhengce/example.html"
+    citation_id = f"web:{url}"
+
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+        web_search_enabled = True
+
+        def __init__(self) -> None:
+            self.evidence = {}
+            self.selected_evidence_ids: tuple[str, ...] = ()
+            self.searches: list[str] = []
+            self.reads: list[str] = []
+
+        def search_web(self, query: str, *, limit: int = 5):
+            self.searches.append(query)
+            self.evidence[citation_id] = AgentEvidence(
+                citation_id=citation_id,
+                label="高校毕业生就业政策",
+                kind="source",
+                excerpt="政策摘要",
+                source_id=url,
+                source_kind="web",
+            )
+            return [{
+                "citation_id": citation_id,
+                "title": "高校毕业生就业政策",
+                "url": url,
+                "excerpt": "政策摘要",
+            }]
+
+        def read_web_page(self, requested_url: str):
+            self.reads.append(requested_url)
+            return {
+                "citation_id": citation_id,
+                "title": "高校毕业生就业政策",
+                "url": requested_url,
+                "content": "政策完整正文",
+            }
+
+        def select_evidence(self, citation_ids):
+            self.selected_evidence_ids = tuple(citation_ids)
+            return self.selected_evidence_ids
+
+    tools = _Tools()
+
+    async def model_stream(messages, info):
+        del messages, info
+        if not tools.searches:
+            yield {
+                0: DeltaToolCall(
+                    name="search_web",
+                    json_args='{"query":"高校毕业生 就业 政策"}',
+                    tool_call_id="call-web-search",
+                )
+            }
+        elif not tools.reads:
+            yield {
+                0: DeltaToolCall(
+                    name="read_web_page",
+                    json_args=f'{{"url":"{url}"}}',
+                    tool_call_id="call-web-read",
+                )
+            }
+        else:
+            yield "根据政府网页，相关就业支持政策已经发布。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="sociology-model",
+        timeout_seconds=30,
+    )
+    tool_events = []
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="查找近期高校毕业生就业政策",
+            conversation=(),
+            tools=tools,
+            on_delta=lambda _: None,
+            on_tool_event=tool_events.append,
+        )
+
+    assert tools.searches == ["高校毕业生 就业 政策"]
+    assert tools.reads == [url]
+    assert result.citations == (tools.evidence[citation_id],)
+    assert [(event.tool, event.phase) for event in tool_events] == [
+        ("search_web", "started"),
+        ("search_web", "finished"),
+        ("read_web_page", "started"),
+        ("read_web_page", "finished"),
+    ]
 
 
 def test_agent_policy_searches_for_a_plain_sociology_concept_by_default() -> None:
