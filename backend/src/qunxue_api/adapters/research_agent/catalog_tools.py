@@ -66,6 +66,7 @@ class KnowledgeToolRegistry:
         self.research_map_enabled = False
         self.web_search_enabled = False
         self._allowed_web_urls: set[str] = set()
+        self._web_queries: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
 
     def select_evidence(self, citation_ids: Sequence[str]) -> tuple[str, ...]:
@@ -82,12 +83,22 @@ class KnowledgeToolRegistry:
     def enable_web_search(self) -> None:
         self.web_search_enabled = self._web_research is not None
 
-    def search_web(self, query: str, *, limit: int = 5) -> list[dict[str, object]]:
+    def search_web(
+        self, query: str, *, limit: int = 5
+    ) -> list[dict[str, object]] | dict[str, object]:
         if not self.web_search_enabled or self._web_research is None:
             raise ValueError("联网搜索未开启")
         safe_query = query.strip()
         if not safe_query:
             raise ValueError("联网搜索词不能为空")
+        query_key = " ".join(safe_query.casefold().split())
+        if query_key in self._web_queries:
+            return {
+                "error": "duplicate_web_query",
+                "message": "本轮已经搜索过相同问题，请直接使用已有网页证据。",
+                "retryable": False,
+            }
+        self._web_queries.add(query_key)
         raw_results = self._web_research.search(safe_query, limit=max(1, min(limit, 8)))
         results: list[dict[str, object]] = []
         for item in raw_results:

@@ -382,9 +382,7 @@ def create_app(
                 doi_resolver=CrossrefDoiMetadataResolver(),
             )
 
-    app.state.professional_materials_application_scope = (
-        professional_materials_application_scope
-    )
+    app.state.professional_materials_application_scope = professional_materials_application_scope
     transcription_provider = _build_transcription_provider(resolved_settings)
 
     @contextmanager
@@ -753,11 +751,16 @@ def create_app(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
                         web_research=OpenWebResearchClient(
-                            search_base_url=resolved_settings.web_search_base_url,
-                            search_engines=resolved_settings.web_search_engines,
-                            search_timeout_seconds=(
-                                resolved_settings.web_search_timeout_seconds
+                            search_provider=resolved_settings.web_search_provider,
+                            search_api_key=(
+                                resolved_settings.web_search_api_key.get_secret_value()
+                                if resolved_settings.web_search_api_key
+                                else None
                             ),
+                            search_base_url=resolved_settings.web_search_base_url,
+                            profile=resolved_settings.web_search_profile,
+                            allowed_domains=resolved_settings.web_search_allowed_domains,
+                            search_timeout_seconds=(resolved_settings.web_search_timeout_seconds),
                             reranker=app.state.knowledge_retriever,
                         ),
                         documents=document_application,

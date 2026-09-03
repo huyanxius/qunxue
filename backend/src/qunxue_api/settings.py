@@ -78,9 +78,12 @@ class Settings(BaseSettings):
     ) = None
     model_timeout_seconds: float = Field(default=30, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
-    web_search_base_url: str = "http://127.0.0.1:8093"
-    web_search_engines: tuple[str, ...] = ("bing", "baidu")
-    web_search_timeout_seconds: float = Field(default=8, gt=0)
+    web_search_provider: Literal["duckduckgo", "tavily", "brave", "custom"] = "duckduckgo"
+    web_search_api_key: SecretStr | None = None
+    web_search_base_url: str | None = None
+    web_search_profile: Literal["generic", "sociology"] = "sociology"
+    web_search_allowed_domains: tuple[str, ...] = ()
+    web_search_timeout_seconds: float = Field(default=12, gt=0)
     model_sft_resource_header: str = "X-LoRA-ID"
     model_sft_resource_id: SecretStr | None = None
     transcription_base_url: str | None = None
