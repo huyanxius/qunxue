@@ -158,6 +158,10 @@
   width: 64px;
 }
 
+.desktop-rail:has(.desktop-rail__notification-panel) {
+  overflow: visible;
+}
+
 .desktop-rail__topbar {
   height: 56px;
   display: flex;
@@ -313,8 +317,8 @@
   box-shadow: none;
 }
 
-.desktop-rail__account a,
-.desktop-rail__account button {
+.desktop-rail__account > a,
+.desktop-rail__account > button {
   min-width: 0;
   min-height: 40px;
   display: flex;
@@ -333,14 +337,31 @@
   text-decoration: none;
 }
 
-.desktop-rail__account button {
+.desktop-rail__account > button {
+  position: relative;
   flex: 0 0 40px;
   justify-content: center;
 }
 
-.desktop-rail__account a:hover,
-.desktop-rail__account button:hover,
-.desktop-rail__account a[aria-current='page'] {
+.desktop-rail__notifications svg {
+  transform-origin: 50% 12%;
+  animation: notification-bell-ring 2.8s ease-in-out infinite;
+}
+
+.desktop-rail__notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid rgb(248 248 245);
+  border-radius: 50%;
+  background: #c73b32;
+}
+
+.desktop-rail__account > a:hover,
+.desktop-rail__account > button:hover,
+.desktop-rail__account > a[aria-current='page'] {
   color: var(--app-ink);
   background: rgb(255 255 255 / 38%);
 }
@@ -382,28 +403,81 @@
 
 .desktop-rail__notification-panel {
   position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  width: 208px;
+  z-index: 40;
+  bottom: 0;
+  left: calc(100% + 10px);
+  width: min(280px, calc(100vw - 274px));
+  max-height: min(520px, calc(100dvh - 24px));
   padding: 14px;
   border: 1px solid var(--app-border);
-  border-radius: var(--radius-large);
+  border-radius: 16px;
   color: var(--app-ink);
-  background: rgb(255 255 255 / 94%);
-  box-shadow: 0 12px 32px rgb(31 37 33 / 10%);
-  backdrop-filter: blur(16px);
+  background: rgb(255 255 255 / 98%);
+  box-shadow: 0 14px 36px rgb(31 37 33 / 14%);
+  overflow-y: auto;
 }
 
-.desktop-rail__notification-panel strong {
-  font-size: 13px;
+.app-frame--rail-collapsed .desktop-rail__notification-panel {
+  width: min(280px, calc(100vw - 98px));
+}
+
+.desktop-rail__notification-panel h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.desktop-rail__notification-tabs {
+  width: fit-content;
+  display: flex;
+  gap: 2px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: var(--radius-large);
+  background: var(--app-surface);
+}
+
+.desktop-rail__notification-tabs button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--app-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.desktop-rail__notification-panel p {
-  margin: 4px 0 0;
+.desktop-rail__notification-tabs button[aria-selected='true'] {
+  color: var(--app-ink);
+  background: var(--app-canvas);
+  box-shadow: 0 1px 5px rgb(31 37 33 / 12%);
+}
+
+.desktop-rail__notification-item strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.desktop-rail__notification-item p {
+  margin: 6px 0 12px;
   color: var(--app-muted);
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.desktop-rail__notification-item time,
+.desktop-rail__notification-empty {
+  color: #9a9a9a;
+  font-size: 10px;
+}
+
+.desktop-rail__notification-empty {
+  margin: 0;
 }
 
 .desktop-rail--collapsed .desktop-rail__account > a > strong,
@@ -411,7 +485,7 @@
   display: none;
 }
 
-.desktop-rail--collapsed .desktop-rail__account a {
+.desktop-rail--collapsed .desktop-rail__account > a {
   justify-content: center;
   padding: 0;
 }
@@ -423,6 +497,18 @@
   border-radius: 50%;
   background: var(--app-muted);
   animation: loading-breathe 1.3s ease-in-out infinite;
+}
+
+@keyframes notification-bell-ring {
+  0%, 78%, 100% { transform: rotate(0); }
+  82% { transform: rotate(12deg); }
+  86% { transform: rotate(-10deg); }
+  90% { transform: rotate(7deg); }
+  94% { transform: rotate(-4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-rail__notifications svg { animation: none; }
 }
 
 /* 内容层必须显式抬到背景板之上：.app-frame__backdrop 是 position: fixed 且
