@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from qunxue_api.adapters.sqlite.research_analysis_model import (
     ResearchAnalysisWriteRequestRow,
     ResearchAnnotationRow,
+    ResearchBatchCodingRunRow,
     ResearchCaseProfileRow,
     ResearchCodebookEntryRow,
     ResearchCodeRow,
@@ -37,6 +38,8 @@ from qunxue_api.modules.research_analysis import (
     AnalysisRecordStatus,
     AnalysisTheme,
     AnalysisWriteRequest,
+    BatchCodingRun,
+    BatchCodingStatus,
     CaseComparison,
     CaseThemeMatrixCell,
     CodebookEntry,
@@ -56,6 +59,54 @@ DecisionRecord = AnalysisCode | AnalysisMemo | CaseComparison
 DecisionRow = ResearchCodeRow | ResearchMemoRow | ResearchComparisonRow
 DecisionModel = type[ResearchCodeRow] | type[ResearchMemoRow] | type[ResearchComparisonRow]
 DecisionT = TypeVar("DecisionT", AnalysisCode, AnalysisMemo, CaseComparison)
+
+
+def _batch_values(value: BatchCodingRun) -> dict[str, object]:
+    return {
+        "run_id": str(value.run_id),
+        "user_id": str(value.user_id),
+        "task_id": str(value.task_id),
+        "material_id": str(value.material_id),
+        "parse_id": str(value.parse_id),
+        "parse_version": value.parse_version,
+        "idempotency_key": value.idempotency_key,
+        "status": value.status.value,
+        "total_segments": value.total_segments,
+        "processed_segments": value.processed_segments,
+        "annotation_ids": [str(item) for item in value.annotation_ids],
+        "code_ids": [str(item) for item in value.code_ids],
+        "low_confidence_segments": list(value.low_confidence_segments),
+        "error_code": value.error_code,
+        "retry_count": value.retry_count,
+        "created_at": value.created_at,
+        "updated_at": value.updated_at,
+        "completed_at": value.completed_at,
+    }
+
+
+def _batch(row: ResearchBatchCodingRunRow | None) -> BatchCodingRun | None:
+    if row is None:
+        return None
+    return BatchCodingRun(
+        run_id=UUID(row.run_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        material_id=UUID(row.material_id),
+        parse_id=UUID(row.parse_id),
+        parse_version=row.parse_version,
+        idempotency_key=row.idempotency_key,
+        status=BatchCodingStatus(row.status),
+        total_segments=row.total_segments,
+        processed_segments=row.processed_segments,
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        code_ids=tuple(UUID(item) for item in row.code_ids),
+        low_confidence_segments=tuple(row.low_confidence_segments),
+        error_code=row.error_code,
+        retry_count=row.retry_count,
+        created_at=_utc(row.created_at),
+        updated_at=_utc(row.updated_at),
+        completed_at=_utc(row.completed_at),
+    )
 
 
 def _utc(value: datetime | None) -> datetime | None:
@@ -144,6 +195,53 @@ class SqliteResearchAnalysisRepository:
                 )
             )
         )
+
+    def add_batch(self, value: BatchCodingRun) -> BatchCodingRun:
+        self._session.execute(
+            insert(ResearchBatchCodingRunRow)
+            .values(**_batch_values(value))
+            .on_conflict_do_nothing(index_elements=["run_id"])
+        )
+        persisted = _batch(self._row_by_id(ResearchBatchCodingRunRow, "run_id", value.run_id))
+        if persisted is None:
+            raise RuntimeError("batch coding run was not persisted")
+        return persisted
+
+    def get_batch(self, run_id: UUID, *, user_id: UUID, task_id: UUID) -> BatchCodingRun | None:
+        return _batch(
+            self._owned_row(ResearchBatchCodingRunRow, "run_id", run_id, user_id, task_id)
+        )
+
+    def get_batch_by_idempotency(
+        self, *, user_id: UUID, task_id: UUID, material_id: UUID, idempotency_key: str
+    ) -> BatchCodingRun | None:
+        row = self._session.scalar(
+            select(ResearchBatchCodingRunRow).where(
+                ResearchBatchCodingRunRow.user_id == str(user_id),
+                ResearchBatchCodingRunRow.task_id == str(task_id),
+                ResearchBatchCodingRunRow.material_id == str(material_id),
+                ResearchBatchCodingRunRow.idempotency_key == idempotency_key,
+            )
+        )
+        return _batch(row)
+
+    def save_batch(self, value: BatchCodingRun) -> BatchCodingRun:
+        self._session.execute(
+            update(ResearchBatchCodingRunRow)
+            .where(ResearchBatchCodingRunRow.run_id == str(value.run_id))
+            .values(**_batch_values(value))
+        )
+        persisted = _batch(self._row_by_id(ResearchBatchCodingRunRow, "run_id", value.run_id))
+        if persisted is None:
+            raise RuntimeError("batch coding run was not persisted")
+        return persisted
+
+    # BatchCodingRepository protocol aliases keep the application independent
+    # from the broader analysis repository's historical method names.
+    add = add_batch
+    get = get_batch
+    get_by_idempotency = get_batch_by_idempotency
+    save = save_batch
 
     def add_annotation(self, value: AnalysisAnnotation) -> AnalysisAnnotation:
         self._session.execute(
