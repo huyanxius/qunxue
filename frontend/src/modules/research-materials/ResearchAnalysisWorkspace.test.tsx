@@ -85,6 +85,62 @@ const comparisonSnapshot: ResearchAnalysisSnapshot = {
 }
 
 describe('ResearchAnalysisWorkspace', () => {
+  it('requires a reason and submits every coding-plan item through the existing review rail', () => {
+    const decidePlan = vi.fn(async () => undefined)
+    render(
+      <ResearchAnalysisWorkspace
+        snapshot={{ ...snapshot, coding_plans: [{
+          plan_id: 'plan-1', task_id: 'task-1', title: '归入既有照护代码',
+          rationale: '相邻片段与代码定义一致。', source: 'agent', status: 'candidate', version: 4,
+          created_at: '2026-08-30T00:00:00Z', conversation_id: 'conversation-1', agent_run_id: 'run-1', agent_turn_id: 'turn-1', tool_call_id: 'tool-plan', decided_at: null, decision_reason: null,
+          items: [{
+            item_id: 'item-1', material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-1', segment_content_hash: 'a'.repeat(64),
+            quote: '姐姐承担了大部分照护', quote_hash: 'b'.repeat(64), quote_start: 5, quote_end: 16,
+            locator: snapshot.annotations[0].locator, code_id: 'code-confirmed', code_label: '照护责任性别化', code_definition: '照护劳动按性别集中分配。', codebook_version: null, confidence: 0.86, rationale: '与定义一致。', status: 'candidate', annotation_id: null, decision_reason: null,
+          }],
+        }]}}
+        selectedMaterialId="material-1"
+        onCreateCode={vi.fn()}
+        onCreateMemo={vi.fn()}
+        onDecideCode={vi.fn()}
+        onDecideMemo={vi.fn()}
+        onDecideCodingPlan={decidePlan}
+      />,
+    )
+    const card = screen.getByRole('article', { name: '编码计划候选：归入既有照护代码' })
+    expect(within(card).getByRole('button', { name: '确认此项' })).toBeDisabled()
+    fireEvent.change(within(card).getByRole('textbox', { name: '编码计划判断依据' }), { target: { value: '已回到原文核对' } })
+    fireEvent.click(within(card).getByRole('button', { name: '确认此项' }))
+    expect(decidePlan).toHaveBeenCalledWith('plan-1', {
+      expected_version: 4,
+      decisions: [{ item_id: 'item-1', decision: 'confirmed', reason: '已回到原文核对' }],
+    })
+  })
+
+  it('keeps an applied plan reversible without changing the original confirmed code', () => {
+    const revokePlan = vi.fn(async () => undefined)
+    const item = {
+      item_id: 'item-applied', material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-1', segment_content_hash: 'a'.repeat(64),
+      quote: '姐姐承担了大部分照护', quote_hash: 'b'.repeat(64), quote_start: 5, quote_end: 16,
+      locator: snapshot.annotations[0].locator, code_id: 'code-confirmed', code_label: '照护责任性别化', code_definition: '照护劳动按性别集中分配。', codebook_version: null, confidence: 0.86, rationale: '与定义一致。', status: 'applied', annotation_id: 'annotation-applied', decision_reason: '已核对',
+    }
+    render(
+      <ResearchAnalysisWorkspace
+        snapshot={{ ...snapshot, coding_plans: [{ plan_id: 'plan-applied', task_id: 'task-1', title: '已应用批次', rationale: '已确认。', items: [item], source: 'agent', status: 'applied', version: 5, created_at: '2026-08-30T00:00:00Z', conversation_id: null, agent_run_id: null, agent_turn_id: null, tool_call_id: null, decided_at: '2026-08-30T00:00:00Z', decision_reason: '已核对' }] }}
+        selectedMaterialId="material-1"
+        onCreateCode={vi.fn()}
+        onCreateMemo={vi.fn()}
+        onDecideCode={vi.fn()}
+        onDecideMemo={vi.fn()}
+        onRevokeCodingPlan={revokePlan}
+      />,
+    )
+    const row = screen.getByRole('article', { name: '已应用编码计划：已应用批次' })
+    fireEvent.change(within(row).getByRole('textbox', { name: '撤销编码计划理由' }), { target: { value: '误点确认' } })
+    fireEvent.click(within(row).getByRole('button', { name: '撤销本批次' }))
+    expect(revokePlan).toHaveBeenCalledWith('plan-applied', { expected_version: 5, reason: '误点确认' })
+  })
+
   it('opens the source-grounded qualitative workspace from the analysis record', () => {
     render(
       <ResearchAnalysisWorkspace

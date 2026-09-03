@@ -936,6 +936,129 @@
         "title": "AnalysisAnnotationResponse",
         "type": "object"
       },
+      "AnalysisAuditEventResponse": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "annotation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "code_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "format": "uuid",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_kind": {
+            "title": "Entity Kind",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "provenance": {
+            "additionalProperties": true,
+            "title": "Provenance",
+            "type": "object"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "task_id",
+          "actor",
+          "action",
+          "entity_kind",
+          "entity_id",
+          "plan_id",
+          "item_id",
+          "annotation_id",
+          "code_id",
+          "idempotency_key",
+          "provenance",
+          "payload",
+          "created_at"
+        ],
+        "title": "AnalysisAuditEventResponse",
+        "type": "object"
+      },
       "AnalysisCaseAttributeContract": {
         "properties": {
           "name": {
@@ -1172,6 +1295,269 @@
         ],
         "title": "AnalysisCodeStatus",
         "type": "string"
+      },
+      "AnalysisCodingPlanItemResponse": {
+        "properties": {
+          "annotation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "code_definition": {
+            "title": "Code Definition",
+            "type": "string"
+          },
+          "code_id": {
+            "format": "uuid",
+            "title": "Code Id",
+            "type": "string"
+          },
+          "code_label": {
+            "title": "Code Label",
+            "type": "string"
+          },
+          "codebook_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codebook Version"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "item_id": {
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ResearchMaterialLocatorResponse"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "quote_end": {
+            "title": "Quote End",
+            "type": "integer"
+          },
+          "quote_hash": {
+            "title": "Quote Hash",
+            "type": "string"
+          },
+          "quote_start": {
+            "title": "Quote Start",
+            "type": "integer"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "segment_content_hash": {
+            "title": "Segment Content Hash",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "segment_content_hash",
+          "quote",
+          "quote_hash",
+          "quote_start",
+          "quote_end",
+          "locator",
+          "code_id",
+          "code_label",
+          "code_definition",
+          "codebook_version",
+          "confidence",
+          "rationale",
+          "status",
+          "annotation_id",
+          "decision_reason"
+        ],
+        "title": "AnalysisCodingPlanItemResponse",
+        "type": "object"
+      },
+      "AnalysisCodingPlanResponse": {
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Run Id"
+          },
+          "agent_turn_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Turn Id"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCodingPlanItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "plan_id": {
+            "format": "uuid",
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan_id",
+          "task_id",
+          "title",
+          "rationale",
+          "items",
+          "source",
+          "status",
+          "version",
+          "created_at",
+          "conversation_id",
+          "agent_run_id",
+          "agent_turn_id",
+          "tool_call_id",
+          "decided_at",
+          "decision_reason"
+        ],
+        "title": "AnalysisCodingPlanResponse",
+        "type": "object"
       },
       "AnalysisMemoKind": {
         "enum": [
@@ -3910,6 +4296,57 @@
           "reason"
         ],
         "title": "DecideAnalysisRecordRequest",
+        "type": "object"
+      },
+      "DecideCodingPlanItemRequest": {
+        "properties": {
+          "decision": {
+            "pattern": "^(confirmed|rejected)$",
+            "title": "Decision",
+            "type": "string"
+          },
+          "item_id": {
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "decision",
+          "reason"
+        ],
+        "title": "DecideCodingPlanItemRequest",
+        "type": "object"
+      },
+      "DecideCodingPlanRequest": {
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/DecideCodingPlanItemRequest"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Decisions",
+            "type": "array"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version",
+          "decisions"
+        ],
+        "title": "DecideCodingPlanRequest",
         "type": "object"
       },
       "DeferTheoryPlanRequest": {
@@ -8589,6 +9026,13 @@
             "title": "Codes",
             "type": "array"
           },
+          "coding_plans": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCodingPlanResponse"
+            },
+            "title": "Coding Plans",
+            "type": "array"
+          },
           "comparisons": {
             "items": {
               "$ref": "#/components/schemas/CaseComparisonResponse"
@@ -8625,6 +9069,7 @@
           "codes",
           "memos",
           "comparisons",
+          "coding_plans",
           "workspace",
           "method_presets"
         ],
@@ -11409,6 +11854,82 @@
         "title": "RetrievalProvenanceResponse",
         "type": "object"
       },
+      "RetrievedCodedSegmentResponse": {
+        "properties": {
+          "annotation_id": {
+            "format": "uuid",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "code_id": {
+            "format": "uuid",
+            "title": "Code Id",
+            "type": "string"
+          },
+          "code_label": {
+            "title": "Code Label",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ResearchMaterialLocatorResponse"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "annotation_id",
+          "code_id",
+          "code_label",
+          "quote",
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "locator",
+          "confidence",
+          "plan_id"
+        ],
+        "title": "RetrievedCodedSegmentResponse",
+        "type": "object"
+      },
       "RetryFrameworkReviewRequest": {
         "properties": {
           "expected_review_version": {
@@ -11473,6 +11994,27 @@
           "note"
         ],
         "title": "ReviewMethodPlanRequest",
+        "type": "object"
+      },
+      "RevokeCodingPlanRequest": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "reason"
+        ],
+        "title": "RevokeCodingPlanRequest",
         "type": "object"
       },
       "SaveAnalysisCaseProfileRequest": {
@@ -18319,6 +18861,73 @@
         ]
       }
     },
+    "/api/research-tasks/{task_id}/analysis/audit": {
+      "get": {
+        "operationId": "get_research_analysis_audit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisAuditEventResponse"
+                  },
+                  "title": "Response Get Research Analysis Audit",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Analysis Audit",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
     "/api/research-tasks/{task_id}/analysis/codes": {
       "post": {
         "operationId": "create_research_analysis_code",
@@ -18492,6 +19101,194 @@
           }
         },
         "summary": "Decide Research Analysis Code",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/coding-plans/{plan_id}/decision": {
+      "post": {
+        "operationId": "decide_research_coding_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideCodingPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCodingPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Decide Research Coding Plan",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/coding-plans/{plan_id}/revoke": {
+      "post": {
+        "operationId": "revoke_research_coding_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeCodingPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCodingPlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Revoke Research Coding Plan",
         "tags": [
           "research-analysis"
         ]
@@ -18848,6 +19645,138 @@
           }
         },
         "summary": "Decide Research Analysis Memo",
+        "tags": [
+          "research-analysis"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/analysis/retrieved-segments": {
+      "get": {
+        "operationId": "get_research_retrieved_segments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RetrievedCodedSegmentResponse"
+                  },
+                  "title": "Response Get Research Retrieved Segments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Retrieved Segments",
         "tags": [
           "research-analysis"
         ]

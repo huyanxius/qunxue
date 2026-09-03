@@ -86,9 +86,7 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def prepare_start_proposal(self, **payload: object) -> ResearchStartProposal: ...
 
-    def can_prepare_start_proposal(
-        self, *, user_id: UUID, conversation_id: UUID
-    ) -> bool: ...
+    def can_prepare_start_proposal(self, *, user_id: UUID, conversation_id: UUID) -> bool: ...
 
     def persist_completed_turn_proposal(
         self, proposal: ResearchStartProposal
@@ -136,6 +134,31 @@ class ResearchAnalysisAgentFacade(Protocol):
         agent_turn_id: UUID,
         tool_call_id: str,
     ) -> object: ...
+
+    def propose_coding_plan_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        title: str,
+        rationale: str,
+        items: tuple[Mapping[str, object], ...],
+        conversation_id: UUID,
+        agent_run_id: UUID,
+        agent_turn_id: UUID,
+        tool_call_id: str,
+    ) -> object: ...
+
+    def retrieve_coded_segments(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_ids: tuple[UUID, ...] = (),
+        material_id: UUID | None = None,
+        query: str | None = None,
+        limit: int = 50,
+    ) -> Sequence[Mapping[str, object]]: ...
 
     def get_comparison_context_for_agent(
         self,
@@ -258,8 +281,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         if task_id is not None and plan.task_id != task_id:
             raise ValueError("confirmed theory plan does not belong to the research task")
         if document is not None and (
-            document.task_id != plan.task_id
-            or document.theory_plan_id != plan.theory_plan_id
+            document.task_id != plan.task_id or document.theory_plan_id != plan.theory_plan_id
         ):
             raise ValueError("research document does not belong to the confirmed theory plan")
         self._task_id = plan.task_id
@@ -341,9 +363,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     ) -> dict[str, object]:
         """Persist an Agent-authored code candidate for explicit user review."""
 
-        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
-            self._analysis_context()
-        )
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = self._analysis_context()
         result = analysis.propose_code_from_agent(
             user_id=user_id,
             task_id=task_id,
@@ -370,9 +390,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     ) -> dict[str, object]:
         """Persist an Agent-authored memo candidate for explicit user review."""
 
-        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
-            self._analysis_context()
-        )
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = self._analysis_context()
         result = analysis.propose_memo_from_agent(
             user_id=user_id,
             task_id=task_id,
@@ -387,6 +405,55 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             tool_call_id=_required_tool_call_id(tool_call_id),
         )
         return _candidate_analysis_payload(result)
+
+    def propose_coding_plan(
+        self,
+        *,
+        title: str,
+        rationale: str,
+        items: Sequence[Mapping[str, object]],
+        tool_call_id: str,
+    ) -> dict[str, object]:
+        """Persist an Agent plan; every item remains pending user review."""
+
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = self._analysis_context()
+        result = analysis.propose_coding_plan_from_agent(
+            user_id=user_id,
+            task_id=task_id,
+            title=title,
+            rationale=rationale,
+            items=tuple(items),
+            conversation_id=conversation_id,
+            agent_run_id=run_id,
+            agent_turn_id=turn_id,
+            tool_call_id=_required_tool_call_id(tool_call_id),
+        )
+        return _candidate_analysis_payload(result)
+
+    def retrieve_coded_segments(
+        self,
+        *,
+        code_ids: Sequence[str] = (),
+        material_id: str | None = None,
+        query: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, object]] | dict[str, object]:
+        """Return confirmed code assignments with original source anchors."""
+
+        user_id, task_id, _, _, _, analysis = self._analysis_context()
+        parsed_material = UUID(material_id) if material_id else None
+        result = analysis.retrieve_coded_segments(
+            user_id=user_id,
+            task_id=task_id,
+            code_ids=_uuid_tuple(code_ids),
+            material_id=parsed_material,
+            query=query,
+            limit=limit,
+        )
+        payload = _json_safe(result)
+        if not isinstance(payload, list):
+            raise TypeError("retrieved coding segments must be a list")
+        return payload
 
     def get_research_comparison_context(
         self,
@@ -428,9 +495,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     ) -> dict[str, object]:
         """Persist an Agent-authored comparison candidate for user review."""
 
-        user_id, task_id, conversation_id, run_id, turn_id, analysis = (
-            self._analysis_context()
-        )
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = self._analysis_context()
         result = analysis.propose_comparison_from_agent(
             user_id=user_id,
             task_id=task_id,
@@ -843,8 +908,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             return {"error": "research_workflow_unavailable"}
         can_prepare = getattr(self._workflow, "can_prepare_start_proposal", None)
         if self._task_id is not None and not (
-            callable(can_prepare)
-            and can_prepare(user_id=user_id, conversation_id=conversation_id)
+            callable(can_prepare) and can_prepare(user_id=user_id, conversation_id=conversation_id)
         ):
             return {
                 "error": "research_task_already_bound",
@@ -1157,9 +1221,7 @@ def _required_text_tuple(
     *,
     allow_empty: bool = False,
 ) -> tuple[str, ...]:
-    normalized = tuple(
-        dict.fromkeys(str(value).strip() for value in values if str(value).strip())
-    )
+    normalized = tuple(dict.fromkeys(str(value).strip() for value in values if str(value).strip()))
     if not normalized and not allow_empty:
         raise ValueError(f"{name} is required")
     return normalized
@@ -1214,10 +1276,7 @@ def _json_safe(value: object) -> object:
     if isinstance(value, Enum):
         return _json_safe(value.value)
     if is_dataclass(value) and not isinstance(value, type):
-        return {
-            field.name: _json_safe(getattr(value, field.name))
-            for field in fields(value)
-        }
+        return {field.name: _json_safe(getattr(value, field.name)) for field in fields(value)}
     if isinstance(value, Mapping):
         return {str(key): _json_safe(item) for key, item in value.items()}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
@@ -1251,9 +1310,7 @@ def _section_from_payload(payload: dict[str, object]) -> ResearchDocumentSection
 
 
 def _confirmed_plan_payload(plan: ConfirmedTheoryPlanSnapshot) -> dict[str, object]:
-    candidate_titles = {
-        item.candidate_id: item.content.title for item in plan.candidates
-    }
+    candidate_titles = {item.candidate_id: item.content.title for item in plan.candidates}
     return {
         "theory_plan_id": str(plan.theory_plan_id),
         "version": plan.version,

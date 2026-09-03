@@ -69,6 +69,21 @@ class AnalysisCodeStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class AnalysisCodingPlanStatus(StrEnum):
+    CANDIDATE = "candidate"
+    APPLIED = "applied"
+    PARTIALLY_APPLIED = "partially_applied"
+    REJECTED = "rejected"
+    REVOKED = "revoked"
+
+
+class AnalysisCodingPlanItemStatus(StrEnum):
+    CANDIDATE = "candidate"
+    APPLIED = "applied"
+    REJECTED = "rejected"
+    REVOKED = "revoked"
+
+
 class AnalysisMemoKind(StrEnum):
     DESCRIPTIVE = "descriptive"
     REFLEXIVE = "reflexive"
@@ -321,6 +336,188 @@ class AnalysisCode:
             decision_reason=_required(reason, "decision reason"),
         )
 
+    def attach_annotation(self, *, annotation_id: UUID, now: datetime) -> AnalysisCode:
+        """Attach a source anchor to a confirmed code; repeated attaches are no-ops."""
+
+        if self.status is not AnalysisCodeStatus.CONFIRMED:
+            raise ValueError("only a confirmed code can receive an annotation")
+        if annotation_id in self.annotation_ids:
+            return self
+        return replace(
+            self,
+            annotation_ids=(*self.annotation_ids, annotation_id),
+            version=self.version + 1,
+            decided_at=_utc(now),
+        )
+
+    def detach_annotation(self, *, annotation_id: UUID, now: datetime) -> AnalysisCode:
+        """Remove one plan-owned anchor while preserving the confirmed code."""
+
+        if self.status is not AnalysisCodeStatus.CONFIRMED:
+            raise ValueError("only a confirmed code can release an annotation")
+        if annotation_id not in self.annotation_ids:
+            return self
+        return replace(
+            self,
+            annotation_ids=tuple(item for item in self.annotation_ids if item != annotation_id),
+            version=self.version + 1,
+            decided_at=_utc(now),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisCodingPlanItem:
+    item_id: UUID
+    material_id: UUID
+    parse_id: UUID
+    segment_id: str
+    segment_content_hash: str
+    quote: str
+    quote_hash: str
+    quote_start: int
+    quote_end: int
+    locator: MaterialLocator
+    code_id: UUID
+    code_label: str
+    code_definition: str
+    codebook_version: int | None
+    confidence: float
+    rationale: str
+    status: AnalysisCodingPlanItemStatus = AnalysisCodingPlanItemStatus.CANDIDATE
+    annotation_id: UUID | None = None
+    decision_reason: str | None = None
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        item_id: UUID | None = None,
+        material_id: UUID,
+        parse_id: UUID,
+        segment_id: str,
+        segment_content_hash: str,
+        quote: str,
+        quote_start: int,
+        quote_end: int,
+        locator: MaterialLocator,
+        code_id: UUID,
+        code_label: str,
+        code_definition: str,
+        codebook_version: int | None,
+        confidence: float,
+        rationale: str,
+    ) -> AnalysisCodingPlanItem:
+        import hashlib
+
+        if not 0 <= confidence <= 1:
+            raise ValueError("confidence must be between 0 and 1")
+        normalized_quote = _required(quote, "quote", limit=100_000)
+        if (
+            quote_start < 0
+            or quote_end <= quote_start
+            or quote_end - quote_start != len(normalized_quote)
+        ):
+            raise ValueError("coding plan quote range is invalid")
+        return cls(
+            item_id=item_id or uuid4(),
+            material_id=material_id,
+            parse_id=parse_id,
+            segment_id=_required(segment_id, "segment_id", limit=256),
+            segment_content_hash=_content_hash(segment_content_hash, "segment_content_hash"),
+            quote=normalized_quote,
+            quote_hash=hashlib.sha256(normalized_quote.encode()).hexdigest(),
+            quote_start=quote_start,
+            quote_end=quote_end,
+            locator=locator,
+            code_id=code_id,
+            code_label=_required(code_label, "code label", limit=256),
+            code_definition=_required(code_definition, "code definition"),
+            codebook_version=codebook_version,
+            confidence=float(confidence),
+            rationale=_required(rationale, "coding rationale"),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisCodingPlan:
+    plan_id: UUID
+    user_id: UUID
+    task_id: UUID
+    title: str
+    rationale: str
+    items: tuple[AnalysisCodingPlanItem, ...]
+    source: str
+    status: AnalysisCodingPlanStatus
+    version: int
+    created_at: datetime
+    conversation_id: UUID | None = None
+    agent_run_id: UUID | None = None
+    agent_turn_id: UUID | None = None
+    tool_call_id: str | None = None
+    decided_at: datetime | None = None
+    decision_reason: str | None = None
+
+    @classmethod
+    def candidate(
+        cls,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        title: str,
+        rationale: str,
+        items: tuple[AnalysisCodingPlanItem, ...],
+        now: datetime,
+        source: str = "agent",
+        conversation_id: UUID | None = None,
+        agent_run_id: UUID | None = None,
+        agent_turn_id: UUID | None = None,
+        tool_call_id: str | None = None,
+        plan_id: UUID | None = None,
+    ) -> AnalysisCodingPlan:
+        if not items:
+            raise ValueError("coding plan requires at least one item")
+        if len({item.item_id for item in items}) != len(items):
+            raise ValueError("coding plan item ids must be unique")
+        return cls(
+            plan_id=plan_id or uuid4(),
+            user_id=user_id,
+            task_id=task_id,
+            title=_required(title, "coding plan title", limit=512),
+            rationale=_required(rationale, "coding plan rationale"),
+            items=tuple(items),
+            source=_required(source, "coding plan source", limit=32),
+            status=AnalysisCodingPlanStatus.CANDIDATE,
+            version=1,
+            created_at=_utc(now),
+            conversation_id=conversation_id,
+            agent_run_id=agent_run_id,
+            agent_turn_id=agent_turn_id,
+            tool_call_id=(
+                _required(tool_call_id, "tool_call_id", limit=512)
+                if tool_call_id is not None
+                else None
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisAuditEvent:
+    event_id: UUID
+    user_id: UUID
+    task_id: UUID
+    actor: str
+    action: str
+    entity_kind: str
+    entity_id: UUID
+    plan_id: UUID | None
+    item_id: UUID | None
+    annotation_id: UUID | None
+    code_id: UUID | None
+    idempotency_key: str | None
+    provenance: dict[str, object]
+    payload: dict[str, object]
+    created_at: datetime
+
 
 @dataclass(frozen=True, slots=True)
 class AnalysisMemo:
@@ -513,9 +710,7 @@ class CaseComparison:
         normalized_cases = tuple(_required(item, "case label", limit=256) for item in case_labels)
         if len(set(normalized_cases)) < 2:
             raise ValueError("comparison requires at least two cases")
-        normalized_times = tuple(
-            _required(item, "time label", limit=256) for item in time_labels
-        )
+        normalized_times = tuple(_required(item, "time label", limit=256) for item in time_labels)
         if normalized_times and len(set(normalized_times)) < 2:
             raise ValueError("comparison requires at least two time labels")
         if not findings:

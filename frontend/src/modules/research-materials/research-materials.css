@@ -714,6 +714,20 @@
 .research-analysis-candidate footer button:last-child { color: var(--materials-surface); background: var(--materials-ink); }
 .research-analysis-candidate footer button:disabled { cursor: not-allowed; opacity: .4; }
 .research-analysis-candidate__error { color: var(--qx-color-danger) !important; }
+.research-analysis-candidate--plan { border-left: 2px solid var(--qx-color-notice-line); }
+.research-analysis-plan__items { display: grid; gap: 9px; }
+.research-analysis-plan__item { display: grid; gap: 6px; padding: 9px; border: 1px solid var(--materials-border); background: rgb(255 255 255 / 42%); }
+.research-analysis-plan__item blockquote, .research-analysis-plan__item p, .research-analysis-plan__item small { margin: 0; }
+.research-analysis-plan__item footer { display: flex; justify-content: flex-end; gap: 7px; }
+.research-analysis-plan__item footer button { padding: 5px 8px; border: 0; border-radius: var(--qx-radius-compact); color: var(--materials-muted); background: transparent; font: inherit; cursor: pointer; }
+.research-analysis-plan__item footer button.is-primary { color: var(--materials-surface); background: var(--materials-ink); }
+.research-analysis-confirmed-plan { display: grid; gap: 6px; padding: 10px 12px; border-left: 2px solid var(--materials-ink); }
+.research-analysis-confirmed-plan span { color: var(--qx-color-notice); font-size: var(--qx-text-locator); }
+.research-analysis-confirmed-plan strong { font-size: var(--qx-text-meta); }
+.research-analysis-confirmed-plan footer { display: flex; gap: 7px; }
+.research-analysis-confirmed-plan input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--materials-border); border-radius: var(--qx-radius-compact); font: inherit; font-size: var(--qx-text-locator); }
+.research-analysis-confirmed-plan button { padding: 6px 8px; border: 1px solid var(--materials-border); border-radius: var(--qx-radius-compact); background: transparent; font: inherit; font-size: var(--qx-text-locator); cursor: pointer; }
+.research-analysis-confirmed-plan button:disabled { cursor: not-allowed; opacity: .45; }
 .research-analysis__confirmed article { display: grid; gap: 4px; }
 .research-analysis__confirmed article span { color: var(--qx-color-ink); font-size: var(--qx-text-locator); line-height: var(--qx-text-locator--line-height); }
 .research-analysis__confirmed article strong { font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
