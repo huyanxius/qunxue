@@ -1,19 +1,54 @@
+import json
 from collections.abc import Callable, Iterable, Mapping
+from functools import partial
 from ipaddress import ip_address
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 SearchFunction = Callable[[str, int], Iterable[Mapping[str, object]]]
 FetchFunction = Callable[[str], str | None]
 ExtractFunction = Callable[[str], str | None]
+SearchTransport = Callable[[str, float], Mapping[str, object]]
 
 
-def _search_ddgs(query: str, max_results: int) -> Iterable[Mapping[str, object]]:
-    from ddgs import DDGS
+def _download_json(url: str, timeout: float) -> Mapping[str, object]:
+    request = Request(url, headers={"User-Agent": "QunxueResearchAgent/1.0"})
+    with build_opener().open(request, timeout=timeout) as response:
+        payload = response.read(5_000_001)
+    if len(payload) > 5_000_000:
+        raise RuntimeError("搜索结果超过读取上限")
+    parsed = json.loads(payload)
+    if not isinstance(parsed, dict):
+        raise RuntimeError("搜索服务返回了无效数据")
+    return parsed
 
-    # Keep production on Bing explicitly; DDGS auto-routing can select Yahoo,
-    # which intermittently times out from the production host.
-    return DDGS(timeout=8).text(query, backend="bing", max_results=max_results)
+
+def _search_searxng(
+    query: str,
+    max_results: int,
+    *,
+    base_url: str,
+    engines: tuple[str, ...],
+    timeout: float,
+    transport: SearchTransport,
+) -> Iterable[Mapping[str, object]]:
+    parsed_base_url = urlparse(base_url)
+    if parsed_base_url.scheme not in {"http", "https"} or not parsed_base_url.netloc:
+        raise ValueError("搜索服务地址必须是 HTTP 或 HTTPS URL")
+    params = urlencode(
+        {
+            "q": query,
+            "format": "json",
+            "categories": "general",
+            "language": "zh-CN",
+            "engines": ",".join(engines),
+        }
+    )
+    payload = transport(f"{base_url.rstrip('/')}/search?{params}", timeout)
+    raw_results = payload.get("results")
+    if not isinstance(raw_results, list):
+        raise RuntimeError("搜索服务返回了无效结果")
+    return (item for item in raw_results[:max_results] if isinstance(item, Mapping))
 
 
 def _fetch_page(url: str) -> str | None:
@@ -87,17 +122,29 @@ def _extract_title(html: str) -> str | None:
 
 
 class OpenWebResearchClient:
-    """Small open-web adapter backed by DDGS search and Trafilatura extraction."""
+    """Open-web adapter backed by SearXNG search and Trafilatura extraction."""
 
     def __init__(
         self,
         *,
-        search: SearchFunction = _search_ddgs,
+        search: SearchFunction | None = None,
+        search_base_url: str = "http://127.0.0.1:8093",
+        search_engines: tuple[str, ...] = ("bing", "baidu"),
+        search_timeout_seconds: float = 8,
+        search_transport: SearchTransport = _download_json,
         fetch: FetchFunction = _fetch_page,
         extract: ExtractFunction = _extract_page,
         extract_title: ExtractFunction = _extract_title,
     ) -> None:
-        self._search = search
+        if not search_engines:
+            raise ValueError("至少需要配置一个搜索引擎")
+        self._search = search or partial(
+            _search_searxng,
+            base_url=search_base_url,
+            engines=search_engines,
+            timeout=search_timeout_seconds,
+            transport=search_transport,
+        )
         self._fetch = fetch
         self._extract = extract
         self._extract_title = extract_title
@@ -107,7 +154,9 @@ class OpenWebResearchClient:
         for item in self._search(query, max(1, min(limit, 8))):
             title = str(item.get("title") or "").strip()
             url = str(item.get("href") or item.get("url") or "").strip()
-            snippet = str(item.get("body") or item.get("snippet") or "").strip()
+            snippet = str(
+                item.get("body") or item.get("snippet") or item.get("content") or ""
+            ).strip()
             try:
                 _ensure_public_url(url)
             except ValueError:
