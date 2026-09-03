@@ -110,7 +110,7 @@ def test_open_web_client_normalizes_search_results_and_extracts_page_text() -> N
 
     client = OpenWebResearchClient(
         search=search,
-        profile="generic",
+        profile="sociology",
         fetch=lambda url: f"<html><title>政策原文</title><body>{url} 正文</body></html>",
         extract=lambda html: "政策完整正文" if "example.gov.cn" in html else None,
         extract_title=lambda html: "政策原文" if html else None,
@@ -308,7 +308,7 @@ def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) 
     client = OpenWebResearchClient(
         search_provider="tavily",
         search_api_key="test-key",
-        profile="generic",
+        profile="sociology",
     )
 
     assert client.search("社会调查", limit=1) == [
@@ -325,6 +325,7 @@ def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) 
                 "max_results": 8,
                 "include_raw_content": True,
                 "topic": "general",
+                "language": "zh",
                 "timeout": 12,
             },
         )
