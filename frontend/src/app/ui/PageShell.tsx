@@ -2,13 +2,13 @@ import { createContext, useContext, useState } from 'react'
 import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
 import {
+  BellIcon,
   BooksIcon,
   ChatCircleDotsIcon,
   FileTextIcon,
   HouseIcon,
   PlusIcon,
   SidebarSimpleIcon,
-  SignOutIcon,
   ToolboxIcon,
   TreeStructureIcon,
   UserCircleIcon,
@@ -106,10 +106,15 @@ export function PageShell({
   const { text } = useAppLocale()
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const sharedRailState = useContext(RailStateContext)
   const [localRailCollapsed, setLocalRailCollapsed] = useState(defaultRailCollapsed)
   const railCollapsed = sharedRailState?.collapsed ?? localRailCollapsed
   const setRailCollapsed = sharedRailState?.setCollapsed ?? setLocalRailCollapsed
+  const accountName = account.sessionState.status === 'authenticated'
+    ? account.sessionState.session.user.displayName ?? text('研究者', 'Researcher')
+    : text('研究者', 'Researcher')
+  const accountInitial = Array.from(accountName.trim())[0] ?? text('研', 'R')
 
   async function logout() {
     setLogoutFailed(false)
@@ -184,25 +189,31 @@ export function PageShell({
               {account.sessionState.status === 'authenticated' ? (
                 <>
                   <NavLink
+                    className="desktop-rail__identity"
                     to="/settings"
-                    aria-label={text(`账户 ${account.sessionState.session.user.email}`, `Account ${account.sessionState.session.user.email}`)}
-                    title={account.sessionState.session.user.email}
+                    aria-label={text(`账户 ${accountName}`, `Account ${accountName}`)}
+                    title={accountName}
                   >
-                    <UserCircleIcon size={18} weight="regular" />
-                    <span>
-                      <strong>{account.sessionState.session.user.displayName ?? text('研究者', 'Researcher')}</strong>
-                      <small>{account.sessionState.session.user.email}</small>
-                    </span>
+                    <span className="desktop-rail__avatar" aria-hidden="true">{accountInitial}</span>
+                    <strong>{accountName}</strong>
                   </NavLink>
                   <button
+                    className="desktop-rail__notifications"
                     type="button"
-                    aria-label={logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
-                    title={logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
-                    onClick={logout}
+                    aria-label={text('通知', 'Notifications')}
+                    aria-expanded={notificationsOpen}
+                    aria-controls="desktop-notifications"
+                    title={text('通知', 'Notifications')}
+                    onClick={() => setNotificationsOpen((open) => !open)}
                   >
-                    <SignOutIcon size={18} weight="regular" aria-hidden="true" />
-                    <span>{logoutFailed ? text('退出失败', 'Sign out failed') : text('退出', 'Sign out')}</span>
+                    <BellIcon size={19} weight="regular" aria-hidden="true" />
                   </button>
+                  {notificationsOpen ? (
+                    <div className="desktop-rail__notification-panel" id="desktop-notifications" role="status">
+                      <strong>{text('暂无通知', 'No notifications')}</strong>
+                      <p>{text('服务器通知会显示在这里。', 'Server notifications will appear here.')}</p>
+                    </div>
+                  ) : null}
                 </>
               ) : account.sessionState.status === 'loading' ? (
                 <span className="desktop-rail__session" role="status" aria-label={text('正在确认账户', 'Checking account')} />
