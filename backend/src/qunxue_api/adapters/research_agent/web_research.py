@@ -1,9 +1,26 @@
 import json
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
+from hashlib import sha256
 from ipaddress import ip_address
-from urllib.parse import urlencode, urlparse
+from typing import Protocol
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
+from qunxue_api.adapters.retrieval.sqlite_index import RetrievalChunk
+
+
+class WebCandidateReranker(Protocol):
+    """The existing knowledge retriever's transient-chunk ranking seam."""
+
+    def search_chunks(
+        self,
+        *,
+        query: str,
+        chunks: tuple[RetrievalChunk, ...],
+        limit: int,
+    ) -> object: ...
 
 SearchFunction = Callable[[str, int], Iterable[Mapping[str, object]]]
 FetchFunction = Callable[[str], str | None]
@@ -95,6 +112,24 @@ def _ensure_public_url(url: str) -> None:
         raise ValueError("不能读取本机或内网地址")
 
 
+def _canonical_url(url: str) -> str:
+    """Drop fragments and common analytics parameters for URL deduplication."""
+
+    parsed = urlparse(url)
+    tracking_prefixes = ("utm_", "gclid", "fbclid", "msclkid")
+    filtered_query = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if not key.lower().startswith(tracking_prefixes)
+    ]
+    return urlunparse(
+        parsed._replace(
+            fragment="",
+            query=urlencode(filtered_query, doseq=True),
+        )
+    )
+
+
 def _extract_page(html: str) -> str | None:
     if html.startswith("QUNXUE_READER_MARKDOWN\n"):
         markdown = html.removeprefix("QUNXUE_READER_MARKDOWN\n")
@@ -122,7 +157,7 @@ def _extract_title(html: str) -> str | None:
 
 
 class OpenWebResearchClient:
-    """Open-web adapter backed by SearXNG search and Trafilatura extraction."""
+    """Open-web adapter with recall, deduplication, and optional vector reranking."""
 
     def __init__(
         self,
@@ -132,6 +167,7 @@ class OpenWebResearchClient:
         search_engines: tuple[str, ...] = ("bing", "baidu"),
         search_timeout_seconds: float = 8,
         search_transport: SearchTransport = _download_json,
+        reranker: WebCandidateReranker | None = None,
         fetch: FetchFunction = _fetch_page,
         extract: ExtractFunction = _extract_page,
         extract_title: ExtractFunction = _extract_title,
@@ -145,13 +181,17 @@ class OpenWebResearchClient:
             timeout=search_timeout_seconds,
             transport=search_transport,
         )
+        self._reranker = reranker
         self._fetch = fetch
         self._extract = extract
         self._extract_title = extract_title
 
     def search(self, query: str, *, limit: int = 5) -> list[dict[str, str]]:
-        results: list[dict[str, str]] = []
-        for item in self._search(query, max(1, min(limit, 8))):
+        safe_limit = max(1, min(limit, 8))
+        recall_limit = max(8, min(32, safe_limit * 4))
+        candidates: list[dict[str, str]] = []
+        seen_urls: set[str] = set()
+        for item in self._search(query, recall_limit):
             title = str(item.get("title") or "").strip()
             url = str(item.get("href") or item.get("url") or "").strip()
             snippet = str(
@@ -163,8 +203,61 @@ class OpenWebResearchClient:
                 continue
             if not title:
                 continue
-            results.append({"title": title, "url": url, "snippet": snippet})
-        return results
+            canonical_url = _canonical_url(url)
+            if canonical_url in seen_urls:
+                continue
+            seen_urls.add(canonical_url)
+            candidates.append({"title": title, "url": url, "snippet": snippet})
+
+        return self._rerank_candidates(query, candidates, safe_limit)[:safe_limit]
+
+    def _rerank_candidates(
+        self,
+        query: str,
+        candidates: list[dict[str, str]],
+        limit: int,
+    ) -> list[dict[str, str]]:
+        if self._reranker is None or not candidates:
+            return candidates
+        chunks = tuple(
+            RetrievalChunk(
+                chunk_id=f"web:{index}",
+                document_kind="web_search_result",
+                knowledge_id=None,
+                theory_id=None,
+                content_version=1,
+                content_hash=sha256(
+                    f"{item['title']}\n{item['snippet']}".encode()
+                ).hexdigest(),
+                title=item["title"],
+                text=f"{item['title']}\n{item['snippet']}",
+                source_ids=(item["url"],),
+            )
+            for index, item in enumerate(candidates)
+        )
+        try:
+            outcome = self._reranker.search_chunks(
+                query=query,
+                chunks=chunks,
+                limit=limit,
+            )
+            hits = getattr(outcome, "hits", ())
+            ranked_ids = [
+                chunk.chunk_id
+                for hit in hits
+                if (chunk := getattr(hit, "chunk", None)) is not None
+            ]
+        except (AttributeError, RetrievalPipelineUnavailable, TypeError, ValueError):
+            return candidates
+        by_id = {f"web:{index}": item for index, item in enumerate(candidates)}
+        ranked = [by_id[chunk_id] for chunk_id in ranked_ids if chunk_id in by_id]
+        ranked_ids_set = set(ranked_ids)
+        ranked.extend(
+            item
+            for index, item in enumerate(candidates)
+            if f"web:{index}" not in ranked_ids_set
+        )
+        return ranked
 
     def read(self, url: str) -> dict[str, str]:
         _ensure_public_url(url)

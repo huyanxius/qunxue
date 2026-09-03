@@ -42,8 +42,9 @@ def test_bootstrap_passes_web_search_settings_to_the_search_adapter(
         application._tools_factory()
 
     assert len(captured_search_clients) == 1
-    assert captured_search_options == [{
-        "search_base_url": "http://127.0.0.1:18093",
-        "search_engines": ("baidu", "bing"),
-        "search_timeout_seconds": 4.5,
-    }]
+    assert len(captured_search_options) == 1
+    options = captured_search_options[0]
+    assert options["search_base_url"] == "http://127.0.0.1:18093"
+    assert options["search_engines"] == ("baidu", "bing")
+    assert options["search_timeout_seconds"] == 4.5
+    assert options["reranker"] is client.app.state.knowledge_retriever
