@@ -7,9 +7,12 @@ from qunxue_api.api.contracts.research_materials import ResearchMaterialLocatorR
 from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisAuditEvent,
     AnalysisCaseProfile,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
+    AnalysisCodingPlanItem,
     AnalysisMemo,
     AnalysisMemoKind,
     AnalysisMemoLink,
@@ -140,6 +143,155 @@ class AnalysisCodeResponse(BaseModel):
             tool_call_id=value.tool_call_id,
             decided_at=value.decided_at,
             decision_reason=value.decision_reason,
+        )
+
+
+class AnalysisCodingPlanItemResponse(BaseModel):
+    item_id: UUID
+    material_id: UUID
+    parse_id: UUID
+    segment_id: str
+    segment_content_hash: str
+    quote: str
+    quote_hash: str
+    quote_start: int
+    quote_end: int
+    locator: ResearchMaterialLocatorResponse
+    code_id: UUID
+    code_label: str
+    code_definition: str
+    codebook_version: int | None
+    confidence: float
+    rationale: str
+    status: str
+    annotation_id: UUID | None
+    decision_reason: str | None
+
+    @classmethod
+    def from_domain(cls, value: AnalysisCodingPlanItem) -> "AnalysisCodingPlanItemResponse":
+        return cls(
+            item_id=value.item_id,
+            material_id=value.material_id,
+            parse_id=value.parse_id,
+            segment_id=value.segment_id,
+            segment_content_hash=value.segment_content_hash,
+            quote=value.quote,
+            quote_hash=value.quote_hash,
+            quote_start=value.quote_start,
+            quote_end=value.quote_end,
+            locator=ResearchMaterialLocatorResponse.from_domain(value.locator),
+            code_id=value.code_id,
+            code_label=value.code_label,
+            code_definition=value.code_definition,
+            codebook_version=value.codebook_version,
+            confidence=value.confidence,
+            rationale=value.rationale,
+            status=value.status.value,
+            annotation_id=value.annotation_id,
+            decision_reason=value.decision_reason,
+        )
+
+
+class AnalysisCodingPlanResponse(BaseModel):
+    plan_id: UUID
+    task_id: UUID
+    title: str
+    rationale: str
+    items: list[AnalysisCodingPlanItemResponse]
+    source: str
+    status: str
+    version: int
+    created_at: datetime
+    conversation_id: UUID | None
+    agent_run_id: UUID | None
+    agent_turn_id: UUID | None
+    tool_call_id: str | None
+    decided_at: datetime | None
+    decision_reason: str | None
+
+    @classmethod
+    def from_domain(cls, value: AnalysisCodingPlan) -> "AnalysisCodingPlanResponse":
+        return cls(
+            plan_id=value.plan_id,
+            task_id=value.task_id,
+            title=value.title,
+            rationale=value.rationale,
+            items=[AnalysisCodingPlanItemResponse.from_domain(item) for item in value.items],
+            source=value.source,
+            status=value.status.value,
+            version=value.version,
+            created_at=value.created_at,
+            conversation_id=value.conversation_id,
+            agent_run_id=value.agent_run_id,
+            agent_turn_id=value.agent_turn_id,
+            tool_call_id=value.tool_call_id,
+            decided_at=value.decided_at,
+            decision_reason=value.decision_reason,
+        )
+
+
+class DecideCodingPlanItemRequest(BaseModel):
+    item_id: UUID
+    decision: str = Field(pattern="^(confirmed|rejected)$")
+    reason: str = Field(min_length=1, max_length=20_000)
+
+
+class DecideCodingPlanRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+    decisions: list[DecideCodingPlanItemRequest] = Field(min_length=1, max_length=500)
+
+
+class RevokeCodingPlanRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+    reason: str = Field(min_length=1, max_length=20_000)
+
+
+class RetrievedCodedSegmentResponse(BaseModel):
+    annotation_id: UUID
+    code_id: UUID
+    code_label: str
+    quote: str
+    material_id: UUID
+    parse_id: UUID
+    segment_id: str
+    locator: ResearchMaterialLocatorResponse
+    confidence: float | None
+    plan_id: UUID | None
+
+
+class AnalysisAuditEventResponse(BaseModel):
+    event_id: UUID
+    task_id: UUID
+    actor: str
+    action: str
+    entity_kind: str
+    entity_id: UUID
+    plan_id: UUID | None
+    item_id: UUID | None
+    annotation_id: UUID | None
+    code_id: UUID | None
+    idempotency_key: str | None
+    provenance: dict[str, object]
+    payload: dict[str, object]
+    created_at: datetime
+
+    @classmethod
+    def from_domain(cls, value: AnalysisAuditEvent) -> "AnalysisAuditEventResponse":
+        return cls(
+            event_id=value.event_id,
+            task_id=value.task_id,
+            actor=value.actor,
+            action=value.action,
+            entity_kind=value.entity_kind,
+            entity_id=value.entity_id,
+            plan_id=value.plan_id,
+            item_id=value.item_id,
+            annotation_id=value.annotation_id,
+            code_id=value.code_id,
+            idempotency_key=value.idempotency_key,
+            provenance=value.provenance,
+            payload=value.payload,
+            created_at=value.created_at,
         )
 
 
@@ -295,6 +447,7 @@ class ResearchAnalysisSnapshotResponse(BaseModel):
     codes: list[AnalysisCodeResponse]
     memos: list[AnalysisMemoResponse]
     comparisons: list[CaseComparisonResponse]
+    coding_plans: list[AnalysisCodingPlanResponse]
     workspace: "QualitativeWorkspaceSnapshotResponse"
     method_presets: list["QualitativeMethodPresetResponse"]
 

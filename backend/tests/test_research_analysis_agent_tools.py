@@ -80,6 +80,14 @@ class _AnalysisFacade:
             now=datetime.now(UTC),
         )
 
+    def propose_coding_plan_from_agent(self, **payload):
+        self.calls.append(("coding_plan", payload))
+        return {"plan_id": "plan-agent", "status": "candidate", "items": payload["items"]}
+
+    def retrieve_coded_segments(self, **payload):
+        self.calls.append(("retrieved", payload))
+        return [{"quote": "原文片段", "code_id": "code-confirmed"}]
+
     def get_comparison_context_for_agent(self, **payload):
         self.calls.append(("comparison_context", payload))
         return {
@@ -246,6 +254,28 @@ def test_analysis_registry_persists_candidate_provenance_without_deciding():
             priority="high",
         ),
     )
+
+
+def test_analysis_registry_exposes_coding_plan_and_confirmed_retrieval():
+    facade = _AnalysisFacade()
+    registry = _registry(facade)
+
+    plan = registry.propose_coding_plan(
+        title="归入既有代码", rationale="与代码本定义一致。", items=[{
+            "material_id": str(UUID(int=301)), "parse_id": str(UUID(int=302)),
+            "segment_id": "segment-2", "quote_start": 0, "quote_end": 3,
+            "code_id": str(UUID(int=303)), "confidence": 0.9, "rationale": "原文支持。",
+        }], tool_call_id="call-plan",
+    )
+    retrieved = registry.retrieve_coded_segments(
+        code_ids=[str(UUID(int=303))], query="原文", limit=5,
+    )
+
+    assert plan["status"] == "candidate"
+    assert plan["requires_user_confirmation"] is True
+    assert retrieved == [{"quote": "原文片段", "code_id": "code-confirmed"}]
+    plan_payload = next(payload for name, payload in facade.calls if name == "coding_plan")
+    assert plan_payload["tool_call_id"] == "call-plan"
 
 
 def test_pydantic_runner_exposes_only_analysis_read_and_candidate_tools():

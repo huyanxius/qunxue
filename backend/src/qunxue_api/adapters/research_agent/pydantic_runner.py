@@ -428,6 +428,11 @@ class PydanticAIKnowledgeRunner:
                 "再用 propose_case_comparison 提出支持证据、反例、矛盾材料、竞争解释、"
                 "证据缺口与下一步行动；你只能调用 propose_analysis_code、"
                 "propose_analysis_memo 或 propose_case_comparison 提出候选，"
+                "需要把新片段归入既有确认编码时，必须先读材料原文和代码本，"
+                "再调用 propose_coding_plan；计划的每一项都必须带 material_id、parse_id、"
+                "segment_id、quote 范围、确认的 code_id、置信度和理由；计划永远等待用户逐条确认，"
+                "不能调用工具替用户应用或撤销编码；确认后可用 retrieve_coded_segments "
+                "返回原文和定位。"
                 "不能静默决定、确认或拒绝主题、理论与结论。候选必须等待用户在界面明确确认，"
                 "相关原文仍用 search_research_materials 与 read_research_material_context 核对。"
                 "用户询问工具调用规则、检索策略或调用条件，或者只是在问候、控制流程、询问能力边界时，"
@@ -887,6 +892,41 @@ class PydanticAIKnowledgeRunner:
                 },
                 "正在生成分析备忘候选",
                 candidate=True,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def propose_coding_plan(
+            ctx: RunContext[KnowledgeToolRegistry],
+            title: str,
+            rationale: str,
+            items: list[dict[str, object]],
+        ) -> dict[str, object]:
+            """提出把新材料片段归入既有确认编码的待审计划。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "propose_coding_plan",
+                {"title": title, "rationale": rationale, "items": items},
+                "正在生成编码计划候选",
+                candidate=True,
+            )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def retrieve_coded_segments(
+            ctx: RunContext[KnowledgeToolRegistry],
+            code_ids: list[str],
+            material_id: str | None = None,
+            query: str | None = None,
+            limit: int = 50,
+        ) -> list[dict[str, object]] | dict[str, object]:
+            """读取已确认编码对应的原文片段，不产生写入。"""
+
+            return self._run_analysis_tool(
+                ctx,
+                "retrieve_coded_segments",
+                {"code_ids": code_ids, "material_id": material_id, "query": query, "limit": limit},
+                "正在检索已确认编码片段",
+                candidate=False,
             )
 
         @self._agent.tool(prepare=_prepare_analysis_tool)
