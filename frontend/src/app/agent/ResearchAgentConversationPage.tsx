@@ -2247,7 +2247,7 @@ export function ResearchAgentConversationPage({
                     onClick={() => setWebSearchEnabled((enabled) => !enabled)}
                   >
                     <GlobeHemisphereWestIcon size={16} />
-                    <span>{text('联网搜索', 'Web search')}</span>
+                    <span>{webSearchEnabled ? text('联网已开启', 'Web on') : text('联网搜索', 'Web search')}</span>
                   </button>
                 </div>
                 <button
