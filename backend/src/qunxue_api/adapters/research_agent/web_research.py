@@ -64,20 +64,22 @@ def _clean_text(value: str) -> str:
 
 
 def _search_tavily(
-    query: str, max_results: int, *, api_key: str, timeout: float
+    query: str, max_results: int, *, api_key: str, timeout: float, language: str | None = None
 ) -> Iterable[Mapping[str, object]]:
     # Adapted from STORM's MIT-licensed TavilySearchRM and Open Deep
     # Research's MIT-licensed Tavily async search: use the provider SDK,
     # request raw content, and let the caller normalize/dedupe URLs.
     from tavily import TavilyClient
 
-    response = TavilyClient(api_key=api_key).search(
-        query,
-        max_results=max_results,
-        include_raw_content=True,
-        topic="general",
-        timeout=timeout,
-    )
+    search_options: dict[str, object] = {
+        "max_results": max_results,
+        "include_raw_content": True,
+        "topic": "general",
+        "timeout": timeout,
+    }
+    if language:
+        search_options["language"] = language
+    response = TavilyClient(api_key=api_key).search(query, **search_options)
     values = response.get("results") if isinstance(response, Mapping) else None
     if not isinstance(values, list):
         raise RuntimeError("Tavily 返回了无效结果")
@@ -248,6 +250,7 @@ class OpenWebResearchClient:
                 provider=search_provider,
                 api_key=search_api_key,
                 timeout=search_timeout_seconds,
+                language="zh" if profile == "sociology" else None,
             )
         self._provider = search_provider
         self._profile = profile
@@ -288,10 +291,18 @@ class OpenWebResearchClient:
 
     @staticmethod
     def _search_provider(
-        query: str, max_results: int, *, provider: str, api_key: str | None, timeout: float
+        query: str,
+        max_results: int,
+        *,
+        provider: str,
+        api_key: str | None,
+        timeout: float,
+        language: str | None,
     ) -> Iterable[Mapping[str, object]]:
         if provider == "tavily" and api_key:
-            return _search_tavily(query, max_results, api_key=api_key, timeout=timeout)
+            return _search_tavily(
+                query, max_results, api_key=api_key, timeout=timeout, language=language
+            )
         raise ValueError(f"搜索提供方 {provider} 缺少有效配置")
 
     def search(self, query: str, *, limit: int = 5) -> list[dict[str, str]]:
