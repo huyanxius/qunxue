@@ -1293,6 +1293,7 @@ dependencies = [
     { name = "rispy" },
     { name = "sqlalchemy" },
     { name = "srt" },
+    { name = "tavily-python" },
     { name = "trafilatura" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "webvtt-py" },
@@ -1321,6 +1322,7 @@ requires-dist = [
     { name = "rispy", specifier = ">=0.10.0,<1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.51" },
     { name = "srt", specifier = ">=3.5,<4.0" },
+    { name = "tavily-python", specifier = ">=0.8.1" },
     { name = "trafilatura", specifier = ">=2,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.51.0" },
     { name = "webvtt-py", specifier = ">=0.5,<1.0" },
@@ -1560,6 +1562,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d854328ebfa884e62cb3f3d8549ddfd37c7814f42afa/starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0", size = 2703240, upload-time = "2026-06-12T09:23:11.602Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/bb/2799cc2ede3ed41131f8975621e7213dfc7ef4acbbaadfa440f32500c370/starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6", size = 73632, upload-time = "2026-06-12T09:23:10.017Z" },
+]
+
+[[package]]
+name = "tavily-python"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "requests" },
+    { name = "tiktoken" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/94/f49475ac7c33beb19a7067ffa9faad21a9b1a4afbcadac22476a9e143783/tavily_python-0.8.1.tar.gz", hash = "sha256:f00d1ecfe9a7ad82a7d6b84427faefe7448e9f16a8115ece3f5fbadc35752c4b", size = 31270, upload-time = "2026-09-03T13:20:33.15Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/33/30bf2dcbd36f0591aa0b0a9bcf6b1d45c5c2223730557abdecf282cef72d/tavily_python-0.8.1-py3-none-any.whl", hash = "sha256:21392e47f28e6024405d5616e1e3228eed1d15a3b3d9d9e523c150e628f13a5e", size = 22177, upload-time = "2026-09-03T13:20:32.21Z" },
 ]
 
 [[package]]

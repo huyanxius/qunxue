@@ -2,7 +2,7 @@
 
 ## Selected implementation
 
-群学的研究链路采用了 [LangChain Open Deep Research](https://github.com/langchain-ai/open_deep_research) 的公开研究流程作为设计来源。该仓库的 [LICENSE](https://github.com/langchain-ai/open_deep_research/blob/main/LICENSE) 是 MIT；本仓库没有复制其 LangGraph 运行时或第三方 provider，而是在现有 pydantic-ai Agent 边界内自行实现了同等的有限查询规划、结果合并和来源约束。
+群学的研究链路直接复用了两个 MIT 项目中可独立移植的网页检索实现：Tavily SDK 调用、`include_raw_content` 原文返回与结果 URL 去重来自 [LangChain Open Deep Research](https://github.com/langchain-ai/open_deep_research)；查询框清理和“由 Agent 先写搜索框查询”的边界来自 [STORM](https://github.com/stanford-oval/storm)。具体版权和许可证记录见 [third-party-notices.md](third-party-notices.md)。
 
 参考文件：
 
@@ -11,17 +11,17 @@
 - [prompts.py](https://github.com/langchain-ai/open_deep_research/blob/main/src/open_deep_research/prompts.py)：澄清问题、研究简报和查询改写提示。
 - [state.py](https://github.com/langchain-ai/open_deep_research/blob/main/src/open_deep_research/state.py)：研究状态和结构化输出边界。
 
-## 自行实现部分
+## 群学适配部分
 
-- Bing RSS、Tavily、Brave 和自定义 JSON provider 的群学适配器。生产默认使用 Bing RSS，因为服务器实测可直接取得结果。
-- 中文查询规范化、社会学语境扩展、官方域名和来源等级排序。
-- URL 规范化、公开地址校验、网页正文读取和 Trafilatura 正文抽取。
+- 现有 pydantic-ai Agent 工具边界、自定义 JSON provider、官方域名和来源等级排序。
+- 中文网页结果的证据闭集、URL 公开地址校验、网页正文读取和 Trafilatura 正文抽取。
+- Tavily 原始结果到群学 `title/url/snippet` 结构的最小映射。
 - 网页证据闭集、同轮重复查询阻断和终止性失败返回。
 - 现有知识库调用策略、Agent 对话状态和 citation 选择边界保持不变。
 
 ## 未复制的项目
 
-- [STORM](https://github.com/stanford-oval/storm) 使用 MIT 许可证，适合多视角提问和长报告生成；本次仅借鉴其“先提问再检索”的思路，没有复制 dspy、Bing 或报告生成代码。
+- [STORM](https://github.com/stanford-oval/storm) 使用 MIT 许可证；本次直接适配其查询清理和查询预算边界，没有复制 dspy、Bing 或报告生成代码。
 - [Vane](https://github.com/ItzCrazyKns/Vane) 使用 MIT 许可证，但其公开 README 以 SearXNG 为主要搜索后端；当前任务明确禁止继续以 SearXNG 为核心，因此没有复用。
 - [GPT Researcher](https://github.com/assafelovic/gpt-researcher) 使用 Apache-2.0；未复制其代码，避免在没有逐项兼容审查时引入 Apache 代码。
 
