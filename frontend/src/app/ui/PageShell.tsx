@@ -107,6 +107,7 @@ export function PageShell({
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'updates' | 'messages'>('all')
   const sharedRailState = useContext(RailStateContext)
   const [localRailCollapsed, setLocalRailCollapsed] = useState(defaultRailCollapsed)
   const railCollapsed = sharedRailState?.collapsed ?? localRailCollapsed
@@ -207,11 +208,37 @@ export function PageShell({
                     onClick={() => setNotificationsOpen((open) => !open)}
                   >
                     <BellIcon size={19} weight="regular" aria-hidden="true" />
+                    <span className="desktop-rail__notification-dot" aria-hidden="true" />
                   </button>
                   {notificationsOpen ? (
-                    <div className="desktop-rail__notification-panel" id="desktop-notifications" role="status">
-                      <strong>{text('暂无通知', 'No notifications')}</strong>
-                      <p>{text('服务器通知会显示在这里。', 'Server notifications will appear here.')}</p>
+                    <div className="desktop-rail__notification-panel" id="desktop-notifications" aria-label={text('通知栏', 'Notifications panel')}>
+                      <h2>{text('通知', 'Notifications')}</h2>
+                      <div className="desktop-rail__notification-tabs" role="tablist" aria-label={text('通知分类', 'Notification categories')}>
+                        {([
+                          ['all', text('全部', 'All')],
+                          ['updates', text('更新日志', 'Updates')],
+                          ['messages', text('消息', 'Messages')],
+                        ] as const).map(([filter, label]) => (
+                          <button
+                            key={filter}
+                            type="button"
+                            role="tab"
+                            aria-selected={notificationFilter === filter}
+                            onClick={() => setNotificationFilter(filter)}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {notificationFilter === 'updates' ? (
+                        <p className="desktop-rail__notification-empty">{text('暂无更新日志', 'No updates')}</p>
+                      ) : (
+                        <article className="desktop-rail__notification-item">
+                          <strong>{text('上游服务请求较慢', 'Upstream service requests are slow')}</strong>
+                          <p>{text('上游服务出现了问题，当前请求响应较慢，请大家谅解。', 'The upstream service is experiencing an issue, so requests are responding slowly. Thank you for your patience.')}</p>
+                          <time dateTime="2026-09-03">{text('9月3日', 'Sep 3')}</time>
+                        </article>
+                      )}
                     </div>
                   ) : null}
                 </>
