@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -100,4 +101,54 @@ def test_open_web_client_normalizes_search_results_and_extracts_page_text() -> N
         "title": "政策原文",
         "url": "https://example.gov.cn/policy",
         "content": "政策完整正文",
+    }
+
+
+def test_open_web_client_queries_bing_and_baidu_through_searxng() -> None:
+    requests: list[tuple[str, float]] = []
+
+    def search_transport(url: str, timeout: float):
+        requests.append((url, timeout))
+        return {
+            "query": "青年就业 政策",
+            "number_of_results": 2,
+            "results": [
+                {
+                    "title": "国务院政策文件",
+                    "url": "https://www.gov.cn/zhengce/example.html",
+                    "content": "高校毕业生就业支持政策。",
+                    "engine": "bing",
+                    "engines": ["bing", "baidu"],
+                    "score": 4.0,
+                }
+            ],
+            "answers": [],
+            "corrections": [],
+            "infoboxes": [],
+            "suggestions": [],
+            "unresponsive_engines": [],
+        }
+
+    client = OpenWebResearchClient(
+        search_base_url="http://127.0.0.1:8093",
+        search_engines=("bing", "baidu"),
+        search_timeout_seconds=6,
+        search_transport=search_transport,
+    )
+
+    assert client.search("青年就业 政策", limit=2) == [{
+        "title": "国务院政策文件",
+        "url": "https://www.gov.cn/zhengce/example.html",
+        "snippet": "高校毕业生就业支持政策。",
+    }]
+    assert len(requests) == 1
+    request_url, timeout = requests[0]
+    assert timeout == 6
+    assert urlparse(request_url).path == "/search"
+    assert parse_qs(urlparse(request_url).query) == {
+        "q": ["青年就业 政策"],
+        "format": ["json"],
+        "categories": ["general"],
+        "language": ["zh-CN"],
+        "engines": ["bing,baidu"],
     }
