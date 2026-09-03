@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     ) = None
     model_timeout_seconds: float = Field(default=30, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
-    web_search_provider: Literal["duckduckgo", "tavily", "brave", "custom"] = "duckduckgo"
+    web_search_provider: Literal["bing", "duckduckgo", "tavily", "brave", "custom"] = "bing"
     web_search_api_key: SecretStr | None = None
     web_search_base_url: str | None = None
     web_search_profile: Literal["generic", "sociology"] = "sociology"

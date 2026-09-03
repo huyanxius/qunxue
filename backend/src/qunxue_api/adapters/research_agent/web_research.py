@@ -331,7 +331,7 @@ class OpenWebResearchClient:
         self,
         *,
         search: SearchFunction | None = None,
-        search_provider: str = "duckduckgo",
+        search_provider: str = "bing",
         search_api_key: str | None = None,
         search_base_url: str | None = None,
         search_engines: tuple[str, ...] = (),
@@ -413,6 +413,8 @@ class OpenWebResearchClient:
     ) -> Iterable[Mapping[str, object]]:
         if provider == "duckduckgo":
             return _search_duckduckgo(query, max_results, timeout=timeout)
+        if provider == "bing":
+            return _search_bing_rss(query, max_results, timeout=timeout)
         if provider == "tavily" and api_key:
             return _search_tavily(query, max_results, api_key=api_key, timeout=timeout)
         if provider == "brave" and api_key:
