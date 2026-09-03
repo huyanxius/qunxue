@@ -300,7 +300,12 @@ def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) 
                         "url": "https://example.edu.cn/report",
                         "content": "摘要",
                         "raw_content": "正文",
-                    }
+                    },
+                    {
+                        "title": "搜索结果页",
+                        "url": "https://www.sogou.com/web?query=社会调查",
+                        "content": "不应进入证据集",
+                    },
                 ]
             }
 
@@ -311,7 +316,7 @@ def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) 
         profile="sociology",
     )
 
-    assert client.search("社会调查", limit=1) == [
+    assert client.search("社会调查", limit=2) == [
         {
             "title": "社会调查报告",
             "url": "https://example.edu.cn/report",

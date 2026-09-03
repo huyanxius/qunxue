@@ -45,6 +45,12 @@ _AUTHORITATIVE_DOMAINS = {
     "cnki.net": 0.9,
     "doi.org": 0.9,
 }
+_SEARCH_RESULT_PAGE_DOMAINS = {
+    "baidu.com",
+    "bing.com",
+    "sogou.com",
+    "so.com",
+}
 
 
 def _download_json(url: str, timeout: float) -> Mapping[str, object]:
@@ -329,6 +335,11 @@ class OpenWebResearchClient:
                     continue
                 canonical_url = _canonical_url(url)
                 hostname = (urlparse(url).hostname or "").lower().removeprefix("www.")
+                if any(
+                    hostname == domain or hostname.endswith("." + domain)
+                    for domain in _SEARCH_RESULT_PAGE_DOMAINS
+                ):
+                    continue
                 if self._allowed_domains and not any(
                     hostname == domain or hostname.endswith("." + domain)
                     for domain in self._allowed_domains
