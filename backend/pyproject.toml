@@ -18,6 +18,7 @@ dependencies = [
     "rispy>=0.10.0,<1.0",
     "sqlalchemy>=2.0.51",
     "srt>=3.5,<4.0",
+    "tavily-python>=0.8.1",
     "trafilatura>=2,<3",
     "uvicorn[standard]>=0.51.0",
     "webvtt-py>=0.5,<1.0",
