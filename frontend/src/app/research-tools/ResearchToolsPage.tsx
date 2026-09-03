@@ -54,14 +54,27 @@ export function ResearchToolsPage() {
                 key={title}
                 aria-disabled={disabled || undefined}
               >
-                {href ? <Link className="research-tools-page__card-link" to={href} aria-label={`打开${title}`} /> : null}
-                <img className="workbench-destination__image" src={image} alt="" aria-hidden="true" />
-                <span className="workbench-destination__shade" aria-hidden="true" />
-                <span className="workbench-destination__copy">
-                  <h2>{title}</h2>
-                  <small>{description}</small>
-                </span>
-                <span className="workbench-destination__arrow" aria-hidden="true">↗</span>
+                {href ? (
+                  <Link className="research-tools-page__card-link" to={href} aria-label={`打开${title}`}>
+                    <img className="workbench-destination__image" src={image} alt="" aria-hidden="true" />
+                    <span className="workbench-destination__shade" aria-hidden="true" />
+                    <span className="workbench-destination__copy">
+                      <h2>{title}</h2>
+                      <small>{description}</small>
+                    </span>
+                    <span className="workbench-destination__arrow" aria-hidden="true">↗</span>
+                  </Link>
+                ) : (
+                  <>
+                    <img className="workbench-destination__image" src={image} alt="" aria-hidden="true" />
+                    <span className="workbench-destination__shade" aria-hidden="true" />
+                    <span className="workbench-destination__copy">
+                      <h2>{title}</h2>
+                      <small>{description}</small>
+                    </span>
+                    <span className="workbench-destination__arrow" aria-hidden="true">↗</span>
+                  </>
+                )}
               </article>
             ))}
           </div>
