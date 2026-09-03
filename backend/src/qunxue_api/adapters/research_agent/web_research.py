@@ -11,9 +11,9 @@ ExtractFunction = Callable[[str], str | None]
 def _search_ddgs(query: str, max_results: int) -> Iterable[Mapping[str, object]]:
     from ddgs import DDGS
 
-    # Yahoo is the default auto backend but is intermittently unreachable from
-    # the production host; prefer engines that remain accessible there.
-    return DDGS(timeout=8).text(query, backend="duckduckgo,bing", max_results=max_results)
+    # Keep production on Bing explicitly; DDGS auto-routing can select Yahoo,
+    # which intermittently times out from the production host.
+    return DDGS(timeout=8).text(query, backend="bing", max_results=max_results)
 
 
 def _fetch_page(url: str) -> str | None:
