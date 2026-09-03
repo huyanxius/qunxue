@@ -18,6 +18,7 @@ import {
   type ResearchMaterial,
   type ResearchMaterialSegment,
 } from './researchMaterialsModel'
+import type { AnalysisAnnotation, AnalysisCode } from './researchAnalysisModel'
 
 /**
  * 中央栏被 Agent 栏挤到这个宽度以下时，208px 的章节栏会吃掉三分之一，正文一行只剩十几个
@@ -44,6 +45,9 @@ type MaterialReaderViewProps = {
   readonly matchCount: number
   readonly page: number
   readonly pageCount: number
+  readonly codingView?: boolean
+  readonly annotations?: readonly AnalysisAnnotation[]
+  readonly codes?: readonly AnalysisCode[]
   readonly workspaceChrome?: boolean
   readonly registerSegment: (segmentId: string, element: HTMLElement | null) => void
   readonly onBack: () => void
@@ -54,6 +58,7 @@ type MaterialReaderViewProps = {
   readonly onSelectSegment: (segment: ResearchMaterialSegment) => void
   readonly onTextSelection: (segment: ResearchMaterialSegment, container: HTMLElement, range: Range) => void
   readonly onPageChange: (page: number) => void
+  readonly onToggleCodingView?: () => void
 }
 
 /**
@@ -77,6 +82,9 @@ export function MaterialReaderView({
   matchCount,
   page,
   pageCount,
+  codingView = false,
+  annotations = [],
+  codes = [],
   workspaceChrome = false,
   registerSegment,
   onBack,
@@ -87,6 +95,7 @@ export function MaterialReaderView({
   onSelectSegment,
   onTextSelection,
   onPageChange,
+  onToggleCodingView,
 }: MaterialReaderViewProps) {
   const frameRef = useRef<HTMLElement | null>(null)
   const [narrow, setNarrow] = useState(false)
@@ -130,6 +139,17 @@ export function MaterialReaderView({
     onTextSelection(segment, event.currentTarget, selection.getRangeAt(0))
   }
 
+  function renderCodedText(segment: ResearchMaterialSegment) {
+    if (!codingView) return segment.text || '此片段没有可显示的正文。'
+    const segmentAnnotations = annotations.filter((annotation) => annotation.segment_id === segment.segmentId)
+    if (!segmentAnnotations.length) return segment.text || '此片段没有可显示的正文。'
+    const text = segment.text || '此片段没有可显示的正文。'
+    const annotation = segmentAnnotations.find((item) => item.quote && text.includes(item.quote))
+    if (!annotation?.quote) return <mark className="qx-coded-text is-whole">{text}</mark>
+    const start = text.indexOf(annotation.quote)
+    return <>{text.slice(0, start)}<mark className="qx-coded-text">{annotation.quote}</mark>{text.slice(start + annotation.quote.length)}</>
+  }
+
   return (
     <section className={`qx-reader${narrow ? ' is-narrow' : ''}${workspaceChrome ? ' is-workspace-chrome' : ''}`} aria-label="材料阅读台" ref={frameRef}>
       <header className={`qx-reader__bar${workspaceChrome ? ' is-workspace-chrome' : ''}`}>
@@ -166,6 +186,16 @@ export function MaterialReaderView({
           >
             <MagnifyingGlassIcon size={16} aria-hidden="true" />
           </button>
+          {annotations.length && onToggleCodingView ? (
+            <button
+              type="button"
+              className={`qx-reader__coding-toggle${codingView ? ' is-active' : ''}`}
+              aria-pressed={codingView}
+              onClick={onToggleCodingView}
+            >
+              {codingView ? '编码视图' : '原文视图'}
+            </button>
+          ) : null}
           <span className="qx-reader__tool-rule" aria-hidden="true" />
           <button
             type="button"
@@ -192,7 +222,7 @@ export function MaterialReaderView({
               placeholder="查找原文或定位"
               autoFocus
               onChange={(event) => onQueryChange(event.target.value)}
-            />
+          />
             {query ? (
               <button type="button" aria-label="清除材料查找" onClick={() => onQueryChange('')}>
                 <XIcon size={13} aria-hidden="true" />
@@ -270,10 +300,18 @@ export function MaterialReaderView({
                     {locator}
                   </button>
                   {heading ? (
-                    <h3 onMouseUp={(event) => captureFromParagraph(segment, event)}>{segment.text || '此片段没有可显示的正文。'}</h3>
+                    <h3 onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment)}</h3>
                   ) : (
-                    <p onMouseUp={(event) => captureFromParagraph(segment, event)}>{segment.text || '此片段没有可显示的正文。'}</p>
+                    <p onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment)}</p>
                   )}
+                  {codingView && annotations.some((annotation) => annotation.segment_id === segment.segmentId) ? (
+                    <aside className="qx-coding-rail" aria-label="此段编码">
+                      {annotations.filter((annotation) => annotation.segment_id === segment.segmentId).flatMap((annotation) => {
+                        const labels = codes.filter((code) => code.annotation_ids.includes(annotation.annotation_id)).map((code) => code.label)
+                        return labels.length ? labels : ['待命名标记']
+                      }).map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}
+                    </aside>
+                  ) : null}
                 </div>
               )
             })}

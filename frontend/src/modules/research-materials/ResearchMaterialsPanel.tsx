@@ -6,7 +6,8 @@ import { MaterialLibraryView } from './MaterialLibraryView'
 import { MaterialReaderView, type ReaderHeading } from './MaterialReaderView'
 import { MediaTranscriptWorkspace } from './MediaTranscriptWorkspace'
 import { ProfessionalMaterialArchivePanel } from './ProfessionalMaterialArchive'
-import { createAnalysisAnnotation } from './researchAnalysisApi'
+import { createAnalysisAnnotation, getAnalysisSnapshot } from './researchAnalysisApi'
+import type { AnalysisAnnotation, AnalysisCode } from './researchAnalysisModel'
 import {
   deleteResearchMaterial,
   getResearchMaterial,
@@ -89,6 +90,9 @@ export function ResearchMaterialsPanel({
   const [outlineOpen, setOutlineOpen] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [codingView, setCodingView] = useState(false)
+  const [analysisAnnotations, setAnalysisAnnotations] = useState<AnalysisAnnotation[]>([])
+  const [analysisCodes, setAnalysisCodes] = useState<AnalysisCode[]>([])
   const [mediaLocation, setMediaLocation] = useState<{ versionId: string | null; segmentId: string | null } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const materialsLoadGeneration = useRef(0)
@@ -132,6 +136,22 @@ export function ResearchMaterialsPanel({
       if (materialsLoadAbortController.current === controller) materialsLoadAbortController.current = null
       materialsLoadGeneration.current += 1
     }
+  }, [taskId])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void getAnalysisSnapshot(taskId, controller.signal).then((snapshot) => {
+      if (controller.signal.aborted) return
+      setAnalysisAnnotations(snapshot.annotations)
+      setAnalysisCodes(snapshot.codes)
+      setCodingView(snapshot.annotations.length > 0)
+    }).catch(() => {
+      if (!controller.signal.aborted) {
+        setAnalysisAnnotations([])
+        setAnalysisCodes([])
+      }
+    })
+    return () => controller.abort()
   }, [taskId])
 
   useEffect(() => {
@@ -544,6 +564,9 @@ export function ResearchMaterialsPanel({
           matchCount={readerSegments.length}
           page={activeReaderPage}
           pageCount={readerPageCount}
+          codingView={codingView}
+          annotations={analysisAnnotations.filter((annotation) => annotation.material_id === selectedMaterial.materialId)}
+          codes={analysisCodes}
           workspaceChrome={workspacePresentation}
           registerSegment={(segmentId, element) => {
             if (element) segmentRefs.current.set(segmentId, element)
@@ -557,6 +580,7 @@ export function ResearchMaterialsPanel({
           onSelectSegment={(segment) => { void (segment.kind === 'heading' ? jumpToHeading(segment) : selectSegment(segment)) }}
           onTextSelection={captureSelection}
           onPageChange={setReaderPage}
+          onToggleCodingView={() => setCodingView((open) => !open)}
         />
       )}
 
