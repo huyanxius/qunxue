@@ -25,6 +25,18 @@ import './research-materials-page.css'
 
 type LibraryMaterial = { material: ResearchMaterial; research: MyResearchItem }
 
+async function waitForReadyMaterial(taskId: string, materialId: string): Promise<ResearchMaterial> {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const { items } = await listResearchLibraryMaterials(taskId)
+    const material = items.find((item) => item.materialId === materialId)
+    if (!material) throw new Error('材料不存在。')
+    if (material.status === 'ready') return material
+    if (material.status === 'failed') throw new Error('材料解析失败，请重试。')
+    await new Promise((resolve) => window.setTimeout(resolve, 1000))
+  }
+  throw new Error('材料解析超时，请稍后重试。')
+}
+
 function MaterialTypeIcon({ material }: { material: ResearchMaterial }) {
   const format = materialMediaLabel(material.mediaType, material.filename)
   if (format === 'PDF') return <FilePdfIcon size={24} />
@@ -179,7 +191,8 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
       const imported = await listResearchLibraryMaterials(taskId)
       const material = imported.items[0]
       if (batchCodingEntry && material) {
-        const run = await startResearchBatchCoding(taskId, material.materialId)
+        const readyMaterial = await waitForReadyMaterial(taskId, material.materialId)
+        const run = await startResearchBatchCoding(taskId, readyMaterial.materialId)
         navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}&material_id=${encodeURIComponent(material.materialId)}&batch_run_id=${encodeURIComponent(run.runId)}`, { replace: true })
       } else {
         navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}`, { replace: true })
@@ -197,7 +210,8 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     setUploadError(null)
     try {
       const material = await addResearchLibraryMaterial(uploadTaskId, file)
-      const run = await startResearchBatchCoding(uploadTaskId, material.materialId)
+      const readyMaterial = await waitForReadyMaterial(uploadTaskId, material.materialId)
+      const run = await startResearchBatchCoding(uploadTaskId, readyMaterial.materialId)
       navigate(`/research/materials?task_id=${encodeURIComponent(uploadTaskId)}&material_id=${encodeURIComponent(material.materialId)}&batch_run_id=${encodeURIComponent(run.runId)}`, { replace: true })
     } catch (cause: unknown) {
       setUploadError(cause instanceof Error ? cause.message : '批量编码启动失败，请重试。')
