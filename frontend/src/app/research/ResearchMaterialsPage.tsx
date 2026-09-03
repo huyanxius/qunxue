@@ -1,4 +1,4 @@
-import { FileDocIcon, FilePdfIcon, FileTextIcon, FolderOpenIcon, MarkdownLogoIcon, PlusIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
+import { FileDocIcon, FilePdfIcon, FileTextIcon, MarkdownLogoIcon, PlusIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
@@ -9,10 +9,13 @@ import {
   listResearchLibraryMaterials,
   materialMediaLabel,
   materialStatusLabel,
+  isSupportedResearchMaterialFile,
   RESEARCH_MATERIAL_ACCEPT,
   ResearchMaterialsPanel,
+  uploadInitialResearchMaterials,
   type ResearchMaterial,
 } from '../../modules/research-materials'
+import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchMaterialsShader } from './ResearchMaterialsShader'
 import './research-materials-page.css'
@@ -35,6 +38,7 @@ function MaterialTypeIcon({ material }: { material: ResearchMaterial }) {
  */
 export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: string | null }) {
   const navigate = useNavigate()
+  const emptyUploadInputRef = useRef<HTMLInputElement>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const uploadPopoverRef = useRef<HTMLDivElement>(null)
   const [searchParams] = useSearchParams()
@@ -50,6 +54,8 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadNotice, setUploadNotice] = useState<string | null>(null)
+  const [emptyUploading, setEmptyUploading] = useState(false)
+  const [emptyUploadError, setEmptyUploadError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -131,6 +137,27 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     }
   }
 
+  async function startFromMaterials(files: File[]) {
+    if (!files.length || emptyUploading) return
+    const unsupported = files.find((file) => !isSupportedResearchMaterialFile(file))
+    if (unsupported) {
+      setEmptyUploadError(`${unsupported.name} 不是可导入的研究材料。`)
+      return
+    }
+    setEmptyUploading(true)
+    setEmptyUploadError(null)
+    try {
+      const requestKey = `material-entry:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`
+      const { taskId } = await createMaterialFirstResearchProject(requestKey, files[0].name)
+      await uploadInitialResearchMaterials(taskId, files)
+      navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}`, { replace: true })
+    } catch (cause: unknown) {
+      setEmptyUploadError(cause instanceof Error ? cause.message : '材料暂时无法导入，请重试。')
+    } finally {
+      setEmptyUploading(false)
+    }
+  }
+
   return (
     <PageShell workspace>
       <PageContent>
@@ -140,10 +167,28 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
 
         {!loading && !error && !research.length ? (
           <section className="research-materials-page__empty" aria-label="还没有研究">
-            <FolderOpenIcon size={25} aria-hidden="true" />
-            <h2>先建立一项研究</h2>
-            <p>研究材料需要绑定到具体研究，建立后就能在这里持续导入和管理。</p>
-            <Link className="research-materials-page__primary" to="/research/new"><PlusIcon size={16} />新建研究</Link>
+            <div className="research-materials-page__empty-copy">
+              <h1>从材料开始研究</h1>
+              <p>导入论文与文本、访谈录音或视频材料，系统会同时建立它所属的研究。访谈转录稿支持 SRT、VTT、TXT 与 DOCX。</p>
+              <p className="research-materials-page__formats">PDF · DOCX · TXT · Markdown · MP3 · M4A · WAV · MP4 · WebM</p>
+              <button className="work-home__start" type="button" disabled={emptyUploading} onClick={() => emptyUploadInputRef.current?.click()}>
+                <PlusIcon size={17} weight="regular" aria-hidden="true" />
+                {emptyUploading ? '正在导入…' : '导入研究材料'}
+              </button>
+              <input
+                ref={emptyUploadInputRef}
+                hidden
+                type="file"
+                multiple
+                accept={RESEARCH_MATERIAL_ACCEPT}
+                onChange={(event) => {
+                  const files = Array.from(event.target.files ?? [])
+                  event.target.value = ''
+                  void startFromMaterials(files)
+                }}
+              />
+              {emptyUploadError ? <span className="research-materials-page__empty-error" role="alert">{emptyUploadError}</span> : null}
+            </div>
           </section>
         ) : null}
 
@@ -201,7 +246,6 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
             ) : null}
             {!libraryLoading && !libraryMaterials.length ? (
               <div className="research-materials-page__library-empty">
-                <FolderOpenIcon size={22} aria-hidden="true" />
                 <p>还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。</p>
                 <Link to="/research/new">去添加材料</Link>
               </div>
