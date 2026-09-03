@@ -38,6 +38,8 @@ from qunxue_api.modules.research_analysis.qualitative_workspace import (
     qualitative_method_presets,
 )
 from qunxue_api.modules.research_analysis.service import ResearchAnalysisService
+from qunxue_api.modules.research_analysis.batch import BatchCodingRun, BatchCodingStatus
+from qunxue_api.modules.research_analysis.batch import BatchCodingRepository
 
 __all__ = [
     "AnalysisAnnotation",
@@ -74,4 +76,7 @@ __all__ = [
     "QualitativeMethodPreset",
     "QualitativeWorkspaceSnapshot",
     "qualitative_method_presets",
+    "BatchCodingRun",
+    "BatchCodingStatus",
+    "BatchCodingRepository",
 ]
