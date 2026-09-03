@@ -8,7 +8,6 @@ from ipaddress import ip_address
 from typing import Literal, Protocol
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
-from xml.etree import ElementTree
 
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.adapters.retrieval.sqlite_index import RetrievalChunk
@@ -64,81 +63,46 @@ def _clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", unescape(value)).strip()
 
 
-def _search_bing_rss(
-    query: str, max_results: int, *, timeout: float
-) -> Iterable[Mapping[str, object]]:
-    url = "https://www.bing.com/search?" + urlencode({"format": "rss", "q": query})
-    request = Request(url, headers={"User-Agent": _USER_AGENT, "Accept-Language": "zh-CN,zh;q=0.9"})
-    with build_opener().open(request, timeout=timeout) as response:
-        payload = response.read(5_000_001)
-    root = ElementTree.fromstring(payload)
-    results: list[dict[str, str]] = []
-    for item in root.findall("./channel/item"):
-        title = _clean_text(item.findtext("title") or "")
-        link = _clean_text(item.findtext("link") or "")
-        snippet = _clean_text(item.findtext("description") or "")
-        if title and link:
-            results.append({"title": title, "url": link, "snippet": snippet})
-    return results[:max_results]
-
-
 def _search_tavily(
     query: str, max_results: int, *, api_key: str, timeout: float
 ) -> Iterable[Mapping[str, object]]:
-    payload = json.dumps(
-        {"api_key": api_key, "query": query, "max_results": max_results, "include_answer": False}
-    ).encode()
-    request = Request(
-        "https://api.tavily.com/search",
-        data=payload,
-        headers={"User-Agent": _USER_AGENT, "Content-Type": "application/json"},
+    # Adapted from STORM's MIT-licensed TavilySearchRM and Open Deep
+    # Research's MIT-licensed Tavily async search: use the provider SDK,
+    # request raw content, and let the caller normalize/dedupe URLs.
+    from tavily import TavilyClient
+
+    response = TavilyClient(api_key=api_key).search(
+        query,
+        max_results=max_results,
+        include_raw_content=True,
+        topic="general",
+        timeout=timeout,
     )
-    with build_opener().open(request, timeout=timeout) as response:
-        parsed = json.loads(response.read(5_000_001))
-    values = parsed.get("results") if isinstance(parsed, Mapping) else None
+    values = response.get("results") if isinstance(response, Mapping) else None
     if not isinstance(values, list):
         raise RuntimeError("Tavily 返回了无效结果")
-    return (item for item in values if isinstance(item, Mapping))
-
-
-def _search_brave(
-    query: str, max_results: int, *, api_key: str, timeout: float
-) -> Iterable[Mapping[str, object]]:
-    endpoint = "https://api.search.brave.com/res/v1/web/search?" + urlencode(
-        {"q": query, "count": max_results}
+    return (
+        {
+            **item,
+            "content": item.get("raw_content") or item.get("content") or "",
+        }
+        for item in values
+        if isinstance(item, Mapping)
     )
-    request = Request(
-        endpoint,
-        headers={
-            "User-Agent": _USER_AGENT,
-            "Accept": "application/json",
-            "X-Subscription-Token": api_key,
-        },
-    )
-    with build_opener().open(request, timeout=timeout) as response:
-        parsed = json.loads(response.read(5_000_001))
-    web = parsed.get("web") if isinstance(parsed, Mapping) else None
-    values = web.get("results") if isinstance(web, Mapping) else None
-    if not isinstance(values, list):
-        raise RuntimeError("Brave 返回了无效结果")
-    return (item for item in values if isinstance(item, Mapping))
 
 
 def plan_web_queries(query: str, *, profile: SearchProfile = "sociology") -> list[str]:
-    """Create bounded generic queries, then add sociology-specific context."""
+    """Clean the Agent's search-box query using STORM's bounded-query convention."""
+
+    del profile
 
     normalized = re.sub(r"\s+", " ", query).strip()
     if not normalized:
         raise ValueError("联网搜索词不能为空")
-    queries = [normalized]
-    if profile == "sociology" and "社会学" not in normalized:
-        queries.append(f"{normalized} 社会学")
-        if any(
-            marker in normalized
-            for marker in ("政策", "就业", "教育", "住房", "迁移", "人口", "劳动", "孤独")
-        ):
-            queries.append(f"{normalized} 官方 数据 报告")
-    return list(dict.fromkeys(queries))
+    cleaned = normalized.replace("-", "").strip().strip('"').strip("'").strip()
+    if not cleaned:
+        raise ValueError("联网搜索词不能为空")
+    return [cleaned]
 
 
 def _fetch_page(url: str) -> str | None:
@@ -246,7 +210,7 @@ class OpenWebResearchClient:
         self,
         *,
         search: SearchFunction | None = None,
-        search_provider: str = "bing",
+        search_provider: str = "tavily",
         search_api_key: str | None = None,
         search_base_url: str | None = None,
         search_engines: tuple[str, ...] = (),
@@ -326,12 +290,8 @@ class OpenWebResearchClient:
     def _search_provider(
         query: str, max_results: int, *, provider: str, api_key: str | None, timeout: float
     ) -> Iterable[Mapping[str, object]]:
-        if provider == "bing":
-            return _search_bing_rss(query, max_results, timeout=timeout)
         if provider == "tavily" and api_key:
             return _search_tavily(query, max_results, api_key=api_key, timeout=timeout)
-        if provider == "brave" and api_key:
-            return _search_brave(query, max_results, api_key=api_key, timeout=timeout)
         raise ValueError(f"搜索提供方 {provider} 缺少有效配置")
 
     def search(self, query: str, *, limit: int = 5) -> list[dict[str, str]]:
