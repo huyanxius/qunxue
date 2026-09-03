@@ -1,3 +1,4 @@
+import sys
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
@@ -168,7 +169,7 @@ def test_open_web_client_uses_explicit_custom_json_provider() -> None:
             "snippet": "高校毕业生就业支持政策。",
         }
     ]
-    assert len(requests) == 3
+    assert len(requests) == 1
     request_url, timeout = requests[0]
     assert timeout == 6
     assert urlparse(request_url).path == "/search"
@@ -264,14 +265,12 @@ def test_open_web_client_falls_back_to_provider_order_without_vector_retriever()
     ]
 
 
-def test_web_query_planner_adds_sociology_context_after_generic_queries() -> None:
+def test_web_query_planner_preserves_the_agent_query_without_fixed_suffixes() -> None:
     assert plan_web_queries("青年就业 政策", profile="generic") == [
         "青年就业 政策",
     ]
     assert plan_web_queries("青年就业 政策", profile="sociology") == [
         "青年就业 政策",
-        "青年就业 政策 社会学",
-        "青年就业 政策 官方 数据 报告",
     ]
 
 
@@ -282,4 +281,51 @@ def test_default_client_uses_public_search_provider_without_searxng() -> None:
         extract_title=lambda _html: "结果",
     )
 
-    assert client.search_provider_name == "bing"
+    assert client.search_provider_name == "tavily"
+
+
+def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) -> None:
+    calls = []
+
+    class FakeTavilyClient:
+        def __init__(self, api_key):
+            assert api_key == "test-key"
+
+        def search(self, query, **kwargs):
+            calls.append((query, kwargs))
+            return {
+                "results": [
+                    {
+                        "title": "社会调查报告",
+                        "url": "https://example.edu.cn/report",
+                        "content": "摘要",
+                        "raw_content": "正文",
+                    }
+                ]
+            }
+
+    monkeypatch.setitem(sys.modules, "tavily", SimpleNamespace(TavilyClient=FakeTavilyClient))
+    client = OpenWebResearchClient(
+        search_provider="tavily",
+        search_api_key="test-key",
+        profile="generic",
+    )
+
+    assert client.search("社会调查", limit=1) == [
+        {
+            "title": "社会调查报告",
+            "url": "https://example.edu.cn/report",
+            "snippet": "正文",
+        }
+    ]
+    assert calls == [
+        (
+            "社会调查",
+            {
+                "max_results": 8,
+                "include_raw_content": True,
+                "topic": "general",
+                "timeout": 12,
+            },
+        )
+    ]
