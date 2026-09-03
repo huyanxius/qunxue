@@ -11,7 +11,10 @@ import {
   decideResearchAnalysisCode,
   decideResearchAnalysisMemo,
   decideResearchCaseComparison,
+  decideResearchCodingPlan,
   getResearchAnalysis,
+  getResearchRetrievedSegments,
+  revokeResearchCodingPlan,
   getResearchCycle,
   saveResearchAnalysisCaseProfile,
   saveResearchCaseThemeMatrixCell,
@@ -36,8 +39,11 @@ import type {
   CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
   DecideAnalysisRecordInput,
+  DecideCodingPlanInput,
+  RevokeCodingPlanInput,
   MethodPresetSelection,
   ResearchAnalysisSnapshot,
+  AnalysisCodingPlan,
   SaveAnalysisCaseProfileInput,
   SaveCaseThemeMatrixCellInput,
   SetQualitativeMethodInput,
@@ -170,6 +176,57 @@ export async function decideAnalysisCode(
     signal,
   })
   return requireData(result, '候选编码判断未保存。')
+}
+
+export async function decideCodingPlan(
+  taskId: string,
+  planId: string,
+  body: DecideCodingPlanInput,
+  signal?: AbortSignal,
+): Promise<AnalysisCodingPlan> {
+  const result = await decideResearchCodingPlan({
+    client: apiClient,
+    path: { task_id: taskId, plan_id: planId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '编码计划判断未保存。')
+}
+
+export async function revokeCodingPlan(
+  taskId: string,
+  planId: string,
+  body: RevokeCodingPlanInput,
+  signal?: AbortSignal,
+): Promise<AnalysisCodingPlan> {
+  const result = await revokeResearchCodingPlan({
+    client: apiClient,
+    path: { task_id: taskId, plan_id: planId },
+    headers: { 'Idempotency-Key': idempotencyKey() },
+    body,
+    signal,
+  })
+  return requireData(result, '编码计划撤销未保存。')
+}
+
+export async function getRetrievedCodedSegments(
+  taskId: string,
+  options: { codeIds?: string[]; materialId?: string; query?: string; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<unknown[]> {
+  const result = await getResearchRetrievedSegments({
+    client: apiClient,
+    path: { task_id: taskId },
+    query: {
+      code_id: options.codeIds,
+      material_id: options.materialId,
+      query: options.query,
+      limit: options.limit,
+    },
+    signal,
+  })
+  return requireData(result, '已确认编码片段暂时无法加载。')
 }
 
 export async function createAnalysisMemo(
