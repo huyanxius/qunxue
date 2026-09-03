@@ -164,6 +164,7 @@ describe('ResearchAgentConversationPage', () => {
     const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     const webSearchButton = within(agent).getByRole('button', { name: '联网搜索' })
     expect(webSearchButton).toHaveAttribute('aria-pressed', 'true')
+    expect(webSearchButton).toHaveTextContent('联网已开启')
     fireEvent.change(within(agent).getByRole('textbox', { name: '问社会学 Agent' }), {
       target: { value: '查找近期青年就业政策。' },
     })
