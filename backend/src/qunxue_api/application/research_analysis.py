@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Protocol, cast
@@ -13,9 +13,14 @@ from uuid import UUID, uuid4
 from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisAuditEvent,
     AnalysisCaseProfile,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
+    AnalysisCodingPlanItem,
+    AnalysisCodingPlanItemStatus,
+    AnalysisCodingPlanStatus,
     AnalysisMemo,
     AnalysisMemoKind,
     AnalysisMemoLink,
@@ -238,6 +243,502 @@ class ResearchAnalysisApplication:
         )
         self._commit()
         return value
+
+    def propose_coding_plan_from_agent(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        title: str,
+        rationale: str,
+        items: tuple[Mapping[str, object], ...],
+        conversation_id: UUID,
+        agent_run_id: UUID,
+        agent_turn_id: UUID,
+        tool_call_id: str,
+    ) -> AnalysisCodingPlan:
+        """Create a source-pinned, approval-gated plan against existing codes."""
+
+        self._require_task(user_id=user_id, task_id=task_id)
+        resolved: list[AnalysisCodingPlanItem] = []
+        for raw in items:
+            try:
+                material_id = UUID(str(raw["material_id"]))
+                parse_id = UUID(str(raw["parse_id"]))
+                segment_id = str(raw["segment_id"])
+                code_id = UUID(str(raw["code_id"]))
+                quote_start = int(raw["quote_start"])
+                quote_end = int(raw["quote_end"])
+                confidence = float(raw["confidence"])
+                item_rationale = str(raw["rationale"])
+            except (KeyError, TypeError, ValueError) as error:
+                raise ValueError("coding plan item is malformed") from error
+            material = self._materials.get(material_id, user_id=user_id, task_id=task_id)
+            if material is None or material.status is not MaterialStatus.READY:
+                raise LookupError(material_id)
+            block = self._materials.get_segment(
+                material_id, parse_id, segment_id, user_id=user_id, task_id=task_id
+            )
+            if block is None:
+                raise LookupError(segment_id)
+            if quote_start < 0 or quote_end > len(block.text) or quote_end <= quote_start:
+                raise ValueError("coding plan selection is outside the source segment")
+            code = self._analysis.get_code(user_id=user_id, task_id=task_id, code_id=code_id)
+            if code is None or code.status is not AnalysisCodeStatus.CONFIRMED:
+                raise ValueError("coding plan target code must be user-confirmed")
+            codebook = self._analysis.get_codebook_entry(
+                user_id=user_id, task_id=task_id, code_id=code_id
+            )
+            resolved.append(
+                AnalysisCodingPlanItem.create(
+                    material_id=material_id,
+                    parse_id=parse_id,
+                    segment_id=segment_id,
+                    segment_content_hash=block.content_hash,
+                    quote=block.text[quote_start:quote_end],
+                    quote_start=quote_start,
+                    quote_end=quote_end,
+                    locator=block.locator,
+                    code_id=code_id,
+                    code_label=code.label,
+                    code_definition=code.definition,
+                    codebook_version=codebook.version if codebook else None,
+                    confidence=confidence,
+                    rationale=item_rationale,
+                )
+            )
+        candidate = AnalysisCodingPlan.candidate(
+            user_id=user_id,
+            task_id=task_id,
+            title=title,
+            rationale=rationale,
+            items=tuple(resolved),
+            source="agent",
+            conversation_id=conversation_id,
+            agent_run_id=agent_run_id,
+            agent_turn_id=agent_turn_id,
+            tool_call_id=tool_call_id,
+            now=self._clock(),
+        )
+        write = self._reserve_agent_write(
+            user_id=user_id,
+            task_id=task_id,
+            conversation_id=conversation_id,
+            agent_run_id=agent_run_id,
+            agent_turn_id=agent_turn_id,
+            tool_call_id=tool_call_id,
+            operation="propose_coding_plan",
+            result_kind="coding_plan",
+            payload={
+                "title": title,
+                "rationale": rationale,
+                "items": [dict(item) for item in items],
+            },
+        )
+        existing = self._analysis.get_coding_plan(
+            user_id=user_id, task_id=task_id, plan_id=write.result_id
+        )
+        if existing is not None:
+            return existing
+        value = replace(candidate, plan_id=write.result_id, created_at=write.created_at)
+        self._analysis.add_coding_plan(value)
+        self._record_audit(
+            user_id=user_id,
+            task_id=task_id,
+            actor="agent",
+            action="coding_plan.proposed",
+            entity_kind="coding_plan",
+            entity_id=value.plan_id,
+            plan_id=value.plan_id,
+            provenance={
+                "conversation_id": str(conversation_id),
+                "agent_run_id": str(agent_run_id),
+                "agent_turn_id": str(agent_turn_id),
+                "tool_call_id": tool_call_id,
+            },
+            payload={"item_count": len(value.items)},
+        )
+        self._commit()
+        return value
+
+    def decide_coding_plan(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        idempotency_key: str,
+        plan_id: UUID,
+        expected_version: int,
+        decisions: tuple[tuple[UUID, str, str], ...],
+    ) -> AnalysisCodingPlan:
+        """Apply/reject every submitted item only after an explicit user decision."""
+
+        self._require_task(user_id=user_id, task_id=task_id)
+        plan = self._analysis.get_coding_plan(user_id=user_id, task_id=task_id, plan_id=plan_id)
+        if plan is None:
+            raise LookupError(plan_id)
+        prior_write = self._analysis.get_write(
+            user_id=user_id, task_id=task_id, namespace="api", idempotency_key=idempotency_key
+        )
+        self._reserve_write(
+            user_id=user_id,
+            task_id=task_id,
+            namespace="api",
+            idempotency_key=idempotency_key,
+            operation="decide_coding_plan",
+            result_kind="coding_plan",
+            result_id=plan_id,
+            payload={
+                "plan_id": plan_id,
+                "expected_version": expected_version,
+                "decisions": decisions,
+            },
+        )
+        if prior_write is not None and plan.status is not AnalysisCodingPlanStatus.CANDIDATE:
+            return plan
+        if plan.version != expected_version:
+            raise ValueError("stale coding plan version")
+        if plan.status is not AnalysisCodingPlanStatus.CANDIDATE:
+            return plan
+        by_id = {item.item_id: item for item in plan.items}
+        if not decisions or {item_id for item_id, _, _ in decisions} != set(by_id):
+            raise ValueError("every coding plan item requires one decision")
+        normalized: dict[UUID, tuple[str, str]] = {}
+        for item_id, decision, reason in decisions:
+            if item_id not in by_id or decision not in {"confirmed", "rejected"}:
+                raise ValueError("coding plan decision is invalid")
+            if not str(reason).strip():
+                raise ValueError("coding plan decision reason is required")
+            normalized[item_id] = (decision, str(reason).strip())
+        now = self._clock()
+        for item in plan.items:
+            decision, _ = normalized[item.item_id]
+            if decision != "confirmed":
+                continue
+            block = self._materials.get_segment(
+                item.material_id,
+                item.parse_id,
+                item.segment_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if (
+                block is None
+                or block.content_hash != item.segment_content_hash
+                or block.text[item.quote_start : item.quote_end] != item.quote
+            ):
+                raise ValueError("coding plan source anchor is no longer readable")
+            target = self._analysis.get_code(user_id=user_id, task_id=task_id, code_id=item.code_id)
+            if target is None or target.status is not AnalysisCodeStatus.CONFIRMED:
+                raise ValueError("coding plan target code is no longer confirmed")
+        updated_items: list[AnalysisCodingPlanItem] = []
+        applied_count = 0
+        rejected_count = 0
+        for item in plan.items:
+            decision, reason = normalized[item.item_id]
+            if decision == "rejected":
+                updated_items.append(
+                    replace(
+                        item, status=AnalysisCodingPlanItemStatus.REJECTED, decision_reason=reason
+                    )
+                )
+                rejected_count += 1
+                self._record_audit(
+                    user_id=user_id,
+                    task_id=task_id,
+                    actor="user",
+                    action="coding_item.rejected",
+                    entity_kind="coding_plan_item",
+                    entity_id=item.item_id,
+                    plan_id=plan_id,
+                    item_id=item.item_id,
+                    code_id=item.code_id,
+                    idempotency_key=idempotency_key,
+                    provenance={},
+                    payload={"reason": reason},
+                )
+                continue
+            annotation = self.create_annotation(
+                user_id=user_id,
+                task_id=task_id,
+                idempotency_key=f"coding-plan:{plan_id}:item:{item.item_id}",
+                material_id=item.material_id,
+                parse_id=item.parse_id,
+                segment_id=item.segment_id,
+                quote_start=item.quote_start,
+                quote_end=item.quote_end,
+                annotation_kind=AnalysisAnnotationKind.DESCRIPTIVE,
+                note=f"Agent 编码计划：{plan.title}",
+            )
+            code = self._analysis.get_code(user_id=user_id, task_id=task_id, code_id=item.code_id)
+            if code is None:
+                raise LookupError(item.code_id)
+            self._analysis.add_code(
+                code.attach_annotation(annotation_id=annotation.annotation_id, now=now)
+            )
+            updated_items.append(
+                replace(
+                    item,
+                    status=AnalysisCodingPlanItemStatus.APPLIED,
+                    annotation_id=annotation.annotation_id,
+                    decision_reason=reason,
+                )
+            )
+            applied_count += 1
+            self._record_audit(
+                user_id=user_id,
+                task_id=task_id,
+                actor="user",
+                action="coding_item.applied",
+                entity_kind="coding_plan_item",
+                entity_id=item.item_id,
+                plan_id=plan_id,
+                item_id=item.item_id,
+                annotation_id=annotation.annotation_id,
+                code_id=item.code_id,
+                idempotency_key=idempotency_key,
+                provenance={},
+                payload={"reason": reason},
+            )
+        status = (
+            AnalysisCodingPlanStatus.APPLIED
+            if applied_count == len(plan.items)
+            else AnalysisCodingPlanStatus.REJECTED
+            if rejected_count == len(plan.items)
+            else AnalysisCodingPlanStatus.PARTIALLY_APPLIED
+        )
+        value = replace(
+            plan,
+            items=tuple(updated_items),
+            status=status,
+            version=plan.version + 1,
+            decided_at=now,
+            decision_reason="用户逐条确认编码计划",
+        )
+        self._analysis.add_coding_plan(value)
+        self._record_audit(
+            user_id=user_id,
+            task_id=task_id,
+            actor="user",
+            action="coding_plan.decided",
+            entity_kind="coding_plan",
+            entity_id=plan_id,
+            plan_id=plan_id,
+            idempotency_key=idempotency_key,
+            provenance={},
+            payload={"status": status.value},
+        )
+        self._commit()
+        return value
+
+    def retrieve_coded_segments(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        code_ids: tuple[UUID, ...] = (),
+        material_id: UUID | None = None,
+        query: str | None = None,
+        limit: int = 50,
+    ) -> tuple[dict[str, object], ...]:
+        self._require_task(user_id=user_id, task_id=task_id)
+        codes = {
+            item.code_id: item
+            for item in self._analysis.list_codes(user_id=user_id, task_id=task_id)
+            if item.status is AnalysisCodeStatus.CONFIRMED
+        }
+        selected = set(code_ids) or set(codes)
+        annotations = {
+            item.annotation_id: item
+            for item in self._analysis.list_annotations(user_id=user_id, task_id=task_id)
+        }
+        plans = self._analysis.list_coding_plans(user_id=user_id, task_id=task_id)
+        plan_by_annotation = {
+            item.annotation_id: (plan.plan_id, item)
+            for plan in plans
+            for item in plan.items
+            if item.annotation_id
+        }
+        needle = (query or "").strip().lower()
+        rows: list[dict[str, object]] = []
+        for code_id in selected:
+            code = codes.get(code_id)
+            if code is None:
+                continue
+            for annotation_id in code.annotation_ids:
+                annotation = annotations.get(annotation_id)
+                if (
+                    annotation is None
+                    or not annotation.source_available
+                    or (material_id and annotation.material_id != material_id)
+                ):
+                    continue
+                if (
+                    needle
+                    and needle not in (annotation.quote or "").lower()
+                    and needle not in code.label.lower()
+                ):
+                    continue
+                plan_ref = plan_by_annotation.get(annotation_id)
+                plan = plan_ref[1] if plan_ref else None
+                rows.append(
+                    {
+                        "annotation_id": annotation.annotation_id,
+                        "code_id": code.code_id,
+                        "code_label": code.label,
+                        "quote": annotation.quote,
+                        "material_id": annotation.material_id,
+                        "parse_id": annotation.parse_id,
+                        "segment_id": annotation.segment_id,
+                        "locator": annotation.locator,
+                        "confidence": plan.confidence if plan else None,
+                        "plan_id": plan_ref[0] if plan_ref else None,
+                    }
+                )
+        return tuple(rows[: max(1, min(limit, 200))])
+
+    def revoke_coding_plan(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        idempotency_key: str,
+        plan_id: UUID,
+        expected_version: int,
+        reason: str,
+    ) -> AnalysisCodingPlan:
+        """Revoke only the code assignments created by one applied plan."""
+
+        self._require_task(user_id=user_id, task_id=task_id)
+        plan = self._analysis.get_coding_plan(user_id=user_id, task_id=task_id, plan_id=plan_id)
+        if plan is None:
+            raise LookupError(plan_id)
+        prior_write = self._analysis.get_write(
+            user_id=user_id, task_id=task_id, namespace="api", idempotency_key=idempotency_key
+        )
+        self._reserve_write(
+            user_id=user_id,
+            task_id=task_id,
+            namespace="api",
+            idempotency_key=idempotency_key,
+            operation="revoke_coding_plan",
+            result_kind="coding_plan",
+            result_id=plan_id,
+            payload={"plan_id": plan_id, "expected_version": expected_version, "reason": reason},
+        )
+        if prior_write is not None and plan.status is AnalysisCodingPlanStatus.REVOKED:
+            return plan
+        if plan.version != expected_version:
+            raise ValueError("stale coding plan version")
+        if plan.status not in {
+            AnalysisCodingPlanStatus.APPLIED,
+            AnalysisCodingPlanStatus.PARTIALLY_APPLIED,
+        }:
+            raise ValueError("only an applied coding plan can be revoked")
+        normalized_reason = reason.strip()
+        if not normalized_reason:
+            raise ValueError("coding plan revocation reason is required")
+        now = self._clock()
+        items: list[AnalysisCodingPlanItem] = []
+        for item in plan.items:
+            if (
+                item.status is not AnalysisCodingPlanItemStatus.APPLIED
+                or item.annotation_id is None
+            ):
+                items.append(item)
+                continue
+            code = self._analysis.get_code(user_id=user_id, task_id=task_id, code_id=item.code_id)
+            if code is None:
+                raise LookupError(item.code_id)
+            self._analysis.add_code(
+                code.detach_annotation(annotation_id=item.annotation_id, now=now)
+            )
+            items.append(
+                replace(
+                    item,
+                    status=AnalysisCodingPlanItemStatus.REVOKED,
+                    decision_reason=normalized_reason,
+                )
+            )
+            self._record_audit(
+                user_id=user_id,
+                task_id=task_id,
+                actor="user",
+                action="coding_item.revoked",
+                entity_kind="coding_plan_item",
+                entity_id=item.item_id,
+                plan_id=plan_id,
+                item_id=item.item_id,
+                annotation_id=item.annotation_id,
+                code_id=item.code_id,
+                idempotency_key=idempotency_key,
+                provenance={},
+                payload={"reason": normalized_reason},
+            )
+        value = replace(
+            plan,
+            items=tuple(items),
+            status=AnalysisCodingPlanStatus.REVOKED,
+            version=plan.version + 1,
+            decided_at=now,
+            decision_reason=normalized_reason,
+        )
+        self._analysis.add_coding_plan(value)
+        self._record_audit(
+            user_id=user_id,
+            task_id=task_id,
+            actor="user",
+            action="coding_plan.revoked",
+            entity_kind="coding_plan",
+            entity_id=plan_id,
+            plan_id=plan_id,
+            idempotency_key=idempotency_key,
+            provenance={},
+            payload={"reason": normalized_reason},
+        )
+        self._commit()
+        return value
+
+    def list_audit_events(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisAuditEvent, ...]:
+        self._require_task(user_id=user_id, task_id=task_id)
+        return self._analysis.list_audit_events(user_id=user_id, task_id=task_id)
+
+    def _record_audit(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        actor: str,
+        action: str,
+        entity_kind: str,
+        entity_id: UUID,
+        plan_id: UUID | None = None,
+        item_id: UUID | None = None,
+        annotation_id: UUID | None = None,
+        code_id: UUID | None = None,
+        idempotency_key: str | None = None,
+        provenance: dict[str, object] | None = None,
+        payload: dict[str, object] | None = None,
+    ) -> AnalysisAuditEvent:
+        return self._analysis.add_audit_event(
+            AnalysisAuditEvent(
+                event_id=uuid4(),
+                user_id=user_id,
+                task_id=task_id,
+                actor=actor,
+                action=action,
+                entity_kind=entity_kind,
+                entity_id=entity_id,
+                plan_id=plan_id,
+                item_id=item_id,
+                annotation_id=annotation_id,
+                code_id=code_id,
+                idempotency_key=idempotency_key,
+                provenance=provenance or {},
+                payload=payload or {},
+                created_at=self._clock(),
+            )
+        )
 
     def list_snapshot(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]:
         self._require_task(user_id=user_id, task_id=task_id)

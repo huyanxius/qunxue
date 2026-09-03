@@ -5,8 +5,10 @@ from uuid import UUID
 
 from qunxue_api.modules.research_analysis.domain import (
     AnalysisAnnotation,
+    AnalysisAuditEvent,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
     AnalysisMemo,
     AnalysisRecordStatus,
     AnalysisWriteRequest,
@@ -40,6 +42,8 @@ class _MemoryRepository:
         self.codes: dict[UUID, AnalysisCode] = {}
         self.memos: dict[UUID, AnalysisMemo] = {}
         self.comparisons: dict[UUID, CaseComparison] = {}
+        self.coding_plans: dict[UUID, AnalysisCodingPlan] = {}
+        self.audit_events: dict[UUID, AnalysisAuditEvent] = {}
         self.write_requests: dict[tuple[UUID, UUID, str, str], AnalysisWriteRequest] = {}
         self.codebook_entries: dict[UUID, CodebookEntry] = {}
         self.themes: dict[UUID, AnalysisTheme] = {}
@@ -89,6 +93,23 @@ class _MemoryRepository:
     def add_comparison(self, value):
         self.comparisons[value.comparison_id] = value
         return value
+
+    def add_coding_plan(self, value):
+        self.coding_plans[value.plan_id] = value
+        return value
+
+    def get_coding_plan(self, plan_id, *, user_id, task_id):
+        return _owned(self.coding_plans.get(plan_id), user_id, task_id)
+
+    def list_coding_plans(self, *, user_id, task_id):
+        return _list_owned(self.coding_plans.values(), user_id, task_id)
+
+    def add_audit_event(self, value):
+        self.audit_events[value.event_id] = value
+        return value
+
+    def list_audit_events(self, *, user_id, task_id):
+        return _list_owned(self.audit_events.values(), user_id, task_id)
 
     def get_code(self, code_id, *, user_id, task_id):
         return _owned(self.codes.get(code_id), user_id, task_id)
@@ -184,6 +205,12 @@ class ResearchAnalysisService:
 
     def add_annotation(self, value: AnalysisAnnotation) -> AnalysisAnnotation:
         return self._repository.add_annotation(value)
+
+    def list_annotations(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisAnnotation, ...]:
+        return self._repository.list_annotations(user_id=user_id, task_id=task_id)
+
+    def list_codes(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisCode, ...]:
+        return self._repository.list_codes(user_id=user_id, task_id=task_id)
 
     def reserve_write(self, value: AnalysisWriteRequest) -> AnalysisWriteRequest:
         return self._repository.reserve_write(value)
@@ -381,6 +408,28 @@ class ResearchAnalysisService:
 
     def add_comparison(self, value: CaseComparison) -> CaseComparison:
         return self._repository.add_comparison(value)
+
+    def add_coding_plan(self, value: AnalysisCodingPlan) -> AnalysisCodingPlan:
+        return self._repository.add_coding_plan(value)
+
+    def get_coding_plan(
+        self, *, user_id: UUID, task_id: UUID, plan_id: UUID
+    ) -> AnalysisCodingPlan | None:
+        return self._repository.get_coding_plan(plan_id, user_id=user_id, task_id=task_id)
+
+    def list_coding_plans(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisCodingPlan, ...]:
+        return self._repository.list_coding_plans(user_id=user_id, task_id=task_id)
+
+    def get_codebook_entry(
+        self, *, user_id: UUID, task_id: UUID, code_id: UUID
+    ) -> CodebookEntry | None:
+        return self._repository.get_codebook_entry(code_id, user_id=user_id, task_id=task_id)
+
+    def add_audit_event(self, value: AnalysisAuditEvent) -> AnalysisAuditEvent:
+        return self._repository.add_audit_event(value)
+
+    def list_audit_events(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisAuditEvent, ...]:
+        return self._repository.list_audit_events(user_id=user_id, task_id=task_id)
 
     def get_comparison(
         self,
@@ -1186,6 +1235,7 @@ class ResearchAnalysisService:
             "codes": self._repository.list_codes(user_id=user_id, task_id=task_id),
             "memos": self._repository.list_memos(user_id=user_id, task_id=task_id),
             "comparisons": self._repository.list_comparisons(user_id=user_id, task_id=task_id),
+            "coding_plans": self._repository.list_coding_plans(user_id=user_id, task_id=task_id),
         }
 
     def formal_handoff(
