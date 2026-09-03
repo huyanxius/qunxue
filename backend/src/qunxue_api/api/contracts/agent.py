@@ -110,6 +110,7 @@ class AgentTurnRequest(BaseModel):
     conversation_id: UUID | None = None
     message: str = Field(min_length=1, max_length=12000)
     workspace: Literal["agent", "research"] = "agent"
+    web_search: bool = False
     task_id: UUID | None = None
     document_id: UUID | None = None
     section_id: str | None = None

@@ -262,7 +262,7 @@ export async function confirmResearchStartProposal(
 }
 
 async function streamAgentTurnOnce(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -278,6 +278,7 @@ async function streamAgentTurnOnce(
       conversation_id: payload.conversation_id,
       message: payload.message,
       workspace: payload.workspace ?? 'agent',
+      web_search: payload.web_search ?? false,
       task_id: payload.task_id ?? null,
       document_id: payload.document_id ?? null,
       section_id: payload.section_id ?? null,
@@ -321,7 +322,7 @@ async function streamAgentTurnOnce(
 }
 
 export async function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {

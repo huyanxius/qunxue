@@ -1,5 +1,6 @@
 import re
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import TYPE_CHECKING, Protocol
 
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
@@ -31,6 +32,12 @@ class KnowledgeRetriever(Protocol):
     ) -> "HybridRetrievalResult": ...
 
 
+class WebResearchClient(Protocol):
+    def search(self, query: str, *, limit: int = 5) -> list[dict[str, str]]: ...
+
+    def read(self, url: str) -> dict[str, str]: ...
+
+
 class KnowledgeToolRegistry:
     """The only capabilities exposed to the natural-language Agent in phase one."""
 
@@ -39,9 +46,11 @@ class KnowledgeToolRegistry:
         catalog: KnowledgeCatalog,
         *,
         retriever: KnowledgeRetriever | None = None,
+        web_research: WebResearchClient | None = None,
     ) -> None:
         self._catalog = catalog
         self._retriever = retriever
+        self._web_research = web_research
         # Agent runs share M4/M5's audited final release identity. If that
         # release is absent, the knowledge tool is unavailable rather than
         # silently switching to preview content.
@@ -55,6 +64,8 @@ class KnowledgeToolRegistry:
         self.selected_evidence_ids: tuple[str, ...] = ()
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False
+        self.web_search_enabled = False
+        self._allowed_web_urls: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
 
     def select_evidence(self, citation_ids: Sequence[str]) -> tuple[str, ...]:
@@ -67,6 +78,70 @@ class KnowledgeToolRegistry:
             raise ValueError("selected evidence is outside this turn's retrieved closed set")
         self.selected_evidence_ids = selected
         return selected
+
+    def enable_web_search(self) -> None:
+        self.web_search_enabled = self._web_research is not None
+
+    def search_web(self, query: str, *, limit: int = 5) -> list[dict[str, object]]:
+        if not self.web_search_enabled or self._web_research is None:
+            raise ValueError("联网搜索未开启")
+        safe_query = query.strip()
+        if not safe_query:
+            raise ValueError("联网搜索词不能为空")
+        raw_results = self._web_research.search(safe_query, limit=max(1, min(limit, 8)))
+        results: list[dict[str, object]] = []
+        for item in raw_results:
+            url = item.get("url", "").strip()
+            title = item.get("title", "").strip()
+            if not url.startswith(("https://", "http://")) or not title:
+                continue
+            excerpt = item.get("snippet", "").strip()
+            citation_id = f"web:{url}"
+            self._allowed_web_urls.add(url)
+            self.evidence[citation_id] = AgentEvidence(
+                citation_id=citation_id,
+                label=title,
+                kind="source",
+                excerpt=excerpt,
+                source_id=url,
+                source_kind="web",
+            )
+            results.append(
+                {
+                    "citation_id": citation_id,
+                    "title": title,
+                    "url": url,
+                    "excerpt": excerpt,
+                    "source_kind": "web",
+                    "evidence_status": "retrieved",
+                }
+            )
+        return results
+
+    def read_web_page(self, url: str) -> dict[str, object]:
+        if not self.web_search_enabled or self._web_research is None:
+            raise ValueError("联网搜索未开启")
+        if url not in self._allowed_web_urls:
+            raise ValueError("请先通过联网搜索取得网页地址")
+        page = self._web_research.read(url)
+        content = page.get("content", "").strip()
+        title = page.get("title", "").strip()
+        citation_id = f"web:{url}"
+        existing = self.evidence[citation_id]
+        if content:
+            self.evidence[citation_id] = replace(
+                existing,
+                label=title or existing.label,
+                excerpt=content,
+            )
+        return {
+            "citation_id": citation_id,
+            "title": title or existing.label,
+            "url": url,
+            "content": content,
+            "source_kind": "web",
+            "evidence_status": "read",
+        }
 
     def enable_research_map(self, current: Mapping[str, object] | None = None) -> None:
         """Opt this turn into the research workspace's structured-map tool set."""

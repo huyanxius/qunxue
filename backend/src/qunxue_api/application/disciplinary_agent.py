@@ -145,6 +145,7 @@ class DisciplinaryAgentApplication:
         prompt: str,
         idempotency_key: str,
         workspace: Literal["agent", "research"] = "agent",
+        web_search: bool = False,
         task_id: UUID | None = None,
         document_id: UUID | None = None,
         section_id: str | None = None,
@@ -242,6 +243,10 @@ class DisciplinaryAgentApplication:
                     project_title=prompt,
                 )
         tools = self._tools_factory()
+        if web_search:
+            enable_web_search = getattr(tools, "enable_web_search", None)
+            if callable(enable_web_search):
+                enable_web_search()
         enable_research_handoff_tools = getattr(
             tools, "enable_research_handoff_tools", None
         )

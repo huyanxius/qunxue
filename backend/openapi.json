@@ -719,6 +719,11 @@
             ],
             "title": "Theory Plan Id"
           },
+          "web_search": {
+            "default": false,
+            "title": "Web Search",
+            "type": "boolean"
+          },
           "workspace": {
             "default": "agent",
             "enum": [

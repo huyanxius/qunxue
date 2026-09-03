@@ -337,6 +337,7 @@ def stream_agent_turn(
                                 prompt=payload.message,
                                 idempotency_key=idempotency_key,
                                 workspace=payload.workspace,
+                                web_search=payload.web_search,
                                 task_id=payload.task_id,
                                 document_id=payload.document_id,
                                 section_id=payload.section_id,
@@ -357,7 +358,7 @@ def stream_agent_turn(
                         if existing is None or existing.status != "running":
                             raise
                         if cancel_event.wait(0.5):
-                            raise AgentInterrupted("Agent run was stopped")
+                            raise AgentInterrupted("Agent run was stopped") from None
                 event_queue.put(("completed", execution))
             except Exception as error:
                 event_queue.put(("failed", error))
