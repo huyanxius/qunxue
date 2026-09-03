@@ -7,7 +7,7 @@ import {
   WarningCircleIcon,
   XIcon,
 } from '@phosphor-icons/react'
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 
 import {
   formatMaterialLocator,
@@ -18,6 +18,7 @@ import {
   type ResearchMaterial,
   type ResearchMaterialSegment,
 } from './researchMaterialsModel'
+import type { AnalysisAnnotation, AnalysisCode } from './researchAnalysisModel'
 
 /**
  * 中央栏被 Agent 栏挤到这个宽度以下时，208px 的章节栏会吃掉三分之一，正文一行只剩十几个
@@ -44,6 +45,8 @@ type MaterialReaderViewProps = {
   readonly matchCount: number
   readonly page: number
   readonly pageCount: number
+  readonly annotations?: readonly AnalysisAnnotation[]
+  readonly codes?: readonly AnalysisCode[]
   readonly workspaceChrome?: boolean
   readonly registerSegment: (segmentId: string, element: HTMLElement | null) => void
   readonly onBack: () => void
@@ -77,6 +80,8 @@ export function MaterialReaderView({
   matchCount,
   page,
   pageCount,
+  annotations = [],
+  codes = [],
   workspaceChrome = false,
   registerSegment,
   onBack,
@@ -90,7 +95,32 @@ export function MaterialReaderView({
 }: MaterialReaderViewProps) {
   const frameRef = useRef<HTMLElement | null>(null)
   const [narrow, setNarrow] = useState(false)
+  const [codingView, setCodingView] = useState(annotations.length > 0)
+  const [activeCodeIds, setActiveCodeIds] = useState<string[]>([])
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null)
+  const [codeFilterOpen, setCodeFilterOpen] = useState(false)
   const narrowMeasured = useRef(false)
+
+  const annotationsBySegment = useMemo(() => {
+    const index = new Map<string, AnalysisAnnotation[]>()
+    annotations.forEach((annotation) => {
+      const current = index.get(annotation.segment_id) ?? []
+      current.push(annotation)
+      index.set(annotation.segment_id, current)
+    })
+    return index
+  }, [annotations])
+  const visibleCodes = useMemo(() => (
+    codes.filter((code) => annotations.some((annotation) => code.annotation_ids.includes(annotation.annotation_id)))
+  ), [annotations, codes])
+  const selectedAnnotation = selectedAnnotationId
+    ? annotations.find((annotation) => annotation.annotation_id === selectedAnnotationId) ?? null
+    : null
+
+  useEffect(() => {
+    if (annotations.length && !codingView) setCodingView(true)
+    if (!annotations.some((annotation) => annotation.annotation_id === selectedAnnotationId)) setSelectedAnnotationId(null)
+  }, [annotations, codingView, selectedAnnotationId])
 
   useEffect(() => {
     const frame = frameRef.current
@@ -130,6 +160,32 @@ export function MaterialReaderView({
     onTextSelection(segment, event.currentTarget, selection.getRangeAt(0))
   }
 
+  function segmentAnnotations(segment: ResearchMaterialSegment) {
+    const items = annotationsBySegment.get(segment.segmentId) ?? []
+    return items.filter((annotation) => {
+      if (!activeCodeIds.length) return true
+      return codes.some((code) => activeCodeIds.includes(code.code_id) && code.annotation_ids.includes(annotation.annotation_id))
+    })
+  }
+
+  function renderCodedText(segment: ResearchMaterialSegment, items: readonly AnalysisAnnotation[]) {
+    const text = segment.text || '此片段没有可显示的正文。'
+    if (!codingView || !items.length) return text
+    const target = items.find((item) => item.quote && text.includes(item.quote))
+    if (!target?.quote) return <mark className="qx-coded-text is-whole">{text}</mark>
+    const start = text.indexOf(target.quote)
+    return <>{text.slice(0, start)}<mark className="qx-coded-text">{target.quote}</mark>{text.slice(start + target.quote.length)}</>
+  }
+
+  function codeLabelsFor(annotation: AnalysisAnnotation) {
+    const labels = codes.filter((code) => code.annotation_ids.includes(annotation.annotation_id)).map((code) => ({
+      id: code.code_id,
+      label: code.label,
+      status: code.status,
+    }))
+    return labels.length ? labels : [{ id: `annotation:${annotation.annotation_id}`, label: '待命名标记', status: 'candidate' as const }]
+  }
+
   return (
     <section className={`qx-reader${narrow ? ' is-narrow' : ''}${workspaceChrome ? ' is-workspace-chrome' : ''}`} aria-label="材料阅读台" ref={frameRef}>
       <header className={`qx-reader__bar${workspaceChrome ? ' is-workspace-chrome' : ''}`}>
@@ -166,6 +222,26 @@ export function MaterialReaderView({
           >
             <MagnifyingGlassIcon size={16} aria-hidden="true" />
           </button>
+          {annotations.length ? (
+            <>
+              <button
+                type="button"
+                className={`qx-reader__coding-toggle${codingView ? ' is-active' : ''}`}
+                aria-pressed={codingView}
+                onClick={() => setCodingView((open) => !open)}
+              >
+                {codingView ? '编码视图' : '原文视图'}
+              </button>
+              <button
+                type="button"
+                className={`qx-reader__coding-filter${codeFilterOpen ? ' is-active' : ''}`}
+                aria-expanded={codeFilterOpen}
+                onClick={() => setCodeFilterOpen((open) => !open)}
+              >
+                代码筛选{activeCodeIds.length ? ` · ${activeCodeIds.length}` : ''}
+              </button>
+            </>
+          ) : null}
           <span className="qx-reader__tool-rule" aria-hidden="true" />
           <button
             type="button"
@@ -205,6 +281,23 @@ export function MaterialReaderView({
         </div>
       ) : null}
 
+      {codeFilterOpen && visibleCodes.length ? (
+        <div className="qx-reader__code-filter" role="group" aria-label="编码筛选">
+          <span>显示编码</span>
+          <button type="button" className={!activeCodeIds.length ? 'is-selected' : undefined} onClick={() => setActiveCodeIds([])}>全部</button>
+          {visibleCodes.map((code) => (
+            <button
+              type="button"
+              key={code.code_id}
+              className={activeCodeIds.includes(code.code_id) ? 'is-selected' : undefined}
+              onClick={() => setActiveCodeIds((current) => current.includes(code.code_id) ? current.filter((id) => id !== code.code_id) : [...current, code.code_id])}
+            >
+              <i aria-hidden="true" />{code.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className={`qx-reader__body${outlineOpen ? ' is-outline-open' : ''}`}>
         <nav id="research-materials-outline" className="qx-reader__outline" aria-label="章节导航" aria-hidden={!outlineOpen}>
           <span className="qx-reader__outline-title">章节</span>
@@ -230,7 +323,7 @@ export function MaterialReaderView({
           <button type="button" className="qx-reader__outline-scrim" aria-label="收起章节目录" onClick={onToggleOutline} />
         ) : null}
 
-        <div className="qx-reader__scroll" role="region" aria-label="文档阅读器">
+        <div className={`qx-reader__scroll${selectedAnnotation ? ' has-inspector' : ''}`} role="region" aria-label="文档阅读器">
           {detailLoading ? (
             <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在读取原文结构</p>
           ) : null}
@@ -246,9 +339,10 @@ export function MaterialReaderView({
               const selected = segment.segmentId === selectedSegmentId
               const locator = formatMaterialLocator(segment.locator)
               const heading = segment.kind === 'heading'
+              const codedAnnotations = segmentAnnotations(segment)
               return (
                 <div
-                  className={`qx-segment${selected ? ' is-selected' : ''}${heading ? ' is-heading' : ''}`}
+                  className={`qx-segment${selected ? ' is-selected' : ''}${heading ? ' is-heading' : ''}${codedAnnotations.length && codingView ? ' is-coded' : ''}`}
                   key={segment.segmentId}
                   data-segment-id={segment.segmentId}
                   aria-current={selected ? 'location' : undefined}
@@ -270,10 +364,25 @@ export function MaterialReaderView({
                     {locator}
                   </button>
                   {heading ? (
-                    <h3 onMouseUp={(event) => captureFromParagraph(segment, event)}>{segment.text || '此片段没有可显示的正文。'}</h3>
+                    <h3 onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment, codedAnnotations)}</h3>
                   ) : (
-                    <p onMouseUp={(event) => captureFromParagraph(segment, event)}>{segment.text || '此片段没有可显示的正文。'}</p>
+                    <p onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment, codedAnnotations)}</p>
                   )}
+                  {codingView && codedAnnotations.length ? (
+                    <aside className="qx-coding-rail" aria-label="此段编码">
+                      {codedAnnotations.flatMap((annotation) => codeLabelsFor(annotation).map((code) => (
+                        <button
+                          type="button"
+                          key={`${annotation.annotation_id}:${code.id}`}
+                          className={code.status === 'candidate' ? 'is-candidate' : undefined}
+                          onClick={(event) => { event.stopPropagation(); setSelectedAnnotationId(annotation.annotation_id) }}
+                          title={`${code.label} · ${code.status === 'confirmed' ? '已确认' : '候选'}`}
+                        >
+                          <span aria-hidden="true" />{code.label}
+                        </button>
+                      )))}
+                    </aside>
+                  ) : null}
                 </div>
               )
             })}
@@ -290,6 +399,25 @@ export function MaterialReaderView({
             </footer>
           ) : null}
         </div>
+        {selectedAnnotation ? (
+          <aside className="qx-reader__inspector" aria-label="编码证据检查器">
+            <header>
+              <span>编码证据</span>
+              <button type="button" aria-label="关闭编码证据" onClick={() => setSelectedAnnotationId(null)}><XIcon size={15} aria-hidden="true" /></button>
+            </header>
+            <blockquote>{selectedAnnotation.quote || '整段标记'}</blockquote>
+            <div className="qx-reader__inspector-codes">
+              {codeLabelsFor(selectedAnnotation).map((code) => <span key={code.id} className={code.status === 'candidate' ? 'is-candidate' : undefined}>{code.label}</span>)}
+            </div>
+            <dl>
+              <div><dt>状态</dt><dd>{selectedAnnotation.annotation_kind === 'researcher_reflection' ? '研究者反思' : '描述性标记'}</dd></div>
+              <div><dt>位置</dt><dd>{formatMaterialLocator({ page: selectedAnnotation.locator.page, headingPath: selectedAnnotation.locator.section_path, paragraph: selectedAnnotation.locator.paragraph, lineStart: selectedAnnotation.locator.line_start, lineEnd: selectedAnnotation.locator.line_end, charStart: selectedAnnotation.locator.char_start, charEnd: selectedAnnotation.locator.char_end })}</dd></div>
+            </dl>
+            {selectedAnnotation.note ? <p className="qx-reader__inspector-note">{selectedAnnotation.note}</p> : null}
+            {selectedAnnotation.reflection ? <p className="qx-reader__inspector-reflection"><span>研究者反思</span>{selectedAnnotation.reflection}</p> : null}
+            <small>{selectedAnnotation.source_available ? '来源可追溯' : `来源不可用：${selectedAnnotation.unavailable_reason || '未说明'}`}</small>
+          </aside>
+        ) : null}
       </div>
     </section>
   )
