@@ -32,6 +32,7 @@ class AgentTurnExecution:
     turn: AgentTurn | None
     replayed: bool
     tool_summary: tuple[dict[str, object], ...] = ()
+    pending_research: dict[str, object] | None = None
 
 
 class DisciplinaryAgentApplication:
@@ -111,6 +112,9 @@ class DisciplinaryAgentApplication:
         document_version: int | None = None,
         theory_plan_id: UUID | None = None,
         mode: Literal["standard", "deep_research"] = "standard",
+        deep_research_run_id: UUID | None = None,
+        deep_research_action: Literal["clarify", "confirm"] | None = None,
+        deep_research_selection: str | None = None,
         on_run_started: Callable[[UUID, UUID, bool], None] | None = None,
         on_delta: Callable[[str], None] | None = None,
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
@@ -123,6 +127,13 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             idempotency_key=idempotency_key,
         )
+        if deep_research_run_id is not None:
+            pending_run = self._conversations.find_run_by_id(
+                user_id=user_id, run_id=deep_research_run_id
+            )
+            if pending_run is None or pending_run.idempotency_key != idempotency_key:
+                raise ValueError("deep research session is invalid")
+            existing_run = pending_run
         conversation: Conversation | None = None
         if existing_run is not None:
             existing_conversation = self.get_conversation(
@@ -137,6 +148,38 @@ class DisciplinaryAgentApplication:
             )
             if existing_run.status == "running":
                 raise RunAlreadyActive(str(existing_run.conversation_id))
+            if existing_run.status in {"awaiting_clarification", "awaiting_plan_confirmation"}:
+                pending = _pending_research(existing_run)
+                if pending is None:
+                    raise ValueError("deep research session is missing its plan")
+                if deep_research_action is None:
+                    return AgentTurnExecution(
+                        conversation=existing_conversation,
+                        run_id=existing_run.run_id,
+                        result=AgentRunResult(
+                            answer="",
+                            citations=(),
+                            release_id=existing_run.knowledge_release_id or "",
+                            provider=existing_run.provider,
+                            model=existing_run.model,
+                        ),
+                        turn=None,
+                        replayed=False,
+                        tool_summary=existing_run.tool_summary,
+                        pending_research=pending,
+                    )
+                if deep_research_action == "clarify":
+                    selection = (deep_research_selection or "").strip()
+                    if not selection:
+                        raise ValueError("research selection must not be empty")
+                    prompt = f"{pending.get('prompt') or prompt}\n\n用户选择的研究重点：{selection}"
+                elif deep_research_action == "confirm":
+                    if existing_run.status != "awaiting_plan_confirmation":
+                        raise ValueError("research plan is not ready for confirmation")
+                    prompt = str(pending.get("prompt") or prompt)
+                    selection = str(pending.get("selected_intent") or "").strip()
+                    if selection:
+                        prompt = f"{prompt}\n\n用户确认的研究重点：{selection}"
             if existing_run.status == "completed" and existing_run.turn_id is not None:
                 replayed_turn = _find_turn(existing_conversation, existing_run.turn_id)
                 if replayed_turn is None:
@@ -211,7 +254,9 @@ class DisciplinaryAgentApplication:
         enable_research_handoff_tools = getattr(
             tools, "enable_research_handoff_tools", None
         )
-        if callable(enable_research_handoff_tools):
+        if callable(enable_research_handoff_tools) and not (
+            mode == "deep_research" and deep_research_action == "confirm"
+        ):
             enable_research_handoff_tools()
         if workspace == "research":
             prepare_research_context = getattr(tools, "prepare_research_context", None)
@@ -306,21 +351,60 @@ class DisciplinaryAgentApplication:
         conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
 
-        if mode == "deep_research":
+        if mode == "deep_research" and deep_research_action != "confirm":
             prepare_research = getattr(self._runner, "prepare_research", None)
+            planning_events: list[AgentResearchEvent] = []
             if callable(prepare_research):
-                prepare_research(
-                    prompt=prompt,
-                    conversation=conversation_history,
-                    on_event=on_research_event or (lambda _event: None),
-                )
-            if on_research_event is not None:
-                on_research_event(
-                    AgentResearchEvent(
-                        kind="step",
-                        payload={"step": "检索知识库与网页资料", "status": "running"},
+                try:
+                    prepare_research(
+                        prompt=prompt,
+                        conversation=conversation_history,
+                        on_event=planning_events.append,
                     )
-                )
+                except Exception:
+                    planning_events.clear()
+            planning_event = planning_events[-1] if planning_events else AgentResearchEvent(
+                kind="plan",
+                payload={
+                    "title": "深入研究",
+                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                },
+            )
+            if on_research_event is not None:
+                on_research_event(planning_event)
+            state = (
+                "awaiting_clarification"
+                if planning_event.kind == "ask"
+                else "awaiting_plan_confirmation"
+            )
+            pending = {
+                "kind": "deep_research_pending",
+                "version": 1,
+                "state": state,
+                "prompt": prompt,
+                **dict(planning_event.payload),
+            }
+            if deep_research_selection:
+                pending["selected_intent"] = deep_research_selection
+            self._conversations.finish_run(run_id=run.run_id, status=state, tool_summary=(pending,))
+            if self._credits is not None:
+                self._credits.release(user_id=user_id, run_id=run.run_id)
+            self._conversations.commit()
+            return AgentTurnExecution(
+                conversation=current,
+                run_id=run.run_id,
+                result=AgentRunResult(
+                    answer="",
+                    citations=(),
+                    release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
+                    provider=run.provider,
+                    model=run.model,
+                ),
+                turn=None,
+                replayed=False,
+                tool_summary=(pending,),
+                pending_research=pending,
+            )
 
         def record_tool_event(event: AgentToolEvent) -> None:
             tool_events.append(event)
@@ -368,6 +452,22 @@ class DisciplinaryAgentApplication:
                 )
                 self._conversations.commit()
                 raise AgentInterrupted("Agent run was interrupted by the client")
+            if mode == "deep_research" and deep_research_action == "confirm":
+                propose_start_research = getattr(tools, "propose_start_research", None)
+                if callable(propose_start_research):
+                    proposal_output = propose_start_research(
+                        phenomenon=prompt,
+                        research_intent="深入研究后的研究起点",
+                        context=result.answer[:1000],
+                    )
+                    tool_events.append(AgentToolEvent(
+                        tool="propose_start_research",
+                        phase="finished",
+                        call_id=f"deep-handoff-{run.run_id}",
+                        input={"phenomenon": prompt},
+                        output=proposal_output,
+                        detail="研究完成后整理研究起点建议",
+                    ))
             citations = tuple(_agent_citation(item) for item in result.citations)
             evidence_ids = frozenset(tools.evidence)
             with self._atomic():
@@ -503,6 +603,13 @@ def _runner_identity(runner: SubjectAgentRunner) -> AgentRuntimeIdentity:
     if not provider or not model:
         raise ValueError("Agent runtime provider and model must not be empty")
     return AgentRuntimeIdentity(provider=provider, model=model)
+
+
+def _pending_research(run) -> dict[str, object] | None:
+    for item in run.tool_summary:
+        if item.get("kind") == "deep_research_pending":
+            return dict(item)
+    return None
 
 
 def _resolve_task_binding(

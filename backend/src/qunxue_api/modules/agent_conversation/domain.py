@@ -119,7 +119,14 @@ class AgentRun:
     conversation_id: UUID
     user_id: UUID
     idempotency_key: str
-    status: Literal["running", "completed", "failed", "interrupted"]
+    status: Literal[
+        "running",
+        "completed",
+        "failed",
+        "interrupted",
+        "awaiting_clarification",
+        "awaiting_plan_confirmation",
+    ]
     provider: str = "pydantic-ai"
     model: str = "knowledge-agent"
     knowledge_release_id: str | None = None

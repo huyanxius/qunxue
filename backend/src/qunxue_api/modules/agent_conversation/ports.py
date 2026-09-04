@@ -177,6 +177,8 @@ class ConversationRepository(Protocol):
 
     def find_run(self, *, user_id: UUID, idempotency_key: str) -> AgentRun | None: ...
 
+    def find_run_by_id(self, *, user_id: UUID, run_id: UUID) -> AgentRun | None: ...
+
     def finish_run(
         self,
         *,

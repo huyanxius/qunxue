@@ -117,6 +117,9 @@ class AgentTurnRequest(BaseModel):
     document_version: int | None = None
     theory_plan_id: UUID | None = None
     mode: Literal["standard", "deep_research"] = "standard"
+    deep_research_run_id: UUID | None = None
+    deep_research_action: Literal["clarify", "confirm"] | None = None
+    deep_research_selection: str | None = Field(default=None, max_length=4000)
 
 
 class ResearchStartProposalResponse(BaseModel):
