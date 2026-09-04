@@ -163,9 +163,8 @@ function DeepResearchMockFlow({
         <div className="deep-research-mock-card__plan">
           {options.map((step, index) => <div key={`${step}-${index}`}><strong>{index + 1}</strong><span>{step}</span></div>)}
         </div>
-        <div className="deep-research-mock-card__actions">
-          <button type="button" className="is-primary" onClick={onConfirmPlan}>开始深入研究</button>
-          <button type="button" onClick={onEdit}>返回修改</button>
+        <div className="deep-research-mock-card__actions" aria-live="polite">
+          <span>已根据计划开始研究</span>
         </div>
       </section>
     )
