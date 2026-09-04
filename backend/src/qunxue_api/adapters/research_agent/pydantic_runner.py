@@ -2,10 +2,10 @@ import asyncio
 import json
 import re
 from asyncio import sleep as async_sleep
-from collections.abc import AsyncIterable, Callable, Mapping, Sequence
-from contextlib import suppress
+from collections.abc import AsyncGenerator, AsyncIterable, Callable, Mapping, Sequence
+from contextlib import asynccontextmanager, suppress
 from contextvars import ContextVar
-from typing import Literal
+from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
 from openai import AsyncOpenAI
@@ -29,9 +29,10 @@ from pydantic_ai.messages import (
     TextPartDelta,
     UserPromptPart,
 )
-from pydantic_ai.models import ModelRequestParameters
+from pydantic_ai.models import ModelRequestParameters, StreamedResponse
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIChatModelSettings
 from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.settings import ModelSettings, merge_model_settings
 from pydantic_ai.usage import UsageLimits
 
 from qunxue_api.adapters.model import (
@@ -40,6 +41,7 @@ from qunxue_api.adapters.model import (
     ModelEndpoint,
     ModelRouteContext,
     ModelRouteExecutor,
+    ModelRoutesUnavailable,
 )
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
@@ -485,6 +487,46 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
         self._route_executor = route_executor
         self._endpoint_models = {"primary": self, **(fallback_models or {})}
 
+    async def request(
+        self,
+        messages: list[ModelMessage],
+        model_settings: ModelSettings | None,
+        model_request_parameters: ModelRequestParameters,
+    ) -> ModelResponse:
+        settings_token = _agent_model_settings_overrides.set(
+            cast(OpenAIChatModelSettings, dict(model_settings or {}))
+        )
+        try:
+            return await super().request(
+                messages,
+                model_settings,
+                model_request_parameters,
+            )
+        finally:
+            _agent_model_settings_overrides.reset(settings_token)
+
+    @asynccontextmanager
+    async def request_stream(
+        self,
+        messages: list[ModelMessage],
+        model_settings: ModelSettings | None,
+        model_request_parameters: ModelRequestParameters,
+        run_context: RunContext[Any] | None = None,
+    ) -> AsyncGenerator[StreamedResponse]:
+        settings_token = _agent_model_settings_overrides.set(
+            cast(OpenAIChatModelSettings, dict(model_settings or {}))
+        )
+        try:
+            async with super().request_stream(
+                messages,
+                model_settings,
+                model_request_parameters,
+                run_context,
+            ) as response:
+                yield response
+        finally:
+            _agent_model_settings_overrides.reset(settings_token)
+
     async def _completions_create(
         self,
         messages: list[ModelMessage],
@@ -503,34 +545,33 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
             agent_run_id=_uuid_correlation(correlation.get("agent_run_id")),
             capability="agent_completion",
         )
-        last_error: ModelAPIError | None = None
+        runtime_overrides = _runtime_model_settings(
+            primary_defaults=cast(OpenAIChatModelSettings, self.settings or {}),
+            prepared_settings=model_settings,
+        )
 
         async def attempt(endpoint: ModelEndpoint) -> ModelAttemptResult[object]:
-            nonlocal last_error
             try:
                 model = self._endpoint_models[endpoint.endpoint_id]
             except KeyError as error:
                 raise RuntimeError(
                     f"no Agent model configured for endpoint {endpoint.endpoint_id}"
                 ) from error
+            # Match Pydantic AI's shallow merge contract: endpoint defaults are
+            # the base and per-call settings take precedence without mutation.
+            endpoint_settings = cast(
+                OpenAIChatModelSettings,
+                merge_model_settings(model.settings, runtime_overrides) or {},
+            )
             try:
-                if model is self:
-                    value = await OpenAIChatModel._completions_create(
-                        self,
-                        messages,
-                        stream,
-                        model_settings,
-                        model_request_parameters,
-                    )
-                else:
-                    value = await model._completions_create(
-                        messages,
-                        stream,
-                        model_settings,
-                        model_request_parameters,
-                    )
+                value = await OpenAIChatModel._completions_create(
+                    model,
+                    messages,
+                    stream,
+                    endpoint_settings,
+                    model_request_parameters,
+                )
             except (ModelHTTPError, ModelAPIError) as error:
-                last_error = error
                 raise ModelAttemptFailure(
                     code=_model_attempt_failure_code(error),
                     retryable=_is_retryable_model_error(error),
@@ -547,17 +588,61 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
                 context=context,
                 invoke=attempt,
             )
-        except ModelAttemptFailure:
-            if last_error is None:
-                raise
-            raise last_error from None
+        except ModelAttemptFailure as failure:
+            raise AgentModelRouteError.from_attempt(failure) from None
+        except ModelRoutesUnavailable:
+            raise AgentModelRouteError("agent_model_unavailable") from None
         return routed.value
+
+
+class AgentModelRouteError(RuntimeError):
+    """Safe, stable failure raised after an Agent model route cannot complete."""
+
+    _MESSAGES = {
+        "agent_model_unavailable": (
+            "Agent model providers are temporarily unavailable."
+        ),
+        "agent_model_request_rejected": "Agent model request was rejected.",
+    }
+
+    def __init__(self, code: str) -> None:
+        if code not in self._MESSAGES:
+            code = "agent_model_unavailable"
+        self.code = code
+        super().__init__(f"{code}: {self._MESSAGES[code]}")
+
+    @classmethod
+    def from_attempt(cls, failure: ModelAttemptFailure) -> "AgentModelRouteError":
+        code = (
+            "agent_model_request_rejected"
+            if failure.code == "model_request_rejected"
+            else "agent_model_unavailable"
+        )
+        return cls(code)
 
 
 _agent_route_correlation: ContextVar[Mapping[str, UUID | None] | None] = ContextVar(
     "agent_route_correlation",
     default=None,
 )
+_agent_model_settings_overrides: ContextVar[OpenAIChatModelSettings | None] = (
+    ContextVar("agent_model_settings_overrides", default=None)
+)
+
+
+def _runtime_model_settings(
+    *,
+    primary_defaults: OpenAIChatModelSettings,
+    prepared_settings: OpenAIChatModelSettings,
+) -> OpenAIChatModelSettings:
+    captured = _agent_model_settings_overrides.get()
+    if captured is not None:
+        return dict(captured)
+    return {
+        key: value
+        for key, value in prepared_settings.items()
+        if key not in primary_defaults or primary_defaults[key] != value
+    }
 
 
 class PydanticAIKnowledgeRunner:

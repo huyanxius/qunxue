@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import traceback
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -21,6 +22,7 @@ from qunxue_api.adapters.model import (
 )
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.pydantic_runner import (
+    AgentModelRouteError,
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
     _append_result_evidence,
@@ -1238,6 +1240,113 @@ def test_agent_applies_deepseek_options_to_a_deepseek_fallback_only() -> None:
     assert "extra_body" not in primary.settings
     assert fallback.settings["extra_body"] == {"thinking": {"type": "disabled"}}
     assert fallback.model_name == "deepseek-v4-flash"
+
+
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize(
+    ("primary_url", "primary_model", "fallback_url", "fallback_model"),
+    [
+        (
+            "https://api.deepseek.com",
+            "deepseek-v4-flash",
+            "https://openai.example.test/v1",
+            "gpt-5.6-sol",
+        ),
+        (
+            "https://openai.example.test/v1",
+            "gpt-5.6-sol",
+            "https://api.deepseek.com",
+            "deepseek-v4-flash",
+        ),
+    ],
+)
+def test_agent_fallback_call_merges_its_defaults_with_runtime_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+    stream: bool,
+    primary_url: str,
+    primary_model: str,
+    fallback_url: str,
+    fallback_model: str,
+) -> None:
+    fallback_endpoints = ((fallback_url, "fallback-key", fallback_model),)
+    runner = PydanticAIKnowledgeRunner(
+        base_url=primary_url,
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model=primary_model,
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url=primary_url,
+            api_key="primary-key",
+            model=primary_model,
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+    routed_model = runner._agent.model
+    observed_settings: list[dict[str, object]] = []
+    streamed_response = object()
+
+    class _FakeStream:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            del exc_type, exc, traceback
+
+    async def request_once(
+        self,
+        messages,
+        actual_stream,
+        model_settings,
+        model_request_parameters,
+    ):
+        del messages, model_request_parameters
+        assert actual_stream is stream
+        observed_settings.append(dict(model_settings))
+        if self is routed_model:
+            raise ModelHTTPError(
+                status_code=503,
+                model_name=primary_model,
+                body={"message": "temporarily unavailable"},
+            )
+        if stream:
+            return _FakeStream()
+        return ModelResponse(parts=[TextPart(content="fallback answer")])
+
+    async def process_stream(*args, **kwargs):
+        del args, kwargs
+        return streamed_response
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+    monkeypatch.setattr(OpenAIChatModel, "_process_streamed_response", process_stream)
+
+    async def invoke() -> object:
+        runtime_overrides = {"temperature": 0.37, "max_tokens": 777}
+        if not stream:
+            return await routed_model.request(
+                [], runtime_overrides, ModelRequestParameters()
+            )
+        async with routed_model.request_stream(
+            [], runtime_overrides, ModelRequestParameters()
+        ) as response:
+            return response
+
+    result = asyncio.run(invoke())
+
+    assert len(observed_settings) == 2
+    fallback_settings = observed_settings[1]
+    assert fallback_settings["temperature"] == 0.37
+    assert fallback_settings["max_tokens"] == 777
+    if fallback_model == "deepseek-v4-flash":
+        assert fallback_settings["extra_body"] == {
+            "thinking": {"type": "disabled"}
+        }
+    else:
+        assert "extra_body" not in fallback_settings
+    if stream:
+        assert result is streamed_response
+    else:
+        assert result.parts == [TextPart(content="fallback answer")]
 
 
 def test_deep_research_uses_an_emergency_guard_not_the_chat_tool_budget() -> None:
@@ -2698,12 +2807,122 @@ def test_agent_does_not_retry_other_bad_model_requests(
 
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
-    with pytest.raises(ModelHTTPError, match="invalid request parameter"):
+    with pytest.raises(
+        AgentModelRouteError,
+        match="agent_model_request_rejected: Agent model request was rejected",
+    ) as caught:
         asyncio.run(
             model._completions_create([], False, {}, ModelRequestParameters())
         )
 
     assert attempts == 1
+    assert caught.value.code == "agent_model_request_rejected"
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_error", "expected_attempt_codes"),
+    [
+        (
+            503,
+            "agent_model_unavailable: Agent model providers are temporarily unavailable.",
+            ["model_unavailable", "model_unavailable"],
+        ),
+        (
+            400,
+            "agent_model_request_rejected: Agent model request was rejected.",
+            ["model_request_rejected"],
+        ),
+    ],
+)
+def test_agent_model_failure_persists_only_safe_error_and_traceback(
+    client,
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int,
+    expected_error: str,
+    expected_attempt_codes: list[str],
+) -> None:
+    canary = f"provider-body-secret-{status_code}"
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": f"agent-route-failure-{status_code}@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": f"register-agent-route-failure-{status_code}"},
+    )
+    assert registered.status_code == 201
+    user_id = UUID(registered.json()["user"]["user_id"])
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=_agent_endpoints(), recorder=attempts)
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://backup.example.test/v1", "backup-key", "backup-model"),
+        ),
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+
+    async def rejected_request(self, *args, **kwargs):
+        del args, kwargs
+        raise ModelHTTPError(
+            status_code=status_code,
+            model_name=self.model_name,
+            body={"message": canary, "url": f"https://secret.test/{canary}"},
+        )
+
+    def run_sync(*args, **kwargs):
+        del args, kwargs
+        asyncio.run(
+            runner._agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", rejected_request)
+    monkeypatch.setattr(runner, "prepare_research", lambda **kwargs: None)
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+
+    with client.app.state.database.session() as session:
+        application = DisciplinaryAgentApplication(
+            conversations=ConversationService(SqliteConversationRepository(session)),
+            runner=runner,
+            tools_factory=_FakeAgentTools,
+        )
+        with pytest.raises(AgentModelRouteError) as caught:
+            application.run_turn(
+                user_id=user_id,
+                conversation_id=None,
+                prompt="测试模型路由失败脱敏",
+                idempotency_key=f"agent-route-failure-{status_code}",
+            )
+
+        failed = (
+            session.query(AgentRunRow)
+            .filter_by(idempotency_key=f"agent-route-failure-{status_code}")
+            .one()
+        )
+        rendered_traceback = "".join(
+            traceback.format_exception(
+                caught.type,
+                caught.value,
+                caught.tb,
+            )
+        )
+
+    assert str(caught.value) == expected_error
+    assert getattr(caught.value, "code", None) == expected_error.split(":", 1)[0]
+    assert failed.error == expected_error
+    assert canary not in str(caught.value)
+    assert canary not in failed.error
+    assert canary not in rendered_traceback
+    assert caught.value.__suppress_context__ is True
+    assert [record.failure_code for record in attempts.list_all()] == (
+        expected_attempt_codes
+    )
 
 
 def test_agent_fails_over_to_the_next_model_endpoint(
