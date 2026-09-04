@@ -20,6 +20,7 @@ from qunxue_api.modules.agent_conversation.errors import (
 from qunxue_api.modules.agent_conversation.ports import (
     AgentEvidence,
     AgentRelease,
+    AgentResearchEvent,
     AgentRunResult,
     AgentRuntimeIdentity,
     AgentToolContext,
@@ -41,6 +42,7 @@ __all__ = [
     "AgentRelease",
     "AgentRuntimeIdentity",
     "AgentRunResult",
+    "AgentResearchEvent",
     "AgentToolContext",
     "AgentToolEvent",
     "AgentConversationError",

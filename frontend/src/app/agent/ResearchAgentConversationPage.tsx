@@ -95,6 +95,122 @@ const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
 const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
 type AgentComposerMode = 'standard' | 'deep-research'
+type DeepResearchMockStage = 'idle' | 'clarifying' | 'planning' | 'researching' | 'completed'
+
+const DEEP_RESEARCH_MOCK_STEPS = [
+  '拆解研究问题',
+  '检索知识库与个人材料',
+  '补充并阅读公开网页',
+  '核对来源，整理研究结论',
+]
+
+function DeepResearchMockFlow({
+  stage,
+  question,
+  stepIndex,
+  options = ['概念与理论背景', '现实案例与最新资料', '不同观点之间的争议', '研究方法与数据'],
+  onChooseIntent,
+  onConfirmPlan,
+  onEdit,
+}: {
+  stage: DeepResearchMockStage
+  question: string
+  stepIndex: number
+  options?: string[]
+  onChooseIntent: (intent: string) => void
+  onConfirmPlan: () => void
+  onEdit: () => void
+}) {
+  const [customIntent, setCustomIntent] = useState('')
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  if (stage === 'idle') return null
+
+  if (stage === 'clarifying') {
+    return (
+      <section className="deep-research-mock-card deep-research-mock-card--question" aria-label="确认研究意图">
+        <h2>{question}，你想让我重点了解哪一部分？</h2>
+        <div className="deep-research-mock-card__options">
+          {options.filter((option) => option !== '更多自定义').map((option, index) => (
+            <button key={option} type="button" onClick={() => onChooseIntent(option)}><b>{String.fromCharCode(65 + index)}</b>{option}</button>
+          ))}
+        </div>
+        <div className="deep-research-mock-card__options deep-research-mock-card__options--custom">
+          <button type="button" onClick={() => setCustomIntent((current) => current || ' ')}><b>E</b>更多自定义</button>
+        </div>
+        {customIntent !== '' ? (
+          <label className="deep-research-mock-card__other">
+            <span>补充方向</span>
+            <input autoFocus value={customIntent.trim()} onChange={(event) => setCustomIntent(event.target.value)} placeholder="写下你想研究的方向" />
+            <button type="button" disabled={!customIntent.trim()} onClick={() => onChooseIntent(customIntent.trim())}>继续</button>
+          </label>
+        ) : null}
+      </section>
+    )
+  }
+
+  if (stage === 'planning') {
+    return (
+      <section className="deep-research-mock-card" aria-label="研究计划">
+        <h2>研究：{question}</h2>
+        <div className="deep-research-mock-card__plan">
+          <div><strong>知识库</strong><span>先检索社会学概念、理论与已有案例</span></div>
+          <div><strong>网页资料</strong><span>补充近年的研究、数据与公开报道</span></div>
+          <div><strong>最后输出</strong><span>比较证据，标注分歧，形成带出处的结论</span></div>
+        </div>
+        <div className="deep-research-mock-card__actions">
+          <button type="button" className="is-primary" onClick={onConfirmPlan}>开始深入研究</button>
+          <button type="button" onClick={onEdit}>返回修改</button>
+        </div>
+      </section>
+    )
+  }
+
+  if (stage === 'researching') {
+    const toolCalls = [
+      { tool: 'search_knowledge', label: '检索知识库', detail: '“沉默、课堂参与、群体互动”' },
+      { tool: 'read_knowledge_entry', label: '读取知识条目', detail: '社会互动与课堂参与' },
+      { tool: 'search_web', label: '搜索公开网页', detail: '近五年课堂沉默与参与研究' },
+      { tool: 'read_web_page', label: '读取网页正文', detail: '3 个研究来源已纳入核对' },
+    ]
+    return (
+      <section className="deep-research-mock-card deep-research-mock-card--progress" aria-label="研究进度" aria-live="polite">
+        <div className="deep-research-mock-card__eyebrow">正在深入研究</div>
+        <h2>我正在逐步核对证据</h2>
+        <div className="deep-research-mock-card__steps">
+          {DEEP_RESEARCH_MOCK_STEPS.map((step, index) => (
+            <div key={step} className={index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
+              <span aria-hidden="true">{index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>{step}
+            </div>
+          ))}
+        </div>
+        <button type="button" className="deep-research-mock-card__details-toggle" onClick={() => setDetailsOpen((open) => !open)} aria-expanded={detailsOpen}>
+          {detailsOpen ? '收起工具调用' : '查看工具调用'}<CaretDownIcon size={13} weight="bold" className={detailsOpen ? 'is-open' : ''} />
+        </button>
+        {detailsOpen ? (
+          <div className="deep-research-mock-card__tool-calls">
+            {toolCalls.map((call, index) => (
+              <div key={call.tool} className={index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
+                <span>{index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>
+                <strong>{call.label}</strong>
+                <small>{call.detail}</small>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </section>
+    )
+  }
+
+  return (
+    <section className="deep-research-mock-card deep-research-mock-card--result" aria-label="研究结论">
+      <div className="deep-research-mock-card__result-row">
+        <div className="deep-research-mock-card__eyebrow">研究完成</div>
+        <h2>已经整理好一份带证据的结论</h2>
+        <div className="deep-research-mock-card__result-meta"><span>知识库 6 条</span><span>网页资料 9 条</span><span>待核对观点 2 个</span></div>
+      </div>
+    </section>
+  )
+}
 
 const knowledgeTools = new Set([
   'search_knowledge',
@@ -1387,6 +1503,13 @@ export function ResearchAgentConversationPage({
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
   const [composerMode, setComposerMode] = useState<AgentComposerMode>('standard')
+  const [deepResearchMockStage, setDeepResearchMockStage] = useState<DeepResearchMockStage>('idle')
+  const [deepResearchMockQuestion, setDeepResearchMockQuestion] = useState('')
+  const [deepResearchMockOptions, setDeepResearchMockOptions] = useState<string[]>([])
+  const [deepResearchMockStep, setDeepResearchMockStep] = useState(0)
+  const hasDeepResearchMockConversation = composerMode === 'deep-research'
+    && deepResearchMockStage !== 'idle'
+    && deepResearchMockStage !== 'clarifying'
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
@@ -1480,7 +1603,7 @@ export function ResearchAgentConversationPage({
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
   const isBusy = status === 'loading' || canStopGeneration
   const canSubmit = draft.trim().length > 0 && !isBusy
-  const isEmpty = !turns.length && !streamingTurn
+  const isEmpty = !turns.length && !streamingTurn && !hasDeepResearchMockConversation
 
   useEffect(() => {
     onStreamingTurnChange?.(streamingTurn)
@@ -1491,6 +1614,21 @@ export function ResearchAgentConversationPage({
     updateDraft(suggestedPrompt)
     globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
   }, [suggestedPrompt, suggestedPromptKey])
+
+  useEffect(() => {
+    if (deepResearchMockStage !== 'researching') return undefined
+    const timer = window.setInterval(() => {
+      setDeepResearchMockStep((current) => {
+        if (current >= DEEP_RESEARCH_MOCK_STEPS.length - 1) {
+          window.clearInterval(timer)
+          setDeepResearchMockStage('completed')
+          return current
+        }
+        return current + 1
+      })
+    }, 900)
+    return () => window.clearInterval(timer)
+  }, [deepResearchMockStage])
 
   useEffect(() => {
     if (isEmpty) {
@@ -1750,6 +1888,7 @@ export function ResearchAgentConversationPage({
         {
           conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
           message: question,
+          mode: composerMode === 'deep-research' ? 'deep_research' : 'standard',
           idempotencyKey,
           workspace,
           web_search: webSearchEnabled,
@@ -1788,6 +1927,18 @@ export function ResearchAgentConversationPage({
             setStatus('thinking')
           } else if (event.type === 'agent_status') {
             setStatus(event.status === 'answering' ? 'answering' : 'thinking')
+          } else if (event.type === 'research_ask') {
+            setDeepResearchMockQuestion(question)
+            setDeepResearchMockOptions(event.options)
+            setDeepResearchMockStep(0)
+            setDeepResearchMockStage('clarifying')
+          } else if (event.type === 'research_plan') {
+            setDeepResearchMockQuestion(event.title)
+            setDeepResearchMockStep(0)
+            setDeepResearchMockStage('planning')
+          } else if (event.type === 'research_step') {
+            setDeepResearchMockStage('researching')
+            setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
           } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
             const next = updateToolSteps(pendingToolSteps.current, event)
             pendingToolSteps.current = next
@@ -1812,6 +1963,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
+            if (composerMode === 'deep-research') setDeepResearchMockStage('completed')
             activeRunId.current = null
             failedTurnAttempt.current = null
             activeTurnAttempt.current = null
@@ -1919,6 +2071,13 @@ export function ResearchAgentConversationPage({
     const normalized = draft.trim()
     const attempt = failedTurnAttempt.current
     void submitQuestion(normalized, attempt?.question === normalized ? attempt.idempotencyKey : undefined)
+  }
+
+  function resetDeepResearchMock() {
+    setDeepResearchMockStage('idle')
+    setDeepResearchMockQuestion('')
+    setDeepResearchMockOptions([])
+    setDeepResearchMockStep(0)
   }
 
   function retryFailedTurn(question: string) {
@@ -2209,6 +2368,25 @@ export function ResearchAgentConversationPage({
                 <div ref={transcriptEndRef} />
               </div>
             )}
+            {hasDeepResearchMockConversation ? (
+              <div className="research-agent-page__transcript new-research__transcript deep-research-mock-transcript">
+                <DeepResearchMockFlow
+                  stage={deepResearchMockStage}
+                  question={deepResearchMockQuestion}
+                  stepIndex={deepResearchMockStep}
+                  options={deepResearchMockOptions}
+                  onChooseIntent={() => undefined}
+                  onConfirmPlan={() => {
+                    setDeepResearchMockStep(0)
+                    setDeepResearchMockStage('researching')
+                  }}
+                  onEdit={() => {
+                    resetDeepResearchMock()
+                    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                  }}
+                />
+              </div>
+            ) : null}
           </main>
 
           <footer className="research-agent-page__composer-dock new-research__composer-dock">
@@ -2217,6 +2395,26 @@ export function ResearchAgentConversationPage({
                 <WarningCircleIcon size={16} /><span>{error}</span>
                 <button type="button" aria-label={text('关闭错误提示', 'Close error message')} onClick={() => setError(null)}><XIcon size={14} /></button>
               </div>
+            ) : null}
+            {composerMode === 'deep-research' && deepResearchMockStage === 'clarifying' ? (
+              <DeepResearchMockFlow
+                stage={deepResearchMockStage}
+                question={deepResearchMockQuestion}
+                stepIndex={deepResearchMockStep}
+                options={deepResearchMockOptions}
+                onChooseIntent={(intent) => {
+                  setDeepResearchMockQuestion((current) => `${current}（重点：${intent}）`)
+                  setDeepResearchMockStage('planning')
+                }}
+                onConfirmPlan={() => {
+                  setDeepResearchMockStep(0)
+                  setDeepResearchMockStage('researching')
+                }}
+                onEdit={() => {
+                  resetDeepResearchMock()
+                  globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                }}
+              />
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
               <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>

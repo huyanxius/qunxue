@@ -372,6 +372,10 @@ export type AgentTurnRequest = {
      */
     message: string;
     /**
+     * Mode
+     */
+    mode?: 'standard' | 'deep_research';
+    /**
      * Section Id
      */
     section_id?: string | null;

@@ -64,6 +64,14 @@ class AgentToolEvent:
     error: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class AgentResearchEvent:
+    """Model-authored research UX state exposed as a safe, structured event."""
+
+    kind: Literal["ask", "plan", "step", "result"]
+    payload: Mapping[str, object]
+
+
 class AgentToolContext(Protocol):
     release: AgentRelease
     evidence: Mapping[str, AgentEvidence]

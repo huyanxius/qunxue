@@ -8,6 +8,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentCitation,
     AgentEvidence,
     AgentInterrupted,
+    AgentResearchEvent,
     AgentRunResult,
     AgentRuntimeIdentity,
     AgentToolContext,
@@ -109,9 +110,11 @@ class DisciplinaryAgentApplication:
         section_id: str | None = None,
         document_version: int | None = None,
         theory_plan_id: UUID | None = None,
+        mode: Literal["standard", "deep_research"] = "standard",
         on_run_started: Callable[[UUID, UUID, bool], None] | None = None,
         on_delta: Callable[[str], None] | None = None,
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
+        on_research_event: Callable[[AgentResearchEvent], None] | None = None,
         is_cancelled: Callable[[], bool] | None = None,
     ) -> AgentTurnExecution:
         if not prompt.strip():
@@ -303,6 +306,22 @@ class DisciplinaryAgentApplication:
         conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
 
+        if mode == "deep_research":
+            prepare_research = getattr(self._runner, "prepare_research", None)
+            if callable(prepare_research):
+                prepare_research(
+                    prompt=prompt,
+                    conversation=conversation_history,
+                    on_event=on_research_event or (lambda _event: None),
+                )
+            if on_research_event is not None:
+                on_research_event(
+                    AgentResearchEvent(
+                        kind="step",
+                        payload={"step": "检索知识库与网页资料", "status": "running"},
+                    )
+                )
+
         def record_tool_event(event: AgentToolEvent) -> None:
             tool_events.append(event)
             if on_tool_event is not None:
@@ -323,6 +342,23 @@ class DisciplinaryAgentApplication:
                     prompt=prompt,
                     conversation=conversation_history,
                     tools=tools,
+                )
+            if mode == "deep_research" and on_research_event is not None:
+                on_research_event(
+                    AgentResearchEvent(
+                        kind="result",
+                        payload={
+                            "summary": "证据检索与核对完成",
+                            "knowledge_count": sum(
+                                1
+                                for item in result.citations
+                                if item.kind in {"entry", "theory", "source"}
+                            ),
+                            "web_count": sum(
+                                1 for item in result.citations if item.source_kind == "web"
+                            ),
+                        },
+                    )
                 )
             if cancelled():
                 self._conversations.finish_run(

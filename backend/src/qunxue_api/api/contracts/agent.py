@@ -116,6 +116,7 @@ class AgentTurnRequest(BaseModel):
     section_id: str | None = None
     document_version: int | None = None
     theory_plan_id: UUID | None = None
+    mode: Literal["standard", "deep_research"] = "standard"
 
 
 class ResearchStartProposalResponse(BaseModel):

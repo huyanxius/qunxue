@@ -712,6 +712,294 @@
   background: transparent;
 }
 
+.research-agent-conversation .deep-research-mock-card {
+  position: relative;
+  width: min(100%, var(--agent-page-copy));
+  margin: 0 auto 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 14px;
+  color: var(--app-ink);
+  background: color-mix(in srgb, var(--app-canvas) 99%, white);
+  box-shadow: none;
+  animation: deep-research-card-in 300ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.research-agent-conversation .deep-research-mock-card__eyebrow {
+  margin-bottom: 7px;
+  color: color-mix(in srgb, #76517d 82%, var(--app-ink));
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.research-agent-conversation .deep-research-mock-card h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.025em;
+  line-height: 1.3;
+}
+
+.research-agent-conversation .deep-research-mock-card p {
+  margin: 0;
+  color: var(--app-ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.research-agent-conversation .deep-research-mock-card__options,
+.research-agent-conversation .deep-research-mock-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.research-agent-conversation .deep-research-mock-card--question .deep-research-mock-card__options {
+  display: grid;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.research-agent-conversation .deep-research-mock-card button {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--app-ink) 16%, transparent);
+  border-radius: 999px;
+  color: var(--app-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.research-agent-conversation .deep-research-mock-card--question .deep-research-mock-card__options button {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  transition: none;
+}
+
+.research-agent-conversation .deep-research-mock-card--question .deep-research-mock-card__options button:hover:not(:disabled) {
+  padding-left: 0;
+  border: 0;
+  background: transparent;
+  transform: none;
+}
+
+.research-agent-conversation .deep-research-mock-card button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #76517d 50%, transparent);
+  background: rgb(118 81 125 / 8%);
+  transform: translateY(-1px);
+}
+
+.research-agent-conversation .deep-research-mock-card__options button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.research-agent-conversation .deep-research-mock-card__options button b {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: color-mix(in srgb, #76517d 85%, var(--app-ink));
+  background: rgb(118 81 125 / 11%);
+  font-size: 13px;
+}
+
+.research-agent-conversation .deep-research-mock-card__options--custom {
+  margin-top: 10px;
+}
+
+.research-agent-conversation .deep-research-mock-card button.is-primary {
+  border-color: var(--app-ink);
+  color: var(--app-canvas);
+  background: var(--app-ink);
+}
+
+.research-agent-conversation .deep-research-mock-card__other {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  color: var(--app-ink-soft);
+  font-size: 12px;
+}
+
+.research-agent-conversation .deep-research-mock-card__other input {
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 9px;
+  color: var(--app-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+
+.research-agent-conversation .deep-research-mock-card__quiet-action {
+  margin-top: 11px;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  color: var(--app-ink-soft) !important;
+  font-size: 11px !important;
+}
+
+.research-agent-conversation .deep-research-mock-card__plan {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.research-agent-conversation .deep-research-mock-card__plan div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  padding-top: 6px;
+  font-size: 13px;
+}
+
+.research-agent-conversation .deep-research-mock-card__plan div:first-child { padding-top: 0; }
+
+.research-agent-conversation .deep-research-mock-card__plan div::before {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  border: 1px solid color-mix(in srgb, var(--app-ink) 32%, transparent);
+  border-radius: 50%;
+  content: '';
+}
+
+.research-agent-conversation .deep-research-mock-card__plan div {
+  grid-template-columns: 20px 72px minmax(0, 1fr);
+}
+
+.research-agent-conversation .deep-research-mock-card__plan div strong,
+.research-agent-conversation .deep-research-mock-card__plan div span {
+  grid-row: 1;
+}
+
+.research-agent-conversation .deep-research-mock-card__plan div strong { grid-column: 2; }
+.research-agent-conversation .deep-research-mock-card__plan div span { grid-column: 3; }
+
+.research-agent-conversation .deep-research-mock-card__plan strong { color: var(--app-ink); }
+.research-agent-conversation .deep-research-mock-card__plan span { color: var(--app-ink-soft); }
+
+.research-agent-conversation .deep-research-mock-card__steps {
+  display: grid;
+  gap: 8px;
+  margin-top: 15px;
+  color: var(--app-ink-soft);
+  font-size: 13px;
+}
+
+.research-agent-conversation .deep-research-mock-card__steps div { display: flex; gap: 9px; align-items: center; }
+.research-agent-conversation .deep-research-mock-card__steps div.is-active { color: #76517d; font-weight: 600; }
+.research-agent-conversation .deep-research-mock-card__steps div.is-complete { color: var(--app-ink); }
+.research-agent-conversation .deep-research-mock-card__steps span { width: 12px; text-align: center; }
+
+.research-agent-conversation .deep-research-mock-card__details-toggle {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  color: var(--app-ink-soft);
+  font-size: 11px;
+}
+
+.research-agent-conversation .deep-research-mock-card__details-toggle:hover:not(:disabled) {
+  border: 0;
+  background: transparent;
+  color: #76517d;
+  transform: none;
+}
+
+.research-agent-conversation .deep-research-mock-card__details-toggle svg { transition: transform 180ms ease; }
+.research-agent-conversation .deep-research-mock-card__details-toggle svg.is-open { transform: rotate(180deg); }
+
+.research-agent-conversation .deep-research-mock-card__tool-calls {
+  display: grid;
+  gap: 8px;
+  margin-top: 11px;
+  padding-top: 2px;
+}
+
+.research-agent-conversation .deep-research-mock-card__tool-calls div {
+  display: grid;
+  grid-template-columns: 12px 116px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  color: var(--app-ink-soft);
+  font-size: 11px;
+}
+
+.research-agent-conversation .deep-research-mock-card__tool-calls div.is-active { color: #76517d; }
+.research-agent-conversation .deep-research-mock-card__tool-calls div.is-complete { color: var(--app-ink); }
+.research-agent-conversation .deep-research-mock-card__tool-calls span { text-align: center; }
+.research-agent-conversation .deep-research-mock-card__tool-calls small { color: var(--app-ink-soft); font-size: 10px; }
+
+.research-agent-conversation .deep-research-mock-card__result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 14px;
+  color: #76517d;
+  font-size: 11px;
+}
+
+.research-agent-conversation .deep-research-mock-card__result-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.research-agent-conversation .deep-research-mock-card__result-row .deep-research-mock-card__eyebrow {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.research-agent-conversation .deep-research-mock-card__result-row h2 {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.research-agent-conversation .deep-research-mock-card__result-row .deep-research-mock-card__result-meta {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.research-agent-conversation .deep-research-mock-transcript {
+  width: min(100%, var(--agent-page-copy));
+  margin: auto;
+  padding-bottom: 18px;
+}
+
+@keyframes deep-research-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .research-agent-conversation .research-agent-composer {
   position: relative;
   isolation: isolate;
