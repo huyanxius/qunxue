@@ -141,6 +141,46 @@ def test_deep_research_waits_for_plan_confirmation_before_running() -> None:
     assert execution.pending_research["state"] == "awaiting_plan_confirmation"
 
 
+def test_skipping_clarification_still_requires_plan_confirmation() -> None:
+    events: list[AgentResearchEvent] = []
+
+    class Release:
+        knowledge_release_id = "release-test"
+
+    class Tools:
+        release = Release()
+        evidence = {}
+        research_map_enabled = False
+
+        def enable_web_search(self):
+            pass
+
+    class Runner:
+        runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
+
+        def prepare_research(self, *, prompt, conversation, on_event):
+            if "跳过了本次澄清" in prompt:
+                on_event(AgentResearchEvent(kind="ask", payload={"question": "再次询问"}))
+            else:
+                on_event(AgentResearchEvent(kind="ask", payload={"question": "研究什么"}))
+
+        def run(self, *, prompt, conversation, tools):
+            raise AssertionError("skip must not start research")
+
+    app = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(), runner=Runner(), tools_factory=Tools
+    )
+    first = app.run_turn(
+        user_id=UUID(int=3), conversation_id=None, prompt="研究青年孤独", idempotency_key="skip-1", mode="deep_research", on_research_event=events.append
+    )
+    skipped = app.run_turn(
+        user_id=UUID(int=3), conversation_id=None, prompt="研究青年孤独", idempotency_key="skip-1", mode="deep_research", deep_research_run_id=first.run_id, deep_research_action="skip", on_research_event=events.append
+    )
+    assert skipped.pending_research is not None
+    assert skipped.pending_research["state"] == "awaiting_plan_confirmation"
+    assert events[-1].kind == "plan"
+
+
 def test_deep_research_does_not_ask_for_clarification_on_greeting() -> None:
     class Release:
         knowledge_release_id = "release-test"
