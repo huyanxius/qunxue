@@ -271,7 +271,7 @@ export function AdminUsersPage({
           <small>位内测用户</small>
         </div>
         <a className="account-management-admin-link" href={settingsHref}>返回账户设置</a>
-        <a className="account-management-admin-link account-management-admin-link--secondary" href="/admin/operations">打开调用中枢</a>
+        <a className="account-management-admin-link account-management-admin-link--secondary" href="/admin/operations">打开模型配置</a>
       </header>
 
       {feedback ? <p className="account-management-feedback" role="status">{feedback}</p> : null}

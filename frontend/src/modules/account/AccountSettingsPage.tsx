@@ -214,7 +214,7 @@ function formattedDate(value: string | null, locale = 'zh-CN') {
 
 export function AccountSettingsPage({
   api = accountManagementApi,
-  adminHref = '/admin/operations',
+  adminHref = '/admin/users',
   onLogout,
   onProfileUpdated,
   onSessionExpired,
