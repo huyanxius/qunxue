@@ -105,6 +105,13 @@ export type AdminUserPage = {
   nextCursor: string | null
 }
 
+export type AdminRuntimeSettings = {
+  model: string
+  reasoningEffort: string
+  providerBaseUrl: string
+  restartRequired: boolean
+}
+
 export type PasswordResetLink = {
   resetId: string
   resetUrl: string
@@ -189,6 +196,8 @@ export type AccountManagementApi = {
   }): Promise<AdminUser>
   createPasswordReset(userId: string, intent: MutationIntent): Promise<PasswordResetLink>
   listAuditEvents(input?: { cursor?: string; limit?: number }): Promise<AccountAuditPage>
+  getRuntimeSettings?(): Promise<AdminRuntimeSettings>
+  updateRuntimeSettings?(input: { model: string; reasoningEffort: string }): Promise<AdminRuntimeSettings>
   consumePasswordReset(input: MutationIntent & {
     token: string
     newPassword: string

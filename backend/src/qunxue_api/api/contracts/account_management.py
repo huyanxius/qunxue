@@ -151,6 +151,18 @@ class AdminUserPageResponse(BaseModel):
     next_cursor: str | None
 
 
+class AdminRuntimeSettingsResponse(BaseModel):
+    model: str
+    reasoning_effort: str
+    provider_base_url: str
+    restart_required: bool = False
+
+
+class AdminRuntimeSettingsUpdateRequest(BaseModel):
+    model: str = Field(min_length=1, max_length=160)
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+
+
 class AdminRoleUpdateRequest(BaseModel):
     role: AccountRole
     expected_version: int = Field(ge=1)

@@ -1,4 +1,9 @@
 import json
+import os
+import re
+import subprocess
+import tempfile
+from pathlib import Path
 from collections.abc import Iterator
 from typing import Annotated
 from uuid import UUID
@@ -14,6 +19,8 @@ from qunxue_api.api.contracts.account_management import (
     AdminStatusUpdateRequest,
     AdminUserPageResponse,
     AdminUserResponse,
+    AdminRuntimeSettingsResponse,
+    AdminRuntimeSettingsUpdateRequest,
     ChangePasswordRequest,
     ChangePasswordResponse,
     CreditCodeBatchCreateRequest,
@@ -77,6 +84,41 @@ admin_router = APIRouter(
     tags=["admin"],
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
+
+
+def _runtime_config_path(request: Request):
+    configured = os.environ.get("QUNXUE_CANONICAL_CONFIG_PATH")
+    if configured:
+        return configured
+    candidate = "/root/qunxue-config/qunxue.env"
+    return candidate if os.path.exists(candidate) else str(Path(__file__).resolve().parents[4] / ".env")
+
+
+def _replace_env_values(path: str, values: dict[str, str]) -> None:
+    with open(path, encoding="utf-8") as handle:
+        lines = handle.readlines()
+    seen = set()
+    output = []
+    for line in lines:
+        key = line.split("=", 1)[0].strip()
+        if key in values:
+            output.append(f"{key}={values[key]}\n")
+            seen.add(key)
+        else:
+            output.append(line)
+    for key, value in values.items():
+        if key not in seen:
+            output.append(f"{key}={value}\n")
+    directory = os.path.dirname(path) or "."
+    fd, temporary = tempfile.mkstemp(prefix="qunxue-config-", dir=directory, text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.writelines(output)
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 @account_router.get("", operation_id="get_account", response_model=AccountResponse)
@@ -386,6 +428,51 @@ def delete_account(
     )
     _clear_session_cookie(response, request)
     return DeleteAccountResponse.model_validate(result)
+
+
+@admin_router.get(
+    "/runtime-settings",
+    operation_id="get_admin_runtime_settings",
+    response_model=AdminRuntimeSettingsResponse,
+)
+def get_admin_runtime_settings(
+    current: CurrentSessionDependency,
+    service: AccountManagementServiceDependency,
+    request: Request,
+) -> AdminRuntimeSettingsResponse:
+    service.require_admin_access(current.user.user_id)
+    settings = request.app.state.settings
+    return AdminRuntimeSettingsResponse(
+        model=settings.model_name or "",
+        reasoning_effort=settings.model_reasoning_effort or "high",
+        provider_base_url=settings.model_base_url or "",
+    )
+
+
+@admin_router.patch(
+    "/runtime-settings",
+    operation_id="update_admin_runtime_settings",
+    response_model=AdminRuntimeSettingsResponse,
+)
+def update_admin_runtime_settings(
+    payload: AdminRuntimeSettingsUpdateRequest,
+    current: CurrentSessionDependency,
+    service: AccountManagementServiceDependency,
+    request: Request,
+) -> AdminRuntimeSettingsResponse:
+    service.require_admin_access(current.user.user_id)
+    path = _runtime_config_path(request)
+    _replace_env_values(path, {
+        "QUNXUE_MODEL_NAME": payload.model.strip(),
+        "QUNXUE_MODEL_REASONING_EFFORT": payload.reasoning_effort,
+    })
+    subprocess.Popen(["pm2", "restart", "qunxue-api"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return AdminRuntimeSettingsResponse(
+        model=payload.model.strip(),
+        reasoning_effort=payload.reasoning_effort,
+        provider_base_url=request.app.state.settings.model_base_url or "",
+        restart_required=True,
+    )
 
 
 @admin_router.get(

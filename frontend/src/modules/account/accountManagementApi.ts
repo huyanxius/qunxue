@@ -202,6 +202,14 @@ export async function getAccountSystemHealth(): Promise<AccountSystemHealth> {
 }
 
 export const accountManagementApi: AccountManagementApi = {
+  async getRuntimeSettings() {
+    const result = await requestJson<{ model: string; reasoning_effort: string; provider_base_url: string; restart_required: boolean }>('GET', '/api/admin/runtime-settings')
+    return { model: result.model, reasoningEffort: result.reasoning_effort, providerBaseUrl: result.provider_base_url, restartRequired: result.restart_required }
+  },
+  async updateRuntimeSettings(input) {
+    const result = await requestJson<{ model: string; reasoning_effort: string; provider_base_url: string; restart_required: boolean }>('PATCH', '/api/admin/runtime-settings', { body: { model: input.model, reasoning_effort: input.reasoningEffort } })
+    return { model: result.model, reasoningEffort: result.reasoning_effort, providerBaseUrl: result.provider_base_url, restartRequired: result.restart_required }
+  },
   async getAccount() {
     return toAccount(await requestJson<RawAccount>('GET', '/api/account'))
   },
