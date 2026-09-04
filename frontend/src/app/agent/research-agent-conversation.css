@@ -80,6 +80,7 @@
 .research-agent-conversation .new-research__conversation {
   width: 100%;
   min-height: 0;
+  overflow-x: hidden;
   scrollbar-gutter: stable;
 }
 
@@ -1002,10 +1003,10 @@
 }
 
 .research-agent-conversation .deep-research-mock-card__result-row h2 {
+  min-width: 0;
   flex: 1 1 auto;
   margin: 0;
   font-size: 18px;
-  white-space: nowrap;
 }
 
 .research-agent-conversation .deep-research-mock-card__result-row .deep-research-mock-card__result-meta {

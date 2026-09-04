@@ -113,7 +113,6 @@ function DeepResearchMockFlow({
   onSkip,
   onConfirmPlan,
   onEdit,
-  resultSummary,
   knowledgeCount,
   webCount,
   toolSteps = [],
@@ -127,7 +126,6 @@ function DeepResearchMockFlow({
   onSkip: () => void
   onConfirmPlan: () => void
   onEdit: () => void
-  resultSummary?: string
   knowledgeCount?: number
   webCount?: number
   toolSteps?: AgentToolStep[]
@@ -220,7 +218,7 @@ function DeepResearchMockFlow({
     <section className="deep-research-mock-card deep-research-mock-card--result" aria-label="研究结论">
       <div className="deep-research-mock-card__result-row">
         <div className="deep-research-mock-card__eyebrow">研究完成</div>
-        <h2>{resultSummary || '已经整理好一份带证据的结论'}</h2>
+        <h2>已经整理好一份带证据的结论</h2>
         <div className="deep-research-mock-card__result-meta"><span>知识库 {knowledgeCount ?? 0} 条</span><span>网页资料 {webCount ?? 0} 条</span></div>
       </div>
     </section>
@@ -2439,7 +2437,6 @@ export function ResearchAgentConversationPage({
                     question={deepResearchMockQuestion}
                     stepIndex={deepResearchMockStep}
                     options={deepResearchMockOptions}
-                    resultSummary={deepResearchResult.summary}
                     knowledgeCount={deepResearchResult.knowledgeCount}
                     webCount={deepResearchResult.webCount}
                     toolSteps={streamingTurn?.toolSteps ?? []}
@@ -2472,7 +2469,6 @@ export function ResearchAgentConversationPage({
                 question={deepResearchMockQuestion}
                 stepIndex={deepResearchMockStep}
                 options={deepResearchMockOptions}
-                resultSummary={deepResearchResult.summary}
                 knowledgeCount={deepResearchResult.knowledgeCount}
                 webCount={deepResearchResult.webCount}
                 toolSteps={streamingTurn?.toolSteps ?? []}
