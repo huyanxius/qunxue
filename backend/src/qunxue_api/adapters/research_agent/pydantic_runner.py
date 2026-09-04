@@ -3,6 +3,7 @@ import json
 import re
 from asyncio import sleep as async_sleep
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
+from contextlib import suppress
 from contextvars import ContextVar
 from typing import Literal
 
@@ -1929,10 +1930,8 @@ class PydanticAIKnowledgeRunner:
                     while not task.done():
                         if is_cancelled is not None and is_cancelled():
                             task.cancel()
-                            try:
+                            with suppress(asyncio.CancelledError):
                                 await task
-                            except asyncio.CancelledError:
-                                pass
                             raise AgentInterrupted("Agent run was interrupted by the client")
                         await async_sleep(0.05)
                     return await task

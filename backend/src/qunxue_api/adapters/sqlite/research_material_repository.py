@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import and_, delete, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from qunxue_api.adapters.sqlite.research_material_model import (
     ResearchMaterialBlobRow,
     ResearchMaterialBlockRow,
+    ResearchMaterialIngestionJobRow,
     ResearchMaterialParseVersionRow,
     ResearchMaterialReparseRequestRow,
     ResearchMaterialRow,
@@ -22,6 +23,8 @@ from qunxue_api.modules.research_materials import (
     MaterialDeleted,
     MaterialFormat,
     MaterialIdempotencyConflict,
+    MaterialIngestionJob,
+    MaterialIngestionStatus,
     MaterialKind,
     MaterialParseVersion,
     MaterialReparseRequest,
@@ -444,6 +447,212 @@ class SqliteResearchMaterialRepository:
         )
         return parsed
 
+    def enqueue_ingestion(
+        self,
+        *,
+        material: ResearchMaterial,
+        parse_id: UUID,
+        now: datetime,
+        max_attempts: int = 3,
+    ) -> MaterialIngestionJob:
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be positive")
+        job_id = uuid4()
+        self._session.execute(
+            insert(ResearchMaterialIngestionJobRow)
+            .values(
+                job_id=str(job_id),
+                material_id=str(material.material_id),
+                user_id=str(material.user_id),
+                task_id=str(material.task_id),
+                parse_id=str(parse_id),
+                ingestion_status=MaterialIngestionStatus.QUEUED.value,
+                attempt_count=0,
+                max_attempts=max_attempts,
+                available_at=now,
+                lease_expires_at=None,
+                error_code=None,
+                created_at=now,
+                updated_at=now,
+                completed_at=None,
+            )
+            .on_conflict_do_nothing(index_elements=["material_id", "parse_id"])
+        )
+        row = self._session.scalar(
+            select(ResearchMaterialIngestionJobRow).where(
+                ResearchMaterialIngestionJobRow.material_id == str(material.material_id),
+                ResearchMaterialIngestionJobRow.parse_id == str(parse_id),
+            )
+        )
+        if row is None:
+            raise RuntimeError("material ingestion job was not persisted")
+        return self._to_ingestion(row)
+
+    def get_ingestion(self, job_id: UUID) -> MaterialIngestionJob | None:
+        return self._to_ingestion(
+            self._session.scalar(
+                select(ResearchMaterialIngestionJobRow).where(
+                    ResearchMaterialIngestionJobRow.job_id == str(job_id)
+                )
+            )
+        )
+
+    def get_material_ingestion(
+        self, material_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> MaterialIngestionJob | None:
+        row = self._session.scalar(
+            select(ResearchMaterialIngestionJobRow)
+            .where(
+                ResearchMaterialIngestionJobRow.material_id == str(material_id),
+                ResearchMaterialIngestionJobRow.user_id == str(user_id),
+                ResearchMaterialIngestionJobRow.task_id == str(task_id),
+            )
+            .order_by(ResearchMaterialIngestionJobRow.created_at.desc())
+            .limit(1)
+        )
+        return self._to_ingestion(row)
+
+    def claim_ingestion(
+        self, job_id: UUID, *, now: datetime, lease_expires_at: datetime
+    ) -> MaterialIngestionJob | None:
+        row = self._session.scalar(
+            select(ResearchMaterialIngestionJobRow).where(
+                ResearchMaterialIngestionJobRow.job_id == str(job_id)
+            )
+        )
+        if row is None or row.attempt_count >= row.max_attempts:
+            return None
+        status = MaterialIngestionStatus(row.ingestion_status)
+        available = _utc(row.available_at) <= _utc(now)
+        stale = (
+            row.lease_expires_at is not None
+            and _utc(row.lease_expires_at) <= _utc(now)
+        )
+        queued_or_failed = status is MaterialIngestionStatus.QUEUED or (
+            status is MaterialIngestionStatus.FAILED and row.completed_at is None
+        )
+        if not (
+            (queued_or_failed and available)
+            or (status is MaterialIngestionStatus.PROCESSING and stale)
+        ):
+            return None
+        next_parse_id = str(uuid4()) if row.attempt_count else row.parse_id
+        result = self._session.execute(
+            update(ResearchMaterialIngestionJobRow)
+            .where(
+                ResearchMaterialIngestionJobRow.job_id == str(job_id),
+                ResearchMaterialIngestionJobRow.ingestion_status == status.value,
+                ResearchMaterialIngestionJobRow.attempt_count == row.attempt_count,
+            )
+            .values(
+                ingestion_status=MaterialIngestionStatus.PROCESSING.value,
+                attempt_count=row.attempt_count + 1,
+                parse_id=next_parse_id,
+                lease_expires_at=lease_expires_at,
+                error_code=None,
+                updated_at=now,
+                completed_at=None,
+            )
+        )
+        if result.rowcount != 1:
+            return None
+        return self.get_ingestion(job_id)
+
+    def complete_ingestion(
+        self,
+        job_id: UUID,
+        *,
+        expected_attempt_count: int,
+        expected_parse_id: UUID,
+        now: datetime,
+    ) -> MaterialIngestionJob | None:
+        result = self._session.execute(
+            update(ResearchMaterialIngestionJobRow)
+            .where(
+                ResearchMaterialIngestionJobRow.job_id == str(job_id),
+                ResearchMaterialIngestionJobRow.ingestion_status
+                == MaterialIngestionStatus.PROCESSING.value,
+                ResearchMaterialIngestionJobRow.attempt_count == expected_attempt_count,
+                ResearchMaterialIngestionJobRow.parse_id == str(expected_parse_id),
+            )
+            .values(
+                ingestion_status=MaterialIngestionStatus.READY.value,
+                lease_expires_at=None,
+                error_code=None,
+                updated_at=now,
+                completed_at=now,
+            )
+        )
+        if result.rowcount != 1:
+            return None
+        job = self.get_ingestion(job_id)
+        if job is None:
+            raise RuntimeError("completed ingestion job disappeared")
+        return job
+
+    def fail_ingestion(
+        self,
+        job_id: UUID,
+        *,
+        expected_attempt_count: int,
+        expected_parse_id: UUID,
+        error_code: str,
+        retry_at: datetime | None,
+        now: datetime,
+    ) -> MaterialIngestionJob | None:
+        result = self._session.execute(
+            update(ResearchMaterialIngestionJobRow)
+            .where(
+                ResearchMaterialIngestionJobRow.job_id == str(job_id),
+                ResearchMaterialIngestionJobRow.ingestion_status
+                == MaterialIngestionStatus.PROCESSING.value,
+                ResearchMaterialIngestionJobRow.attempt_count == expected_attempt_count,
+                ResearchMaterialIngestionJobRow.parse_id == str(expected_parse_id),
+            )
+            .values(
+                ingestion_status=MaterialIngestionStatus.FAILED.value,
+                available_at=retry_at or now,
+                lease_expires_at=None,
+                error_code=error_code,
+                updated_at=now,
+                completed_at=None if retry_at is not None else now,
+            )
+        )
+        if result.rowcount != 1:
+            return None
+        job = self.get_ingestion(job_id)
+        if job is None:
+            raise RuntimeError("failed ingestion job disappeared")
+        return job
+
+    def recoverable_ingestion_ids(self, *, now: datetime) -> tuple[UUID, ...]:
+        rows = self._session.scalars(
+            select(ResearchMaterialIngestionJobRow)
+            .where(
+                ResearchMaterialIngestionJobRow.attempt_count
+                < ResearchMaterialIngestionJobRow.max_attempts,
+                or_(
+                    and_(
+                        ResearchMaterialIngestionJobRow.ingestion_status
+                        == MaterialIngestionStatus.QUEUED.value,
+                        ResearchMaterialIngestionJobRow.available_at <= now,
+                    ),
+                    and_(
+                        ResearchMaterialIngestionJobRow.ingestion_status
+                        == MaterialIngestionStatus.FAILED.value,
+                        ResearchMaterialIngestionJobRow.completed_at.is_(None),
+                    ),
+                    and_(
+                        ResearchMaterialIngestionJobRow.ingestion_status
+                        == MaterialIngestionStatus.PROCESSING.value,
+                        ResearchMaterialIngestionJobRow.lease_expires_at <= now,
+                    ),
+                ),
+            )
+            .order_by(ResearchMaterialIngestionJobRow.created_at)
+        )
+        return tuple(UUID(row.job_id) for row in rows)
+
     def delete(
         self,
         material_id: UUID,
@@ -521,6 +730,29 @@ class SqliteResearchMaterialRepository:
             )
         )
         return deleted
+
+    @staticmethod
+    def _to_ingestion(
+        row: ResearchMaterialIngestionJobRow | None,
+    ) -> MaterialIngestionJob | None:
+        if row is None:
+            return None
+        return MaterialIngestionJob(
+            job_id=UUID(row.job_id),
+            material_id=UUID(row.material_id),
+            user_id=UUID(row.user_id),
+            task_id=UUID(row.task_id),
+            parse_id=UUID(row.parse_id),
+            ingestion_status=MaterialIngestionStatus(row.ingestion_status),
+            attempt_count=row.attempt_count,
+            max_attempts=row.max_attempts,
+            available_at=_utc(row.available_at),
+            lease_expires_at=_utc(row.lease_expires_at) if row.lease_expires_at else None,
+            error_code=row.error_code,
+            created_at=_utc(row.created_at),
+            updated_at=_utc(row.updated_at),
+            completed_at=_utc(row.completed_at) if row.completed_at else None,
+        )
 
     @staticmethod
     def _to_domain(row: ResearchMaterialRow | None) -> ResearchMaterial | None:

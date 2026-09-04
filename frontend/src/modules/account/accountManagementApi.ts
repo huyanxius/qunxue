@@ -1,10 +1,12 @@
 import { apiClient } from '../../api/client'
+import { getSystemHealth as requestSystemHealth } from '../../api/system'
 import type {
   AccountAuditEvent,
   AccountManagementApi,
   AccountPreferences,
   AccountProfile,
   AccountSession,
+  AccountSystemHealth,
   AdminUser,
   CreditSummary,
   PersonalDataExport,
@@ -193,6 +195,10 @@ function toAdminUser(value: RawAdminUser): AdminUser {
     isCurrentUser: value.is_current_user,
     isProtectedAdmin: value.is_protected_admin,
   }
+}
+
+export async function getAccountSystemHealth(): Promise<AccountSystemHealth> {
+  return requestSystemHealth()
 }
 
 export const accountManagementApi: AccountManagementApi = {

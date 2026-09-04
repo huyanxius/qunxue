@@ -111,6 +111,7 @@ class DisciplinaryAgentApplication:
         section_id: str | None = None,
         document_version: int | None = None,
         theory_plan_id: UUID | None = None,
+        material_ids: tuple[UUID, ...] = (),
         mode: Literal["standard", "deep_research"] = "standard",
         deep_research_run_id: UUID | None = None,
         deep_research_action: Literal["clarify", "confirm", "skip"] | None = None,
@@ -123,6 +124,11 @@ class DisciplinaryAgentApplication:
     ) -> AgentTurnExecution:
         if not prompt.strip():
             raise ValueError("message must not be empty")
+        material_ids = tuple(dict.fromkeys(material_ids))
+        if len(material_ids) > 20:
+            raise ValueError("an Agent turn accepts at most 20 research materials")
+        if material_ids and workspace != "research":
+            raise ValueError("research material attachments require a research workspace")
         existing_run = self._conversations.find_run(
             user_id=user_id,
             idempotency_key=idempotency_key,
@@ -146,6 +152,11 @@ class DisciplinaryAgentApplication:
                 conversation_id=existing_conversation.conversation_id,
                 requested_task_id=task_id,
             )
+            persisted_material_ids = tuple(
+                item.material_id for item in existing_run.material_attachments
+            )
+            if material_ids and material_ids != persisted_material_ids:
+                raise ValueError("idempotent Agent run material scope does not match")
             if existing_run.status == "running":
                 raise RunAlreadyActive(str(existing_run.conversation_id))
             if existing_run.status in {"awaiting_clarification", "awaiting_plan_confirmation"}:
@@ -285,6 +296,21 @@ class DisciplinaryAgentApplication:
                     document_id=document_id,
                     theory_plan_id=theory_plan_id,
                 )
+        if existing_run is not None:
+            material_attachments = existing_run.material_attachments
+        elif material_ids:
+            if task_id is None:
+                raise ValueError("research material attachments require a research task")
+            pin_research_material_scope = getattr(tools, "pin_research_material_scope", None)
+            if not callable(pin_research_material_scope):
+                raise RuntimeError("research material attachments are unavailable")
+            material_attachments = pin_research_material_scope(
+                user_id=user_id,
+                task_id=task_id,
+                material_ids=material_ids,
+            )
+        else:
+            material_attachments = ()
         runtime_identity = _runner_identity(self._runner)
         run = self._conversations.start_run(
             user_id=user_id,
@@ -293,6 +319,7 @@ class DisciplinaryAgentApplication:
             knowledge_release_id=tools.release.knowledge_release_id,
             provider=runtime_identity.provider,
             model=runtime_identity.model,
+            material_attachments=material_attachments,
         )
         if self._credits is not None:
             try:
@@ -324,6 +351,9 @@ class DisciplinaryAgentApplication:
                 document_version=document_version,
                 theory_plan_id=theory_plan_id,
             )
+        bind_research_material_scope = getattr(tools, "bind_research_material_scope", None)
+        if callable(bind_research_material_scope):
+            bind_research_material_scope(run.material_attachments)
         if workspace == "research":
             enable_research_document_tools = getattr(
                 tools, "enable_research_document_tools", None

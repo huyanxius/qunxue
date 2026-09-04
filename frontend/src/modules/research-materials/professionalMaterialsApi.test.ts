@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import {
   getProfessionalMaterialArchive,
@@ -74,6 +75,6 @@ describe('professional material archive API boundary', () => {
     const [input, init] = fetchMock.mock.calls[0]
     const request = requestOf(input, init)
     expect(request.headers.get('Idempotency-Key')).toEqual(expect.any(String))
-    expect((await request.clone().formData()).getAll('files')).toHaveLength(1)
+    expect((await parseMultipartRequest(request)).getAll('files')).toHaveLength(1)
   })
 })

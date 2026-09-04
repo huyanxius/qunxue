@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
+from pydantic import ValidationError
 from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.models import ModelRequestParameters
@@ -26,6 +27,7 @@ from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConve
 from qunxue_api.adapters.sqlite.research_document_proposal import (
     SqliteResearchDocumentProposalRepository,
 )
+from qunxue_api.api.contracts.agent import AgentTurnRequest
 from qunxue_api.api.routes.agent import (
     _cancel_active_run,
     _effective_agent_runtime_mode,
@@ -47,6 +49,7 @@ from qunxue_api.modules.agent_conversation import (
     IdempotentTurn,
     RunAlreadyActive,
 )
+from qunxue_api.modules.agent_conversation import domain as agent_domain
 from qunxue_api.settings import Settings
 
 
@@ -64,6 +67,16 @@ def test_agent_runtime_mode_honors_api_key_override_without_using_legacy_gateway
     )
 
     assert _effective_agent_runtime_mode(request) == "base"
+
+
+def test_agent_turn_request_limits_material_attachments_to_twenty() -> None:
+    with pytest.raises(ValidationError):
+        AgentTurnRequest(
+            message="比较这些材料",
+            workspace="research",
+            task_id=UUID(int=99),
+            material_ids=tuple(UUID(int=index + 1) for index in range(21)),
+        )
 
 
 def test_agent_runtime_mode_treats_blank_api_key_as_unconfigured() -> None:
@@ -590,6 +603,41 @@ def test_sqlite_failed_key_retry_refreshes_pre_run_identity() -> None:
     assert retried.run_id == UUID(failed.run_id)
     assert (failed.provider, failed.model) == ("deterministic-knowledge", "local")
     assert failed.knowledge_release_id == "release-new"
+
+
+def test_sqlite_agent_run_persists_and_restores_material_attachment_snapshots() -> None:
+    conversation_id = UUID("00000000-0000-0000-0000-000000000081")
+    user_id = UUID("00000000-0000-0000-0000-000000000082")
+    attachment = agent_domain.AgentMaterialAttachment(
+        material_id=UUID("00000000-0000-0000-0000-000000000083"),
+        parse_id=UUID("00000000-0000-0000-0000-000000000084"),
+    )
+    session = Mock()
+    session.scalar.side_effect = [None, None]
+    repository = SqliteConversationRepository(session)
+    run = AgentRun(
+        run_id=UUID("00000000-0000-0000-0000-000000000085"),
+        conversation_id=conversation_id,
+        user_id=user_id,
+        idempotency_key="material-attachments",
+        status="running",
+        knowledge_release_id="release-a",
+        material_attachments=(attachment,),
+    )
+
+    repository.start_run(run)
+
+    stored = session.add.call_args.args[0]
+    assert stored.material_attachments == [
+        {
+            "material_id": str(attachment.material_id),
+            "parse_id": str(attachment.parse_id),
+        }
+    ]
+    session.scalar.side_effect = [stored]
+    restored = repository.find_run(user_id=user_id, idempotency_key="material-attachments")
+    assert restored is not None
+    assert restored.material_attachments == (attachment,)
 
 
 def test_sqlite_insert_race_does_not_return_the_other_running_run() -> None:

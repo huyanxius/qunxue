@@ -1,0 +1,47 @@
+.agent-material-picker__backdrop {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(32 29 25 / 28%);
+  backdrop-filter: blur(3px);
+}
+
+.agent-material-picker {
+  width: min(520px, 100%);
+  max-height: min(620px, calc(100dvh - 40px));
+  overflow: hidden;
+  border: 1px solid #d8d2c8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(42 37 30 / 22%);
+}
+
+.agent-material-picker > header,
+.agent-material-picker > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.agent-material-picker > header { border-bottom: 1px solid #eee9e2; }
+.agent-material-picker > footer { border-top: 1px solid #eee9e2; }
+.agent-material-picker > header > div { display: grid; gap: 4px; }
+.agent-material-picker > header small,
+.agent-material-picker > footer span { color: #777066; font-size: 12px; }
+.agent-material-picker button { font: inherit; cursor: pointer; }
+.agent-material-picker > header button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #5d574f; }
+.agent-material-picker > footer button { padding: 8px 18px; border: 0; border-radius: 999px; color: #fff; background: #25221e; }
+.agent-material-picker__list { display: grid; gap: 8px; max-height: 430px; overflow: auto; padding: 12px; }
+.agent-material-picker__item { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid #e5e0d8; border-radius: 12px; cursor: pointer; }
+.agent-material-picker__item:has(input:checked) { border-color: #806740; background: #faf6ee; }
+.agent-material-picker__item.is-disabled { cursor: not-allowed; opacity: .62; }
+.agent-material-picker__file { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #755d39; background: #f3ede2; }
+.agent-material-picker__copy { min-width: 0; display: grid; gap: 3px; }
+.agent-material-picker__copy b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.agent-material-picker__copy small { color: #777066; font-size: 11px; }
+.agent-material-picker__empty { margin: 24px; color: #777066; text-align: center; }

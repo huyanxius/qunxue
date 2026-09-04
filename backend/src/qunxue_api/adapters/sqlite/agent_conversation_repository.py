@@ -13,6 +13,7 @@ from qunxue_api.adapters.sqlite.research_material_model import (
 )
 from qunxue_api.modules.agent_conversation import (
     AgentCitation,
+    AgentMaterialAttachment,
     AgentMessage,
     AgentRun,
     AgentTurn,
@@ -401,6 +402,13 @@ class SqliteConversationRepository:
                     knowledge_release_id=run.knowledge_release_id,
                     usage={},
                     tool_summary=[],
+                    material_attachments=[
+                        {
+                            "material_id": str(item.material_id),
+                            "parse_id": str(item.parse_id),
+                        }
+                        for item in run.material_attachments
+                    ],
                     started_at=datetime.now(UTC),
                 )
             )
@@ -530,6 +538,13 @@ def _run_from_row(row: AgentRunRow) -> AgentRun:
         knowledge_release_id=row.knowledge_release_id,
         turn_id=UUID(row.turn_id) if row.turn_id else None,
         tool_summary=tuple(dict(item) for item in row.tool_summary),
+        material_attachments=tuple(
+            AgentMaterialAttachment(
+                material_id=UUID(str(item["material_id"])),
+                parse_id=UUID(str(item["parse_id"])),
+            )
+            for item in (row.material_attachments or [])
+        ),
     )
 
 

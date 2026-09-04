@@ -70,9 +70,15 @@ import {
 } from '../../modules/research-agent'
 import type { ResearchCanvasStreamingTurn } from '../../modules/research-workspace'
 import {
+  addResearchLibraryMaterial,
+  AgentMaterialAttachmentPicker,
   formatMaterialLocator,
+  isSupportedResearchMaterialFile,
+  listResearchLibraryMaterials,
   normalizeMaterialLocator,
+  RESEARCH_MATERIAL_ACCEPT,
   ResearchMaterialsPanel,
+  type ResearchMaterial,
   type ResearchMaterialLocator,
 } from '../../modules/research-materials'
 import { ResearchAgentBot } from './ResearchAgentBot'
@@ -97,6 +103,15 @@ const RAIL_EXIT_MS = 220
 const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
 type AgentComposerMode = 'standard' | 'deep-research'
 type DeepResearchMockStage = 'idle' | 'clarifying' | 'planning' | 'researching' | 'completed'
+
+function attachmentStatusLabel(material: ResearchMaterial, locale: 'zh-CN' | 'en-US') {
+  if (material.unavailableReason === 'ocr_required') return locale === 'en-US' ? 'OCR required' : '需要 OCR'
+  if (material.unavailableReason === 'transcription_unavailable') return locale === 'en-US' ? 'Transcription unavailable' : '未配置转写'
+  if (material.unavailableReason === 'transcription_required') return locale === 'en-US' ? 'Transcription required' : '等待转写'
+  if (material.ingestionStatus === 'queued') return locale === 'en-US' ? 'Queued' : '等待解析'
+  if (material.ingestionStatus === 'failed' || material.status === 'failed') return locale === 'en-US' ? 'Failed' : '解析失败'
+  return locale === 'en-US' ? 'Processing' : '处理中'
+}
 
 const DEEP_RESEARCH_MOCK_STEPS = [
   '拆解研究问题',
@@ -365,6 +380,7 @@ type PendingTurnAttempt = {
   idempotencyKey: string
   conversationId: string | null
   runId?: string | null
+  materialIds: string[]
 }
 
 type ResearchStartHandoff = {
@@ -533,6 +549,9 @@ function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | nul
       idempotencyKey: value.idempotencyKey,
       conversationId: value.conversationId ?? null,
       runId: typeof value.runId === 'string' && value.runId ? value.runId : null,
+      materialIds: Array.isArray(value.materialIds)
+        ? value.materialIds.filter((item): item is string => typeof item === 'string').slice(0, 20)
+        : [],
     }
   } catch {
     return null
@@ -1564,6 +1583,11 @@ export function ResearchAgentConversationPage({
   const [railMounted, setRailMounted] = useState(false)
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
+  const [materialPickerOpen, setMaterialPickerOpen] = useState(false)
+  const [materialPickerLoading, setMaterialPickerLoading] = useState(false)
+  const [availableMaterials, setAvailableMaterials] = useState<ResearchMaterial[]>([])
+  const [attachedMaterials, setAttachedMaterials] = useState<ResearchMaterial[]>([])
+  const [materialUploading, setMaterialUploading] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
   const [composerMode, setComposerMode] = useState<AgentComposerMode>(() => restoredPendingTurn.current?.runId ? 'deep-research' : 'standard')
@@ -1599,6 +1623,7 @@ export function ResearchAgentConversationPage({
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
   const materialMenuRef = useRef<HTMLDivElement>(null)
   const materialMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const materialFileInputRef = useRef<HTMLInputElement>(null)
   const modeMenuRef = useRef<HTMLDivElement>(null)
   const modeMenuButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -1664,10 +1689,109 @@ export function ResearchAgentConversationPage({
     }
     navigate('/research/materials')
   }
+
+  async function openMaterialAttachmentPicker() {
+    setMaterialMenuOpen(false)
+    if (workspace !== 'research' || !taskId) {
+      navigate('/research/materials')
+      return
+    }
+    setMaterialPickerOpen(true)
+    setMaterialPickerLoading(true)
+    try {
+      const result = await listResearchLibraryMaterials(taskId)
+      setAvailableMaterials(result.items)
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : text('研究材料暂时无法加载。', 'Research materials are unavailable.'))
+      setMaterialPickerOpen(false)
+    } finally {
+      setMaterialPickerLoading(false)
+    }
+  }
+
+  function toggleAttachedMaterial(material: ResearchMaterial) {
+    if (material.status !== 'ready') return
+    setAttachedMaterials((current) => {
+      if (current.some((item) => item.materialId === material.materialId)) {
+        return current.filter((item) => item.materialId !== material.materialId)
+      }
+      if (current.length >= 20) {
+        setError(text('每轮最多附加 20 份研究材料。', 'You can attach up to 20 research materials per turn.'))
+        return current
+      }
+      return [...current, material]
+    })
+  }
+
+  async function uploadComposerMaterials(files: File[]) {
+    if (workspace !== 'research' || !taskId) {
+      navigate('/research/materials')
+      return
+    }
+    const unsupported = files.find((file) => !isSupportedResearchMaterialFile(file))
+    if (unsupported) {
+      setError(text(`不支持“${unsupported.name}”的文件格式。`, `The file type for “${unsupported.name}” is not supported.`))
+      return
+    }
+    const remaining = Math.max(0, 20 - attachedMaterials.length)
+    if (files.length > remaining) {
+      setError(text('每轮最多附加 20 份研究材料。', 'You can attach up to 20 research materials per turn.'))
+      return
+    }
+    setMaterialUploading(true)
+    setError(null)
+    try {
+      const uploaded: ResearchMaterial[] = []
+      for (const file of files) uploaded.push(await addResearchLibraryMaterial(taskId, file))
+      setAttachedMaterials((current) => {
+        const byId = new Map(current.map((item) => [item.materialId, item]))
+        for (const item of uploaded) byId.set(item.materialId, item)
+        return [...byId.values()].slice(0, 20)
+      })
+      setAvailableMaterials((current) => {
+        const byId = new Map(current.map((item) => [item.materialId, item]))
+        for (const item of uploaded) byId.set(item.materialId, item)
+        return [...byId.values()]
+      })
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : text('研究材料上传失败。', 'Research material upload failed.'))
+    } finally {
+      setMaterialUploading(false)
+      if (materialFileInputRef.current) materialFileInputRef.current.value = ''
+    }
+  }
+  const pendingAttachedMaterialIds = attachedMaterials
+    .filter((material) => material.ingestionStatus === 'queued' || material.ingestionStatus === 'processing')
+    .map((material) => material.materialId)
+    .join(',')
+
+  useEffect(() => {
+    if (!taskId || !pendingAttachedMaterialIds) return undefined
+    let active = true
+    const refresh = () => {
+      void listResearchLibraryMaterials(taskId)
+        .then((result) => {
+          if (!active) return
+          const byId = new Map(result.items.map((item) => [item.materialId, item]))
+          setAttachedMaterials((current) => current.map((item) => byId.get(item.materialId) ?? item))
+          setAvailableMaterials(result.items)
+        })
+        .catch(() => undefined)
+    }
+    const timer = window.setInterval(refresh, 750)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [pendingAttachedMaterialIds, taskId])
+
   const turns = useMemo(() => activeConversation?.turns ?? [], [activeConversation])
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
   const isBusy = status === 'loading' || canStopGeneration
-  const canSubmit = draft.trim().length > 0 && !isBusy
+  const canSubmit = draft.trim().length > 0
+    && !isBusy
+    && !materialUploading
+    && attachedMaterials.every((material) => material.status === 'ready')
   const isEmpty = !turns.length && !streamingTurn && !hasDeepResearchMockConversation
 
   useEffect(() => {
@@ -1928,6 +2052,7 @@ export function ResearchAgentConversationPage({
       idempotencyKey,
       conversationId: activeConversation?.conversation_id ?? pendingConversationId.current,
       runId: resumableAttempt?.runId ?? null,
+      materialIds: resumableAttempt?.materialIds ?? attachedMaterials.map((item) => item.materialId),
     }
     activeTurnAttempt.current = attempt
     failedTurnAttempt.current = null
@@ -1960,6 +2085,7 @@ export function ResearchAgentConversationPage({
           section_id: workspace === 'research' ? sectionId : null,
           document_version: workspace === 'research' ? documentVersion : null,
           theory_plan_id: workspace === 'research' ? theoryPlanId : null,
+          material_ids: workspace === 'research' ? attempt.materialIds : [],
           deep_research_run_id: deepAction ? (activeTurnAttempt.current?.runId ?? null) : null,
           deep_research_action: deepAction?.action ?? null,
           deep_research_selection: deepAction?.selection ?? null,
@@ -2090,6 +2216,7 @@ export function ResearchAgentConversationPage({
               ...current.filter((item) => item.conversation_id !== completedConversation.conversation_id),
             ])
             setStreamingTurn(null)
+            setAttachedMaterials([])
             setStatus('idle')
             if (!embedded) {
               setSearchParams((current) => {
@@ -2608,7 +2735,7 @@ export function ResearchAgentConversationPage({
               />
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
-              <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>
+              <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${attachedMaterials.length || materialUploading ? ' has-attachments' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>
                 {composerPrefix}
                 <textarea
                   ref={composerInputRef}
@@ -2621,6 +2748,34 @@ export function ResearchAgentConversationPage({
                   placeholder={text('问一个问题，或描述你正在理解的现象', 'Ask a question or describe a phenomenon you are trying to understand')}
                   rows={1}
                 />
+                <input
+                  ref={materialFileInputRef}
+                  className="research-agent-composer__file-input"
+                  type="file"
+                  multiple
+                  accept={RESEARCH_MATERIAL_ACCEPT}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onChange={(event) => { void uploadComposerMaterials([...event.currentTarget.files ?? []]) }}
+                />
+                {attachedMaterials.length || materialUploading ? (
+                  <div className="research-agent-composer__attachments" aria-label={text('本轮附件', 'Attachments for this turn')}>
+                    {attachedMaterials.map((material) => (
+                      <span className={`research-agent-composer__attachment is-${material.status}`} key={material.materialId}>
+                        <FileTextIcon size={14} aria-hidden="true" />
+                        <span title={material.filename}>{material.filename}</span>
+                        {material.status !== 'ready' ? <small>{attachmentStatusLabel(material, locale)}</small> : null}
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          aria-label={text(`移除附件 ${material.filename}`, `Remove attachment ${material.filename}`)}
+                          onClick={() => setAttachedMaterials((current) => current.filter((item) => item.materialId !== material.materialId))}
+                        ><XIcon size={12} /></button>
+                      </span>
+                    ))}
+                    {materialUploading ? <span className="research-agent-composer__uploading" role="status"><CircleNotchIcon size={14} className="spin" />{text('正在上传…', 'Uploading…')}</span> : null}
+                  </div>
+                ) : null}
                 <div className="research-agent-composer__controls">
                   <div className="research-agent-composer__material-entry" ref={materialMenuRef}>
                     <button
@@ -2630,7 +2785,7 @@ export function ResearchAgentConversationPage({
                       aria-label={text('添加研究材料', 'Add research material')}
                       aria-expanded={materialMenuOpen}
                       aria-controls="research-agent-material-menu"
-                      disabled={isBusy}
+                      disabled={isBusy || materialUploading}
                       onClick={() => {
                         setModeMenuOpen(false)
                         setMaterialMenuOpen((open) => !open)
@@ -2645,14 +2800,18 @@ export function ResearchAgentConversationPage({
                         role="menu"
                         aria-label={text('添加研究材料', 'Add research material')}
                       >
-                        <button type="button" role="menuitem" onClick={openResearchMaterials}>
+                        <button type="button" role="menuitem" onClick={() => {
+                          setMaterialMenuOpen(false)
+                          if (workspace === 'research' && taskId) materialFileInputRef.current?.click()
+                          else openResearchMaterials()
+                        }}>
                           <FilePlusIcon size={18} /><span>{text('上传文件', 'Upload a file')}</span>
                         </button>
-                        <button type="button" role="menuitem" onClick={openResearchMaterials}>
+                        <button type="button" role="menuitem" onClick={() => { void openMaterialAttachmentPicker() }}>
                           <FolderOpenIcon size={18} /><span>{text('从研究材料添加', 'Add from research materials')}</span>
                         </button>
                         <button type="button" role="menuitem" onClick={openResearchMaterials}>
-                          <LinkSimpleIcon size={18} /><span>{text('引用文件', 'Reference a file')}</span>
+                          <LinkSimpleIcon size={18} /><span>{text('查看材料库', 'Open material library')}</span>
                         </button>
                       </div>
                     ) : null}
@@ -2792,6 +2951,15 @@ export function ResearchAgentConversationPage({
                 closeMaterials()
                 setMaterialLocatorTarget(null)
               }}
+            />
+          ) : null}
+          {materialPickerOpen ? (
+            <AgentMaterialAttachmentPicker
+              materials={materialPickerLoading ? [] : availableMaterials}
+              selectedIds={new Set(attachedMaterials.map((item) => item.materialId))}
+              locale={locale}
+              onToggle={toggleAttachedMaterial}
+              onClose={() => setMaterialPickerOpen(false)}
             />
           ) : null}
         </section>

@@ -32,6 +32,13 @@ class MaterialStatus(StrEnum):
     DELETED = "deleted"
 
 
+class MaterialIngestionStatus(StrEnum):
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+
 @dataclass(frozen=True, slots=True)
 class ParsedMaterial:
     """Stable parser output consumed by the application boundary.
@@ -471,6 +478,26 @@ class MaterialReparseRequest:
     created_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class MaterialIngestionJob:
+    """Durable parse/index work claim for one immutable parse ID."""
+
+    job_id: UUID
+    material_id: UUID
+    user_id: UUID
+    task_id: UUID
+    parse_id: UUID
+    ingestion_status: MaterialIngestionStatus
+    attempt_count: int
+    max_attempts: int
+    available_at: datetime
+    lease_expires_at: datetime | None
+    error_code: str | None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+
+
 def _validate_blocks(
     blocks: tuple[MaterialBlock, ...], *, parse_id: UUID, material_id: UUID
 ) -> None:
@@ -644,3 +671,23 @@ class ResearchMaterial:
         }
         values.update(changes)
         return ResearchMaterial(**values)
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchMaterialSearchHit:
+    material_id: UUID
+    parse_id: UUID
+    segment_id: str
+    title: str
+    material_kind: MaterialKind
+    material_format: MaterialFormat
+    excerpt: str
+    locator: MaterialLocator
+    score: float
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchMaterialSearchResult:
+    query: str
+    total: int
+    items: tuple[ResearchMaterialSearchHit, ...]

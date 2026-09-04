@@ -6,9 +6,13 @@ from pydantic import BaseModel, BeforeValidator
 
 from qunxue_api.modules.research_materials import (
     MaterialBlock,
+    MaterialIngestionJob,
+    MaterialIngestionStatus,
     MaterialKind,
     MaterialLocator,
     ResearchMaterial,
+    ResearchMaterialSearchHit,
+    ResearchMaterialSearchResult,
 )
 
 
@@ -89,6 +93,9 @@ class ResearchMaterialResponse(BaseModel):
     segment_count: int
     updated_at: datetime
     error_code: str | None
+    ingestion_job_id: UUID | None = None
+    ingestion_status: MaterialIngestionStatus = MaterialIngestionStatus.QUEUED
+    unavailable_reason: str | None = None
     segments: list[ResearchMaterialSegmentResponse] | None = None
 
     @classmethod
@@ -138,3 +145,82 @@ class ResearchMaterialResponse(BaseModel):
 class ResearchMaterialListResponse(BaseModel):
     task_id: UUID
     items: list[ResearchMaterialResponse]
+
+
+class ResearchMaterialSearchHitResponse(BaseModel):
+    material_id: UUID
+    parse_id: UUID
+    segment_id: str
+    title: str
+    material_kind: MaterialKind
+    material_format: str
+    excerpt: str
+    locator: ResearchMaterialLocatorResponse
+    score: float
+
+    @classmethod
+    def from_domain(cls, hit: ResearchMaterialSearchHit) -> "ResearchMaterialSearchHitResponse":
+        return cls(
+            material_id=hit.material_id,
+            parse_id=hit.parse_id,
+            segment_id=hit.segment_id,
+            title=hit.title,
+            material_kind=hit.material_kind,
+            material_format=hit.material_format.value,
+            excerpt=hit.excerpt,
+            locator=ResearchMaterialLocatorResponse.from_domain(hit.locator),
+            score=hit.score,
+        )
+
+
+class ResearchMaterialIngestionResponse(BaseModel):
+    material_id: UUID
+    ingestion_job_id: UUID | None
+    ingestion_status: MaterialIngestionStatus
+    attempt_count: int
+    max_attempts: int
+    error_code: str | None
+    unavailable_reason: str | None
+    lease_expires_at: datetime | None
+    updated_at: datetime
+
+    @classmethod
+    def from_state(
+        cls,
+        *,
+        material: ResearchMaterial,
+        status: MaterialIngestionStatus,
+        job: MaterialIngestionJob | None,
+        unavailable_reason: str | None,
+    ) -> "ResearchMaterialIngestionResponse":
+        return cls(
+            material_id=material.material_id,
+            ingestion_job_id=job.job_id if job else None,
+            ingestion_status=status,
+            attempt_count=job.attempt_count if job else 0,
+            max_attempts=job.max_attempts if job else 0,
+            error_code=job.error_code if job else material.last_error_code,
+            unavailable_reason=unavailable_reason,
+            lease_expires_at=job.lease_expires_at if job else None,
+            updated_at=job.updated_at if job else material.updated_at,
+        )
+
+
+class ResearchMaterialSearchResponse(BaseModel):
+    task_id: UUID
+    query: str
+    total: int
+    items: list[ResearchMaterialSearchHitResponse]
+
+    @classmethod
+    def from_domain(
+        cls,
+        task_id: UUID,
+        result: ResearchMaterialSearchResult,
+    ) -> "ResearchMaterialSearchResponse":
+        return cls(
+            task_id=task_id,
+            query=result.query,
+            total=result.total,
+            items=[ResearchMaterialSearchHitResponse.from_domain(item) for item in result.items],
+        )
