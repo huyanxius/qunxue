@@ -391,29 +391,32 @@ class DisciplinaryAgentApplication:
                 }
                 if deep_research_selection:
                     pending["selected_intent"] = deep_research_selection
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    status=state,
-                    tool_summary=(pending,),
-                )
-                if self._credits is not None:
-                    self._credits.release(user_id=user_id, run_id=run.run_id)
-                self._conversations.commit()
-                return AgentTurnExecution(
-                    conversation=current,
-                    run_id=run.run_id,
-                    result=AgentRunResult(
-                        answer="",
-                        citations=(),
-                        release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
-                        provider=run.provider,
-                        model=run.model,
-                    ),
-                    turn=None,
-                    replayed=False,
-                    tool_summary=(pending,),
-                    pending_research=pending,
-                )
+                if planning_event.kind == "ask":
+                    self._conversations.finish_run(
+                        run_id=run.run_id,
+                        status=state,
+                        tool_summary=(pending,),
+                    )
+                    if self._credits is not None:
+                        self._credits.release(user_id=user_id, run_id=run.run_id)
+                    self._conversations.commit()
+                    return AgentTurnExecution(
+                        conversation=current,
+                        run_id=run.run_id,
+                        result=AgentRunResult(
+                            answer="",
+                            citations=(),
+                            release_id=(
+                                run.knowledge_release_id or tools.release.knowledge_release_id
+                            ),
+                            provider=run.provider,
+                            model=run.model,
+                        ),
+                        turn=None,
+                        replayed=False,
+                        tool_summary=(pending,),
+                        pending_research=pending,
+                    )
 
         def record_tool_event(event: AgentToolEvent) -> None:
             tool_events.append(event)
