@@ -231,11 +231,15 @@ export function PageShell({
                         ))}
                       </div>
                       {notificationFilter === 'updates' ? (
-                        <p className="desktop-rail__notification-empty">{text('暂无更新日志', 'No updates')}</p>
+                        <article className="desktop-rail__notification-item">
+                          <strong>{text('深度研究现已上线', 'Deep Research is now available')}</strong>
+                          <p>{text('我们已上线“深度研究”功能。它会自动让 Agent 规划任务，完成知识库检索、研究分析网页内容，并补充输出研究结果。欢迎体验这一整条研究链路。', 'Deep Research is now available. It automatically asks the Agent to plan tasks, search the knowledge base, analyze research pages, and complete the final research output. Try the full research workflow.')}</p>
+                          <time dateTime="2026-09-04">{text('9月4日', 'Sep 4')}</time>
+                        </article>
                       ) : (
                         <article className="desktop-rail__notification-item">
-                          <strong>{text('上游服务请求较慢', 'Upstream service requests are slow')}</strong>
-                          <p>{text('上游服务出现了问题，当前请求响应较慢，请大家谅解。', 'The upstream service is experiencing an issue, so requests are responding slowly. Thank you for your patience.')}</p>
+                          <strong>{text('外部服务响应延迟', 'External service response delays')}</strong>
+                          <p>{text('部分外部服务当前响应延迟，相关请求可能需要更长时间完成。我们正在持续关注服务状态，感谢理解。', 'Some external services are currently experiencing response delays, so related requests may take longer to complete. We are monitoring the service status closely.')}</p>
                           <time dateTime="2026-09-03">{text('9月3日', 'Sep 3')}</time>
                         </article>
                       )}
