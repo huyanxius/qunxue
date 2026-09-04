@@ -22,6 +22,7 @@ class ModelEndpoint:
     model: str
     api_key: str | None = field(repr=False)
     timeout_seconds: float
+    provider: str | None = None
     extra_headers: Mapping[str, str] = field(default_factory=dict, repr=False)
 
 
@@ -30,6 +31,10 @@ class ModelRouteContext:
     trace_id: UUID
     request_id: UUID
     operation: str
+    route_id: UUID | None = None
+    task_id: UUID | None = None
+    agent_run_id: UUID | None = None
+    capability: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +100,13 @@ class ModelAttemptRecord:
     attempt_id: UUID
     context: ModelRouteContext
     endpoint_id: str
+    route_id: UUID | None
+    task_id: UUID | None
+    agent_run_id: UUID | None
+    capability: str | None
+    provider: str | None
+    model: str
+    fallback: bool
     attempt_number: int
     success: bool
     selected: bool
@@ -140,6 +152,7 @@ class _EndpointCircuitState:
     consecutive_retryable_failures: int = 0
     cooldown_until: float | None = None
     recovering: bool = False
+    successful: bool = False
 
 
 class ModelRouteExecutor:
@@ -180,7 +193,11 @@ class ModelRouteExecutor:
         invoke: Callable[[ModelEndpoint], ModelAttemptResult[ResultT]],
     ) -> ModelRouteResult[ResultT]:
         last_failure: ModelAttemptFailure | None = None
-        for attempt_number, endpoint in enumerate(self._admit_endpoints(), start=1):
+        attempt_number = 0
+        for endpoint in self._endpoints:
+            if not self._admit_endpoint(endpoint):
+                continue
+            attempt_number += 1
             started_at = self._wall_clock()
             try:
                 with model_route_scope(
@@ -204,9 +221,19 @@ class ModelRouteExecutor:
                     started_at=started_at,
                 )
                 if not failure.retryable:
+                    self._note_success(endpoint.endpoint_id)
                     raise
                 last_failure = failure
                 continue
+            except Exception:
+                self._note_success(endpoint.endpoint_id)
+                self._record_terminal_exception(
+                    context=context,
+                    endpoint=endpoint,
+                    attempt_number=attempt_number,
+                    started_at=started_at,
+                )
+                raise
 
             self._note_success(endpoint.endpoint_id)
             self._record_success(
@@ -234,7 +261,11 @@ class ModelRouteExecutor:
         invoke: Callable[[ModelEndpoint], Awaitable[ModelAttemptResult[ResultT]]],
     ) -> ModelRouteResult[ResultT]:
         last_failure: ModelAttemptFailure | None = None
-        for attempt_number, endpoint in enumerate(self._admit_endpoints(), start=1):
+        attempt_number = 0
+        for endpoint in self._endpoints:
+            if not self._admit_endpoint(endpoint):
+                continue
+            attempt_number += 1
             started_at = self._wall_clock()
             try:
                 with model_route_scope(
@@ -258,9 +289,19 @@ class ModelRouteExecutor:
                     started_at=started_at,
                 )
                 if not failure.retryable:
+                    self._note_success(endpoint.endpoint_id)
                     raise
                 last_failure = failure
                 continue
+            except Exception:
+                self._note_success(endpoint.endpoint_id)
+                self._record_terminal_exception(
+                    context=context,
+                    endpoint=endpoint,
+                    attempt_number=attempt_number,
+                    started_at=started_at,
+                )
+                raise
 
             self._note_success(endpoint.endpoint_id)
             self._record_success(
@@ -293,11 +334,10 @@ class ModelRouteExecutor:
 
     def health_snapshot(self) -> ModelHealthSnapshot:
         with self._lock:
-            now = self._clock()
             endpoints = tuple(
                 ModelEndpointHealth(
                     endpoint_id=endpoint.endpoint_id,
-                    status=self._status_for(self._circuit_for(endpoint.endpoint_id), now),
+                    status=self._status_for(self._circuit_for(endpoint.endpoint_id)),
                     consecutive_retryable_failures=self._circuit_for(
                         endpoint.endpoint_id
                     ).consecutive_retryable_failures,
@@ -305,29 +345,21 @@ class ModelRouteExecutor:
                 )
                 for endpoint in self._endpoints
             )
-        statuses = {endpoint.status for endpoint in endpoints}
-        if "healthy" in statuses:
-            status = "available"
-        elif "recovering" in statuses:
-            status = "recovering"
-        else:
-            status = "unavailable"
-        return ModelHealthSnapshot(status=status, endpoints=endpoints)
+        return ModelHealthSnapshot(
+            status=self._aggregate_status(endpoints),
+            endpoints=endpoints,
+        )
 
-    def _admit_endpoints(self) -> tuple[ModelEndpoint, ...]:
+    def _admit_endpoint(self, endpoint: ModelEndpoint) -> bool:
         with self._lock:
             now = self._clock()
-            admitted: list[ModelEndpoint] = []
-            for endpoint in self._endpoints:
-                state = self._circuit_for(endpoint.endpoint_id)
-                if state.cooldown_until is None:
-                    admitted.append(endpoint)
-                    continue
-                if state.recovering or now < state.cooldown_until:
-                    continue
-                state.recovering = True
-                admitted.append(endpoint)
-            return tuple(admitted)
+            state = self._circuit_for(endpoint.endpoint_id)
+            if state.cooldown_until is None:
+                return True
+            if state.recovering or now < state.cooldown_until:
+                return False
+            state.recovering = True
+            return True
 
     def _note_success(self, endpoint_id: str) -> None:
         with self._lock:
@@ -335,6 +367,7 @@ class ModelRouteExecutor:
             state.consecutive_retryable_failures = 0
             state.cooldown_until = None
             state.recovering = False
+            state.successful = True
 
     def _circuit_for(self, endpoint_id: str) -> _EndpointCircuitState:
         try:
@@ -343,12 +376,29 @@ class ModelRouteExecutor:
             raise ValueError(f"unknown model endpoint: {endpoint_id}") from error
 
     @staticmethod
-    def _status_for(state: _EndpointCircuitState, now: float) -> str:
-        if state.cooldown_until is None:
-            return "healthy"
-        if state.recovering or now >= state.cooldown_until:
+    def _status_for(state: _EndpointCircuitState) -> str:
+        if state.cooldown_until is not None and state.recovering:
             return "recovering"
-        return "unhealthy"
+        if state.cooldown_until is not None:
+            return "unhealthy"
+        if state.consecutive_retryable_failures:
+            return "degraded"
+        if state.successful:
+            return "healthy"
+        return "unknown"
+
+    @staticmethod
+    def _aggregate_status(endpoints: tuple[ModelEndpointHealth, ...]) -> str:
+        statuses = {endpoint.status for endpoint in endpoints}
+        if not statuses or statuses == {"unknown"}:
+            return "unknown"
+        if statuses == {"healthy"}:
+            return "healthy"
+        if statuses == {"unhealthy"}:
+            return "unhealthy"
+        if statuses <= {"unhealthy", "recovering"} and "recovering" in statuses:
+            return "recovering"
+        return "degraded"
 
     def _record_success(
         self,
@@ -364,6 +414,13 @@ class ModelRouteExecutor:
                 attempt_id=self._id_factory(),
                 context=context,
                 endpoint_id=endpoint.endpoint_id,
+                route_id=context.route_id,
+                task_id=context.task_id,
+                agent_run_id=context.agent_run_id,
+                capability=context.capability,
+                provider=endpoint.provider,
+                model=endpoint.model,
+                fallback=attempt_number > 1,
                 attempt_number=attempt_number,
                 success=True,
                 selected=True,
@@ -390,6 +447,13 @@ class ModelRouteExecutor:
                 attempt_id=self._id_factory(),
                 context=context,
                 endpoint_id=endpoint.endpoint_id,
+                route_id=context.route_id,
+                task_id=context.task_id,
+                agent_run_id=context.agent_run_id,
+                capability=context.capability,
+                provider=endpoint.provider,
+                model=endpoint.model,
+                fallback=attempt_number > 1,
                 attempt_number=attempt_number,
                 success=False,
                 selected=False,
@@ -397,6 +461,38 @@ class ModelRouteExecutor:
                 output_tokens=None,
                 failure_code=failure.code,
                 failure_retryable=failure.retryable,
+                started_at=started_at,
+                completed_at=self._wall_clock(),
+            )
+        )
+
+    def _record_terminal_exception(
+        self,
+        *,
+        context: ModelRouteContext,
+        endpoint: ModelEndpoint,
+        attempt_number: int,
+        started_at: datetime,
+    ) -> None:
+        self._record(
+            ModelAttemptRecord(
+                attempt_id=self._id_factory(),
+                context=context,
+                endpoint_id=endpoint.endpoint_id,
+                route_id=context.route_id,
+                task_id=context.task_id,
+                agent_run_id=context.agent_run_id,
+                capability=context.capability,
+                provider=endpoint.provider,
+                model=endpoint.model,
+                fallback=attempt_number > 1,
+                attempt_number=attempt_number,
+                success=False,
+                selected=False,
+                input_tokens=None,
+                output_tokens=None,
+                failure_code="model_attempt_exception",
+                failure_retryable=False,
                 started_at=started_at,
                 completed_at=self._wall_clock(),
             )
