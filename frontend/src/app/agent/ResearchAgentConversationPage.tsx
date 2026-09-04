@@ -774,6 +774,20 @@ function tombstoneConversationMaterial(conversation: AgentConversation, material
 }
 
 
+// 维度既可能来自条目号（D1:C213），也可能只出现在来源路径里（价值论/02-02-1...md）。
+const dimensionByName: Array<[string, string]> = [
+  ['本体论', 'D1'], ['实践论', 'D2'], ['方法论', 'D3'], ['价值论', 'D4'],
+  ['认识论', 'D5'], ['传统', 'D6'], ['学科史', 'D7'],
+]
+
+function citationDimension(citation: AgentCitation): string | null {
+  const fromId = citation.knowledge_id?.match(/\b(D[1-7])\b/)?.[1]
+  if (fromId) return fromId
+  if (citation.source_kind === 'web') return null
+  const label = citation.label ?? ''
+  return dimensionByName.find(([name]) => label.includes(name))?.[1] ?? null
+}
+
 // 网页来源的副标题给域名，比统一写"来源"更能让人判断这条证据可不可信。
 function citationHost(citation: AgentCitation) {
   if (citation.source_kind !== 'web' || !citation.source_id) return null
@@ -789,7 +803,7 @@ function citationToRail(citation: AgentCitation, locale: AppLocale): ResearchCit
   const materialLocator = material.locator ? formatMaterialLocator(material.locator) : null
   const host = citationHost(citation)
   // 知识条目号形如 D1:C213，前缀就是知识库的维度，用它取和知识库页面同一套色。
-  const dimension = citation.knowledge_id?.match(/^(D[1-7])/)?.[1] ?? null
+  const dimension = citationDimension(citation)
   return {
     id: citation.citation_id,
     title: citation.label,
@@ -1308,7 +1322,7 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
     <div className="new-research__sources" aria-label={text('回答证据', 'Answer evidence')}>
       <span className="new-research__sources-label">{text('依据', 'Evidence')}</span>
       {citations.map((citation, index) => (
-        <button type="button" key={citation.citation_id} data-dimension={citation.knowledge_id?.match(/^(D[1-7])/)?.[1] ?? undefined} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
+        <button type="button" key={citation.citation_id} data-dimension={citationDimension(citation) ?? undefined} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
           <b>{index + 1}</b><span>{citation.label}<small>{citationKindLabel(citation.kind, locale)}</small></span>
         </button>
       ))}
