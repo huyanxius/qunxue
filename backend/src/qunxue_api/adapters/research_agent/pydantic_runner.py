@@ -4,6 +4,7 @@ import re
 from asyncio import sleep as async_sleep
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
 from contextvars import ContextVar
+from typing import Literal
 
 from openai import AsyncOpenAI
 from openai.types.shared import ReasoningEffort
@@ -51,6 +52,7 @@ from qunxue_api.modules.agent_conversation import (
 class DeepResearchDecision(BaseModel):
     """Structured planning output; it keeps research UX out of free-form text."""
 
+    request_type: Literal["research", "conversation"] = "conversation"
     needs_clarification: bool = False
     question: str = ""
     options: list[str] = Field(default_factory=list)
@@ -74,6 +76,8 @@ class DeterministicKnowledgeRunner:
         on_event: Callable[[AgentResearchEvent], None],
     ) -> None:
         del conversation
+        if prompt.strip() in {"你好", "您好", "嗨", "hello", "hi", "谢谢", "感谢"}:
+            return
         if len(prompt.strip()) < 18:
             on_event(
                 AgentResearchEvent(
@@ -590,7 +594,12 @@ class PydanticAIKnowledgeRunner:
             output_type=DeepResearchDecision,
             retries=1,
             instructions=(
-                "你是深入研究模式的研究规划器。根据用户问题和对话历史判断意图是否足够清楚。"
+                "你是深入研究模式的研究规划器。先判断当前消息是 research 还是普通 conversation。"
+                "问候、致谢、闲聊、简单解释和不需要多轮证据检索的请求都标记为 conversation，"
+                "直接让主 Agent 回答，不要生成 ask 或 plan。只有用户明确要求研究、比较、综述、"
+                "调查，"
+                "或问题确实需要多轮知识库/网页检索时才标记为 research。"
+                "对 research 请求再根据用户问题和对话历史判断意图是否足够清楚。"
                 "只返回结构化规划，不回答研究结论。意图不清时 needs_clarification=true，"
                 "拟定一句简洁的 question，并给出 3 到 5 个互斥选项；意图清楚时给出简洁 title 和"
                 "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
@@ -626,6 +635,8 @@ class PydanticAIKnowledgeRunner:
                 title="深入研究",
                 steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
             )
+        if decision.request_type != "research":
+            return
         if decision.needs_clarification:
             options = [
                 item.strip()
