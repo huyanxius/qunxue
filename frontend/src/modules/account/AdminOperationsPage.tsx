@@ -53,14 +53,14 @@ export function AdminOperationsPage({ onForbidden, onSessionExpired }: { onForbi
     return () => { active = false }
   }, [onForbidden, onSessionExpired])
 
-  if (!authorized) return <div className="admin-ops-loading">正在校验管理员权限…</div>
-
   const usageCost = useMemo(() => {
     const points = credits?.entries
       .filter((entry) => entry.kind === 'usage')
       .reduce((sum, entry) => sum + Math.abs(entry.points), 0) ?? 0
     return points / 100
   }, [credits])
+
+  if (!authorized) return <div className="admin-ops-loading">正在校验管理员权限…</div>
 
   return (
     <article className="admin-ops-page">
