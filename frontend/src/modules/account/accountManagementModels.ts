@@ -55,6 +55,18 @@ export type CreditSummary = {
   nextCursor: string | null
 }
 
+export type AccountSystemHealth = {
+  capability: 'unavailable' | 'mock' | 'base' | 'sft'
+  contractVersion: string
+  knowledgeReleaseId: string | null
+  modelVersion: string
+  persistence: 'sqlite'
+  provider: string
+  runtimeMode: 'mock' | 'base' | 'sft'
+  service: string
+  status: 'ok'
+}
+
 export type CreditRedemption = {
   redeemedPoints: number
   balance: number

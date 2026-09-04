@@ -201,13 +201,24 @@ def test_confirmed_deep_research_passes_cancellation_into_the_stream_runner() ->
         conversations=ConversationService.in_memory(), runner=Runner(), tools_factory=Tools
     )
     planned = app.run_turn(
-        user_id=UUID(int=3), conversation_id=None, prompt="研究社区照护", idempotency_key="cancel-1",
-        mode="deep_research", on_delta=lambda _delta: None, is_cancelled=is_cancelled,
+        user_id=UUID(int=3),
+        conversation_id=None,
+        prompt="研究社区照护",
+        idempotency_key="cancel-1",
+        mode="deep_research",
+        on_delta=lambda _delta: None,
+        is_cancelled=is_cancelled,
     )
     completed = app.run_turn(
-        user_id=UUID(int=3), conversation_id=None, prompt="研究社区照护", idempotency_key="cancel-1",
-        mode="deep_research", deep_research_run_id=planned.run_id, deep_research_action="confirm",
-        on_delta=lambda _delta: None, is_cancelled=is_cancelled,
+        user_id=UUID(int=3),
+        conversation_id=None,
+        prompt="研究社区照护",
+        idempotency_key="cancel-1",
+        mode="deep_research",
+        deep_research_run_id=planned.run_id,
+        deep_research_action="confirm",
+        on_delta=lambda _delta: None,
+        is_cancelled=is_cancelled,
     )
 
     assert completed.result.answer == "完整结论"

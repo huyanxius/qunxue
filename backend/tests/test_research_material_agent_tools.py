@@ -4,6 +4,7 @@ from inspect import signature
 from types import SimpleNamespace
 from uuid import UUID
 
+import pytest
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
@@ -15,7 +16,11 @@ from qunxue_api.adapters.research_agent.pydantic_runner import (
 )
 from qunxue_api.adapters.retrieval import RetrievalChunk
 from qunxue_api.adapters.retrieval.hybrid import HybridRetrievalHit, HybridRetrievalResult
-from qunxue_api.modules.agent_conversation import AgentEvidence, AgentToolContext
+from qunxue_api.modules.agent_conversation import (
+    AgentEvidence,
+    AgentMaterialAttachment,
+    AgentToolContext,
+)
 from qunxue_api.modules.research_materials import (
     MaterialBlock,
     MaterialFormat,
@@ -24,6 +29,8 @@ from qunxue_api.modules.research_materials import (
     MaterialParseVersion,
     MaterialStatus,
     ResearchMaterial,
+    ResearchMaterialSearchHit,
+    ResearchMaterialSearchResult,
 )
 
 USER_ID = UUID("00000000-0000-0000-0000-000000000101")
@@ -274,6 +281,62 @@ def test_search_research_materials_uses_shared_hybrid_retrieval_and_exact_locato
     assert evidence.locator == materials.block.locator.as_dict()
 
 
+def test_search_research_materials_reuses_persistent_search_without_loading_parses():
+    materials = _Materials()
+
+    class _NoParseMaterials(_Materials):
+        def get_parse(self, *args, **kwargs):
+            raise AssertionError("persistent search must not rebuild parse blocks")
+
+    class _PersistentSearch:
+        def __init__(self):
+            self.calls = []
+
+        def search(self, **kwargs):
+            self.calls.append(kwargs)
+            return ResearchMaterialSearchResult(
+                query=kwargs["query"],
+                total=1,
+                items=(
+                    ResearchMaterialSearchHit(
+                        material_id=MATERIAL_ID,
+                        parse_id=PARSE_ID,
+                        segment_id=materials.block.segment_id,
+                        title="社区访谈",
+                        material_kind=MaterialKind.INTERVIEW_TRANSCRIPT,
+                        material_format=MaterialFormat.DOCX,
+                        excerpt=materials.block.text,
+                        locator=materials.block.locator,
+                        score=0.8,
+                    ),
+                ),
+            )
+
+    search = _PersistentSearch()
+    registry = ResearchDocumentToolRegistry(
+        catalog=_Catalog(),
+        retriever=_Retriever(),
+        materials=_NoParseMaterials(),
+        material_search=search,
+        documents=SimpleNamespace(),
+        proposals=SimpleNamespace(),
+    )
+    registry.bind_agent_context(
+        user_id=USER_ID,
+        conversation_id=UUID("00000000-0000-0000-0000-000000000105"),
+        agent_run_id=UUID("00000000-0000-0000-0000-000000000106"),
+        task_id=TASK_ID,
+    )
+    registry.enable_research_material_tools()
+
+    result = registry.search_research_materials("照护")
+
+    assert search.calls[0]["material_ids"] == (MATERIAL_ID,)
+    assert result[0]["material_id"] == str(MATERIAL_ID)
+    assert result[0]["parse_id"] == str(PARSE_ID)
+    assert result[0]["retrieval_mode"] == "fts5"
+
+
 def test_read_research_material_context_returns_only_owned_current_parse_and_registers_evidence():
     materials = _Materials()
     registry = _registry(materials, _Retriever())
@@ -320,6 +383,80 @@ def test_read_research_material_context_can_read_historical_parse_after_reparse(
     assert result["segment_id"] == materials.old_block.segment_id
     assert result["text"] == materials.old_block.text
     assert result["locator"] == materials.old_block.locator.as_dict()
+
+
+def test_pinned_material_scope_deduplicates_and_blocks_other_parse_versions():
+    materials = _ReparsedMaterials()
+    registry = _registry(materials, _Retriever())
+
+    attachments = registry.pin_research_material_scope(
+        user_id=USER_ID,
+        task_id=TASK_ID,
+        material_ids=(MATERIAL_ID, MATERIAL_ID),
+    )
+
+    assert attachments == (
+        AgentMaterialAttachment(material_id=MATERIAL_ID, parse_id=PARSE_ID),
+    )
+    result = registry.read_research_material_context(
+        str(MATERIAL_ID),
+        materials.old_block.segment_id,
+        parse_id=str(HISTORICAL_PARSE_ID),
+    )
+    assert result["error"] == "research_material_outside_turn_scope"
+
+
+def test_bound_empty_material_scope_exposes_no_task_materials():
+    materials = _Materials()
+    registry = _registry(materials, _Retriever())
+
+    registry.bind_research_material_scope(())
+
+    assert registry.search_research_materials("照护") == []
+    result = registry.read_research_material_context(
+        str(MATERIAL_ID),
+        materials.block.segment_id,
+    )
+    assert result["error"] == "research_material_outside_turn_scope"
+
+
+def test_pinned_parse_remains_readable_while_a_new_parse_is_processing():
+    materials = _Materials()
+    registry = _registry(materials, _Retriever())
+    attachments = registry.pin_research_material_scope(
+        user_id=USER_ID,
+        task_id=TASK_ID,
+        material_ids=(MATERIAL_ID,),
+    )
+    materials.material = replace(materials.material, status=MaterialStatus.PARSING)
+
+    registry.bind_research_material_scope(attachments)
+
+    results = registry.search_research_materials("照护")
+    assert results[0]["parse_id"] == str(PARSE_ID)
+    read = registry.read_research_material_context(
+        str(MATERIAL_ID),
+        materials.block.segment_id,
+    )
+    assert read["parse_id"] == str(PARSE_ID)
+
+
+def test_pinned_material_scope_rejects_a_material_without_a_ready_current_parse():
+    materials = _Materials()
+    materials.material = replace(
+        materials.material,
+        status=MaterialStatus.PARSING,
+        current_parse_id=None,
+        current_parse_version=None,
+    )
+    registry = _registry(materials, _Retriever())
+
+    with pytest.raises(ValueError, match="ready current parse"):
+        registry.pin_research_material_scope(
+            user_id=USER_ID,
+            task_id=TASK_ID,
+            material_ids=(MATERIAL_ID,),
+        )
 
 
 def test_runner_passes_historical_parse_id_to_material_context_tool():

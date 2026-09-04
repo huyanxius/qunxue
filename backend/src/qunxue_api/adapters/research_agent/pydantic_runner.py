@@ -3,6 +3,7 @@ import json
 import re
 from asyncio import sleep as async_sleep
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
+from contextlib import suppress
 from contextvars import ContextVar
 from typing import Literal
 
@@ -1929,10 +1930,8 @@ class PydanticAIKnowledgeRunner:
                     while not task.done():
                         if is_cancelled is not None and is_cancelled():
                             task.cancel()
-                            try:
+                            with suppress(asyncio.CancelledError):
                                 await task
-                            except asyncio.CancelledError:
-                                pass
                             raise AgentInterrupted("Agent run was interrupted by the client")
                         await async_sleep(0.05)
                     return await task
@@ -2850,7 +2849,7 @@ def _text_result(
         raise ValueError("selected evidence is outside this turn's retrieved closed set")
     return AgentRunResult(
         answer=visible_text(answer),
-        citations=tuple(tools.evidence[item] for item in selected_citation_ids[:8]),
+        citations=tuple(tools.evidence[item] for item in selected_citation_ids),
         release_id=tools.release.knowledge_release_id,
         provider="pydantic-ai",
         model=model,
@@ -2911,10 +2910,10 @@ def _select_result_evidence(
             for citation_id in existing
             if _evidence_source_bucket(tools, citation_id) != incoming_bucket
         )
-        selected = tuple(dict.fromkeys((*preserved[:7], *incoming)))
+        selected = tuple(dict.fromkeys((*preserved, *incoming)))
     else:
         selected = incoming
-    _set_selected_evidence(tools, selected[:8])
+    _set_selected_evidence(tools, selected)
 
 
 def _append_result_evidence(
@@ -2932,7 +2931,7 @@ def _append_result_evidence(
     if not incoming:
         return
     existing = tuple(getattr(tools, "selected_evidence_ids", ()))
-    _set_selected_evidence(tools, tuple(dict.fromkeys((*existing, *incoming)))[:8])
+    _set_selected_evidence(tools, tuple(dict.fromkeys((*existing, *incoming))))
 
 
 def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str]) -> None:

@@ -114,6 +114,12 @@ class IdempotentTurn:
 
 
 @dataclass(frozen=True, slots=True)
+class AgentMaterialAttachment:
+    material_id: UUID
+    parse_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class AgentRun:
     run_id: UUID
     conversation_id: UUID
@@ -132,3 +138,4 @@ class AgentRun:
     knowledge_release_id: str | None = None
     turn_id: UUID | None = None
     tool_summary: tuple[dict[str, object], ...] = ()
+    material_attachments: tuple[AgentMaterialAttachment, ...] = ()

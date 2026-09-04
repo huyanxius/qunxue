@@ -1,20 +1,24 @@
 import { apiClient } from '../../api/client'
+import { createMultipartBody } from '../../api/multipart'
 import {
   deleteResearchMaterial as deleteResearchMaterialRequest,
   getResearchMaterial as getResearchMaterialRequest,
   getResearchMaterialSegment as getResearchMaterialSegmentRequest,
   listResearchMaterials as listResearchMaterialsRequest,
   reparseResearchMaterial as reparseResearchMaterialRequest,
+  searchResearchMaterials as searchResearchMaterialsRequest,
   uploadResearchMaterial as uploadResearchMaterialRequest,
 } from '../../api/generated'
 import {
   normalizeResearchMaterial,
   normalizeResearchMaterialList,
   normalizeResearchMaterialSegment,
+  normalizeResearchMaterialSearchResult,
   type ResearchMaterial,
   type ResearchMaterialKind,
   type ResearchMaterialList,
   type ResearchMaterialSegment,
+  type ResearchMaterialSearchResult,
 } from './researchMaterialsModel'
 
 /**
@@ -140,17 +144,43 @@ export async function getResearchMaterialSegment(
   )
 }
 
+export async function searchResearchMaterials(
+  taskId: string,
+  query: string,
+  signal?: AbortSignal,
+): Promise<ResearchMaterialSearchResult> {
+  const result = await searchResearchMaterialsRequest({
+    client: apiClient,
+    path: { task_id: taskId },
+    query: { q: query, limit: 50, offset: 0 },
+    signal,
+  })
+  return normalizeResearchMaterialSearchResult(
+    requireData(result, '研究材料检索暂时不可用。'),
+    taskId,
+  )
+}
+
 export async function uploadResearchMaterial(
   taskId: string,
   file: File,
   materialKind: ResearchMaterialKind,
   signal?: AbortSignal,
 ): Promise<ResearchMaterial> {
+  const multipart = await createMultipartBody([
+    { name: 'file', file },
+    { name: 'material_kind', value: materialKind },
+    { name: 'defer_processing', value: 'true' },
+  ])
   const result = await uploadResearchMaterialRequest({
     client: apiClient,
     path: { task_id: taskId },
-    headers: { 'Idempotency-Key': idempotencyKey() },
-    body: { file, material_kind: materialKind },
+    headers: {
+      'Content-Type': multipart.contentType,
+      'Idempotency-Key': idempotencyKey(),
+    },
+    body: { file, material_kind: materialKind, defer_processing: true },
+    bodySerializer: () => multipart.body,
     signal,
   })
   return normalizeResearchMaterial(requireData(result, '研究材料上传失败。'))

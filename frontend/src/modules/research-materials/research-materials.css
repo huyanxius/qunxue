@@ -202,6 +202,20 @@
 .qx-library__head { display: grid; gap: var(--qx-space-1); max-width: 720px; margin: 0 auto var(--qx-space-2); width: 100%; }
 .qx-library__head h2 { margin: 0; font-family: var(--qx-font-reading); font-size: var(--qx-text-section); line-height: var(--qx-text-section--line-height); font-weight: 600; letter-spacing: -.01em; }
 .qx-library__summary { margin: 0; color: var(--qx-color-muted); font-size: var(--qx-text-meta); line-height: var(--qx-text-meta--line-height); }
+
+.qx-library__search-area { display: grid; gap: var(--qx-space-2); width: 100%; max-width: 720px; margin: var(--qx-space-4) auto; }
+.qx-library__search { display: flex; gap: var(--qx-space-2); align-items: center; padding: 9px 12px; border: 1px solid var(--qx-color-rule); border-radius: var(--radius-field); color: var(--qx-color-muted); background: var(--qx-color-surface); }
+.qx-library__search:focus-within { border-color: var(--qx-color-accent); box-shadow: 0 0 0 3px var(--qx-color-accent-soft); }
+.qx-library__search input { flex: 1; min-width: 0; border: 0; color: var(--qx-color-ink); background: transparent; font: inherit; outline: none; }
+.qx-library__search-note { margin: 0; color: var(--qx-color-muted); font-size: var(--qx-text-meta); }
+.qx-library__search-note.is-error { color: var(--qx-color-danger); }
+.qx-library__search-results { display: grid; gap: var(--qx-space-2); }
+.qx-library__search-results > p { margin: 0; color: var(--qx-color-muted); font-size: var(--qx-text-meta); }
+.qx-library__search-results > button { display: grid; gap: 7px; width: 100%; padding: 12px 14px; border: 1px solid var(--qx-color-rule); border-radius: var(--radius-card); color: var(--qx-color-ink); background: var(--qx-color-surface); text-align: left; cursor: pointer; }
+.qx-library__search-results > button:hover { border-color: var(--qx-color-rule-strong); background: var(--qx-color-surface-subtle); }
+.qx-library__search-results > button span { display: flex; gap: var(--qx-space-2); align-items: baseline; justify-content: space-between; }
+.qx-library__search-results > button small { color: var(--qx-color-muted); }
+.qx-library__search-results q { color: var(--qx-color-muted); font-size: var(--qx-text-body); line-height: 1.6; }
 .qx-library > .qx-message { width: 100%; max-width: 720px; margin: 0 auto; }
 
 .qx-library__list { display: grid; gap: var(--qx-space-2); width: 100%; max-width: 720px; margin: 0 auto; padding: 0; list-style: none; }

@@ -4,6 +4,7 @@ import {
   CircleNotchIcon,
   FilePlusIcon,
   IdentificationCardIcon,
+  MagnifyingGlassIcon,
   TrashIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -16,6 +17,7 @@ import {
   RESEARCH_MATERIAL_ACCEPT,
   type ResearchMaterial,
   type ResearchMaterialKind,
+  type ResearchMaterialSearchHit,
 } from './researchMaterialsModel'
 
 const MATERIAL_KINDS: readonly ResearchMaterialKind[] = [
@@ -33,6 +35,13 @@ function formatUpdatedAt(value: string) {
   return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric' }).format(date)
 }
 
+function searchLocator(hit: ResearchMaterialSearchHit): string {
+  if (hit.locator.page !== null) return `第 ${hit.locator.page} 页`
+  if (hit.locator.paragraph !== null) return `第 ${hit.locator.paragraph} 段`
+  if (hit.locator.lineStart !== null) return `第 ${hit.locator.lineStart} 行`
+  return '可定位原文'
+}
+
 /**
  * 状态列写的是「这份材料现在能干什么」，不是它的内部状态名。
  *
@@ -41,10 +50,22 @@ function formatUpdatedAt(value: string) {
  * 才是需要占用注意力的状态，只有它们配图标。
  */
 function statusSummary(material: ResearchMaterial) {
-  if (material.status === 'processing') {
+  if (material.unavailableReason === 'ocr_required') {
+    return { tone: 'failed' as const, icon: <WarningCircleIcon size={14} aria-hidden="true" />, text: '需要 OCR，当前不可检索' }
+  }
+  if (material.unavailableReason === 'transcription_unavailable') {
+    return { tone: 'failed' as const, icon: <WarningCircleIcon size={14} aria-hidden="true" />, text: '转写服务未配置' }
+  }
+  if (material.unavailableReason === 'transcription_required') {
+    return { tone: 'pending' as const, icon: null, text: '等待转写' }
+  }
+  if (material.ingestionStatus === 'queued') {
+    return { tone: 'pending' as const, icon: null, text: '等待解析' }
+  }
+  if (material.ingestionStatus === 'processing' || material.status === 'processing') {
     return { tone: 'processing' as const, icon: <CircleNotchIcon className="is-spinning" size={14} aria-hidden="true" />, text: '正在解析' }
   }
-  if (material.status === 'failed') {
+  if (material.ingestionStatus === 'failed' || material.status === 'failed') {
     return { tone: 'failed' as const, icon: <WarningCircleIcon size={14} aria-hidden="true" />, text: '解析失败' }
   }
   if (material.status === 'ready') {
@@ -70,6 +91,12 @@ type MaterialLibraryViewProps = {
   readonly onOpenArchive: (material: ResearchMaterial) => void
   readonly onRetry: (material: ResearchMaterial) => void
   readonly onDelete: (material: ResearchMaterial) => void
+  readonly searchQuery: string
+  readonly searchResults: readonly ResearchMaterialSearchHit[]
+  readonly searchLoading: boolean
+  readonly searchError: string | null
+  readonly onSearchQueryChange: (query: string) => void
+  readonly onOpenSearchResult: (hit: ResearchMaterialSearchHit) => void
 }
 
 /**
@@ -93,6 +120,12 @@ export function MaterialLibraryView({
   onOpenArchive,
   onRetry,
   onDelete,
+  searchQuery,
+  searchResults,
+  searchLoading,
+  searchError,
+  onSearchQueryChange,
+  onOpenSearchResult,
 }: MaterialLibraryViewProps) {
   const readyCount = materials.filter((material) => material.status === 'ready').length
   const empty = !loading && !materials.length
@@ -145,6 +178,40 @@ export function MaterialLibraryView({
       {notice ? <p className="qx-message is-success" role="status"><CheckCircleIcon size={15} aria-hidden="true" />{notice}</p> : null}
       {loading ? <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在加载材料</p> : null}
 
+      {!empty && !loading ? (
+        <div className="qx-library__search-area">
+          <label className="qx-library__search">
+            <MagnifyingGlassIcon size={17} aria-hidden="true" />
+            <span className="sr-only">检索全部材料</span>
+            <input
+              type="search"
+              aria-label="检索全部材料"
+              value={searchQuery}
+              placeholder="检索全部材料中的原文"
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+            />
+            {searchLoading ? <CircleNotchIcon className="is-spinning" size={15} aria-label="正在检索" /> : null}
+          </label>
+          {searchError ? <p className="qx-library__search-note is-error" role="alert">{searchError}</p> : null}
+          {searchQuery.trim() && !searchLoading && !searchError ? (
+            <div className="qx-library__search-results" aria-label="材料检索结果">
+              <p>{searchResults.length ? `${searchResults.length} 处命中` : '没有找到匹配原文'}</p>
+              {searchResults.map((hit) => (
+                <button
+                  type="button"
+                  key={`${hit.materialId}:${hit.parseId}:${hit.segmentId}`}
+                  aria-label={`打开检索结果：${hit.title}，${searchLocator(hit)}`}
+                  onClick={() => onOpenSearchResult(hit)}
+                >
+                  <span><strong>{hit.title}</strong><small>{materialKindLabel(hit.materialKind)} · {searchLocator(hit)}</small></span>
+                  <q>{hit.excerpt}</q>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {empty ? (
         <div className="qx-library__empty">
           <FilePlusIcon size={26} aria-hidden="true" />
@@ -159,7 +226,7 @@ export function MaterialLibraryView({
         </div>
       ) : (
         <>
-          <ul className="qx-library__list">
+          <ul className="qx-library__list" hidden={Boolean(searchQuery.trim())}>
             {materials.map((material) => {
               const status = statusSummary(material)
               const busy = busyMaterialId === material.materialId

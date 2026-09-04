@@ -83,6 +83,7 @@ from qunxue_api.adapters.sqlite.research_intake_model import (
 from qunxue_api.adapters.sqlite.research_material_model import (
     ResearchMaterialBlobRow,
     ResearchMaterialBlockRow,
+    ResearchMaterialIngestionJobRow,
     ResearchMaterialParseVersionRow,
     ResearchMaterialReparseRequestRow,
     ResearchMaterialRow,
@@ -154,6 +155,7 @@ __all__ = [
     "ResearchMaterialParseVersionRow",
     "ResearchMaterialReparseRequestRow",
     "ResearchMaterialBlockRow",
+    "ResearchMaterialIngestionJobRow",
     "SqliteResearchMaterialRepository",
     "ResearchProjectAuditEventRow",
     "ResearchProjectExchangeRunRow",

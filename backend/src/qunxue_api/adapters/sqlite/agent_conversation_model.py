@@ -84,6 +84,9 @@ class AgentRunRow(Base):
     tool_summary: Mapped[list[dict[str, object]]] = mapped_column(
         JSON, nullable=False, default=list
     )
+    material_attachments: Mapped[list[dict[str, str]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

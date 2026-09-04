@@ -116,6 +116,7 @@ class AgentTurnRequest(BaseModel):
     section_id: str | None = None
     document_version: int | None = None
     theory_plan_id: UUID | None = None
+    material_ids: tuple[UUID, ...] = Field(default=(), max_length=20)
     mode: Literal["standard", "deep_research"] = "standard"
     deep_research_run_id: UUID | None = None
     deep_research_action: Literal["clarify", "confirm", "skip"] | None = None

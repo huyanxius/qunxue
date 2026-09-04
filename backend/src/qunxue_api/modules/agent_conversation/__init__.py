@@ -2,6 +2,7 @@
 
 from qunxue_api.modules.agent_conversation.domain import (
     AgentCitation,
+    AgentMaterialAttachment,
     AgentMessage,
     AgentRun,
     AgentTurn,
@@ -38,6 +39,7 @@ from qunxue_api.modules.agent_conversation.service import ConversationService
 
 __all__ = [
     "AgentCitation",
+    "AgentMaterialAttachment",
     "AgentEvidence",
     "AgentRelease",
     "AgentRuntimeIdentity",

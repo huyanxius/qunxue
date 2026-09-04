@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import { NewResearchWorkspacePage } from './NewResearchWorkspacePage'
 
@@ -221,7 +222,7 @@ describe('NewResearchWorkspacePage', () => {
         }, 201)
       }
       if (url.pathname === `/api/research-tasks/${taskId}/materials` && request.method === 'POST') {
-        const form = await request.formData()
+        const form = await parseMultipartRequest(request)
         const file = form.get('file') as File
         return json({
           material_id: `material-${file.name}`,
@@ -894,7 +895,7 @@ describe('NewResearchWorkspacePage', () => {
     expect(await within(workspace).findByText('本轮已停止，已保留生成内容和 0 个已完成步骤。')).toBeVisible()
     expect(within(workspace).getAllByText(/已保留生成内容/)).toHaveLength(1)
     expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue('怎么理解青年孤独？')
-    expect(within(workspace).getByRole('button', { name: '重试本轮' })).toBeEnabled()
+    expect(within(workspace).getByRole('button', { name: '继续研究' })).toBeEnabled()
   })
 
   it('turns a truncated Agent stream into a recoverable error instead of a stuck composer', async () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { accountManagementApi } from './accountManagementApi'
+import { accountManagementApi, getAccountSystemHealth } from './accountManagementApi'
 import { AccountManagementRequestError } from './accountManagementModels'
 
 afterEach(() => {
@@ -31,6 +31,31 @@ const rawAccount = {
 } as const
 
 describe('account management API adapter', () => {
+  it('exposes system health through the account module adapter', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => new Response(JSON.stringify({
+      capability: 'base',
+      contract_version: 'v1',
+      knowledge_release_id: 'release-1',
+      model_version: 'deepseek-v4-flash',
+      persistence: 'sqlite',
+      provider: 'openai-compatible',
+      runtime_mode: 'base',
+      service: 'qunxue-api',
+      status: 'ok',
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(getAccountSystemHealth()).resolves.toMatchObject({
+      contractVersion: 'v1',
+      knowledgeReleaseId: 'release-1',
+      modelVersion: 'deepseek-v4-flash',
+    })
+    expect(new URL((fetchMock.mock.calls[0][0] as Request).url).pathname).toBe('/api/health')
+  })
+
   it('forwards the caller-owned mutation key with cookie credentials', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL) => new Response(JSON.stringify(rawAccount), {
       status: 200,

@@ -108,6 +108,38 @@ class ResearchMaterialReparseRequestRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ResearchMaterialIngestionJobRow(Base):
+    """Durable local-worker queue for document parsing and FTS projection."""
+
+    __tablename__ = "research_material_ingestion_jobs"
+    __table_args__ = (
+        UniqueConstraint("material_id", "parse_id", name="uq_material_ingestion_parse"),
+        Index(
+            "ix_material_ingestion_recovery",
+            "ingestion_status",
+            "available_at",
+            "lease_expires_at",
+        ),
+    )
+
+    job_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    material_id: Mapped[str] = mapped_column(
+        ForeignKey("research_materials.material_id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    task_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    parse_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    ingestion_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(128))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class ResearchMaterialParseVersionRow(Base):
     __tablename__ = "research_material_parse_versions"
     __table_args__ = (

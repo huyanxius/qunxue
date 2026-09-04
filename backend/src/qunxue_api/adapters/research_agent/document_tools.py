@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Protocol
 from uuid import UUID
 
-from qunxue_api.modules.agent_conversation import AgentEvidence
+from qunxue_api.modules.agent_conversation import AgentEvidence, AgentMaterialAttachment
 from qunxue_api.modules.research_analysis import (
     ComparisonFinding,
     ComparisonFindingKind,
@@ -24,6 +24,7 @@ from qunxue_api.modules.research_materials import (
     MaterialParseVersion,
     MaterialStatus,
     ResearchMaterial,
+    ResearchMaterialSearchResult,
 )
 from qunxue_api.modules.theory_matching import ConfirmedTheoryPlanSnapshot
 
@@ -53,6 +54,15 @@ class ResearchMaterialReader(Protocol):
         offset: int = 0,
     ) -> Sequence[ResearchMaterial]: ...
 
+    def get(
+        self,
+        material_id: UUID,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        include_deleted: bool = False,
+    ) -> ResearchMaterial | None: ...
+
     def get_parse(
         self,
         material_id: UUID,
@@ -79,6 +89,22 @@ class ResearchMaterialReader(Protocol):
         user_id: UUID,
         task_id: UUID,
     ) -> bool: ...
+
+
+class ResearchMaterialSearchReader(Protocol):
+    """Persistent, authorization-aware material search projection."""
+
+    def search(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        query: str,
+        material_ids: tuple[UUID, ...] = (),
+        material_parse_ids: tuple[tuple[UUID, UUID], ...] = (),
+        limit: int = 20,
+        offset: int = 0,
+    ) -> ResearchMaterialSearchResult: ...
 
 
 class ResearchWorkflowCoordinator(Protocol):
@@ -203,6 +229,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         proposals: ResearchDocumentProposalService,
         workflow: ResearchWorkflowCoordinator | None = None,
         materials: ResearchMaterialReader | None = None,
+        material_search: ResearchMaterialSearchReader | None = None,
         analysis: ResearchAnalysisAgentFacade | None = None,
     ) -> None:
         super().__init__(catalog, retriever=retriever, web_research=web_research)
@@ -210,6 +237,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._proposals = proposals
         self._workflow = workflow
         self._materials = materials
+        self._material_search = material_search
         self._analysis = analysis
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
@@ -223,6 +251,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._theory_plan_release_id: str | None = None
         self._confirmed_plan: ConfirmedTheoryPlanSnapshot | None = None
         self._pending_start_proposal: ResearchStartProposal | None = None
+        self._material_scope: dict[UUID, UUID] | None = None
         self.research_handoff_tools_enabled = False
         self.research_document_tools_enabled = False
         self.research_material_tools_enabled = False
@@ -241,6 +270,61 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             self._materials is not None and self._task_id is not None
         )
         self._refresh_analysis_tools_enabled()
+
+    def pin_research_material_scope(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        material_ids: Sequence[UUID],
+    ) -> tuple[AgentMaterialAttachment, ...]:
+        """Validate explicit attachments and freeze their current parse IDs."""
+
+        if self._materials is None:
+            raise ValueError("research material storage is unavailable")
+        unique_ids = tuple(dict.fromkeys(material_ids))
+        if len(unique_ids) > 20:
+            raise ValueError("an Agent turn accepts at most 20 research materials")
+        attachments: list[AgentMaterialAttachment] = []
+        for material_id in unique_ids:
+            material = self._materials.get(
+                material_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if (
+                material is None
+                or material.status is not MaterialStatus.READY
+                or material.current_parse_id is None
+            ):
+                raise ValueError("attached research material requires a ready current parse")
+            parsed = self._materials.get_parse(
+                material_id,
+                material.current_parse_id,
+                user_id=user_id,
+                task_id=task_id,
+            )
+            if parsed is None or parsed.status is not MaterialStatus.READY:
+                raise ValueError("attached research material requires a ready current parse")
+            attachments.append(
+                AgentMaterialAttachment(
+                    material_id=material.material_id,
+                    parse_id=parsed.parse_id,
+                )
+            )
+        resolved = tuple(attachments)
+        self.bind_research_material_scope(resolved)
+        return resolved
+
+    def bind_research_material_scope(
+        self,
+        attachments: Sequence[AgentMaterialAttachment],
+    ) -> None:
+        """Restore the immutable material scope saved on an Agent run."""
+
+        self._material_scope = (
+            {item.material_id: item.parse_id for item in attachments}
+        )
 
     @property
     def document_prompt_context(self) -> dict[str, object] | None:
@@ -610,8 +694,113 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             # Keep compatibility with narrow test doubles and older adapters;
             # ownership is still supplied to every subsequent read.
             rows = materials.list(user_id=user_id, task_id=task_id)
+
+        allowed_materials: dict[UUID, ResearchMaterial] = {}
         for material in rows:
-            if material.status is not MaterialStatus.READY or material.current_parse_id is None:
+            scoped_parse_id = (
+                self._material_scope.get(material.material_id)
+                if self._material_scope is not None
+                else None
+            )
+            if self._material_scope is not None:
+                if scoped_parse_id is None:
+                    continue
+                scoped_parse = materials.get_parse(
+                    material.material_id,
+                    scoped_parse_id,
+                    user_id=user_id,
+                    task_id=task_id,
+                )
+                if scoped_parse is None or scoped_parse.status is not MaterialStatus.READY:
+                    continue
+            elif material.status is not MaterialStatus.READY or material.current_parse_id is None:
+                continue
+            if self._material_allows_external_model(
+                materials,
+                material.material_id,
+                user_id=user_id,
+                task_id=task_id,
+            ):
+                allowed_materials[material.material_id] = material
+        if self._material_search is not None:
+            if not allowed_materials:
+                return []
+            material_parse_ids = (
+                tuple(
+                    (material_id, parse_id)
+                    for material_id, parse_id in self._material_scope.items()
+                    if material_id in allowed_materials
+                )
+                if self._material_scope is not None
+                else ()
+            )
+            result = self._material_search.search(
+                user_id=user_id,
+                task_id=task_id,
+                query=normalized_query,
+                material_ids=(
+                    () if material_parse_ids else tuple(allowed_materials)
+                ),
+                material_parse_ids=material_parse_ids,
+                limit=safe_limit,
+                offset=0,
+            )
+            values: list[dict[str, object]] = []
+            for hit in result.items:
+                if hit.material_id not in allowed_materials:
+                    continue
+                citation_id = _material_citation_id(hit.material_id, hit.segment_id)
+                source_id = f"material-segment:{hit.segment_id}"
+                evidence = AgentEvidence(
+                    citation_id=citation_id,
+                    label=hit.title,
+                    kind="research_material",
+                    excerpt=hit.excerpt,
+                    source_id=source_id,
+                    source_kind="personal_material",
+                    material_id=str(hit.material_id),
+                    parse_id=str(hit.parse_id),
+                    segment_id=hit.segment_id,
+                    locator=hit.locator.as_dict(),
+                )
+                self.evidence[citation_id] = evidence
+                values.append(
+                    {
+                        "citation_id": citation_id,
+                        "source_id": source_id,
+                        "source_kind": "personal_material",
+                        "kind": "research_material",
+                        "material_id": str(hit.material_id),
+                        "parse_id": str(hit.parse_id),
+                        "segment_id": hit.segment_id,
+                        "title": hit.title,
+                        "material_kind": hit.material_kind.value,
+                        "material_format": hit.material_format.value,
+                        "excerpt": hit.excerpt,
+                        "locator": hit.locator.as_dict(),
+                        "retrieval_index_id": "research-material-fts5",
+                        "retrieval_mode": "fts5",
+                        "retrieval_sources": ["lexical"],
+                        "rerank_score": hit.score,
+                        "embedding_model": None,
+                        "reranker_model": None,
+                        "evidence_status": "verified",
+                    }
+                )
+            return values
+
+        for material in rows:
+            scoped_parse_id = (
+                self._material_scope.get(material.material_id)
+                if self._material_scope is not None
+                else None
+            )
+            if self._material_scope is not None and scoped_parse_id is None:
+                continue
+            resolved_parse_id = scoped_parse_id or material.current_parse_id
+            if resolved_parse_id is None or (
+                self._material_scope is None and material.status is not MaterialStatus.READY
+            ):
                 continue
             if not self._material_allows_external_model(
                 materials,
@@ -622,7 +811,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 continue
             parsed = materials.get_parse(
                 material.material_id,
-                material.current_parse_id,
+                resolved_parse_id,
                 user_id=user_id,
                 task_id=task_id,
             )
@@ -719,12 +908,24 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             parsed_material_id = UUID(material_id)
         except ValueError:
             return {"error": "research_material_not_found", "material_id": material_id}
+        scoped_parse_id = (
+            self._material_scope.get(parsed_material_id)
+            if self._material_scope is not None
+            else None
+        )
+        if self._material_scope is not None and scoped_parse_id is None:
+            return {
+                "error": "research_material_outside_turn_scope",
+                "material_id": material_id,
+            }
         material = materials.get(
             parsed_material_id,
             user_id=user_id,
             task_id=task_id,
         )
-        if material is None or material.status is not MaterialStatus.READY:
+        if material is None or (
+            scoped_parse_id is None and material.status is not MaterialStatus.READY
+        ):
             return {"error": "research_material_not_found", "material_id": material_id}
         if not self._material_allows_external_model(
             materials,
@@ -737,10 +938,18 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 "material_id": material_id,
                 "message": "该材料仅可手动阅读，未进入外部模型上下文。",
             }
-        if material.current_parse_id is None and parse_id is None:
+        if scoped_parse_id is None and material.current_parse_id is None and parse_id is None:
             return {"error": "research_material_not_found", "material_id": material_id}
         resolved_parse_id: UUID
-        if parse_id is None:
+        if scoped_parse_id is not None:
+            if parse_id is not None and parse_id != str(scoped_parse_id):
+                return {
+                    "error": "research_material_outside_turn_scope",
+                    "material_id": material_id,
+                    "parse_id": parse_id,
+                }
+            resolved_parse_id = scoped_parse_id
+        elif parse_id is None:
             # ``current_parse_id`` was checked above; keeping this branch
             # explicit makes the historical-parse path impossible to mistake
             # for a nullable UUID.
