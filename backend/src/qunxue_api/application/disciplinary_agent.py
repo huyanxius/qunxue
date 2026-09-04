@@ -254,9 +254,11 @@ class DisciplinaryAgentApplication:
         enable_research_handoff_tools = getattr(
             tools, "enable_research_handoff_tools", None
         )
-        if callable(enable_research_handoff_tools) and not (
-            mode == "deep_research" and deep_research_action == "confirm"
-        ):
+        # Deep research owns its full plan/retrieve/conclusion lifecycle. The
+        # legacy handoff tool is available only to ordinary Agent turns; if it
+        # is exposed here the model can bypass the research cards and jump to
+        # the old “new research” flow before producing a conclusion.
+        if callable(enable_research_handoff_tools) and mode != "deep_research":
             enable_research_handoff_tools()
         if workspace == "research":
             prepare_research_context = getattr(tools, "prepare_research_context", None)
@@ -391,32 +393,31 @@ class DisciplinaryAgentApplication:
                 }
                 if deep_research_selection:
                     pending["selected_intent"] = deep_research_selection
-                if planning_event.kind == "ask":
-                    self._conversations.finish_run(
-                        run_id=run.run_id,
-                        status=state,
-                        tool_summary=(pending,),
-                    )
-                    if self._credits is not None:
-                        self._credits.release(user_id=user_id, run_id=run.run_id)
-                    self._conversations.commit()
-                    return AgentTurnExecution(
-                        conversation=current,
-                        run_id=run.run_id,
-                        result=AgentRunResult(
-                            answer="",
-                            citations=(),
-                            release_id=(
-                                run.knowledge_release_id or tools.release.knowledge_release_id
-                            ),
-                            provider=run.provider,
-                            model=run.model,
+                self._conversations.finish_run(
+                    run_id=run.run_id,
+                    status=state,
+                    tool_summary=(pending,),
+                )
+                if self._credits is not None:
+                    self._credits.release(user_id=user_id, run_id=run.run_id)
+                self._conversations.commit()
+                return AgentTurnExecution(
+                    conversation=current,
+                    run_id=run.run_id,
+                    result=AgentRunResult(
+                        answer="",
+                        citations=(),
+                        release_id=(
+                            run.knowledge_release_id or tools.release.knowledge_release_id
                         ),
-                        turn=None,
-                        replayed=False,
-                        tool_summary=(pending,),
-                        pending_research=pending,
-                    )
+                        provider=run.provider,
+                        model=run.model,
+                    ),
+                    turn=None,
+                    replayed=False,
+                    tool_summary=(pending,),
+                    pending_research=pending,
+                )
 
         def record_tool_event(event: AgentToolEvent) -> None:
             tool_events.append(event)
