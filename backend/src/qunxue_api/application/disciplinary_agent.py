@@ -1,4 +1,3 @@
-import re
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
@@ -22,47 +21,6 @@ from qunxue_api.modules.agent_conversation import (
     SubjectAgentRunner,
 )
 from qunxue_api.modules.billing import CreditService
-
-_PRODUCT_IDENTITY_ANSWER = "我是群学致知的社会学学科 Agent。"
-_RUNTIME_IDENTITY_PATTERNS = (
-    re.compile(
-        r"(?:报告|说出|透露|披露|告诉我|确认|介绍)\s*(?:一下)?\s*"
-        r"(?:你|您)(?:的)?(?:底层)?(?:模型|供应商|提供商|厂商|版本|型号)"
-    ),
-    re.compile(
-        r"(?:你|您)(?:到底)?(?:是|是不是|属于)\s*"
-        r"(?:什么|哪个|哪种|哪款)\s*(?:模型|版本|型号)"
-    ),
-    re.compile(
-        r"(?:你|您)(?:到底)?(?:是|是不是|属于)\s*"
-        r"(?:哪家|哪个|什么)\s*(?:供应商|提供商|厂商|公司)(?:的)?"
-    ),
-    re.compile(
-        r"(?:你|您)(?:到底)?(?:是|是不是)\s*"
-        r"(?:gpt|openai|deepseek|claude|gemini|terra|luna|sol|"
-        r"[a-z0-9]+(?:[-_.][a-z0-9]+)+)\b"
-    ),
-    re.compile(
-        r"(?:你|您)(?:正在)?(?:使用|用|基于|接入|运行于|运行在)(?:的)?\s*"
-        r"(?:什么|哪个|哪种|哪款|哪家)?\s*"
-        r"(?:模型|供应商|提供商|厂商|版本|型号)"
-    ),
-    re.compile(
-        r"(?:你|您)(?:是)?由\s*(?:谁|哪家|哪个|什么)\s*"
-        r"(?:公司|供应商|提供商|厂商)?(?:开发|提供|训练|运行)"
-    ),
-    re.compile(r"(?:你|您)(?:的)?(?:底层)?(?:模型|供应商|提供商|厂商|版本|型号)"),
-    re.compile(
-        r"\b(?:what|which)\s+(?:underlying\s+)?"
-        r"(?:model|provider|vendor|version)\s+(?:are|do)\s+you\b"
-    ),
-    re.compile(
-        r"\b(?:what|which)\s+(?:model|provider|vendor)\s+"
-        r"do\s+you\s+(?:use|run)\b"
-    ),
-    re.compile(r"\byour\s+(?:underlying\s+)?(?:model|provider|vendor|version)\b"),
-    re.compile(r"\b(?:who|what company)\s+(?:made|built|provides|runs)\s+you\b"),
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,32 +309,21 @@ class DisciplinaryAgentApplication:
                 on_tool_event(event)
 
         try:
-            if _asks_about_runtime_identity(prompt):
-                result = AgentRunResult(
-                    answer=_PRODUCT_IDENTITY_ANSWER,
-                    citations=(),
-                    release_id=tools.release.knowledge_release_id,
-                    provider=runtime_identity.provider,
-                    model=runtime_identity.model,
+            stream_runner = getattr(self._runner, "run_stream", None)
+            if on_delta is not None and callable(stream_runner):
+                result = stream_runner(
+                    prompt=prompt,
+                    conversation=conversation_history,
+                    tools=tools,
+                    on_delta=on_delta,
+                    on_tool_event=record_tool_event,
                 )
-                if on_delta is not None:
-                    on_delta(_PRODUCT_IDENTITY_ANSWER)
             else:
-                stream_runner = getattr(self._runner, "run_stream", None)
-                if on_delta is not None and callable(stream_runner):
-                    result = stream_runner(
-                        prompt=prompt,
-                        conversation=conversation_history,
-                        tools=tools,
-                        on_delta=on_delta,
-                        on_tool_event=record_tool_event,
-                    )
-                else:
-                    result = self._runner.run(
-                        prompt=prompt,
-                        conversation=conversation_history,
-                        tools=tools,
-                    )
+                result = self._runner.run(
+                    prompt=prompt,
+                    conversation=conversation_history,
+                    tools=tools,
+                )
             if cancelled():
                 self._conversations.finish_run(
                     run_id=run.run_id,
@@ -546,11 +493,6 @@ def _resolve_task_binding(
             "The conversation is already bound to a different research task."
         )
     return bound_task_id
-
-
-def _asks_about_runtime_identity(prompt: str) -> bool:
-    normalized = " ".join(prompt.lower().split())
-    return any(pattern.search(normalized) for pattern in _RUNTIME_IDENTITY_PATTERNS)
 
 
 def _evidence_from_citation(item):

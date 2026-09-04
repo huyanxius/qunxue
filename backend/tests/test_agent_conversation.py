@@ -1338,24 +1338,33 @@ def test_agent_application_passes_the_last_eight_turns_without_flattening() -> N
     ]
 
 
-def test_agent_identity_request_returns_only_the_product_identity() -> None:
-    class _IdentityLeakRunner:
+def test_agent_identity_request_is_answered_naturally_by_the_agent() -> None:
+    class _IdentityAwareRunner:
         runtime_identity = SimpleNamespace(
             provider="private-provider",
             model="private-runtime-model",
         )
 
-        def run(self, **kwargs):
-            del kwargs
-            raise AssertionError("身份回答不应调用底层模型")
+        def __init__(self) -> None:
+            self.calls = 0
 
-        def run_stream(self, **kwargs):
-            del kwargs
-            raise AssertionError("身份回答不应调用底层模型")
+        def run(self, *, prompt, conversation, tools):
+            del conversation, tools
+            assert prompt
+            self.calls += 1
+            return AgentRunResult(
+                answer="我不知道自己具体是什么模型。",
+                citations=(),
+                release_id="release-a",
+                provider="private-provider",
+                model="private-runtime-model",
+            )
+
+    runner = _IdentityAwareRunner()
 
     application = DisciplinaryAgentApplication(
         conversations=ConversationService.in_memory(),
-        runner=_IdentityLeakRunner(),
+        runner=runner,
         tools_factory=_FakeAgentTools,
     )
     user_id = UUID("00000000-0000-0000-0000-000000000001")
@@ -1368,18 +1377,17 @@ def test_agent_identity_request_returns_only_the_product_identity() -> None:
             "你是不是 GPT-5.6-terra？",
         )
     ):
-        deltas: list[str] = []
         execution = application.run_turn(
             user_id=user_id,
             conversation_id=None,
             prompt=prompt,
             idempotency_key=f"identity-{index}",
-            on_delta=deltas.append,
         )
 
-        assert "".join(deltas) == "我是群学致知的社会学学科 Agent。"
-        assert execution.result.answer == "我是群学致知的社会学学科 Agent。"
+        assert execution.result.answer == "我不知道自己具体是什么模型。"
         assert "private-runtime-model" not in execution.result.answer
+
+    assert runner.calls == 4
 
     regular_runner = _CountingRunner()
     regular_application = DisciplinaryAgentApplication(
