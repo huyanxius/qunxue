@@ -113,7 +113,7 @@ class DisciplinaryAgentApplication:
         theory_plan_id: UUID | None = None,
         mode: Literal["standard", "deep_research"] = "standard",
         deep_research_run_id: UUID | None = None,
-        deep_research_action: Literal["clarify", "confirm"] | None = None,
+        deep_research_action: Literal["clarify", "confirm", "skip"] | None = None,
         deep_research_selection: str | None = None,
         on_run_started: Callable[[UUID, UUID, bool], None] | None = None,
         on_delta: Callable[[str], None] | None = None,
@@ -173,6 +173,8 @@ class DisciplinaryAgentApplication:
                     if not selection:
                         raise ValueError("research selection must not be empty")
                     prompt = f"{pending.get('prompt') or prompt}\n\n用户选择的研究重点：{selection}"
+                elif deep_research_action == "skip":
+                    prompt = str(pending.get("prompt") or prompt)
                 elif deep_research_action == "confirm":
                     if existing_run.status != "awaiting_plan_confirmation":
                         raise ValueError("research plan is not ready for confirmation")
@@ -359,9 +361,12 @@ class DisciplinaryAgentApplication:
 
         conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
-        deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
+        deep_research_started = mode == "deep_research" and deep_research_action in {"confirm", "skip"}
 
-        if mode == "deep_research" and deep_research_action != "confirm":
+        # Every Agent turn gets the same lightweight intent check. Deep mode
+        # additionally pauses on a plan; ordinary mode only pauses when the
+        # planner identifies a material clarification question.
+        if deep_research_action not in {"clarify", "confirm", "skip"}:
             prepare_research = getattr(self._runner, "prepare_research", None)
             planning_events: list[AgentResearchEvent] = []
             planning_failed = False
@@ -375,56 +380,41 @@ class DisciplinaryAgentApplication:
                 except Exception:
                     planning_events.clear()
                     planning_failed = True
-            if planning_events or planning_failed:
-                planning_event = planning_events[-1] if planning_events else AgentResearchEvent(
-                    kind="plan",
-                    payload={
-                        "title": "深入研究",
-                        "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                    },
-                )
-                if on_research_event is not None:
-                    on_research_event(planning_event)
-                deep_research_started = True
-                state = (
-                    "awaiting_clarification"
-                    if planning_event.kind == "ask"
-                    else "awaiting_plan_confirmation"
-                )
-                pending = {
-                    "kind": "deep_research_pending",
-                    "version": 1,
-                    "state": state,
-                    "prompt": prompt,
-                    **dict(planning_event.payload),
-                }
-                if deep_research_selection:
-                    pending["selected_intent"] = deep_research_selection
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    status=state,
-                    tool_summary=(pending,),
-                )
-                if self._credits is not None:
-                    self._credits.release(user_id=user_id, run_id=run.run_id)
-                self._conversations.commit()
-                return AgentTurnExecution(
-                    conversation=current,
-                    run_id=run.run_id,
-                    result=AgentRunResult(
-                        answer="",
-                        citations=(),
-                        release_id=(
-                            run.knowledge_release_id or tools.release.knowledge_release_id
-                        ),
-                        provider=run.provider,
-                        model=run.model,
-                    ),
-                    turn=None,
-                    replayed=False,
-                    tool_summary=(pending,),
-                    pending_research=pending,
-                )
+                if planning_events or planning_failed:
+                    planning_event = planning_events[-1] if planning_events else AgentResearchEvent(
+                        kind="plan",
+                        payload={"title": "深入研究", "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"]},
+                    )
+                    should_pause = mode == "deep_research" or planning_event.kind == "ask"
+                    if should_pause:
+                        if on_research_event is not None:
+                            on_research_event(planning_event)
+                        deep_research_started = mode == "deep_research"
+                        state = "awaiting_clarification" if planning_event.kind == "ask" else "awaiting_plan_confirmation"
+                        pending = {"kind": "deep_research_pending", "version": 1, "state": state, "prompt": prompt, **dict(planning_event.payload)}
+                        if deep_research_selection:
+                            pending["selected_intent"] = deep_research_selection
+                        self._conversations.finish_run(run_id=run.run_id, status=state, tool_summary=(pending,))
+                        if self._credits is not None:
+                            self._credits.release(user_id=user_id, run_id=run.run_id)
+                        self._conversations.commit()
+                        return AgentTurnExecution(
+                            conversation=current,
+                            run_id=run.run_id,
+                            result=AgentRunResult(
+                                answer="",
+                                citations=(),
+                                release_id=(
+                                    run.knowledge_release_id or tools.release.knowledge_release_id
+                                ),
+                                provider=run.provider,
+                                model=run.model,
+                            ),
+                            turn=None,
+                            replayed=False,
+                            tool_summary=(pending,),
+                            pending_research=pending,
+                        )
 
         def record_tool_event(event: AgentToolEvent) -> None:
             tool_events.append(event)
