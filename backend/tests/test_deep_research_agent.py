@@ -120,6 +120,48 @@ def test_deep_research_waits_for_plan_confirmation_before_running() -> None:
     assert execution.pending_research["state"] == "awaiting_plan_confirmation"
 
 
+def test_deep_research_does_not_ask_for_clarification_on_greeting() -> None:
+    class Release:
+        knowledge_release_id = "release-test"
+
+    class Tools:
+        release = Release()
+        evidence = {}
+        research_map_enabled = False
+        web_search_enabled = False
+
+    class Runner:
+        runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
+
+        def prepare_research(self, *, prompt, conversation, on_event):
+            del conversation, on_event
+            assert prompt == "你好"
+
+        def run(self, *, prompt, conversation, tools):
+            return AgentRunResult(
+                answer="你好！有什么想了解的？",
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="test",
+            )
+
+    app = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(),
+        runner=Runner(),
+        tools_factory=Tools,
+    )
+    execution = app.run_turn(
+        user_id=UUID(int=2),
+        conversation_id=None,
+        prompt="你好",
+        idempotency_key="deep-greeting-1",
+        mode="deep_research",
+    )
+    assert execution.pending_research is None
+    assert execution.result.answer == "你好！有什么想了解的？"
+
+
 def test_deep_research_sse_exposes_plan_event(client: TestClient) -> None:
     register = client.post(
         "/api/session/register",
