@@ -285,11 +285,10 @@ class ModelRouteExecutor:
                     result = await invoke(endpoint)
             except asyncio.CancelledError:
                 self._release_after_failed_exit(endpoint.endpoint_id)
-                self._record_terminal_exception(
+                self._record_cancellation(
                     context=context,
                     endpoint=endpoint,
                     attempt_number=attempt_number,
-                    failure_code="model_attempt_cancelled",
                     started_at=started_at,
                 )
                 raise
@@ -398,7 +397,10 @@ class ModelRouteExecutor:
 
     def _release_after_failed_exit(self, endpoint_id: str) -> None:
         with self._lock:
-            self._circuit_for(endpoint_id).recovering = False
+            state = self._circuit_for(endpoint_id)
+            if state.recovering:
+                state.cooldown_until = self._clock() + self._cooldown_seconds
+                state.recovering = False
 
     def _circuit_for(self, endpoint_id: str) -> _EndpointCircuitState:
         try:
@@ -529,6 +531,29 @@ class ModelRouteExecutor:
                 completed_at=self._wall_clock(),
             )
         )
+
+    def _record_cancellation(
+        self,
+        *,
+        context: ModelRouteContext,
+        endpoint: ModelEndpoint,
+        attempt_number: int,
+        started_at: datetime,
+    ) -> None:
+        try:
+            self._record_terminal_exception(
+                context=context,
+                endpoint=endpoint,
+                attempt_number=attempt_number,
+                failure_code="model_attempt_cancelled",
+                started_at=started_at,
+            )
+        except asyncio.CancelledError:
+            # The invocation's cancellation remains authoritative.
+            return
+        except Exception:
+            # Cancellation audit is best effort and must not recurse.
+            return
 
     def _record(self, attempt: ModelAttemptRecord) -> None:
         if self._recorder is not None:

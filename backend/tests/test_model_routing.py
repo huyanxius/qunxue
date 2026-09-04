@@ -423,6 +423,87 @@ async def test_async_cancellation_releases_half_open_slot_and_records_once() -> 
     ] == [("primary", "model_attempt_cancelled", False, False)]
 
 
+def _half_open_single_router(clock: MutableClock) -> ModelRouteExecutor:
+    router = ModelRouteExecutor(
+        endpoints=(_endpoint("primary"),),
+        failure_threshold=1,
+        cooldown_seconds=30,
+        clock=clock,
+    )
+    with pytest.raises(ModelAttemptFailure):
+        router.execute(context=_context(), invoke=_retryable_failure)
+    clock.advance(seconds=30)
+    return router
+
+
+def test_half_open_exception_restarts_cooldown_before_next_probe() -> None:
+    clock = MutableClock()
+    router = _half_open_single_router(clock)
+
+    with pytest.raises(ValueError, match="unexpected"):
+        router.execute(
+            context=_context(),
+            invoke=lambda _: (_ for _ in ()).throw(ValueError("unexpected")),
+        )
+
+    with pytest.raises(ModelRoutesUnavailable):
+        router.execute(context=_context(), invoke=_unexpected_call)
+    clock.advance(seconds=30)
+
+    assert router.execute(
+        context=_context(),
+        invoke=lambda _: ModelAttemptResult(value="recovered"),
+    ).value == "recovered"
+
+
+@pytest.mark.anyio
+async def test_half_open_cancellation_restarts_cooldown_before_next_probe() -> None:
+    clock = MutableClock()
+    router = _half_open_single_router(clock)
+
+    with pytest.raises(asyncio.CancelledError):
+        await router.execute_async(
+            context=_context(),
+            invoke=lambda _: _cancel_attempt(),
+        )
+
+    with pytest.raises(ModelRoutesUnavailable):
+        router.execute(context=_context(), invoke=_unexpected_call)
+    clock.advance(seconds=30)
+
+    assert router.execute(
+        context=_context(),
+        invoke=lambda _: ModelAttemptResult(value="recovered"),
+    ).value == "recovered"
+
+
+async def _cancel_attempt() -> ModelAttemptResult[object]:
+    raise asyncio.CancelledError()
+
+
+@pytest.mark.anyio
+async def test_failing_recorder_does_not_replace_cancelled_error() -> None:
+    calls: list[str] = []
+    router = ModelRouteExecutor(
+        endpoints=_endpoints(),
+        recorder=_FailingRecorder(),
+    )
+
+    async def cancel(endpoint: ModelEndpoint) -> ModelAttemptResult[object]:
+        calls.append(endpoint.endpoint_id)
+        raise asyncio.CancelledError()
+
+    with pytest.raises(asyncio.CancelledError):
+        await router.execute_async(context=_context(), invoke=cancel)
+
+    assert calls == ["primary"]
+
+
+class _FailingRecorder:
+    def record(self, _: object) -> None:
+        raise RuntimeError("audit recorder unavailable")
+
+
 async def _raise_unexpected_async(
     calls: list[str], endpoint_id: str
 ) -> ModelAttemptResult[object]:
