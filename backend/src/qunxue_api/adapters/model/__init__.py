@@ -21,6 +21,7 @@ from qunxue_api.adapters.model.recording import (
     InMemoryModelInvocationRecorder,
     SqliteModelInvocationRecorder,
 )
+from qunxue_api.adapters.model.routed_provider import RoutedModelProvider
 from qunxue_api.adapters.model.routing import (
     InMemoryModelAttemptRecorder,
     ModelAttemptFailure,
@@ -79,6 +80,7 @@ __all__ = [
     "ModelScenario",
     "OpenAICompatibleModelProvider",
     "PersistedModelRouteAttempt",
+    "RoutedModelProvider",
     "SqliteModelInvocationRecorder",
     "SqliteModelAttemptRecorder",
     "current_model_route_scope",

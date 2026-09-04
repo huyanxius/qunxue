@@ -191,6 +191,10 @@ class ModelRouteExecutor:
             for index, endpoint in enumerate(endpoints)
         }
 
+    @property
+    def endpoint_ids(self) -> tuple[str, ...]:
+        return tuple(endpoint.endpoint_id for endpoint in self._endpoints)
+
     def execute(
         self,
         *,

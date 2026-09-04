@@ -6,6 +6,8 @@ from hashlib import sha256
 from typing import TypeVar, cast
 from uuid import UUID, uuid4
 
+from qunxue_api.adapters.model.routed_provider import business_model_route_context
+from qunxue_api.adapters.model.routing import ModelRouteContext
 from qunxue_api.adapters.model.types import (
     JsonObject,
     ModelCapabilityName,
@@ -239,7 +241,16 @@ class ModelGateway:
         descriptor = self._provider.descriptor
         scenario = self._scenario_for_phenomenon(phenomenon)
         try:
-            result = call()
+            with business_model_route_context(
+                ModelRouteContext(
+                    trace_id=trace_id,
+                    request_id=request_id,
+                    operation=capability.value,
+                    task_id=task_id,
+                    capability=capability.value,
+                )
+            ):
+                result = call()
         except ModelProviderFailure as error:
             completed_at = self._clock()
             self._recorder.record(
@@ -273,6 +284,7 @@ class ModelGateway:
             ) from error
 
         completed_at = self._clock()
+        descriptor = result.selected_descriptor or descriptor
         output = _to_jsonable(result.output)
         if not isinstance(output, dict):
             raise TypeError("model provider output must serialize to an object")

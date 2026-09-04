@@ -21,7 +21,10 @@ from qunxue_api.adapters.model import (
     ModelGateway,
     ModelInvocationError,
     ModelProvider,
+    ModelRouteExecutor,
     OpenAICompatibleModelProvider,
+    RoutedModelProvider,
+    SqliteModelAttemptRecorder,
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
@@ -280,13 +283,25 @@ def create_app(
         resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(app.state.knowledge_catalog)
     app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
-    resolved_model_provider = model_provider or _model_provider_from_settings(
-        settings=resolved_settings,
-        builtin_case_catalog=builtin_case_catalog,
-    )
+    if model_provider is None:
+        (
+            resolved_model_provider,
+            model_router,
+            model_attempt_recorder,
+        ) = _model_provider_from_settings(
+            settings=resolved_settings,
+            builtin_case_catalog=builtin_case_catalog,
+            database=resolved_database,
+        )
+    else:
+        resolved_model_provider = model_provider
+        model_router = None
+        model_attempt_recorder = None
     model_invocation_recorder = SqliteModelInvocationRecorder(resolved_database)
     app.state.builtin_case_catalog = builtin_case_catalog
     app.state.model_invocation_recorder = model_invocation_recorder
+    app.state.model_router = model_router
+    app.state.model_attempt_recorder = model_attempt_recorder
     app.state.model_gateway = ModelGateway(
         provider=resolved_model_provider,
         recorder=model_invocation_recorder,
@@ -781,9 +796,8 @@ def create_app(
                     ),
                     model=model_name,
                     fallback_endpoints=tuple(
-                        (item["base_url"], item["api_key"])
+                        (item.base_url, item.api_key.get_secret_value())
                         for item in resolved_settings.model_fallbacks
-                        if item.get("base_url") and item.get("api_key")
                     ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
                     extra_headers=_model_headers_from_settings(resolved_settings),
@@ -1131,33 +1145,40 @@ def _model_provider_from_settings(
     *,
     settings: Settings,
     builtin_case_catalog: BuiltInCaseCatalog,
-) -> ModelProvider:
+    database: Database,
+) -> tuple[
+    ModelProvider,
+    ModelRouteExecutor | None,
+    SqliteModelAttemptRecorder | None,
+]:
     runtime_mode = _effective_model_runtime_mode(settings)
     if runtime_mode == "mock":
-        return create_deterministic_mock_provider(catalog=builtin_case_catalog)
-    model_base_url = settings.model_base_url or (
-        DEFAULT_MODEL_BASE_URL if settings.has_model_api_key else None
-    )
-    model_name = settings.model_name or (DEFAULT_MODEL_NAME if settings.has_model_api_key else None)
-    if model_base_url is None or model_name is None:
+        return create_deterministic_mock_provider(catalog=builtin_case_catalog), None, None
+    endpoints = settings.resolved_model_endpoints()
+    if not endpoints:
         raise ValueError(
             "QUNXUE_MODEL_BASE_URL (model_base_url) and "
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
         )
 
     headers = _model_headers_from_settings(settings)
-
-    return OpenAICompatibleModelProvider(
-        base_url=model_base_url,
-        api_key=(
-            settings.model_api_key.get_secret_value()
-            if settings.model_api_key is not None
-            else None
-        ),
-        model=model_name,
-        timeout_seconds=settings.model_timeout_seconds,
-        capability_tier=runtime_mode,
-        extra_headers=headers,
+    providers: tuple[ModelProvider, ...] = tuple(
+        OpenAICompatibleModelProvider(
+            base_url=endpoint.base_url,
+            api_key=endpoint.api_key,
+            model=endpoint.model,
+            timeout_seconds=endpoint.timeout_seconds,
+            capability_tier=runtime_mode,
+            extra_headers=headers,
+        )
+        for endpoint in endpoints
+    )
+    attempt_recorder = SqliteModelAttemptRecorder(database)
+    router = ModelRouteExecutor(endpoints=endpoints, recorder=attempt_recorder)
+    return (
+        RoutedModelProvider(providers=providers, router=router),
+        router,
+        attempt_recorder,
     )
 
 

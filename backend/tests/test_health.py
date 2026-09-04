@@ -1,9 +1,12 @@
+import json
 import sqlite3
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
+from qunxue_api.adapters.model import SqliteModelAttemptRecorder
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     RetrievalChunk,
@@ -257,6 +260,124 @@ def test_model_credentials_are_secret_values_in_runtime_settings() -> None:
     assert "local-test-api-key" not in rendered
     assert "local-test-tenant-token" not in rendered
     assert "local-test-lora-id" not in rendered
+
+
+def test_fallback_can_override_primary_model() -> None:
+    settings = Settings(
+        model_base_url="https://primary.test/v1",
+        model_name="primary-model",
+        model_fallbacks=[
+            {
+                "base_url": "https://backup.test/v1",
+                "api_key": "fallback-key",
+                "model": "backup-model",
+            }
+        ],
+    )
+
+    endpoints = settings.resolved_model_endpoints()
+
+    assert [endpoint.endpoint_id for endpoint in endpoints] == [
+        "primary",
+        "fallback-1",
+    ]
+    assert endpoints[1].model == "backup-model"
+    assert "fallback-key" not in repr(settings)
+
+
+def test_legacy_fallback_inherits_primary_model_from_json_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "QUNXUE_MODEL_FALLBACKS",
+        json.dumps(
+            [
+                {
+                    "base_url": "https://backup.test/v1",
+                    "api_key": "fallback-key",
+                }
+            ]
+        ),
+    )
+
+    settings = Settings(
+        _env_file=None,
+        model_base_url="https://primary.test/v1",
+        model_name="primary-model",
+    )
+
+    assert settings.resolved_model_endpoints()[1].model == "primary-model"
+    assert "fallback-key" not in repr(settings)
+
+
+@pytest.mark.parametrize(
+    "fallback",
+    [
+        {
+            "base_url": "https://user:password@backup.test/v1",
+            "api_key": "fallback-key",
+        },
+        {
+            "base_url": "https://backup.test/v1",
+            "api_key": "fallback-key",
+            "model": "   ",
+        },
+    ],
+)
+def test_fallback_settings_reject_credentials_and_empty_models(
+    fallback: dict[str, str],
+) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, model_fallbacks=[fallback])
+
+
+@pytest.mark.parametrize(
+    "settings_values",
+    [
+        {"model_base_url": "https://user:password@primary.test/v1"},
+        {"model_name": "   "},
+    ],
+)
+def test_primary_model_settings_reject_credentials_and_empty_model_names(
+    settings_values: dict[str, str],
+) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **settings_values)
+
+
+def test_real_bootstrap_installs_one_business_router_for_all_endpoints(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.test/v1",
+            model_name="primary-model",
+            model_fallbacks=[
+                {
+                    "base_url": "https://backup.test/v1",
+                    "api_key": "fallback-key",
+                    "model": "backup-model",
+                }
+            ],
+        ),
+        database=client.app.state.database,
+    )
+
+    assert app.state.model_router.endpoint_ids == ("primary", "fallback-1")
+    assert isinstance(app.state.model_attempt_recorder, SqliteModelAttemptRecorder)
+    assert app.state.model_gateway.descriptor.model_version == "primary-model"
+
+
+def test_mock_bootstrap_does_not_install_a_routed_external_provider(
+    client: TestClient,
+) -> None:
+    assert client.app.state.model_router is None
+    assert client.app.state.model_gateway.descriptor.provider == "deterministic-mock"
 
 
 def test_configured_frontend_origin_can_preflight_agent_requests(client: TestClient) -> None:

@@ -49,6 +49,7 @@ class ModelProviderResult[OutputT]:
     knowledge_release_id: str | None
     degraded: bool = False
     degradation_reason: str | None = None
+    selected_descriptor: ModelProviderDescriptor | None = None
 
 
 class ModelProviderFailure(RuntimeError):
