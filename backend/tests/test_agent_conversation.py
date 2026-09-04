@@ -2178,7 +2178,7 @@ def test_agent_fails_over_to_the_next_model_endpoint(
     ]
 
 
-def test_agent_races_primary_endpoints_and_keeps_first_response(
+def test_agent_uses_primary_before_calling_fallback_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     runner = PydanticAIKnowledgeRunner(
@@ -2190,14 +2190,15 @@ def test_agent_races_primary_endpoints_and_keeps_first_response(
     )
     model = runner._agent.model
     calls: list[str] = []
-    fast_response = object()
+    primary_response = object()
 
     async def request_once(self, *args, **kwargs):
         del args, kwargs
         calls.append(self.base_url)
         if self.base_url.startswith("https://slow"):
             await asyncio.sleep(0.05)
-        return fast_response if self.base_url.startswith("https://fast") else object()
+            return primary_response
+        return object()
 
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
@@ -2205,14 +2206,49 @@ def test_agent_races_primary_endpoints_and_keeps_first_response(
         model._completions_create([], False, {}, ModelRequestParameters())
     )
 
-    assert result is fast_response
-    assert set(calls) == {
-        "https://slow.example.test/v1/",
-        "https://fast.example.test/v1/",
-    }
+    assert calls == ["https://slow.example.test/v1/"]
+    assert result is primary_response
 
 
-def test_agent_keeps_coding_tools_after_endpoint_racing_change() -> None:
+def test_agent_races_keys_for_the_same_primary_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://primary.example.test/v1", "peer-key"),
+            ("https://backup.example.test/v1", "backup-key"),
+        ),
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+    )
+    model = runner._agent.model
+    calls: list[str] = []
+    peer_response = object()
+
+    async def request_once(self, *args, **kwargs):
+        del args, kwargs
+        api_key = self._provider.client.api_key
+        calls.append(api_key)
+        if api_key == "primary-key":
+            await asyncio.sleep(0.05)
+            return object()
+        if api_key == "peer-key":
+            return peer_response
+        pytest.fail("backup endpoint must not race the primary endpoint keys")
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+
+    result = asyncio.run(
+        model._completions_create([], False, {}, ModelRequestParameters())
+    )
+
+    assert result is peer_response
+    assert set(calls) == {"primary-key", "peer-key"}
+
+
+def test_agent_keeps_coding_tools_after_endpoint_failover_change() -> None:
     runner = PydanticAIKnowledgeRunner(
         base_url="https://models.example.test/v1",
         api_key="local-test-key",
