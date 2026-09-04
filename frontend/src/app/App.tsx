@@ -13,6 +13,7 @@ import { useCallback, useState, type ReactNode } from 'react'
 import {
   AccountSettingsPage,
   AdminUsersPage,
+  AdminOperationsPage,
   LoginPage,
   PasswordResetPage,
   RegisterPage,
@@ -310,6 +311,21 @@ function AdminUsersRoute() {
   )
 }
 
+function AdminOperationsRoute() {
+  const navigate = useNavigate()
+  return (
+    <PageShell wide>
+      <PageContent>
+        <AdminOperationsPage
+          onForbidden={() => navigate('/settings', { replace: true })}
+          onSessionExpired={() => navigate('/login?redirect=%2Fadmin%2Foperations', { replace: true })}
+        />
+        <button className="admin-ops-back" type="button" onClick={() => navigate('/admin/users')}>返回用户管理</button>
+      </PageContent>
+    </PageShell>
+  )
+}
+
 function PasswordResetRoute() {
   const { token = '' } = useParams<{ token: string }>()
   return (
@@ -429,6 +445,7 @@ export function AppRoutes({
       <Route path="/my" element={protectedRoute(<Navigate replace to="/app?research=all" />)} />
       <Route path="/settings" element={protectedRoute(<AccountSettingsRoute />)} />
       <Route path="/admin/users" element={protectedRoute(<AdminUsersRoute />)} />
+      <Route path="/admin/operations" element={protectedRoute(<AdminOperationsRoute />)} />
         </Routes>
       </RouteMotionSurface>
     </RailStateProvider>

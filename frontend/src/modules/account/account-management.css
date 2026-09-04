@@ -171,6 +171,11 @@
   text-underline-offset: 4px;
 }
 
+.account-management-admin-link--secondary {
+  grid-column: 2;
+  margin-top: 28px;
+}
+
 .account-management-layout {
   display: grid;
   grid-template-columns: 190px minmax(0, 820px);
