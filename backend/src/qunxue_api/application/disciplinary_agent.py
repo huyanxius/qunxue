@@ -174,7 +174,10 @@ class DisciplinaryAgentApplication:
                         raise ValueError("research selection must not be empty")
                     prompt = f"{pending.get('prompt') or prompt}\n\n用户选择的研究重点：{selection}"
                 elif deep_research_action == "skip":
-                    prompt = str(pending.get("prompt") or prompt)
+                    prompt = (
+                        str(pending.get("prompt") or prompt)
+                        + "\n\n用户跳过了本次澄清，请采用合理默认范围生成研究方案，不要再次询问。"
+                    )
                 elif deep_research_action == "confirm":
                     if existing_run.status != "awaiting_plan_confirmation":
                         raise ValueError("research plan is not ready for confirmation")
@@ -361,12 +364,12 @@ class DisciplinaryAgentApplication:
 
         conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
-        deep_research_started = mode == "deep_research" and deep_research_action in {"confirm", "skip"}
+        deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
 
         # Every Agent turn gets the same lightweight intent check. Deep mode
         # additionally pauses on a plan; ordinary mode only pauses when the
         # planner identifies a material clarification question.
-        if deep_research_action not in {"clarify", "confirm", "skip"}:
+        if deep_research_action not in {"clarify", "confirm"}:
             prepare_research = getattr(self._runner, "prepare_research", None)
             planning_events: list[AgentResearchEvent] = []
             planning_failed = False
@@ -385,6 +388,14 @@ class DisciplinaryAgentApplication:
                         kind="plan",
                         payload={"title": "深入研究", "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"]},
                     )
+                    if deep_research_action == "skip" and planning_event.kind == "ask":
+                        planning_event = AgentResearchEvent(
+                            kind="plan",
+                            payload={
+                                "title": prompt.strip()[:80] or "深入研究",
+                                "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                            },
+                        )
                     should_pause = mode == "deep_research" or planning_event.kind == "ask"
                     if should_pause:
                         if on_research_event is not None:
