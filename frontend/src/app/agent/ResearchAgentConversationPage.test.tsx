@@ -8,6 +8,7 @@ import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   delete (document as Document & { startViewTransition?: unknown }).startViewTransition
   window.sessionStorage.clear()
@@ -128,6 +129,31 @@ function LocationProbe() {
 }
 
 describe('ResearchAgentConversationPage', () => {
+  it('introduces deep research with a dismissible bubble that expires after five seconds', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    const intro = within(agent).getByRole('dialog', { name: '深入研究介绍' })
+    expect(within(intro).getByRole('heading', { name: '深入研究' })).toBeVisible()
+    expect(within(intro).getByText('让 Agent 多轮检索知识库与网页，整理出一份带证据的研究结果。')).toBeVisible()
+
+    fireEvent.click(within(intro).getByRole('button', { name: '稍后再说' }))
+    expect(within(agent).queryByRole('dialog', { name: '深入研究介绍' })).not.toBeInTheDocument()
+
+    fireEvent.click(within(agent).getByRole('button', { name: '选择 Agent 模式' }))
+    fireEvent.click(within(agent).getByRole('menuitemradio', { name: /深入研究/ }))
+    expect(within(agent).queryByRole('dialog', { name: '深入研究介绍' })).not.toBeInTheDocument()
+
+    cleanup()
+    renderPage('user-agent-second')
+    const secondAgent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    expect(within(secondAgent).getByRole('dialog', { name: '深入研究介绍' })).toBeVisible()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(within(secondAgent).queryByRole('dialog', { name: '深入研究介绍' })).not.toBeInTheDocument()
+  })
+
   it('opens the composer material menu and returns focus when Escape closes it', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
     renderPage()
