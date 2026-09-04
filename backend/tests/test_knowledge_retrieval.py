@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
+from qunxue_api.adapters.theory_evidence import CatalogTheoryLexicalRetriever
 from qunxue_api.adapters.research_agent.retrieval import (
     RetrievalCandidate,
     fuzzy_match_score,
@@ -51,6 +52,29 @@ def test_rrf_fuse_merges_lexical_and_semantic_rankings_without_score_scale_assum
         "knowledge:c",
     ]
     assert fused[0].sources == ("lexical", "semantic")
+
+
+def test_lexical_fallback_returns_no_hits_when_query_has_no_relevance() -> None:
+    chunk = RetrievalChunk(
+        chunk_id="knowledge:alienation",
+        document_kind="knowledge_entry",
+        knowledge_id="D1:C001",
+        theory_id=None,
+        content_version=1,
+        content_hash="sha256:alienation",
+        title="异化劳动",
+        text="劳动者与劳动产品之间的结构性分离。",
+        source_ids=(),
+    )
+
+    result = CatalogTheoryLexicalRetriever._lexical_result(
+        query="qzxv",
+        chunks=(chunk,),
+        limit=3,
+        retrieval_index_id="catalog-lexical:test",
+    )
+
+    assert result.hits == ()
 
 
 def test_knowledge_search_requires_the_release_bound_hybrid_retriever() -> None:

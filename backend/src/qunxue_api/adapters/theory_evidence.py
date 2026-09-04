@@ -118,10 +118,6 @@ class CatalogTheoryLexicalRetriever:
             key=lambda item: (-item[0], item[1].chunk_id),
         )
         selected = [(score, chunk) for score, chunk in ranked if score > 0][: max(1, limit)]
-        # A short or unfamiliar phenomenon should still expose the audited
-        # candidate set to the real judge instead of fabricating a no-match.
-        if not selected:
-            selected = ranked[: max(1, limit)]
         return HybridRetrievalResult(
             retrieval_index_id=retrieval_index_id,
             mode="catalog_lexical",

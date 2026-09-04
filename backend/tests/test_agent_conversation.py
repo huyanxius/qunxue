@@ -2212,6 +2212,19 @@ def test_agent_races_primary_endpoints_and_keeps_first_response(
     }
 
 
+def test_agent_keeps_coding_tools_after_endpoint_racing_change() -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+    )
+
+    tools = runner._agent._function_toolset.tools
+
+    assert {"propose_coding_plan", "retrieve_coded_segments"} <= set(tools)
+
+
 def test_knowledge_directory_is_bounded_and_queryable() -> None:
     release = SimpleNamespace(knowledge_release_id="release-a")
     directory = SimpleNamespace(
