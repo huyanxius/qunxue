@@ -110,8 +110,6 @@ function DeepResearchMockFlow({
   stepIndex,
   options = ['概念与理论背景', '现实案例与最新资料', '不同观点之间的争议', '研究方法与数据'],
   onChooseIntent,
-  onConfirmPlan,
-  onEdit,
   resultSummary,
   knowledgeCount,
   webCount,
@@ -122,8 +120,6 @@ function DeepResearchMockFlow({
   stepIndex: number
   options?: string[]
   onChooseIntent: (intent: string) => void
-  onConfirmPlan: () => void
-  onEdit: () => void
   resultSummary?: string
   knowledgeCount?: number
   webCount?: number
@@ -2402,11 +2398,6 @@ export function ResearchAgentConversationPage({
                     webCount={deepResearchResult.webCount}
                     toolSteps={streamingTurn?.toolSteps ?? []}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
-                    onConfirmPlan={() => continueDeepResearch('confirm')}
-                    onEdit={() => {
-                      resetDeepResearchMock()
-                      globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
-                    }}
                   />
                 ) : null}
                 {conversationTail}
@@ -2433,11 +2424,6 @@ export function ResearchAgentConversationPage({
                 webCount={deepResearchResult.webCount}
                 toolSteps={streamingTurn?.toolSteps ?? []}
                 onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
-                onConfirmPlan={() => continueDeepResearch('confirm')}
-                onEdit={() => {
-                  resetDeepResearchMock()
-                  globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
-                }}
               />
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
