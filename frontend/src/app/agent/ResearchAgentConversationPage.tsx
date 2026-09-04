@@ -84,6 +84,7 @@ import {
 import { ResearchAgentBot } from './ResearchAgentBot'
 import { ResearchAgentShader } from './ResearchAgentShader'
 import { ResearchPromptCarousel } from './ResearchPromptCarousel'
+import deepResearchGuidance from '../../assets/agent/new-research-guidance.webp'
 import { useAppLocale, type AppLocale } from '../i18n/AppLocaleProvider'
 import './research-agent-page.css'
 import './new-research-workspace.css'
@@ -97,6 +98,7 @@ const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v1'
 const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
+const DEEP_RESEARCH_INTRO_TIMEOUT_MS = 5000
 // 退场动画时长，和 research-agent-conversation.css 里 agent-rail-leave 保持一致。
 const RAIL_EXIT_MS = 220
 
@@ -1591,6 +1593,8 @@ export function ResearchAgentConversationPage({
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
   const [composerMode, setComposerMode] = useState<AgentComposerMode>(() => restoredPendingTurn.current?.runId ? 'deep-research' : 'standard')
+  const [deepResearchIntroVisible, setDeepResearchIntroVisible] = useState(false)
+  const deepResearchIntroShown = useRef(false)
   const [deepResearchMockStage, setDeepResearchMockStage] = useState<DeepResearchMockStage>('idle')
   const [deepResearchMockQuestion, setDeepResearchMockQuestion] = useState('')
   const [deepResearchMockOptions, setDeepResearchMockOptions] = useState<string[]>([])
@@ -1793,6 +1797,14 @@ export function ResearchAgentConversationPage({
     && !materialUploading
     && attachedMaterials.every((material) => material.status === 'ready')
   const isEmpty = !turns.length && !streamingTurn && !hasDeepResearchMockConversation
+
+  useEffect(() => {
+    if (embedded || !isEmpty || composerMode !== 'standard' || deepResearchIntroShown.current) return undefined
+    deepResearchIntroShown.current = true
+    setDeepResearchIntroVisible(true)
+    const timeout = window.setTimeout(() => setDeepResearchIntroVisible(false), DEEP_RESEARCH_INTRO_TIMEOUT_MS)
+    return () => window.clearTimeout(timeout)
+  }, [composerMode, embedded, isEmpty])
 
   useEffect(() => {
     onStreamingTurnChange?.(streamingTurn)
@@ -2829,6 +2841,35 @@ export function ResearchAgentConversationPage({
                   </button>
                 </div>
                 <div className="research-agent-composer__mode-entry" ref={modeMenuRef}>
+                  {deepResearchIntroVisible ? (
+                    <aside className="deep-research-intro" role="dialog" aria-label={text('深入研究介绍', 'Deep research introduction')}>
+                      <button
+                        className="deep-research-intro__close"
+                        type="button"
+                        aria-label={text('关闭深入研究介绍', 'Close deep research introduction')}
+                        onClick={() => setDeepResearchIntroVisible(false)}
+                      >
+                        <XIcon size={16} weight="bold" />
+                      </button>
+                      <img src={deepResearchGuidance} alt="" />
+                      <div className="deep-research-intro__body">
+                        <p className="deep-research-intro__eyebrow">{text('新功能', 'New feature')}</p>
+                        <h2>{text('深入研究', 'Deep research')}</h2>
+                        <p>{text('让 Agent 多轮检索知识库与网页，整理出一份带证据的研究结果。', 'Ask the Agent to search your knowledge base and the web, then shape the evidence into a research result.')}</p>
+                        <div className="deep-research-intro__actions">
+                          <button type="button" className="deep-research-intro__dismiss" onClick={() => setDeepResearchIntroVisible(false)}>
+                            {text('稍后再说', 'Maybe later')}
+                          </button>
+                          <button type="button" className="deep-research-intro__try" onClick={() => {
+                            setComposerMode('deep-research')
+                            setDeepResearchIntroVisible(false)
+                          }}>
+                            {text('试试看', 'Try it')}
+                          </button>
+                        </div>
+                      </div>
+                    </aside>
+                  ) : null}
                   <button
                     ref={modeMenuButtonRef}
                     type="button"
@@ -2873,6 +2914,7 @@ export function ResearchAgentConversationPage({
                         aria-checked={composerMode === 'deep-research'}
                         onClick={() => {
                           setComposerMode('deep-research')
+                          setDeepResearchIntroVisible(false)
                           setModeMenuOpen(false)
                         }}
                       >
