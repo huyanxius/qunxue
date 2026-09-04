@@ -22,6 +22,10 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
         evidence = {}
         research_map_enabled = False
         web_search_enabled = False
+        handoff_enabled = False
+
+        def enable_research_handoff_tools(self):
+            self.handoff_enabled = True
 
     class Runner:
         runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
@@ -40,6 +44,7 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
             )
 
         def run(self, *, prompt, conversation, tools):
+            assert tools.handoff_enabled is False
             return AgentRunResult(
                 answer="已完成研究。",
                 citations=(),
@@ -63,13 +68,24 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
         on_research_event=events.append,
     )
 
-    assert execution.pending_research is None
-    assert execution.result.answer == "已完成研究。"
+    assert execution.pending_research is not None
+    assert execution.pending_research["state"] == "awaiting_plan_confirmation"
     assert events[0].kind == "plan"
     assert events[0].payload["steps"] == ["检索知识库", "补充网页资料"]
 
+    confirmed = app.run_turn(
+        user_id=UUID(int=1),
+        conversation_id=None,
+        prompt="研究短视频平台上的劳动关系变化",
+        idempotency_key="deep-1",
+        mode="deep_research",
+        deep_research_run_id=execution.run_id,
+        deep_research_action="confirm",
+    )
+    assert confirmed.result.answer == "已完成研究。"
 
-def test_deep_research_waits_only_when_planner_needs_clarification() -> None:
+
+def test_deep_research_waits_for_plan_confirmation_before_running() -> None:
     events: list[AgentResearchEvent] = []
 
     class Release:
@@ -87,11 +103,7 @@ def test_deep_research_waits_only_when_planner_needs_clarification() -> None:
         def prepare_research(self, *, prompt, conversation, on_event):
             on_event(
                 AgentResearchEvent(
-                    kind="ask",
-                    payload={
-                        "question": "你希望我研究哪个具体问题或对象？",
-                        "options": ["社会现象", "群体或组织", "政策或制度"],
-                    },
+                    kind="plan", payload={"title": prompt, "steps": ["检索知识库"]}
                 )
             )
 
@@ -115,7 +127,7 @@ def test_deep_research_waits_only_when_planner_needs_clarification() -> None:
 
     assert execution.turn is None
     assert execution.pending_research is not None
-    assert execution.pending_research["state"] == "awaiting_clarification"
+    assert execution.pending_research["state"] == "awaiting_plan_confirmation"
 
 
 def test_deep_research_does_not_ask_for_clarification_on_greeting() -> None:

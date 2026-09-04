@@ -110,6 +110,8 @@ function DeepResearchMockFlow({
   stepIndex,
   options = ['概念与理论背景', '现实案例与最新资料', '不同观点之间的争议', '研究方法与数据'],
   onChooseIntent,
+  onConfirmPlan,
+  onEdit,
   resultSummary,
   knowledgeCount,
   webCount,
@@ -120,6 +122,8 @@ function DeepResearchMockFlow({
   stepIndex: number
   options?: string[]
   onChooseIntent: (intent: string) => void
+  onConfirmPlan: () => void
+  onEdit: () => void
   resultSummary?: string
   knowledgeCount?: number
   webCount?: number
@@ -132,7 +136,7 @@ function DeepResearchMockFlow({
   if (stage === 'clarifying') {
     return (
       <section className="deep-research-mock-card deep-research-mock-card--question" aria-label="确认研究意图">
-        <h2>{question}，你想让我重点了解哪一部分？</h2>
+        <h2>{question}</h2>
         <div className="deep-research-mock-card__options">
           {options.filter((option) => option !== '更多自定义').map((option, index) => (
             <button key={option} type="button" onClick={() => onChooseIntent(option)}><b>{String.fromCharCode(65 + index)}</b>{option}</button>
@@ -159,8 +163,9 @@ function DeepResearchMockFlow({
         <div className="deep-research-mock-card__plan">
           {options.map((step, index) => <div key={`${step}-${index}`}><strong>{index + 1}</strong><span>{step}</span></div>)}
         </div>
-        <div className="deep-research-mock-card__actions" aria-live="polite">
-          <span>已根据计划开始研究</span>
+        <div className="deep-research-mock-card__actions">
+          <button type="button" className="is-primary" onClick={onConfirmPlan}>开始深入研究</button>
+          <button type="button" onClick={onEdit}>返回修改</button>
         </div>
       </section>
     )
@@ -2398,6 +2403,11 @@ export function ResearchAgentConversationPage({
                     webCount={deepResearchResult.webCount}
                     toolSteps={streamingTurn?.toolSteps ?? []}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                    onConfirmPlan={() => continueDeepResearch('confirm')}
+                    onEdit={() => {
+                      resetDeepResearchMock()
+                      globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                    }}
                   />
                 ) : null}
                 {conversationTail}
@@ -2424,6 +2434,11 @@ export function ResearchAgentConversationPage({
                 webCount={deepResearchResult.webCount}
                 toolSteps={streamingTurn?.toolSteps ?? []}
                 onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                onConfirmPlan={() => continueDeepResearch('confirm')}
+                onEdit={() => {
+                  resetDeepResearchMock()
+                  globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                }}
               />
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
