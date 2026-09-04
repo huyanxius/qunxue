@@ -110,6 +110,7 @@ function DeepResearchMockFlow({
   stepIndex,
   options = ['概念与理论背景', '现实案例与最新资料', '不同观点之间的争议', '研究方法与数据'],
   onChooseIntent,
+  onSkip,
   onConfirmPlan,
   onEdit,
   resultSummary,
@@ -122,6 +123,7 @@ function DeepResearchMockFlow({
   stepIndex: number
   options?: string[]
   onChooseIntent: (intent: string) => void
+  onSkip: () => void
   onConfirmPlan: () => void
   onEdit: () => void
   resultSummary?: string
@@ -144,6 +146,7 @@ function DeepResearchMockFlow({
         </div>
         <div className="deep-research-mock-card__options deep-research-mock-card__options--custom">
           <button type="button" onClick={() => setCustomIntent((current) => current || ' ')}><b>E</b>更多自定义</button>
+          <button type="button" onClick={onSkip}>跳过</button>
         </div>
         {customIntent !== '' ? (
           <label className="deep-research-mock-card__other">
@@ -1512,9 +1515,7 @@ export function ResearchAgentConversationPage({
   const [deepResearchMockStep, setDeepResearchMockStep] = useState(0)
   const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
   const deepResearchLifecycleStarted = useRef(false)
-  const hasDeepResearchMockConversation = composerMode === 'deep-research'
-    && deepResearchMockStage !== 'idle'
-    && deepResearchMockStage !== 'clarifying'
+  const hasDeepResearchMockConversation = deepResearchMockStage !== 'idle'
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
@@ -1841,7 +1842,7 @@ export function ResearchAgentConversationPage({
     }, { replace: true })
   }
 
-  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm'; selection?: string }) {
+  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm' | 'skip'; selection?: string }) {
     const question = rawQuestion.trim()
     if (!question || isBusy) return
     const idempotencyKey = retryIdempotencyKey
@@ -1977,7 +1978,8 @@ export function ResearchAgentConversationPage({
             setDeepResearchMockOptions(event.options ?? event.steps ?? [])
             setDeepResearchMockStep(0)
             setDeepResearchMockStage(event.state === 'awaiting_clarification' ? 'clarifying' : 'planning')
-            setStreamingTurn(null)
+            // Keep the question card in the transcript while waiting for the
+            // user's answer; it is part of the conversation history.
             setStatus('idle')
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
@@ -2102,7 +2104,7 @@ export function ResearchAgentConversationPage({
     deepResearchLifecycleStarted.current = false
   }
 
-  function continueDeepResearch(action: 'clarify' | 'confirm', selection?: string) {
+  function continueDeepResearch(action: 'clarify' | 'confirm' | 'skip', selection?: string) {
     const attempt = activeTurnAttempt.current
     if (!attempt?.runId) return
     void submitQuestion(attempt.question, attempt.idempotencyKey, { action, selection })
@@ -2403,6 +2405,7 @@ export function ResearchAgentConversationPage({
                     webCount={deepResearchResult.webCount}
                     toolSteps={streamingTurn?.toolSteps ?? []}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                    onSkip={() => continueDeepResearch('skip')}
                     onConfirmPlan={() => continueDeepResearch('confirm')}
                     onEdit={() => {
                       resetDeepResearchMock()
@@ -2423,7 +2426,7 @@ export function ResearchAgentConversationPage({
                 <button type="button" aria-label={text('关闭错误提示', 'Close error message')} onClick={() => setError(null)}><XIcon size={14} /></button>
               </div>
             ) : null}
-            {composerMode === 'deep-research' && deepResearchMockStage === 'clarifying' ? (
+            {composerMode === 'deep-research' && deepResearchMockStage === 'clarifying' && !streamingTurn ? (
               <DeepResearchMockFlow
                 stage={deepResearchMockStage}
                 question={deepResearchMockQuestion}
@@ -2434,6 +2437,7 @@ export function ResearchAgentConversationPage({
                 webCount={deepResearchResult.webCount}
                 toolSteps={streamingTurn?.toolSteps ?? []}
                 onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                onSkip={() => continueDeepResearch('skip')}
                 onConfirmPlan={() => continueDeepResearch('confirm')}
                 onEdit={() => {
                   resetDeepResearchMock()
