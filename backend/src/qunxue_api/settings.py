@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal, cast
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -58,6 +58,8 @@ class RetrievalConfig:
 
 
 class ModelFallbackSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+
     base_url: str
     api_key: SecretStr
     model: str | None = None
@@ -150,6 +152,7 @@ class Settings(BaseSettings):
         env_prefix="QUNXUE_",
         env_file=BACKEND_ROOT / ".env",
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     @field_validator("model_base_url")

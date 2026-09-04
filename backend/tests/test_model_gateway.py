@@ -478,6 +478,53 @@ def test_business_gateway_does_not_fallback_after_terminal_provider_failure() ->
     assert not hasattr(attempts.list_all()[0], "failure_message")
 
 
+def test_all_failed_business_endpoints_record_the_last_attempted_descriptor() -> None:
+    attempts = InMemoryModelAttemptRecorder()
+    invocations = InMemoryModelInvocationRecorder()
+    gateway = ModelGateway(
+        provider=RoutedModelProvider(
+            providers=(
+                _BusinessProvider(
+                    model="primary-model",
+                    failure_code="model_unavailable",
+                ),
+                _BusinessProvider(
+                    model="backup-model",
+                    failure_code="model_unavailable",
+                ),
+            ),
+            router=ModelRouteExecutor(
+                endpoints=_business_endpoints(),
+                recorder=attempts,
+            ),
+        ),
+        recorder=invocations,
+        contract_version="v1",
+        id_factory=_ids(),
+    )
+
+    with pytest.raises(ModelInvocationError):
+        gateway.build(
+            task_id=UUID(int=1),
+            raw_input="现象",
+            research_intent=None,
+            context=None,
+        )
+
+    assert [attempt.endpoint_id for attempt in attempts.list_all()] == [
+        "primary",
+        "fallback-1",
+    ]
+    invocation = invocations.list_all()[0]
+    assert invocation.provider == "provider-backup-model"
+    assert invocation.model_version == "backup-model"
+    assert all(
+        attempt.context.trace_id == invocation.trace_id
+        and attempt.context.request_id == invocation.request_id
+        for attempt in attempts.list_all()
+    )
+
+
 def test_one_gateway_serves_four_capabilities_and_records_truthful_traces() -> None:
     catalog = BuiltInCaseCatalog.default()
     success = catalog.get("success")

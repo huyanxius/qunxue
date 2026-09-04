@@ -1014,6 +1014,10 @@ def create_app(
                 ErrorCode.INTERNAL_SERVER_ERROR,
                 status.HTTP_502_BAD_GATEWAY,
             ),
+            "model_request_rejected": (
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                status.HTTP_502_BAD_GATEWAY,
+            ),
             "no_reliable_candidate": (
                 ErrorCode.NO_RELIABLE_CANDIDATE,
                 status.HTTP_409_CONFLICT,

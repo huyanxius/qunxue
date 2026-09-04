@@ -152,6 +152,7 @@ class RoutedModelProvider:
             try:
                 result = invoke(provider)
             except ModelProviderFailure as error:
+                error.selected_descriptor = provider.descriptor
                 last_failure = error
                 raise ModelAttemptFailure(
                     code=error.code,

@@ -33,6 +33,7 @@ class ModelScenario(StrEnum):
     PROVIDER_UNAVAILABLE = "provider_unavailable"
     RATE_LIMITED = "rate_limited"
     INVALID_OUTPUT = "invalid_output"
+    REQUEST_REJECTED = "request_rejected"
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,10 +61,12 @@ class ModelProviderFailure(RuntimeError):
         message: str,
         knowledge_release_id: str | None,
         scenario: ModelScenario,
+        selected_descriptor: ModelProviderDescriptor | None = None,
     ) -> None:
         self.code = code
         self.knowledge_release_id = knowledge_release_id
         self.scenario = scenario
+        self.selected_descriptor = selected_descriptor
         super().__init__(message)
 
 

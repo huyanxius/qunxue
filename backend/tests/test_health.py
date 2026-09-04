@@ -310,6 +310,70 @@ def test_legacy_fallback_inherits_primary_model_from_json_environment(
     assert "fallback-key" not in repr(settings)
 
 
+def test_fallback_env_validation_hides_api_key_when_required_field_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret = "validation-test-secret-key"
+    monkeypatch.setenv(
+        "QUNXUE_MODEL_FALLBACKS",
+        json.dumps([{"api_key": secret}]),
+    )
+
+    with pytest.raises(ValidationError) as caught:
+        Settings(_env_file=None)
+
+    rendered = f"{caught.value!s}\n{caught.value!r}"
+    if secret in rendered:
+        pytest.fail("fallback validation error leaked an API key")
+
+
+def test_fallback_env_validation_hides_credential_bearing_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    credential_url = "https://validation-user:validation-pass@backup.test/v1"
+    monkeypatch.setenv(
+        "QUNXUE_MODEL_FALLBACKS",
+        json.dumps(
+            [
+                {
+                    "base_url": credential_url,
+                    "api_key": "validation-test-secret-key",
+                }
+            ]
+        ),
+    )
+
+    with pytest.raises(ValidationError) as caught:
+        Settings(_env_file=None)
+
+    rendered = f"{caught.value!s}\n{caught.value!r}"
+    if any(
+        sensitive in rendered
+        for sensitive in (credential_url, "validation-user", "validation-pass")
+    ):
+        pytest.fail("fallback validation error leaked URL credentials")
+
+
+def test_fallback_env_validation_rejects_unknown_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "QUNXUE_MODEL_FALLBACKS",
+        json.dumps(
+            [
+                {
+                    "base_url": "https://backup.test/v1",
+                    "api_key": "validation-test-secret-key",
+                    "modle": "misspelled-model-field",
+                }
+            ]
+        ),
+    )
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
+
+
 @pytest.mark.parametrize(
     "fallback",
     [

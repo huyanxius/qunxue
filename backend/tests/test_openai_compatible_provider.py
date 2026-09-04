@@ -616,6 +616,108 @@ def test_http_and_json_failures_map_to_sanitized_provider_failures(
     assert "not-json" not in str(raised.value)
 
 
+@pytest.mark.parametrize(
+    ("status_code", "expected_code"),
+    [
+        (408, "model_unavailable"),
+        (409, "model_unavailable"),
+        (429, "model_rate_limited"),
+        (500, "model_unavailable"),
+        (503, "model_unavailable"),
+        (400, "model_request_rejected"),
+        (401, "model_request_rejected"),
+        (403, "model_request_rejected"),
+        (404, "model_request_rejected"),
+        (422, "model_request_rejected"),
+    ],
+)
+def test_http_error_status_preserves_retry_classification_without_details(
+    status_code: int,
+    expected_code: str,
+) -> None:
+    private_body = b"private upstream response body"
+    with _fake_openai_service(_Reply(body=private_body, status=status_code)) as (
+        base_url,
+        _requests,
+    ):
+        provider = model.OpenAICompatibleModelProvider(
+            base_url=base_url,
+            api_key="classification-test-key",
+            model="local-sociology-model",
+            timeout_seconds=1,
+            capability_tier="base",
+        )
+
+        with pytest.raises(model.ModelProviderFailure) as raised:
+            provider.extract_phenomenon(
+                raw_input="same input",
+                research_intent=None,
+                context=None,
+            )
+
+    assert raised.value.code == expected_code
+    assert private_body.decode() not in str(raised.value)
+    assert str(status_code) not in str(raised.value)
+    assert base_url not in str(raised.value)
+
+
+def test_routed_unauthorized_request_does_not_call_backup() -> None:
+    with _fake_openai_service(_Reply(body=b"private denial", status=401)) as (
+        primary_url,
+        primary_requests,
+    ), _fake_openai_service(
+        _completion(_phenomenon_response(phenomenon="backup endpoint"))
+    ) as (backup_url, backup_requests):
+        endpoints = (
+            model.ModelEndpoint(
+                endpoint_id="primary",
+                base_url=primary_url,
+                api_key=None,
+                model="primary-model",
+                timeout_seconds=1,
+                provider="openai-compatible",
+            ),
+            model.ModelEndpoint(
+                endpoint_id="fallback-1",
+                base_url=backup_url,
+                api_key=None,
+                model="backup-model",
+                timeout_seconds=1,
+                provider="openai-compatible",
+            ),
+        )
+        providers = tuple(
+            model.OpenAICompatibleModelProvider(
+                base_url=endpoint.base_url,
+                api_key=None,
+                model=endpoint.model,
+                timeout_seconds=endpoint.timeout_seconds,
+                capability_tier="base",
+            )
+            for endpoint in endpoints
+        )
+        gateway = model.ModelGateway(
+            provider=model.RoutedModelProvider(
+                providers=providers,
+                router=model.ModelRouteExecutor(endpoints=endpoints),
+            ),
+            recorder=model.InMemoryModelInvocationRecorder(),
+            contract_version="v1",
+        )
+
+        with pytest.raises(model.ModelInvocationError) as raised:
+            gateway.build(
+                task_id=UUID(int=30),
+                raw_input="same input",
+                research_intent=None,
+                context=None,
+            )
+
+    assert raised.value.code == "model_request_rejected"
+    assert len(primary_requests) == 1
+    assert backup_requests == []
+
+
 def test_timeout_and_connection_failure_are_recoverable_without_leaking_config() -> None:
     with _fake_openai_service(
         _Reply(body=_completion(_phenomenon_response()).body, delay_seconds=0.05)

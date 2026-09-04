@@ -253,6 +253,7 @@ class ModelGateway:
                 result = call()
         except ModelProviderFailure as error:
             completed_at = self._clock()
+            descriptor = error.selected_descriptor or descriptor
             self._recorder.record(
                 ModelInvocationRecord(
                     trace_id=trace_id,

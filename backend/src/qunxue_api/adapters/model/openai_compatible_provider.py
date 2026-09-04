@@ -558,11 +558,18 @@ class OpenAICompatibleModelProvider:
                     knowledge_release_id=knowledge_release_id,
                     scenario=ModelScenario.RATE_LIMITED,
                 ) from error
+            if error.code in {408, 409} or 500 <= error.code < 600:
+                raise ModelProviderFailure(
+                    code="model_unavailable",
+                    message="The model provider could not complete the request.",
+                    knowledge_release_id=knowledge_release_id,
+                    scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+                ) from error
             raise ModelProviderFailure(
-                code="model_unavailable",
-                message="The model provider rejected or could not complete the request.",
+                code="model_request_rejected",
+                message="The model provider rejected the request.",
                 knowledge_release_id=knowledge_release_id,
-                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+                scenario=ModelScenario.REQUEST_REJECTED,
             ) from error
         except TimeoutError as error:
             raise ModelProviderFailure(
