@@ -1,3 +1,4 @@
+import asyncio
 from uuid import UUID
 
 import pytest
@@ -21,14 +22,14 @@ def test_routing_contracts_are_available_from_model_adapter_package() -> None:
     assert public_executor is ModelRouteExecutor
 
 
-def _endpoint(endpoint_id: str) -> ModelEndpoint:
+def _endpoint(endpoint_id: str, *, provider: str | None = "test-provider") -> ModelEndpoint:
     return ModelEndpoint(
         endpoint_id=endpoint_id,
         base_url=f"https://{endpoint_id}.example.test/v1",
         model="test-model",
         api_key=None,
         timeout_seconds=10,
-        provider="test-provider",
+        provider=provider,
     )
 
 
@@ -165,6 +166,31 @@ def test_attempt_records_include_safe_route_correlation_and_fallback_metadata() 
     }.isdisjoint(first.__dataclass_fields__)
 
 
+def test_skipped_primary_still_marks_first_backup_attempt_as_fallback() -> None:
+    primary = _endpoint("primary", provider=None)
+    backup = _endpoint("backup", provider=None)
+    recorder = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(
+        endpoints=(primary, backup),
+        recorder=recorder,
+        failure_threshold=1,
+    )
+    router.note_failure(endpoint_id="primary", retryable=True)
+
+    router.execute(
+        context=_context(),
+        invoke=lambda endpoint: ModelAttemptResult(value=endpoint.endpoint_id),
+    )
+
+    (record,) = recorder.list_all()
+    assert record.endpoint_id == "backup"
+    assert record.attempt_number == 1
+    assert record.fallback is True
+    assert record.route_id is not None
+    assert record.capability == "test-operation"
+    assert record.provider == "backup"
+
+
 def test_third_retryable_failure_opens_circuit_until_cooldown() -> None:
     clock = MutableClock()
     router = ModelRouteExecutor(
@@ -259,7 +285,7 @@ def test_half_open_exception_settles_only_the_invoked_endpoint() -> None:
         )
 
     assert [item.status for item in router.health_snapshot().endpoints] == [
-        "healthy",
+        "unhealthy",
         "unhealthy",
     ]
 
@@ -313,6 +339,23 @@ def test_sync_terminal_exception_is_recorded_once_without_fallback() -> None:
     assert "prompt=secret" not in repr(recorder.list_all()[0])
 
 
+def test_terminal_exception_preserves_existing_degraded_health() -> None:
+    router = ModelRouteExecutor(endpoints=(_endpoint("primary"),))
+    for _ in range(2):
+        with pytest.raises(ModelAttemptFailure):
+            router.execute(context=_context(), invoke=_retryable_failure)
+
+    with pytest.raises(ValueError, match="unexpected failure"):
+        router.execute(
+            context=_context(),
+            invoke=lambda endpoint: _raise_unexpected([], endpoint.endpoint_id),
+        )
+
+    endpoint = router.health_snapshot().endpoints[0]
+    assert endpoint.status == "degraded"
+    assert endpoint.consecutive_retryable_failures == 2
+
+
 def _raise_unexpected(calls: list[str], endpoint_id: str) -> ModelAttemptResult[object]:
     calls.append(endpoint_id)
     raise ValueError("unexpected failure; prompt=secret")
@@ -347,6 +390,37 @@ async def test_async_terminal_exception_is_recorded_once_without_fallback() -> N
         for item in recorder.list_all()
     ] == [("primary", False, False, "model_attempt_exception", False)]
     assert "prompt=secret" not in repr(recorder.list_all()[0])
+
+
+@pytest.mark.anyio
+async def test_async_cancellation_releases_half_open_slot_and_records_once() -> None:
+    clock = MutableClock()
+    recorder = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(
+        endpoints=_endpoints(),
+        recorder=recorder,
+        failure_threshold=1,
+        cooldown_seconds=30,
+        clock=clock,
+    )
+    router.note_failure(endpoint_id="primary", retryable=True)
+    clock.advance(seconds=30)
+    calls: list[str] = []
+
+    async def cancel(endpoint: ModelEndpoint) -> ModelAttemptResult[object]:
+        calls.append(endpoint.endpoint_id)
+        assert router.health_snapshot().endpoints[0].status == "recovering"
+        raise asyncio.CancelledError()
+
+    with pytest.raises(asyncio.CancelledError):
+        await router.execute_async(context=_context(), invoke=cancel)
+
+    assert router.health_snapshot().endpoints[0].status == "unhealthy"
+    assert calls == ["primary"]
+    assert [
+        (item.endpoint_id, item.failure_code, item.failure_retryable, item.fallback)
+        for item in recorder.list_all()
+    ] == [("primary", "model_attempt_cancelled", False, False)]
 
 
 async def _raise_unexpected_async(

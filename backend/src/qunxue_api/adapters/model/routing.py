@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from threading import Lock
 from time import monotonic
@@ -185,6 +186,10 @@ class ModelRouteExecutor:
         self._circuits = {
             endpoint.endpoint_id: _EndpointCircuitState() for endpoint in endpoints
         }
+        self._fallback_by_endpoint_id = {
+            endpoint.endpoint_id: index > 0
+            for index, endpoint in enumerate(endpoints)
+        }
 
     def execute(
         self,
@@ -192,6 +197,7 @@ class ModelRouteExecutor:
         context: ModelRouteContext,
         invoke: Callable[[ModelEndpoint], ModelAttemptResult[ResultT]],
     ) -> ModelRouteResult[ResultT]:
+        context = self._resolve_context(context)
         last_failure: ModelAttemptFailure | None = None
         attempt_number = 0
         for endpoint in self._endpoints:
@@ -226,7 +232,7 @@ class ModelRouteExecutor:
                 last_failure = failure
                 continue
             except Exception:
-                self._note_success(endpoint.endpoint_id)
+                self._release_after_failed_exit(endpoint.endpoint_id)
                 self._record_terminal_exception(
                     context=context,
                     endpoint=endpoint,
@@ -260,6 +266,7 @@ class ModelRouteExecutor:
         context: ModelRouteContext,
         invoke: Callable[[ModelEndpoint], Awaitable[ModelAttemptResult[ResultT]]],
     ) -> ModelRouteResult[ResultT]:
+        context = self._resolve_context(context)
         last_failure: ModelAttemptFailure | None = None
         attempt_number = 0
         for endpoint in self._endpoints:
@@ -276,6 +283,16 @@ class ModelRouteExecutor:
                     )
                 ):
                     result = await invoke(endpoint)
+            except asyncio.CancelledError:
+                self._release_after_failed_exit(endpoint.endpoint_id)
+                self._record_terminal_exception(
+                    context=context,
+                    endpoint=endpoint,
+                    attempt_number=attempt_number,
+                    failure_code="model_attempt_cancelled",
+                    started_at=started_at,
+                )
+                raise
             except ModelAttemptFailure as failure:
                 self.note_failure(
                     endpoint_id=endpoint.endpoint_id,
@@ -294,7 +311,7 @@ class ModelRouteExecutor:
                 last_failure = failure
                 continue
             except Exception:
-                self._note_success(endpoint.endpoint_id)
+                self._release_after_failed_exit(endpoint.endpoint_id)
                 self._record_terminal_exception(
                     context=context,
                     endpoint=endpoint,
@@ -369,6 +386,20 @@ class ModelRouteExecutor:
             state.recovering = False
             state.successful = True
 
+    def _resolve_context(self, context: ModelRouteContext) -> ModelRouteContext:
+        return replace(
+            context,
+            route_id=context.route_id or self._id_factory(),
+            capability=context.capability or context.operation or "model_route",
+        )
+
+    def _provider_for(self, endpoint: ModelEndpoint) -> str:
+        return endpoint.provider or endpoint.endpoint_id
+
+    def _release_after_failed_exit(self, endpoint_id: str) -> None:
+        with self._lock:
+            self._circuit_for(endpoint_id).recovering = False
+
     def _circuit_for(self, endpoint_id: str) -> _EndpointCircuitState:
         try:
             return self._circuits[endpoint_id]
@@ -418,9 +449,9 @@ class ModelRouteExecutor:
                 task_id=context.task_id,
                 agent_run_id=context.agent_run_id,
                 capability=context.capability,
-                provider=endpoint.provider,
+                provider=self._provider_for(endpoint),
                 model=endpoint.model,
-                fallback=attempt_number > 1,
+                fallback=self._fallback_by_endpoint_id[endpoint.endpoint_id],
                 attempt_number=attempt_number,
                 success=True,
                 selected=True,
@@ -451,9 +482,9 @@ class ModelRouteExecutor:
                 task_id=context.task_id,
                 agent_run_id=context.agent_run_id,
                 capability=context.capability,
-                provider=endpoint.provider,
+                provider=self._provider_for(endpoint),
                 model=endpoint.model,
-                fallback=attempt_number > 1,
+                fallback=self._fallback_by_endpoint_id[endpoint.endpoint_id],
                 attempt_number=attempt_number,
                 success=False,
                 selected=False,
@@ -472,6 +503,7 @@ class ModelRouteExecutor:
         context: ModelRouteContext,
         endpoint: ModelEndpoint,
         attempt_number: int,
+        failure_code: str = "model_attempt_exception",
         started_at: datetime,
     ) -> None:
         self._record(
@@ -483,15 +515,15 @@ class ModelRouteExecutor:
                 task_id=context.task_id,
                 agent_run_id=context.agent_run_id,
                 capability=context.capability,
-                provider=endpoint.provider,
+                provider=self._provider_for(endpoint),
                 model=endpoint.model,
-                fallback=attempt_number > 1,
+                fallback=self._fallback_by_endpoint_id[endpoint.endpoint_id],
                 attempt_number=attempt_number,
                 success=False,
                 selected=False,
                 input_tokens=None,
                 output_tokens=None,
-                failure_code="model_attempt_exception",
+                failure_code=failure_code,
                 failure_retryable=False,
                 started_at=started_at,
                 completed_at=self._wall_clock(),
