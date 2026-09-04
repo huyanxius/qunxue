@@ -350,6 +350,7 @@ class DisciplinaryAgentApplication:
 
         conversation_history = current.turns[-8:]
         tool_events: list[AgentToolEvent] = []
+        deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
 
         if mode == "deep_research" and deep_research_action != "confirm":
             prepare_research = getattr(self._runner, "prepare_research", None)
@@ -365,18 +366,17 @@ class DisciplinaryAgentApplication:
                 except Exception:
                     planning_events.clear()
                     planning_failed = True
-            if not planning_events and not planning_failed:
-                planning_event = None
-            else:
+            if planning_events or planning_failed:
                 planning_event = planning_events[-1] if planning_events else AgentResearchEvent(
-                kind="plan",
-                payload={
-                    "title": "深入研究",
-                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                },
+                    kind="plan",
+                    payload={
+                        "title": "深入研究",
+                        "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                    },
                 )
                 if on_research_event is not None:
                     on_research_event(planning_event)
+                deep_research_started = True
                 state = (
                     "awaiting_clarification"
                     if planning_event.kind == "ask"
@@ -436,7 +436,7 @@ class DisciplinaryAgentApplication:
                     conversation=conversation_history,
                     tools=tools,
                 )
-            if mode == "deep_research" and on_research_event is not None:
+            if deep_research_started and on_research_event is not None:
                 on_research_event(
                     AgentResearchEvent(
                         kind="result",
