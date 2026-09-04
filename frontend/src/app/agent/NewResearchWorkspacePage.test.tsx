@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import { NewResearchWorkspacePage } from './NewResearchWorkspacePage'
 
@@ -221,7 +222,7 @@ describe('NewResearchWorkspacePage', () => {
         }, 201)
       }
       if (url.pathname === `/api/research-tasks/${taskId}/materials` && request.method === 'POST') {
-        const form = await request.formData()
+        const form = await parseMultipartRequest(request)
         const file = form.get('file') as File
         return json({
           material_id: `material-${file.name}`,

@@ -28,6 +28,7 @@ import {
   getResearchMaterialSegment,
   listResearchMaterials,
   reparseResearchMaterial,
+  searchResearchMaterials,
   uploadResearchMaterial,
 } from './researchMaterialsApi'
 import {
@@ -36,6 +37,7 @@ import {
   isSupportedResearchMaterialFile,
   type ResearchMaterial,
   type ResearchMaterialKind,
+  type ResearchMaterialSearchHit,
   type ResearchMaterialSegment,
 } from './researchMaterialsModel'
 import {
@@ -89,6 +91,10 @@ export function ResearchMaterialsPanel({
   const [kind, setKind] = useState<ResearchMaterialKind>('paper')
   const [error, setError] = useState<string | null>(null)
   const [uploadNotice, setUploadNotice] = useState<string | null>(null)
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('')
+  const [librarySearchResults, setLibrarySearchResults] = useState<ResearchMaterialSearchHit[]>([])
+  const [librarySearchLoading, setLibrarySearchLoading] = useState(false)
+  const [librarySearchError, setLibrarySearchError] = useState<string | null>(null)
   const [selectionDraft, setSelectionDraft] = useState<ResearchMaterialSelectionDraft | null>(null)
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null)
   const [annotationKind, setAnnotationKind] = useState<AnnotationKind>('descriptive')
@@ -120,6 +126,10 @@ export function ResearchMaterialsPanel({
   const segmentRefs = useRef(new Map<string, HTMLElement>())
   const scrolledCitationTarget = useRef<string | null>(null)
   const analysisLoadGeneration = useRef(0)
+  const pendingMaterialIds = materials
+    .filter((material) => material.ingestionStatus === 'queued' || material.ingestionStatus === 'processing')
+    .map((material) => material.materialId)
+    .join(',')
 
   async function loadMaterials(signal?: AbortSignal) {
     const requestGeneration = ++materialsLoadGeneration.current
@@ -153,6 +163,54 @@ export function ResearchMaterialsPanel({
       materialsLoadGeneration.current += 1
     }
   }, [taskId])
+
+  useEffect(() => {
+    const query = librarySearchQuery.trim()
+    if (!query) {
+      setLibrarySearchResults([])
+      setLibrarySearchLoading(false)
+      setLibrarySearchError(null)
+      return undefined
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setLibrarySearchLoading(true)
+      setLibrarySearchError(null)
+      void searchResearchMaterials(taskId, query, controller.signal)
+        .then((result) => {
+          if (!controller.signal.aborted) setLibrarySearchResults(result.items)
+        })
+        .catch((cause: unknown) => {
+          if ((cause as { name?: string } | null)?.name !== 'AbortError' && !controller.signal.aborted) {
+            setLibrarySearchError(cause instanceof Error ? cause.message : '研究材料检索暂时不可用。')
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLibrarySearchLoading(false)
+        })
+    }, 200)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [librarySearchQuery, taskId])
+
+  useEffect(() => {
+    if (!pendingMaterialIds) return undefined
+    let active = true
+    const refresh = () => {
+      void listResearchMaterials(taskId)
+        .then((result) => {
+          if (active) setMaterials(result.items.filter((item) => item.status !== 'deleted'))
+        })
+        .catch(() => undefined)
+    }
+    const timer = window.setInterval(refresh, 750)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [pendingMaterialIds, taskId])
 
   async function refreshAnalysis(signal?: AbortSignal) {
     const generation = ++analysisLoadGeneration.current
@@ -202,6 +260,9 @@ export function ResearchMaterialsPanel({
     setSelectedSegmentId(null)
     setReaderPage(0)
     setReaderQuery('')
+    setLibrarySearchQuery('')
+    setLibrarySearchResults([])
+    setLibrarySearchError(null)
     setSearchOpen(false)
     setArchiveOpen(false)
     setMediaLocation(null)
@@ -305,6 +366,10 @@ export function ResearchMaterialsPanel({
       const detail = await getResearchMaterial(taskId, material.materialId, controller.signal, parseId)
       if (controller.signal.aborted || requestGeneration !== materialDetailGeneration.current) return
       setSelectedMaterial(detail)
+      if (segmentId) {
+        const targetIndex = (detail.segments ?? []).findIndex((item) => item.segmentId === segmentId)
+        if (targetIndex >= 0) setReaderPage(Math.floor(targetIndex / READER_PAGE_SIZE))
+      }
       // Historical citation views must not replace the library's current
       // parse metadata with an older snapshot.
       if (!parseId) setMaterials((current) => current.map((item) => item.materialId === detail.materialId ? { ...item, ...detail } : item))
@@ -690,6 +755,15 @@ export function ResearchMaterialsPanel({
       onOpenArchive={(material) => { void selectMaterial(material).then(() => setArchiveOpen(true)) }}
       onRetry={(material) => { void retry(material) }}
       onDelete={(material) => { void remove(material) }}
+      searchQuery={librarySearchQuery}
+      searchResults={librarySearchResults}
+      searchLoading={librarySearchLoading}
+      searchError={librarySearchError}
+      onSearchQueryChange={setLibrarySearchQuery}
+      onOpenSearchResult={(hit) => {
+        const material = materials.find((item) => item.materialId === hit.materialId)
+        if (material) void selectMaterial(material, hit.parseId, hit.segmentId)
+      }}
     />
   )
 

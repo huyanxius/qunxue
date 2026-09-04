@@ -1,14 +1,16 @@
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, File, Form, Header, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, Header, Query, Request, UploadFile, status
 from fastapi.responses import JSONResponse, Response
 
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.contracts.research_materials import (
+    ResearchMaterialIngestionResponse,
     ResearchMaterialKindInput,
     ResearchMaterialListResponse,
     ResearchMaterialResponse,
+    ResearchMaterialSearchResponse,
     ResearchMaterialSegmentResponse,
 )
 from qunxue_api.api.dependencies import (
@@ -130,12 +132,24 @@ def _material_response(
         parse_id=parse_id,
     )
     segments = parsed.blocks if parsed is not None else ()
+    ingestion_status, job, unavailable_reason = application.ingestion_state(
+        user_id=material.user_id,
+        task_id=material.task_id,
+        material_id=material.material_id,
+    )
     return ResearchMaterialResponse.from_domain(
         material,
         segments=segments if include_segments else None,
         parse_id=parsed.parse_id if parsed is not None else None,
         parse_version=parsed.version if parsed is not None else None,
-    ).model_copy(update={"segment_count": len(segments)})
+    ).model_copy(
+        update={
+            "segment_count": len(segments),
+            "ingestion_job_id": job.job_id if job else None,
+            "ingestion_status": ingestion_status,
+            "unavailable_reason": unavailable_reason,
+        }
+    )
 
 
 @router.post(
@@ -146,6 +160,7 @@ def _material_response(
 )
 async def upload_research_material(
     task_id: UUID,
+    request: Request,
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
     application: ResearchMaterialApplicationDependency,
@@ -153,6 +168,7 @@ async def upload_research_material(
     idempotency_key: IdempotencyKey,
     file: Annotated[UploadFile, File()],
     material_kind: Annotated[ResearchMaterialKindInput, Form()] = MaterialKind.OTHER,
+    defer_processing: Annotated[bool, Form()] = False,
 ) -> ResearchMaterialResponse | JSONResponse:
     upload_limit = _upload_limit(filename=file.filename or "", media_type=file.content_type)
     content = await file.read(upload_limit + 1)
@@ -175,6 +191,7 @@ async def upload_research_material(
             media_type=file.content_type or "",
             content=content,
             material_kind=material_kind,
+            defer_processing=defer_processing,
         )
     except UnsupportedMaterialFormat as error:
         return _error(
@@ -196,6 +213,14 @@ async def upload_research_material(
         task_id=task_id,
         material_id=material.material_id,
     )
+    if defer_processing:
+        job = application.get_ingestion(
+            user_id=current.user.user_id,
+            task_id=task_id,
+            material_id=material.material_id,
+        )
+        if job is not None:
+            request.app.state.schedule_research_material_ingestion(job.job_id)
     return _material_response(application, material)
 
 
@@ -215,6 +240,64 @@ def list_research_materials(
         task_id=task_id,
         items=[_material_response(application, item) for item in materials],
     )
+
+
+@router.get(
+    "/{material_id}/ingestion",
+    operation_id="get_research_material_ingestion",
+    response_model=ResearchMaterialIngestionResponse,
+)
+def get_research_material_ingestion(
+    task_id: UUID,
+    material_id: UUID,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchMaterialApplicationDependency,
+) -> ResearchMaterialIngestionResponse:
+    material = application.get(
+        user_id=current.user.user_id,
+        task_id=task_id,
+        material_id=material_id,
+    )
+    ingestion_status, job, unavailable_reason = application.ingestion_state(
+        user_id=current.user.user_id,
+        task_id=task_id,
+        material_id=material_id,
+    )
+    return ResearchMaterialIngestionResponse.from_state(
+        material=material,
+        status=ingestion_status,
+        job=job,
+        unavailable_reason=unavailable_reason,
+    )
+
+
+@router.get(
+    "/search",
+    operation_id="search_research_materials",
+    response_model=ResearchMaterialSearchResponse,
+)
+def search_research_materials(
+    task_id: UUID,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchMaterialApplicationDependency,
+    q: Annotated[str, Query(min_length=1, max_length=500)],
+    material_ids: Annotated[list[UUID] | None, Query()] = None,
+    material_kind: Annotated[ResearchMaterialKindInput | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ResearchMaterialSearchResponse:
+    result = application.search(
+        user_id=current.user.user_id,
+        task_id=task_id,
+        query=q,
+        material_ids=tuple(material_ids or ()),
+        material_kind=material_kind,
+        limit=limit,
+        offset=offset,
+    )
+    return ResearchMaterialSearchResponse.from_domain(task_id, result)
 
 
 @router.get(

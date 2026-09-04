@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import {
   exportResearchArchive,
@@ -16,7 +17,7 @@ describe('research exchange API', () => {
         return Response.json({ task_id: 'task-1', items: [] })
       }
       if (request.url.endsWith('/qdpx-preview')) {
-        expect((await request.formData()).get('file')).toBeTruthy()
+        expect((await parseMultipartRequest(request)).get('file')).toBeTruthy()
         return Response.json({
           exchange_id: 'exchange-preview',
           valid: true,

@@ -6,10 +6,12 @@ from uuid import UUID
 
 from qunxue_api.modules.research_materials.domain import (
     MaterialBlock,
+    MaterialIngestionJob,
     MaterialKind,
     MaterialParseVersion,
     MaterialReparseRequest,
     ResearchMaterial,
+    ResearchMaterialSearchResult,
 )
 
 
@@ -104,3 +106,60 @@ class ResearchMaterialRepository(Protocol):
         idempotency_key: str,
         now: datetime,
     ) -> ResearchMaterial | None: ...
+
+    def enqueue_ingestion(
+        self,
+        *,
+        material: ResearchMaterial,
+        parse_id: UUID,
+        now: datetime,
+        max_attempts: int = 3,
+    ) -> MaterialIngestionJob: ...
+
+    def get_ingestion(self, job_id: UUID) -> MaterialIngestionJob | None: ...
+
+    def get_material_ingestion(
+        self, material_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> MaterialIngestionJob | None: ...
+
+    def claim_ingestion(
+        self, job_id: UUID, *, now: datetime, lease_expires_at: datetime
+    ) -> MaterialIngestionJob | None: ...
+
+    def complete_ingestion(
+        self,
+        job_id: UUID,
+        *,
+        expected_attempt_count: int,
+        expected_parse_id: UUID,
+        now: datetime,
+    ) -> MaterialIngestionJob | None: ...
+
+    def fail_ingestion(
+        self,
+        job_id: UUID,
+        *,
+        expected_attempt_count: int,
+        expected_parse_id: UUID,
+        error_code: str,
+        retry_at: datetime | None,
+        now: datetime,
+    ) -> MaterialIngestionJob | None: ...
+
+    def recoverable_ingestion_ids(self, *, now: datetime) -> tuple[UUID, ...]: ...
+
+
+@runtime_checkable
+class ResearchMaterialSearchRepository(Protocol):
+    def search(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        query: str,
+        material_ids: tuple[UUID, ...] = (),
+        material_parse_ids: tuple[tuple[UUID, UUID], ...] = (),
+        material_kind: MaterialKind | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> ResearchMaterialSearchResult: ...

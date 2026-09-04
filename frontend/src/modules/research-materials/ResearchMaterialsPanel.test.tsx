@@ -34,6 +34,80 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('searches across ready materials and opens the exact matching segment', async () => {
+    const segment = {
+      segment_id: 'segment-2', material_id: 'material-1', parse_id: 'parse-1', ordinal: 1,
+      kind: 'paragraph', text: '照护安排发生了变化。', locator: { page: 3, paragraph: 2 },
+    }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(requestOf(input, init).url)
+      if (url.pathname.endsWith('/materials/search')) return response({
+        task_id: 'task-1', query: '照护安排', total: 1, items: [{
+          material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-2',
+          title: '社区访谈.docx', material_kind: 'interview_transcript', material_format: 'docx',
+          excerpt: '照护安排发生了变化。', locator: { page: 3, paragraph: 2 }, score: 0.8,
+        }],
+      })
+      if (url.pathname.endsWith('/materials/material-1')) {
+        return response({ ...material, segments: [segment] })
+      }
+      return response({ task_id: 'task-1', items: [material] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
+    const workspace = await screen.findByRole('region', { name: '研究材料' })
+    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+      target: { value: '照护安排' },
+    })
+
+    const hit = await within(workspace).findByRole('button', { name: /打开检索结果.*社区访谈/ })
+    expect(hit).toHaveTextContent('第 3 页')
+    fireEvent.click(hit)
+
+    const reader = await within(workspace).findByRole('region', { name: '材料阅读台' })
+    expect(within(reader).getByText('照护安排发生了变化。')).toBeVisible()
+  })
+
+  it('opens a cross-material search hit on its page in a long document', async () => {
+    const segments = Array.from({ length: 30 }, (_, index) => ({
+      segment_id: `segment-${index + 1}`,
+      material_id: 'material-1',
+      parse_id: 'parse-1',
+      ordinal: index,
+      kind: 'paragraph',
+      text: index === 25 ? '第 26 段：目标照护记录。' : `第 ${index + 1} 段：其他记录。`,
+      locator: { paragraph: index + 1 },
+    }))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/materials/search')) return response({
+        task_id: 'task-1', query: '目标照护', total: 1, items: [{
+          material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-26',
+          title: '社区访谈.docx', material_kind: 'interview_transcript', material_format: 'docx',
+          excerpt: '第 26 段：目标照护记录。', locator: { paragraph: 26 }, score: 0.8,
+        }],
+      })
+      if (path.endsWith('/materials/material-1')) return response({
+        ...material,
+        segment_count: segments.length,
+        segments,
+      })
+      return response({ task_id: 'task-1', items: [material] })
+    }))
+
+    render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
+    const workspace = await screen.findByRole('region', { name: '研究材料' })
+    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+      target: { value: '目标照护' },
+    })
+    fireEvent.click(await within(workspace).findByRole('button', { name: /打开检索结果.*社区访谈/ }))
+
+    const reader = await within(workspace).findByRole('region', { name: '文档阅读器' })
+    expect(await within(reader).findByText('第 26 段：目标照护记录。')).toBeVisible()
+    expect(within(reader).getByText('第 2 / 2 页')).toBeVisible()
+  })
+
   it('paginates long source text and exposes document search instead of rendering every segment at once', async () => {
     const segments = Array.from({ length: 42 }, (_, index) => ({
       segment_id: `segment-${index + 1}`,

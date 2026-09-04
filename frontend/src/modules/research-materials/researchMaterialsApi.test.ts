@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import {
   deleteResearchMaterial,
@@ -6,6 +7,7 @@ import {
   getResearchMaterialSegment,
   listResearchMaterials,
   reparseResearchMaterial,
+  searchResearchMaterials,
   uploadResearchMaterial,
   ResearchMaterialsApiError,
 } from './researchMaterialsApi'
@@ -55,11 +57,12 @@ describe('research materials API boundary', () => {
     expect(request.method).toBe('POST')
     expect(request.headers.get('Idempotency-Key')).toEqual(expect.any(String))
     expect(request.headers.get('Content-Type')).toMatch(/^multipart\/form-data; boundary=/)
-    const form = await request.clone().formData()
+    const form = await parseMultipartRequest(request)
     const uploadedFile = form.get('file')
     expect(uploadedFile).not.toBeNull()
     expect(uploadedFile).toMatchObject({ type: file.type })
     expect(form.get('material_kind')).toBe('interview_transcript')
+    expect(form.get('defer_processing')).toBe('true')
   })
 
   it('keeps detail, exact segment, reparse and delete under the same task path', async () => {
@@ -107,6 +110,29 @@ describe('research materials API boundary', () => {
     const [input, init] = fetchMock.mock.calls[0]
     const request = requestOf(input, init)
     expect(new URL(request.url).searchParams.get('parse_id')).toBe('parse-old')
+  })
+
+  it('searches across a task and preserves exact source coordinates', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => response({
+      task_id: 'task-1', query: '照护安排', total: 1, items: [{
+        material_id: 'material-1', parse_id: 'parse-1', segment_id: 'segment-2',
+        title: '访谈.docx', material_kind: 'interview_transcript', material_format: 'docx',
+        excerpt: '照护安排发生了变化。', score: 0.7,
+        locator: { page: 3, paragraph: 2, section_path: ['照护'] },
+      }],
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await searchResearchMaterials('task-1', '照护安排')
+
+    expect(result.items[0]).toMatchObject({
+      materialId: 'material-1', parseId: 'parse-1', segmentId: 'segment-2',
+      locator: { page: 3, paragraph: 2, headingPath: ['照护'] },
+    })
+    const [input, init] = fetchMock.mock.calls[0]
+    const url = new URL(requestOf(input, init).url)
+    expect(url.pathname).toBe('/api/research-tasks/task-1/materials/search')
+    expect(url.searchParams.get('q')).toBe('照护安排')
   })
 
   it('preserves generated API status and error details for callers', async () => {

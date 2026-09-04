@@ -1,4 +1,5 @@
 import { apiClient } from '../../api/client'
+import { createMultipartBody } from '../../api/multipart'
 import {
   batchUploadMaterials as batchUploadMaterialsRequest,
   createMaterialBatch as createMaterialBatchRequest,
@@ -169,11 +170,19 @@ export async function uploadMaterialBatch(
   files: File[],
   materialKind: MaterialKind,
 ): Promise<BatchUploadResult> {
+  const multipart = await createMultipartBody([
+    ...files.map((file) => ({ name: 'files', file }) as const),
+    { name: 'material_kind', value: materialKind },
+  ])
   const result = await batchUploadMaterialsRequest({
     client: apiClient,
-    headers: { 'Idempotency-Key': idempotencyKey() },
+    headers: {
+      'Content-Type': multipart.contentType,
+      'Idempotency-Key': idempotencyKey(),
+    },
     path: { task_id: taskId, batch_id: batchId },
     body: { files, material_kind: materialKind },
+    bodySerializer: () => multipart.body,
   })
   return requireData(result, '批量上传暂时无法完成。')
 }

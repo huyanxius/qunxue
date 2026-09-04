@@ -1,4 +1,5 @@
 import { apiClient } from '../../api/client'
+import { createMultipartBody } from '../../api/multipart'
 import {
   exportResearchProjectArchive,
   listResearchProjectAuditEvents,
@@ -119,11 +120,16 @@ export async function previewQdpxImport(
   taskId: string,
   file: File,
 ): Promise<QdpxImportPreview> {
+  const multipart = await createMultipartBody([{ name: 'file', file }])
   const result = await previewResearchProjectQdpxImport({
     client: apiClient,
     path: { task_id: taskId },
-    headers: { 'Idempotency-Key': exchangeKey() },
+    headers: {
+      'Content-Type': multipart.contentType,
+      'Idempotency-Key': exchangeKey(),
+    },
     body: { file },
+    bodySerializer: () => multipart.body,
   })
   return unwrap(result)
 }

@@ -23,6 +23,7 @@ export const RESEARCH_MATERIAL_MEDIA_TYPES = [
 export type ResearchMaterialMediaType = typeof RESEARCH_MATERIAL_MEDIA_TYPES[number]
 export type ResearchMaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other'
 export type ResearchMaterialStatus = 'uploaded' | 'processing' | 'ready' | 'failed' | 'deleted'
+export type ResearchMaterialIngestionStatus = 'queued' | 'processing' | 'ready' | 'failed'
 
 export type ResearchMaterialLocator = {
   page: number | null
@@ -61,6 +62,9 @@ export type ResearchMaterial = {
   segmentCount: number
   updatedAt: string
   errorCode: string | null
+  ingestionJobId?: string | null
+  ingestionStatus?: ResearchMaterialIngestionStatus
+  unavailableReason?: string | null
   materialKind?: ResearchMaterialKind | null
   segments?: ResearchMaterialSegment[]
 }
@@ -68,6 +72,25 @@ export type ResearchMaterial = {
 export type ResearchMaterialList = {
   taskId: string
   items: ResearchMaterial[]
+}
+
+export type ResearchMaterialSearchHit = {
+  materialId: string
+  parseId: string
+  segmentId: string
+  title: string
+  materialKind: ResearchMaterialKind
+  materialFormat: string
+  excerpt: string
+  locator: ResearchMaterialLocator
+  score: number
+}
+
+export type ResearchMaterialSearchResult = {
+  taskId: string
+  query: string
+  total: number
+  items: ResearchMaterialSearchHit[]
 }
 
 type RawRecord = Record<string, unknown>
@@ -104,6 +127,16 @@ function normalizeKind(value: unknown): ResearchMaterialKind | null {
   return value === 'paper' || value === 'interview_transcript' || value === 'observation_record' || value === 'field_note' || value === 'other'
     ? value
     : null
+}
+
+function normalizeIngestionStatus(
+  value: unknown,
+  materialStatus: ResearchMaterialStatus,
+): ResearchMaterialIngestionStatus {
+  if (value === 'queued' || value === 'processing' || value === 'ready' || value === 'failed') return value
+  if (materialStatus === 'ready') return 'ready'
+  if (materialStatus === 'failed') return 'failed'
+  return 'processing'
 }
 
 /** Normalize server locators while preserving only positions the parser supplied. */
@@ -161,6 +194,7 @@ export function normalizeResearchMaterialSegment(
 export function normalizeResearchMaterial(value: unknown): ResearchMaterial {
   const raw = record(value)
   const materialId = stringValue(raw.material_id ?? raw.materialId)
+  const status = normalizeStatus(raw.status)
   const segments = Array.isArray(raw.segments)
     ? raw.segments.map((item, index) => normalizeSegment(item, materialId, index))
     : undefined
@@ -170,12 +204,15 @@ export function normalizeResearchMaterial(value: unknown): ResearchMaterial {
     filename: stringValue(raw.filename ?? raw.original_filename ?? raw.originalFilename, '未命名材料'),
     mediaType: stringValue(raw.media_type ?? raw.mediaType),
     sizeBytes: numberValue(raw.size_bytes ?? raw.sizeBytes),
-    status: normalizeStatus(raw.status),
+    status,
     version: numberValue(raw.version, 1),
     parseVersion: nullableNumber(raw.parse_version ?? raw.parseVersion),
     segmentCount: numberValue(raw.segment_count ?? raw.segmentCount, segments?.length ?? 0),
     updatedAt: stringValue(raw.updated_at ?? raw.updatedAt),
     errorCode: nullableString(raw.error_code ?? raw.errorCode),
+    ingestionJobId: nullableString(raw.ingestion_job_id ?? raw.ingestionJobId),
+    ingestionStatus: normalizeIngestionStatus(raw.ingestion_status ?? raw.ingestionStatus, status),
+    unavailableReason: nullableString(raw.unavailable_reason ?? raw.unavailableReason),
     materialKind: normalizeKind(raw.material_kind ?? raw.materialKind),
     segments,
   }
@@ -190,6 +227,33 @@ export function normalizeResearchMaterialList(value: unknown, fallbackTaskId: st
       : []
   return {
     taskId: stringValue(raw.task_id ?? raw.taskId, fallbackTaskId),
+    items,
+  }
+}
+
+export function normalizeResearchMaterialSearchResult(
+  value: unknown,
+  fallbackTaskId: string,
+): ResearchMaterialSearchResult {
+  const raw = record(value)
+  const items = Array.isArray(raw.items) ? raw.items.map((value) => {
+    const item = record(value)
+    return {
+      materialId: stringValue(item.material_id ?? item.materialId),
+      parseId: stringValue(item.parse_id ?? item.parseId),
+      segmentId: stringValue(item.segment_id ?? item.segmentId),
+      title: stringValue(item.title, '未命名材料'),
+      materialKind: normalizeKind(item.material_kind ?? item.materialKind) ?? 'other',
+      materialFormat: stringValue(item.material_format ?? item.materialFormat),
+      excerpt: stringValue(item.excerpt),
+      locator: normalizeMaterialLocator(item.locator),
+      score: numberValue(item.score),
+    }
+  }) : []
+  return {
+    taskId: stringValue(raw.task_id ?? raw.taskId, fallbackTaskId),
+    query: stringValue(raw.query),
+    total: numberValue(raw.total, items.length),
     items,
   }
 }

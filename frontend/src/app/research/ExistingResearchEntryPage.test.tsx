@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { parseMultipartRequest } from '../../test/multipart'
 
 import { ExistingResearchEntryPage } from './ExistingResearchEntryPage'
 
@@ -40,7 +41,7 @@ describe('ExistingResearchEntryPage', () => {
         }, { status: 201 })
       }
       if (url.pathname === `/api/research-tasks/${taskId}/materials`) {
-        const form = await request.formData()
+        const form = await parseMultipartRequest(request)
         const file = form.get('file') as File
         return Response.json({
           material_id: `material-${file.name}`,

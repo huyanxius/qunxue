@@ -1,9 +1,12 @@
+import logging
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
-from uuid import uuid4
+from time import sleep
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -63,6 +66,9 @@ from qunxue_api.adapters.sqlite.research_document_proposal import (
 )
 from qunxue_api.adapters.sqlite.research_material_repository import (
     SqliteResearchMaterialRepository,
+)
+from qunxue_api.adapters.sqlite.research_material_search import (
+    SqliteResearchMaterialSearchRepository,
 )
 from qunxue_api.adapters.sqlite.research_method_repository import SqliteMethodPlanRepository
 from qunxue_api.adapters.sqlite.research_project_audit import (
@@ -153,6 +159,10 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
+from qunxue_api.modules.research_materials import (
+    MaterialIngestionStatus,
+    MaterialParseError,
+)
 from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.theory_matching import TheoryMatchingService
 from qunxue_api.modules.transcription import (
@@ -167,6 +177,8 @@ from qunxue_api.settings import (
     Settings,
     get_settings,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _build_transcription_provider(settings: Settings) -> TranscriptionProvider:
@@ -366,10 +378,63 @@ def create_app(
                 materials=SqliteResearchMaterialRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 parser=parse_material,
+                search=SqliteResearchMaterialSearchRepository(session),
+                transcription_available=resolved_settings.has_transcription_provider,
                 commit=session.commit,
+                rollback=session.rollback,
             )
 
     app.state.research_material_application_scope = research_material_application_scope
+
+    ingestion_executor = ThreadPoolExecutor(
+        max_workers=2,
+        thread_name_prefix="qunxue-material-ingestion",
+    )
+
+    def process_research_material_ingestion(job_id: UUID) -> None:
+        while True:
+            try:
+                with research_material_application_scope() as application:
+                    job = application.process_ingestion(job_id)
+            except MaterialParseError:
+                logger.info(
+                    "research material ingestion needs user action",
+                    extra={"job_id": str(job_id)},
+                )
+                return
+            except Exception:
+                logger.exception(
+                    "research material ingestion attempt failed",
+                    extra={"job_id": str(job_id)},
+                )
+                with research_material_application_scope() as application:
+                    job = application.get_ingestion_job(job_id)
+            if (
+                job is None
+                or job.ingestion_status is not MaterialIngestionStatus.FAILED
+                or job.completed_at is not None
+                or job.attempt_count >= job.max_attempts
+            ):
+                return
+            delay = max(0.0, (job.available_at - datetime.now(UTC)).total_seconds())
+            if delay:
+                sleep(delay)
+
+    def schedule_research_material_ingestion(job_id: UUID) -> None:
+        ingestion_executor.submit(process_research_material_ingestion, job_id)
+
+    def recover_research_material_ingestions() -> None:
+        with research_material_application_scope() as application:
+            recoverable = application.recoverable_ingestion_ids()
+        for job_id in recoverable:
+            schedule_research_material_ingestion(job_id)
+
+    def shutdown_research_material_ingestions() -> None:
+        ingestion_executor.shutdown(wait=True, cancel_futures=False)
+
+    app.state.schedule_research_material_ingestion = schedule_research_material_ingestion
+    app.router.add_event_handler("startup", recover_research_material_ingestions)
+    app.router.add_event_handler("shutdown", shutdown_research_material_ingestions)
 
     @contextmanager
     def professional_materials_application_scope() -> Iterator[ProfessionalMaterialsApplication]:
@@ -767,6 +832,7 @@ def create_app(
                         proposals=proposal_service,
                         workflow=agent_research_workflow,
                         materials=material_repository,
+                        material_search=SqliteResearchMaterialSearchRepository(session),
                         analysis=analysis_application,
                     ),
                 )

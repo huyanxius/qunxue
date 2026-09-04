@@ -139,7 +139,7 @@ describe('ResearchAgentConversationPage', () => {
     const menu = within(agent).getByRole('menu', { name: '添加研究材料' })
     expect(within(menu).getByRole('menuitem', { name: '上传文件' })).toBeVisible()
     expect(within(menu).getByRole('menuitem', { name: '从研究材料添加' })).toBeVisible()
-    expect(within(menu).getByRole('menuitem', { name: '引用文件' })).toBeVisible()
+    expect(within(menu).getByRole('menuitem', { name: '查看材料库' })).toBeVisible()
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(within(agent).queryByRole('menu', { name: '添加研究材料' })).not.toBeInTheDocument()
@@ -428,6 +428,116 @@ describe('ResearchAgentConversationPage', () => {
     renderPage()
     const standalone = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     expect(within(standalone).queryByRole('button', { name: '研究材料' })).not.toBeInTheDocument()
+  })
+
+  it('attaches ready task materials to the next Agent turn and clears them after success', async () => {
+    const conversation = conversationFixture({ id: 'conversation-material-attachment' })
+    const completed = conversationFixture({
+      id: conversation.conversation_id,
+      prompt: '只根据这份访谈总结。',
+      answer: '访谈显示照护安排发生了变化。',
+    })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({
+        task_id: 'task-1',
+        items: [{
+          material_id: 'material-1', task_id: 'task-1', filename: '社区访谈.docx',
+          media_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          size_bytes: 2048, status: 'ready', version: 1, parse_version: 1,
+          segment_count: 3, updated_at: '2026-09-04T00:00:00Z', error_code: null,
+        }],
+      })
+      if (url.pathname === '/api/agent/turns' && init?.method === 'POST') return streamResponse(completed)
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    fireEvent.click(within(agent).getByRole('button', { name: '添加研究材料' }))
+    fireEvent.click(within(agent).getByRole('menuitem', { name: '从研究材料添加' }))
+    const picker = await screen.findByRole('dialog', { name: '选择本轮材料' })
+    fireEvent.click(within(picker).getByRole('checkbox', { name: /社区访谈\.docx/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: '完成' }))
+
+    expect(within(agent).getByText('社区访谈.docx')).toBeVisible()
+    const input = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '只根据这份访谈总结。' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([request]) => urlFor(request).pathname === '/api/agent/turns')).toBe(true))
+    const turnCall = fetchMock.mock.calls.find(([request]) => urlFor(request).pathname === '/api/agent/turns')
+    expect(JSON.parse(String(turnCall?.[1]?.body))).toMatchObject({ material_ids: ['material-1'] })
+    await within(agent).findByText('访谈显示照护安排发生了变化。')
+    expect(within(agent).queryByText('社区访谈.docx')).not.toBeInTheDocument()
+  })
+
+  it('uploads from the composer and refreshes the attachment until it is searchable', async () => {
+    const conversation = conversationFixture({ id: 'conversation-direct-upload' })
+    const processing = {
+      material_id: 'material-upload', task_id: 'task-1', filename: '田野笔记.txt',
+      media_type: 'text/plain', size_bytes: 12, status: 'processing', version: 1,
+      parse_version: null, segment_count: 0, updated_at: '2026-09-04T00:00:00Z',
+      error_code: null, ingestion_status: 'queued', ingestion_job_id: 'job-1',
+      unavailable_reason: null,
+    }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlFor(input)
+      const method = input instanceof Request ? input.method : init?.method ?? 'GET'
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/research-tasks/task-1/materials' && method === 'POST') return json(processing, 201)
+      if (url.pathname === '/api/research-tasks/task-1/materials') return json({
+        task_id: 'task-1', items: [{ ...processing, status: 'ready', ingestion_status: 'ready', parse_version: 1 }],
+      })
+      return json({}, 404)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const rendered = render(
+      <MemoryRouter initialEntries={['/research/task-1/match']}>
+        <ResearchAgentConversationPage
+          embedded
+          userId="user-agent"
+          conversationId={conversation.conversation_id}
+          workspace="research"
+          taskId="task-1"
+        />
+      </MemoryRouter>,
+    )
+    const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
+    fireEvent.click(within(agent).getByRole('button', { name: '添加研究材料' }))
+    fireEvent.click(within(agent).getByRole('menuitem', { name: '上传文件' }))
+    const fileInput = rendered.container.querySelector<HTMLInputElement>('.research-agent-composer__file-input')
+    expect(fileInput).not.toBeNull()
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(['field notes'], '田野笔记.txt', { type: 'text/plain' })] },
+    })
+
+    expect(await within(agent).findByText('等待解析')).toBeVisible()
+    await waitFor(() => expect(within(agent).queryByText('等待解析')).not.toBeInTheDocument(), { timeout: 2500 })
+    const uploadCall = fetchMock.mock.calls.find(([input, init]) => {
+      const method = input instanceof Request ? input.method : init?.method
+      return urlFor(input).pathname === '/api/research-tasks/task-1/materials' && method === 'POST'
+    })
+    const uploadRequest = uploadCall?.[0] instanceof Request
+      ? uploadCall[0]
+      : new Request(String(uploadCall?.[0]), uploadCall?.[1])
+    const uploadBody = await uploadRequest.clone().text()
+    expect(uploadBody).toContain('name="defer_processing"')
+    expect(uploadBody).toMatch(/name="defer_processing"\r?\n\r?\ntrue/)
   })
 
   it('distinguishes a personal material citation and opens its exact source locator', async () => {

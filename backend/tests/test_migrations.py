@@ -818,7 +818,8 @@ def test_alembic_head_matches_orm_metadata(
             table_name
             for table_name in inspector.get_table_names()
             if table_name != "alembic_version"
-            and not table_name.startswith("knowledge_search_fts")
+                and not table_name.startswith("knowledge_search_fts")
+                and not table_name.startswith("research_material_search")
         }
         metadata_tables = set(Base.metadata.tables)
         assert database_tables == metadata_tables
@@ -838,7 +839,7 @@ def test_alembic_head_matches_orm_metadata(
                 reflected
                 and object_type == "table"
                 and name is not None
-                and name.startswith("knowledge_search_fts")
+                    and name.startswith(("knowledge_search_fts", "research_material_search"))
             ):
                 return False
             if object_type == "foreign_key_constraint":

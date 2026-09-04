@@ -380,6 +380,10 @@ export type AgentTurnRequest = {
      */
     document_version?: number | null;
     /**
+     * Material Ids
+     */
+    material_ids?: Array<string>;
+    /**
      * Message
      */
     message: string;
@@ -1271,6 +1275,10 @@ export type BodyPreviewResearchProjectQdpxImport = {
  * Body_upload_research_material
  */
 export type BodyUploadResearchMaterial = {
+    /**
+     * Defer Processing
+     */
+    defer_processing?: boolean;
     /**
      * File
      */
@@ -3800,6 +3808,11 @@ export type MaterialCollectionResponse = {
 };
 
 /**
+ * MaterialIngestionStatus
+ */
+export type MaterialIngestionStatus = 'queued' | 'processing' | 'ready' | 'failed';
+
+/**
  * MaterialInputRequest
  */
 export type MaterialInputRequest = {
@@ -5833,6 +5846,45 @@ export type ResearchDocumentVersionListResponse = {
 export type ResearchEntryMode = 'from_scratch' | 'existing_research' | 'legacy';
 
 /**
+ * ResearchMaterialIngestionResponse
+ */
+export type ResearchMaterialIngestionResponse = {
+    /**
+     * Attempt Count
+     */
+    attempt_count: number;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Ingestion Job Id
+     */
+    ingestion_job_id: string | null;
+    ingestion_status: MaterialIngestionStatus;
+    /**
+     * Lease Expires At
+     */
+    lease_expires_at: string | null;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Max Attempts
+     */
+    max_attempts: number;
+    /**
+     * Unavailable Reason
+     */
+    unavailable_reason: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
  * ResearchMaterialListResponse
  */
 export type ResearchMaterialListResponse = {
@@ -5913,6 +5965,11 @@ export type ResearchMaterialResponse = {
      */
     filename: string;
     /**
+     * Ingestion Job Id
+     */
+    ingestion_job_id?: string | null;
+    ingestion_status?: MaterialIngestionStatus;
+    /**
      * Is Current Parse
      */
     is_current_parse: boolean;
@@ -5958,6 +6015,10 @@ export type ResearchMaterialResponse = {
      */
     task_id: string;
     /**
+     * Unavailable Reason
+     */
+    unavailable_reason?: string | null;
+    /**
      * Updated At
      */
     updated_at: string;
@@ -5965,6 +6026,64 @@ export type ResearchMaterialResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * ResearchMaterialSearchHitResponse
+ */
+export type ResearchMaterialSearchHitResponse = {
+    /**
+     * Excerpt
+     */
+    excerpt: string;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Material Format
+     */
+    material_format: string;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    material_kind: MaterialKind;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ResearchMaterialSearchResponse
+ */
+export type ResearchMaterialSearchResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchMaterialSearchHitResponse>;
+    /**
+     * Query
+     */
+    query: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -12149,6 +12268,65 @@ export type UploadResearchMaterialResponses = {
 
 export type UploadResearchMaterialResponse = UploadResearchMaterialResponses[keyof UploadResearchMaterialResponses];
 
+export type SearchResearchMaterialsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query: {
+        /**
+         * Q
+         */
+        q: string;
+        /**
+         * Material Ids
+         */
+        material_ids?: Array<string> | null;
+        /**
+         * Material Kind
+         */
+        material_kind?: MaterialKind | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/research-tasks/{task_id}/materials/search';
+};
+
+export type SearchResearchMaterialsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type SearchResearchMaterialsError = SearchResearchMaterialsErrors[keyof SearchResearchMaterialsErrors];
+
+export type SearchResearchMaterialsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialSearchResponse;
+};
+
+export type SearchResearchMaterialsResponse = SearchResearchMaterialsResponses[keyof SearchResearchMaterialsResponses];
+
 export type DeleteResearchMaterialData = {
     body?: never;
     headers: {
@@ -12289,6 +12467,48 @@ export type GetResearchMaterialContentResponses = {
      */
     200: unknown;
 };
+
+export type GetResearchMaterialIngestionData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/materials/{material_id}/ingestion';
+};
+
+export type GetResearchMaterialIngestionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchMaterialIngestionError = GetResearchMaterialIngestionErrors[keyof GetResearchMaterialIngestionErrors];
+
+export type GetResearchMaterialIngestionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResearchMaterialIngestionResponse;
+};
+
+export type GetResearchMaterialIngestionResponse = GetResearchMaterialIngestionResponses[keyof GetResearchMaterialIngestionResponses];
 
 export type ReparseResearchMaterialData = {
     body?: never;

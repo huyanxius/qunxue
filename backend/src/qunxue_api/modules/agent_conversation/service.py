@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from qunxue_api.modules.agent_conversation.domain import (
     AgentCitation,
+    AgentMaterialAttachment,
     AgentRun,
     AgentTurn,
     Conversation,
@@ -340,6 +341,7 @@ class ConversationService:
         knowledge_release_id: str,
         provider: str = "pydantic-ai",
         model: str = "knowledge-agent",
+        material_attachments: tuple[AgentMaterialAttachment, ...] = (),
     ) -> AgentRun:
         self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         normalized_provider = provider.strip()
@@ -356,6 +358,7 @@ class ConversationService:
                 provider=normalized_provider,
                 model=normalized_model,
                 knowledge_release_id=knowledge_release_id,
+                material_attachments=material_attachments,
             )
         )
 

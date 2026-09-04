@@ -3,6 +3,8 @@
 from qunxue_api.modules.research_materials.domain import (
     MaterialBlock,
     MaterialFormat,
+    MaterialIngestionJob,
+    MaterialIngestionStatus,
     MaterialKind,
     MaterialLocator,
     MaterialParseVersion,
@@ -10,6 +12,8 @@ from qunxue_api.modules.research_materials.domain import (
     MaterialStatus,
     ParsedMaterial,
     ResearchMaterial,
+    ResearchMaterialSearchHit,
+    ResearchMaterialSearchResult,
 )
 from qunxue_api.modules.research_materials.errors import (
     DoiMetadataUnavailable,
@@ -26,7 +30,10 @@ from qunxue_api.modules.research_materials.literature_exchange import (
     export_literature_entries,
     import_literature_entries,
 )
-from qunxue_api.modules.research_materials.ports import ResearchMaterialRepository
+from qunxue_api.modules.research_materials.ports import (
+    ResearchMaterialRepository,
+    ResearchMaterialSearchRepository,
+)
 from qunxue_api.modules.research_materials.professional import (
     CaseAttributeValue,
     ConsentScope,
@@ -64,6 +71,8 @@ __all__ = [
     "MaterialFormat",
     "MaterialIdempotencyConflict",
     "MaterialKind",
+    "MaterialIngestionJob",
+    "MaterialIngestionStatus",
     "MaterialLocator",
     "MaterialNotFound",
     "MaterialOwnershipError",
@@ -76,6 +85,9 @@ __all__ = [
     "ResearchMaterial",
     "ResearchMaterialError",
     "ResearchMaterialRepository",
+    "ResearchMaterialSearchRepository",
+    "ResearchMaterialSearchHit",
+    "ResearchMaterialSearchResult",
     "ResearchMaterialService",
     "UnsupportedMaterialFormat",
     "CaseAttributeValue",

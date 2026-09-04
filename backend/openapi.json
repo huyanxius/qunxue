@@ -718,6 +718,16 @@
             ],
             "title": "Document Version"
           },
+          "material_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Material Ids",
+            "type": "array"
+          },
           "message": {
             "maxLength": 12000,
             "minLength": 1,
@@ -2345,6 +2355,11 @@
       },
       "Body_upload_research_material": {
         "properties": {
+          "defer_processing": {
+            "default": false,
+            "title": "Defer Processing",
+            "type": "boolean"
+          },
           "file": {
             "contentMediaType": "application/octet-stream",
             "title": "File",
@@ -6850,6 +6865,16 @@
         "title": "MaterialCollectionResponse",
         "type": "object"
       },
+      "MaterialIngestionStatus": {
+        "enum": [
+          "queued",
+          "processing",
+          "ready",
+          "failed"
+        ],
+        "title": "MaterialIngestionStatus",
+        "type": "string"
+      },
       "MaterialInputRequest": {
         "properties": {
           "context": {
@@ -10531,6 +10556,90 @@
         "title": "ResearchEntryMode",
         "type": "string"
       },
+      "ResearchMaterialIngestionResponse": {
+        "properties": {
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "ingestion_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingestion Job Id"
+          },
+          "ingestion_status": {
+            "$ref": "#/components/schemas/MaterialIngestionStatus"
+          },
+          "lease_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Expires At"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "max_attempts": {
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_id",
+          "ingestion_job_id",
+          "ingestion_status",
+          "attempt_count",
+          "max_attempts",
+          "error_code",
+          "unavailable_reason",
+          "lease_expires_at",
+          "updated_at"
+        ],
+        "title": "ResearchMaterialIngestionResponse",
+        "type": "object"
+      },
       "ResearchMaterialListResponse": {
         "properties": {
           "items": {
@@ -10707,6 +10816,22 @@
             "title": "Filename",
             "type": "string"
           },
+          "ingestion_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingestion Job Id"
+          },
+          "ingestion_status": {
+            "$ref": "#/components/schemas/MaterialIngestionStatus",
+            "default": "queued"
+          },
           "is_current_parse": {
             "title": "Is Current Parse",
             "type": "boolean"
@@ -10781,6 +10906,17 @@
             "title": "Task Id",
             "type": "string"
           },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -10810,6 +10946,91 @@
           "error_code"
         ],
         "title": "ResearchMaterialResponse",
+        "type": "object"
+      },
+      "ResearchMaterialSearchHitResponse": {
+        "properties": {
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ResearchMaterialLocatorResponse"
+          },
+          "material_format": {
+            "title": "Material Format",
+            "type": "string"
+          },
+          "material_id": {
+            "format": "uuid",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "material_kind": {
+            "$ref": "#/components/schemas/MaterialKind"
+          },
+          "parse_id": {
+            "format": "uuid",
+            "title": "Parse Id",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_id",
+          "parse_id",
+          "segment_id",
+          "title",
+          "material_kind",
+          "material_format",
+          "excerpt",
+          "locator",
+          "score"
+        ],
+        "title": "ResearchMaterialSearchHitResponse",
+        "type": "object"
+      },
+      "ResearchMaterialSearchResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchMaterialSearchHitResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "query",
+          "total",
+          "items"
+        ],
+        "title": "ResearchMaterialSearchResponse",
         "type": "object"
       },
       "ResearchMaterialSegmentResponse": {
@@ -22275,6 +22496,139 @@
         ]
       }
     },
+    "/api/research-tasks/{task_id}/materials/search": {
+      "get": {
+        "operationId": "search_research_materials",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Ids"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MaterialKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Search Research Materials",
+        "tags": [
+          "research-materials"
+        ]
+      }
+    },
     "/api/research-tasks/{task_id}/materials/{material_id}": {
       "delete": {
         "operationId": "delete_research_material",
@@ -22517,6 +22871,79 @@
           }
         },
         "summary": "Get Research Material Content",
+        "tags": [
+          "research-materials"
+        ]
+      }
+    },
+    "/api/research-tasks/{task_id}/materials/{material_id}/ingestion": {
+      "get": {
+        "operationId": "get_research_material_ingestion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchMaterialIngestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Research Material Ingestion",
         "tags": [
           "research-materials"
         ]

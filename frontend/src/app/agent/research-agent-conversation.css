@@ -1093,6 +1093,79 @@
   outline: 0;
 }
 
+.research-agent-conversation .research-agent-composer.has-attachments textarea {
+  height: 132px;
+  min-height: 132px;
+  padding-bottom: 88px;
+}
+
+.research-agent-conversation .research-agent-composer__file-input {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.research-agent-conversation .research-agent-composer__attachments {
+  position: absolute;
+  z-index: 3;
+  right: 14px;
+  bottom: 52px;
+  left: 14px;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.research-agent-conversation .research-agent-composer__attachment,
+.research-agent-conversation .research-agent-composer__uploading {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 230px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgb(17 17 17 / 10%);
+  border-radius: 10px;
+  color: rgb(17 17 17 / 74%);
+  background: rgb(255 255 255 / 82%);
+  font-size: 11px;
+}
+
+.research-agent-conversation .research-agent-composer__attachment > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.research-agent-conversation .research-agent-composer__attachment small {
+  color: #8a6335;
+  white-space: nowrap;
+}
+
+.research-agent-conversation .research-agent-composer__attachment button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.research-agent-conversation .research-agent-composer__attachment button:hover {
+  background: rgb(17 17 17 / 7%);
+}
+
 .research-agent-conversation .research-agent-composer__controls {
   position: absolute;
   z-index: 3;
