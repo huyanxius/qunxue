@@ -406,8 +406,8 @@
   z-index: 40;
   bottom: 0;
   left: calc(100% + 10px);
-  width: min(280px, calc(100vw - 274px));
-  max-height: min(520px, calc(100dvh - 24px));
+  width: min(300px, calc(100vw - 274px));
+  max-height: min(560px, calc(100dvh - 24px));
   padding: 14px;
   border: 1px solid var(--app-border);
   border-radius: 16px;
