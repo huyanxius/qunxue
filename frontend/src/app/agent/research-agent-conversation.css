@@ -2050,3 +2050,193 @@
     animation: none;
   }
 }
+
+/* 正文里的工具痕迹与证据区跟右侧研究面板对齐：宋体小标题、细边框、横线分组，
+   结果项复用同一种浅色小卡片，不再堆图标框和大圆角块。 */
+.research-agent-conversation .research-agent-tool-summary {
+  gap: 9px;
+  border-radius: 10px;
+  border-color: var(--app-border);
+  background: var(--app-canvas);
+}
+
+.research-agent-conversation .research-agent-tool-summary strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.research-agent-conversation .new-research__trace-list {
+  gap: 0;
+  padding: 2px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .new-research__trace-step {
+  gap: 9px;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.research-agent-conversation .new-research__trace-step + .new-research__trace-step {
+  border-top: 1px solid var(--app-border);
+}
+
+.research-agent-conversation .new-research__trace-step strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.research-agent-conversation .new-research__trace-result {
+  border: 0;
+  border-radius: 8px;
+  background: var(--app-sidebar);
+  box-shadow: none;
+}
+
+/* 证据来源退成一句话：下面紧跟着的依据列表才是主体。 */
+.research-agent-conversation .new-research__evidence-origin {
+  display: block;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--app-muted);
+  background: transparent;
+  box-shadow: none;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.research-agent-conversation .new-research__sources button {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .new-research__sources-label {
+  font-family: var(--serif, Georgia, serif);
+}
+
+.research-agent-conversation .research-agent-handoff {
+  padding: 14px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .research-agent-handoff__mark {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  color: var(--app-muted);
+  background: transparent;
+}
+
+.research-agent-conversation .research-agent-handoff__mark svg { width: 20px; height: 20px; }
+
+.research-agent-conversation .research-agent-handoff__copy strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 工具记号只剩线条本身：底色方块、边框和投影在这套排版里全是噪音。 */
+.research-agent-conversation .research-agent-tool-logo,
+.research-agent-conversation .research-agent-tool-logo.is-running,
+.research-agent-conversation .research-agent-tool-logo.is-failed,
+.research-agent-conversation .research-agent-tool-logo.is-interrupted {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.research-agent-conversation .research-agent-tool-logo.is-running { color: #876d2d; }
+.research-agent-conversation .research-agent-tool-logo.is-failed,
+.research-agent-conversation .research-agent-tool-logo.is-interrupted { color: #a85b3c; }
+.research-agent-conversation .research-agent-tool-logo { color: var(--app-muted); }
+
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo + .research-agent-tool-logo {
+  margin-left: -3px;
+}
+
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo:nth-child(2),
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo:nth-child(3) {
+  opacity: .55;
+}
+
+/* 依据药丸复用研究面板那套色：知识条目按维度上色，序号跟着走。 */
+.research-agent-conversation .new-research__sources button[data-dimension='D1'] { --tone-ink: #43639a; }
+.research-agent-conversation .new-research__sources button[data-dimension='D2'] { --tone-ink: #44745f; }
+.research-agent-conversation .new-research__sources button[data-dimension='D3'] { --tone-ink: #367083; }
+.research-agent-conversation .new-research__sources button[data-dimension='D4'] { --tone-ink: #985067; }
+.research-agent-conversation .new-research__sources button[data-dimension='D5'] { --tone-ink: #8a6b2f; }
+.research-agent-conversation .new-research__sources button[data-dimension='D6'] { --tone-ink: #695b91; }
+.research-agent-conversation .new-research__sources button[data-dimension='D7'] { --tone-ink: #925c49; }
+
+.research-agent-conversation .new-research__sources button > b {
+  color: var(--tone-ink, var(--app-muted));
+  background: transparent;
+}
+
+.research-agent-conversation .new-research__sources button small {
+  color: var(--tone-ink, var(--app-muted));
+}
+
+.research-agent-conversation .new-research__sources button[data-dimension] > span,
+.research-agent-conversation .new-research__sources button[data-dimension] > span > small {
+  color: var(--tone-ink);
+}
+
+/* 依据视图在分区栏里的排版：返回行一行放下，动作链接跟栏内其它按钮一个样式。 */
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__back {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__back strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-agent-basis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-agent-basis-actions a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  color: var(--app-ink);
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .new-research__basis > strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
+}

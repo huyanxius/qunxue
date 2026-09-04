@@ -1,12 +1,13 @@
 import {
   ArrowClockwiseIcon,
+  ArticleIcon,
   ArrowUpIcon,
-  BookOpenTextIcon,
   CaretDownIcon,
   CaretRightIcon,
   CheckIcon,
   CheckCircleIcon,
   CircleNotchIcon,
+  CirclesThreeIcon,
   ClockCounterClockwiseIcon,
   CompassIcon,
   CopyIcon,
@@ -15,23 +16,19 @@ import {
   FileTextIcon,
   FolderOpenIcon,
   GlobeHemisphereWestIcon,
+  GlobeSimpleIcon,
   LinkSimpleIcon,
   ListIcon,
   MagnifyingGlassIcon,
-  MapTrifoldIcon,
-  PathIcon,
+  TreeStructureIcon,
   PencilLineIcon,
   PlusIcon,
-  ScalesIcon,
   SidebarSimpleIcon,
-  SparkleIcon,
   StopIcon,
   TrashIcon,
   WarningCircleIcon,
-  WrenchIcon,
   XCircleIcon,
   XIcon,
-  type Icon,
 } from '@phosphor-icons/react'
 import {
   useCallback,
@@ -466,7 +463,7 @@ function KnowledgeHandoffCards({
   return (
     <div className="research-agent-knowledge-handoffs">
       <section className="research-agent-handoff research-agent-handoff--compact" aria-label={text('知识库建议', 'Knowledge base suggestion')}>
-        <span className="research-agent-handoff__mark" aria-hidden="true"><BookOpenTextIcon size={23} weight="duotone" /></span>
+        <span className="research-agent-handoff__mark" aria-hidden="true"><ArticleIcon size={23} weight="duotone" /></span>
         <div className="research-agent-handoff__copy">
           <small>{text('去知识库阅读', 'Read in the knowledge base')}</small>
           <strong>{citation.label}</strong>
@@ -475,7 +472,7 @@ function KnowledgeHandoffCards({
         <Link className="research-agent-handoff__link" to={entryHref}>{text('打开知识条目', 'Open knowledge entry')} <CaretRightIcon size={14} aria-hidden="true" /></Link>
       </section>
       <section className="research-agent-handoff research-agent-handoff--compact" aria-label={text('知识图谱建议', 'Knowledge graph suggestion')}>
-        <span className="research-agent-handoff__mark" aria-hidden="true"><MapTrifoldIcon size={23} weight="duotone" /></span>
+        <span className="research-agent-handoff__mark" aria-hidden="true"><TreeStructureIcon size={23} weight="duotone" /></span>
         <div className="research-agent-handoff__copy">
           <small>{text('沿知识关系探索', 'Explore related knowledge')}</small>
           <strong>{citation.label}</strong>
@@ -1190,17 +1187,21 @@ function ConversationHistory({
   )
 }
 
-const toolIcons: Record<string, Icon> = {
+// 每个工具保留自己的图标，但换掉过于具象的那几个（扳手、地图、书本），
+// 统一 light 权重的线条，状态只用颜色区分，和右侧研究面板一个语言。
+const toolIcons: Record<string, typeof ArticleIcon> = {
   search_knowledge: MagnifyingGlassIcon,
-  read_knowledge_entry: BookOpenTextIcon,
+  read_knowledge_entry: ArticleIcon,
   read_sources: LinkSimpleIcon,
   browse_knowledge_directory: FolderOpenIcon,
   search_research_materials: MagnifyingGlassIcon,
   read_research_material_context: FileTextIcon,
-  update_research_map: MapTrifoldIcon,
-  propose_start_research: SparkleIcon,
-  get_research_workflow_state: PathIcon,
-  start_theory_matching: ScalesIcon,
+  search_web: GlobeSimpleIcon,
+  read_web_page: GlobeSimpleIcon,
+  update_research_map: TreeStructureIcon,
+  propose_start_research: CompassIcon,
+  get_research_workflow_state: CompassIcon,
+  start_theory_matching: CirclesThreeIcon,
   save_confirmed_theory_plan: CheckCircleIcon,
   read_research_document: FileTextIcon,
   propose_document_revision: PencilLineIcon,
@@ -1208,10 +1209,10 @@ const toolIcons: Record<string, Icon> = {
 }
 
 function ToolLogo({ tool, state }: { tool: string; state?: string }) {
-  const ToolIcon = toolIcons[tool] ?? WrenchIcon
+  const ToolIcon = toolIcons[tool] ?? ArticleIcon
   return (
     <span className={`research-agent-tool-logo${state ? ` is-${state}` : ''}`} aria-hidden="true">
-      <ToolIcon size={15} weight={tool === 'search_knowledge' ? 'bold' : 'regular'} />
+      <ToolIcon size={16} weight="light" />
     </span>
   )
 }
@@ -1305,9 +1306,9 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
   if (!citations.length) return null
   return (
     <div className="new-research__sources" aria-label={text('回答证据', 'Answer evidence')}>
-      <span className="new-research__sources-label"><BookOpenTextIcon size={14} />{text('依据', 'Evidence')}</span>
+      <span className="new-research__sources-label">{text('依据', 'Evidence')}</span>
       {citations.map((citation, index) => (
-        <button type="button" key={citation.citation_id} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
+        <button type="button" key={citation.citation_id} data-dimension={citation.knowledge_id?.match(/^(D[1-7])/)?.[1] ?? undefined} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
           <b>{index + 1}</b><span>{citation.label}<small>{citationKindLabel(citation.kind, locale)}</small></span>
         </button>
       ))}
@@ -1327,41 +1328,20 @@ function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
   )).length
   const webCount = citations.filter((citation) => citation.source_kind === 'web').length
   if (!materialCount && !knowledgeCount && !webCount) return null
-  const originCount = [materialCount, knowledgeCount, webCount].filter(Boolean).length
-  const mixed = originCount > 1
+  // 下面紧跟着的就是逐条依据，这里只需要一句话交代来源构成，不必再占一张卡片。
+  const parts = [
+    knowledgeCount ? `${text('群学知识库', 'Qunxue knowledge')} ${knowledgeCount}` : null,
+    materialCount ? `${text('你的研究材料', 'Your materials')} ${materialCount}` : null,
+    webCount ? `${text('公开网页', 'Public web')} ${webCount}` : null,
+  ].filter(Boolean)
   return (
-    <div
-      className={`new-research__evidence-origin${mixed ? ' is-mixed' : ''}`}
+    <p
+      className="new-research__evidence-origin"
       role="status"
       aria-label={text('本轮证据来源', 'Evidence sources for this answer')}
     >
-      <div className="new-research__evidence-origin-heading">
-        <BookOpenTextIcon size={14} aria-hidden="true" />
-        <span>{text('本轮证据来源', 'Evidence sources')}</span>
-      </div>
-      <div className="new-research__evidence-origin-list">
-        {knowledgeCount ? (
-          <span className="is-knowledge"><span>{text('群学知识库', 'Qunxue knowledge')}</span><b>{knowledgeCount}</b></span>
-        ) : null}
-        {materialCount ? (
-          <span className="is-material"><span>{text('你的研究材料', 'Your research materials')}</span><b>{materialCount}</b></span>
-        ) : null}
-        {webCount ? (
-          <span className="is-web"><span>{text('公开网页', 'Public web')}</span><b>{webCount}</b></span>
-        ) : null}
-      </div>
-      <p>
-        {knowledgeCount && materialCount && !webCount
-          ? text('本轮同时引用了群学知识库和你的研究材料', 'This answer cites both the Qunxue knowledge base and your research materials')
-          : mixed
-            ? text('本轮同时引用了多类证据来源', 'This answer cites multiple evidence sources')
-            : materialCount
-              ? text('本轮引用了你的研究材料', 'This answer cites your research materials')
-              : knowledgeCount
-                ? text('本轮引用了群学知识库', 'This answer cites the Qunxue knowledge base')
-                : text('本轮引用了公开网页', 'This answer cites the public web')}
-      </p>
-    </div>
+      {text('本轮引用', 'Cited this turn')} · {parts.join(' · ')}
+    </p>
   )
 }
 
@@ -2440,7 +2420,7 @@ export function ResearchAgentConversationPage({
         ? <div className="research-agent-basis-actions">
             <a href={selectedKnowledgeEntryHref}>{text('打开知识条目', 'Open knowledge entry')} <ArrowUpIcon size={13} /></a>
             {selectedKnowledgeGraphHref
-              ? <a className="is-graph" href={selectedKnowledgeGraphHref}>{text('在知识图谱中查看', 'View in knowledge graph')} <MapTrifoldIcon size={13} /></a>
+              ? <a className="is-graph" href={selectedKnowledgeGraphHref}>{text('在知识图谱中查看', 'View in knowledge graph')} <TreeStructureIcon size={13} /></a>
               : null}
           </div>
         : selectedCitation.knowledge_id
@@ -2490,7 +2470,7 @@ export function ResearchAgentConversationPage({
                 {embedded ? (
                   <>
                     <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                    <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
+                    <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><ArticleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
                     {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
                   </>
                 ) : (

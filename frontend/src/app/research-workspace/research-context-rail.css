@@ -267,3 +267,66 @@
 }
 
 .research-context-rail--sections .research-context-rail__section-body { overflow: hidden; }
+
+/* 依据（二级视图）：返回行和正文跟着分区栏的排版走，不再套旧浮层那套。 */
+.research-context-rail--sections .research-context-rail__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rail-border);
+}
+
+.research-context-rail--sections .research-context-rail__back {
+  padding: 4px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.research-context-rail--sections .research-context-rail__back strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.research-context-rail--sections .research-context-rail__panel { padding: 14px 16px 18px; }
+.research-context-rail--sections .research-context-rail__basis > div { display: grid; gap: 8px; }
+.research-context-rail--sections .new-research__basis > span {
+  color: var(--rail-muted);
+  font-size: 10.5px;
+  letter-spacing: .06em;
+}
+.research-context-rail--sections .new-research__basis > strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.research-context-rail--sections .new-research__basis p {
+  color: var(--rail-muted);
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+.research-context-rail--sections .research-agent-basis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.research-context-rail--sections .research-agent-basis-actions a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--rail-border);
+  border-radius: 8px;
+  color: var(--rail-ink);
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.research-context-rail--sections .research-agent-basis-actions a:hover {
+  border-color: color-mix(in srgb, var(--rail-ink) 35%, var(--rail-border));
+}
