@@ -1425,7 +1425,14 @@ function AssistantTurn({
         {failure ? <p className="qx-notice-surface new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
         {(failure || interrupted) && onRegenerate ? (
           <div className="new-research__assistant-actions">
-            <button type="button" aria-label={text('重试本轮', 'Retry this turn')} onClick={onRegenerate}><ArrowClockwiseIcon size={14} />{text('从本轮问题重试', 'Retry this question')}</button>
+            <button
+              type="button"
+              aria-label={interrupted ? text('继续研究', 'Continue research') : text('重试本轮', 'Retry this turn')}
+              onClick={onRegenerate}
+            >
+              {interrupted ? <CaretRightIcon size={14} /> : <ArrowClockwiseIcon size={14} />}
+              {interrupted ? text('继续研究', 'Continue research') : text('从本轮问题重试', 'Retry this question')}
+            </button>
           </div>
         ) : null}
         {!streaming && answer && !citations.length ? (
@@ -1777,6 +1784,8 @@ export function ResearchAgentConversationPage({
   }, [streamingTurn?.answer, streamingTurn?.toolSteps.length, turns.length])
 
   useEffect(() => () => {
+    const runId = activeRunId.current
+    if (runId) void stopAgentRun(runId).catch(() => undefined)
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     conversationLoadGeneration.current += 1
@@ -1784,14 +1793,22 @@ export function ResearchAgentConversationPage({
   }, [])
 
   function cancelActiveStream() {
+    const runId = activeRunId.current
+    if (runId) {
+      void stopAgentRun(runId).catch(() => undefined)
+      settleInterruptedTurn()
+    }
+    activeRunId.current = null
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
     pendingToolSteps.current = []
     failedTurnAttempt.current = null
     activeTurnAttempt.current = null
-    persistPendingTurnAttempt(userId, null)
-    persistInterruptedTurn(userId, null)
+    if (!runId) {
+      persistPendingTurnAttempt(userId, null)
+      persistInterruptedTurn(userId, null)
+    }
     setStreamingTurn(null)
   }
 
@@ -2103,6 +2120,7 @@ export function ResearchAgentConversationPage({
 
   useEffect(() => {
     if (pendingResumeStarted.current) return
+    if (restoredInterruptedTurn.current) return
     const pending = restoredPendingTurn.current
     if (!pending?.runId) return
     pendingResumeStarted.current = true
@@ -2176,7 +2194,11 @@ export function ResearchAgentConversationPage({
   function stopGeneration() {
     const runId = activeRunId.current
     activeRunId.current = null
-    if (runId) void stopAgentRun(runId).catch(() => undefined)
+    if (runId) {
+      void stopAgentRun(runId).catch(() => {
+        setError(text('停止请求未被服务端确认，请稍后重试。', 'The server did not confirm the stop request. Try again.'))
+      })
+    }
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
