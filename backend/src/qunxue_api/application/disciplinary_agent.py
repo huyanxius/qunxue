@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
+from inspect import Parameter, signature
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -409,10 +410,19 @@ class DisciplinaryAgentApplication:
             planning_failed = False
             if callable(prepare_research):
                 try:
+                    prepare_kwargs = {
+                        "prompt": prompt,
+                        "conversation": conversation_history,
+                        "on_event": planning_events.append,
+                    }
+                    parameters = signature(prepare_research).parameters
+                    if "tools" in parameters or any(
+                        parameter.kind is Parameter.VAR_KEYWORD
+                        for parameter in parameters.values()
+                    ):
+                        prepare_kwargs["tools"] = tools
                     prepare_research(
-                        prompt=prompt,
-                        conversation=conversation_history,
-                        on_event=planning_events.append,
+                        **prepare_kwargs,
                     )
                 except Exception:
                     planning_events.clear()

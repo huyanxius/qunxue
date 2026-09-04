@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import traceback
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -14,8 +15,14 @@ from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from sqlalchemy.exc import IntegrityError
 
+from qunxue_api.adapters.model import (
+    InMemoryModelAttemptRecorder,
+    ModelEndpoint,
+    ModelRouteExecutor,
+)
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.pydantic_runner import (
+    AgentModelRouteError,
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
     _append_result_evidence,
@@ -51,6 +58,67 @@ from qunxue_api.modules.agent_conversation import (
 )
 from qunxue_api.modules.agent_conversation import domain as agent_domain
 from qunxue_api.settings import Settings
+
+
+def _agent_endpoints(
+    *,
+    primary_model: str = "primary-model",
+    fallback_model: str = "backup-model",
+    fallback_base_url: str = "https://backup.example.test/v1",
+) -> tuple[ModelEndpoint, ...]:
+    return (
+        ModelEndpoint(
+            endpoint_id="primary",
+            base_url="https://primary.example.test/v1",
+            api_key="primary-key",
+            model=primary_model,
+            timeout_seconds=30,
+            provider="openai-compatible",
+        ),
+        ModelEndpoint(
+            endpoint_id="fallback-1",
+            base_url=fallback_base_url,
+            api_key="backup-key",
+            model=fallback_model,
+            timeout_seconds=30,
+            provider="openai-compatible",
+        ),
+    )
+
+
+def _agent_route_executor(
+    *,
+    base_url: str,
+    model: str,
+    api_key: str | None,
+    fallback_endpoints: tuple[
+        tuple[str, str] | tuple[str, str, str], ...
+    ] = (),
+) -> ModelRouteExecutor:
+    endpoints = [
+        ModelEndpoint(
+            endpoint_id="primary",
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            timeout_seconds=30,
+            provider="openai-compatible",
+        )
+    ]
+    for index, fallback in enumerate(fallback_endpoints, start=1):
+        endpoint_url, endpoint_key = fallback[:2]
+        endpoint_model = fallback[2] if len(fallback) == 3 else model
+        endpoints.append(
+            ModelEndpoint(
+                endpoint_id=f"fallback-{index}",
+                base_url=endpoint_url,
+                api_key=endpoint_key,
+                model=endpoint_model,
+                timeout_seconds=30,
+                provider="openai-compatible",
+            )
+        )
+    return ModelRouteExecutor(endpoints=tuple(endpoints))
 
 
 def test_agent_runtime_mode_honors_api_key_override_without_using_legacy_gateway() -> None:
@@ -118,6 +186,31 @@ def test_starting_another_conversation_does_not_cancel_the_current_run() -> None
 class _FakeAgentTools:
     release = SimpleNamespace(knowledge_release_id="release-a")
     evidence = {}
+
+
+def test_knowledge_tool_registry_exposes_only_read_only_agent_route_context() -> None:
+    class _Catalog:
+        @staticmethod
+        def current_release(*, purpose):
+            del purpose
+            return SimpleNamespace(knowledge_release_id="release-a")
+
+    registry = KnowledgeToolRegistry(_Catalog())
+    registry._user_id = UUID(int=51)
+    registry._task_id = UUID(int=52)
+    registry._agent_run_id = UUID(int=53)
+    registry._conversation_id = UUID(int=54)
+    registry._agent_turn_id = UUID(int=55)
+
+    context = registry.agent_route_context()
+
+    assert dict(context) == {
+        "user_id": UUID(int=51),
+        "task_id": UUID(int=52),
+        "agent_run_id": UUID(int=53),
+    }
+    with pytest.raises(TypeError):
+        context["task_id"] = UUID(int=99)
 
 
 def test_application_only_enables_web_tools_for_an_opted_in_turn() -> None:
@@ -1095,6 +1188,167 @@ def test_deepseek_flash_disables_thinking_by_default() -> None:
     assert runner._usage_limits.tool_calls_limit == 20
 
 
+def test_agent_builds_independent_settings_without_leaking_deepseek_options_to_fallback() -> None:
+    fallback_endpoints = (
+        ("https://openai.example.test/v1", "fallback-key", "gpt-5.6-sol"),
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="primary-key",
+            model="deepseek-v4-flash",
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+
+    primary = runner._agent.model
+    fallback = primary._endpoint_models["fallback-1"]
+
+    assert primary.settings is not fallback.settings
+    assert primary.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert "extra_body" not in fallback.settings
+    assert fallback.model_name == "gpt-5.6-sol"
+
+
+def test_agent_applies_deepseek_options_to_a_deepseek_fallback_only() -> None:
+    fallback_endpoints = (
+        ("https://api.deepseek.com", "fallback-key", "deepseek-v4-flash"),
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://openai.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://openai.example.test/v1",
+            api_key="primary-key",
+            model="gpt-5.6-sol",
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+
+    primary = runner._agent.model
+    fallback = primary._endpoint_models["fallback-1"]
+
+    assert primary.settings is not fallback.settings
+    assert "extra_body" not in primary.settings
+    assert fallback.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert fallback.model_name == "deepseek-v4-flash"
+
+
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize(
+    ("primary_url", "primary_model", "fallback_url", "fallback_model"),
+    [
+        (
+            "https://api.deepseek.com",
+            "deepseek-v4-flash",
+            "https://openai.example.test/v1",
+            "gpt-5.6-sol",
+        ),
+        (
+            "https://openai.example.test/v1",
+            "gpt-5.6-sol",
+            "https://api.deepseek.com",
+            "deepseek-v4-flash",
+        ),
+    ],
+)
+def test_agent_fallback_call_merges_its_defaults_with_runtime_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+    stream: bool,
+    primary_url: str,
+    primary_model: str,
+    fallback_url: str,
+    fallback_model: str,
+) -> None:
+    fallback_endpoints = ((fallback_url, "fallback-key", fallback_model),)
+    runner = PydanticAIKnowledgeRunner(
+        base_url=primary_url,
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model=primary_model,
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url=primary_url,
+            api_key="primary-key",
+            model=primary_model,
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+    routed_model = runner._agent.model
+    observed_settings: list[dict[str, object]] = []
+    streamed_response = object()
+
+    class _FakeStream:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            del exc_type, exc, traceback
+
+    async def request_once(
+        self,
+        messages,
+        actual_stream,
+        model_settings,
+        model_request_parameters,
+    ):
+        del messages, model_request_parameters
+        assert actual_stream is stream
+        observed_settings.append(dict(model_settings))
+        if self is routed_model:
+            raise ModelHTTPError(
+                status_code=503,
+                model_name=primary_model,
+                body={"message": "temporarily unavailable"},
+            )
+        if stream:
+            return _FakeStream()
+        return ModelResponse(parts=[TextPart(content="fallback answer")])
+
+    async def process_stream(*args, **kwargs):
+        del args, kwargs
+        return streamed_response
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+    monkeypatch.setattr(OpenAIChatModel, "_process_streamed_response", process_stream)
+
+    async def invoke() -> object:
+        runtime_overrides = {"temperature": 0.37, "max_tokens": 777}
+        if not stream:
+            return await routed_model.request(
+                [], runtime_overrides, ModelRequestParameters()
+            )
+        async with routed_model.request_stream(
+            [], runtime_overrides, ModelRequestParameters()
+        ) as response:
+            return response
+
+    result = asyncio.run(invoke())
+
+    assert len(observed_settings) == 2
+    fallback_settings = observed_settings[1]
+    assert fallback_settings["temperature"] == 0.37
+    assert fallback_settings["max_tokens"] == 777
+    if fallback_model == "deepseek-v4-flash":
+        assert fallback_settings["extra_body"] == {
+            "thinking": {"type": "disabled"}
+        }
+    else:
+        assert "extra_body" not in fallback_settings
+    if stream:
+        assert result is streamed_response
+    else:
+        assert result.parts == [TextPart(content="fallback answer")]
+
+
 def test_deep_research_uses_an_emergency_guard_not_the_chat_tool_budget() -> None:
     runner = PydanticAIKnowledgeRunner(
         base_url="https://models.example.test/v1",
@@ -1165,6 +1419,51 @@ def test_agent_bootstrap_forwards_configured_reasoning_effort(client, monkeypatc
         pass
 
     assert captured["reasoning_effort"] == "max"
+
+
+def test_agent_bootstrap_reuses_shared_router_and_normalized_endpoints(
+    client,
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class _CapturedRunner(_CountingRunner):
+        def __init__(self, **kwargs) -> None:
+            super().__init__()
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "qunxue_api.bootstrap.PydanticAIKnowledgeRunner",
+        _CapturedRunner,
+    )
+    settings = Settings(
+        _env_file=None,
+        database_url=client.app.state.settings.database_url,
+        runtime_mode="base",
+        model_base_url="https://primary.example.test/v1",
+        model_api_key="primary-key",
+        model_name="primary-model",
+        model_fallbacks=[
+            {
+                "base_url": "https://backup.example.test/v1/",
+                "api_key": "backup-key",
+                "model": "backup-model",
+            }
+        ],
+    )
+    app = create_app(
+        settings=settings,
+        database=client.app.state.database,
+        knowledge_retriever=client.app.state.knowledge_retriever,
+    )
+
+    with app.state.disciplinary_agent_scope():
+        pass
+
+    assert captured["route_executor"] is app.state.model_router
+    assert captured["fallback_endpoints"] == (
+        ("https://backup.example.test/v1", "backup-key", "backup-model"),
+    )
 
 
 def test_agent_bootstrap_forwards_extension_and_sft_headers(client, monkeypatch) -> None:
@@ -2195,14 +2494,264 @@ def test_agent_returns_search_failure_to_the_model_for_a_second_judgment() -> No
     assert "".join(deltas) == result.answer
 
 
-def test_agent_retries_unknown_provider_at_the_model_request_boundary(
+def test_agent_shared_router_records_primary_and_fallback_with_run_context(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    task_id = UUID(int=41)
+    agent_run_id = UUID(int=42)
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=_agent_endpoints(), recorder=attempts)
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://backup.example.test/v1", "backup-key", "backup-model"),
+        ),
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+    completed_request = object()
+    called_models: list[str] = []
+
+    async def request_once(self, *args, **kwargs):
+        del args, kwargs
+        called_models.append(self.model_name)
+        if self.base_url.startswith("https://primary"):
+            raise ModelHTTPError(
+                status_code=429,
+                model_name="primary-model",
+                body={"message": "rate limited"},
+            )
+        return completed_request
+
+    class _RouteAwareTools:
+        release = SimpleNamespace(knowledge_release_id="release-a")
+        evidence: dict[str, object] = {}
+        selected_evidence_ids: tuple[str, ...] = ()
+
+        @staticmethod
+        def agent_route_context() -> dict[str, UUID | None]:
+            return {
+                "user_id": UUID(int=40),
+                "task_id": task_id,
+                "agent_run_id": agent_run_id,
+            }
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+
+    def run_sync(*args, **kwargs):
+        del args, kwargs
+        result = asyncio.run(
+            runner._agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+        assert result is completed_request
+        return SimpleNamespace(output="路由完成")
+
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+
+    result = runner.run(
+        prompt="你好",
+        conversation=(),
+        tools=_RouteAwareTools(),
+    )
+
+    records = [
+        item for item in attempts.list_all() if item.agent_run_id == agent_run_id
+    ]
+    assert result.answer == "路由完成"
+    assert called_models == ["primary-model", "backup-model"]
+    assert [item.endpoint_id for item in records] == ["primary", "fallback-1"]
+    assert len({item.route_id for item in records}) == 1
+    assert records[0].failure_code == "model_rate_limited"
+    assert records[0].failure_retryable is True
+    assert records[1].success is True
+    assert all(item.task_id == task_id for item in records)
+    assert all(item.agent_run_id == agent_run_id for item in records)
+    assert all(item.capability == "agent_completion" for item in records)
+    assert all(
+        not hasattr(item, field)
+        for item in records
+        for field in ("user_id", "prompt", "material")
+    )
+
+
+@pytest.mark.parametrize("outcome", ["normal", "error", "cancelled"])
+def test_planner_route_context_is_correlated_and_reset_after_every_exit(
+    monkeypatch: pytest.MonkeyPatch,
+    outcome: str,
+) -> None:
+    task_id = UUID(int=61)
+    agent_run_id = UUID(int=62)
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(
+        endpoints=(_agent_endpoints()[0],),
+        recorder=attempts,
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+    request_count = 0
+
+    async def request_once(self, *args, **kwargs):
+        nonlocal request_count
+        del self, args, kwargs
+        request_count += 1
+        if outcome == "cancelled" and request_count == 1:
+            raise asyncio.CancelledError
+        return object()
+
+    def planner_run_sync(*args, **kwargs):
+        del args, kwargs
+        asyncio.run(
+            runner._planner_agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+        if outcome == "error":
+            raise RuntimeError("planner failed after completion")
+        return SimpleNamespace(output=SimpleNamespace(request_type="conversation"))
+
+    tools = SimpleNamespace(
+        agent_route_context=lambda: {
+            "user_id": UUID(int=60),
+            "task_id": task_id,
+            "agent_run_id": agent_run_id,
+        }
+    )
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+    monkeypatch.setattr(runner._planner_agent, "run_sync", planner_run_sync)
+
+    if outcome == "cancelled":
+        with pytest.raises(asyncio.CancelledError):
+            runner.prepare_research(
+                prompt="研究平台劳动关系",
+                conversation=(),
+                tools=tools,
+                on_event=lambda event: None,
+            )
+    else:
+        runner.prepare_research(
+            prompt="研究平台劳动关系",
+            conversation=(),
+            tools=tools,
+            on_event=lambda event: None,
+        )
+
+    asyncio.run(
+        runner._agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
+        )
+    )
+
+    records = attempts.list_all()
+    assert records[0].task_id == task_id
+    assert records[0].agent_run_id == agent_run_id
+    assert records[0].capability == "agent_completion"
+    assert records[-1].task_id is None
+    assert records[-1].agent_run_id is None
+    assert records[-1].capability == "agent_completion"
+    assert all(not hasattr(item, "user_id") for item in records)
+
+
+def test_agent_shared_router_creates_a_fresh_route_for_each_completion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    attempts = InMemoryModelAttemptRecorder()
+    endpoints = (_agent_endpoints()[0],)
+    router = ModelRouteExecutor(endpoints=endpoints, recorder=attempts)
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+
+    async def request_once(self, *args, **kwargs):
+        del self, args, kwargs
+        return object()
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+
+    async def complete_twice() -> None:
+        await runner._agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
+        )
+        await runner._agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
+        )
+
+    asyncio.run(complete_twice())
+
+    route_ids = [item.route_id for item in attempts.list_all()]
+    assert len(route_ids) == 2
+    assert route_ids[0] is not None
+    assert route_ids[1] is not None
+    assert route_ids[0] != route_ids[1]
+
+
+def test_agent_shared_router_preserves_model_request_cancellation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=_agent_endpoints(), recorder=attempts)
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://backup.example.test/v1", "backup-key", "backup-model"),
+        ),
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+    calls: list[str] = []
+
+    async def cancelled_request(self, *args, **kwargs):
+        del args, kwargs
+        calls.append(self.model_name)
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", cancelled_request)
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(
+            runner._agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+
+    records = attempts.list_all()
+    assert calls == ["primary-model"]
+    assert len(records) == 1
+    assert records[0].failure_code == "model_attempt_cancelled"
+
+
+def test_agent_routes_unknown_provider_to_the_next_model_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fallback_endpoints = (
+        ("https://backup.example.test/v1", "backup-key", "backup-model"),
+    )
     runner = PydanticAIKnowledgeRunner(
         base_url="https://models.example.test/v1",
         api_key="local-test-key",
+        fallback_endpoints=fallback_endpoints,
         model="gpt-5.6-terra",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://models.example.test/v1",
+            api_key="local-test-key",
+            model="gpt-5.6-terra",
+            fallback_endpoints=fallback_endpoints,
+        ),
     )
     model = runner._agent.model
     attempts = 0
@@ -2220,15 +2769,7 @@ def test_agent_retries_unknown_provider_at_the_model_request_boundary(
             )
         return completed_request
 
-    async def no_sleep(_seconds: float) -> None:
-        return None
-
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
-    monkeypatch.setattr(
-        "qunxue_api.adapters.research_agent.pydantic_runner.async_sleep",
-        no_sleep,
-        raising=False,
-    )
     result = asyncio.run(
         model._completions_create([], False, {}, ModelRequestParameters())
     )
@@ -2245,6 +2786,11 @@ def test_agent_does_not_retry_other_bad_model_requests(
         api_key="local-test-key",
         model="gpt-5.6-terra",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://models.example.test/v1",
+            api_key="local-test-key",
+            model="gpt-5.6-terra",
+        ),
     )
     model = runner._agent.model
     attempts = 0
@@ -2261,25 +2807,142 @@ def test_agent_does_not_retry_other_bad_model_requests(
 
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
-    with pytest.raises(ModelHTTPError, match="invalid request parameter"):
+    with pytest.raises(
+        AgentModelRouteError,
+        match="agent_model_request_rejected: Agent model request was rejected",
+    ) as caught:
         asyncio.run(
             model._completions_create([], False, {}, ModelRequestParameters())
         )
 
     assert attempts == 1
+    assert caught.value.code == "agent_model_request_rejected"
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_error", "expected_attempt_codes"),
+    [
+        (
+            503,
+            "agent_model_unavailable: Agent model providers are temporarily unavailable.",
+            ["model_unavailable", "model_unavailable"],
+        ),
+        (
+            400,
+            "agent_model_request_rejected: Agent model request was rejected.",
+            ["model_request_rejected"],
+        ),
+    ],
+)
+def test_agent_model_failure_persists_only_safe_error_and_traceback(
+    client,
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int,
+    expected_error: str,
+    expected_attempt_codes: list[str],
+) -> None:
+    canary = f"provider-body-secret-{status_code}"
+    registered = client.post(
+        "/api/session/register",
+        json={
+            "email": f"agent-route-failure-{status_code}@example.com",
+            "password": "password-123",
+            "display_name": "学生",
+        },
+        headers={"Idempotency-Key": f"register-agent-route-failure-{status_code}"},
+    )
+    assert registered.status_code == 201
+    user_id = UUID(registered.json()["user"]["user_id"])
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=_agent_endpoints(), recorder=attempts)
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=(
+            ("https://backup.example.test/v1", "backup-key", "backup-model"),
+        ),
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+
+    async def rejected_request(self, *args, **kwargs):
+        del args, kwargs
+        raise ModelHTTPError(
+            status_code=status_code,
+            model_name=self.model_name,
+            body={"message": canary, "url": f"https://secret.test/{canary}"},
+        )
+
+    def run_sync(*args, **kwargs):
+        del args, kwargs
+        asyncio.run(
+            runner._agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", rejected_request)
+    monkeypatch.setattr(runner, "prepare_research", lambda **kwargs: None)
+    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+
+    with client.app.state.database.session() as session:
+        application = DisciplinaryAgentApplication(
+            conversations=ConversationService(SqliteConversationRepository(session)),
+            runner=runner,
+            tools_factory=_FakeAgentTools,
+        )
+        with pytest.raises(AgentModelRouteError) as caught:
+            application.run_turn(
+                user_id=user_id,
+                conversation_id=None,
+                prompt="测试模型路由失败脱敏",
+                idempotency_key=f"agent-route-failure-{status_code}",
+            )
+
+        failed = (
+            session.query(AgentRunRow)
+            .filter_by(idempotency_key=f"agent-route-failure-{status_code}")
+            .one()
+        )
+        rendered_traceback = "".join(
+            traceback.format_exception(
+                caught.type,
+                caught.value,
+                caught.tb,
+            )
+        )
+
+    assert str(caught.value) == expected_error
+    assert getattr(caught.value, "code", None) == expected_error.split(":", 1)[0]
+    assert failed.error == expected_error
+    assert canary not in str(caught.value)
+    assert canary not in failed.error
+    assert canary not in rendered_traceback
+    assert caught.value.__suppress_context__ is True
+    assert [record.failure_code for record in attempts.list_all()] == (
+        expected_attempt_codes
+    )
 
 
 def test_agent_fails_over_to_the_next_model_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    fallback_endpoints = (
+        ("https://backup.example.test/v1", "backup-key"),
+    )
     runner = PydanticAIKnowledgeRunner(
         base_url="https://primary.example.test/v1",
         api_key="primary-key",
-        fallback_endpoints=(
-            ("https://backup.example.test/v1", "backup-key"),
-        ),
+        fallback_endpoints=fallback_endpoints,
         model="gpt-5.6-sol",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://primary.example.test/v1",
+            api_key="primary-key",
+            model="gpt-5.6-sol",
+            fallback_endpoints=fallback_endpoints,
+        ),
     )
     model = runner._agent.model
     calls: list[str] = []
@@ -2296,15 +2959,7 @@ def test_agent_fails_over_to_the_next_model_endpoint(
             )
         return completed_request
 
-    async def no_sleep(_seconds: float) -> None:
-        return None
-
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
-    monkeypatch.setattr(
-        "qunxue_api.adapters.research_agent.pydantic_runner.async_sleep",
-        no_sleep,
-        raising=False,
-    )
 
     result = asyncio.run(
         model._completions_create([], False, {}, ModelRequestParameters())
@@ -2320,12 +2975,19 @@ def test_agent_fails_over_to_the_next_model_endpoint(
 def test_agent_uses_primary_before_calling_fallback_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    fallback_endpoints = (("https://fast.example.test/v1", "fast-key"),)
     runner = PydanticAIKnowledgeRunner(
         base_url="https://slow.example.test/v1",
         api_key="slow-key",
-        fallback_endpoints=(("https://fast.example.test/v1", "fast-key"),),
+        fallback_endpoints=fallback_endpoints,
         model="gpt-5.6-sol",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://slow.example.test/v1",
+            api_key="slow-key",
+            model="gpt-5.6-sol",
+            fallback_endpoints=fallback_endpoints,
+        ),
     )
     model = runner._agent.model
     calls: list[str] = []
@@ -2349,22 +3011,29 @@ def test_agent_uses_primary_before_calling_fallback_endpoint(
     assert result is primary_response
 
 
-def test_agent_races_keys_for_the_same_primary_endpoint(
+def test_agent_does_not_race_keys_for_the_same_primary_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    fallback_endpoints = (
+        ("https://primary.example.test/v1", "peer-key"),
+        ("https://backup.example.test/v1", "backup-key"),
+    )
     runner = PydanticAIKnowledgeRunner(
         base_url="https://primary.example.test/v1",
         api_key="primary-key",
-        fallback_endpoints=(
-            ("https://primary.example.test/v1", "peer-key"),
-            ("https://backup.example.test/v1", "backup-key"),
-        ),
+        fallback_endpoints=fallback_endpoints,
         model="gpt-5.6-sol",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://primary.example.test/v1",
+            api_key="primary-key",
+            model="gpt-5.6-sol",
+            fallback_endpoints=fallback_endpoints,
+        ),
     )
     model = runner._agent.model
     calls: list[str] = []
-    peer_response = object()
+    primary_response = object()
 
     async def request_once(self, *args, **kwargs):
         del args, kwargs
@@ -2372,10 +3041,8 @@ def test_agent_races_keys_for_the_same_primary_endpoint(
         calls.append(api_key)
         if api_key == "primary-key":
             await asyncio.sleep(0.05)
-            return object()
-        if api_key == "peer-key":
-            return peer_response
-        pytest.fail("backup endpoint must not race the primary endpoint keys")
+            return primary_response
+        pytest.fail("fallback keys must not race a successful primary request")
 
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
@@ -2383,8 +3050,8 @@ def test_agent_races_keys_for_the_same_primary_endpoint(
         model._completions_create([], False, {}, ModelRequestParameters())
     )
 
-    assert result is peer_response
-    assert set(calls) == {"primary-key", "peer-key"}
+    assert result is primary_response
+    assert calls == ["primary-key"]
 
 
 def test_agent_keeps_coding_tools_after_endpoint_failover_change() -> None:

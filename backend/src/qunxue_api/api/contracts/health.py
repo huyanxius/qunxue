@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -15,3 +16,6 @@ class HealthResponse(BaseModel):
     contract_version: str
     capability: Literal["unavailable"] | ModelCapability
     knowledge_release_id: str | None
+    model_status: Literal["unknown", "healthy", "degraded", "unavailable"]
+    model_checked_at: datetime | None
+    release_revision: str

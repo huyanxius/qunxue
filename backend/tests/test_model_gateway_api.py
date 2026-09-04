@@ -84,6 +84,7 @@ def test_invalid_builtin_case_cursor_uses_the_stable_error_envelope(
         ("model_unavailable", 503, "model_timeout"),
         ("model_rate_limited", 429, "model_timeout"),
         ("model_invalid_output", 502, "internal_server_error"),
+        ("model_request_rejected", 502, "internal_server_error"),
         ("no_reliable_candidate", 409, "no_reliable_candidate"),
         ("insufficient_sources", 409, "insufficient_sources"),
     ],

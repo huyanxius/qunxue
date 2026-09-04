@@ -1,9 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, cast
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -15,6 +16,26 @@ SILICONFLOW_EMBEDDING_MODEL = "Pro/BAAI/bge-m3"
 SILICONFLOW_RERANKER_MODEL = "Pro/BAAI/bge-reranker-v2-m3"
 DEFAULT_MODEL_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL_NAME = "deepseek-v4-flash"
+
+
+def _normalize_model_base_url(value: str) -> str:
+    parsed = urlsplit(value)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("model base URL must be an HTTP(S) URL without credentials")
+    return value.rstrip("/")
+
+
+def _normalize_model_name(value: str) -> str:
+    if not value.strip():
+        raise ValueError("model name must not be empty")
+    return value.strip()
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +53,37 @@ class RetrievalConfig:
     min_rerank_score: float
     min_lexical_score: float
     recall_limit: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedModelEndpointSettings:
+    """Validated model endpoint configuration without adapter dependencies."""
+
+    endpoint_id: str
+    base_url: str
+    model: str
+    api_key: SecretStr | None = field(repr=False)
+    timeout_seconds: float
+
+
+class ModelFallbackSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+
+    base_url: str
+    api_key: SecretStr
+    model: str | None = None
+
+    @field_validator("base_url")
+    @classmethod
+    def validate_base_url(cls, value: str) -> str:
+        return _normalize_model_base_url(value)
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _normalize_model_name(value)
 
 
 def is_sqlite_memory_url(database_url: str) -> bool:
@@ -53,6 +105,12 @@ def is_sqlite_memory_url(database_url: str) -> bool:
 class Settings(BaseSettings):
     app_name: str = "群学致知 API"
     contract_version: str = "2026-07-foundation"
+    release_revision: str = Field(
+        default="unreleased",
+        min_length=1,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$",
+    )
     runtime_mode: Literal["mock", "base", "sft"] = "mock"
     database_url: str = DEFAULT_DATABASE_URL
     session_cookie_name: str = "qunxue_session"
@@ -71,12 +129,13 @@ class Settings(BaseSettings):
     )
     model_base_url: str | None = None
     model_api_key: SecretStr | None = None
-    model_fallbacks: list[dict[str, str]] = Field(default_factory=list)
+    model_fallbacks: list[ModelFallbackSettings] = Field(default_factory=list)
     model_name: str | None = None
     model_reasoning_effort: (
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
     ) = None
     model_timeout_seconds: float = Field(default=30, gt=0)
+    model_probe_interval_seconds: float = Field(default=300, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
     web_search_provider: Literal["tavily", "custom"] = "tavily"
     web_search_api_key: SecretStr | None = None
@@ -109,7 +168,18 @@ class Settings(BaseSettings):
         env_prefix="QUNXUE_",
         env_file=BACKEND_ROOT / ".env",
         extra="ignore",
+        hide_input_in_errors=True,
     )
+
+    @field_validator("model_base_url")
+    @classmethod
+    def validate_model_base_url(cls, value: str | None) -> str | None:
+        return _normalize_model_base_url(value) if value is not None else None
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, value: str | None) -> str | None:
+        return _normalize_model_name(value) if value is not None else None
 
     @property
     def has_model_api_key(self) -> bool:
@@ -134,6 +204,38 @@ class Settings(BaseSettings):
             and self.transcription_model
             and self.transcription_model.strip()
         )
+
+    def resolved_model_endpoints(self) -> tuple[ResolvedModelEndpointSettings, ...]:
+        primary_base_url = self.model_base_url or (
+            DEFAULT_MODEL_BASE_URL if self.has_model_api_key else None
+        )
+        primary_model = self.model_name or (
+            DEFAULT_MODEL_NAME if self.has_model_api_key else None
+        )
+        if primary_base_url is None and primary_model is None and not self.model_fallbacks:
+            return ()
+        if primary_base_url is None or primary_model is None:
+            raise ValueError("model_base_url and model_name must be configured together")
+        endpoints = [
+            ResolvedModelEndpointSettings(
+                endpoint_id="primary",
+                base_url=primary_base_url,
+                api_key=self.model_api_key,
+                model=primary_model,
+                timeout_seconds=self.model_timeout_seconds,
+            )
+        ]
+        endpoints.extend(
+            ResolvedModelEndpointSettings(
+                endpoint_id=f"fallback-{index}",
+                base_url=fallback.base_url,
+                api_key=fallback.api_key,
+                model=fallback.model or primary_model,
+                timeout_seconds=self.model_timeout_seconds,
+            )
+            for index, fallback in enumerate(self.model_fallbacks, start=1)
+        )
+        return tuple(endpoints)
 
     def require_retrieval_config(self) -> RetrievalConfig:
         text_fields = {

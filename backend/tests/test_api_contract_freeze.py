@@ -152,6 +152,42 @@ def test_error_and_model_metadata_enums_are_stable(client: TestClient) -> None:
     assert schemas["ModelCapability"]["enum"] == ["mock", "base", "sft"]
 
 
+def test_health_contract_preserves_runtime_fields_and_truthful_model_state(
+    client: TestClient,
+) -> None:
+    schema = client.app.openapi()
+    health = schema["components"]["schemas"]["HealthResponse"]
+
+    assert {
+        "status",
+        "service",
+        "runtime_mode",
+        "provider",
+        "model_version",
+        "persistence",
+        "contract_version",
+        "capability",
+        "knowledge_release_id",
+        "model_status",
+        "model_checked_at",
+        "release_revision",
+    } <= set(health["required"])
+    assert set(health["properties"]["model_status"]["enum"]) == {
+        "unknown",
+        "healthy",
+        "degraded",
+        "unavailable",
+    }
+    unavailable_schema = schema["paths"]["/api/health"]["get"]["responses"]["503"][
+        "content"
+    ]["application/json"]["schema"]
+    refs = {variant["$ref"] for variant in unavailable_schema["anyOf"]}
+    assert refs == {
+        "#/components/schemas/ErrorResponse",
+        "#/components/schemas/HealthResponse",
+    }
+
+
 def test_model_metadata_marks_knowledge_release_as_nullable_not_applicable(
     client: TestClient,
 ) -> None:
@@ -588,6 +624,13 @@ def test_every_documented_json_error_uses_error_response(client: TestClient) -> 
                 ):
                     continue
                 response_schema = response["content"]["application/json"]["schema"]
+                if path == "/api/health" and method == "get" and status_code == "503":
+                    refs = {variant["$ref"] for variant in response_schema["anyOf"]}
+                    assert refs == {
+                        "#/components/schemas/ErrorResponse",
+                        "#/components/schemas/HealthResponse",
+                    }
+                    continue
                 assert response_schema["$ref"].endswith("/ErrorResponse"), (
                     f"{method.upper()} {path} documents {status_code} with "
                     f"{response_schema}"

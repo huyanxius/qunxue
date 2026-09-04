@@ -1,5 +1,9 @@
 """Provider-neutral model gateway and the deterministic demonstration adapter."""
 
+from qunxue_api.adapters.model.attempt_recording import (
+    PersistedModelRouteAttempt,
+    SqliteModelAttemptRecorder,
+)
 from qunxue_api.adapters.model.cases import (
     BuiltInCase,
     BuiltInCaseCatalog,
@@ -17,6 +21,24 @@ from qunxue_api.adapters.model.recording import (
     InMemoryModelInvocationRecorder,
     SqliteModelInvocationRecorder,
 )
+from qunxue_api.adapters.model.routed_provider import RoutedModelProvider
+from qunxue_api.adapters.model.routing import (
+    InMemoryModelAttemptRecorder,
+    ModelAttemptFailure,
+    ModelAttemptRecord,
+    ModelAttemptRecorder,
+    ModelAttemptResult,
+    ModelEndpoint,
+    ModelEndpointHealth,
+    ModelHealthSnapshot,
+    ModelRouteContext,
+    ModelRouteExecutor,
+    ModelRouteResult,
+    ModelRouteScope,
+    ModelRoutesUnavailable,
+    current_model_route_scope,
+    model_route_scope,
+)
 from qunxue_api.adapters.model.types import (
     ModelCapabilityName,
     ModelInvocationError,
@@ -26,6 +48,7 @@ from qunxue_api.adapters.model.types import (
     ModelProviderFailure,
     ModelProviderResult,
     ModelScenario,
+    ProbeableModelProvider,
 )
 
 __all__ = [
@@ -33,17 +56,36 @@ __all__ = [
     "BuiltInCaseCatalog",
     "BuiltInCasePage",
     "DeterministicMockModelProvider",
+    "InMemoryModelAttemptRecorder",
     "InMemoryModelInvocationRecorder",
+    "ModelAttemptFailure",
+    "ModelAttemptRecord",
+    "ModelAttemptRecorder",
+    "ModelAttemptResult",
     "ModelCapabilityName",
+    "ModelEndpoint",
+    "ModelEndpointHealth",
     "ModelGateway",
+    "ModelHealthSnapshot",
     "ModelInvocationError",
     "ModelInvocationRecord",
     "ModelProvider",
     "ModelProviderDescriptor",
     "ModelProviderFailure",
     "ModelProviderResult",
+    "ProbeableModelProvider",
+    "ModelRouteContext",
+    "ModelRouteExecutor",
+    "ModelRouteResult",
+    "ModelRouteScope",
+    "ModelRoutesUnavailable",
     "ModelScenario",
     "OpenAICompatibleModelProvider",
+    "PersistedModelRouteAttempt",
+    "RoutedModelProvider",
     "SqliteModelInvocationRecorder",
+    "SqliteModelAttemptRecorder",
+    "current_model_route_scope",
     "create_deterministic_mock_provider",
+    "model_route_scope",
 ]

@@ -7,10 +7,18 @@ import pytest
 
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
+    InMemoryModelAttemptRecorder,
     InMemoryModelInvocationRecorder,
     ModelCapabilityName,
+    ModelEndpoint,
     ModelGateway,
+    ModelInvocationError,
+    ModelProviderDescriptor,
+    ModelProviderFailure,
+    ModelProviderResult,
+    ModelRouteExecutor,
     ModelScenario,
+    RoutedModelProvider,
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
@@ -31,7 +39,10 @@ from qunxue_api.modules.research_framework import (
     ResearchFrameworkDraft,
     ResearchFrameworkDraftInput,
 )
-from qunxue_api.modules.research_intake import ConfirmedPhenomenonSnapshot
+from qunxue_api.modules.research_intake import (
+    ConfirmedPhenomenonSnapshot,
+    PhenomenonCandidateDraft,
+)
 from qunxue_api.modules.theory_matching import (
     CandidateJudgementRunStatus,
     CandidateOrigin,
@@ -235,6 +246,282 @@ def _batch_input(input: TheoryJudgementInput) -> TheoryJudgementBatchInput:
             ),
         ),
         target_candidate_ids=(candidate_id,),
+    )
+
+
+class _BusinessProvider:
+    def __init__(
+        self,
+        *,
+        model: str,
+        failure_code: str | None = None,
+        calls: list[str] | None = None,
+    ) -> None:
+        self._failure_code = failure_code
+        self._calls = calls
+        self._descriptor = ModelProviderDescriptor(
+            provider=f"provider-{model}",
+            model_version=model,
+            capability_tier="base",
+            demonstration=False,
+        )
+
+    @property
+    def descriptor(self) -> ModelProviderDescriptor:
+        return self._descriptor
+
+    def extract_phenomenon(
+        self,
+        *,
+        raw_input: str,
+        research_intent: str | None,
+        context: str | None,
+    ) -> ModelProviderResult[PhenomenonCandidateDraft]:
+        if self._calls is not None:
+            self._calls.append(self._descriptor.model_version)
+        if self._failure_code is not None:
+            raise ModelProviderFailure(
+                code=self._failure_code,
+                message="sensitive provider failure detail",
+                knowledge_release_id=None,
+                scenario=ModelScenario.TIMEOUT,
+            )
+        return ModelProviderResult(
+            output=PhenomenonCandidateDraft(
+                phenomenon=raw_input,
+                research_intent=research_intent,
+                context=context,
+                source_ref_ids=("input:direct",),
+            ),
+            knowledge_release_id=None,
+        )
+
+    def judge_candidate(self, *, input):
+        raise AssertionError("not used")
+
+    def draft_framework(self, *, input):
+        raise AssertionError("not used")
+
+    def audit_framework(self, *, framework):
+        raise AssertionError("not used")
+
+
+def _business_endpoints() -> tuple[ModelEndpoint, ...]:
+    return (
+        ModelEndpoint(
+            endpoint_id="primary",
+            base_url="https://primary.test/v1",
+            api_key=None,
+            model="primary-model",
+            timeout_seconds=30,
+            provider="provider-primary-model",
+        ),
+        ModelEndpoint(
+            endpoint_id="fallback-1",
+            base_url="https://backup.test/v1",
+            api_key=None,
+            model="backup-model",
+            timeout_seconds=30,
+            provider="provider-backup-model",
+        ),
+    )
+
+
+def test_business_gateway_falls_back_and_keeps_one_business_trace() -> None:
+    attempts = InMemoryModelAttemptRecorder()
+    calls: list[str] = []
+    routed = RoutedModelProvider(
+        providers=(
+            _BusinessProvider(
+                model="primary-model",
+                failure_code="model_timeout",
+                calls=calls,
+            ),
+            _BusinessProvider(model="backup-model", calls=calls),
+        ),
+        router=ModelRouteExecutor(endpoints=_business_endpoints(), recorder=attempts),
+    )
+    invocations = InMemoryModelInvocationRecorder()
+    gateway = ModelGateway(
+        provider=routed,
+        recorder=invocations,
+        contract_version="v1",
+        id_factory=_ids(),
+    )
+
+    result = gateway.build(
+        task_id=UUID(int=1),
+        raw_input="现象",
+        research_intent=None,
+        context=None,
+    )
+
+    assert result.phenomenon == "现象"
+    assert calls == ["primary-model", "backup-model"]
+    assert [item.endpoint_id for item in attempts.list_all()] == [
+        "primary",
+        "fallback-1",
+    ]
+    assert len({item.context.trace_id for item in attempts.list_all()}) == 1
+    invocation = invocations.list_all()[0]
+    assert invocation.trace_id == attempts.list_all()[0].context.trace_id
+    assert invocation.request_id == attempts.list_all()[0].context.request_id
+    assert invocation.provider == "provider-backup-model"
+    assert invocation.model_version == "backup-model"
+
+
+def test_routed_provider_serves_all_four_business_capabilities() -> None:
+    catalog = BuiltInCaseCatalog.default()
+    provider = create_deterministic_mock_provider(catalog=catalog)
+    attempts = InMemoryModelAttemptRecorder()
+    endpoint = ModelEndpoint(
+        endpoint_id="primary",
+        base_url="https://primary.test/v1",
+        api_key=None,
+        model=provider.descriptor.model_version,
+        timeout_seconds=30,
+        provider=provider.descriptor.provider,
+    )
+    gateway = ModelGateway(
+        provider=RoutedModelProvider(
+            providers=(provider,),
+            router=ModelRouteExecutor(endpoints=(endpoint,), recorder=attempts),
+        ),
+        recorder=InMemoryModelInvocationRecorder(),
+        contract_version="v1",
+    )
+    success = catalog.get("success")
+    judgement_input, framework_input, framework = _model_inputs(success.phenomenon)
+
+    gateway.build(
+        task_id=UUID(int=200),
+        raw_input=success.phenomenon,
+        research_intent=success.research_intent,
+        context=success.context,
+    )
+    gateway.judge_and_rerank(input=_batch_input(judgement_input))
+    gateway.draft(input=framework_input)
+    gateway.audit(framework=framework)
+
+    assert [attempt.capability for attempt in attempts.list_all()] == [
+        "phenomenon_extraction",
+        "candidate_judgement_and_rerank",
+        "framework_draft",
+        "framework_audit",
+    ]
+
+
+def test_routed_provider_keeps_endpoint_mapping_when_primary_circuit_is_open() -> None:
+    calls: list[str] = []
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=_business_endpoints(), recorder=attempts)
+    for _ in range(3):
+        router.note_failure(endpoint_id="primary", retryable=True)
+    gateway = ModelGateway(
+        provider=RoutedModelProvider(
+            providers=(
+                _BusinessProvider(model="primary-model", calls=calls),
+                _BusinessProvider(model="backup-model", calls=calls),
+            ),
+            router=router,
+        ),
+        recorder=InMemoryModelInvocationRecorder(),
+        contract_version="v1",
+    )
+
+    result = gateway.build(
+        task_id=UUID(int=1),
+        raw_input="现象",
+        research_intent=None,
+        context=None,
+    )
+
+    assert result.phenomenon == "现象"
+    assert calls == ["backup-model"]
+    assert [attempt.endpoint_id for attempt in attempts.list_all()] == ["fallback-1"]
+
+
+def test_business_gateway_does_not_fallback_after_terminal_provider_failure() -> None:
+    calls: list[str] = []
+    attempts = InMemoryModelAttemptRecorder()
+    gateway = ModelGateway(
+        provider=RoutedModelProvider(
+            providers=(
+                _BusinessProvider(
+                    model="primary-model",
+                    failure_code="model_invalid_output",
+                    calls=calls,
+                ),
+                _BusinessProvider(model="backup-model", calls=calls),
+            ),
+            router=ModelRouteExecutor(
+                endpoints=_business_endpoints(),
+                recorder=attempts,
+            ),
+        ),
+        recorder=InMemoryModelInvocationRecorder(),
+        contract_version="v1",
+    )
+
+    with pytest.raises(ModelInvocationError) as caught:
+        gateway.build(
+            task_id=UUID(int=1),
+            raw_input="现象",
+            research_intent=None,
+            context=None,
+        )
+
+    assert caught.value.code == "model_invalid_output"
+    assert calls == ["primary-model"]
+    assert len(attempts.list_all()) == 1
+    assert attempts.list_all()[0].failure_code == "model_invalid_output"
+    assert not hasattr(attempts.list_all()[0], "failure_message")
+
+
+def test_all_failed_business_endpoints_record_the_last_attempted_descriptor() -> None:
+    attempts = InMemoryModelAttemptRecorder()
+    invocations = InMemoryModelInvocationRecorder()
+    gateway = ModelGateway(
+        provider=RoutedModelProvider(
+            providers=(
+                _BusinessProvider(
+                    model="primary-model",
+                    failure_code="model_unavailable",
+                ),
+                _BusinessProvider(
+                    model="backup-model",
+                    failure_code="model_unavailable",
+                ),
+            ),
+            router=ModelRouteExecutor(
+                endpoints=_business_endpoints(),
+                recorder=attempts,
+            ),
+        ),
+        recorder=invocations,
+        contract_version="v1",
+        id_factory=_ids(),
+    )
+
+    with pytest.raises(ModelInvocationError):
+        gateway.build(
+            task_id=UUID(int=1),
+            raw_input="现象",
+            research_intent=None,
+            context=None,
+        )
+
+    assert [attempt.endpoint_id for attempt in attempts.list_all()] == [
+        "primary",
+        "fallback-1",
+    ]
+    invocation = invocations.list_all()[0]
+    assert invocation.provider == "provider-backup-model"
+    assert invocation.model_version == "backup-model"
+    assert all(
+        attempt.context.trace_id == invocation.trace_id
+        and attempt.context.request_id == invocation.request_id
+        for attempt in attempts.list_all()
     )
 
 

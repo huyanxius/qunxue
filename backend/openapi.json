@@ -5675,6 +5675,28 @@
             ],
             "title": "Knowledge Release Id"
           },
+          "model_checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Checked At"
+          },
+          "model_status": {
+            "enum": [
+              "unknown",
+              "healthy",
+              "degraded",
+              "unavailable"
+            ],
+            "title": "Model Status",
+            "type": "string"
+          },
           "model_version": {
             "title": "Model Version",
             "type": "string"
@@ -5686,6 +5708,10 @@
           },
           "provider": {
             "title": "Provider",
+            "type": "string"
+          },
+          "release_revision": {
+            "title": "Release Revision",
             "type": "string"
           },
           "runtime_mode": {
@@ -5716,7 +5742,10 @@
           "persistence",
           "contract_version",
           "capability",
-          "knowledge_release_id"
+          "knowledge_release_id",
+          "model_status",
+          "model_checked_at",
+          "release_revision"
         ],
         "title": "HealthResponse",
         "type": "object"
@@ -15832,7 +15861,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HealthResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                  ],
+                  "title": "Response 503 Get Health"
                 }
               }
             },

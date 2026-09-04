@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from uuid import UUID
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from qunxue_api.adapters.model.types import (
@@ -178,6 +179,7 @@ class OpenAICompatibleModelProvider:
         timeout_seconds: float,
         capability_tier: str,
         extra_headers: dict[str, str] | None = None,
+        probe_transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         parsed_url = urlsplit(base_url)
         if (
@@ -201,6 +203,7 @@ class OpenAICompatibleModelProvider:
         self._api_key = _validated_api_key(api_key)
         self._model = model.strip()
         self._timeout_seconds = timeout_seconds
+        self._probe_transport = probe_transport
         self._descriptor = ModelProviderDescriptor(
             provider="openai-compatible",
             model_version=self._model,
@@ -211,6 +214,43 @@ class OpenAICompatibleModelProvider:
     @property
     def descriptor(self) -> ModelProviderDescriptor:
         return self._descriptor
+
+    async def probe(self) -> None:
+        """Send the smallest useful completion request to verify reachability."""
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout_seconds,
+                transport=self._probe_transport,
+            ) as client:
+                response = await client.post(
+                    self._endpoint,
+                    headers=self._request_headers(),
+                    json={
+                        "model": self._model,
+                        "messages": [{"role": "user", "content": "Reply with OK."}],
+                        "max_tokens": 1,
+                    },
+                )
+        except httpx.HTTPError as error:
+            raise self._probe_failure() from error
+
+        if not response.is_success:
+            raise self._probe_failure()
+        try:
+            completion = response.json()
+        except (TypeError, ValueError):
+            raise self._probe_failure() from None
+        if not isinstance(completion, dict):
+            raise self._probe_failure()
+        choices = completion.get("choices")
+        if not isinstance(choices, list) or not choices:
+            raise self._probe_failure()
+        first_choice = choices[0]
+        if not isinstance(first_choice, dict) or not isinstance(
+            first_choice.get("message"), dict
+        ):
+            raise self._probe_failure()
 
     def extract_phenomenon(
         self,
@@ -521,72 +561,10 @@ class OpenAICompatibleModelProvider:
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode()
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            **self._extra_headers,
-        }
-        if self._api_key is not None:
-            headers["Authorization"] = f"Bearer {self._api_key}"
-        request = Request(
-            self._endpoint,
-            data=request_body,
-            headers=headers,
-            method="POST",
+        raw_response = self._send(
+            request_body=request_body,
+            knowledge_release_id=knowledge_release_id,
         )
-        try:
-            with urlopen(request, timeout=self._timeout_seconds) as response:
-                raw_response = response.read(_MAX_RESPONSE_BYTES + 1)
-                declared_length = response.headers.get("Content-Length")
-                if (
-                    declared_length is not None
-                    and int(declared_length) > len(raw_response)
-                ):
-                    raise ModelProviderFailure(
-                        code="model_unavailable",
-                        message=(
-                            "The model provider closed the response before it completed."
-                        ),
-                        knowledge_release_id=knowledge_release_id,
-                        scenario=ModelScenario.PROVIDER_UNAVAILABLE,
-                    )
-        except HTTPError as error:
-            if error.code == 429:
-                raise ModelProviderFailure(
-                    code="model_rate_limited",
-                    message="The model provider rate limit was reached. Retry later.",
-                    knowledge_release_id=knowledge_release_id,
-                    scenario=ModelScenario.RATE_LIMITED,
-                ) from error
-            raise ModelProviderFailure(
-                code="model_unavailable",
-                message="The model provider rejected or could not complete the request.",
-                knowledge_release_id=knowledge_release_id,
-                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
-            ) from error
-        except TimeoutError as error:
-            raise ModelProviderFailure(
-                code="model_timeout",
-                message="The model provider timed out. The invocation can be retried.",
-                knowledge_release_id=knowledge_release_id,
-                scenario=ModelScenario.TIMEOUT,
-            ) from error
-        except URLError as error:
-            raise ModelProviderFailure(
-                code="model_unavailable",
-                message="The model provider is unavailable. The invocation can be retried.",
-                knowledge_release_id=knowledge_release_id,
-                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
-            ) from error
-        except ModelProviderFailure:
-            raise
-        except (HTTPException, ConnectionError, OSError, ValueError) as error:
-            raise ModelProviderFailure(
-                code="model_unavailable",
-                message="The model provider connection ended unexpectedly.",
-                knowledge_release_id=knowledge_release_id,
-                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
-            ) from error
 
         if len(raw_response) > _MAX_RESPONSE_BYTES:
             self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
@@ -616,6 +594,100 @@ class OpenAICompatibleModelProvider:
             raise
         except (KeyError, IndexError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
             self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+
+    def _send(
+        self,
+        *,
+        request_body: bytes,
+        knowledge_release_id: str | None,
+    ) -> bytes:
+        request = Request(
+            self._endpoint,
+            data=request_body,
+            headers=self._request_headers(),
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=self._timeout_seconds) as response:
+                raw_response = response.read(_MAX_RESPONSE_BYTES + 1)
+                declared_length = response.headers.get("Content-Length")
+                if (
+                    declared_length is not None
+                    and int(declared_length) > len(raw_response)
+                ):
+                    raise ModelProviderFailure(
+                        code="model_unavailable",
+                        message=(
+                            "The model provider closed the response before it completed."
+                        ),
+                        knowledge_release_id=knowledge_release_id,
+                        scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+                    )
+        except HTTPError as error:
+            if error.code == 429:
+                raise ModelProviderFailure(
+                    code="model_rate_limited",
+                    message="The model provider rate limit was reached. Retry later.",
+                    knowledge_release_id=knowledge_release_id,
+                    scenario=ModelScenario.RATE_LIMITED,
+                ) from error
+            if error.code in {408, 409} or 500 <= error.code < 600:
+                raise ModelProviderFailure(
+                    code="model_unavailable",
+                    message="The model provider could not complete the request.",
+                    knowledge_release_id=knowledge_release_id,
+                    scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+                ) from error
+            raise ModelProviderFailure(
+                code="model_request_rejected",
+                message="The model provider rejected the request.",
+                knowledge_release_id=knowledge_release_id,
+                scenario=ModelScenario.REQUEST_REJECTED,
+            ) from error
+        except TimeoutError as error:
+            raise ModelProviderFailure(
+                code="model_timeout",
+                message="The model provider timed out. The invocation can be retried.",
+                knowledge_release_id=knowledge_release_id,
+                scenario=ModelScenario.TIMEOUT,
+            ) from error
+        except URLError as error:
+            raise ModelProviderFailure(
+                code="model_unavailable",
+                message="The model provider is unavailable. The invocation can be retried.",
+                knowledge_release_id=knowledge_release_id,
+                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+            ) from error
+        except ModelProviderFailure:
+            raise
+        except (HTTPException, ConnectionError, OSError, ValueError) as error:
+            raise ModelProviderFailure(
+                code="model_unavailable",
+                message="The model provider connection ended unexpectedly.",
+                knowledge_release_id=knowledge_release_id,
+                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+            ) from error
+
+        return raw_response
+
+    def _request_headers(self) -> dict[str, str]:
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            **self._extra_headers,
+        }
+        if self._api_key is not None:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
+
+    @staticmethod
+    def _probe_failure() -> ModelProviderFailure:
+        return ModelProviderFailure(
+            code="model_probe_unavailable",
+            message="The model health probe failed.",
+            knowledge_release_id=None,
+            scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+        )
 
     def _validated_response(
         self,

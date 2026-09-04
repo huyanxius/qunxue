@@ -1,13 +1,15 @@
+import asyncio
 import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
 from time import sleep
 from uuid import UUID, uuid4
 
+import httpx
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,10 +20,15 @@ from qunxue_api.account_extension import install_account_management
 from qunxue_api.adapters.email import ResendEmailProvider
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
+    ModelEndpoint,
     ModelGateway,
     ModelInvocationError,
     ModelProvider,
+    ModelRouteExecutor,
     OpenAICompatibleModelProvider,
+    ProbeableModelProvider,
+    RoutedModelProvider,
+    SqliteModelAttemptRecorder,
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
@@ -171,8 +178,6 @@ from qunxue_api.modules.transcription import (
     UnavailableTranscriptionProvider,
 )
 from qunxue_api.settings import (
-    DEFAULT_MODEL_BASE_URL,
-    DEFAULT_MODEL_NAME,
     KNOWLEDGE_ROOT,
     Settings,
     get_settings,
@@ -209,11 +214,39 @@ def create_app(
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
     model_provider: ModelProvider | None = None,
+    model_probe_transport: httpx.AsyncBaseTransport | None = None,
     knowledge_retriever: HybridRetriever | None = None,
     require_email_verification: bool = True,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
+
+    async def run_model_probe_loop(app: FastAPI) -> None:
+        while True:
+            try:
+                await app.state.model_provider.probe()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.warning("Model health probe failed.")
+            await asyncio.sleep(resolved_settings.model_probe_interval_seconds)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        probe_task = None
+        if app.state.model_router is not None:
+            probe_task = asyncio.create_task(
+                run_model_probe_loop(app),
+                name="qunxue-model-health-probe",
+            )
+        app.state.model_probe_task = probe_task
+        try:
+            yield
+        finally:
+            if probe_task is not None:
+                probe_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await probe_task
 
     def build_catalog_evidence_source(
         *,
@@ -248,6 +281,7 @@ def create_app(
         title=resolved_settings.app_name,
         version="0.1.0",
         description="群学致知前后端架构基线 API。",
+        lifespan=lifespan,
     )
     app.add_middleware(
         CORSMiddleware,
@@ -280,13 +314,34 @@ def create_app(
         resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(app.state.knowledge_catalog)
     app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
-    resolved_model_provider = model_provider or _model_provider_from_settings(
-        settings=resolved_settings,
-        builtin_case_catalog=builtin_case_catalog,
+    model_endpoints = (
+        _model_endpoints_from_settings(resolved_settings)
+        if _effective_model_runtime_mode(resolved_settings) != "mock"
+        else ()
     )
+    if model_provider is None:
+        (
+            resolved_model_provider,
+            model_router,
+            model_attempt_recorder,
+        ) = _model_provider_from_settings(
+            settings=resolved_settings,
+            builtin_case_catalog=builtin_case_catalog,
+            database=resolved_database,
+            endpoints=model_endpoints,
+            probe_transport=model_probe_transport,
+        )
+    else:
+        resolved_model_provider = model_provider
+        model_router = None
+        model_attempt_recorder = None
     model_invocation_recorder = SqliteModelInvocationRecorder(resolved_database)
     app.state.builtin_case_catalog = builtin_case_catalog
     app.state.model_invocation_recorder = model_invocation_recorder
+    app.state.model_endpoints = model_endpoints
+    app.state.model_router = model_router
+    app.state.model_attempt_recorder = model_attempt_recorder
+    app.state.model_provider = resolved_model_provider
     app.state.model_gateway = ModelGateway(
         provider=resolved_model_provider,
         recorder=model_invocation_recorder,
@@ -759,35 +814,27 @@ def create_app(
             # as the zero-config development default.
             agent_runtime_mode = _effective_model_runtime_mode(resolved_settings)
             use_real_agent = agent_runtime_mode != "mock"
-            model_base_url = resolved_settings.model_base_url or (
-                DEFAULT_MODEL_BASE_URL if resolved_settings.has_model_api_key else None
-            )
-            model_name = resolved_settings.model_name or (
-                DEFAULT_MODEL_NAME if resolved_settings.has_model_api_key else None
-            )
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
             else:
-                if model_base_url is None or model_name is None:
+                agent_endpoints = app.state.model_endpoints
+                if not agent_endpoints:
                     raise ValueError(
                         "QUNXUE_MODEL_BASE_URL and QUNXUE_MODEL_NAME are required for Agent runtime"
                     )
+                primary_endpoint = agent_endpoints[0]
                 runner = PydanticAIKnowledgeRunner(
-                    base_url=model_base_url,
-                    api_key=(
-                        resolved_settings.model_api_key.get_secret_value()
-                        if resolved_settings.has_model_api_key
-                        else None
-                    ),
-                    model=model_name,
+                    base_url=primary_endpoint.base_url,
+                    api_key=primary_endpoint.api_key,
+                    model=primary_endpoint.model,
                     fallback_endpoints=tuple(
-                        (item["base_url"], item["api_key"])
-                        for item in resolved_settings.model_fallbacks
-                        if item.get("base_url") and item.get("api_key")
+                        (endpoint.base_url, endpoint.api_key, endpoint.model)
+                        for endpoint in agent_endpoints[1:]
                     ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
-                    extra_headers=_model_headers_from_settings(resolved_settings),
+                    extra_headers=primary_endpoint.extra_headers,
                     reasoning_effort=resolved_settings.model_reasoning_effort,
+                    route_executor=app.state.model_router,
                 )
             try:
                 yield DisciplinaryAgentApplication(
@@ -1000,6 +1047,10 @@ def create_app(
                 ErrorCode.INTERNAL_SERVER_ERROR,
                 status.HTTP_502_BAD_GATEWAY,
             ),
+            "model_request_rejected": (
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                status.HTTP_502_BAD_GATEWAY,
+            ),
             "no_reliable_candidate": (
                 ErrorCode.NO_RELIABLE_CANDIDATE,
                 status.HTTP_409_CONFLICT,
@@ -1131,33 +1182,61 @@ def _model_provider_from_settings(
     *,
     settings: Settings,
     builtin_case_catalog: BuiltInCaseCatalog,
-) -> ModelProvider:
+    database: Database,
+    endpoints: tuple[ModelEndpoint, ...],
+    probe_transport: httpx.AsyncBaseTransport | None,
+) -> tuple[
+    ModelProvider,
+    ModelRouteExecutor | None,
+    SqliteModelAttemptRecorder | None,
+]:
     runtime_mode = _effective_model_runtime_mode(settings)
     if runtime_mode == "mock":
-        return create_deterministic_mock_provider(catalog=builtin_case_catalog)
-    model_base_url = settings.model_base_url or (
-        DEFAULT_MODEL_BASE_URL if settings.has_model_api_key else None
-    )
-    model_name = settings.model_name or (DEFAULT_MODEL_NAME if settings.has_model_api_key else None)
-    if model_base_url is None or model_name is None:
+        return create_deterministic_mock_provider(catalog=builtin_case_catalog), None, None
+    if not endpoints:
         raise ValueError(
             "QUNXUE_MODEL_BASE_URL (model_base_url) and "
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
         )
 
-    headers = _model_headers_from_settings(settings)
+    providers: tuple[ProbeableModelProvider, ...] = tuple(
+        OpenAICompatibleModelProvider(
+            base_url=endpoint.base_url,
+            api_key=endpoint.api_key,
+            model=endpoint.model,
+            timeout_seconds=endpoint.timeout_seconds,
+            capability_tier=runtime_mode,
+            extra_headers=dict(endpoint.extra_headers),
+            probe_transport=probe_transport,
+        )
+        for endpoint in endpoints
+    )
+    attempt_recorder = SqliteModelAttemptRecorder(database)
+    router = ModelRouteExecutor(endpoints=endpoints, recorder=attempt_recorder)
+    return (
+        RoutedModelProvider(providers=providers, router=router),
+        router,
+        attempt_recorder,
+    )
 
-    return OpenAICompatibleModelProvider(
-        base_url=model_base_url,
-        api_key=(
-            settings.model_api_key.get_secret_value()
-            if settings.model_api_key is not None
-            else None
-        ),
-        model=model_name,
-        timeout_seconds=settings.model_timeout_seconds,
-        capability_tier=runtime_mode,
-        extra_headers=headers,
+
+def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, ...]:
+    headers = _model_headers_from_settings(settings)
+    return tuple(
+        ModelEndpoint(
+            endpoint_id=endpoint.endpoint_id,
+            base_url=endpoint.base_url,
+            api_key=(
+                endpoint.api_key.get_secret_value()
+                if endpoint.api_key is not None
+                else None
+            ),
+            model=endpoint.model,
+            timeout_seconds=endpoint.timeout_seconds,
+            provider="openai-compatible",
+            extra_headers=dict(headers),
+        )
+        for endpoint in settings.resolved_model_endpoints()
     )
 
 

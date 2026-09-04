@@ -3093,6 +3093,14 @@ export type HealthResponse = {
      */
     knowledge_release_id: string | null;
     /**
+     * Model Checked At
+     */
+    model_checked_at: string | null;
+    /**
+     * Model Status
+     */
+    model_status: 'unknown' | 'healthy' | 'degraded' | 'unavailable';
+    /**
      * Model Version
      */
     model_version: string;
@@ -3104,6 +3112,10 @@ export type HealthResponse = {
      * Provider
      */
     provider: string;
+    /**
+     * Release Revision
+     */
+    release_revision: string;
     /**
      * Runtime Mode
      */
@@ -8658,9 +8670,11 @@ export type GetHealthErrors = {
      */
     422: ErrorResponse;
     /**
+     * Response 503 Get Health
+     *
      * Service Unavailable
      */
-    503: ErrorResponse;
+    503: HealthResponse | ErrorResponse;
 };
 
 export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
