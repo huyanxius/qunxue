@@ -747,44 +747,23 @@
   background: linear-gradient(
     105deg,
     transparent 19%,
-    rgb(148 134 154 / 0%) 32%,
-    rgb(148 134 154 / 76%) 41%,
-    rgb(201 192 204 / 96%) 47%,
+    rgb(148 134 154 / 0%) 24%,
+    rgb(148 134 154 / 98%) 37%,
+    rgb(238 231 242 / 100%) 45%,
     rgb(255 253 252 / 100%) 50%,
-    rgb(180 169 184 / 92%) 53%,
-    rgb(148 134 154 / 64%) 59%,
-    rgb(148 134 154 / 0%) 69%,
-    transparent 81%
+    rgb(218 207 224 / 100%) 55%,
+    rgb(148 134 154 / 92%) 63%,
+    rgb(148 134 154 / 0%) 75%,
+    transparent 87%
   );
-  background-size: 240% 100%;
+  background-size: 205% 100%;
   content: '';
-  filter: drop-shadow(0 0 18px rgb(148 134 154 / 92%));
+  filter: drop-shadow(0 0 26px rgb(148 134 154 / 100%));
   pointer-events: none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: agent-composer-deep-edge-sweep 5s cubic-bezier(.42, 0, .2, 1) both;
-}
-
-.research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::after {
-  position: absolute;
-  z-index: 1;
-  top: -12px;
-  bottom: -12px;
-  left: -40%;
-  width: 42%;
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgb(255 253 252 / 94%) 0%,
-    rgb(201 192 204 / 76%) 31%,
-    rgb(148 134 154 / 56%) 50%,
-    rgb(148 134 154 / 0%) 76%
-  );
-  content: '';
-  filter: blur(20px);
-  pointer-events: none;
-  animation: agent-composer-deep-aura-sweep 5s cubic-bezier(.42, 0, .2, 1) both;
+  animation: agent-composer-deep-edge-sweep 4.8s cubic-bezier(.42, 0, .2, 1) infinite;
 }
 
 .research-agent-conversation .research-agent-composer textarea {
@@ -1024,13 +1003,6 @@
   }
 }
 
-@keyframes agent-composer-deep-aura-sweep {
-  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.82); }
-  10% { opacity: 1; }
-  62% { opacity: .86; }
-  100% { opacity: 0; transform: translate3d(370%, 0, 0) scale(1.08); }
-}
-
 .research-agent-conversation .research-agent-composer__send {
   position: absolute;
   z-index: 3;
@@ -1052,13 +1024,11 @@
 @media (prefers-reduced-motion: reduce) {
   .research-agent-conversation .research-agent-composer__material-menu,
   .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message,
-  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::before,
-  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::after {
+  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::before {
     animation: none;
   }
 
-  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::before,
-  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::after {
+  .research-agent-conversation .research-agent-composer.is-deep-research.is-awaiting-first-message::before {
     opacity: .22;
     background-position: 50% 0;
   }
