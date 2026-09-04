@@ -30,14 +30,29 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.CheckConstraint("status IN ('queued', 'processing', 'completed', 'failed')", name="ck_research_batch_coding_status"),
+        sa.CheckConstraint(
+            "status IN ('queued', 'processing', 'completed', 'failed')",
+            name="ck_research_batch_coding_status",
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["task_id"], ["research_tasks.task_id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["material_id"], ["research_materials.material_id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["material_id"], ["research_materials.material_id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("run_id"),
-        sa.UniqueConstraint("user_id", "task_id", "material_id", "idempotency_key", name="uq_research_batch_coding_idempotency"),
+        sa.UniqueConstraint(
+            "user_id",
+            "task_id",
+            "material_id",
+            "idempotency_key",
+            name="uq_research_batch_coding_idempotency",
+        ),
     )
-    op.create_index("ix_research_batch_coding_owner_created", "research_batch_coding_runs", ["user_id", "task_id", "created_at"])
+    op.create_index(
+        "ix_research_batch_coding_owner_created",
+        "research_batch_coding_runs",
+        ["user_id", "task_id", "created_at"],
+    )
 
 
 def downgrade() -> None:

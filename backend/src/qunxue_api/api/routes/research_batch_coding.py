@@ -31,6 +31,11 @@ def _error(code: ErrorCode, message: str, status_code: int) -> JSONResponse:
     operation_id="startResearchBatchCoding",
     response_model=BatchCodingRunResponse,
     status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 def start_batch_coding(
     task_id: UUID,
@@ -55,7 +60,14 @@ def start_batch_coding(
 
 
 @router.get(
-    "/{run_id}", operation_id="getResearchBatchCoding", response_model=BatchCodingRunResponse
+    "/{run_id}",
+    operation_id="getResearchBatchCoding",
+    response_model=BatchCodingRunResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 def get_batch_coding(
     task_id: UUID,
@@ -75,6 +87,11 @@ def get_batch_coding(
     "/{run_id}/retry",
     operation_id="retryResearchBatchCoding",
     response_model=BatchCodingRunResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 def retry_batch_coding(
     task_id: UUID,

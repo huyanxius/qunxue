@@ -4,8 +4,8 @@ export { ResearchAnalysisPanel } from './ResearchAnalysisPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
 export { getResearchCycleSnapshot } from './researchCycle'
-export { startResearchBatchCoding, getResearchBatchCodingRun, retryResearchBatchCodingRun } from './researchBatchCodingApi'
-export type { ResearchBatchCodingRun } from './researchBatchCodingApi'
+export { startResearchBatchCoding, getResearchBatchCodingRun, retryResearchBatchCodingRun } from './researchBatchCoding'
+export type { ResearchBatchCodingRun } from './researchBatchCoding'
 export { ResearchCyclePanel } from './ResearchCyclePanel'
 export {
   formatMaterialLocator,

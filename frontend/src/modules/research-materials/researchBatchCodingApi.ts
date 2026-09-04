@@ -1,21 +1,6 @@
 import { getResearchBatchCoding as getResearchBatchCodingRequest, retryResearchBatchCoding as retryResearchBatchCodingRequest, startResearchBatchCoding as startResearchBatchCodingRequest } from '../../api/generated'
 import { apiClient } from '../../api/client'
-
-export type ResearchBatchCodingRun = {
-  runId: string
-  taskId: string
-  materialId: string
-  parseId: string
-  parseVersion: number
-  status: 'queued' | 'processing' | 'completed' | 'failed'
-  totalSegments: number
-  processedSegments: number
-  annotationIds: string[]
-  codeIds: string[]
-  lowConfidenceSegments: string[]
-  errorCode: string | null
-  retryCount: number
-}
+import type { ResearchBatchCodingRun } from './researchBatchCodingModel'
 
 function normalize(value: any): ResearchBatchCodingRun {
   return {

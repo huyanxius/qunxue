@@ -3,7 +3,6 @@ from types import SimpleNamespace
 import pytest
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
-from qunxue_api.adapters.theory_evidence import CatalogTheoryLexicalRetriever
 from qunxue_api.adapters.research_agent.retrieval import (
     RetrievalCandidate,
     fuzzy_match_score,
@@ -16,6 +15,7 @@ from qunxue_api.adapters.retrieval.hybrid import (
     HybridRetrievalResult,
     RetrievalPipelineUnavailable,
 )
+from qunxue_api.adapters.theory_evidence import CatalogTheoryLexicalRetriever
 
 
 def test_normalize_query_collapses_punctuation_and_case_for_fuzzy_matching() -> None:

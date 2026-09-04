@@ -555,6 +555,7 @@ def stream_agent_turn(
 def stop_agent_run(
     run_id: UUID,
     current: CurrentSessionDependency,
+    _idempotency_key: IdempotencyKey,
 ) -> None:
     _cancel_active_run(current.user.user_id, run_id)
 

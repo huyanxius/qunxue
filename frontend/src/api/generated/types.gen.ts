@@ -360,6 +360,18 @@ export type AgentTurnRequest = {
      */
     conversation_id?: string | null;
     /**
+     * Deep Research Action
+     */
+    deep_research_action?: 'clarify' | 'confirm' | 'skip' | null;
+    /**
+     * Deep Research Run Id
+     */
+    deep_research_run_id?: string | null;
+    /**
+     * Deep Research Selection
+     */
+    deep_research_selection?: string | null;
+    /**
      * Document Id
      */
     document_id?: string | null;
@@ -3055,16 +3067,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
-
-/**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
 
 /**
  * HealthResponse
@@ -7764,34 +7766,6 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -8077,6 +8051,12 @@ export type ConfirmAgentResearchStartResponse = ConfirmAgentResearchStartRespons
 
 export type StopAgentRunData = {
     body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         /**
          * Run Id
@@ -11192,9 +11172,17 @@ export type StartResearchBatchCodingData = {
 
 export type StartResearchBatchCodingErrors = {
     /**
-     * Validation Error
+     * Unauthorized
      */
-    422: HttpValidationError;
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
 };
 
 export type StartResearchBatchCodingError = StartResearchBatchCodingErrors[keyof StartResearchBatchCodingErrors];
@@ -11226,9 +11214,17 @@ export type GetResearchBatchCodingData = {
 
 export type GetResearchBatchCodingErrors = {
     /**
-     * Validation Error
+     * Unauthorized
      */
-    422: HttpValidationError;
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
 };
 
 export type GetResearchBatchCodingError = GetResearchBatchCodingErrors[keyof GetResearchBatchCodingErrors];
@@ -11266,9 +11262,17 @@ export type RetryResearchBatchCodingData = {
 
 export type RetryResearchBatchCodingErrors = {
     /**
-     * Validation Error
+     * Unauthorized
      */
-    422: HttpValidationError;
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
 };
 
 export type RetryResearchBatchCodingError = RetryResearchBatchCodingErrors[keyof RetryResearchBatchCodingErrors];

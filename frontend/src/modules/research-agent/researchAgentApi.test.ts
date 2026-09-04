@@ -42,7 +42,26 @@ describe('research agent SSE adapter', () => {
 
     expect(fetch).toHaveBeenCalledWith(
       'https://api.qunxue.test/api/agent/runs/run-mobile/stop',
-      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Idempotency-Key': expect.any(String) },
+      }),
+    )
+  })
+
+  it('still sends an idempotent stop request when random UUIDs are unavailable', async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetch)
+    vi.stubGlobal('crypto', {})
+
+    await stopAgentRun('run-without-random-uuid')
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.qunxue.test/api/agent/runs/run-without-random-uuid/stop',
+      expect.objectContaining({
+        headers: { 'Idempotency-Key': 'stop-agent-run:run-without-random-uuid' },
+      }),
     )
   })
 

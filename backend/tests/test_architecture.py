@@ -263,12 +263,13 @@ def _architecture_violations(
             source_path, package_root
         )
         relative = source_path.relative_to(package_root)
+        relative_label = relative.as_posix()
 
         if source_path == root_entry:
             for imported in imports:
                 if imported.startswith("qunxue_api."):
                     violations.add(
-                        f"{relative} cannot import internal layer {imported}"
+                        f"{relative_label} cannot import internal layer {imported}"
                     )
             continue
 
@@ -276,7 +277,7 @@ def _architecture_violations(
             relative.parts[0] if len(relative.parts) > 1 else relative.stem
         )
         if source_component not in ALLOWED_TOP_LEVEL_DEPENDENCIES:
-            violations.add(f"{relative} is not a registered top-level component")
+            violations.add(f"{relative_label} is not a registered top-level component")
             continue
         for imported in imports:
             if not imported.startswith("qunxue_api."):
@@ -284,7 +285,7 @@ def _architecture_violations(
             target_component = imported.split(".")[1]
             if target_component not in ALLOWED_TOP_LEVEL_DEPENDENCIES[source_component]:
                 violations.add(
-                    f"{relative}: {source_component} cannot depend on "
+                    f"{relative_label}: {source_component} cannot depend on "
                     f"{target_component}"
                 )
 
@@ -295,18 +296,19 @@ def _architecture_violations(
                     and len(imported.split(".")) != 3
                 ):
                     violations.add(
-                        f"{relative} bypasses a module public package root: {imported}"
+                        f"{relative_label} bypasses a module public package root: {imported}"
                     )
             continue
 
         module_relative = source_path.relative_to(modules_root)
+        module_relative_label = module_relative.as_posix()
         if len(module_relative.parts) < 2:
             continue
         source_module = module_relative.parts[0]
         for imported in imports:
             if _matches_prefix(imported, FORBIDDEN_BUSINESS_PREFIXES):
                 violations.add(
-                    f"{module_relative}: business module cannot import {imported}"
+                    f"{module_relative_label}: business module cannot import {imported}"
                 )
             if not imported.startswith(f"{MODULE_PACKAGE}."):
                 continue
@@ -317,18 +319,18 @@ def _architecture_violations(
                 source_module, set()
             ):
                 violations.add(
-                    f"{module_relative}: {source_module} cannot depend on "
+                    f"{module_relative_label}: {source_module} cannot depend on "
                     f"{target_module}"
                 )
             if imported != f"{MODULE_PACKAGE}.{target_module}":
                 violations.add(
-                    f"{module_relative} bypasses {target_module}'s public package root"
+                    f"{module_relative_label} bypasses {target_module}'s public package root"
                 )
 
         for imported, symbols in from_imports:
             if imported == MODULE_PACKAGE:
                 violations.add(
-                    f"{module_relative} must import from a module public package root"
+                    f"{module_relative_label} must import from a module public package root"
                 )
                 continue
             if not imported.startswith(f"{MODULE_PACKAGE}."):
@@ -343,7 +345,7 @@ def _architecture_violations(
             unexpected = symbols - allowed_symbols
             if unexpected:
                 violations.add(
-                    f"{module_relative} cannot import {sorted(unexpected)} "
+                    f"{module_relative_label} cannot import {sorted(unexpected)} "
                     f"from {target_module}"
                 )
 
@@ -353,7 +355,7 @@ def _architecture_violations(
             target_module = imported.split(".")[2]
             if target_module != source_module:
                 violations.add(
-                    f"{module_relative} must explicitly import symbols "
+                    f"{module_relative_label} must explicitly import symbols "
                     f"from {target_module}"
                 )
 
@@ -367,7 +369,7 @@ def _architecture_violations(
         for imported in imports:
             if imported == module_root:
                 violations.add(
-                    f"{module_relative}: {source_role} cannot import "
+                    f"{module_relative_label}: {source_role} cannot import "
                     "its module package root"
                 )
                 continue
@@ -382,7 +384,7 @@ def _architecture_violations(
                 not in ALLOWED_MODULE_INTERNAL_DEPENDENCIES[source_role]
             ):
                 violations.add(
-                    f"{module_relative}: {source_role} cannot depend on {target_role}"
+                    f"{module_relative_label}: {source_role} cannot depend on {target_role}"
                 )
 
     return sorted(violations)

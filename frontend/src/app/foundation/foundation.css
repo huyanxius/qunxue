@@ -4257,6 +4257,10 @@
   z-index: 1;
 }
 
+.foundation-knowledge > .knowledge-ticker.is-card-open {
+  z-index: 3;
+}
+
 .public-site.is-agent-expanded .foundation-knowledge .knowledge-ticker,
 .foundation-knowledge .knowledge-ticker {
   border-color: rgb(101 69 29 / 18%);

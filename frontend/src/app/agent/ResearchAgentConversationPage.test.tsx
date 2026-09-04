@@ -483,9 +483,9 @@ describe('ResearchAgentConversationPage', () => {
     const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
     expect(within(agent).getByText('研究材料')).toBeVisible()
     fireEvent.click(within(agent).getByRole('button', { name: '查看证据：社区访谈.docx' }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: '来源' })
     fireEvent.click(within(sources).getByRole('button', { name: /社区访谈\.docx/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('第 4 页 · 第 12 段')).toBeVisible()
     fireEvent.click(within(basis).getByRole('button', { name: '打开原文位置' }))
     const materials = await screen.findByRole('dialog', { name: '研究材料' })
@@ -595,9 +595,9 @@ describe('ResearchAgentConversationPage', () => {
 
     const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
     fireEvent.click(within(agent).getByRole('button', { name: '查看证据：已删除的访谈.docx' }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: '来源' })
     fireEvent.click(within(sources).getByRole('button', { name: /已删除的访谈.docx/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('这份研究材料已删除，原文不再可访问。')).toBeVisible()
     expect(within(basis).queryByRole('button', { name: '打开原文位置' })).toBeNull()
   })
@@ -657,9 +657,9 @@ describe('ResearchAgentConversationPage', () => {
     const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
     expect(within(agent).getByText(leakedAnswer)).toBeVisible()
     fireEvent.click(within(agent).getByRole('button', { name: '查看证据：待删除访谈.docx' }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: '来源' })
     fireEvent.click(within(sources).getByRole('button', { name: /待删除访谈\.docx/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText(excerpt)).toBeVisible()
 
     fireEvent.click(within(agent).getByRole('button', { name: '研究材料' }))
@@ -986,9 +986,10 @@ describe('ResearchAgentConversationPage', () => {
     const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     const citationButtons = await within(region).findAllByRole('button', { name: `查看证据：${citation.label}` })
     fireEvent.click(citationButtons[0])
-    fireEvent.click(await screen.findByRole('tab', { name: 'Basis' }))
+    let sources = await screen.findByRole('region', { name: '来源' })
+    fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
 
-    let basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    let basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
       'href',
       '/knowledge/D1%3AC001?knowledge_release_id=release-turn-old&return_to=%2Fagent%3Fconversation_id%3Dconversation-citation-links%26knowledge_release_id%3Drelease-turn-old',
@@ -999,16 +1000,18 @@ describe('ResearchAgentConversationPage', () => {
     )
 
     fireEvent.click(citationButtons[1])
-    fireEvent.click(await screen.findByRole('tab', { name: 'Basis' }))
-    basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    sources = await screen.findByRole('region', { name: '来源' })
+    fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
+    basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
       'href',
       '/knowledge/D1%3AC001?knowledge_release_id=release-turn-new&return_to=%2Fagent%3Fconversation_id%3Dconversation-citation-links%26knowledge_release_id%3Drelease-turn-new',
     )
 
     fireEvent.click(citationButtons[2])
-    fireEvent.click(await screen.findByRole('tab', { name: 'Basis' }))
-    basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    sources = await screen.findByRole('region', { name: '来源' })
+    fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
+    basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).queryByRole('link', { name: /打开知识条目|在知识图谱中查看/ })).not.toBeInTheDocument()
     expect(within(basis).getByText('当前回合的知识版本尚未确认，暂不提供跳转。')).toBeVisible()
   })
@@ -1096,7 +1099,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(await screen.findByRole('textbox', { name: '问社会学 Agent' })).toHaveValue('')
   })
 
-  it('retries a disconnected turn with the original question and idempotency key', async () => {
+  it('automatically resumes a disconnected turn with the original idempotency key', async () => {
     const question = '为什么青年在熟人社区里也会感到孤独？'
     const conversation = conversationFixture({ prompt: question, answer: '可以从关系稳定性与情感劳动继续分析。' })
     const turnRequests: RequestInit[] = []
@@ -1123,10 +1126,9 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.change(textbox, { target: { value: question } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(region).findByRole('alert')).toHaveTextContent('回答完成前中断')
-    fireEvent.click(within(region).getByRole('button', { name: '重试本轮' }))
-
     expect(await within(region).findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(within(region).queryByRole('alert')).not.toBeInTheDocument()
+    expect(within(region).queryByRole('button', { name: '重试本轮' })).not.toBeInTheDocument()
     expect(turnRequests.map((request) => new Headers(request.headers).get('Idempotency-Key'))).toEqual([
       'stable-agent-turn-key',
       'stable-agent-turn-key',
@@ -1285,10 +1287,10 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(region).getByText(completeDetail)).toBeVisible()
 
     fireEvent.click(within(region).getAllByRole('button', { name: '查看活动' })[0])
-    const activity = await screen.findByRole('tabpanel', { name: 'Activity' })
+    const activity = await screen.findByRole('region', { name: '活动' })
     fireEvent.click(within(activity).getByRole('button', { name: /社会资本条目/ }))
 
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('检索知识库')).toBeVisible()
     expect(within(basis).getByText(/社会资本条目/)).toBeVisible()
     expect(within(basis).getByText(/互惠规范会影响社区互助/)).toBeVisible()
@@ -1324,6 +1326,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(region).getByText('根据当前问题核对知识条目的主张、适用前提与证据边界')).not.toBeVisible()
     fireEvent.click(runningTool)
     expect(within(region).getByText('根据当前问题核对知识条目的主张、适用前提与证据边界')).toBeVisible()
+    expect(await within(region).findByText('已经形成一段可保留的回答。')).toBeVisible()
     fireEvent.click(within(region).getByRole('button', { name: '停止生成' }))
 
     expect(await within(region).findByText('本轮已停止，已保留生成内容和 1 个已完成步骤。')).toBeVisible()
@@ -1365,6 +1368,58 @@ describe('ResearchAgentConversationPage', () => {
     page.unmount()
 
     await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => urlFor(input).pathname === '/api/agent/runs/run-leave/stop')).toBe(true))
+  })
+
+  it('dismisses deep research progress when the user stops the run', async () => {
+    const runningStream = deferredStream([
+      ['turn_started', { conversation_id: 'conversation-deep-stop', run_id: 'run-deep-stop', replayed: false, runtime_mode: 'base' }],
+      ['tool_started', { tool: 'search_knowledge', call_id: 'tool-deep-search', input: { query: '青年孤独' }, detail: '正在检索知识库' }],
+    ])
+    let turnRequestCount = 0
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname === '/api/agent/turns') {
+        turnRequestCount += 1
+        if (turnRequestCount === 1) {
+          return new Response(eventStream([
+            ['turn_started', { conversation_id: 'conversation-deep-stop', run_id: 'run-deep-stop', replayed: false, runtime_mode: 'base' }],
+            ['research_plan', { title: '研究青年孤独', steps: ['检索知识库', '核对证据'] }],
+            ['research_waiting', {
+              run_id: 'run-deep-stop',
+              state: 'awaiting_plan_confirmation',
+              title: '研究青年孤独',
+              steps: ['检索知识库', '核对证据'],
+              prompt: '研究青年孤独。',
+            }],
+          ]), { headers: { 'Content-Type': 'text/event-stream' } })
+        }
+        return runningStream.response
+      }
+      if (url.pathname === '/api/agent/runs/run-deep-stop/stop') {
+        return new Response(null, { status: 204 })
+      }
+      return json({}, 404)
+    }))
+    renderPage('user-deep-stop')
+
+    const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    fireEvent.click(within(region).getByRole('button', { name: '选择 Agent 模式' }))
+    fireEvent.click(within(region).getByRole('menuitemradio', { name: /深入研究/ }))
+    const textbox = within(region).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(textbox, { target: { value: '研究青年孤独。' } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+
+    const plan = await within(region).findByRole('region', { name: '研究计划' })
+    fireEvent.click(within(plan).getByRole('button', { name: '开始深入研究' }))
+    expect(await within(region).findByRole('region', { name: '研究进度' })).toBeVisible()
+
+    fireEvent.click(within(region).getByRole('button', { name: '停止生成' }))
+
+    await waitFor(() => {
+      expect(within(region).queryByRole('region', { name: '研究进度' })).not.toBeInTheDocument()
+    })
+    expect(within(region).queryByText(/已运行/)).not.toBeInTheDocument()
   })
 
   it('shows the runtime mode reported by the real Agent stream', async () => {

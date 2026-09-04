@@ -807,14 +807,14 @@ describe('App routes', () => {
     expect(within(agentConversation).getByRole('button', { name: '重新生成' })).toBeVisible()
 
     fireEvent.click(activityButtons[0])
-    const activity = await screen.findByRole('tabpanel', { name: 'Activity' })
+    const activity = await screen.findByRole('region', { name: '活动' })
     expect(activity).toHaveTextContent('检索知识库')
     expect(activity).toHaveTextContent('找到 1 条知识库条目')
 
     fireEvent.click(within(agentConversation).getByRole('button', { name: /查看证据：平台劳动与职业选择/ }))
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: '来源' })
     fireEvent.click(within(sources).getByRole('button', { name: /平台劳动与职业选择/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(basis).toHaveTextContent('平台排序会改变青年看见职业机会与评估风险的方式。')
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
       'href',
@@ -903,9 +903,9 @@ describe('App routes', () => {
     expect(screen.queryByText('互惠规范描述了持续互动中信任与回报的关系。')).not.toBeInTheDocument()
     fireEvent.click(citation)
 
-    const sources = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const sources = await screen.findByRole('region', { name: '来源' })
     fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
-    const basis = await screen.findByRole('tabpanel', { name: 'Basis' })
+    const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
   })
 
@@ -1330,8 +1330,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     )
 
-    const accountRail = await screen.findByRole('complementary', { name: '群学致知功能栏' })
-    fireEvent.click(within(accountRail).getByRole('button', { name: '退出' }))
+    fireEvent.click(await screen.findByRole('button', { name: '退出' }))
 
     expect(await screen.findByRole('heading', { name: /从真实困惑.*找到可研究的问题。/ })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/')
