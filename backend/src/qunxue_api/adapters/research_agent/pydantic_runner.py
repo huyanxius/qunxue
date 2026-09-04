@@ -822,7 +822,6 @@ class PydanticAIKnowledgeRunner:
                     error=str(result.get("error") or "web_search_failed"),
                 ))
                 return result
-            _select_result_evidence(ctx.deps, result)
             self._emit_tool_event(AgentToolEvent(
                 tool="search_web",
                 phase="finished",
@@ -864,7 +863,7 @@ class PydanticAIKnowledgeRunner:
                     "message": "网页正文暂时无法读取，不能把搜索摘要当作原文。",
                     "retryable": False,
                 }
-            _select_result_evidence(ctx.deps, [result])
+            _append_result_evidence(ctx.deps, [result])
             self._emit_tool_event(AgentToolEvent(
                 tool="read_web_page",
                 phase="finished",
@@ -2867,6 +2866,24 @@ def _select_result_evidence(
     else:
         selected = incoming
     _set_selected_evidence(tools, selected[:8])
+
+
+def _append_result_evidence(
+    tools: AgentToolContext,
+    results: Sequence[Mapping[str, object]],
+) -> None:
+    """Accumulate successfully read web pages without dropping prior evidence."""
+
+    citation_ids: list[str] = []
+    for result in results:
+        citation_id = result.get("citation_id")
+        if isinstance(citation_id, str):
+            citation_ids.append(citation_id)
+    incoming = tuple(dict.fromkeys(citation_ids))
+    if not incoming:
+        return
+    existing = tuple(getattr(tools, "selected_evidence_ids", ()))
+    _set_selected_evidence(tools, tuple(dict.fromkeys((*existing, *incoming)))[:8])
 
 
 def _set_selected_evidence(tools: AgentToolContext, citation_ids: Sequence[str]) -> None:
