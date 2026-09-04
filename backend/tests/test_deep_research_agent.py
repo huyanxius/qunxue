@@ -2,13 +2,28 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from qunxue_api.adapters.research_agent.pydantic_runner import DeterministicKnowledgeRunner
+from qunxue_api.adapters.research_agent.pydantic_runner import (
+    DeterministicKnowledgeRunner,
+    VisibleTextStream,
+)
 from qunxue_api.application import DisciplinaryAgentApplication
 from qunxue_api.modules.agent_conversation import (
     AgentResearchEvent,
     AgentRunResult,
     ConversationService,
 )
+
+
+def test_visible_text_stream_drops_thinking_across_chunks() -> None:
+    visible: list[str] = []
+    stream = VisibleTextStream(visible.append)
+
+    stream.push("<thi")
+    stream.push("nking>先规划</thinking>真正")
+    stream.push("的回答")
+    stream.finish()
+
+    assert "".join(visible) == "真正的回答"
 
 
 def test_deep_research_mode_emits_model_research_event_before_answer() -> None:

@@ -2435,6 +2435,25 @@ export function ResearchAgentConversationPage({
                     onRegenerate={() => { void submitQuestion(turn.user.content) }}
                   />
                 ))}
+                {streamingTurn && deepResearchMockStage === 'researching' ? (
+                  <DeepResearchMockFlow
+                    stage={deepResearchMockStage}
+                    question={deepResearchMockQuestion}
+                    stepIndex={deepResearchMockStep}
+                    options={deepResearchMockOptions}
+                    knowledgeCount={deepResearchResult.knowledgeCount}
+                    webCount={deepResearchResult.webCount}
+                    toolSteps={streamingTurn.toolSteps}
+                    elapsedSeconds={deepResearchElapsedSeconds}
+                    onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                    onSkip={() => continueDeepResearch('skip')}
+                    onConfirmPlan={() => continueDeepResearch('confirm')}
+                    onEdit={() => {
+                      resetDeepResearchMock()
+                      globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                    }}
+                  />
+                ) : null}
                 {streamingTurn ? (
                   <AssistantTurn
                     question={streamingTurn.question}
@@ -2453,7 +2472,7 @@ export function ResearchAgentConversationPage({
                     onRegenerate={() => retryFailedTurn(streamingTurn.question)}
                   />
                 ) : null}
-                {hasDeepResearchMockConversation ? (
+                {hasDeepResearchMockConversation && deepResearchMockStage !== 'researching' ? (
                   <DeepResearchMockFlow
                     stage={deepResearchMockStage}
                     question={deepResearchMockQuestion}
