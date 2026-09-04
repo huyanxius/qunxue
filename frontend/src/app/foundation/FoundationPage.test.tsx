@@ -164,12 +164,15 @@ describe('FoundationPage', () => {
     expect(screen.queryByText('待审核')).not.toBeInTheDocument()
     expect(screen.queryByText('已审核')).not.toBeInTheDocument()
     const ticker = screen.getByRole('region', { name: /知识索引流/ })
+    fireEvent.pointerEnter(ticker.querySelector<HTMLElement>('.knowledge-ticker__term')!)
+    expect(ticker).toHaveClass('is-card-open')
     const tickerTrack = ticker.querySelector<HTMLElement>('.knowledge-ticker__track')
     expect(tickerTrack).not.toBeNull()
     Object.defineProperty(tickerTrack, 'scrollWidth', { configurable: true, value: 1200 })
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 100 })
     fireEvent.scroll(window)
+    expect(ticker).not.toHaveClass('is-card-open')
     expect(tickerTrack).toHaveStyle({ transform: 'translate3d(-320px, 0, 0)' })
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 50 })

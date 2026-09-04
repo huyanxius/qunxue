@@ -387,7 +387,7 @@ export function KnowledgeTicker({
 
   return (
     <div
-      className="knowledge-ticker"
+      className={`knowledge-ticker${activeEntry ? ' is-card-open' : ''}`}
       role="region"
       aria-label={`知识索引流：${titles.join('、')}`}
       ref={tickerRef}
