@@ -366,21 +366,37 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
 
     async def _completions_create(self, *args, **kwargs):
         models = (self, *self._fallback_models)
+        primary_models = tuple(model for model in models if model.base_url == self.base_url)
+        fallback_models = tuple(model for model in models if model.base_url != self.base_url)
         last_error: Exception | None = None
-        for model_index, model in enumerate(models):
-            for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
+
+        async def request_primary():
+            if len(primary_models) == 1:
+                return await self._request_model(primary_models[0], *args, **kwargs)
+            return await self._race_models(primary_models, *args, **kwargs)
+
+        try:
+            return await request_primary()
+        except (ModelHTTPError, ModelAPIError) as error:
+            last_error = error
+            if not _is_retryable_model_error(error):
+                raise
+
+        if not fallback_models:
+            await async_sleep(self._PROVIDER_RETRY_DELAYS[0])
+            return await request_primary()
+
+        for model_index, model in enumerate(fallback_models):
+            attempts = 2 if model_index == len(fallback_models) - 1 else 1
+            for attempt in range(attempts):
                 try:
-                    if model_index == 0 and retry_delay == self._PROVIDER_RETRY_DELAYS[0]:
-                        return await self._race_models(models, *args, **kwargs)
                     return await self._request_model(model, *args, **kwargs)
                 except (ModelHTTPError, ModelAPIError) as error:
                     last_error = error
                     if not _is_retryable_model_error(error):
                         raise
-                    if retry_delay is not None:
-                        await async_sleep(retry_delay)
-            if model_index < len(models) - 1:
-                continue
+                    if attempt < attempts - 1:
+                        await async_sleep(self._PROVIDER_RETRY_DELAYS[0])
         assert last_error is not None
         raise last_error
 
