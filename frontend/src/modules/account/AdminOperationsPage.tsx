@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowsClockwiseIcon, CheckCircleIcon, CpuIcon, CurrencyCircleDollarIcon, GaugeIcon, UsersThreeIcon } from '@phosphor-icons/react'
 
-import { getSystemHealth, type SystemHealth } from '../../api/system'
-import { accountManagementApi } from './accountManagementApi'
-import type { CreditSummary } from './accountManagementModels'
+import { accountManagementApi, getAccountSystemHealth } from './accountManagementApi'
+import type { AccountSystemHealth, CreditSummary } from './accountManagementModels'
 import './admin-operations.css'
 
 type PoolAccount = {
@@ -26,7 +25,7 @@ function yuan(value: number) {
 
 export function AdminOperationsPage({ onForbidden, onSessionExpired }: { onForbidden?(): void; onSessionExpired?(): void }) {
   const [authorized, setAuthorized] = useState(false)
-  const [health, setHealth] = useState<SystemHealth | null>(null)
+  const [health, setHealth] = useState<AccountSystemHealth | null>(null)
   const [credits, setCredits] = useState<CreditSummary | null>(null)
   const [model, setModel] = useState('deepseek-v4-flash')
   const [reasoning, setReasoning] = useState('high')
@@ -34,7 +33,7 @@ export function AdminOperationsPage({ onForbidden, onSessionExpired }: { onForbi
 
   useEffect(() => {
     let active = true
-    Promise.allSettled([accountManagementApi.listAdminUsers({}), getSystemHealth(), accountManagementApi.getCreditSummary({ limit: 100 })]).then(([access, system, ledger]) => {
+    Promise.allSettled([accountManagementApi.listAdminUsers({}), getAccountSystemHealth(), accountManagementApi.getCreditSummary({ limit: 100 })]).then(([access, system, ledger]) => {
       if (!active) return
       for (const result of [access, system, ledger]) {
         if (result.status === 'rejected' && typeof result.reason === 'object' && result.reason && 'status' in result.reason) {

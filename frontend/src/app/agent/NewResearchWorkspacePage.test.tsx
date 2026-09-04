@@ -895,7 +895,7 @@ describe('NewResearchWorkspacePage', () => {
     expect(await within(workspace).findByText('本轮已停止，已保留生成内容和 0 个已完成步骤。')).toBeVisible()
     expect(within(workspace).getAllByText(/已保留生成内容/)).toHaveLength(1)
     expect(within(workspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue('怎么理解青年孤独？')
-    expect(within(workspace).getByRole('button', { name: '重试本轮' })).toBeEnabled()
+    expect(within(workspace).getByRole('button', { name: '继续研究' })).toBeEnabled()
   })
 
   it('turns a truncated Agent stream into a recoverable error instead of a stuck composer', async () => {

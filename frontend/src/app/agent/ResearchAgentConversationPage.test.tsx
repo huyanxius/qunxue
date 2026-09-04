@@ -659,9 +659,7 @@ describe('ResearchAgentConversationPage', () => {
     )
 
     const agent = await screen.findByRole('complementary', { name: '研究 Agent 对话栏' })
-    expect(within(agent).getByRole('status', { name: '本轮证据来源' })).toHaveTextContent('本轮同时引用了群学知识库和你的研究材料')
-    expect(within(agent).getByText('群学知识库')).toBeVisible()
-    expect(within(agent).getByText('你的研究材料')).toBeVisible()
+    expect(within(agent).getByRole('status', { name: '本轮证据来源' })).toHaveTextContent('本轮引用 · 群学知识库 1 · 你的研究材料 1')
   })
 
   it('keeps a deleted material citation as a tombstone without opening source text', async () => {
@@ -1046,7 +1044,7 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.change(textbox, { target: { value: '把这个现象继续形成研究。' } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(region).findByRole('button', { name: '重试本轮' })).toBeVisible()
+    expect(await within(region).findByRole('button', { name: '继续研究' })).toBeVisible()
     expect(within(region).queryByRole('region', { name: '研究建议' })).not.toBeInTheDocument()
   })
 
