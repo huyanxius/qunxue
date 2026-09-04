@@ -7,6 +7,7 @@ from contextvars import ContextVar
 
 from openai import AsyncOpenAI
 from openai.types.shared import ReasoningEffort
+from pydantic import BaseModel, Field
 from pydantic_ai import (
     Agent,
     AgentStreamEvent,
@@ -38,12 +39,23 @@ from qunxue_api.adapters.research_agent.research_map_contracts import (
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
+    AgentResearchEvent,
     AgentRunResult,
     AgentRuntimeIdentity,
     AgentToolContext,
     AgentToolEvent,
     AgentTurn,
 )
+
+
+class DeepResearchDecision(BaseModel):
+    """Structured planning output; it keeps research UX out of free-form text."""
+
+    needs_clarification: bool = False
+    question: str = ""
+    options: list[str] = Field(default_factory=list)
+    title: str = "深入研究"
+    steps: list[str] = Field(default_factory=list)
 
 
 class DeterministicKnowledgeRunner:
@@ -53,6 +65,41 @@ class DeterministicKnowledgeRunner:
         provider="deterministic-knowledge",
         model="local",
     )
+
+    def prepare_research(
+        self,
+        *,
+        prompt: str,
+        conversation: Sequence[AgentTurn],
+        on_event: Callable[[AgentResearchEvent], None],
+    ) -> None:
+        del conversation
+        if len(prompt.strip()) < 18:
+            on_event(
+                AgentResearchEvent(
+                    kind="ask",
+                    payload={
+                        "question": "你希望我重点研究哪一部分？",
+                        "options": [
+                            "概念与理论背景",
+                            "现实案例与最新资料",
+                            "不同观点之间的争议",
+                            "研究方法与数据",
+                            "更多自定义",
+                        ],
+                    },
+                )
+            )
+            return
+        on_event(
+            AgentResearchEvent(
+                kind="plan",
+                payload={
+                    "title": prompt.strip()[:80],
+                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                },
+            )
+        )
 
     def run(
         self,
@@ -538,11 +585,77 @@ class PydanticAIKnowledgeRunner:
                 "明显偏离社会学学习与研究的问题，应简短说明能力边界并邀请用户转回学科问题。"
             ),
         )
+        self._planner_agent = Agent(
+            model_instance,
+            output_type=DeepResearchDecision,
+            retries=1,
+            instructions=(
+                "你是深入研究模式的研究规划器。根据用户问题和对话历史判断意图是否足够清楚。"
+                "只返回结构化规划，不回答研究结论。意图不清时 needs_clarification=true，"
+                "拟定一句简洁的 question，并给出 3 到 5 个互斥选项；意图清楚时给出简洁 title 和"
+                "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
+            ),
+        )
         self._active_tool_event: ContextVar[Callable[[AgentToolEvent], None] | None] = ContextVar(
             f"agent_tool_event_{id(self)}",
             default=None,
         )
         self._register_tools()
+
+    def prepare_research(
+        self,
+        *,
+        prompt: str,
+        conversation: Sequence[AgentTurn],
+        on_event: Callable[[AgentResearchEvent], None],
+    ) -> None:
+        """Ask the model for the research UX envelope before retrieval starts."""
+
+        try:
+            decision = self._planner_agent.run_sync(
+                _compose_agent_prompt(prompt=prompt, research_map=None, document_context=None),
+                message_history=_agent_message_history(conversation),
+                usage_limits=UsageLimits(request_limit=2, tool_calls_limit=0),
+            ).output
+        except Exception:
+            # Planning must not make the regular Agent unavailable. The fallback keeps
+            # the contract valid and lets the main run apply the normal evidence policy.
+            decision = DeepResearchDecision(
+                title="深入研究",
+                steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
+            )
+        if decision.needs_clarification:
+            options = [
+                item.strip()
+                for item in decision.options
+                if item.strip() and item.strip() != "更多自定义"
+            ][:5]
+            if len(options) < 3:
+                options = [
+                    "概念与理论背景",
+                    "现实案例与最新资料",
+                    "不同观点之间的争议",
+                ]
+            on_event(
+                AgentResearchEvent(
+                    kind="ask",
+                    payload={
+                        "question": decision.question.strip() or "你希望我重点研究哪一部分？",
+                        "options": [*options, "更多自定义"],
+                    },
+                )
+            )
+            return
+        on_event(
+            AgentResearchEvent(
+                kind="plan",
+                payload={
+                    "title": decision.title.strip() or "深入研究",
+                    "steps": [item.strip() for item in decision.steps if item.strip()][:6]
+                    or ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                },
+            )
+        )
 
     def _register_tools(self) -> None:
         @self._agent.tool

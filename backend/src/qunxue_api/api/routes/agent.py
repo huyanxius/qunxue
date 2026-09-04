@@ -30,6 +30,7 @@ from qunxue_api.api.routes.research_tasks import _match_status, _navigation_resp
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.agent_conversation import (
     AgentInterrupted,
+    AgentResearchEvent,
     AgentToolEvent,
     ConversationNotFound,
     ConversationTaskBindingConflict,
@@ -326,6 +327,9 @@ def stream_agent_turn(
         def on_tool_event(event: AgentToolEvent) -> None:
             event_queue.put(("tool", event))
 
+        def on_research_event(event: AgentResearchEvent) -> None:
+            event_queue.put(("research", event))
+
         def run_agent() -> None:
             try:
                 while True:
@@ -343,9 +347,11 @@ def stream_agent_turn(
                                 section_id=payload.section_id,
                                 document_version=payload.document_version,
                                 theory_plan_id=payload.theory_plan_id,
+                                mode=payload.mode,
                                 on_run_started=on_run_started,
                                 on_delta=on_delta,
                                 on_tool_event=on_tool_event,
+                                on_research_event=on_research_event,
                                 is_cancelled=cancel_event.is_set,
                             )
                         break
@@ -425,6 +431,13 @@ def stream_agent_turn(
                         and event_payload.output.get("schema_version") == 1
                     ):
                         yield _event("canvas_patch", event_payload.output)
+                elif event_name == "research":
+                    if not isinstance(event_payload, AgentResearchEvent):
+                        raise RuntimeError("Agent worker returned an invalid research event")
+                    yield _event(
+                        f"research_{event_payload.kind}",
+                        dict(event_payload.payload),
+                    )
                 elif event_name == "failed":
                     if isinstance(event_payload, BaseException):
                         raise event_payload

@@ -72,6 +72,27 @@ export function parseAgentEventStream(stream: string): AgentEvent[] {
       events.push(event)
     } else if (eventName === 'assistant_delta' && typeof payload.delta === 'string') {
       events.push({ type: eventName, delta: payload.delta })
+    } else if (eventName === 'research_ask' && typeof payload.question === 'string' && Array.isArray(payload.options)) {
+      events.push({
+        type: eventName,
+        question: payload.question,
+        options: payload.options.filter((item): item is string => typeof item === 'string'),
+      })
+    } else if (eventName === 'research_plan' && typeof payload.title === 'string' && Array.isArray(payload.steps)) {
+      events.push({
+        type: eventName,
+        title: payload.title,
+        steps: payload.steps.filter((item): item is string => typeof item === 'string'),
+      })
+    } else if (eventName === 'research_step' && typeof payload.step === 'string') {
+      events.push({ type: eventName, step: payload.step, status: typeof payload.status === 'string' ? payload.status : undefined })
+    } else if (eventName === 'research_result') {
+      events.push({
+        type: eventName,
+        summary: typeof payload.summary === 'string' ? payload.summary : undefined,
+        knowledge_count: typeof payload.knowledge_count === 'number' ? payload.knowledge_count : undefined,
+        web_count: typeof payload.web_count === 'number' ? payload.web_count : undefined,
+      })
     } else if (eventName === 'citation_added' && payload.citation_id) {
       events.push({ type: eventName, citation: payload as unknown as AgentCitation })
     } else if (eventName === 'canvas_patch' && isResearchMapPatch(payload)) {
@@ -262,7 +283,7 @@ export async function confirmResearchStartProposal(
 }
 
 async function streamAgentTurnOnce(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -277,6 +298,7 @@ async function streamAgentTurnOnce(
     body: JSON.stringify({
       conversation_id: payload.conversation_id,
       message: payload.message,
+      mode: payload.mode ?? 'standard',
       workspace: payload.workspace ?? 'agent',
       web_search: payload.web_search ?? false,
       task_id: payload.task_id ?? null,
@@ -322,7 +344,7 @@ async function streamAgentTurnOnce(
 }
 
 export async function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {

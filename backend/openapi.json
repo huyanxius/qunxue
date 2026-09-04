@@ -684,6 +684,15 @@
             "title": "Message",
             "type": "string"
           },
+          "mode": {
+            "default": "standard",
+            "enum": [
+              "standard",
+              "deep_research"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
           "section_id": {
             "anyOf": [
               {

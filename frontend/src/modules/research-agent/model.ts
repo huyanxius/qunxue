@@ -128,6 +128,10 @@ export type AgentEvent =
       detail: string | null
     }
   | { type: 'assistant_delta'; delta: string }
+  | { type: 'research_ask'; question: string; options: string[] }
+  | { type: 'research_plan'; title: string; steps: string[] }
+  | { type: 'research_step'; step: string; status?: string }
+  | { type: 'research_result'; summary?: string; knowledge_count?: number; web_count?: number }
   | { type: 'citation_added'; citation: AgentCitation }
   | { type: 'canvas_patch'; patch: AgentResearchMapPatch }
   | { type: 'turn_completed'; conversation: AgentConversation; knowledge_release_id: string }
