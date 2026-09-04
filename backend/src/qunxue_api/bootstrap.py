@@ -9,6 +9,7 @@ from threading import Lock
 from time import sleep
 from uuid import UUID, uuid4
 
+import httpx
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +26,7 @@ from qunxue_api.adapters.model import (
     ModelProvider,
     ModelRouteExecutor,
     OpenAICompatibleModelProvider,
+    ProbeableModelProvider,
     RoutedModelProvider,
     SqliteModelAttemptRecorder,
     SqliteModelInvocationRecorder,
@@ -212,6 +214,7 @@ def create_app(
     database: Database | None = None,
     journey_dependencies: ResearchJourneyDependencies | None = None,
     model_provider: ModelProvider | None = None,
+    model_probe_transport: httpx.AsyncBaseTransport | None = None,
     knowledge_retriever: HybridRetriever | None = None,
     require_email_verification: bool = True,
 ) -> FastAPI:
@@ -221,7 +224,7 @@ def create_app(
     async def run_model_probe_loop(app: FastAPI) -> None:
         while True:
             try:
-                await asyncio.to_thread(app.state.model_provider.probe)
+                await app.state.model_provider.probe()
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -326,6 +329,7 @@ def create_app(
             builtin_case_catalog=builtin_case_catalog,
             database=resolved_database,
             endpoints=model_endpoints,
+            probe_transport=model_probe_transport,
         )
     else:
         resolved_model_provider = model_provider
@@ -1180,6 +1184,7 @@ def _model_provider_from_settings(
     builtin_case_catalog: BuiltInCaseCatalog,
     database: Database,
     endpoints: tuple[ModelEndpoint, ...],
+    probe_transport: httpx.AsyncBaseTransport | None,
 ) -> tuple[
     ModelProvider,
     ModelRouteExecutor | None,
@@ -1194,7 +1199,7 @@ def _model_provider_from_settings(
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
         )
 
-    providers: tuple[ModelProvider, ...] = tuple(
+    providers: tuple[ProbeableModelProvider, ...] = tuple(
         OpenAICompatibleModelProvider(
             base_url=endpoint.base_url,
             api_key=endpoint.api_key,
@@ -1202,6 +1207,7 @@ def _model_provider_from_settings(
             timeout_seconds=endpoint.timeout_seconds,
             capability_tier=runtime_mode,
             extra_headers=dict(endpoint.extra_headers),
+            probe_transport=probe_transport,
         )
         for endpoint in endpoints
     )

@@ -101,6 +101,10 @@ class ModelProvider(Protocol):
     ) -> ModelProviderResult[FrameworkAuditDraft]: ...
 
 
+class ProbeableModelProvider(ModelProvider, Protocol):
+    async def probe(self) -> None: ...
+
+
 JsonObject = dict[str, object]
 
 

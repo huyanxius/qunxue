@@ -48,6 +48,7 @@ from qunxue_api.adapters.model.types import (
     ModelProviderFailure,
     ModelProviderResult,
     ModelScenario,
+    ProbeableModelProvider,
 )
 
 __all__ = [
@@ -72,6 +73,7 @@ __all__ = [
     "ModelProviderDescriptor",
     "ModelProviderFailure",
     "ModelProviderResult",
+    "ProbeableModelProvider",
     "ModelRouteContext",
     "ModelRouteExecutor",
     "ModelRouteResult",

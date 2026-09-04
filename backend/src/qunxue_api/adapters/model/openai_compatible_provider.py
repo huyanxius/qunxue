@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from uuid import UUID
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from qunxue_api.adapters.model.types import (
@@ -178,6 +179,7 @@ class OpenAICompatibleModelProvider:
         timeout_seconds: float,
         capability_tier: str,
         extra_headers: dict[str, str] | None = None,
+        probe_transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         parsed_url = urlsplit(base_url)
         if (
@@ -201,6 +203,7 @@ class OpenAICompatibleModelProvider:
         self._api_key = _validated_api_key(api_key)
         self._model = model.strip()
         self._timeout_seconds = timeout_seconds
+        self._probe_transport = probe_transport
         self._descriptor = ModelProviderDescriptor(
             provider="openai-compatible",
             model_version=self._model,
@@ -212,19 +215,42 @@ class OpenAICompatibleModelProvider:
     def descriptor(self) -> ModelProviderDescriptor:
         return self._descriptor
 
-    def probe(self) -> None:
+    async def probe(self) -> None:
         """Send the smallest useful completion request to verify reachability."""
 
-        request_body = json.dumps(
-            {
-                "model": self._model,
-                "messages": [{"role": "user", "content": "Reply with OK."}],
-                "max_tokens": 1,
-            },
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ).encode()
-        self._send(request_body=request_body, knowledge_release_id=None)
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout_seconds,
+                transport=self._probe_transport,
+            ) as client:
+                response = await client.post(
+                    self._endpoint,
+                    headers=self._request_headers(),
+                    json={
+                        "model": self._model,
+                        "messages": [{"role": "user", "content": "Reply with OK."}],
+                        "max_tokens": 1,
+                    },
+                )
+        except httpx.HTTPError as error:
+            raise self._probe_failure() from error
+
+        if not response.is_success:
+            raise self._probe_failure()
+        try:
+            completion = response.json()
+        except (TypeError, ValueError):
+            raise self._probe_failure() from None
+        if not isinstance(completion, dict):
+            raise self._probe_failure()
+        choices = completion.get("choices")
+        if not isinstance(choices, list) or not choices:
+            raise self._probe_failure()
+        first_choice = choices[0]
+        if not isinstance(first_choice, dict) or not isinstance(
+            first_choice.get("message"), dict
+        ):
+            raise self._probe_failure()
 
     def extract_phenomenon(
         self,
@@ -575,17 +601,10 @@ class OpenAICompatibleModelProvider:
         request_body: bytes,
         knowledge_release_id: str | None,
     ) -> bytes:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            **self._extra_headers,
-        }
-        if self._api_key is not None:
-            headers["Authorization"] = f"Bearer {self._api_key}"
         request = Request(
             self._endpoint,
             data=request_body,
-            headers=headers,
+            headers=self._request_headers(),
             method="POST",
         )
         try:
@@ -650,6 +669,25 @@ class OpenAICompatibleModelProvider:
             ) from error
 
         return raw_response
+
+    def _request_headers(self) -> dict[str, str]:
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            **self._extra_headers,
+        }
+        if self._api_key is not None:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
+
+    @staticmethod
+    def _probe_failure() -> ModelProviderFailure:
+        return ModelProviderFailure(
+            code="model_probe_unavailable",
+            message="The model health probe failed.",
+            knowledge_release_id=None,
+            scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+        )
 
     def _validated_response(
         self,

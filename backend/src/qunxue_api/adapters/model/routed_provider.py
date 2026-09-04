@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -24,6 +25,7 @@ from qunxue_api.adapters.model.types import (
     ModelProviderFailure,
     ModelProviderResult,
     ModelScenario,
+    ProbeableModelProvider,
 )
 from qunxue_api.modules.research_framework import (
     FrameworkAuditDraft,
@@ -66,7 +68,7 @@ class RoutedModelProvider:
     def __init__(
         self,
         *,
-        providers: tuple[ModelProvider, ...],
+        providers: tuple[ProbeableModelProvider, ...],
         router: ModelRouteExecutor,
     ) -> None:
         endpoint_ids = router.endpoint_ids
@@ -91,7 +93,7 @@ class RoutedModelProvider:
         with self._health_lock:
             return self._health_checked_at
 
-    def probe(self) -> None:
+    async def probe(self) -> None:
         context = ModelRouteContext(
             trace_id=uuid4(),
             request_id=uuid4(),
@@ -99,8 +101,13 @@ class RoutedModelProvider:
             capability="health_probe",
         )
         try:
-            self._route(context=context, invoke=lambda provider: provider.probe())
-        finally:
+            await self._probe_route(context=context)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            self._note_health_checked()
+            raise
+        else:
             self._note_health_checked()
 
     def extract_phenomenon(
@@ -213,6 +220,42 @@ class RoutedModelProvider:
             ) from error
 
         return routed.value, routed.endpoint.endpoint_id
+
+    async def _probe_route(self, *, context: ModelRouteContext) -> None:
+        last_failure: ModelProviderFailure | None = None
+
+        async def attempt(endpoint) -> ModelAttemptResult[None]:
+            nonlocal last_failure
+            try:
+                provider = self._providers[endpoint.endpoint_id]
+            except KeyError as error:
+                raise RuntimeError(
+                    f"no model provider configured for endpoint {endpoint.endpoint_id}"
+                ) from error
+            try:
+                await provider.probe()
+            except ModelProviderFailure as error:
+                error.selected_descriptor = provider.descriptor
+                last_failure = error
+                raise ModelAttemptFailure(
+                    code="model_probe_unavailable",
+                    retryable=True,
+                ) from error
+            return ModelAttemptResult(value=None)
+
+        try:
+            await self._router.execute_async(context=context, invoke=attempt)
+        except ModelAttemptFailure:
+            if last_failure is None:
+                raise
+            raise last_failure from None
+        except ModelRoutesUnavailable as error:
+            raise ModelProviderFailure(
+                code="model_probe_unavailable",
+                message="No model endpoints are currently available for health probing.",
+                knowledge_release_id=None,
+                scenario=ModelScenario.PROVIDER_UNAVAILABLE,
+            ) from error
 
     def _note_health_checked(self) -> None:
         with self._health_lock:

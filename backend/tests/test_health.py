@@ -1,11 +1,12 @@
+import asyncio
 import json
 import sqlite3
-from collections.abc import Iterator
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 from threading import Event, Lock
-from urllib.request import Request
+from time import monotonic
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -13,12 +14,12 @@ from pydantic import ValidationError
 from qunxue_api.adapters.model import (
     InMemoryModelAttemptRecorder,
     ModelEndpoint,
+    ModelProviderFailure,
     ModelRouteExecutor,
     OpenAICompatibleModelProvider,
     RoutedModelProvider,
     SqliteModelAttemptRecorder,
 )
-from qunxue_api.adapters.model import openai_compatible_provider as provider_module
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     RetrievalChunk,
@@ -29,32 +30,33 @@ from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 from qunxue_api.settings import SILICONFLOW_EMBEDDING_MODEL, Settings
 
 
-class _ProbeResponse:
-    headers: dict[str, str] = {}
-
-    def __enter__(self) -> "_ProbeResponse":
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        return None
-
-    def read(self, _limit: int) -> bytes:
-        return b'{"choices":[{"finish_reason":"length","message":{"content":"O"}}]}'
+def _probe_completion() -> dict[str, object]:
+    return {"choices": [{"message": {}}]}
 
 
-@pytest.fixture(autouse=True)
-def _prevent_model_probe_network(
-    monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[list[Request]]:
-    requests: list[Request] = []
+@pytest.fixture
+def healthy_probe_transport() -> httpx.MockTransport:
+    return httpx.MockTransport(
+        lambda request: httpx.Response(200, json=_probe_completion(), request=request)
+    )
 
-    def fake_urlopen(request: Request, *, timeout: float) -> _ProbeResponse:
-        del timeout
-        requests.append(request)
-        return _ProbeResponse()
 
-    monkeypatch.setattr(provider_module, "urlopen", fake_urlopen)
-    yield requests
+class _BlockingProbeTransport(httpx.AsyncBaseTransport):
+    def __init__(self) -> None:
+        self.started = Event()
+        self.cancelled = Event()
+        self.finished = Event()
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        del request
+        self.started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+            raise
+        finally:
+            self.finished.set()
 
 
 def test_health_reports_runtime_contract(client: TestClient) -> None:
@@ -110,6 +112,7 @@ def test_health_reports_unknown_before_a_real_model_has_been_checked(
 def test_health_reports_degraded_model_without_leaking_endpoint_details(
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     app = create_app(
         settings=Settings(
@@ -123,6 +126,7 @@ def test_health_reports_degraded_model_without_leaking_endpoint_details(
             model_extra_headers={"X-Private-Tenant": "tenant-secret"},
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
@@ -153,6 +157,7 @@ def test_health_reports_degraded_model_without_leaking_endpoint_details(
 def test_health_returns_health_contract_when_all_real_endpoints_are_unavailable(
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     app = create_app(
         settings=Settings(
@@ -164,6 +169,7 @@ def test_health_returns_health_contract_when_all_real_endpoints_are_unavailable(
             model_name="private-model-name",
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
@@ -194,9 +200,13 @@ def test_health_exposes_configured_release_revision(client: TestClient) -> None:
     assert response.json()["release_revision"] == "7e48edff"
 
 
-def test_routed_probe_uses_audited_shared_route_without_request_identity(
-    _prevent_model_probe_network: list[Request],
-) -> None:
+def test_routed_probe_uses_audited_shared_route_without_request_identity() -> None:
+    requests: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_probe_completion(), request=request)
+
     endpoint = ModelEndpoint(
         endpoint_id="primary",
         base_url="https://primary.internal.test/v1",
@@ -213,14 +223,18 @@ def test_routed_probe_uses_audited_shared_route_without_request_identity(
         model=endpoint.model,
         timeout_seconds=endpoint.timeout_seconds,
         capability_tier="base",
+        extra_headers={"X-Private-Tenant": "tenant-secret"},
+        probe_transport=httpx.MockTransport(handle),
     )
     routed = RoutedModelProvider(providers=(provider,), router=router)
 
-    routed.probe()
+    asyncio.run(routed.probe())
 
-    request_body = json.loads(_prevent_model_probe_network[-1].data or b"{}")
+    request_body = json.loads(requests[-1].content)
     attempt = attempts.list_all()[0]
     assert request_body["max_tokens"] == 1
+    assert requests[-1].headers["Authorization"] == "Bearer health-secret-key"
+    assert requests[-1].headers["X-Private-Tenant"] == "tenant-secret"
     assert attempt.context.capability == "health_probe"
     assert attempt.context.task_id is None
     assert attempt.context.agent_run_id is None
@@ -229,25 +243,185 @@ def test_routed_probe_uses_audited_shared_route_without_request_identity(
     assert routed.health_checked_at is not None
 
 
+@pytest.mark.parametrize(
+    "response",
+    [
+        (401, {"private": "denial"}),
+        (200, "not-json"),
+        (200, []),
+        (200, {}),
+        (200, {"choices": []}),
+        (200, {"choices": [None]}),
+        (200, {"choices": [{}]}),
+    ],
+)
+def test_failed_probe_is_sanitized_and_opens_the_endpoint_circuit(
+    response: tuple[int, object],
+) -> None:
+    status_code, payload = response
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if isinstance(payload, str):
+            return httpx.Response(status_code, text=payload, request=request)
+        return httpx.Response(status_code, json=payload, request=request)
+
+    endpoint = ModelEndpoint(
+        endpoint_id="primary",
+        base_url="https://private-endpoint.test/v1",
+        api_key="private-probe-key",
+        model="private-model-name",
+        timeout_seconds=1,
+        provider="openai-compatible",
+    )
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=(endpoint,), recorder=attempts)
+    provider = OpenAICompatibleModelProvider(
+        base_url=endpoint.base_url,
+        api_key=endpoint.api_key,
+        model=endpoint.model,
+        timeout_seconds=endpoint.timeout_seconds,
+        capability_tier="base",
+        probe_transport=httpx.MockTransport(handle),
+    )
+    routed = RoutedModelProvider(providers=(provider,), router=router)
+
+    for attempt_number in range(1, 4):
+        with pytest.raises(ModelProviderFailure) as raised:
+            asyncio.run(routed.probe())
+        expected_status = "degraded" if attempt_number < 3 else "unhealthy"
+        assert router.health_snapshot().status == expected_status
+        assert raised.value.code == "model_probe_unavailable"
+        assert "private" not in str(raised.value)
+
+    assert {attempt.failure_code for attempt in attempts.list_all()} == {
+        "model_probe_unavailable"
+    }
+    assert all(attempt.failure_retryable is True for attempt in attempts.list_all())
+    assert routed.health_checked_at is not None
+
+
+def test_probe_falls_back_and_reports_degraded_when_backup_is_healthy() -> None:
+    primary_calls: list[httpx.Request] = []
+    backup_calls: list[httpx.Request] = []
+
+    def primary(request: httpx.Request) -> httpx.Response:
+        primary_calls.append(request)
+        return httpx.Response(403, text="private denial", request=request)
+
+    def backup(request: httpx.Request) -> httpx.Response:
+        backup_calls.append(request)
+        return httpx.Response(200, json=_probe_completion(), request=request)
+
+    endpoints = (
+        ModelEndpoint("primary", "https://primary.test/v1", "m1", "secret", 1),
+        ModelEndpoint("fallback-1", "https://backup.test/v1", "m2", "secret", 1),
+    )
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=endpoints, recorder=attempts)
+    providers = (
+        OpenAICompatibleModelProvider(
+            base_url=endpoints[0].base_url,
+            api_key=endpoints[0].api_key,
+            model=endpoints[0].model,
+            timeout_seconds=1,
+            capability_tier="base",
+            probe_transport=httpx.MockTransport(primary),
+        ),
+        OpenAICompatibleModelProvider(
+            base_url=endpoints[1].base_url,
+            api_key=endpoints[1].api_key,
+            model=endpoints[1].model,
+            timeout_seconds=1,
+            capability_tier="base",
+            probe_transport=httpx.MockTransport(backup),
+        ),
+    )
+
+    asyncio.run(RoutedModelProvider(providers=providers, router=router).probe())
+
+    assert len(primary_calls) == 1
+    assert len(backup_calls) == 1
+    assert router.health_snapshot().status == "degraded"
+    assert [attempt.failure_code for attempt in attempts.list_all()] == [
+        "model_probe_unavailable",
+        None,
+    ]
+
+
+def test_cancelled_probe_does_not_fall_back_or_mark_a_successful_check() -> None:
+    blocking = _BlockingProbeTransport()
+    backup_calls: list[httpx.Request] = []
+
+    def backup(request: httpx.Request) -> httpx.Response:
+        backup_calls.append(request)
+        return httpx.Response(200, json=_probe_completion(), request=request)
+
+    endpoints = (
+        ModelEndpoint("primary", "https://primary.test/v1", "m1", None, 1),
+        ModelEndpoint("fallback-1", "https://backup.test/v1", "m2", None, 1),
+    )
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=endpoints, recorder=attempts)
+    providers = (
+        OpenAICompatibleModelProvider(
+            base_url=endpoints[0].base_url,
+            api_key=None,
+            model=endpoints[0].model,
+            timeout_seconds=1,
+            capability_tier="base",
+            probe_transport=blocking,
+        ),
+        OpenAICompatibleModelProvider(
+            base_url=endpoints[1].base_url,
+            api_key=None,
+            model=endpoints[1].model,
+            timeout_seconds=1,
+            capability_tier="base",
+            probe_transport=httpx.MockTransport(backup),
+        ),
+    )
+    routed = RoutedModelProvider(providers=providers, router=router)
+
+    async def cancel_in_flight() -> None:
+        task = asyncio.create_task(routed.probe())
+        while not blocking.started.is_set():
+            await asyncio.sleep(0)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(cancel_in_flight())
+
+    assert blocking.cancelled.is_set()
+    assert blocking.finished.is_set()
+    assert backup_calls == []
+    assert router.health_snapshot().status == "unknown"
+    assert routed.health_checked_at is None
+    assert [attempt.failure_code for attempt in attempts.list_all()] == [
+        "model_attempt_cancelled"
+    ]
+
+
 def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
     client: TestClient,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     second_probe = Event()
     probe_lock = Lock()
     probe_count = 0
 
-    def fake_urlopen(request: Request, *, timeout: float) -> _ProbeResponse:
+    def handle(request: httpx.Request) -> httpx.Response:
         nonlocal probe_count
-        del request, timeout
         with probe_lock:
             probe_count += 1
+            current_count = probe_count
             if probe_count >= 2:
                 second_probe.set()
-        return _ProbeResponse()
+        if current_count == 1:
+            raise httpx.ConnectError("private transport failure", request=request)
+        return httpx.Response(200, json=_probe_completion(), request=request)
 
-    monkeypatch.setattr(provider_module, "urlopen", fake_urlopen)
+    transport = httpx.MockTransport(handle)
     app = create_app(
         settings=Settings(
             _env_file=None,
@@ -259,6 +433,7 @@ def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
             model_probe_interval_seconds=0.01,
         ),
         database=client.app.state.database,
+        model_probe_transport=transport,
     )
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
@@ -270,11 +445,42 @@ def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
     assert probe_task.done() is True
 
 
+def test_shutdown_cancels_an_in_flight_probe_without_orphan_work(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    transport = _BlockingProbeTransport()
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_name="private-model-name",
+        ),
+        database=client.app.state.database,
+        model_probe_transport=transport,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+
+    with TestClient(app):
+        assert transport.started.wait(timeout=1)
+        probe_task = app.state.model_probe_task
+        shutdown_started = monotonic()
+
+    assert monotonic() - shutdown_started < 0.5
+    assert transport.cancelled.is_set()
+    assert transport.finished.is_set()
+    assert probe_task.done() is True
+
+
 @pytest.mark.parametrize("runtime_mode", ["mock", "base", "sft"])
 def test_health_reports_each_configured_runtime_mode(
     runtime_mode: str,
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     model_settings = (
         {}
@@ -292,6 +498,7 @@ def test_health_reports_each_configured_runtime_mode(
             **model_settings,
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     if runtime_mode != "mock":
         _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
@@ -312,6 +519,7 @@ def test_health_rejects_non_mock_runtime_without_a_ready_match_index(
     runtime_mode: str,
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     app = create_app(
         settings=Settings(
@@ -322,6 +530,7 @@ def test_health_rejects_non_mock_runtime_without_a_ready_match_index(
             model_name=f"local-{runtime_mode}-model",
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
 
     with TestClient(app) as health_client:
@@ -346,6 +555,7 @@ def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
     chunk_schema_version: str,
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     app = create_app(
         settings=Settings(
@@ -356,6 +566,7 @@ def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
             model_name="local-base-model",
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     _seed_ready_retrieval_index(
         app,
@@ -374,6 +585,7 @@ def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
 def test_health_rejects_a_ready_manifest_without_its_index_points(
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     index_path = tmp_path / "retrieval.db"
     app = create_app(
@@ -385,6 +597,7 @@ def test_health_rejects_a_ready_manifest_without_its_index_points(
             model_name="local-base-model",
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     _seed_ready_retrieval_index(app, index_path=index_path)
     with sqlite3.connect(index_path) as connection:
@@ -400,6 +613,7 @@ def test_health_rejects_a_ready_manifest_without_its_index_points(
 def test_health_maps_corrupt_index_storage_to_retrieval_unavailable(
     client: TestClient,
     tmp_path: Path,
+    healthy_probe_transport: httpx.MockTransport,
 ) -> None:
     index_path = tmp_path / "retrieval.db"
     app = create_app(
@@ -411,6 +625,7 @@ def test_health_maps_corrupt_index_storage_to_retrieval_unavailable(
             model_name="local-base-model",
         ),
         database=client.app.state.database,
+        model_probe_transport=healthy_probe_transport,
     )
     _seed_ready_retrieval_index(app, index_path=index_path)
     index_path.write_bytes(b"not-a-sqlite-index")

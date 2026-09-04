@@ -1,3 +1,4 @@
+import httpx
 from fastapi.testclient import TestClient
 
 from qunxue_api.bootstrap import create_app
@@ -23,10 +24,21 @@ def _settings(
     )
 
 
+def _healthy_probe_transport() -> httpx.MockTransport:
+    return httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            json={"choices": [{"message": {}}]},
+            request=request,
+        )
+    )
+
+
 def test_api_key_only_selects_real_defaults_and_catalog_matching(client: TestClient) -> None:
     app = create_app(
         settings=_settings(client, api_key="test-api-key"),
         database=client.app.state.database,
+        model_probe_transport=_healthy_probe_transport(),
     )
 
     descriptor = app.state.model_gateway.descriptor
