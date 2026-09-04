@@ -112,6 +112,10 @@ function DeepResearchMockFlow({
   onChooseIntent,
   onConfirmPlan,
   onEdit,
+  resultSummary,
+  knowledgeCount,
+  webCount,
+  toolSteps = [],
 }: {
   stage: DeepResearchMockStage
   question: string
@@ -120,6 +124,10 @@ function DeepResearchMockFlow({
   onChooseIntent: (intent: string) => void
   onConfirmPlan: () => void
   onEdit: () => void
+  resultSummary?: string
+  knowledgeCount?: number
+  webCount?: number
+  toolSteps?: AgentToolStep[]
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -153,9 +161,7 @@ function DeepResearchMockFlow({
       <section className="deep-research-mock-card" aria-label="研究计划">
         <h2>研究：{question}</h2>
         <div className="deep-research-mock-card__plan">
-          <div><strong>知识库</strong><span>先检索社会学概念、理论与已有案例</span></div>
-          <div><strong>网页资料</strong><span>补充近年的研究、数据与公开报道</span></div>
-          <div><strong>最后输出</strong><span>比较证据，标注分歧，形成带出处的结论</span></div>
+          {options.map((step, index) => <div key={`${step}-${index}`}><strong>{index + 1}</strong><span>{step}</span></div>)}
         </div>
         <div className="deep-research-mock-card__actions">
           <button type="button" className="is-primary" onClick={onConfirmPlan}>开始深入研究</button>
@@ -166,12 +172,9 @@ function DeepResearchMockFlow({
   }
 
   if (stage === 'researching') {
-    const toolCalls = [
-      { tool: 'search_knowledge', label: '检索知识库', detail: '“沉默、课堂参与、群体互动”' },
-      { tool: 'read_knowledge_entry', label: '读取知识条目', detail: '社会互动与课堂参与' },
-      { tool: 'search_web', label: '搜索公开网页', detail: '近五年课堂沉默与参与研究' },
-      { tool: 'read_web_page', label: '读取网页正文', detail: '3 个研究来源已纳入核对' },
-    ]
+    const toolCalls = toolSteps.length
+      ? toolSteps.map((step) => ({ tool: step.tool, label: step.label, detail: step.detail || '' }))
+      : [{ tool: 'research', label: '等待工具调用', detail: '研究即将开始' }]
     return (
       <section className="deep-research-mock-card deep-research-mock-card--progress" aria-label="研究进度" aria-live="polite">
         <div className="deep-research-mock-card__eyebrow">正在深入研究</div>
@@ -189,8 +192,8 @@ function DeepResearchMockFlow({
         {detailsOpen ? (
           <div className="deep-research-mock-card__tool-calls">
             {toolCalls.map((call, index) => (
-              <div key={call.tool} className={index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
-                <span>{index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>
+              <div key={`${call.tool}-${index}`} className={toolSteps[index]?.status === 'completed' || index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
+                <span>{toolSteps[index]?.status === 'completed' || index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>
                 <strong>{call.label}</strong>
                 <small>{call.detail}</small>
               </div>
@@ -205,8 +208,8 @@ function DeepResearchMockFlow({
     <section className="deep-research-mock-card deep-research-mock-card--result" aria-label="研究结论">
       <div className="deep-research-mock-card__result-row">
         <div className="deep-research-mock-card__eyebrow">研究完成</div>
-        <h2>已经整理好一份带证据的结论</h2>
-        <div className="deep-research-mock-card__result-meta"><span>知识库 6 条</span><span>网页资料 9 条</span><span>待核对观点 2 个</span></div>
+        <h2>{resultSummary || '已经整理好一份带证据的结论'}</h2>
+        <div className="deep-research-mock-card__result-meta"><span>知识库 {knowledgeCount ?? 0} 条</span><span>网页资料 {webCount ?? 0} 条</span></div>
       </div>
     </section>
   )
@@ -1502,11 +1505,12 @@ export function ResearchAgentConversationPage({
   const [materialsOpen, setMaterialsOpen] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
-  const [composerMode, setComposerMode] = useState<AgentComposerMode>('standard')
+  const [composerMode, setComposerMode] = useState<AgentComposerMode>(() => restoredPendingTurn.current?.runId ? 'deep-research' : 'standard')
   const [deepResearchMockStage, setDeepResearchMockStage] = useState<DeepResearchMockStage>('idle')
   const [deepResearchMockQuestion, setDeepResearchMockQuestion] = useState('')
   const [deepResearchMockOptions, setDeepResearchMockOptions] = useState<string[]>([])
   const [deepResearchMockStep, setDeepResearchMockStep] = useState(0)
+  const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
   const hasDeepResearchMockConversation = composerMode === 'deep-research'
     && deepResearchMockStage !== 'idle'
     && deepResearchMockStage !== 'clarifying'
@@ -1614,21 +1618,6 @@ export function ResearchAgentConversationPage({
     updateDraft(suggestedPrompt)
     globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
   }, [suggestedPrompt, suggestedPromptKey])
-
-  useEffect(() => {
-    if (deepResearchMockStage !== 'researching') return undefined
-    const timer = window.setInterval(() => {
-      setDeepResearchMockStep((current) => {
-        if (current >= DEEP_RESEARCH_MOCK_STEPS.length - 1) {
-          window.clearInterval(timer)
-          setDeepResearchMockStage('completed')
-          return current
-        }
-        return current + 1
-      })
-    }, 900)
-    return () => window.clearInterval(timer)
-  }, [deepResearchMockStage])
 
   useEffect(() => {
     if (isEmpty) {
@@ -1851,7 +1840,7 @@ export function ResearchAgentConversationPage({
     }, { replace: true })
   }
 
-  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string) {
+  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm'; selection?: string }) {
     const question = rawQuestion.trim()
     if (!question || isBusy) return
     const idempotencyKey = retryIdempotencyKey
@@ -1859,7 +1848,9 @@ export function ResearchAgentConversationPage({
       ?? `agent-${Date.now()}`
     const resumableAttempt = failedTurnAttempt.current?.idempotencyKey === idempotencyKey
       ? failedTurnAttempt.current
-      : null
+      : activeTurnAttempt.current?.idempotencyKey === idempotencyKey
+        ? activeTurnAttempt.current
+        : null
     const attempt: PendingTurnAttempt = {
       question,
       idempotencyKey,
@@ -1897,6 +1888,9 @@ export function ResearchAgentConversationPage({
           section_id: workspace === 'research' ? sectionId : null,
           document_version: workspace === 'research' ? documentVersion : null,
           theory_plan_id: workspace === 'research' ? theoryPlanId : null,
+          deep_research_run_id: deepAction ? (activeTurnAttempt.current?.runId ?? null) : null,
+          deep_research_action: deepAction?.action ?? null,
+          deep_research_selection: deepAction?.selection ?? null,
         },
         (event: AgentEvent) => {
           if (streamGeneration.current !== runGeneration) return
@@ -1928,20 +1922,28 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'agent_status') {
             setStatus(event.status === 'answering' ? 'answering' : 'thinking')
           } else if (event.type === 'research_ask') {
-            setDeepResearchMockQuestion(question)
+            setDeepResearchMockQuestion(event.question)
             setDeepResearchMockOptions(event.options)
             setDeepResearchMockStep(0)
             setDeepResearchMockStage('clarifying')
           } else if (event.type === 'research_plan') {
             setDeepResearchMockQuestion(event.title)
+            setDeepResearchMockOptions(event.steps)
             setDeepResearchMockStep(0)
             setDeepResearchMockStage('planning')
           } else if (event.type === 'research_step') {
             setDeepResearchMockStage('researching')
             setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
+          } else if (event.type === 'research_result') {
+            setDeepResearchResult({ summary: event.summary, knowledgeCount: event.knowledge_count, webCount: event.web_count })
+            setDeepResearchMockStage('completed')
           } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
             const next = updateToolSteps(pendingToolSteps.current, event)
             pendingToolSteps.current = next
+            if (composerMode === 'deep-research' && event.type === 'tool_started') {
+              setDeepResearchMockStage('researching')
+              setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
+            }
             setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
             setStreamingTurn((current) => current ? { ...current, toolSteps: next } : current)
           } else if (event.type === 'assistant_delta') {
@@ -1960,6 +1962,17 @@ export function ResearchAgentConversationPage({
               answer: citation.deleted ? DELETED_MATERIAL_ANSWER : current.answer,
               citations: [...current.citations, citation],
             } : current)
+          } else if (event.type === 'research_waiting') {
+            activeRunId.current = event.run_id
+            const waitingAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: event.run_id }
+            activeTurnAttempt.current = waitingAttempt
+            persistPendingTurnAttempt(userId, waitingAttempt)
+            setDeepResearchMockQuestion(event.question ?? event.title ?? question)
+            setDeepResearchMockOptions(event.options ?? event.steps ?? [])
+            setDeepResearchMockStep(0)
+            setDeepResearchMockStage(event.state === 'awaiting_clarification' ? 'clarifying' : 'planning')
+            setStreamingTurn(null)
+            setStatus('idle')
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
@@ -2078,6 +2091,13 @@ export function ResearchAgentConversationPage({
     setDeepResearchMockQuestion('')
     setDeepResearchMockOptions([])
     setDeepResearchMockStep(0)
+    setDeepResearchResult({})
+  }
+
+  function continueDeepResearch(action: 'clarify' | 'confirm', selection?: string) {
+    const attempt = activeTurnAttempt.current
+    if (!attempt?.runId) return
+    void submitQuestion(attempt.question, attempt.idempotencyKey, { action, selection })
   }
 
   function retryFailedTurn(question: string) {
@@ -2364,29 +2384,28 @@ export function ResearchAgentConversationPage({
                     onRegenerate={() => retryFailedTurn(streamingTurn.question)}
                   />
                 ) : null}
+                {hasDeepResearchMockConversation ? (
+                  <DeepResearchMockFlow
+                    stage={deepResearchMockStage}
+                    question={deepResearchMockQuestion}
+                    stepIndex={deepResearchMockStep}
+                    options={deepResearchMockOptions}
+                    resultSummary={deepResearchResult.summary}
+                    knowledgeCount={deepResearchResult.knowledgeCount}
+                    webCount={deepResearchResult.webCount}
+                    toolSteps={streamingTurn?.toolSteps ?? []}
+                    onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                    onConfirmPlan={() => continueDeepResearch('confirm')}
+                    onEdit={() => {
+                      resetDeepResearchMock()
+                      globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+                    }}
+                  />
+                ) : null}
                 {conversationTail}
                 <div ref={transcriptEndRef} />
               </div>
             )}
-            {hasDeepResearchMockConversation ? (
-              <div className="research-agent-page__transcript new-research__transcript deep-research-mock-transcript">
-                <DeepResearchMockFlow
-                  stage={deepResearchMockStage}
-                  question={deepResearchMockQuestion}
-                  stepIndex={deepResearchMockStep}
-                  options={deepResearchMockOptions}
-                  onChooseIntent={() => undefined}
-                  onConfirmPlan={() => {
-                    setDeepResearchMockStep(0)
-                    setDeepResearchMockStage('researching')
-                  }}
-                  onEdit={() => {
-                    resetDeepResearchMock()
-                    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
-                  }}
-                />
-              </div>
-            ) : null}
           </main>
 
           <footer className="research-agent-page__composer-dock new-research__composer-dock">
@@ -2402,14 +2421,12 @@ export function ResearchAgentConversationPage({
                 question={deepResearchMockQuestion}
                 stepIndex={deepResearchMockStep}
                 options={deepResearchMockOptions}
-                onChooseIntent={(intent) => {
-                  setDeepResearchMockQuestion((current) => `${current}（重点：${intent}）`)
-                  setDeepResearchMockStage('planning')
-                }}
-                onConfirmPlan={() => {
-                  setDeepResearchMockStep(0)
-                  setDeepResearchMockStage('researching')
-                }}
+                resultSummary={deepResearchResult.summary}
+                knowledgeCount={deepResearchResult.knowledgeCount}
+                webCount={deepResearchResult.webCount}
+                toolSteps={streamingTurn?.toolSteps ?? []}
+                onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
+                onConfirmPlan={() => continueDeepResearch('confirm')}
                 onEdit={() => {
                   resetDeepResearchMock()
                   globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
