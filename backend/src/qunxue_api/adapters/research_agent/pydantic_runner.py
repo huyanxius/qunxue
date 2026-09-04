@@ -40,6 +40,7 @@ from qunxue_api.adapters.research_agent.research_map_contracts import (
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
     AgentEvidence,
+    AgentInterrupted,
     AgentResearchEvent,
     AgentRunResult,
     AgentRuntimeIdentity,
@@ -514,6 +515,10 @@ class PydanticAIKnowledgeRunner:
         if _is_deepseek_flash(base_url=base_url, model=model):
             model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
+        self._deep_research_usage_limits = UsageLimits(
+            request_limit=48,
+            tool_calls_limit=100,
+        )
         def build_model(endpoint_url: str, endpoint_key: str | None) -> OpenAIChatModel:
             provider = OpenAIProvider(
                 openai_client=AsyncOpenAI(
@@ -1799,7 +1804,7 @@ class PydanticAIKnowledgeRunner:
             ),
             message_history=_agent_message_history(conversation),
             deps=tools,
-            usage_limits=self._usage_limits,
+            usage_limits=self._usage_limits_for(tools),
         )
         return _text_result(
             result.output,
@@ -1816,6 +1821,7 @@ class PydanticAIKnowledgeRunner:
         tools: AgentToolContext,
         on_delta: Callable[[str], None],
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
     ) -> AgentRunResult:
         token = self._active_tool_event.set(on_tool_event)
 
@@ -1840,20 +1846,51 @@ class PydanticAIKnowledgeRunner:
                 conversation=conversation,
                 tools=tools,
             )
-            result = self._agent.run_sync(
-                _compose_agent_prompt(
-                    prompt=prompt,
-                    research_map=getattr(tools, "research_map", None)
-                    if getattr(tools, "research_map_enabled", False)
-                    else None,
-                    document_context=getattr(tools, "document_prompt_context", None),
-                    retrieved_evidence=retrieved_evidence,
-                ),
-                message_history=_agent_message_history(conversation),
-                deps=tools,
-                usage_limits=self._usage_limits,
-                event_stream_handler=stream_text,
-            )
+            if not getattr(tools, "deep_research_enabled", False) and is_cancelled is None:
+                result = self._agent.run_sync(
+                    _compose_agent_prompt(
+                        prompt=prompt,
+                        research_map=getattr(tools, "research_map", None)
+                        if getattr(tools, "research_map_enabled", False)
+                        else None,
+                        document_context=getattr(tools, "document_prompt_context", None),
+                        retrieved_evidence=retrieved_evidence,
+                    ),
+                    message_history=_agent_message_history(conversation),
+                    deps=tools,
+                    usage_limits=self._usage_limits_for(tools),
+                    event_stream_handler=stream_text,
+                )
+            else:
+                async def run_cancellable():
+                    task = asyncio.create_task(
+                        self._agent.run(
+                            _compose_agent_prompt(
+                                prompt=prompt,
+                                research_map=getattr(tools, "research_map", None)
+                                if getattr(tools, "research_map_enabled", False)
+                                else None,
+                                document_context=getattr(tools, "document_prompt_context", None),
+                                retrieved_evidence=retrieved_evidence,
+                            ),
+                            message_history=_agent_message_history(conversation),
+                            deps=tools,
+                            usage_limits=self._usage_limits_for(tools),
+                            event_stream_handler=stream_text,
+                        )
+                    )
+                    while not task.done():
+                        if is_cancelled is not None and is_cancelled():
+                            task.cancel()
+                            try:
+                                await task
+                            except asyncio.CancelledError:
+                                pass
+                            raise AgentInterrupted("Agent run was interrupted by the client")
+                        await async_sleep(0.05)
+                    return await task
+
+                result = asyncio.run(run_cancellable())
             return _text_result(
                 str(result.output),
                 tools=tools,
@@ -1862,6 +1899,13 @@ class PydanticAIKnowledgeRunner:
             )
         finally:
             self._active_tool_event.reset(token)
+
+    def _usage_limits_for(self, tools: AgentToolContext) -> UsageLimits:
+        return (
+            self._deep_research_usage_limits
+            if getattr(tools, "deep_research_enabled", False)
+            else self._usage_limits
+        )
 
     def _preload_bound_research_evidence(
         self,

@@ -64,6 +64,7 @@ class KnowledgeToolRegistry:
         self.selected_evidence_ids: tuple[str, ...] = ()
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False
+        self.deep_research_enabled = False
         self.web_search_enabled = False
         self._allowed_web_urls: set[str] = set()
         self._web_queries: set[str] = set()
@@ -82,6 +83,11 @@ class KnowledgeToolRegistry:
 
     def enable_web_search(self) -> None:
         self.web_search_enabled = self._web_research is not None
+
+    def enable_deep_research(self) -> None:
+        """Select the long-running research execution policy for this turn."""
+
+        self.deep_research_enabled = True
 
     def search_web(
         self, query: str, *, limit: int = 5

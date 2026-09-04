@@ -134,6 +134,7 @@ class SubjectAgentRunner(Protocol):
         tools: AgentToolContext,
         on_delta: Callable[[str], None],
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
     ) -> AgentRunResult: ...
 
 

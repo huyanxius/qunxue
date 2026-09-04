@@ -257,6 +257,10 @@ class DisciplinaryAgentApplication:
                     project_title=prompt,
                 )
         tools = self._tools_factory()
+        if mode == "deep_research":
+            enable_deep_research = getattr(tools, "enable_deep_research", None)
+            if callable(enable_deep_research):
+                enable_deep_research()
         # Deep research owns web evidence by product definition; the toggle is
         # only optional for ordinary Agent turns.
         if web_search or mode == "deep_research":
@@ -435,12 +439,17 @@ class DisciplinaryAgentApplication:
         try:
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
+                runner_kwargs = {
+                    "prompt": prompt,
+                    "conversation": conversation_history,
+                    "tools": tools,
+                    "on_delta": on_delta,
+                    "on_tool_event": record_tool_event,
+                }
+                if "is_cancelled" in __import__("inspect").signature(stream_runner).parameters:
+                    runner_kwargs["is_cancelled"] = cancelled
                 result = stream_runner(
-                    prompt=prompt,
-                    conversation=conversation_history,
-                    tools=tools,
-                    on_delta=on_delta,
-                    on_tool_event=record_tool_event,
+                    **runner_kwargs,
                 )
             else:
                 result = self._runner.run(

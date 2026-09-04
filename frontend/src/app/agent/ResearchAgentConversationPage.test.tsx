@@ -1276,9 +1276,13 @@ describe('ResearchAgentConversationPage', () => {
       ['assistant_delta', { delta: '已经形成一段可保留的回答。' }],
       ['tool_started', { tool: 'read_knowledge_entry', call_id: 'tool-read', input: { knowledge_id: 'D1:C001' }, detail: '正在核对知识条目' }],
     ])
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (
-      urlFor(input).pathname === '/api/agent/turns' ? liveStream.response : json({ items: [] })
-    )))
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = urlFor(input).pathname
+      if (path === '/api/agent/turns') return liveStream.response
+      if (path === '/api/agent/runs/run-stop/stop') return new Response(null, { status: 204 })
+      return json({ items: [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
     const first = renderPage('user-stop')
     const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
@@ -1298,6 +1302,8 @@ describe('ResearchAgentConversationPage', () => {
 
     expect(await within(region).findByText('本轮已停止，已保留生成内容和 1 个已完成步骤。')).toBeVisible()
     expect(within(region).getByText('已经形成一段可保留的回答。')).toBeVisible()
+    expect(within(region).getByRole('button', { name: '继续研究' })).toBeVisible()
+    expect(fetchMock.mock.calls.some(([input]) => urlFor(input).pathname === '/api/agent/runs/run-stop/stop')).toBe(true)
     first.unmount()
 
     renderPage('user-stop')
@@ -1308,6 +1314,31 @@ describe('ResearchAgentConversationPage', () => {
     expect(restoredTools).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(restoredTools)
     expect(within(restored).getByText('青年孤独研究')).toBeVisible()
+    expect(within(restored).getByRole('button', { name: '继续研究' })).toBeVisible()
+  })
+
+  it('stops the server run when the user leaves the Agent page', async () => {
+    const liveStream = deferredStream([
+      ['turn_started', { conversation_id: 'conversation-leave', run_id: 'run-leave', replayed: false, runtime_mode: 'base' }],
+      ['assistant_delta', { delta: '尚未完成的研究内容。' }],
+    ])
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = urlFor(input).pathname
+      if (path === '/api/agent/turns') return liveStream.response
+      if (path === '/api/agent/runs/run-leave/stop') return new Response(null, { status: 204 })
+      return json({ items: [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const page = renderPage('user-leave')
+    const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    fireEvent.change(within(region).getByRole('textbox', { name: '问社会学 Agent' }), { target: { value: '继续调查社区照护。' } })
+    fireEvent.submit(within(region).getByRole('textbox', { name: '问社会学 Agent' }).closest('form') as HTMLFormElement)
+    expect(await within(region).findByText('尚未完成的研究内容。')).toBeVisible()
+
+    page.unmount()
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => urlFor(input).pathname === '/api/agent/runs/run-leave/stop')).toBe(true))
   })
 
   it('shows the runtime mode reported by the real Agent stream', async () => {

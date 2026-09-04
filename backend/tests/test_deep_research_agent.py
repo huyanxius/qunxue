@@ -141,6 +141,64 @@ def test_deep_research_waits_for_plan_confirmation_before_running() -> None:
     assert execution.pending_research["state"] == "awaiting_plan_confirmation"
 
 
+def test_confirmed_deep_research_passes_cancellation_into_the_stream_runner() -> None:
+    class Release:
+        knowledge_release_id = "release-test"
+
+    class Tools:
+        release = Release()
+        evidence = {}
+        research_map_enabled = False
+        web_search_enabled = False
+        deep_research_enabled = False
+
+        def enable_web_search(self):
+            self.web_search_enabled = True
+
+        def enable_deep_research(self):
+            self.deep_research_enabled = True
+
+    cancellation_checks = 0
+
+    def is_cancelled():
+        nonlocal cancellation_checks
+        cancellation_checks += 1
+        return False
+
+    class Runner:
+        runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
+
+        def prepare_research(self, *, prompt, conversation, on_event):
+            on_event(AgentResearchEvent(kind="plan", payload={"title": prompt, "steps": ["调查"]}))
+
+        def run_stream(self, *, prompt, conversation, tools, on_delta, on_tool_event, is_cancelled):
+            assert tools.deep_research_enabled is True
+            assert is_cancelled() is False
+            return AgentRunResult(
+                answer="完整结论",
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="test",
+            )
+
+    app = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(), runner=Runner(), tools_factory=Tools
+    )
+    planned = app.run_turn(
+        user_id=UUID(int=3), conversation_id=None, prompt="研究社区照护", idempotency_key="cancel-1",
+        mode="deep_research", on_delta=lambda _delta: None, is_cancelled=is_cancelled,
+    )
+    completed = app.run_turn(
+        user_id=UUID(int=3), conversation_id=None, prompt="研究社区照护", idempotency_key="cancel-1",
+        mode="deep_research", deep_research_run_id=planned.run_id, deep_research_action="confirm",
+        on_delta=lambda _delta: None, is_cancelled=is_cancelled,
+    )
+
+    assert completed.result.answer == "完整结论"
+    assert cancellation_checks >= 3
+
+
 def test_skipping_clarification_still_requires_plan_confirmation() -> None:
     events: list[AgentResearchEvent] = []
 

@@ -1044,6 +1044,22 @@ def test_deepseek_flash_disables_thinking_by_default() -> None:
     assert runner._usage_limits.tool_calls_limit == 20
 
 
+def test_deep_research_uses_an_emergency_guard_not_the_chat_tool_budget() -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1",
+        api_key="local-test-key",
+        model="sociology-model",
+        timeout_seconds=30,
+    )
+
+    limits = runner._usage_limits_for(
+        type("DeepResearchTools", (), {"deep_research_enabled": True})()
+    )
+
+    assert limits.request_limit == 48
+    assert limits.tool_calls_limit == 100
+
+
 def test_agent_runner_forwards_configured_model_headers() -> None:
     runner = PydanticAIKnowledgeRunner(
         base_url="https://models.example.test/v1",

@@ -535,9 +535,10 @@ def stream_agent_turn(
                 {"code": "agent_unavailable", "message": "Agent 暂时无法完成回答，请稍后重试。"},
             )
         finally:
-            # Browser disconnects are transport events, not stop requests. The
-            # worker owns its lifecycle until completion or an explicit stop.
-            pass
+            # Closing the stream is an implicit user stop (navigation, new
+            # conversation, tab close). The worker checks this cooperative
+            # signal before starting another model or tool operation.
+            cancel_event.set()
 
     return StreamingResponse(
         events(),
