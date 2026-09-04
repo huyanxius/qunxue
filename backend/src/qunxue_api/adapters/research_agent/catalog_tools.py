@@ -1,7 +1,9 @@
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Protocol
+from uuid import UUID
 
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.modules.agent_conversation import (
@@ -69,6 +71,17 @@ class KnowledgeToolRegistry:
         self._allowed_web_urls: set[str] = set()
         self._web_queries: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
+
+    def agent_route_context(self) -> Mapping[str, UUID | None]:
+        """Expose only safe correlation identifiers for model-attempt routing."""
+
+        return MappingProxyType(
+            {
+                "user_id": getattr(self, "_user_id", None),
+                "task_id": getattr(self, "_task_id", None),
+                "agent_run_id": getattr(self, "_agent_run_id", None),
+            }
+        )
 
     def select_evidence(self, citation_ids: Sequence[str]) -> tuple[str, ...]:
         """Bind this turn's source cards to a validated structured evidence set."""

@@ -6,6 +6,7 @@ from collections.abc import AsyncIterable, Callable, Mapping, Sequence
 from contextlib import suppress
 from contextvars import ContextVar
 from typing import Literal
+from uuid import UUID, uuid4
 
 from openai import AsyncOpenAI
 from openai.types.shared import ReasoningEffort
@@ -21,16 +22,25 @@ from pydantic_ai import (
 )
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 from pydantic_ai.messages import (
+    ModelMessage,
     ModelRequest,
     ModelResponse,
     TextPart,
     TextPartDelta,
     UserPromptPart,
 )
+from pydantic_ai.models import ModelRequestParameters
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIChatModelSettings
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
+from qunxue_api.adapters.model import (
+    ModelAttemptFailure,
+    ModelAttemptResult,
+    ModelEndpoint,
+    ModelRouteContext,
+    ModelRouteExecutor,
+)
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
 )
@@ -461,78 +471,92 @@ def _insufficient_evidence_answer() -> str:
 
 
 class _RetryingOpenAIChatModel(OpenAIChatModel):
-    _PROVIDER_RETRY_DELAYS = (0.5,)
+    """Bridge Pydantic AI serialization onto the shared route executor."""
 
-    def __init__(self, *args, fallback_models: Sequence[OpenAIChatModel] = (), **kwargs):
+    def __init__(
+        self,
+        *args,
+        route_executor: ModelRouteExecutor | None,
+        fallback_models: Mapping[str, OpenAIChatModel] | None = None,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self._fallback_models = tuple(fallback_models)
+        self._route_executor = route_executor
+        self._endpoint_models = {"primary": self, **(fallback_models or {})}
 
-    async def _request_model(self, model: OpenAIChatModel, *args, **kwargs):
-        if model is self:
-            return await super()._completions_create(*args, **kwargs)
-        return await model._completions_create(*args, **kwargs)
+    async def _completions_create(
+        self,
+        messages: list[ModelMessage],
+        stream: bool,
+        model_settings: OpenAIChatModelSettings,
+        model_request_parameters: ModelRequestParameters,
+    ):
+        if self._route_executor is None:
+            raise RuntimeError("a shared model route executor is required")
+        correlation = _agent_route_correlation.get() or {}
+        context = ModelRouteContext(
+            trace_id=uuid4(),
+            request_id=uuid4(),
+            operation="agent_completion",
+            task_id=_uuid_correlation(correlation.get("task_id")),
+            agent_run_id=_uuid_correlation(correlation.get("agent_run_id")),
+            capability="agent_completion",
+        )
+        last_error: ModelAPIError | None = None
 
-    async def _race_models(self, models: Sequence[OpenAIChatModel], *args, **kwargs):
-        tasks = {
-            asyncio.create_task(self._request_model(model, *args, **kwargs))
-            for model in models
-        }
-        last_error: Exception | None = None
+        async def attempt(endpoint: ModelEndpoint) -> ModelAttemptResult[object]:
+            nonlocal last_error
+            try:
+                model = self._endpoint_models[endpoint.endpoint_id]
+            except KeyError as error:
+                raise RuntimeError(
+                    f"no Agent model configured for endpoint {endpoint.endpoint_id}"
+                ) from error
+            try:
+                if model is self:
+                    value = await OpenAIChatModel._completions_create(
+                        self,
+                        messages,
+                        stream,
+                        model_settings,
+                        model_request_parameters,
+                    )
+                else:
+                    value = await model._completions_create(
+                        messages,
+                        stream,
+                        model_settings,
+                        model_request_parameters,
+                    )
+            except (ModelHTTPError, ModelAPIError) as error:
+                last_error = error
+                raise ModelAttemptFailure(
+                    code=_model_attempt_failure_code(error),
+                    retryable=_is_retryable_model_error(error),
+                ) from error
+            input_tokens, output_tokens = _completion_usage(value)
+            return ModelAttemptResult(
+                value=value,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
         try:
-            while tasks:
-                done, tasks = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_COMPLETED
-                )
-                for task in done:
-                    try:
-                        result = task.result()
-                    except (ModelHTTPError, ModelAPIError) as error:
-                        last_error = error
-                        continue
-                    for pending in tasks:
-                        pending.cancel()
-                    return result
-            assert last_error is not None
-            raise last_error
-        finally:
-            for task in tasks:
-                task.cancel()
-
-    async def _completions_create(self, *args, **kwargs):
-        models = (self, *self._fallback_models)
-        primary_models = tuple(model for model in models if model.base_url == self.base_url)
-        fallback_models = tuple(model for model in models if model.base_url != self.base_url)
-        last_error: Exception | None = None
-
-        async def request_primary():
-            if len(primary_models) == 1:
-                return await self._request_model(primary_models[0], *args, **kwargs)
-            return await self._race_models(primary_models, *args, **kwargs)
-
-        try:
-            return await request_primary()
-        except (ModelHTTPError, ModelAPIError) as error:
-            last_error = error
-            if not _is_retryable_model_error(error):
+            routed = await self._route_executor.execute_async(
+                context=context,
+                invoke=attempt,
+            )
+        except ModelAttemptFailure:
+            if last_error is None:
                 raise
+            raise last_error from None
+        return routed.value
 
-        if not fallback_models:
-            await async_sleep(self._PROVIDER_RETRY_DELAYS[0])
-            return await request_primary()
 
-        for model_index, model in enumerate(fallback_models):
-            attempts = 2 if model_index == len(fallback_models) - 1 else 1
-            for attempt in range(attempts):
-                try:
-                    return await self._request_model(model, *args, **kwargs)
-                except (ModelHTTPError, ModelAPIError) as error:
-                    last_error = error
-                    if not _is_retryable_model_error(error):
-                        raise
-                    if attempt < attempts - 1:
-                        await async_sleep(self._PROVIDER_RETRY_DELAYS[0])
-        assert last_error is not None
-        raise last_error
+_agent_route_correlation: ContextVar[Mapping[str, UUID | None] | None] = ContextVar(
+    "agent_route_correlation",
+    default=None,
+)
 
 
 class PydanticAIKnowledgeRunner:
@@ -541,11 +565,14 @@ class PydanticAIKnowledgeRunner:
         *,
         base_url: str,
         api_key: str | None,
-        fallback_endpoints: Sequence[tuple[str, str]] = (),
+        fallback_endpoints: Sequence[
+            tuple[str, str] | tuple[str, str, str]
+        ] = (),
         model: str,
         timeout_seconds: float,
         extra_headers: Mapping[str, str] | None = None,
         reasoning_effort: ReasoningEffort | None = None,
+        route_executor: ModelRouteExecutor | None = None,
     ) -> None:
         self._model = model
         self.runtime_identity = AgentRuntimeIdentity(
@@ -567,7 +594,11 @@ class PydanticAIKnowledgeRunner:
             request_limit=48,
             tool_calls_limit=100,
         )
-        def build_model(endpoint_url: str, endpoint_key: str | None) -> OpenAIChatModel:
+        def build_model(
+            endpoint_url: str,
+            endpoint_key: str | None,
+            endpoint_model: str,
+        ) -> OpenAIChatModel:
             provider = OpenAIProvider(
                 openai_client=AsyncOpenAI(
                     base_url=endpoint_url,
@@ -575,7 +606,27 @@ class PydanticAIKnowledgeRunner:
                     max_retries=0,
                 )
             )
-            return OpenAIChatModel(model, provider=provider, settings=model_settings)
+            return OpenAIChatModel(
+                endpoint_model,
+                provider=provider,
+                settings=model_settings,
+            )
+
+        fallback_models: dict[str, OpenAIChatModel] = {}
+        for index, fallback in enumerate(fallback_endpoints, start=1):
+            endpoint_url, endpoint_key = fallback[:2]
+            endpoint_model = fallback[2] if len(fallback) == 3 else model
+            fallback_models[f"fallback-{index}"] = build_model(
+                endpoint_url,
+                endpoint_key,
+                endpoint_model,
+            )
+        expected_endpoint_ids = ("primary", *fallback_models)
+        if (
+            route_executor is not None
+            and route_executor.endpoint_ids != expected_endpoint_ids
+        ):
+            raise ValueError("Agent model endpoints must match the shared route executor")
 
         model_instance = _RetryingOpenAIChatModel(
             model,
@@ -587,7 +638,8 @@ class PydanticAIKnowledgeRunner:
                 )
             ),
             settings=model_settings,
-            fallback_models=tuple(build_model(url, key) for url, key in fallback_endpoints),
+            route_executor=route_executor,
+            fallback_models=fallback_models,
         )
         self._agent = Agent(
             model_instance,
@@ -1835,30 +1887,36 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        retrieved_evidence = self._preload_bound_research_evidence(
-            prompt=prompt,
-            conversation=conversation,
-            tools=tools,
+        route_token = _agent_route_correlation.set(
+            _agent_route_context_from_tools(tools)
         )
-        result = self._agent.run_sync(
-            _compose_agent_prompt(
+        try:
+            retrieved_evidence = self._preload_bound_research_evidence(
                 prompt=prompt,
-                research_map=getattr(tools, "research_map", None)
-                if getattr(tools, "research_map_enabled", False)
-                else None,
-                document_context=getattr(tools, "document_prompt_context", None),
-                retrieved_evidence=retrieved_evidence,
-            ),
-            message_history=_agent_message_history(conversation),
-            deps=tools,
-            usage_limits=self._usage_limits_for(tools),
-        )
-        return _text_result(
-            result.output,
-            tools=tools,
-            model=self._model,
-            usage=_result_usage(result),
-        )
+                conversation=conversation,
+                tools=tools,
+            )
+            result = self._agent.run_sync(
+                _compose_agent_prompt(
+                    prompt=prompt,
+                    research_map=getattr(tools, "research_map", None)
+                    if getattr(tools, "research_map_enabled", False)
+                    else None,
+                    document_context=getattr(tools, "document_prompt_context", None),
+                    retrieved_evidence=retrieved_evidence,
+                ),
+                message_history=_agent_message_history(conversation),
+                deps=tools,
+                usage_limits=self._usage_limits_for(tools),
+            )
+            return _text_result(
+                result.output,
+                tools=tools,
+                model=self._model,
+                usage=_result_usage(result),
+            )
+        finally:
+            _agent_route_correlation.reset(route_token)
 
     def run_stream(
         self,
@@ -1871,6 +1929,9 @@ class PydanticAIKnowledgeRunner:
         is_cancelled: Callable[[], bool] | None = None,
     ) -> AgentRunResult:
         token = self._active_tool_event.set(on_tool_event)
+        route_token = _agent_route_correlation.set(
+            _agent_route_context_from_tools(tools)
+        )
         visible_stream = VisibleTextStream(on_delta)
 
         async def stream_text(
@@ -1945,6 +2006,7 @@ class PydanticAIKnowledgeRunner:
                 usage=_result_usage(result),
             )
         finally:
+            _agent_route_correlation.reset(route_token)
             self._active_tool_event.reset(token)
 
     def _usage_limits_for(self, tools: AgentToolContext) -> UsageLimits:
@@ -2123,6 +2185,56 @@ def _is_retryable_model_error(error: ModelHTTPError | ModelAPIError) -> bool:
             or error.status_code >= 500
         )
     return True
+
+
+def _model_attempt_failure_code(error: ModelHTTPError | ModelAPIError) -> str:
+    if not isinstance(error, ModelHTTPError):
+        return "model_unavailable"
+    if error.status_code == 429:
+        return "model_rate_limited"
+    if (
+        _is_transient_unknown_provider(error)
+        or error.status_code in {408, 409}
+        or error.status_code >= 500
+    ):
+        return "model_unavailable"
+    return "model_request_rejected"
+
+
+def _uuid_correlation(value: object) -> UUID | None:
+    return value if isinstance(value, UUID) else None
+
+
+def _agent_route_context_from_tools(
+    tools: AgentToolContext,
+) -> Mapping[str, UUID | None] | None:
+    get_context = getattr(tools, "agent_route_context", None)
+    if not callable(get_context):
+        return None
+    raw_context = get_context()
+    if not isinstance(raw_context, Mapping):
+        return None
+    return {
+        "user_id": _uuid_correlation(raw_context.get("user_id")),
+        "task_id": _uuid_correlation(raw_context.get("task_id")),
+        "agent_run_id": _uuid_correlation(raw_context.get("agent_run_id")),
+    }
+
+
+def _completion_usage(completion: object) -> tuple[int | None, int | None]:
+    usage = getattr(completion, "usage", None)
+    if usage is None:
+        return (None, None)
+    input_tokens = getattr(usage, "prompt_tokens", None)
+    if input_tokens is None:
+        input_tokens = getattr(usage, "input_tokens", None)
+    output_tokens = getattr(usage, "completion_tokens", None)
+    if output_tokens is None:
+        output_tokens = getattr(usage, "output_tokens", None)
+    return (
+        int(input_tokens) if input_tokens is not None else None,
+        int(output_tokens) if output_tokens is not None else None,
+    )
 
 
 _EVIDENCE_REQUIRED_MARKERS = (

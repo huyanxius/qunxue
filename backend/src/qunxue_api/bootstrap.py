@@ -174,8 +174,6 @@ from qunxue_api.modules.transcription import (
     UnavailableTranscriptionProvider,
 )
 from qunxue_api.settings import (
-    DEFAULT_MODEL_BASE_URL,
-    DEFAULT_MODEL_NAME,
     KNOWLEDGE_ROOT,
     Settings,
     get_settings,
@@ -774,34 +772,27 @@ def create_app(
             # as the zero-config development default.
             agent_runtime_mode = _effective_model_runtime_mode(resolved_settings)
             use_real_agent = agent_runtime_mode != "mock"
-            model_base_url = resolved_settings.model_base_url or (
-                DEFAULT_MODEL_BASE_URL if resolved_settings.has_model_api_key else None
-            )
-            model_name = resolved_settings.model_name or (
-                DEFAULT_MODEL_NAME if resolved_settings.has_model_api_key else None
-            )
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
             else:
-                if model_base_url is None or model_name is None:
+                agent_endpoints = resolved_settings.resolved_model_endpoints()
+                if not agent_endpoints:
                     raise ValueError(
                         "QUNXUE_MODEL_BASE_URL and QUNXUE_MODEL_NAME are required for Agent runtime"
                     )
+                primary_endpoint = agent_endpoints[0]
                 runner = PydanticAIKnowledgeRunner(
-                    base_url=model_base_url,
-                    api_key=(
-                        resolved_settings.model_api_key.get_secret_value()
-                        if resolved_settings.has_model_api_key
-                        else None
-                    ),
-                    model=model_name,
+                    base_url=primary_endpoint.base_url,
+                    api_key=primary_endpoint.api_key,
+                    model=primary_endpoint.model,
                     fallback_endpoints=tuple(
-                        (item.base_url, item.api_key.get_secret_value())
-                        for item in resolved_settings.model_fallbacks
+                        (endpoint.base_url, endpoint.api_key, endpoint.model)
+                        for endpoint in agent_endpoints[1:]
                     ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
                     extra_headers=_model_headers_from_settings(resolved_settings),
                     reasoning_effort=resolved_settings.model_reasoning_effort,
+                    route_executor=app.state.model_router,
                 )
             try:
                 yield DisciplinaryAgentApplication(
