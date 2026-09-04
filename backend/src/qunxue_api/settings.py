@@ -105,6 +105,12 @@ def is_sqlite_memory_url(database_url: str) -> bool:
 class Settings(BaseSettings):
     app_name: str = "群学致知 API"
     contract_version: str = "2026-07-foundation"
+    release_revision: str = Field(
+        default="unreleased",
+        min_length=1,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$",
+    )
     runtime_mode: Literal["mock", "base", "sft"] = "mock"
     database_url: str = DEFAULT_DATABASE_URL
     session_cookie_name: str = "qunxue_session"
@@ -129,6 +135,7 @@ class Settings(BaseSettings):
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
     ) = None
     model_timeout_seconds: float = Field(default=30, gt=0)
+    model_probe_interval_seconds: float = Field(default=300, gt=0)
     model_extra_headers: dict[str, SecretStr] = Field(default_factory=dict)
     web_search_provider: Literal["tavily", "custom"] = "tavily"
     web_search_api_key: SecretStr | None = None

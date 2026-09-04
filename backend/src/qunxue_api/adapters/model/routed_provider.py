@@ -6,6 +6,8 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import replace
+from datetime import UTC, datetime
+from threading import Lock
 from typing import TypeVar
 from uuid import uuid4
 
@@ -36,6 +38,7 @@ from qunxue_api.modules.theory_matching import (
 )
 
 OutputT = TypeVar("OutputT")
+RouteT = TypeVar("RouteT")
 
 _route_context: ContextVar[ModelRouteContext | None] = ContextVar(
     "business_model_route_context",
@@ -76,10 +79,29 @@ class RoutedModelProvider:
         self._providers = dict(zip(endpoint_ids, providers, strict=True))
         self._router = router
         self._descriptor = providers[0].descriptor
+        self._health_lock = Lock()
+        self._health_checked_at: datetime | None = None
 
     @property
     def descriptor(self) -> ModelProviderDescriptor:
         return self._descriptor
+
+    @property
+    def health_checked_at(self) -> datetime | None:
+        with self._health_lock:
+            return self._health_checked_at
+
+    def probe(self) -> None:
+        context = ModelRouteContext(
+            trace_id=uuid4(),
+            request_id=uuid4(),
+            operation="health_probe",
+            capability="health_probe",
+        )
+        try:
+            self._route(context=context, invoke=lambda provider: provider.probe())
+        finally:
+            self._note_health_checked()
 
     def extract_phenomenon(
         self,
@@ -139,9 +161,25 @@ class RoutedModelProvider:
             operation=operation,
             capability=operation,
         )
+        try:
+            result, endpoint_id = self._route(context=context, invoke=invoke)
+        finally:
+            self._note_health_checked()
+
+        return replace(
+            result,
+            selected_descriptor=self._providers[endpoint_id].descriptor,
+        )
+
+    def _route(
+        self,
+        *,
+        context: ModelRouteContext,
+        invoke: Callable[[ModelProvider], RouteT],
+    ) -> tuple[RouteT, str]:
         last_failure: ModelProviderFailure | None = None
 
-        def attempt(endpoint) -> ModelAttemptResult[ModelProviderResult[OutputT]]:
+        def attempt(endpoint) -> ModelAttemptResult[RouteT]:
             nonlocal last_failure
             try:
                 provider = self._providers[endpoint.endpoint_id]
@@ -174,7 +212,8 @@ class RoutedModelProvider:
                 scenario=ModelScenario.PROVIDER_UNAVAILABLE,
             ) from error
 
-        return replace(
-            routed.value,
-            selected_descriptor=self._providers[routed.endpoint.endpoint_id].descriptor,
-        )
+        return routed.value, routed.endpoint.endpoint_id
+
+    def _note_health_checked(self) -> None:
+        with self._health_lock:
+            self._health_checked_at = datetime.now(UTC)

@@ -26,7 +26,7 @@ router = APIRouter(
     "/health",
     operation_id="get_health",
     response_model=HealthResponse,
-    responses={503: {"model": ErrorResponse}},
+    responses={503: {"model": HealthResponse | ErrorResponse}},
 )
 def get_health(request: Request) -> HealthResponse | JSONResponse:
     settings: Settings = request.app.state.settings
@@ -65,7 +65,19 @@ def get_health(request: Request) -> HealthResponse | JSONResponse:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content=body.model_dump(mode="json"),
             )
-    return HealthResponse(
+    model_router = request.app.state.model_router
+    if runtime_mode == "mock":
+        model_status = "healthy"
+    elif model_router is None:
+        model_status = "unknown"
+    else:
+        snapshot_status = model_router.health_snapshot().status
+        model_status = {
+            "unhealthy": "unavailable",
+            "recovering": "degraded",
+        }.get(snapshot_status, snapshot_status)
+    model_provider = request.app.state.model_provider
+    health = HealthResponse(
         status="ok",
         service=settings.app_name,
         runtime_mode=runtime_mode,
@@ -75,4 +87,13 @@ def get_health(request: Request) -> HealthResponse | JSONResponse:
         contract_version=settings.contract_version,
         capability=descriptor.capability_tier,
         knowledge_release_id=release.knowledge_release_id,
+        model_status=model_status,
+        model_checked_at=getattr(model_provider, "health_checked_at", None),
+        release_revision=settings.release_revision,
     )
+    if model_status == "unavailable":
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=health.model_dump(mode="json"),
+        )
+    return health

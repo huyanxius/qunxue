@@ -212,6 +212,20 @@ class OpenAICompatibleModelProvider:
     def descriptor(self) -> ModelProviderDescriptor:
         return self._descriptor
 
+    def probe(self) -> None:
+        """Send the smallest useful completion request to verify reachability."""
+
+        request_body = json.dumps(
+            {
+                "model": self._model,
+                "messages": [{"role": "user", "content": "Reply with OK."}],
+                "max_tokens": 1,
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode()
+        self._send(request_body=request_body, knowledge_release_id=None)
+
     def extract_phenomenon(
         self,
         *,
@@ -521,6 +535,46 @@ class OpenAICompatibleModelProvider:
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode()
+        raw_response = self._send(
+            request_body=request_body,
+            knowledge_release_id=knowledge_release_id,
+        )
+
+        if len(raw_response) > _MAX_RESPONSE_BYTES:
+            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+        try:
+            completion = json.loads(raw_response)
+            if not isinstance(completion, dict):
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            choices = completion.get("choices")
+            if not isinstance(choices, list) or not choices:
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            choice = choices[0]
+            if not isinstance(choice, dict):
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            if choice.get("finish_reason") not in {None, "stop"}:
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            message = choice.get("message")
+            if not isinstance(message, dict):
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            content = message.get("content")
+            if not isinstance(content, str):
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            decoded = json.loads(content)
+            if not isinstance(decoded, dict):
+                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+            return decoded
+        except ModelProviderFailure:
+            raise
+        except (KeyError, IndexError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+
+    def _send(
+        self,
+        *,
+        request_body: bytes,
+        knowledge_release_id: str | None,
+    ) -> bytes:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -595,34 +649,7 @@ class OpenAICompatibleModelProvider:
                 scenario=ModelScenario.PROVIDER_UNAVAILABLE,
             ) from error
 
-        if len(raw_response) > _MAX_RESPONSE_BYTES:
-            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-        try:
-            completion = json.loads(raw_response)
-            if not isinstance(completion, dict):
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            choices = completion.get("choices")
-            if not isinstance(choices, list) or not choices:
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            choice = choices[0]
-            if not isinstance(choice, dict):
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            if choice.get("finish_reason") not in {None, "stop"}:
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            message = choice.get("message")
-            if not isinstance(message, dict):
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            content = message.get("content")
-            if not isinstance(content, str):
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            decoded = json.loads(content)
-            if not isinstance(decoded, dict):
-                self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
-            return decoded
-        except ModelProviderFailure:
-            raise
-        except (KeyError, IndexError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
-            self._raise_invalid_output(knowledge_release_id=knowledge_release_id)
+        return raw_response
 
     def _validated_response(
         self,

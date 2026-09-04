@@ -1,7 +1,8 @@
+import asyncio
 import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
@@ -217,6 +218,33 @@ def create_app(
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
 
+    async def run_model_probe_loop(app: FastAPI) -> None:
+        while True:
+            try:
+                await asyncio.to_thread(app.state.model_provider.probe)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.warning("Model health probe failed.")
+            await asyncio.sleep(resolved_settings.model_probe_interval_seconds)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        probe_task = None
+        if app.state.model_router is not None:
+            probe_task = asyncio.create_task(
+                run_model_probe_loop(app),
+                name="qunxue-model-health-probe",
+            )
+        app.state.model_probe_task = probe_task
+        try:
+            yield
+        finally:
+            if probe_task is not None:
+                probe_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await probe_task
+
     def build_catalog_evidence_source(
         *,
         analysis_application: ResearchAnalysisApplication,
@@ -250,6 +278,7 @@ def create_app(
         title=resolved_settings.app_name,
         version="0.1.0",
         description="群学致知前后端架构基线 API。",
+        lifespan=lifespan,
     )
     app.add_middleware(
         CORSMiddleware,
@@ -308,6 +337,7 @@ def create_app(
     app.state.model_endpoints = model_endpoints
     app.state.model_router = model_router
     app.state.model_attempt_recorder = model_attempt_recorder
+    app.state.model_provider = resolved_model_provider
     app.state.model_gateway = ModelGateway(
         provider=resolved_model_provider,
         recorder=model_invocation_recorder,

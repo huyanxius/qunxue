@@ -1,13 +1,24 @@
 import json
 import sqlite3
+from collections.abc import Iterator
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from threading import Event, Lock
+from urllib.request import Request
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from qunxue_api.adapters.model import SqliteModelAttemptRecorder
+from qunxue_api.adapters.model import (
+    InMemoryModelAttemptRecorder,
+    ModelEndpoint,
+    ModelRouteExecutor,
+    OpenAICompatibleModelProvider,
+    RoutedModelProvider,
+    SqliteModelAttemptRecorder,
+)
+from qunxue_api.adapters.model import openai_compatible_provider as provider_module
 from qunxue_api.adapters.retrieval import (
     RETRIEVAL_CORPUS_SCHEMA_VERSION,
     RetrievalChunk,
@@ -16,6 +27,34 @@ from qunxue_api.adapters.retrieval import (
 from qunxue_api.bootstrap import create_app
 from qunxue_api.modules.knowledge_catalog import KnowledgeUsePurpose
 from qunxue_api.settings import SILICONFLOW_EMBEDDING_MODEL, Settings
+
+
+class _ProbeResponse:
+    headers: dict[str, str] = {}
+
+    def __enter__(self) -> "_ProbeResponse":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self, _limit: int) -> bytes:
+        return b'{"choices":[{"finish_reason":"length","message":{"content":"O"}}]}'
+
+
+@pytest.fixture(autouse=True)
+def _prevent_model_probe_network(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[list[Request]]:
+    requests: list[Request] = []
+
+    def fake_urlopen(request: Request, *, timeout: float) -> _ProbeResponse:
+        del timeout
+        requests.append(request)
+        return _ProbeResponse()
+
+    monkeypatch.setattr(provider_module, "urlopen", fake_urlopen)
+    yield requests
 
 
 def test_health_reports_runtime_contract(client: TestClient) -> None:
@@ -34,7 +73,201 @@ def test_health_reports_runtime_contract(client: TestClient) -> None:
         "contract_version": "2026-07-foundation",
         "capability": "mock",
         "knowledge_release_id": current_release.json()["knowledge_release_id"],
+        "model_status": "healthy",
+        "model_checked_at": None,
+        "release_revision": "unreleased",
     }
+
+
+def test_health_reports_unknown_before_a_real_model_has_been_checked(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_api_key="health-secret-key",
+            model_name="private-model-name",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+    health_client = TestClient(app)
+    try:
+        response = health_client.get("/api/health")
+    finally:
+        health_client.close()
+
+    assert response.status_code == 200
+    assert response.json()["model_status"] == "unknown"
+    assert response.json()["model_checked_at"] is None
+
+
+def test_health_reports_degraded_model_without_leaking_endpoint_details(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_api_key="health-secret-key",
+            model_name="private-model-name",
+            model_extra_headers={"X-Private-Tenant": "tenant-secret"},
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+
+    with TestClient(app) as health_client:
+        app.state.model_router.note_failure(endpoint_id="primary", retryable=True)
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json()["model_status"] == "degraded"
+    assert not {
+        "primary.internal.test",
+        "health-secret-key",
+        "tenant-secret",
+        "primary",
+    } & set(response.text.split())
+    assert all(
+        secret not in response.text
+        for secret in (
+            "primary.internal.test",
+            "health-secret-key",
+            "tenant-secret",
+            "primary",
+        )
+    )
+    assert response.json()["model_version"] == "private-model-name"
+
+
+def test_health_returns_health_contract_when_all_real_endpoints_are_unavailable(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_name="private-model-name",
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+
+    with TestClient(app) as health_client:
+        for _ in range(3):
+            app.state.model_router.note_failure(endpoint_id="primary", retryable=True)
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "ok"
+    assert response.json()["model_status"] == "unavailable"
+    assert "error" not in response.json()
+
+
+def test_health_exposes_configured_release_revision(client: TestClient) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            release_revision="7e48edff",
+        ),
+        database=client.app.state.database,
+    )
+
+    with TestClient(app) as release_client:
+        response = release_client.get("/api/health")
+
+    assert response.json()["release_revision"] == "7e48edff"
+
+
+def test_routed_probe_uses_audited_shared_route_without_request_identity(
+    _prevent_model_probe_network: list[Request],
+) -> None:
+    endpoint = ModelEndpoint(
+        endpoint_id="primary",
+        base_url="https://primary.internal.test/v1",
+        api_key="health-secret-key",
+        model="private-model-name",
+        timeout_seconds=1,
+        provider="openai-compatible",
+    )
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(endpoints=(endpoint,), recorder=attempts)
+    provider = OpenAICompatibleModelProvider(
+        base_url=endpoint.base_url,
+        api_key=endpoint.api_key,
+        model=endpoint.model,
+        timeout_seconds=endpoint.timeout_seconds,
+        capability_tier="base",
+    )
+    routed = RoutedModelProvider(providers=(provider,), router=router)
+
+    routed.probe()
+
+    request_body = json.loads(_prevent_model_probe_network[-1].data or b"{}")
+    attempt = attempts.list_all()[0]
+    assert request_body["max_tokens"] == 1
+    assert attempt.context.capability == "health_probe"
+    assert attempt.context.task_id is None
+    assert attempt.context.agent_run_id is None
+    assert attempt.success is True
+    assert router.health_snapshot().status == "healthy"
+    assert routed.health_checked_at is not None
+
+
+def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    second_probe = Event()
+    probe_lock = Lock()
+    probe_count = 0
+
+    def fake_urlopen(request: Request, *, timeout: float) -> _ProbeResponse:
+        nonlocal probe_count
+        del request, timeout
+        with probe_lock:
+            probe_count += 1
+            if probe_count >= 2:
+                second_probe.set()
+        return _ProbeResponse()
+
+    monkeypatch.setattr(provider_module, "urlopen", fake_urlopen)
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_name="private-model-name",
+            model_probe_interval_seconds=0.01,
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+
+    with TestClient(app):
+        assert second_probe.wait(timeout=1)
+        probe_task = app.state.model_probe_task
+        assert probe_task.done() is False
+
+    assert probe_task.done() is True
 
 
 @pytest.mark.parametrize("runtime_mode", ["mock", "base", "sft"])
