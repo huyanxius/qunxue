@@ -180,6 +180,11 @@ class DisciplinaryAgentApplication:
                     selection = str(pending.get("selected_intent") or "").strip()
                     if selection:
                         prompt = f"{prompt}\n\n用户确认的研究重点：{selection}"
+                    prompt = (
+                        "执行已确认的深入研究。请主动完成多轮知识库检索、网页搜索并读取网页正文，"
+                        "核对证据后直接输出详细研究结论；不要只输出研究起点、计划或‘研究完成’占位语。\n\n"
+                        f"{prompt}"
+                    )
             if existing_run.status == "completed" and existing_run.turn_id is not None:
                 replayed_turn = _find_turn(existing_conversation, existing_run.turn_id)
                 if replayed_turn is None:
@@ -247,7 +252,9 @@ class DisciplinaryAgentApplication:
                     project_title=prompt,
                 )
         tools = self._tools_factory()
-        if web_search:
+        # Deep research owns web evidence by product definition; the toggle is
+        # only optional for ordinary Agent turns.
+        if web_search or mode == "deep_research":
             enable_web_search = getattr(tools, "enable_web_search", None)
             if callable(enable_web_search):
                 enable_web_search()
@@ -445,7 +452,7 @@ class DisciplinaryAgentApplication:
                     AgentResearchEvent(
                         kind="result",
                         payload={
-                            "summary": "证据检索与核对完成",
+                            "summary": result.answer,
                             "knowledge_count": sum(
                                 1
                                 for item in result.citations
@@ -465,22 +472,6 @@ class DisciplinaryAgentApplication:
                 )
                 self._conversations.commit()
                 raise AgentInterrupted("Agent run was interrupted by the client")
-            if mode == "deep_research" and deep_research_action == "confirm":
-                propose_start_research = getattr(tools, "propose_start_research", None)
-                if callable(propose_start_research):
-                    proposal_output = propose_start_research(
-                        phenomenon=prompt,
-                        research_intent="深入研究后的研究起点",
-                        context=result.answer[:1000],
-                    )
-                    tool_events.append(AgentToolEvent(
-                        tool="propose_start_research",
-                        phase="finished",
-                        call_id=f"deep-handoff-{run.run_id}",
-                        input={"phenomenon": prompt},
-                        output=proposal_output,
-                        detail="研究完成后整理研究起点建议",
-                    ))
             citations = tuple(_agent_citation(item) for item in result.citations)
             evidence_ids = frozenset(tools.evidence)
             with self._atomic():

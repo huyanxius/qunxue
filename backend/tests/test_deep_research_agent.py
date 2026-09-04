@@ -21,11 +21,17 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
         release = Release()
         evidence = {}
         research_map_enabled = False
-        web_search_enabled = False
         handoff_enabled = False
+        web_search_enabled = False
 
         def enable_research_handoff_tools(self):
             self.handoff_enabled = True
+
+        def enable_web_search(self):
+            self.web_search_enabled = True
+
+        def propose_start_research(self, **_payload):
+            raise AssertionError("deep research must not create a research-start proposal")
 
     class Runner:
         runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
@@ -45,6 +51,8 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
 
         def run(self, *, prompt, conversation, tools):
             assert tools.handoff_enabled is False
+            assert tools.web_search_enabled is True
+            assert "直接输出详细研究结论" in prompt
             return AgentRunResult(
                 answer="已完成研究。",
                 citations=(),
@@ -81,8 +89,11 @@ def test_deep_research_mode_emits_model_research_event_before_answer() -> None:
         mode="deep_research",
         deep_research_run_id=execution.run_id,
         deep_research_action="confirm",
+        on_research_event=events.append,
     )
     assert confirmed.result.answer == "已完成研究。"
+    assert events[-1].kind == "result"
+    assert events[-1].payload["summary"] == "已完成研究。"
 
 
 def test_deep_research_waits_for_plan_confirmation_before_running() -> None:
