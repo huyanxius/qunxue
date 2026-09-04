@@ -1391,43 +1391,43 @@
   -webkit-backdrop-filter: blur(20px) saturate(.92);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header {
   min-height: 74px;
   padding: 0 18px 0 20px;
   border: 0;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header div {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header div {
   gap: 4px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header span {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header span {
   color: var(--rail-muted);
   font-size: 10px;
   font-weight: 560;
   letter-spacing: .08em;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header strong {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header strong {
   font-size: 15px;
   font-weight: 640;
   letter-spacing: -.015em;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header button {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header button {
   width: 34px;
   height: 34px;
   border-radius: 50%;
   transition: color 150ms ease, background 150ms ease, transform 150ms ease;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__header button:hover {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header button:hover {
   color: var(--rail-ink);
   background: rgb(31 29 25 / 6%);
   transform: rotate(3deg);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tabs {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tabs {
   gap: 3px;
   margin: 0 14px 12px;
   padding: 4px;
@@ -1436,7 +1436,7 @@
   background: rgb(31 29 25 / 4.5%);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tabs button {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tabs button {
   min-height: 36px;
   padding: 0 8px;
   border: 0;
@@ -1447,46 +1447,46 @@
   transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tabs button:hover {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tabs button:hover {
   color: var(--rail-ink);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tabs button.is-active {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tabs button.is-active {
   border: 0;
   color: var(--rail-ink);
   background: rgb(255 255 255 / 86%);
   box-shadow: 0 1px 2px rgb(25 23 20 / 8%), 0 4px 12px rgb(25 23 20 / 5%);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tabs button:focus-visible,
-.research-agent-conversation > .research-context-rail .research-context-rail__header button:focus-visible,
-.research-agent-conversation > .research-context-rail .research-context-rail__panel button:focus-visible {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tabs button:focus-visible,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__header button:focus-visible,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__panel button:focus-visible {
   outline: 1px solid color-mix(in srgb, var(--rail-ink) 58%, transparent);
   outline-offset: 2px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__tab-dot {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__tab-dot {
   top: 7px;
   right: 10px;
   background: #738578;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__body {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__body {
   padding: 0 6px 6px;
   scrollbar-gutter: stable;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__panel {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__panel {
   padding: 14px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__empty {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__empty {
   justify-items: center;
   min-height: min(480px, 58vh);
   text-align: center;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__empty svg {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__empty svg {
   box-sizing: border-box;
   width: 40px;
   height: 40px;
@@ -1496,76 +1496,76 @@
   background: rgb(31 29 25 / 5%);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__empty strong {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__empty strong {
   font-size: 13px;
   font-weight: 640;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__empty p {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__empty p {
   max-width: 242px;
   font-size: 12px;
   line-height: 1.65;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__agent-note,
-.research-agent-conversation > .research-context-rail .research-context-rail__activity,
-.research-agent-conversation > .research-context-rail .research-context-rail__source {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__agent-note,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__activity,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source {
   border: 0;
   border-radius: 13px;
   background: rgb(255 255 255 / 68%);
   box-shadow: inset 0 0 0 1px var(--rail-border);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__agent-note {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__agent-note {
   gap: 10px;
   padding: 16px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__agent-mark {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__agent-mark {
   border-radius: 9px;
   background: var(--rail-ink);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__activity-list,
-.research-agent-conversation > .research-context-rail .research-context-rail__source-list {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__activity-list,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source-list {
   gap: 8px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__activity {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__activity {
   padding: 14px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__activity-button {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__activity-button {
   gap: 10px;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__activity-copy strong,
-.research-agent-conversation > .research-context-rail .research-context-rail__source strong {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__activity-copy strong,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source strong {
   font-size: 12px;
   font-weight: 630;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__source {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source {
   padding: 13px 12px;
   transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__source:hover,
-.research-agent-conversation > .research-context-rail .research-context-rail__source[aria-current='true'] {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source:hover,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source[aria-current='true'] {
   border: 0;
   background: rgb(255 255 255 / 96%);
   box-shadow: inset 0 0 0 1px rgb(31 29 25 / 18%), 0 7px 18px rgb(25 23 20 / 6%);
   transform: translateY(-1px);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__source-index {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__source-index {
   border-radius: 8px;
   color: var(--rail-ink);
   background: rgb(31 29 25 / 6%);
 }
 
-.research-agent-conversation > .research-context-rail .research-context-rail__result-list button,
-.research-agent-conversation > .research-context-rail .research-tool-detail pre {
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-context-rail__result-list button,
+.research-agent-conversation > .research-context-rail:not(.research-context-rail--sections) .research-tool-detail pre {
   border-color: var(--rail-border);
   border-radius: 10px;
   background: rgb(255 255 255 / 72%);
@@ -1949,4 +1949,294 @@
     animation: none;
     transition: none;
   }
+}
+
+/* 展开的研究面板是画布右侧的一张卡片：自己占一列，不遮住对话，卡片内部是横线分隔的列表。
+   窄屏放不下两列，仍然沿用上面那套盖在对话上的浮层。 */
+.research-agent-conversation {
+  --agent-rail-width: clamp(320px, 25vw, 392px);
+}
+
+@keyframes agent-rail-enter {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes agent-rail-leave {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(18px); }
+}
+
+.research-agent-conversation.is-rail-mounted.is-rail-open > .research-context-rail {
+  animation: agent-rail-enter 260ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* 收起：卡片先滑出去，页面那一列同时收窄，动画播完组件才卸载。 */
+.research-agent-conversation.is-rail-mounted:not(.is-rail-open) > .research-context-rail {
+  animation: agent-rail-leave 220ms cubic-bezier(.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+/* 常显滚动条会在对话和研究面板之间压出一条深灰竖轨，内容照常可滚，只是不画轨道。 */
+.research-agent-conversation .research-agent-page__scroll-region,
+.research-agent-conversation .research-context-rail__body {
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+
+.research-agent-conversation .research-agent-page__scroll-region::-webkit-scrollbar,
+.research-agent-conversation .research-context-rail__body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+@media (min-width: 1181px) {
+  /* 第二列常设（收起时宽 0）才能做宽度动画，所以对话本身必须一直钉在第一列，
+     否则自动排流会把它塞进那条 0 宽的列里。 */
+  .research-agent-conversation:not(.research-agent-conversation--embedded) {
+    grid-template-columns: minmax(0, 1fr) 0;
+    column-gap: 0;
+    transition: grid-template-columns 260ms cubic-bezier(.22, 1, .36, 1),
+      column-gap 260ms cubic-bezier(.22, 1, .36, 1),
+      padding-right 260ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .research-agent-conversation:not(.research-agent-conversation--embedded) > * {
+    grid-column: 1;
+  }
+
+  .research-agent-conversation.is-rail-open {
+    grid-template-columns: minmax(0, 1fr) var(--agent-rail-width);
+    column-gap: clamp(16px, 2.2vw, 34px);
+    padding-right: clamp(14px, 1.6vw, 24px);
+  }
+
+  .research-agent-conversation.is-rail-mounted > .research-context-rail {
+    position: static;
+    z-index: auto;
+    grid-row: 1 / -1;
+    grid-column: 2;
+    width: auto;
+    /* 收起时列宽归零，卡片靠 min-width 保住自身宽度，被父级裁掉而不是压扁。 */
+    min-width: var(--agent-rail-width);
+    /* 高度跟着内容走，短内容不会拉出一条空长条。 */
+    align-self: start;
+    max-height: calc(100% - 30px);
+    margin: 12px 0 18px;
+    border: 1px solid var(--app-border);
+    border-radius: 18px;
+    background: var(--app-canvas);
+    box-shadow: 0 10px 30px rgb(25 23 20 / 5%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__header {
+    min-height: 44px;
+    padding: 0 10px 0 16px;
+    border: 0;
+  }
+
+  .research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__body {
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-agent-conversation:not(.research-agent-conversation--embedded),
+  .research-agent-conversation.is-rail-mounted.is-rail-open > .research-context-rail,
+  .research-agent-conversation.is-rail-mounted:not(.is-rail-open) > .research-context-rail {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* 正文里的工具痕迹与证据区跟右侧研究面板对齐：宋体小标题、细边框、横线分组，
+   结果项复用同一种浅色小卡片，不再堆图标框和大圆角块。 */
+.research-agent-conversation .research-agent-tool-summary {
+  gap: 9px;
+  border-radius: 10px;
+  border-color: var(--app-border);
+  background: var(--app-canvas);
+}
+
+.research-agent-conversation .research-agent-tool-summary strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.research-agent-conversation .new-research__trace-list {
+  gap: 0;
+  padding: 2px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .new-research__trace-step {
+  gap: 9px;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.research-agent-conversation .new-research__trace-step + .new-research__trace-step {
+  border-top: 1px solid var(--app-border);
+}
+
+.research-agent-conversation .new-research__trace-step strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.research-agent-conversation .new-research__trace-result {
+  border: 0;
+  border-radius: 8px;
+  background: var(--app-sidebar);
+  box-shadow: none;
+}
+
+/* 证据来源退成一句话：下面紧跟着的依据列表才是主体。 */
+.research-agent-conversation .new-research__evidence-origin {
+  display: block;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--app-muted);
+  background: transparent;
+  box-shadow: none;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.research-agent-conversation .new-research__sources button {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .new-research__sources-label {
+  font-family: var(--serif, Georgia, serif);
+}
+
+.research-agent-conversation .research-agent-handoff {
+  padding: 14px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-canvas);
+  box-shadow: none;
+}
+
+.research-agent-conversation .research-agent-handoff__mark {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  color: var(--app-muted);
+  background: transparent;
+}
+
+.research-agent-conversation .research-agent-handoff__mark svg { width: 20px; height: 20px; }
+
+.research-agent-conversation .research-agent-handoff__copy strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 工具记号只剩线条本身：底色方块、边框和投影在这套排版里全是噪音。 */
+.research-agent-conversation .research-agent-tool-logo,
+.research-agent-conversation .research-agent-tool-logo.is-running,
+.research-agent-conversation .research-agent-tool-logo.is-failed,
+.research-agent-conversation .research-agent-tool-logo.is-interrupted {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.research-agent-conversation .research-agent-tool-logo.is-running { color: #876d2d; }
+.research-agent-conversation .research-agent-tool-logo.is-failed,
+.research-agent-conversation .research-agent-tool-logo.is-interrupted { color: #a85b3c; }
+.research-agent-conversation .research-agent-tool-logo { color: var(--app-muted); }
+
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo + .research-agent-tool-logo {
+  margin-left: -3px;
+}
+
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo:nth-child(2),
+.research-agent-conversation .research-agent-tool-logo-stack .research-agent-tool-logo:nth-child(3) {
+  opacity: .55;
+}
+
+/* 依据药丸复用研究面板那套色：知识条目按维度上色，序号跟着走。 */
+.research-agent-conversation .new-research__sources button[data-dimension='D1'] { --tone-ink: #43639a; }
+.research-agent-conversation .new-research__sources button[data-dimension='D2'] { --tone-ink: #44745f; }
+.research-agent-conversation .new-research__sources button[data-dimension='D3'] { --tone-ink: #367083; }
+.research-agent-conversation .new-research__sources button[data-dimension='D4'] { --tone-ink: #985067; }
+.research-agent-conversation .new-research__sources button[data-dimension='D5'] { --tone-ink: #8a6b2f; }
+.research-agent-conversation .new-research__sources button[data-dimension='D6'] { --tone-ink: #695b91; }
+.research-agent-conversation .new-research__sources button[data-dimension='D7'] { --tone-ink: #925c49; }
+
+.research-agent-conversation .new-research__sources button > b {
+  color: var(--tone-ink, var(--app-muted));
+  background: transparent;
+}
+
+.research-agent-conversation .new-research__sources button small {
+  color: var(--tone-ink, var(--app-muted));
+}
+
+.research-agent-conversation .new-research__sources button[data-dimension] > span,
+.research-agent-conversation .new-research__sources button[data-dimension] > span > small {
+  color: var(--tone-ink);
+}
+
+/* 依据视图在分区栏里的排版：返回行一行放下，动作链接跟栏内其它按钮一个样式。 */
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__back {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-context-rail__back strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-agent-basis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .research-agent-basis-actions a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  color: var(--app-ink);
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.research-agent-conversation.is-rail-mounted > .research-context-rail .new-research__basis > strong {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
 }

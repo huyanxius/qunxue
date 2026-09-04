@@ -1,12 +1,13 @@
 import {
   ArrowClockwiseIcon,
+  ArticleIcon,
   ArrowUpIcon,
-  BookOpenTextIcon,
   CaretDownIcon,
   CaretRightIcon,
   CheckIcon,
   CheckCircleIcon,
   CircleNotchIcon,
+  CirclesThreeIcon,
   ClockCounterClockwiseIcon,
   CompassIcon,
   CopyIcon,
@@ -15,22 +16,19 @@ import {
   FileTextIcon,
   FolderOpenIcon,
   GlobeHemisphereWestIcon,
+  GlobeSimpleIcon,
   LinkSimpleIcon,
   ListIcon,
   MagnifyingGlassIcon,
-  MapTrifoldIcon,
-  PathIcon,
+  TreeStructureIcon,
   PencilLineIcon,
   PlusIcon,
-  ScalesIcon,
-  SparkleIcon,
+  SidebarSimpleIcon,
   StopIcon,
   TrashIcon,
   WarningCircleIcon,
-  WrenchIcon,
   XCircleIcon,
   XIcon,
-  type Icon,
 } from '@phosphor-icons/react'
 import {
   useCallback,
@@ -93,6 +91,9 @@ const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v1'
 const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
+// 退场动画时长，和 research-agent-conversation.css 里 agent-rail-leave 保持一致。
+const RAIL_EXIT_MS = 220
+
 const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
 type AgentComposerMode = 'standard' | 'deep-research'
 type DeepResearchMockStage = 'idle' | 'clarifying' | 'planning' | 'researching' | 'completed'
@@ -462,7 +463,7 @@ function KnowledgeHandoffCards({
   return (
     <div className="research-agent-knowledge-handoffs">
       <section className="research-agent-handoff research-agent-handoff--compact" aria-label={text('知识库建议', 'Knowledge base suggestion')}>
-        <span className="research-agent-handoff__mark" aria-hidden="true"><BookOpenTextIcon size={23} weight="duotone" /></span>
+        <span className="research-agent-handoff__mark" aria-hidden="true"><ArticleIcon size={23} weight="duotone" /></span>
         <div className="research-agent-handoff__copy">
           <small>{text('去知识库阅读', 'Read in the knowledge base')}</small>
           <strong>{citation.label}</strong>
@@ -471,7 +472,7 @@ function KnowledgeHandoffCards({
         <Link className="research-agent-handoff__link" to={entryHref}>{text('打开知识条目', 'Open knowledge entry')} <CaretRightIcon size={14} aria-hidden="true" /></Link>
       </section>
       <section className="research-agent-handoff research-agent-handoff--compact" aria-label={text('知识图谱建议', 'Knowledge graph suggestion')}>
-        <span className="research-agent-handoff__mark" aria-hidden="true"><MapTrifoldIcon size={23} weight="duotone" /></span>
+        <span className="research-agent-handoff__mark" aria-hidden="true"><TreeStructureIcon size={23} weight="duotone" /></span>
         <div className="research-agent-handoff__copy">
           <small>{text('沿知识关系探索', 'Explore related knowledge')}</small>
           <strong>{citation.label}</strong>
@@ -773,16 +774,33 @@ function tombstoneConversationMaterial(conversation: AgentConversation, material
 }
 
 
+// 网页来源的副标题给域名，比统一写"来源"更能让人判断这条证据可不可信。
+function citationHost(citation: AgentCitation) {
+  if (citation.source_kind !== 'web' || !citation.source_id) return null
+  try {
+    return new URL(citation.source_id).host.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
 function citationToRail(citation: AgentCitation, locale: AppLocale): ResearchCitation {
   const material = materialCitationFields(citation)
   const materialLocator = material.locator ? formatMaterialLocator(material.locator) : null
+  const host = citationHost(citation)
+  // 知识条目号形如 D1:C213，前缀就是知识库的维度，用它取和知识库页面同一套色。
+  const dimension = citation.knowledge_id?.match(/^(D[1-7])/)?.[1] ?? null
   return {
     id: citation.citation_id,
     title: citation.label,
     kind: citation.kind,
-    subtitle: `${citationKindLabel(citation.kind, locale)}${materialLocator ? ` · ${materialLocator}` : citation.knowledge_id ? ` · ${citation.knowledge_id}` : ''}`,
+    subtitle: host ?? `${citationKindLabel(citation.kind, locale)}${materialLocator ? ` · ${materialLocator}` : citation.knowledge_id ? ` · ${citation.knowledge_id}` : ''}`,
     excerpt: citation.excerpt,
     knowledgeId: citation.knowledge_id,
+    group: citation.source_kind === 'web'
+      ? 'web'
+      : citation.kind === 'material' || citation.kind === 'research_material' ? 'material' : 'knowledge',
+    dimension,
   }
 }
 
@@ -913,6 +931,7 @@ function AgentConversationHistoryRail({
   conversations,
   loading,
   onDelete,
+  onNewConversation,
   onOpen,
   onRename,
 }: {
@@ -920,6 +939,7 @@ function AgentConversationHistoryRail({
   conversations: AgentConversationSummary[]
   loading: boolean
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  onNewConversation: () => void
   onOpen: (conversation: AgentConversationSummary) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
 }) {
@@ -1007,7 +1027,18 @@ function AgentConversationHistoryRail({
   return (
     <>
       <section ref={railRef} className="agent-conversation-history" aria-label={text('Agent 对话记录', 'Agent conversation history')}>
-      <h2>{text('对话记录', 'Conversation history')}</h2>
+      <div className="agent-conversation-history__heading">
+        <h2>{text('对话记录', 'Conversation history')}</h2>
+        <button
+          className="agent-conversation-history__new"
+          type="button"
+          aria-label={text('开始新对话', 'Start a new conversation')}
+          title={text('开始新对话', 'Start a new conversation')}
+          onClick={onNewConversation}
+        >
+          <PlusIcon size={15} aria-hidden="true" />
+        </button>
+      </div>
       {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : safeConversations.length ? (
         <div className="agent-conversation-history__list">
           {safeConversations.map((conversation) => {
@@ -1156,17 +1187,21 @@ function ConversationHistory({
   )
 }
 
-const toolIcons: Record<string, Icon> = {
+// 每个工具保留自己的图标，但换掉过于具象的那几个（扳手、地图、书本），
+// 统一 light 权重的线条，状态只用颜色区分，和右侧研究面板一个语言。
+const toolIcons: Record<string, typeof ArticleIcon> = {
   search_knowledge: MagnifyingGlassIcon,
-  read_knowledge_entry: BookOpenTextIcon,
+  read_knowledge_entry: ArticleIcon,
   read_sources: LinkSimpleIcon,
   browse_knowledge_directory: FolderOpenIcon,
   search_research_materials: MagnifyingGlassIcon,
   read_research_material_context: FileTextIcon,
-  update_research_map: MapTrifoldIcon,
-  propose_start_research: SparkleIcon,
-  get_research_workflow_state: PathIcon,
-  start_theory_matching: ScalesIcon,
+  search_web: GlobeSimpleIcon,
+  read_web_page: GlobeSimpleIcon,
+  update_research_map: TreeStructureIcon,
+  propose_start_research: CompassIcon,
+  get_research_workflow_state: CompassIcon,
+  start_theory_matching: CirclesThreeIcon,
   save_confirmed_theory_plan: CheckCircleIcon,
   read_research_document: FileTextIcon,
   propose_document_revision: PencilLineIcon,
@@ -1174,10 +1209,10 @@ const toolIcons: Record<string, Icon> = {
 }
 
 function ToolLogo({ tool, state }: { tool: string; state?: string }) {
-  const ToolIcon = toolIcons[tool] ?? WrenchIcon
+  const ToolIcon = toolIcons[tool] ?? ArticleIcon
   return (
     <span className={`research-agent-tool-logo${state ? ` is-${state}` : ''}`} aria-hidden="true">
-      <ToolIcon size={15} weight={tool === 'search_knowledge' ? 'bold' : 'regular'} />
+      <ToolIcon size={16} weight="light" />
     </span>
   )
 }
@@ -1271,9 +1306,9 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
   if (!citations.length) return null
   return (
     <div className="new-research__sources" aria-label={text('回答证据', 'Answer evidence')}>
-      <span className="new-research__sources-label"><BookOpenTextIcon size={14} />{text('依据', 'Evidence')}</span>
+      <span className="new-research__sources-label">{text('依据', 'Evidence')}</span>
       {citations.map((citation, index) => (
-        <button type="button" key={citation.citation_id} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
+        <button type="button" key={citation.citation_id} data-dimension={citation.knowledge_id?.match(/^(D[1-7])/)?.[1] ?? undefined} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
           <b>{index + 1}</b><span>{citation.label}<small>{citationKindLabel(citation.kind, locale)}</small></span>
         </button>
       ))}
@@ -1293,41 +1328,20 @@ function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
   )).length
   const webCount = citations.filter((citation) => citation.source_kind === 'web').length
   if (!materialCount && !knowledgeCount && !webCount) return null
-  const originCount = [materialCount, knowledgeCount, webCount].filter(Boolean).length
-  const mixed = originCount > 1
+  // 下面紧跟着的就是逐条依据，这里只需要一句话交代来源构成，不必再占一张卡片。
+  const parts = [
+    knowledgeCount ? `${text('群学知识库', 'Qunxue knowledge')} ${knowledgeCount}` : null,
+    materialCount ? `${text('你的研究材料', 'Your materials')} ${materialCount}` : null,
+    webCount ? `${text('公开网页', 'Public web')} ${webCount}` : null,
+  ].filter(Boolean)
   return (
-    <div
-      className={`new-research__evidence-origin${mixed ? ' is-mixed' : ''}`}
+    <p
+      className="new-research__evidence-origin"
       role="status"
       aria-label={text('本轮证据来源', 'Evidence sources for this answer')}
     >
-      <div className="new-research__evidence-origin-heading">
-        <BookOpenTextIcon size={14} aria-hidden="true" />
-        <span>{text('本轮证据来源', 'Evidence sources')}</span>
-      </div>
-      <div className="new-research__evidence-origin-list">
-        {knowledgeCount ? (
-          <span className="is-knowledge"><span>{text('群学知识库', 'Qunxue knowledge')}</span><b>{knowledgeCount}</b></span>
-        ) : null}
-        {materialCount ? (
-          <span className="is-material"><span>{text('你的研究材料', 'Your research materials')}</span><b>{materialCount}</b></span>
-        ) : null}
-        {webCount ? (
-          <span className="is-web"><span>{text('公开网页', 'Public web')}</span><b>{webCount}</b></span>
-        ) : null}
-      </div>
-      <p>
-        {knowledgeCount && materialCount && !webCount
-          ? text('本轮同时引用了群学知识库和你的研究材料', 'This answer cites both the Qunxue knowledge base and your research materials')
-          : mixed
-            ? text('本轮同时引用了多类证据来源', 'This answer cites multiple evidence sources')
-            : materialCount
-              ? text('本轮引用了你的研究材料', 'This answer cites your research materials')
-              : knowledgeCount
-                ? text('本轮引用了群学知识库', 'This answer cites the Qunxue knowledge base')
-                : text('本轮引用了公开网页', 'This answer cites the public web')}
-      </p>
-    </div>
+      {text('本轮引用', 'Cited this turn')} · {parts.join(' · ')}
+    </p>
   )
 }
 
@@ -1526,8 +1540,14 @@ export function ResearchAgentConversationPage({
   const [status, setStatus] = useState<AgentPageStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [historyLoading, setHistoryLoading] = useState(!embedded)
-  const [historyOpen, setHistoryOpen] = useState(false)
   const [contextOpen, setContextOpen] = useState(false)
+  // 研究工作区里内嵌的面板仍然保留这个浮层入口，独立 Agent 页已经由左侧对话记录栏取代它。
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const closeHistory = useCallback(() => setHistoryOpen(false), [])
+  // 用户手动收起研究面板后就不再自动弹出，直到换一段对话。
+  const researchPanelDismissed = useRef(false)
+  // 收起时先播完退场动画再卸载，所以挂载状态比 contextOpen 多活一小会儿。
+  const [railMounted, setRailMounted] = useState(false)
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
@@ -1568,7 +1588,6 @@ export function ResearchAgentConversationPage({
   const modeMenuRef = useRef<HTMLDivElement>(null)
   const modeMenuButtonRef = useRef<HTMLButtonElement>(null)
 
-  const closeHistory = useCallback(() => setHistoryOpen(false), [])
 
   function openMaterials() {
     materialsOpenRef.current = true
@@ -1823,6 +1842,7 @@ export function ResearchAgentConversationPage({
     setSelectedActivityId(null)
     setContextOpen(false)
     setContextTab('agent')
+    researchPanelDismissed.current = false
     closeMaterials()
     setMaterialLocatorTarget(null)
   }
@@ -2252,6 +2272,46 @@ export function ResearchAgentConversationPage({
   const selectedCitationReleaseId = selectedCitationContext?.knowledgeReleaseId ?? null
   const selectedMaterialCitation = materialCitationFields(selectedCitation)
   const selectedActivity = allToolSteps.find((activity) => activity.id === selectedActivityId)
+  // 这轮一旦产生来源或工具活动，右侧研究面板自己展开；独立 Agent 页才这样，
+  // 研究工作区里内嵌的窄栏仍然只按用户点击开合。
+  useEffect(() => {
+    if (embedded || researchPanelDismissed.current) return
+    if (!citationsForRail.length && !activities.length) return
+    setContextOpen(true)
+  }, [activities.length, citationsForRail.length, embedded])
+
+  useEffect(() => {
+    if (contextOpen) {
+      setRailMounted(true)
+      return undefined
+    }
+    if (!railMounted) return undefined
+    const timer = setTimeout(() => setRailMounted(false), RAIL_EXIT_MS)
+    return () => clearTimeout(timer)
+  }, [contextOpen, railMounted])
+
+  function toggleResearchPanel() {
+    if (contextOpen) {
+      researchPanelDismissed.current = true
+      setContextOpen(false)
+      return
+    }
+    researchPanelDismissed.current = false
+    setContextTab('sources')
+    setContextOpen(true)
+  }
+
+  function closeResearchPanel() {
+    researchPanelDismissed.current = true
+    setContextOpen(false)
+  }
+
+  function backToResearchPanel() {
+    setSelectedActivityId(null)
+    setSelectedCitationContext(null)
+    setContextTab('sources')
+  }
+
   function openCitation(citation: AgentCitation, knowledgeReleaseId: string | null) {
     const conversationReleaseId = activeConversation?.conversation_id
       ? knowledgeReleaseByConversationId[activeConversation.conversation_id] ?? null
@@ -2360,7 +2420,7 @@ export function ResearchAgentConversationPage({
         ? <div className="research-agent-basis-actions">
             <a href={selectedKnowledgeEntryHref}>{text('打开知识条目', 'Open knowledge entry')} <ArrowUpIcon size={13} /></a>
             {selectedKnowledgeGraphHref
-              ? <a className="is-graph" href={selectedKnowledgeGraphHref}>{text('在知识图谱中查看', 'View in knowledge graph')} <MapTrifoldIcon size={13} /></a>
+              ? <a className="is-graph" href={selectedKnowledgeGraphHref}>{text('在知识图谱中查看', 'View in knowledge graph')} <TreeStructureIcon size={13} /></a>
               : null}
           </div>
         : selectedCitation.knowledge_id
@@ -2376,7 +2436,7 @@ export function ResearchAgentConversationPage({
 
   const conversationSurface = (
         <section
-          className={`research-agent-page new-research research-agent-conversation${embedded ? ' research-agent-conversation--embedded new-research__agent-panel is-agent-synced' : ''} ${isEmpty ? 'is-empty' : 'is-conversation'}${landingBackdropPhase === 'leaving' ? ' is-transitioning' : ''}`}
+          className={`research-agent-page new-research research-agent-conversation${embedded ? ' research-agent-conversation--embedded new-research__agent-panel is-agent-synced' : ''} ${isEmpty ? 'is-empty' : 'is-conversation'}${landingBackdropPhase === 'leaving' ? ' is-transitioning' : ''}${!embedded && railMounted ? ' is-rail-mounted' : ''}${!embedded && contextOpen ? ' is-rail-open' : ''}`}
           aria-label={embedded ? text('研究 Agent 对话栏', 'Research Agent conversation panel') : text('社会学 Agent 对话', 'Sociology Agent conversation')}
           role={embedded ? 'complementary' : undefined}
           data-runtime-mode={runtimeMode ?? 'unknown'}
@@ -2407,10 +2467,15 @@ export function ResearchAgentConversationPage({
                     <FileTextIcon size={16} />
                   </button>
                 ) : null}
-                <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><BookOpenTextIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
-                {showConversationManagement ? <button type="button" aria-label={text('开始新对话', 'Start a new conversation')} title={text('开始新对话', 'Start a new conversation')} onClick={newConversation}><PlusIcon size={16} /></button> : null}
+                {embedded ? (
+                  <>
+                    <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
+                    <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><ArticleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
+                    {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
+                  </>
+                ) : (
+                  <button type="button" aria-label={text('研究面板', 'Research panel')} aria-pressed={contextOpen} title={text('研究面板', 'Research panel')} onClick={toggleResearchPanel}><SidebarSimpleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
+                )}
               </div>
             </header>
           )}
@@ -2663,7 +2728,7 @@ export function ResearchAgentConversationPage({
             </form>
           </footer>
 
-          {showConversationManagement && historyOpen ? (
+          {embedded && showConversationManagement && historyOpen ? (
             <ConversationHistory
               conversations={conversations}
               activeConversationId={activeConversation?.conversation_id ?? null}
@@ -2673,13 +2738,16 @@ export function ResearchAgentConversationPage({
             />
           ) : null}
 
-          {contextOpen ? (
+          {(embedded ? contextOpen : railMounted) ? (
             <ResearchContextRail
               activeTab={contextTab}
               activities={activities}
               citations={citationsForRail}
               selectedCitationId={selectedCitationId}
-              onClose={() => setContextOpen(false)}
+              variant={embedded ? 'tabs' : 'sections'}
+              elapsedSeconds={embedded ? null : deepResearchElapsedSeconds}
+              onClose={closeResearchPanel}
+              onBack={backToResearchPanel}
               onPanelChange={setContextTab}
               onActivitySelect={(activity) => {
                 setSelectedCitationContext(null)
@@ -2725,6 +2793,7 @@ export function ResearchAgentConversationPage({
             conversations={conversations}
             loading={historyLoading}
             onDelete={deleteSavedConversation}
+            onNewConversation={newConversation}
             onOpen={openConversation}
             onRename={renameSavedConversation}
           />,
@@ -2742,6 +2811,7 @@ export function ResearchAgentConversationPage({
           conversations={conversations}
           loading={historyLoading}
           onDelete={deleteSavedConversation}
+          onNewConversation={newConversation}
           onOpen={openConversation}
           onRename={renameSavedConversation}
         />

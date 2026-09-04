@@ -687,11 +687,42 @@
   border-top: 1px solid var(--app-border);
 }
 
+.agent-conversation-history__heading {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 6px 9px 10px;
+}
+
 .agent-conversation-history h2 {
-  margin: 0 10px 9px;
+  margin: 0;
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 500;
+}
+
+.agent-conversation-history__new {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--app-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.agent-conversation-history__new:hover {
+  color: var(--app-ink);
+  background: var(--app-surface);
+}
+
+.agent-conversation-history__new:focus-visible {
+  outline: 2px solid var(--app-accent, #5e5a4f);
+  outline-offset: 2px;
 }
 
 .agent-conversation-history > p {

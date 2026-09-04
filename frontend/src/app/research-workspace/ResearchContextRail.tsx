@@ -1,5 +1,6 @@
-import { CheckCircleIcon, CircleNotchIcon, FileTextIcon, MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
-import type { ReactNode } from 'react'
+import { ArrowLeftIcon, CaretRightIcon, CheckCircleIcon, CircleNotchIcon, FileTextIcon, MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
+import { useId, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 import type { AgentCitation, AgentToolStep } from '../../modules/research-agent'
 import { useAppLocale } from '../../i18n/AppLocaleProvider'
@@ -22,6 +23,9 @@ export type ResearchActivity = {
   resultItems?: ResearchActivityResult[]
 }
 
+/** 右栏分段的归属。知识库是本体条目，web 是抓回来的外部网页，material 是用户自己传的研究材料。 */
+export type ResearchCitationGroup = 'knowledge' | 'web' | 'material'
+
 export type ResearchCitation = {
   id: string
   title: string
@@ -29,6 +33,9 @@ export type ResearchCitation = {
   subtitle?: string | null
   excerpt?: string | null
   knowledgeId?: string | null
+  group?: ResearchCitationGroup
+  /** 知识库维度（D1—D7），决定条目在栏里用哪一种色标。 */
+  dimension?: string | null
 }
 
 export type ResearchContextTab = 'agent' | 'activity' | 'sources' | 'basis'
@@ -39,7 +46,14 @@ type ResearchContextRailProps = {
   readonly citations?: readonly ResearchCitation[]
   readonly basisContent?: ReactNode
   readonly selectedCitationId?: string | null
+  /**
+   * tabs：一次只显示一个面板，由外部按钮切换，用于研究工作区里内嵌的窄栏。
+   * sections：知识库 / 网页 / 工作流程同屏堆叠，用于独立 Agent 页右侧那一列。
+   */
+  readonly variant?: 'tabs' | 'sections'
+  readonly elapsedSeconds?: number | null
   readonly onClose?: () => void
+  readonly onBack?: () => void
   readonly onPanelChange?: (tab: ResearchContextTab) => void
   readonly onActivitySelect?: (activity: ResearchActivity) => void
   readonly onCitationSelect?: (citation: ResearchCitation) => void
@@ -55,6 +69,9 @@ const tabLabels: Record<ResearchContextTab, string> = {
 const toolLabel = (tool: string) => tool.replaceAll('_', ' ')
 
 const TOOL_DETAIL_PREVIEW_LIMIT = 180
+
+// 吸顶标题的行高，和 research-context-rail.css 里 summary 的 min-height 保持一致。
+const RAIL_STICKY_HEIGHT = 44
 
 export function summarizeToolDetail(detail: string | null | undefined) {
   const normalized = detail?.trim() ?? ''
@@ -135,15 +152,173 @@ function ActivityPanel({ activities, onSelect }: { activities: readonly Research
   )
 }
 
-function SourcesPanel({ citations, selectedCitationId, onSelect }: { citations: readonly ResearchCitation[]; selectedCitationId?: string | null; onSelect?: (citation: ResearchCitation) => void }) {
+function SourcesPanel({ citations, selectedCitationId, onSelect, numberOf }: { citations: readonly ResearchCitation[]; selectedCitationId?: string | null; onSelect?: (citation: ResearchCitation) => void; numberOf?: (citation: ResearchCitation) => number }) {
   const { text } = useAppLocale()
   if (!citations.length) return <div className="research-context-rail__empty"><FileTextIcon size={20} /><strong>{text('回答完成后，来源会出现在这里', 'Sources will appear here when the answer is complete')}</strong><p>{text('当本次回答绑定知识库来源时，来源会和回答保持对应。', 'Knowledge sources stay linked to the answer that used them.')}</p></div>
-  return <div className="research-context-rail__source-list">{citations.map((citation) => <button type="button" className="research-context-rail__source" data-citation-id={citation.id} aria-current={citation.id === selectedCitationId ? 'true' : undefined} key={citation.id} onClick={() => onSelect?.(citation)}><span className="research-context-rail__source-index">{citations.indexOf(citation) + 1}</span><span><strong>{citation.title}</strong>{citation.subtitle ? <small>{citation.subtitle}</small> : null}{citation.excerpt ? <em>{citation.excerpt}</em> : null}</span></button>)}</div>
+  return <div className="research-context-rail__source-list">{citations.map((citation) => <button type="button" className="research-context-rail__source" data-citation-id={citation.id} data-dimension={citation.dimension ?? undefined} aria-current={citation.id === selectedCitationId ? 'true' : undefined} key={citation.id} onClick={() => onSelect?.(citation)}><span className="research-context-rail__source-index">{numberOf ? numberOf(citation) : citations.indexOf(citation) + 1}</span><span><strong>{citation.title}</strong>{citation.subtitle ? <small>{citation.subtitle}</small> : null}{citation.excerpt ? <em>{citation.excerpt}</em> : null}</span></button>)}</div>
 }
 
-export function ResearchContextRail({ activeTab: controlledTab, activities = [], citations = [], basisContent, selectedCitationId, onClose, onActivitySelect, onCitationSelect }: ResearchContextRailProps) {
+type RailSectionProps = {
+  readonly title: string
+  readonly count: number
+  readonly index: number
+  readonly meta?: string | null
+  readonly emptyHint: string
+  readonly children: ReactNode
+}
+
+function RailSection({ title, count, index, meta, emptyHint, children }: RailSectionProps) {
+  // 折叠状态留在段内自己管：流式回答期间上层每秒都在重渲染，放上层会被反复重置回默认值。
+  const [open, setOpen] = useState(true)
+  const bodyId = useId()
+  // 标题和内容是兄弟节点，不是 details/summary：只有同属一个滚动容器的直接子元素，
+  // 粘性标题才能一层层堆在卡片顶部，而不是滚过自己那段就被带走。
+  return (
+    <>
+      <button
+        type="button"
+        className="research-context-rail__section-head"
+        aria-controls={bodyId}
+        aria-expanded={open}
+        style={{ '--rail-sticky-top': `${index * RAIL_STICKY_HEIGHT}px`, '--rail-sticky-layer': String(9 - index) } as CSSProperties}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <CaretRightIcon className="research-context-rail__section-caret" size={12} weight="bold" aria-hidden="true" />
+        <span>{title}</span>
+        {meta ? <em>{meta}</em> : null}
+        <b>{count}</b>
+      </button>
+      <div className="research-context-rail__section-body" id={bodyId} role="group" aria-label={title} hidden={!open}>
+        {count ? children : <p className="research-context-rail__section-empty">{emptyHint}</p>}
+      </div>
+    </>
+  )
+}
+
+function elapsedLabel(seconds: number, locale: 'zh-CN' | 'en-US') {
+  if (seconds < 60) return locale === 'en-US' ? `${seconds}s` : `用时 ${seconds} 秒`
+  const minutes = Math.floor(seconds / 60)
+  const rest = seconds % 60
+  return locale === 'en-US' ? `${minutes}m ${rest}s` : `用时 ${minutes} 分 ${rest} 秒`
+}
+
+function SectionsRail({
+  tab,
+  activities,
+  citations,
+  basisContent,
+  selectedCitationId,
+  elapsedSeconds,
+  onBack,
+  onActivitySelect,
+  onCitationSelect,
+}: {
+  tab: ResearchContextTab
+  activities: readonly ResearchActivity[]
+  citations: readonly ResearchCitation[]
+  basisContent?: ReactNode
+  selectedCitationId?: string | null
+  elapsedSeconds?: number | null
+  onBack?: () => void
+  onActivitySelect?: (activity: ResearchActivity) => void
+  onCitationSelect?: (citation: ResearchCitation) => void
+}) {
+  const { locale, text } = useAppLocale()
+  const knowledge = citations.filter((citation) => (citation.group ?? 'knowledge') === 'knowledge')
+  const web = citations.filter((citation) => citation.group === 'web')
+  const materials = citations.filter((citation) => citation.group === 'material')
+  const numberOf = (citation: ResearchCitation) => citations.findIndex((item) => item.id === citation.id) + 1
+  const running = activities.some((activity) => activity.status === 'running' && !activity.interrupted)
+  const workflowMeta = elapsedSeconds && elapsedSeconds > 0
+    ? elapsedLabel(elapsedSeconds, locale)
+    : running ? text('进行中', 'Running') : null
+  const showBasis = tab === 'basis'
+  return (
+    <aside className="research-context-rail research-context-rail--sections" aria-label={text('研究面板', 'Research panel')}>
+      {/* 总览不需要标题栏：栏是什么、怎么收起，右上角那个开关已经说清楚了。 */}
+      {showBasis ? (
+        <header className="research-context-rail__header">
+          <button className="research-context-rail__back" type="button" onClick={onBack}>
+            <ArrowLeftIcon size={15} aria-hidden="true" /><strong>{text('依据', 'Basis')}</strong>
+          </button>
+        </header>
+      ) : null}
+      <div className="research-context-rail__body">
+        {showBasis ? (
+          <section className="research-context-rail__panel" role="region" aria-label={text('依据', 'Basis')} tabIndex={0}>
+            <div className="research-context-rail__basis">
+              {basisContent ?? <div className="research-context-rail__empty"><FileTextIcon size={20} /><strong>{text('选择一条来源', 'Select a source')}</strong><p>{text('选择一条来源后，这里会显示它的依据。', 'Select a source to inspect its basis here.')}</p></div>}
+            </div>
+          </section>
+        ) : (
+          <section className="research-context-rail__sections" role="region" aria-label={text('研究面板', 'Research panel')} tabIndex={0}>
+            <RailSection
+              title={text('知识库', 'Knowledge base')}
+              count={knowledge.length}
+              index={0}
+              emptyHint={text('这次回答还没有引用知识库条目。', 'No knowledge entries cited yet.')}
+            >
+              <SourcesPanel citations={knowledge} selectedCitationId={selectedCitationId} onSelect={onCitationSelect} numberOf={numberOf} />
+            </RailSection>
+            <RailSection
+              title={text('网页', 'Web pages')}
+              count={web.length}
+              index={1}
+              emptyHint={text('这次回答还没有读取网页。', 'No web pages read yet.')}
+            >
+              <SourcesPanel citations={web} selectedCitationId={selectedCitationId} onSelect={onCitationSelect} numberOf={numberOf} />
+            </RailSection>
+            {materials.length ? (
+              <RailSection title={text('研究材料', 'Research materials')} count={materials.length} index={2} emptyHint="">
+                <SourcesPanel citations={materials} selectedCitationId={selectedCitationId} onSelect={onCitationSelect} numberOf={numberOf} />
+              </RailSection>
+            ) : null}
+            <RailSection
+              title={text('工作流程', 'Workflow')}
+              count={activities.length}
+              index={materials.length ? 3 : 2}
+              meta={workflowMeta}
+              emptyHint={text('Agent 开始检索后，这里按步骤记录它做了什么。', 'Steps appear here once the Agent starts retrieving.')}
+            >
+              <ActivityPanel activities={activities} onSelect={onActivitySelect} />
+            </RailSection>
+          </section>
+        )}
+      </div>
+    </aside>
+  )
+}
+
+export function ResearchContextRail({
+  activeTab: controlledTab,
+  activities = [],
+  citations = [],
+  basisContent,
+  selectedCitationId,
+  variant = 'tabs',
+  elapsedSeconds = null,
+  onClose,
+  onBack,
+  onActivitySelect,
+  onCitationSelect,
+}: ResearchContextRailProps) {
   const { text } = useAppLocale()
   const tab = controlledTab ?? 'agent'
+  if (variant === 'sections') {
+    return (
+      <SectionsRail
+        tab={tab}
+        activities={activities}
+        citations={citations}
+        basisContent={basisContent}
+        selectedCitationId={selectedCitationId}
+        elapsedSeconds={elapsedSeconds}
+        onBack={onBack}
+        onActivitySelect={onActivitySelect}
+        onCitationSelect={onCitationSelect}
+      />
+    )
+  }
   return (
     <aside className="research-context-rail" aria-label={text('研究上下文栏', 'Research context panel')}>
       <header className="research-context-rail__header"><div><strong>{tabLabels[tab]}</strong></div><button type="button" aria-label={text('关闭上下文栏', 'Close context panel')} onClick={onClose}><XIcon size={17} /></button></header>

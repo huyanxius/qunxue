@@ -90,6 +90,59 @@ describe('ResearchContextRail', () => {
     expect(onCitationSelect).toHaveBeenCalledWith(citation)
   })
 
+  it('splits knowledge, web and workflow into one stacked panel', () => {
+    const webCitation: ResearchCitation = {
+      id: 'citation-web-1',
+      title: '高校毕业生就业政策',
+      kind: 'source',
+      subtitle: '来源 · gov.cn',
+      group: 'web',
+    }
+
+    render(
+      <ResearchContextRail
+        variant="sections"
+        activeTab="sources"
+        activities={[activity]}
+        citations={[{ ...citation, group: 'knowledge' }, webCitation]}
+        elapsedSeconds={39}
+      />,
+    )
+
+    const panel = screen.getByRole('region', { name: '研究面板' })
+    expect(within(panel).getByRole('group', { name: '知识库' })).toHaveTextContent('知识条目 · D1:C029')
+    expect(within(panel).getByRole('group', { name: '网页' })).toHaveTextContent('高校毕业生就业政策')
+    expect(within(panel).getByRole('group', { name: '知识库' })).not.toHaveTextContent('高校毕业生就业政策')
+    const workflow = within(panel).getByRole('group', { name: '工作流程' })
+    expect(workflow).toHaveTextContent('检索知识库')
+    expect(panel).toHaveTextContent('用时 39 秒')
+  })
+
+  it('says what is still missing instead of hiding an empty section', () => {
+    render(<ResearchContextRail variant="sections" activeTab="sources" />)
+
+    const panel = screen.getByRole('region', { name: '研究面板' })
+    expect(within(panel).getByRole('group', { name: '网页' })).toHaveTextContent('这次回答还没有读取网页。')
+    expect(within(panel).queryByRole('group', { name: '研究材料' })).not.toBeInTheDocument()
+  })
+
+  it('returns from a basis view to the stacked panel', () => {
+    const onBack = vi.fn()
+
+    render(
+      <ResearchContextRail
+        variant="sections"
+        activeTab="basis"
+        basisContent={<p>来自当前条目的证据正文。</p>}
+        onBack={onBack}
+      />,
+    )
+
+    expect(screen.getByRole('region', { name: '依据' })).toHaveTextContent('来自当前条目的证据正文。')
+    fireEvent.click(screen.getByRole('button', { name: '依据' }))
+    expect(onBack).toHaveBeenCalledOnce()
+  })
+
   it('uses host-provided basis content and keeps the empty state honest', () => {
     const { rerender } = render(
       <ResearchContextRail activeTab="basis" basisContent={<p>来自当前条目的证据正文。</p>} />,
