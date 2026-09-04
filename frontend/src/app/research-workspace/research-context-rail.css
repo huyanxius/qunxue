@@ -94,3 +94,176 @@
 @media (max-width: 820px) {
   .research-context-rail { position: absolute; inset: 0 0 0 auto; z-index: 4; width: min(100%, 360px); box-shadow: -12px 0 30px rgba(25, 23, 19, .12); }
 }
+
+/* sections 变体：知识库 / 网页 / 工作流程同屏堆叠，用于独立 Agent 页右侧那一列。
+   分组只靠横线和留白，不再往条目上套圆角块；颜色留给知识库维度和工具状态。 */
+.research-context-rail--sections .research-context-rail__sections {
+  display: grid;
+  align-content: start;
+  padding: 0 16px 16px;
+}
+
+.research-context-rail__section-head {
+  /* 逐级吸顶：滚到工作流程时，知识库和网页两行仍然钉在卡片顶部。 */
+  position: sticky;
+  top: var(--rail-sticky-top, 0);
+  z-index: var(--rail-sticky-layer, 1);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: calc(100% + 32px);
+  min-height: 44px;
+  margin: 0 -16px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--rail-border);
+  color: var(--rail-ink);
+  background: var(--app-canvas, #fff);
+  cursor: pointer;
+  font-family: var(--serif, Georgia, 'Songti SC', serif);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.research-context-rail__section-head > span { flex: 1; min-width: 0; }
+.research-context-rail__section-head > em { color: var(--rail-muted); font-size: 10.5px; font-style: normal; font-weight: 500; }
+.research-context-rail__section-head > b { min-width: 16px; color: var(--rail-muted); font-size: 11px; font-weight: 600; text-align: right; }
+.research-context-rail__section-head:focus-visible { outline: 2px solid var(--app-accent, #5e5a4f); outline-offset: -2px; }
+.research-context-rail__section-caret { color: var(--rail-muted); transition: transform 160ms ease; }
+.research-context-rail__section-head[aria-expanded='true'] .research-context-rail__section-caret { transform: rotate(90deg); }
+.research-context-rail__section-body { padding: 2px 0 14px; }
+.research-context-rail__section-empty {
+  margin: 8px 0 4px;
+  color: var(--rail-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* 条目：横线分隔的列表行。 */
+.research-context-rail--sections .research-context-rail__source-list,
+.research-context-rail--sections .research-context-rail__activity-list {
+  display: block;
+}
+
+.research-context-rail--sections .research-context-rail__source,
+.research-context-rail--sections .research-context-rail__activity {
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.research-context-rail--sections .research-context-rail__source + .research-context-rail__source,
+.research-context-rail--sections .research-context-rail__activity + .research-context-rail__activity {
+  border-top: 1px solid var(--rail-border);
+}
+
+.research-context-rail--sections .research-context-rail__source {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.research-context-rail--sections .research-context-rail__source:hover,
+.research-context-rail--sections .research-context-rail__source[aria-current='true'] {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.research-context-rail--sections .research-context-rail__source:hover strong,
+.research-context-rail--sections .research-context-rail__source[aria-current='true'] strong {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 序号退成一个安静的数字：它只负责和正文里的引用编号对上。 */
+.research-context-rail--sections .research-context-rail__source-index {
+  place-items: start;
+  width: auto;
+  height: auto;
+  padding-top: 1px;
+  border-radius: 0;
+  color: var(--tone-ink, var(--rail-muted));
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.research-context-rail--sections .research-context-rail__source strong { font-size: 12px; font-weight: 620; line-height: 1.45; }
+.research-context-rail--sections .research-context-rail__source small { color: var(--tone-ink, var(--rail-muted)); font-size: 10.5px; }
+.research-context-rail--sections .research-context-rail__source em {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--rail-muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 知识库维度色，取自知识库页面的同一套（knowledge-ui.css 的 taxonomy 色板）。 */
+.research-context-rail--sections [data-dimension='D1'] { --tone-ink: #43639a; }
+.research-context-rail--sections [data-dimension='D2'] { --tone-ink: #44745f; }
+.research-context-rail--sections [data-dimension='D3'] { --tone-ink: #367083; }
+.research-context-rail--sections [data-dimension='D4'] { --tone-ink: #985067; }
+.research-context-rail--sections [data-dimension='D5'] { --tone-ink: #8a6b2f; }
+.research-context-rail--sections [data-dimension='D6'] { --tone-ink: #695b91; }
+.research-context-rail--sections [data-dimension='D7'] { --tone-ink: #925c49; }
+
+/* 工作流程：步骤之间同样只有横线，工具返回的条目靠一条竖线缩进。 */
+.research-context-rail--sections .research-context-rail__activity-button { min-width: 0; gap: 8px; }
+.research-context-rail--sections .research-context-rail__activity-copy strong { font-size: 12px; }
+.research-context-rail--sections .research-context-rail__activity-copy small { font-size: 11px; line-height: 1.5; }
+.research-context-rail--sections .research-context-rail__activity-state { font-size: 10.5px; }
+.research-context-rail--sections .research-context-rail__activity-input,
+.research-context-rail--sections .research-tool-detail { margin-left: 26px; }
+.research-context-rail--sections .research-context-rail__result-list { gap: 6px; margin: 8px 0 0 26px; }
+.research-context-rail--sections .research-context-rail__result-list button {
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--app-sidebar, #f6f6f6);
+}
+.research-context-rail--sections .research-context-rail__result-list button:hover {
+  background: color-mix(in srgb, var(--rail-border) 55%, var(--app-sidebar, #f6f6f6));
+}
+.research-context-rail--sections .research-context-rail__result-list strong { font-size: 11px; font-weight: 600; }
+.research-context-rail--sections .research-context-rail__result-list small { -webkit-line-clamp: 2; font-size: 10.5px; }
+
+.research-context-rail__back {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 8px 5px 5px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--rail-ink);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.research-context-rail__back:hover { background: color-mix(in srgb, var(--rail-border) 55%, transparent); }
+.research-context-rail__back strong { font-size: 13px; font-weight: 650; }
+
+@media (prefers-reduced-motion: reduce) {
+  .research-context-rail__section-caret { transition: none; }
+}
+
+/* 分区栏比浮层窄，活动里的 query / url 是 nowrap 的，作为 grid item 默认
+   min-width:auto 会被它们撑宽，整段横着溢出卡片。这里钉死收缩下限。 */
+.research-context-rail--sections .research-context-rail__sections,
+.research-context-rail--sections .research-context-rail__section-body,
+.research-context-rail--sections .research-context-rail__activity-button,
+.research-context-rail--sections .research-context-rail__result-list,
+.research-context-rail--sections .research-context-rail__result-list button {
+  min-width: 0;
+}
+
+.research-context-rail--sections .research-context-rail__section-body { overflow: hidden; }

@@ -261,7 +261,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(JSON.parse(String(turnCall?.[1]?.body))).toMatchObject({ web_search: true })
   })
 
-  it('keeps the conversation rail visible while the research history dialog is open', async () => {
+  it('starts a new conversation from the history rail and keeps one panel toggle in the header', async () => {
     const conversation = conversationFixture({ id: 'conversation-history-rail' })
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = urlFor(input)
@@ -279,11 +279,11 @@ describe('ResearchAgentConversationPage', () => {
     renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
 
     await screen.findByText(conversation.turns[0].assistant.content)
-    expect(screen.getByRole('region', { name: 'Agent 对话记录' })).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: '打开研究记录' }))
-
-    expect(screen.getByRole('dialog', { name: '研究记录' })).toBeVisible()
-    expect(screen.getByRole('region', { name: 'Agent 对话记录' })).toBeVisible()
+    const historyRail = screen.getByRole('region', { name: 'Agent 对话记录' })
+    expect(historyRail).toBeVisible()
+    expect(within(historyRail).getByRole('button', { name: '开始新对话' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: '打开研究记录' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '研究面板' })).toBeVisible()
   })
 
   it('renames and deletes a saved conversation from its overflow menu', async () => {
@@ -521,7 +521,7 @@ describe('ResearchAgentConversationPage', () => {
     const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     expect(within(agent).getByRole('status', { name: '本轮证据来源' })).toHaveTextContent('公开网页')
     fireEvent.click(within(agent).getByRole('button', { name: '查看证据：高校毕业生就业政策' }))
-    const sources = await screen.findByRole('region', { name: '来源' })
+    const sources = await screen.findByRole('region', { name: '研究面板' })
     fireEvent.click(within(sources).getByRole('button', { name: /高校毕业生就业政策/ }))
 
     expect(await screen.findByRole('link', { name: '打开网页' })).toHaveAttribute(
@@ -986,7 +986,7 @@ describe('ResearchAgentConversationPage', () => {
     const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     const citationButtons = await within(region).findAllByRole('button', { name: `查看证据：${citation.label}` })
     fireEvent.click(citationButtons[0])
-    let sources = await screen.findByRole('region', { name: '来源' })
+    let sources = await screen.findByRole('region', { name: '研究面板' })
     fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
 
     let basis = await screen.findByRole('region', { name: '依据' })
@@ -1000,7 +1000,7 @@ describe('ResearchAgentConversationPage', () => {
     )
 
     fireEvent.click(citationButtons[1])
-    sources = await screen.findByRole('region', { name: '来源' })
+    sources = await screen.findByRole('region', { name: '研究面板' })
     fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
     basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
@@ -1009,7 +1009,7 @@ describe('ResearchAgentConversationPage', () => {
     )
 
     fireEvent.click(citationButtons[2])
-    sources = await screen.findByRole('region', { name: '来源' })
+    sources = await screen.findByRole('region', { name: '研究面板' })
     fireEvent.click(within(sources).getByRole('button', { name: /社会资本与邻里互助/ }))
     basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).queryByRole('link', { name: /打开知识条目|在知识图谱中查看/ })).not.toBeInTheDocument()
@@ -1188,7 +1188,7 @@ describe('ResearchAgentConversationPage', () => {
     }
   })
 
-  it('closes history with Escape and ignores a late stream after switching records', async () => {
+  it('ignores a late stream after switching records from the history rail', async () => {
     const saved = conversationFixture({
       id: 'conversation-saved',
       prompt: '已保存的社区互助研究',
@@ -1226,14 +1226,8 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
     expect(await within(region).findByRole('button', { name: '停止生成' })).toBeVisible()
 
-    fireEvent.click(within(region).getByRole('button', { name: '打开研究记录' }))
-    const dialog = await within(region).findByRole('dialog', { name: '研究记录' })
-    fireEvent.keyDown(dialog, { key: 'Escape' })
-    expect(within(region).queryByRole('dialog', { name: '研究记录' })).not.toBeInTheDocument()
-
-    fireEvent.click(within(region).getByRole('button', { name: '打开研究记录' }))
-    const reopenedDialog = await within(region).findByRole('dialog', { name: '研究记录' })
-    fireEvent.click(within(reopenedDialog).getByRole('button', { name: new RegExp(saved.title) }))
+    const historyRail = screen.getByRole('region', { name: 'Agent 对话记录' })
+    fireEvent.click(within(historyRail).getByRole('button', { name: new RegExp(saved.title) }))
 
     expect(await within(region).findByText(saved.turns[0].assistant.content)).toBeVisible()
     liveStream.finish([
@@ -1277,18 +1271,20 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.change(textbox, { target: { value: conversation.title } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    const toolSummary = await within(region).findByRole('button', { name: /Agent 已完成工具调用/ })
+    // 研究面板会同步列出同一次工具调用，所以正文这一段断言限定在对话内容里。
+    const transcript = within(region).getByRole('log', { name: '对话内容' })
+    const toolSummary = await within(transcript).findByRole('button', { name: /Agent 已完成工具调用/ })
     expect(toolSummary).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(toolSummary)
-    expect(within(region).getByText('根据当前研究问题寻找相关概念、理论与已有研究参照')).toBeVisible()
-    const disclosure = await within(region).findByRole('button', { name: '查看完整工具返回' })
-    expect(within(region).queryByText(completeDetail)).not.toBeVisible()
+    expect(within(transcript).getByText('根据当前研究问题寻找相关概念、理论与已有研究参照')).toBeVisible()
+    const disclosure = await within(transcript).findByRole('button', { name: '查看完整工具返回' })
+    expect(within(transcript).queryByText(completeDetail)).not.toBeVisible()
     fireEvent.click(disclosure)
-    expect(within(region).getByText(completeDetail)).toBeVisible()
+    expect(within(transcript).getByText(completeDetail)).toBeVisible()
 
     fireEvent.click(within(region).getAllByRole('button', { name: '查看活动' })[0])
-    const activity = await screen.findByRole('region', { name: '活动' })
-    fireEvent.click(within(activity).getByRole('button', { name: /社会资本条目/ }))
+    const panel = await screen.findByRole('region', { name: '研究面板' })
+    fireEvent.click(within(panel).getByRole('button', { name: /社会资本条目/ }))
 
     const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('检索知识库')).toBeVisible()
@@ -1342,7 +1338,8 @@ describe('ResearchAgentConversationPage', () => {
     const restoredTools = within(restored).getByRole('button', { name: /工具调用已中断/ })
     expect(restoredTools).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(restoredTools)
-    expect(within(restored).getByText('青年孤独研究')).toBeVisible()
+    // 研究面板此时也在右侧列出同一条检索结果，所以断言限定在对话正文里。
+    expect(within(within(restored).getByRole('log', { name: '对话内容' })).getByText('青年孤独研究')).toBeVisible()
     expect(within(restored).getByRole('button', { name: '继续研究' })).toBeVisible()
   })
 

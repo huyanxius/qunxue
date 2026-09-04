@@ -799,21 +799,23 @@ describe('App routes', () => {
 
     const activityButtons = within(agentConversation).getAllByRole('button', { name: '查看活动' })
     expect(activityButtons[0]).toBeVisible()
-    expect(within(agentConversation).getByRole('button', { name: '查看来源' })).toBeVisible()
-    expect(within(agentConversation).getByRole('button', { name: '打开研究记录' })).toBeVisible()
+    // 独立 Agent 页右上角只留研究面板一个开关，来源、活动、研究记录都不再各占一个按钮。
+    expect(within(agentConversation).getByRole('button', { name: '研究面板' })).toBeVisible()
+    expect(within(agentConversation).queryByRole('button', { name: '查看来源' })).not.toBeInTheDocument()
+    expect(within(agentConversation).queryByRole('button', { name: '打开研究记录' })).not.toBeInTheDocument()
     expect(await within(agentConversation).findByText('Agent 已完成工具调用')).toBeVisible()
     expect(within(agentConversation).getByRole('table')).toBeVisible()
     expect(within(agentConversation).getByRole('button', { name: '复制回答' })).toBeVisible()
     expect(within(agentConversation).getByRole('button', { name: '重新生成' })).toBeVisible()
 
     fireEvent.click(activityButtons[0])
-    const activity = await screen.findByRole('region', { name: '活动' })
+    const activity = await screen.findByRole('region', { name: '研究面板' })
     expect(activity).toHaveTextContent('检索知识库')
     expect(activity).toHaveTextContent('找到 1 条知识库条目')
 
     fireEvent.click(within(agentConversation).getByRole('button', { name: /查看证据：平台劳动与职业选择/ }))
-    const sources = await screen.findByRole('region', { name: '来源' })
-    fireEvent.click(within(sources).getByRole('button', { name: /平台劳动与职业选择/ }))
+    const sources = await screen.findByRole('region', { name: '研究面板' })
+    fireEvent.click(within(within(sources).getByRole('group', { name: '知识库' })).getByRole('button', { name: /平台劳动与职业选择/ }))
     const basis = await screen.findByRole('region', { name: '依据' })
     expect(basis).toHaveTextContent('平台排序会改变青年看见职业机会与评估风险的方式。')
     expect(within(basis).getByRole('link', { name: /打开知识条目/ })).toHaveAttribute(
@@ -841,7 +843,9 @@ describe('App routes', () => {
     const failedToolSummary = await within(agentConversation).findByRole('button', { name: /工具调用未完成/ })
     expect(failedToolSummary).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(failedToolSummary)
-    expect(within(agentConversation).getByText('知识库暂时不可用')).toBeVisible()
+    // 研究面板同步列出这次失败调用，正文断言限定在对话内容里。
+    const failedTranscript = within(agentConversation).getByRole('log', { name: '对话内容' })
+    expect(within(failedTranscript).getByText('知识库暂时不可用')).toBeVisible()
     expect(within(agentConversation).getByText(conversation.turns[0].assistant.content)).toBeVisible()
   })
 
@@ -863,9 +867,10 @@ describe('App routes', () => {
     const repeatedToolSummary = await within(agentConversation).findByRole('button', { name: /Agent 已完成工具调用/ })
     expect(repeatedToolSummary).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(repeatedToolSummary)
-    expect(within(agentConversation).getAllByText('检索知识库')).toHaveLength(2)
-    expect(within(agentConversation).getByText(/query: 青年/)).toBeVisible()
-    expect(within(agentConversation).getByText(/query: 孤独/)).toBeVisible()
+    const repeatedTranscript = within(agentConversation).getByRole('log', { name: '对话内容' })
+    expect(within(repeatedTranscript).getAllByText('检索知识库')).toHaveLength(2)
+    expect(within(repeatedTranscript).getByText(/query: 青年/)).toBeVisible()
+    expect(within(repeatedTranscript).getByText(/query: 孤独/)).toBeVisible()
   })
 
   it('reveals citation context through Sources and Basis before opening a knowledge entry', async () => {
@@ -900,11 +905,11 @@ describe('App routes', () => {
     fireEvent.click(within(history).getByRole('button', { name: /为什么同一社区里的互助正在减少/ }))
 
     const citation = await screen.findByRole('button', { name: '查看证据：互惠规范' })
-    expect(screen.queryByText('互惠规范描述了持续互动中信任与回报的关系。')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '依据' })).not.toBeInTheDocument()
     fireEvent.click(citation)
 
-    const sources = await screen.findByRole('region', { name: '来源' })
-    fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
+    const sources = await screen.findByRole('region', { name: '研究面板' })
+    fireEvent.click(within(within(sources).getByRole('group', { name: '知识库' })).getByRole('button', { name: /互惠规范/ }))
     const basis = await screen.findByRole('region', { name: '依据' })
     expect(within(basis).getByText('互惠规范描述了持续互动中信任与回报的关系。')).toBeVisible()
   })
