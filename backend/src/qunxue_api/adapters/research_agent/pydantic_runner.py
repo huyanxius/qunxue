@@ -60,6 +60,41 @@ class DeepResearchDecision(BaseModel):
     steps: list[str] = Field(default_factory=list)
 
 
+_GENERIC_RESEARCH_LENSES = (
+    "概念与理论",
+    "理论背景",
+    "现实案例",
+    "最新资料",
+    "观点之间的争议",
+    "不同观点",
+    "研究方法",
+    "数据",
+)
+
+
+def _clarification_is_material(decision: DeepResearchDecision, prompt: str) -> bool:
+    """Reject low-value lens pickers when the user already supplied a topic."""
+
+    if not _has_research_subject(prompt):
+        return True
+    question = decision.question.strip()
+    generic_question = bool(
+        re.search(
+            r"重点研究哪一部分|重点了解哪一部分|从哪个角度|选择研究切口|侧重研究哪|重点关注哪一方面",
+            question,
+        )
+    )
+    options = [item.strip() for item in decision.options if item.strip()]
+    if len(options) < 3:
+        return False
+    generic_options = sum(
+        any(lens in option for lens in _GENERIC_RESEARCH_LENSES) for option in options
+    )
+    # A topic with a generic “pick a lens” question can be handled by the
+    # planner's own defaults; turn it into a plan instead of blocking the user.
+    return not (generic_question and len(options) >= 3 and generic_options >= 2)
+
+
 class DeterministicKnowledgeRunner:
     """Explicit local runner for tests and the repository's mock runtime only."""
 
@@ -78,17 +113,16 @@ class DeterministicKnowledgeRunner:
         del conversation
         if prompt.strip() in {"你好", "您好", "嗨", "hello", "hi", "谢谢", "感谢"}:
             return
-        if len(prompt.strip()) < 18:
+        if not _has_research_subject(prompt):
             on_event(
                 AgentResearchEvent(
                     kind="ask",
                     payload={
-                        "question": "你希望我重点研究哪一部分？",
+                        "question": "你希望我研究哪个具体问题或对象？",
                         "options": [
-                            "概念与理论背景",
-                            "现实案例与最新资料",
-                            "不同观点之间的争议",
-                            "研究方法与数据",
+                            "一个社会现象或现实问题",
+                            "一个群体、组织或平台",
+                            "一项政策、制度或公共议题",
                             "更多自定义",
                         ],
                     },
@@ -600,7 +634,13 @@ class PydanticAIKnowledgeRunner:
                 "调查，"
                 "或问题确实需要多轮知识库/网页检索时才标记为 research。"
                 "对 research 请求再根据用户问题和对话历史判断意图是否足够清楚。"
-                "只返回结构化规划，不回答研究结论。意图不清时 needs_clarification=true，"
+                "要主动识别真正高影响的不确定性并在必要时询问，例如研究对象、时间范围、地区或比较对象；"
+                "这种询问应帮助确定证据范围或结论适用边界，而不是为了让用户替你选择研究视角。"
+                "只有缺少会实质改变研究结论的关键信息、且无法采用合理默认值时，"
+                "才 needs_clarification=true。"
+                "用户已经给出研究对象、现象或问题时，直接采用合理范围（并在计划中体现假设），不要要求用户"
+                "从概念、案例、争议、方法等大类中选择研究切口，也不要把一个清楚的问题拆成选择题。"
+                "如果确实需要澄清，问题必须针对缺失的边界（例如研究对象、时间范围、地区或比较对象），"
                 "拟定一句简洁的 question，并给出 3 到 5 个互斥选项；意图清楚时给出简洁 title 和"
                 "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
                 "如果当前消息只是切换到深入研究而没有明确研究问题，请先询问用户要继续哪个研究或提供新的问题，"
@@ -632,12 +672,13 @@ class PydanticAIKnowledgeRunner:
             # Planning must not make the regular Agent unavailable. The fallback keeps
             # the contract valid and lets the main run apply the normal evidence policy.
             decision = DeepResearchDecision(
+                request_type="research" if _has_research_subject(prompt) else "conversation",
                 title="深入研究",
                 steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
             )
         if decision.request_type != "research":
             return
-        if decision.needs_clarification:
+        if decision.needs_clarification and _clarification_is_material(decision, prompt):
             options = [
                 item.strip()
                 for item in decision.options
@@ -669,6 +710,7 @@ class PydanticAIKnowledgeRunner:
                 },
             )
         )
+
 
     def _register_tools(self) -> None:
         @self._agent.tool
@@ -2395,6 +2437,46 @@ def _is_non_substantive_prompt(normalized: str) -> bool:
         or _is_casual_ack_prompt(normalized)
         or _is_contextual_evidence_followup(normalized)
     )
+
+
+_RESEARCH_INTENT_PREFIXES = (
+    "深入研究",
+    "研究一下",
+    "研究",
+    "调查一下",
+    "调查",
+    "分析一下",
+    "分析",
+    "比较一下",
+    "比较",
+    "综述一下",
+    "综述",
+    "帮我看看",
+    "帮我研究",
+    "请研究",
+)
+
+
+def _has_research_subject(prompt: str) -> bool:
+    """Require an actual object/phenomenon before pausing for clarification.
+
+    A short request such as “研究一下” is genuinely underspecified. A concise
+    topic such as “研究平台劳动关系” is sufficient for the planner to choose
+    sensible defaults and start, so length alone must never trigger an ask card.
+    """
+
+    normalized = _normalized_text(prompt).strip().lower()
+    for prefix in _RESEARCH_INTENT_PREFIXES:
+        if normalized.startswith(prefix):
+            normalized = normalized[len(prefix) :].strip(" ：:，,。！？?!")
+            break
+    normalized = re.sub(r"^(?:这个|那个|一下|一下子)$", "", normalized).strip()
+    if not normalized:
+        return False
+    # Pronouns without a usable conversation context are not a research object.
+    if re.fullmatch(r"(?:这个|那个|它|上述|前面|刚才)(?:问题|现象|主题)?", normalized):
+        return False
+    return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", normalized)) and len(normalized) >= 2
 
 
 def _control_token(normalized: str) -> str:
