@@ -499,6 +499,72 @@ export type AnalysisAnnotationResponse = {
 };
 
 /**
+ * AnalysisAuditEventResponse
+ */
+export type AnalysisAuditEventResponse = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Actor
+     */
+    actor: string;
+    /**
+     * Annotation Id
+     */
+    annotation_id: string | null;
+    /**
+     * Code Id
+     */
+    code_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Entity Id
+     */
+    entity_id: string;
+    /**
+     * Entity Kind
+     */
+    entity_kind: string;
+    /**
+     * Event Id
+     */
+    event_id: string;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string | null;
+    /**
+     * Item Id
+     */
+    item_id: string | null;
+    /**
+     * Payload
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * Plan Id
+     */
+    plan_id: string | null;
+    /**
+     * Provenance
+     */
+    provenance: {
+        [key: string]: unknown;
+    };
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
  * AnalysisCaseAttributeContract
  */
 export type AnalysisCaseAttributeContract = {
@@ -625,6 +691,151 @@ export type AnalysisCodeResponse = {
  * AnalysisCodeStatus
  */
 export type AnalysisCodeStatus = 'candidate' | 'confirmed' | 'rejected';
+
+/**
+ * AnalysisCodingPlanItemResponse
+ */
+export type AnalysisCodingPlanItemResponse = {
+    /**
+     * Annotation Id
+     */
+    annotation_id: string | null;
+    /**
+     * Code Definition
+     */
+    code_definition: string;
+    /**
+     * Code Id
+     */
+    code_id: string;
+    /**
+     * Code Label
+     */
+    code_label: string;
+    /**
+     * Codebook Version
+     */
+    codebook_version: number | null;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Quote End
+     */
+    quote_end: number;
+    /**
+     * Quote Hash
+     */
+    quote_hash: string;
+    /**
+     * Quote Start
+     */
+    quote_start: number;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Segment Content Hash
+     */
+    segment_content_hash: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * AnalysisCodingPlanResponse
+ */
+export type AnalysisCodingPlanResponse = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Agent Turn Id
+     */
+    agent_turn_id: string | null;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decision Reason
+     */
+    decision_reason: string | null;
+    /**
+     * Items
+     */
+    items: Array<AnalysisCodingPlanItemResponse>;
+    /**
+     * Plan Id
+     */
+    plan_id: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Tool Call Id
+     */
+    tool_call_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
 
 /**
  * AnalysisMemoKind
@@ -886,6 +1097,76 @@ export type AuditResolutionSetResponse = {
      * Version
      */
     version: number;
+};
+
+/**
+ * BatchCodingRunResponse
+ */
+export type BatchCodingRunResponse = {
+    /**
+     * Annotation Ids
+     */
+    annotation_ids: Array<string>;
+    /**
+     * Code Ids
+     */
+    code_ids: Array<string>;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Low Confidence Segments
+     */
+    low_confidence_segments: Array<string>;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Parse Version
+     */
+    parse_version: number;
+    /**
+     * Processed Segments
+     */
+    processed_segments: number;
+    /**
+     * Retry Count
+     */
+    retry_count: number;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Total Segments
+     */
+    total_segments: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
 };
 
 /**
@@ -2051,6 +2332,38 @@ export type DecideAnalysisRecordRequest = {
 };
 
 /**
+ * DecideCodingPlanItemRequest
+ */
+export type DecideCodingPlanItemRequest = {
+    /**
+     * Decision
+     */
+    decision: string;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DecideCodingPlanRequest
+ */
+export type DecideCodingPlanRequest = {
+    /**
+     * Decisions
+     */
+    decisions: Array<DecideCodingPlanItemRequest>;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
  * DeferTheoryPlanRequest
  */
 export type DeferTheoryPlanRequest = {
@@ -2738,6 +3051,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
  * FrameworkStatus
  */
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
+
+/**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
 
 /**
  * HealthResponse
@@ -4725,6 +5048,10 @@ export type ResearchAnalysisSnapshotResponse = {
      */
     codes: Array<AnalysisCodeResponse>;
     /**
+     * Coding Plans
+     */
+    coding_plans: Array<AnalysisCodingPlanResponse>;
+    /**
      * Comparisons
      */
     comparisons: Array<CaseComparisonResponse>;
@@ -6164,6 +6491,49 @@ export type RetrievalProvenanceResponse = {
 };
 
 /**
+ * RetrievedCodedSegmentResponse
+ */
+export type RetrievedCodedSegmentResponse = {
+    /**
+     * Annotation Id
+     */
+    annotation_id: string;
+    /**
+     * Code Id
+     */
+    code_id: string;
+    /**
+     * Code Label
+     */
+    code_label: string;
+    /**
+     * Confidence
+     */
+    confidence: number | null;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Material Id
+     */
+    material_id: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Plan Id
+     */
+    plan_id: string | null;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+};
+
+/**
  * RetryFrameworkReviewRequest
  */
 export type RetryFrameworkReviewRequest = {
@@ -6207,6 +6577,20 @@ export type ReviewMethodPlanRequest = {
      * Note
      */
     note: string;
+};
+
+/**
+ * RevokeCodingPlanRequest
+ */
+export type RevokeCodingPlanRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -7374,6 +7758,34 @@ export type UpdateResearchTaskRequest = {
      * Project Title
      */
     project_title?: string | null;
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -9918,6 +10330,46 @@ export type CreateResearchAnalysisAnnotationResponses = {
 
 export type CreateResearchAnalysisAnnotationResponse = CreateResearchAnalysisAnnotationResponses[keyof CreateResearchAnalysisAnnotationResponses];
 
+export type GetResearchAnalysisAuditData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/audit';
+};
+
+export type GetResearchAnalysisAuditErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchAnalysisAuditError = GetResearchAnalysisAuditErrors[keyof GetResearchAnalysisAuditErrors];
+
+export type GetResearchAnalysisAuditResponses = {
+    /**
+     * Response Get Research Analysis Audit
+     *
+     * Successful Response
+     */
+    200: Array<AnalysisAuditEventResponse>;
+};
+
+export type GetResearchAnalysisAuditResponse = GetResearchAnalysisAuditResponses[keyof GetResearchAnalysisAuditResponses];
+
 export type CreateResearchAnalysisCodeData = {
     body: CreateAnalysisCodeRequest;
     headers: {
@@ -10009,6 +10461,102 @@ export type DecideResearchAnalysisCodeResponses = {
 };
 
 export type DecideResearchAnalysisCodeResponse = DecideResearchAnalysisCodeResponses[keyof DecideResearchAnalysisCodeResponses];
+
+export type DecideResearchCodingPlanData = {
+    body: DecideCodingPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/coding-plans/{plan_id}/decision';
+};
+
+export type DecideResearchCodingPlanErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type DecideResearchCodingPlanError = DecideResearchCodingPlanErrors[keyof DecideResearchCodingPlanErrors];
+
+export type DecideResearchCodingPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisCodingPlanResponse;
+};
+
+export type DecideResearchCodingPlanResponse = DecideResearchCodingPlanResponses[keyof DecideResearchCodingPlanResponses];
+
+export type RevokeResearchCodingPlanData = {
+    body: RevokeCodingPlanRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Plan Id
+         */
+        plan_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/analysis/coding-plans/{plan_id}/revoke';
+};
+
+export type RevokeResearchCodingPlanErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type RevokeResearchCodingPlanError = RevokeResearchCodingPlanErrors[keyof RevokeResearchCodingPlanErrors];
+
+export type RevokeResearchCodingPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalysisCodingPlanResponse;
+};
+
+export type RevokeResearchCodingPlanResponse = RevokeResearchCodingPlanResponses[keyof RevokeResearchCodingPlanResponses];
 
 export type CreateResearchCaseComparisonData = {
     body: CreateCaseComparisonRequest;
@@ -10193,6 +10741,63 @@ export type DecideResearchAnalysisMemoResponses = {
 };
 
 export type DecideResearchAnalysisMemoResponse = DecideResearchAnalysisMemoResponses[keyof DecideResearchAnalysisMemoResponses];
+
+export type GetResearchRetrievedSegmentsData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query?: {
+        /**
+         * Code Id
+         */
+        code_id?: Array<string> | null;
+        /**
+         * Material Id
+         */
+        material_id?: string | null;
+        /**
+         * Query
+         */
+        query?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/research-tasks/{task_id}/analysis/retrieved-segments';
+};
+
+export type GetResearchRetrievedSegmentsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetResearchRetrievedSegmentsError = GetResearchRetrievedSegmentsErrors[keyof GetResearchRetrievedSegmentsErrors];
+
+export type GetResearchRetrievedSegmentsResponses = {
+    /**
+     * Response Get Research Retrieved Segments
+     *
+     * Successful Response
+     */
+    200: Array<RetrievedCodedSegmentResponse>;
+};
+
+export type GetResearchRetrievedSegmentsResponse = GetResearchRetrievedSegmentsResponses[keyof GetResearchRetrievedSegmentsResponses];
 
 export type SaveResearchAnalysisCaseProfileData = {
     body: SaveAnalysisCaseProfileRequest;
@@ -10557,6 +11162,121 @@ export type ConfirmResearchAnalysisThemeResponses = {
 };
 
 export type ConfirmResearchAnalysisThemeResponse = ConfirmResearchAnalysisThemeResponses[keyof ConfirmResearchAnalysisThemeResponses];
+
+export type StartResearchBatchCodingData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+    };
+    query: {
+        /**
+         * Material Id
+         */
+        material_id: string;
+    };
+    url: '/api/research-tasks/{task_id}/batch-coding';
+};
+
+export type StartResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StartResearchBatchCodingError = StartResearchBatchCodingErrors[keyof StartResearchBatchCodingErrors];
+
+export type StartResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    201: BatchCodingRunResponse;
+};
+
+export type StartResearchBatchCodingResponse = StartResearchBatchCodingResponses[keyof StartResearchBatchCodingResponses];
+
+export type GetResearchBatchCodingData = {
+    body?: never;
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/batch-coding/{run_id}';
+};
+
+export type GetResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetResearchBatchCodingError = GetResearchBatchCodingErrors[keyof GetResearchBatchCodingErrors];
+
+export type GetResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    200: BatchCodingRunResponse;
+};
+
+export type GetResearchBatchCodingResponse = GetResearchBatchCodingResponses[keyof GetResearchBatchCodingResponses];
+
+export type RetryResearchBatchCodingData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Task Id
+         */
+        task_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/research-tasks/{task_id}/batch-coding/{run_id}/retry';
+};
+
+export type RetryResearchBatchCodingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RetryResearchBatchCodingError = RetryResearchBatchCodingErrors[keyof RetryResearchBatchCodingErrors];
+
+export type RetryResearchBatchCodingResponses = {
+    /**
+     * Successful Response
+     */
+    200: BatchCodingRunResponse;
+};
+
+export type RetryResearchBatchCodingResponse = RetryResearchBatchCodingResponses[keyof RetryResearchBatchCodingResponses];
 
 export type ExportResearchProjectArchiveData = {
     body?: never;

@@ -15,6 +15,8 @@ import {
   decideAnalysisCode,
   decideAnalysisMemo,
   decideCaseComparison,
+  decideCodingPlan,
+  revokeCodingPlan,
   getAnalysisSnapshot,
   getResearchCycleSnapshot,
   saveAnalysisCaseProfile,
@@ -29,6 +31,8 @@ import type {
   CreateAnalysisMemoLinkInput,
   CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
+  DecideCodingPlanInput,
+  RevokeCodingPlanInput,
   ResearchAnalysisSnapshot,
   SaveAnalysisCaseProfileInput,
   SaveCaseThemeMatrixCellInput,
@@ -169,6 +173,22 @@ export function ResearchAnalysisPanel({ taskId, refreshKey = 0 }: ResearchAnalys
     setNotice(decision === 'confirmed' ? '备忘草稿已确认。' : '备忘草稿已拒绝。')
   }
 
+  async function decidePlan(planId: string, body: DecideCodingPlanInput) {
+    const updated = await decideCodingPlan(taskId, planId, body)
+    setSnapshot((current) => current
+      ? { ...current, coding_plans: (current.coding_plans ?? []).map((plan) => plan.plan_id === updated.plan_id ? updated : plan) }
+      : current)
+    setNotice(updated.status === 'applied' ? '编码计划已应用，原文标记已回写。' : '编码计划已保存。')
+  }
+
+  async function revokePlan(planId: string, body: RevokeCodingPlanInput) {
+    const updated = await revokeCodingPlan(taskId, planId, body)
+    setSnapshot((current) => current
+      ? { ...current, coding_plans: (current.coding_plans ?? []).map((plan) => plan.plan_id === updated.plan_id ? updated : plan) }
+      : current)
+    setNotice('编码计划已撤销，既有代码保留。')
+  }
+
   async function saveComparison(body: CreateCaseComparisonInput) {
     const created = await createCaseComparison(taskId, body)
     setSnapshot((current) => current
@@ -249,6 +269,8 @@ export function ResearchAnalysisPanel({ taskId, refreshKey = 0 }: ResearchAnalys
             onCreateMemo={saveMemo}
             onDecideCode={decideCode}
             onDecideMemo={decideMemo}
+            onDecideCodingPlan={decidePlan}
+            onRevokeCodingPlan={revokePlan}
             onCreateComparison={saveComparison}
             onDecideComparison={decideComparison}
             onConfigureCodebook={configureCodebook}

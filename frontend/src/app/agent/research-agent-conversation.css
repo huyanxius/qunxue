@@ -806,14 +806,16 @@
 }
 
 .research-agent-conversation .research-agent-composer__web-search.is-active {
-  border-color: rgb(17 17 17 / 20%);
-  color: var(--app-ink);
-  background: rgb(17 17 17 / 8%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 35%);
+  border-color: rgb(17 17 17 / 30%);
+  color: rgb(17 17 17 / 88%);
+  background: rgb(17 17 17 / 7%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 64%), 0 2px 8px rgb(17 17 17 / 7%);
 }
 
-.research-agent-conversation .research-agent-composer__web-search.is-active svg {
-  fill: rgb(17 17 17 / 10%);
+.research-agent-conversation .research-agent-composer__web-search.is-active:hover:not(:disabled) {
+  border-color: rgb(17 17 17 / 38%);
+  color: #111;
+  background: rgb(17 17 17 / 10%);
 }
 
 .research-agent-conversation .research-agent-composer__material-menu {

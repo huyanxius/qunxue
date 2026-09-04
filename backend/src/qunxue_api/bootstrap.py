@@ -100,6 +100,7 @@ from qunxue_api.api.routes.professional_materials import (
     router as professional_materials_router,
 )
 from qunxue_api.api.routes.research_analysis import router as research_analysis_router
+from qunxue_api.api.routes.research_batch_coding import router as research_batch_coding_router
 from qunxue_api.api.routes.research_cycle import router as research_cycle_router
 from qunxue_api.api.routes.research_documents import router as research_documents_router
 from qunxue_api.api.routes.research_exchange import router as research_exchange_router
@@ -112,6 +113,7 @@ from qunxue_api.application import (
     DisciplinaryAgentApplication,
     ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
+    ResearchBatchCodingApplication,
     ResearchCycleApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
@@ -380,9 +382,7 @@ def create_app(
                 doi_resolver=CrossrefDoiMetadataResolver(),
             )
 
-    app.state.professional_materials_application_scope = (
-        professional_materials_application_scope
-    )
+    app.state.professional_materials_application_scope = professional_materials_application_scope
     transcription_provider = _build_transcription_provider(resolved_settings)
 
     @contextmanager
@@ -405,6 +405,19 @@ def create_app(
             yield build_research_analysis_application(session)
 
     app.state.research_analysis_application_scope = research_analysis_application_scope
+
+    @contextmanager
+    def research_batch_coding_application_scope() -> Iterator[ResearchBatchCodingApplication]:
+        with resolved_database.session() as session:
+            materials = SqliteResearchMaterialRepository(session)
+            yield ResearchBatchCodingApplication(
+                analysis=ResearchAnalysisService(SqliteResearchAnalysisRepository(session)),
+                materials=materials,
+                research_tasks=SqliteResearchTaskRepository(session),
+                batches=SqliteResearchAnalysisRepository(session),
+            )
+
+    app.state.research_batch_coding_application_scope = research_batch_coding_application_scope
 
     @contextmanager
     def research_project_exchange_application_scope() -> Iterator[
@@ -737,7 +750,19 @@ def create_app(
                     tools_factory=lambda: ResearchDocumentToolRegistry(
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
-                        web_research=OpenWebResearchClient(),
+                        web_research=OpenWebResearchClient(
+                            search_provider=resolved_settings.web_search_provider,
+                            search_api_key=(
+                                resolved_settings.web_search_api_key.get_secret_value()
+                                if resolved_settings.web_search_api_key
+                                else None
+                            ),
+                            search_base_url=resolved_settings.web_search_base_url,
+                            profile=resolved_settings.web_search_profile,
+                            allowed_domains=resolved_settings.web_search_allowed_domains,
+                            search_timeout_seconds=(resolved_settings.web_search_timeout_seconds),
+                            reranker=app.state.knowledge_retriever,
+                        ),
                         documents=document_application,
                         proposals=proposal_service,
                         workflow=agent_research_workflow,
@@ -762,6 +787,7 @@ def create_app(
     app.include_router(professional_materials_router)
     app.include_router(research_method_router)
     app.include_router(research_analysis_router)
+    app.include_router(research_batch_coding_router)
     app.include_router(research_cycle_router)
     app.include_router(research_exchange_router)
     app.include_router(phenomena_router)

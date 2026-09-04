@@ -1,8 +1,18 @@
+from qunxue_api.modules.research_analysis.batch import (
+    BatchCodingRepository,
+    BatchCodingRun,
+    BatchCodingStatus,
+)
 from qunxue_api.modules.research_analysis.domain import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisAuditEvent,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
+    AnalysisCodingPlanItem,
+    AnalysisCodingPlanItemStatus,
+    AnalysisCodingPlanStatus,
     AnalysisMemo,
     AnalysisMemoKind,
     AnalysisRecordStatus,
@@ -42,8 +52,13 @@ from qunxue_api.modules.research_analysis.service import ResearchAnalysisService
 __all__ = [
     "AnalysisAnnotation",
     "AnalysisAnnotationKind",
+    "AnalysisAuditEvent",
     "AnalysisCode",
     "AnalysisCodeStatus",
+    "AnalysisCodingPlan",
+    "AnalysisCodingPlanItem",
+    "AnalysisCodingPlanItemStatus",
+    "AnalysisCodingPlanStatus",
     "AnalysisMemo",
     "AnalysisMemoKind",
     "AnalysisRecordStatus",
@@ -74,4 +89,7 @@ __all__ = [
     "QualitativeMethodPreset",
     "QualitativeWorkspaceSnapshot",
     "qualitative_method_presets",
+    "BatchCodingRun",
+    "BatchCodingStatus",
+    "BatchCodingRepository",
 ]

@@ -1,14 +1,16 @@
-from typing import cast
+from typing import Annotated, cast
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.api.contracts.research_analysis import (
     AnalysisAnnotationResponse,
+    AnalysisAuditEventResponse,
     AnalysisCaseProfileResponse,
     AnalysisCodeResponse,
+    AnalysisCodingPlanResponse,
     AnalysisMemoLinkResponse,
     AnalysisMemoResponse,
     AnalysisThemeResponse,
@@ -23,15 +25,19 @@ from qunxue_api.api.contracts.research_analysis import (
     CreateAnalysisThemeRequest,
     CreateCaseComparisonRequest,
     DecideAnalysisRecordRequest,
+    DecideCodingPlanRequest,
     MethodPresetSelectionResponse,
     QualitativeMethodPresetResponse,
     QualitativeWorkspaceSnapshotResponse,
     ResearchAnalysisSnapshotResponse,
+    RetrievedCodedSegmentResponse,
+    RevokeCodingPlanRequest,
     SaveAnalysisCaseProfileRequest,
     SaveCaseThemeMatrixCellRequest,
     SetQualitativeMethodRequest,
     TransitionCodebookEntryRequest,
 )
+from qunxue_api.api.contracts.research_materials import ResearchMaterialLocatorResponse
 from qunxue_api.api.dependencies import (
     CurrentSessionDependency,
     OwnedResearchTaskDependency,
@@ -42,6 +48,7 @@ from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
     AnalysisMemo,
     CaseComparison,
     QualitativeWorkspaceSnapshot,
@@ -96,12 +103,130 @@ def get_research_analysis(
             CaseComparisonResponse.from_domain(item)
             for item in cast(tuple[CaseComparison, ...], value["comparisons"])
         ],
+        coding_plans=[
+            AnalysisCodingPlanResponse.from_domain(item)
+            for item in cast(tuple[AnalysisCodingPlan, ...], value.get("coding_plans", ()))
+        ],
         workspace=QualitativeWorkspaceSnapshotResponse.from_domain(workspace),
         method_presets=[
             QualitativeMethodPresetResponse.from_domain(item)
             for item in qualitative_method_presets().values()
         ],
     )
+
+
+@router.post(
+    "/coding-plans/{plan_id}/decision",
+    operation_id="decide_research_coding_plan",
+    response_model=AnalysisCodingPlanResponse,
+)
+def decide_research_coding_plan(
+    task_id: UUID,
+    plan_id: UUID,
+    payload: DecideCodingPlanRequest,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchAnalysisApplicationDependency,
+    idempotency_key: IdempotencyKey,
+) -> AnalysisCodingPlanResponse | JSONResponse:
+    try:
+        value = application.decide_coding_plan(
+            user_id=current.user.user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            plan_id=plan_id,
+            expected_version=payload.expected_version,
+            decisions=tuple(
+                (item.item_id, item.decision, item.reason) for item in payload.decisions
+            ),
+        )
+    except LookupError:
+        return _error(404, ErrorCode.NOT_FOUND, "编码计划不存在或无权访问。")
+    except ValueError as error:
+        if isinstance(error, ResearchAnalysisIdempotencyConflict):
+            return _error(409, ErrorCode.IDEMPOTENCY_CONFLICT, str(error))
+        return _decision_error(error)
+    return AnalysisCodingPlanResponse.from_domain(value)
+
+
+@router.post(
+    "/coding-plans/{plan_id}/revoke",
+    operation_id="revoke_research_coding_plan",
+    response_model=AnalysisCodingPlanResponse,
+)
+def revoke_research_coding_plan(
+    task_id: UUID,
+    plan_id: UUID,
+    payload: RevokeCodingPlanRequest,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchAnalysisApplicationDependency,
+    idempotency_key: IdempotencyKey,
+) -> AnalysisCodingPlanResponse | JSONResponse:
+    try:
+        value = application.revoke_coding_plan(
+            user_id=current.user.user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            plan_id=plan_id,
+            expected_version=payload.expected_version,
+            reason=payload.reason,
+        )
+    except LookupError:
+        return _error(404, ErrorCode.NOT_FOUND, "编码计划不存在或无权访问。")
+    except ValueError as error:
+        if isinstance(error, ResearchAnalysisIdempotencyConflict):
+            return _error(409, ErrorCode.IDEMPOTENCY_CONFLICT, str(error))
+        return _decision_error(error)
+    return AnalysisCodingPlanResponse.from_domain(value)
+
+
+@router.get(
+    "/retrieved-segments",
+    operation_id="get_research_retrieved_segments",
+    response_model=list[RetrievedCodedSegmentResponse],
+)
+def get_research_retrieved_segments(
+    task_id: UUID,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchAnalysisApplicationDependency,
+    code_id: Annotated[list[UUID] | None, Query()] = None,
+    material_id: UUID | None = None,
+    query: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> list[RetrievedCodedSegmentResponse]:
+    rows = application.retrieve_coded_segments(
+        user_id=current.user.user_id,
+        task_id=task_id,
+        code_ids=tuple(code_id or ()),
+        material_id=material_id,
+        query=query,
+        limit=limit,
+    )
+    return [
+        RetrievedCodedSegmentResponse(
+            **{**row, "locator": ResearchMaterialLocatorResponse.from_domain(row["locator"])}
+        )
+        for row in rows
+    ]
+
+
+@router.get(
+    "/audit",
+    operation_id="get_research_analysis_audit",
+    response_model=list[AnalysisAuditEventResponse],
+)
+def get_research_analysis_audit(
+    task_id: UUID,
+    _task: OwnedResearchTaskDependency,
+    current: CurrentSessionDependency,
+    application: ResearchAnalysisApplicationDependency,
+) -> list[AnalysisAuditEventResponse]:
+    return [
+        AnalysisAuditEventResponse.from_domain(item)
+        for item in application.list_audit_events(user_id=current.user.user_id, task_id=task_id)
+    ]
 
 
 @router.post(

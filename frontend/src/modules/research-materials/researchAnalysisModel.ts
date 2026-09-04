@@ -1,5 +1,7 @@
 export type AnalysisAnnotationKind = 'descriptive' | 'researcher_reflection'
 export type AnalysisRecordStatus = 'candidate' | 'confirmed' | 'rejected'
+export type AnalysisCodingPlanStatus = 'candidate' | 'applied' | 'partially_applied' | 'rejected'
+export type AnalysisCodingPlanItemStatus = 'candidate' | 'applied' | 'rejected'
 export type AnalysisMemoKind = 'descriptive' | 'reflexive' | 'analytic' | 'methodological'
 export type ComparisonFindingKind = 'support' | 'counterexample' | 'contradict' | 'competing_explanation' | 'evidence_gap'
 export type CodebookLifecycle = 'active' | 'merged' | 'split' | 'retired'
@@ -57,6 +59,46 @@ export type AnalysisCode = {
   task_id: string
   tool_call_id: string | null
   version: number
+}
+
+export type AnalysisCodingPlanItem = {
+  item_id: string
+  material_id: string
+  parse_id: string
+  segment_id: string
+  segment_content_hash: string
+  quote: string
+  quote_hash: string
+  quote_start: number
+  quote_end: number
+  locator: ResearchAnalysisLocator
+  code_id: string
+  code_label: string
+  code_definition: string
+  codebook_version: number | null
+  confidence: number
+  rationale: string
+  status: string
+  annotation_id: string | null
+  decision_reason: string | null
+}
+
+export type AnalysisCodingPlan = {
+  plan_id: string
+  task_id: string
+  title: string
+  rationale: string
+  items: AnalysisCodingPlanItem[]
+  source: string
+  status: string
+  version: number
+  created_at: string
+  conversation_id: string | null
+  agent_run_id: string | null
+  agent_turn_id: string | null
+  tool_call_id: string | null
+  decided_at: string | null
+  decision_reason: string | null
 }
 
 export type AnalysisMemo = {
@@ -123,6 +165,7 @@ export type ResearchAnalysisSnapshot = {
   task_id: string
   workspace?: QualitativeWorkspaceSnapshot
   method_presets?: QualitativeMethodPreset[]
+  coding_plans?: AnalysisCodingPlan[]
 }
 
 export type CodebookEntry = {
@@ -258,6 +301,16 @@ export type CreateCaseComparisonInput = {
 
 export type DecideAnalysisRecordInput = {
   decision: AnalysisRecordStatus
+  expected_version: number
+  reason: string
+}
+
+export type DecideCodingPlanInput = {
+  expected_version: number
+  decisions: Array<{ item_id: string; decision: 'confirmed' | 'rejected'; reason: string }>
+}
+
+export type RevokeCodingPlanInput = {
   expected_version: number
   reason: string
 }

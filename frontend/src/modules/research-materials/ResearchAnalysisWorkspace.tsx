@@ -8,6 +8,7 @@ import type {
   CreateAnalysisMemoInput,
   CreateAnalysisThemeInput,
   CreateCaseComparisonInput,
+  AnalysisCodingPlan,
   ResearchAnalysisSnapshot,
   SaveAnalysisCaseProfileInput,
   SaveCaseThemeMatrixCellInput,
@@ -33,6 +34,8 @@ type ResearchAnalysisWorkspaceProps = {
   readonly onCreateMemo: (body: CreateAnalysisMemoInput) => void | Promise<void>
   readonly onDecideCode: (codeId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) => void | Promise<void>
   readonly onDecideMemo: (memoId: string, decision: ResearchAnalysisDecision, reason: string, expectedVersion: number) => void | Promise<void>
+  readonly onDecideCodingPlan?: (planId: string, body: { expected_version: number; decisions: Array<{ item_id: string; decision: 'confirmed' | 'rejected'; reason: string }> }) => void | Promise<void>
+  readonly onRevokeCodingPlan?: (planId: string, body: { expected_version: number; reason: string }) => void | Promise<void>
   readonly onCreateComparison?: (body: CreateCaseComparisonInput) => void | Promise<void>
   readonly onDecideComparison?: (comparisonId: string, decision: CaseComparisonDecision, reason: string, expectedVersion: number) => void | Promise<void>
   readonly onConfigureCodebook?: (codeId: string, body: ConfigureCodebookEntryInput) => void | Promise<void>
@@ -60,6 +63,8 @@ export function ResearchAnalysisWorkspace({
   onCreateMemo,
   onDecideCode,
   onDecideMemo,
+  onDecideCodingPlan,
+  onRevokeCodingPlan,
   onCreateComparison,
   onDecideComparison,
   onConfigureCodebook,
@@ -93,6 +98,7 @@ export function ResearchAnalysisWorkspace({
   const candidateCodes = snapshot.codes.filter((code) => code.status === 'candidate' && code.source === 'agent')
   const confirmedMemos = snapshot.memos.filter((memo) => memo.status === 'confirmed')
   const candidateMemos = snapshot.memos.filter((memo) => memo.status === 'candidate' && memo.source === 'agent')
+  const candidatePlans = (snapshot.coding_plans ?? []).filter((plan) => plan.status === 'candidate' && plan.source === 'agent')
 
   function toggle(values: string[], value: string, setValues: (next: string[]) => void) {
     setValues(values.includes(value) ? values.filter((item) => item !== value) : [...values, value])
@@ -188,7 +194,7 @@ export function ResearchAnalysisWorkspace({
         {!visibleAnnotations.length ? <p className="research-analysis__empty">先在材料原文中拖选关键片段。原文证据会在这里逐步形成编码、分析备忘、主题与案例比较。</p> : null}
       </div>
 
-      {candidateCodes.length || candidateMemos.length ? (
+      {candidateCodes.length || candidateMemos.length || candidatePlans.length ? (
         <section className="research-analysis__candidates" aria-label="待确认的 Agent 建议">
           <h4>待你判断</h4>
           {candidateCodes.map((code) => (
@@ -212,6 +218,9 @@ export function ResearchAnalysisWorkspace({
               onDecide={(decision, reason, version) => onDecideMemo(memo.memo_id, decision, reason, version)}
             />
           ))}
+          {candidatePlans.map((plan) => (
+            <CodingPlanCard key={plan.plan_id} plan={plan} onDecide={onDecideCodingPlan} />
+          ))}
         </section>
       ) : null}
 
@@ -229,6 +238,9 @@ export function ResearchAnalysisWorkspace({
             <strong>{memo.title}</strong>
             <p>{memo.content}</p>
           </article>
+        ))}
+        {(snapshot.coding_plans ?? []).filter((plan) => plan.status === 'applied' || plan.status === 'partially_applied').map((plan) => (
+          <AppliedCodingPlanRow key={plan.plan_id} plan={plan} onRevoke={onRevokeCodingPlan} />
         ))}
       </section>
 
@@ -303,3 +315,88 @@ export function ResearchAnalysisWorkspace({
 }
 
 export type { ResearchAnalysisWorkspaceProps }
+
+function CodingPlanCard({
+  plan,
+  onDecide,
+}: {
+  readonly plan: AnalysisCodingPlan
+  readonly onDecide?: ResearchAnalysisWorkspaceProps['onDecideCodingPlan']
+}) {
+  const [reason, setReason] = useState('')
+  const [decisions, setDecisions] = useState<Record<string, 'confirmed' | 'rejected'>>({})
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const allDecided = plan.items.every((item) => decisions[item.item_id])
+
+  async function choose(itemId: string, decision: 'confirmed' | 'rejected') {
+    if (!onDecide || !reason.trim() || pending) return
+    const next = { ...decisions, [itemId]: decision }
+    setDecisions(next)
+    if (!plan.items.every((item) => next[item.item_id])) return
+    setPending(true)
+    setError(null)
+    try {
+      await onDecide(plan.plan_id, {
+        expected_version: plan.version,
+        decisions: plan.items.map((item) => ({ item_id: item.item_id, decision: next[item.item_id], reason: reason.trim() })),
+      })
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : '编码计划未保存。')
+      setDecisions({})
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <article className="research-analysis-candidate research-analysis-candidate--plan" aria-label={`编码计划候选：${plan.title}`}>
+      <header><span>编码计划 · 待确认</span><strong>{plan.title}</strong></header>
+      <p>{plan.rationale}</p>
+      <div className="research-analysis-plan__items">
+        {plan.items.map((item) => (
+          <div key={item.item_id} className="research-analysis-plan__item">
+            <blockquote>{item.quote}</blockquote>
+            <p>{item.code_label} · 置信度 {Math.round(item.confidence * 100)}%</p>
+            <small>{[item.locator.page ? `第 ${item.locator.page} 页` : '', item.locator.section_path.join(' / '), `字符 ${item.quote_start}–${item.quote_end}`].filter(Boolean).join(' · ')}</small>
+            <footer>
+              <button type="button" disabled={!reason.trim() || pending || Boolean(decisions[item.item_id])} onClick={() => void choose(item.item_id, 'rejected')}>拒绝此项</button>
+              <button type="button" className="is-primary" disabled={!reason.trim() || pending || Boolean(decisions[item.item_id])} onClick={() => void choose(item.item_id, 'confirmed')}>确认此项</button>
+            </footer>
+          </div>
+        ))}
+      </div>
+      <label><span>逐条判断依据</span><textarea aria-label="编码计划判断依据" value={reason} onChange={(event) => setReason(event.target.value)} rows={2} placeholder="回到原文核对后再确认或拒绝" /></label>
+      {!onDecide ? <p>当前界面暂不支持确认，请回到研究分析页。</p> : null}
+      {allDecided && pending ? <p role="status">正在保存编码计划…</p> : null}
+      {error ? <p role="alert" className="research-analysis-candidate__error">{error}</p> : null}
+    </article>
+  )
+}
+
+function AppliedCodingPlanRow({
+  plan,
+  onRevoke,
+}: {
+  readonly plan: AnalysisCodingPlan
+  readonly onRevoke?: ResearchAnalysisWorkspaceProps['onRevokeCodingPlan']
+}) {
+  const [reason, setReason] = useState('')
+  const [pending, setPending] = useState(false)
+  async function revoke() {
+    if (!onRevoke || !reason.trim() || pending) return
+    setPending(true)
+    try {
+      await onRevoke(plan.plan_id, { expected_version: plan.version, reason: reason.trim() })
+    } finally {
+      setPending(false)
+    }
+  }
+  return (
+    <article className="research-analysis-confirmed-plan" aria-label={`已应用编码计划：${plan.title}`}>
+      <span>已应用编码计划 · {plan.items.filter((item) => item.status === 'applied').length}/{plan.items.length} 项</span>
+      <strong>{plan.title}</strong>
+      {onRevoke ? <footer><input aria-label="撤销编码计划理由" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="需要撤回时填写理由" /><button type="button" disabled={!reason.trim() || pending} onClick={() => void revoke()}>撤销本批次</button></footer> : null}
+    </article>
+  )
+}

@@ -1,4 +1,4 @@
-import { FileDocIcon, FilePdfIcon, FileTextIcon, FolderOpenIcon, MarkdownLogoIcon, PlusIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
+import { FileDocIcon, FilePdfIcon, FileTextIcon, MarkdownLogoIcon, PlusIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
@@ -9,10 +9,16 @@ import {
   listResearchLibraryMaterials,
   materialMediaLabel,
   materialStatusLabel,
+  isSupportedResearchMaterialFile,
   RESEARCH_MATERIAL_ACCEPT,
   ResearchMaterialsPanel,
+  uploadInitialResearchMaterials,
+  startResearchBatchCoding,
+  getResearchBatchCodingRun,
+  retryResearchBatchCodingRun,
   type ResearchMaterial,
 } from '../../modules/research-materials'
+import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchMaterialsShader } from './ResearchMaterialsShader'
 import './research-materials-page.css'
@@ -35,11 +41,15 @@ function MaterialTypeIcon({ material }: { material: ResearchMaterial }) {
  */
 export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: string | null }) {
   const navigate = useNavigate()
+  const emptyUploadInputRef = useRef<HTMLInputElement>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const uploadPopoverRef = useRef<HTMLDivElement>(null)
   const [searchParams] = useSearchParams()
   const selectedTaskId = searchParams.get('task_id')
   const selectedMaterialId = searchParams.get('material_id')
+  const interviewView = searchParams.get('view') === 'interviews'
+  const batchCodingEntry = searchParams.get('entry') === 'batch-coding'
+  const batchRunId = searchParams.get('batch_run_id')
   const [research, setResearch] = useState<MyResearchItem[]>([])
   const [libraryMaterials, setLibraryMaterials] = useState<LibraryMaterial[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,6 +60,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadNotice, setUploadNotice] = useState<string | null>(null)
+  const [emptyUploading, setEmptyUploading] = useState(false)
+  const [emptyUploadError, setEmptyUploadError] = useState<string | null>(null)
+  const [batchRun, setBatchRun] = useState<Awaited<ReturnType<typeof getResearchBatchCodingRun>> | null>(null)
 
   useEffect(() => {
     let active = true
@@ -95,6 +108,22 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   }, [loading, research, selectedTaskId])
 
   useEffect(() => {
+    if (batchCodingEntry && !loading && research.length === 0) emptyUploadInputRef.current?.click()
+    if (batchCodingEntry && !loading && research.length > 0 && !selectedTaskId) setUploadOpen(true)
+  }, [batchCodingEntry, loading, research.length, selectedTaskId])
+
+  useEffect(() => {
+    if (batchCodingEntry && uploadOpen && research.length > 0 && !selectedTaskId) uploadInputRef.current?.click()
+  }, [batchCodingEntry, uploadOpen, research.length, selectedTaskId])
+
+  useEffect(() => {
+    if (!batchRunId || !selectedTaskId) return undefined
+    let active = true
+    void getResearchBatchCodingRun(selectedTaskId, batchRunId).then((run) => { if (active) setBatchRun(run) }).catch(() => undefined)
+    return () => { active = false }
+  }, [batchRunId, selectedTaskId])
+
+  useEffect(() => {
     if (!uploadOpen) return undefined
     function closeUpload(event: KeyboardEvent | PointerEvent) {
       if (event instanceof KeyboardEvent) {
@@ -112,6 +141,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
   }, [uploadOpen])
 
   const selectedResearch = research.find((item) => item.taskId === selectedTaskId) ?? null
+  const visibleMaterials = interviewView
+    ? libraryMaterials.filter(({ material }) => material.materialKind === 'interview_transcript' || material.mediaType.startsWith('audio/') || material.mediaType.startsWith('video/'))
+    : libraryMaterials
 
   async function addMaterial(file: File) {
     if (!uploadTaskId) return
@@ -131,6 +163,49 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
     }
   }
 
+  async function startFromMaterials(files: File[]) {
+    if (!files.length || emptyUploading) return
+    const unsupported = files.find((file) => !isSupportedResearchMaterialFile(file))
+    if (unsupported) {
+      setEmptyUploadError(`${unsupported.name} 不是可导入的研究材料。`)
+      return
+    }
+    setEmptyUploading(true)
+    setEmptyUploadError(null)
+    try {
+      const requestKey = `material-entry:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`
+      const { taskId } = await createMaterialFirstResearchProject(requestKey, files[0].name)
+      await uploadInitialResearchMaterials(taskId, files)
+      const imported = await listResearchLibraryMaterials(taskId)
+      const material = imported.items[0]
+      if (batchCodingEntry && material) {
+        const run = await startResearchBatchCoding(taskId, material.materialId)
+        navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}&material_id=${encodeURIComponent(material.materialId)}&batch_run_id=${encodeURIComponent(run.runId)}`, { replace: true })
+      } else {
+        navigate(`/research/materials?task_id=${encodeURIComponent(taskId)}`, { replace: true })
+      }
+    } catch (cause: unknown) {
+      setEmptyUploadError(cause instanceof Error ? cause.message : '材料暂时无法导入，请重试。')
+    } finally {
+      setEmptyUploading(false)
+    }
+  }
+
+  async function addBatchMaterial(file: File) {
+    if (!uploadTaskId) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const material = await addResearchLibraryMaterial(uploadTaskId, file)
+      const run = await startResearchBatchCoding(uploadTaskId, material.materialId)
+      navigate(`/research/materials?task_id=${encodeURIComponent(uploadTaskId)}&material_id=${encodeURIComponent(material.materialId)}&batch_run_id=${encodeURIComponent(run.runId)}`, { replace: true })
+    } catch (cause: unknown) {
+      setUploadError(cause instanceof Error ? cause.message : '批量编码启动失败，请重试。')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <PageShell workspace>
       <PageContent>
@@ -140,10 +215,28 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
 
         {!loading && !error && !research.length ? (
           <section className="research-materials-page__empty" aria-label="还没有研究">
-            <FolderOpenIcon size={25} aria-hidden="true" />
-            <h2>先建立一项研究</h2>
-            <p>研究材料需要绑定到具体研究，建立后就能在这里持续导入和管理。</p>
-            <Link className="research-materials-page__primary" to="/research/new"><PlusIcon size={16} />新建研究</Link>
+            <div className="research-materials-page__empty-copy">
+              <h1>从材料开始研究</h1>
+              <p>导入论文与文本、访谈录音或视频材料，系统会同时建立它所属的研究。访谈转录稿支持 SRT、VTT、TXT 与 DOCX。</p>
+              <p className="research-materials-page__formats">PDF · DOCX · TXT · Markdown · MP3 · M4A · WAV · MP4 · WebM</p>
+              <button className="work-home__start" type="button" disabled={emptyUploading} onClick={() => emptyUploadInputRef.current?.click()}>
+                <PlusIcon size={17} weight="regular" aria-hidden="true" />
+                {emptyUploading ? '正在导入…' : '导入研究材料'}
+              </button>
+              <input
+                ref={emptyUploadInputRef}
+                hidden
+                type="file"
+                multiple
+                accept={RESEARCH_MATERIAL_ACCEPT}
+                onChange={(event) => {
+                  const files = Array.from(event.target.files ?? [])
+                  event.target.value = ''
+                  void startFromMaterials(files)
+                }}
+              />
+              {emptyUploadError ? <span className="research-materials-page__empty-error" role="alert">{emptyUploadError}</span> : null}
+            </div>
           </section>
         ) : null}
 
@@ -151,8 +244,8 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
           <section className="research-materials-page__library" aria-label="全部研究材料" role="region">
             <header className="research-materials-page__identity">
               <FileTextIcon size={18} weight="regular" aria-hidden="true" />
-              <h1>研究材料</h1>
-              <small>{libraryMaterials.length}</small>
+              <h1>{interviewView ? '访谈整理' : '研究材料'}</h1>
+              <small>{visibleMaterials.length}</small>
             </header>
             <div className="research-materials-page__add-entry" ref={uploadPopoverRef}>
               <button
@@ -162,24 +255,24 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
                 aria-controls="research-materials-upload-popover"
                 onClick={() => setUploadOpen((open) => !open)}
               >
-                <PlusIcon size={17} weight="regular" aria-hidden="true" />添加材料
+                <PlusIcon size={17} weight="regular" aria-hidden="true" />{batchCodingEntry ? '选择材料并批量编码' : '添加材料'}
               </button>
               {uploadOpen ? (
                 <div id="research-materials-upload-popover" className="qx-popover-surface research-materials-page__upload" role="dialog" aria-label="添加材料">
                   <select aria-label="材料所属研究" value={uploadTaskId} onChange={(event) => setUploadTaskId(event.target.value)}>
                     {research.map((item) => <option key={item.taskId} value={item.taskId}>{item.phenomenonSummary || '未命名研究'}</option>)}
                   </select>
-                  <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '正在上传…' : '选择文件'}</button>
-                  <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void addMaterial(file) }} />
+                  <button type="button" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>{uploading ? '正在处理…' : '选择文件'}</button>
+                  <input ref={uploadInputRef} hidden type="file" accept={RESEARCH_MATERIAL_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void (batchCodingEntry ? addBatchMaterial(file) : addMaterial(file)) }} />
                   {uploadError ? <span role="alert">{uploadError}</span> : null}
                 </div>
               ) : null}
             </div>
             {uploadNotice ? <p className="research-materials-page__status" role="status">{uploadNotice}</p> : null}
             {libraryLoading ? <p className="research-materials-page__status" role="status">正在整理材料库</p> : null}
-            {!libraryLoading && libraryMaterials.length ? (
+            {!libraryLoading && visibleMaterials.length ? (
               <div className="research-materials-page__material-grid">
-                {libraryMaterials.map(({ material, research: owner }) => (
+                {visibleMaterials.map(({ material, research: owner }) => (
                   <Link
                     className="research-materials-page__material-card"
                     key={`${material.taskId}:${material.materialId}`}
@@ -199,10 +292,9 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
                 ))}
               </div>
             ) : null}
-            {!libraryLoading && !libraryMaterials.length ? (
+            {!libraryLoading && !visibleMaterials.length ? (
               <div className="research-materials-page__library-empty">
-                <FolderOpenIcon size={22} aria-hidden="true" />
-                <p>还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。</p>
+                <p>{interviewView ? '还没有可整理的访谈录音、视频或转录稿。' : '还没有材料。你可以从新建研究页放入第一批论文、访谈或田野记录。'}</p>
                 <Link to="/research/new">去添加材料</Link>
               </div>
             ) : null}
@@ -211,11 +303,18 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
 
         {selectedResearch ? (
           <section className="research-materials-page__reader" aria-label="材料阅读" role="region">
+            {batchRun ? (
+              <div className="research-materials-page__batch-status" role="status">
+                <strong>整份材料批量编码</strong>
+                <span>{batchRun.status === 'completed' ? `已遍历 ${batchRun.processedSegments}/${batchRun.totalSegments} 段，候选结果已写入分析区。` : batchRun.status === 'failed' ? `处理失败：${batchRun.errorCode ?? '未知错误'}` : `正在遍历 ${batchRun.processedSegments}/${batchRun.totalSegments} 段…`}</span>
+                {batchRun.status === 'failed' ? <button type="button" onClick={() => void retryResearchBatchCodingRun(selectedResearch.taskId, batchRun.runId).then(setBatchRun)}>重试</button> : null}
+              </div>
+            ) : null}
             <ResearchMaterialsPanel
               taskId={selectedResearch.taskId}
               initialMaterialId={selectedMaterialId}
               presentation="workspace"
-              onClose={() => navigate('/research/materials')}
+              onClose={() => navigate(interviewView ? '/research/materials?view=interviews' : '/research/materials')}
             />
           </section>
         ) : null}

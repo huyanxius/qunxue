@@ -7,6 +7,7 @@ from fastapi import Depends, Request
 from qunxue_api.application import (
     ProfessionalMaterialsApplication,
     ResearchAnalysisApplication,
+    ResearchBatchCodingApplication,
     ResearchCycleApplication,
     ResearchDocumentApplication,
     ResearchDocumentProposalApplication,
@@ -157,6 +158,19 @@ def get_research_analysis_application(
 ResearchAnalysisApplicationDependency = Annotated[
     ResearchAnalysisApplication,
     Depends(get_research_analysis_application),
+]
+
+
+def get_research_batch_coding_application(
+    request: Request,
+) -> Iterator[ResearchBatchCodingApplication]:
+    with request.app.state.research_batch_coding_application_scope() as application:
+        yield application
+
+
+ResearchBatchCodingApplicationDependency = Annotated[
+    ResearchBatchCodingApplication,
+    Depends(get_research_batch_coding_application),
 ]
 
 

@@ -62,8 +62,12 @@
 }
 
 .research-tools-page__card {
+  position: relative;
   width: 100%;
 }
+
+.research-tools-page__card-link { position: absolute; z-index: 4; inset: 0; border-radius: inherit; }
+.research-tools-page__card:has(.research-tools-page__card-link:focus-visible) { outline: 2px solid var(--app-ink); outline-offset: 4px; }
 
 .research-tools-page__card .workbench-destination__image {
   opacity: 1;
@@ -79,6 +83,15 @@
   line-height: 1;
   letter-spacing: -.055em;
   text-shadow: 0 1px 24px rgb(244 245 237 / 52%);
+}
+
+.research-tools-page__card.is-disabled {
+  filter: grayscale(1);
+  opacity: .48;
+}
+
+.research-tools-page__card.is-disabled .workbench-destination__arrow {
+  display: none;
 }
 
 @media (max-width: 980px) {

@@ -67,6 +67,110 @@ class ResearchAnalysisWriteRequestRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ResearchCodingPlanRow(Base):
+    __tablename__ = "research_analysis_coding_plans"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('candidate', 'applied', 'partially_applied', 'rejected', 'revoked')",
+            name="ck_research_analysis_coding_plans_status",
+        ),
+        Index(
+            "ix_research_analysis_coding_plans_owner_created", "user_id", "task_id", "created_at"
+        ),
+    )
+
+    plan_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    items: Mapped[list[dict[str, object]]] = mapped_column(JSON, nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    conversation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    agent_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    agent_turn_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    tool_call_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ResearchAnalysisAuditEventRow(Base):
+    __tablename__ = "research_analysis_audit_events"
+    __table_args__ = (
+        Index("ix_research_analysis_audit_owner_created", "user_id", "task_id", "created_at"),
+    )
+
+    event_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    actor: Mapped[str] = mapped_column(String(32), nullable=False)
+    action: Mapped[str] = mapped_column(String(128), nullable=False)
+    entity_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    plan_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    item_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    annotation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    code_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    provenance: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ResearchBatchCodingRunRow(Base):
+    __tablename__ = "research_batch_coding_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "task_id",
+            "material_id",
+            "idempotency_key",
+            name="uq_research_batch_coding_idempotency",
+        ),
+        CheckConstraint(
+            "status IN ('queued', 'processing', 'completed', 'failed')",
+            name="ck_research_batch_coding_status",
+        ),
+        Index("ix_research_batch_coding_owner_created", "user_id", "task_id", "created_at"),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
+    )
+    material_id: Mapped[str] = mapped_column(
+        ForeignKey("research_materials.material_id", ondelete="CASCADE"), nullable=False
+    )
+    parse_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    parse_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    total_segments: Mapped[int] = mapped_column(Integer, nullable=False)
+    processed_segments: Mapped[int] = mapped_column(Integer, nullable=False)
+    annotation_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    code_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    low_confidence_segments: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class ResearchAnnotationRow(Base):
     __tablename__ = "research_analysis_annotations"
     __table_args__ = (

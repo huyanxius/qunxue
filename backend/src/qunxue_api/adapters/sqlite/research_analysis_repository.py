@@ -13,11 +13,14 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite.research_analysis_model import (
+    ResearchAnalysisAuditEventRow,
     ResearchAnalysisWriteRequestRow,
     ResearchAnnotationRow,
+    ResearchBatchCodingRunRow,
     ResearchCaseProfileRow,
     ResearchCodebookEntryRow,
     ResearchCodeRow,
+    ResearchCodingPlanRow,
     ResearchComparisonRow,
     ResearchMatrixCellRow,
     ResearchMemoLinkRow,
@@ -28,15 +31,22 @@ from qunxue_api.adapters.sqlite.research_analysis_model import (
 from qunxue_api.modules.research_analysis import (
     AnalysisAnnotation,
     AnalysisAnnotationKind,
+    AnalysisAuditEvent,
     AnalysisCaseProfile,
     AnalysisCode,
     AnalysisCodeStatus,
+    AnalysisCodingPlan,
+    AnalysisCodingPlanItem,
+    AnalysisCodingPlanItemStatus,
+    AnalysisCodingPlanStatus,
     AnalysisMemo,
     AnalysisMemoKind,
     AnalysisMemoLink,
     AnalysisRecordStatus,
     AnalysisTheme,
     AnalysisWriteRequest,
+    BatchCodingRun,
+    BatchCodingStatus,
     CaseComparison,
     CaseThemeMatrixCell,
     CodebookEntry,
@@ -56,6 +66,118 @@ DecisionRecord = AnalysisCode | AnalysisMemo | CaseComparison
 DecisionRow = ResearchCodeRow | ResearchMemoRow | ResearchComparisonRow
 DecisionModel = type[ResearchCodeRow] | type[ResearchMemoRow] | type[ResearchComparisonRow]
 DecisionT = TypeVar("DecisionT", AnalysisCode, AnalysisMemo, CaseComparison)
+
+
+def _batch_values(value: BatchCodingRun) -> dict[str, object]:
+    return {
+        "run_id": str(value.run_id),
+        "user_id": str(value.user_id),
+        "task_id": str(value.task_id),
+        "material_id": str(value.material_id),
+        "parse_id": str(value.parse_id),
+        "parse_version": value.parse_version,
+        "idempotency_key": value.idempotency_key,
+        "status": value.status.value,
+        "total_segments": value.total_segments,
+        "processed_segments": value.processed_segments,
+        "annotation_ids": [str(item) for item in value.annotation_ids],
+        "code_ids": [str(item) for item in value.code_ids],
+        "low_confidence_segments": list(value.low_confidence_segments),
+        "error_code": value.error_code,
+        "retry_count": value.retry_count,
+        "created_at": value.created_at,
+        "updated_at": value.updated_at,
+        "completed_at": value.completed_at,
+    }
+
+
+def _coding_plan_values(value: AnalysisCodingPlan) -> dict[str, object]:
+    return {
+        "plan_id": str(value.plan_id),
+        "user_id": str(value.user_id),
+        "task_id": str(value.task_id),
+        "title": value.title,
+        "rationale": value.rationale,
+        "items": [
+            {
+                "item_id": str(item.item_id),
+                "material_id": str(item.material_id),
+                "parse_id": str(item.parse_id),
+                "segment_id": item.segment_id,
+                "segment_content_hash": item.segment_content_hash,
+                "quote": item.quote,
+                "quote_hash": item.quote_hash,
+                "quote_start": item.quote_start,
+                "quote_end": item.quote_end,
+                "locator": item.locator.as_dict(),
+                "code_id": str(item.code_id),
+                "code_label": item.code_label,
+                "code_definition": item.code_definition,
+                "codebook_version": item.codebook_version,
+                "confidence": item.confidence,
+                "rationale": item.rationale,
+                "status": item.status.value,
+                "annotation_id": _uuid_text(item.annotation_id),
+                "decision_reason": item.decision_reason,
+            }
+            for item in value.items
+        ],
+        "source": value.source,
+        "status": value.status.value,
+        "version": value.version,
+        "created_at": value.created_at,
+        "conversation_id": _uuid_text(value.conversation_id),
+        "agent_run_id": _uuid_text(value.agent_run_id),
+        "agent_turn_id": _uuid_text(value.agent_turn_id),
+        "tool_call_id": value.tool_call_id,
+        "decided_at": value.decided_at,
+        "decision_reason": value.decision_reason,
+    }
+
+
+def _audit_values(value: AnalysisAuditEvent) -> dict[str, object]:
+    return {
+        "event_id": str(value.event_id),
+        "user_id": str(value.user_id),
+        "task_id": str(value.task_id),
+        "actor": value.actor,
+        "action": value.action,
+        "entity_kind": value.entity_kind,
+        "entity_id": str(value.entity_id),
+        "plan_id": _uuid_text(value.plan_id),
+        "item_id": _uuid_text(value.item_id),
+        "annotation_id": _uuid_text(value.annotation_id),
+        "code_id": _uuid_text(value.code_id),
+        "idempotency_key": value.idempotency_key,
+        "provenance": dict(value.provenance),
+        "payload": dict(value.payload),
+        "created_at": value.created_at,
+    }
+
+
+def _batch(row: ResearchBatchCodingRunRow | None) -> BatchCodingRun | None:
+    if row is None:
+        return None
+    return BatchCodingRun(
+        run_id=UUID(row.run_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        material_id=UUID(row.material_id),
+        parse_id=UUID(row.parse_id),
+        parse_version=row.parse_version,
+        idempotency_key=row.idempotency_key,
+        status=BatchCodingStatus(row.status),
+        total_segments=row.total_segments,
+        processed_segments=row.processed_segments,
+        annotation_ids=tuple(UUID(item) for item in row.annotation_ids),
+        code_ids=tuple(UUID(item) for item in row.code_ids),
+        low_confidence_segments=tuple(row.low_confidence_segments),
+        error_code=row.error_code,
+        retry_count=row.retry_count,
+        created_at=_utc(row.created_at),
+        updated_at=_utc(row.updated_at),
+        completed_at=_utc(row.completed_at),
+    )
 
 
 def _utc(value: datetime | None) -> datetime | None:
@@ -144,6 +266,53 @@ class SqliteResearchAnalysisRepository:
                 )
             )
         )
+
+    def add_batch(self, value: BatchCodingRun) -> BatchCodingRun:
+        self._session.execute(
+            insert(ResearchBatchCodingRunRow)
+            .values(**_batch_values(value))
+            .on_conflict_do_nothing(index_elements=["run_id"])
+        )
+        persisted = _batch(self._row_by_id(ResearchBatchCodingRunRow, "run_id", value.run_id))
+        if persisted is None:
+            raise RuntimeError("batch coding run was not persisted")
+        return persisted
+
+    def get_batch(self, run_id: UUID, *, user_id: UUID, task_id: UUID) -> BatchCodingRun | None:
+        return _batch(
+            self._owned_row(ResearchBatchCodingRunRow, "run_id", run_id, user_id, task_id)
+        )
+
+    def get_batch_by_idempotency(
+        self, *, user_id: UUID, task_id: UUID, material_id: UUID, idempotency_key: str
+    ) -> BatchCodingRun | None:
+        row = self._session.scalar(
+            select(ResearchBatchCodingRunRow).where(
+                ResearchBatchCodingRunRow.user_id == str(user_id),
+                ResearchBatchCodingRunRow.task_id == str(task_id),
+                ResearchBatchCodingRunRow.material_id == str(material_id),
+                ResearchBatchCodingRunRow.idempotency_key == idempotency_key,
+            )
+        )
+        return _batch(row)
+
+    def save_batch(self, value: BatchCodingRun) -> BatchCodingRun:
+        self._session.execute(
+            update(ResearchBatchCodingRunRow)
+            .where(ResearchBatchCodingRunRow.run_id == str(value.run_id))
+            .values(**_batch_values(value))
+        )
+        persisted = _batch(self._row_by_id(ResearchBatchCodingRunRow, "run_id", value.run_id))
+        if persisted is None:
+            raise RuntimeError("batch coding run was not persisted")
+        return persisted
+
+    # BatchCodingRepository protocol aliases keep the application independent
+    # from the broader analysis repository's historical method names.
+    add = add_batch
+    get = get_batch
+    get_by_idempotency = get_batch_by_idempotency
+    save = save_batch
 
     def add_annotation(self, value: AnalysisAnnotation) -> AnalysisAnnotation:
         self._session.execute(
@@ -285,6 +454,56 @@ class SqliteResearchAnalysisRepository:
                 "decision_reason": value.decision_reason,
             },
             converter=_comparison,
+        )
+
+    def add_coding_plan(self, value: AnalysisCodingPlan) -> AnalysisCodingPlan:
+        self._session.execute(
+            insert(ResearchCodingPlanRow)
+            .values(**_coding_plan_values(value))
+            .on_conflict_do_update(
+                index_elements=["plan_id"],
+                set_={
+                    key: item
+                    for key, item in _coding_plan_values(value).items()
+                    if key != "plan_id"
+                },
+                where=ResearchCodingPlanRow.version < value.version,
+            )
+        )
+        persisted = _coding_plan(self._row_by_id(ResearchCodingPlanRow, "plan_id", value.plan_id))
+        if persisted is None:
+            raise RuntimeError("coding plan was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def get_coding_plan(
+        self, plan_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> AnalysisCodingPlan | None:
+        return _coding_plan(
+            self._owned_row(ResearchCodingPlanRow, "plan_id", plan_id, user_id, task_id)
+        )
+
+    def list_coding_plans(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisCodingPlan, ...]:
+        return tuple(
+            _coding_plan(row) for row in self._owned_rows(ResearchCodingPlanRow, user_id, task_id)
+        )
+
+    def add_audit_event(self, value: AnalysisAuditEvent) -> AnalysisAuditEvent:
+        self._session.execute(
+            insert(ResearchAnalysisAuditEventRow)
+            .values(**_audit_values(value))
+            .on_conflict_do_nothing(index_elements=["event_id"])
+        )
+        row = self._row_by_id(ResearchAnalysisAuditEventRow, "event_id", value.event_id)
+        persisted = _audit(row)
+        if persisted is None:
+            raise RuntimeError("analysis audit event was not persisted")
+        self._ensure_same_scope(persisted, value)
+        return persisted
+
+    def list_audit_events(self, *, user_id: UUID, task_id: UUID) -> tuple[AnalysisAuditEvent, ...]:
+        return tuple(
+            _audit(row) for row in self._owned_rows(ResearchAnalysisAuditEventRow, user_id, task_id)
         )
 
     def get_code(
@@ -722,7 +941,21 @@ class SqliteResearchAnalysisRepository:
         if persisted is None:
             raise RuntimeError("research analysis record was not persisted")
         self._ensure_same_scope(persisted, value)
-        if not _same_decision_subject(persisted, value):
+        attachment_update = (
+            isinstance(persisted, AnalysisCode)
+            and isinstance(value, AnalysisCode)
+            and persisted.status is AnalysisCodeStatus.CONFIRMED
+            and value.status is AnalysisCodeStatus.CONFIRMED
+            and value.version == persisted.version + 1
+            and replace(
+                persisted,
+                annotation_ids=value.annotation_ids,
+                version=value.version,
+                decided_at=value.decided_at,
+            )
+            == value
+        )
+        if not _same_decision_subject(persisted, value) and not attachment_update:
             raise ValueError("analysis record identity already contains different content")
         if (
             persisted.status.value == "candidate"
@@ -743,6 +976,24 @@ class SqliteResearchAnalysisRepository:
                     version=value.version,
                     decided_at=value.decided_at,
                     decision_reason=value.decision_reason,
+                )
+            )
+            if result.rowcount == 1:
+                return value
+        if attachment_update:
+            result = self._session.execute(
+                update(model)
+                .where(
+                    getattr(model, key_name) == str(key_value),
+                    model.user_id == str(value.user_id),
+                    model.task_id == str(value.task_id),
+                    model.status == "confirmed",
+                    model.version == value.version - 1,
+                )
+                .values(
+                    annotation_ids=[str(item) for item in value.annotation_ids],
+                    version=value.version,
+                    decided_at=value.decided_at,
                 )
             )
             if result.rowcount == 1:
@@ -855,6 +1106,80 @@ def _write_request(
 
 def _uuid_text(value: UUID | None) -> str | None:
     return str(value) if value is not None else None
+
+
+def _coding_plan(row: ResearchCodingPlanRow | None) -> AnalysisCodingPlan | None:
+    if row is None:
+        return None
+    created_at = _utc(row.created_at)
+    if created_at is None:
+        raise ValueError("coding plan is missing created_at")
+    return AnalysisCodingPlan(
+        plan_id=UUID(row.plan_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        title=row.title,
+        rationale=row.rationale,
+        items=tuple(
+            AnalysisCodingPlanItem(
+                item_id=UUID(item["item_id"]),
+                material_id=UUID(item["material_id"]),
+                parse_id=UUID(item["parse_id"]),
+                segment_id=item["segment_id"],
+                segment_content_hash=item["segment_content_hash"],
+                quote=item["quote"],
+                quote_hash=item["quote_hash"],
+                quote_start=item["quote_start"],
+                quote_end=item["quote_end"],
+                locator=MaterialLocator.from_dict(item["locator"]),
+                code_id=UUID(item["code_id"]),
+                code_label=item["code_label"],
+                code_definition=item["code_definition"],
+                codebook_version=item.get("codebook_version"),
+                confidence=float(item["confidence"]),
+                rationale=item["rationale"],
+                status=AnalysisCodingPlanItemStatus(item.get("status", "candidate")),
+                annotation_id=UUID(item["annotation_id"]) if item.get("annotation_id") else None,
+                decision_reason=item.get("decision_reason"),
+            )
+            for item in row.items
+        ),
+        source=row.source,
+        status=AnalysisCodingPlanStatus(row.status),
+        version=row.version,
+        created_at=created_at,
+        conversation_id=UUID(row.conversation_id) if row.conversation_id else None,
+        agent_run_id=UUID(row.agent_run_id) if row.agent_run_id else None,
+        agent_turn_id=UUID(row.agent_turn_id) if row.agent_turn_id else None,
+        tool_call_id=row.tool_call_id,
+        decided_at=_utc(row.decided_at),
+        decision_reason=row.decision_reason,
+    )
+
+
+def _audit(row: ResearchAnalysisAuditEventRow | None) -> AnalysisAuditEvent | None:
+    if row is None:
+        return None
+    created_at = _utc(row.created_at)
+    if created_at is None:
+        raise ValueError("analysis audit event is missing created_at")
+    return AnalysisAuditEvent(
+        event_id=UUID(row.event_id),
+        user_id=UUID(row.user_id),
+        task_id=UUID(row.task_id),
+        actor=row.actor,
+        action=row.action,
+        entity_kind=row.entity_kind,
+        entity_id=UUID(row.entity_id),
+        plan_id=UUID(row.plan_id) if row.plan_id else None,
+        item_id=UUID(row.item_id) if row.item_id else None,
+        annotation_id=UUID(row.annotation_id) if row.annotation_id else None,
+        code_id=UUID(row.code_id) if row.code_id else None,
+        idempotency_key=row.idempotency_key,
+        provenance=dict(row.provenance),
+        payload=dict(row.payload),
+        created_at=created_at,
+    )
 
 
 def _code(row: ResearchCodeRow | None) -> AnalysisCode | None:
