@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from asyncio import sleep as async_sleep
@@ -332,15 +333,46 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
         super().__init__(*args, **kwargs)
         self._fallback_models = tuple(fallback_models)
 
+    async def _request_model(self, model: OpenAIChatModel, *args, **kwargs):
+        if model is self:
+            return await super()._completions_create(*args, **kwargs)
+        return await model._completions_create(*args, **kwargs)
+
+    async def _race_models(self, models: Sequence[OpenAIChatModel], *args, **kwargs):
+        tasks = {
+            asyncio.create_task(self._request_model(model, *args, **kwargs))
+            for model in models
+        }
+        last_error: Exception | None = None
+        try:
+            while tasks:
+                done, tasks = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in done:
+                    try:
+                        result = task.result()
+                    except (ModelHTTPError, ModelAPIError) as error:
+                        last_error = error
+                        continue
+                    for pending in tasks:
+                        pending.cancel()
+                    return result
+            assert last_error is not None
+            raise last_error
+        finally:
+            for task in tasks:
+                task.cancel()
+
     async def _completions_create(self, *args, **kwargs):
         models = (self, *self._fallback_models)
         last_error: Exception | None = None
         for model_index, model in enumerate(models):
             for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
                 try:
-                    if model is self:
-                        return await super()._completions_create(*args, **kwargs)
-                    return await model._completions_create(*args, **kwargs)
+                    if model_index == 0 and retry_delay == self._PROVIDER_RETRY_DELAYS[0]:
+                        return await self._race_models(models, *args, **kwargs)
+                    return await self._request_model(model, *args, **kwargs)
                 except (ModelHTTPError, ModelAPIError) as error:
                     last_error = error
                     if not _is_retryable_model_error(error):
