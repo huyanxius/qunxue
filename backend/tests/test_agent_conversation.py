@@ -18,6 +18,8 @@ from qunxue_api.adapters.research_agent.pydantic_runner import (
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
     _append_result_evidence,
+    _select_result_evidence,
+    _text_result,
 )
 from qunxue_api.adapters.sqlite.agent_conversation_model import AgentRunRow
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
@@ -1570,6 +1572,50 @@ def test_read_web_pages_accumulate_as_citations_within_one_turn() -> None:
     _append_result_evidence(tools, [{"citation_id": f"web:{urls[1]}"}])
 
     assert tools.selected_evidence_ids == tuple(f"web:{url}" for url in urls)
+
+
+def test_agent_result_preserves_every_selected_citation_beyond_eight() -> None:
+    knowledge_results = [
+        {
+            "citation_id": f"knowledge:{index}",
+            "source_citation_ids": [f"source:{index}"],
+        }
+        for index in range(5)
+    ]
+    web_results = [{"citation_id": f"web:https://example.com/{index}"} for index in range(3)]
+    expected_ids = tuple(
+        citation_id
+        for result in (*knowledge_results, *web_results)
+        for citation_id in (result["citation_id"], *result.get("source_citation_ids", []))
+    )
+
+    class _Tools:
+        release = SimpleNamespace(knowledge_release_id="release-all-citations")
+
+        def __init__(self) -> None:
+            self.evidence = {
+                citation_id: AgentEvidence(
+                    citation_id=citation_id,
+                    label=citation_id,
+                    kind="source",
+                    excerpt="已采用证据",
+                    source_id=citation_id,
+                    source_kind="web" if citation_id.startswith("web:") else "knowledge",
+                )
+                for citation_id in expected_ids
+            }
+            self.selected_evidence_ids: tuple[str, ...] = ()
+
+        def select_evidence(self, citation_ids):
+            self.selected_evidence_ids = tuple(citation_ids)
+
+    tools = _Tools()
+    _select_result_evidence(tools, knowledge_results)
+    _append_result_evidence(tools, web_results)
+
+    result = _text_result("完整证据回答", tools=tools, model="sociology-model")
+
+    assert tuple(citation.citation_id for citation in result.citations) == expected_ids
 
 
 def test_agent_policy_searches_for_a_plain_sociology_concept_by_default() -> None:
