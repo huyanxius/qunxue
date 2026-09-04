@@ -2166,9 +2166,42 @@ def test_agent_fails_over_to_the_next_model_endpoint(
     assert result is completed_request
     assert calls == [
         "https://primary.example.test/v1/",
-        "https://primary.example.test/v1/",
         "https://backup.example.test/v1/",
     ]
+
+
+def test_agent_races_primary_endpoints_and_keeps_first_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://slow.example.test/v1",
+        api_key="slow-key",
+        fallback_endpoints=(("https://fast.example.test/v1", "fast-key"),),
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+    )
+    model = runner._agent.model
+    calls: list[str] = []
+    fast_response = object()
+
+    async def request_once(self, *args, **kwargs):
+        del args, kwargs
+        calls.append(self.base_url)
+        if self.base_url.startswith("https://slow"):
+            await asyncio.sleep(0.05)
+        return fast_response if self.base_url.startswith("https://fast") else object()
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+
+    result = asyncio.run(
+        model._completions_create([], False, {}, ModelRequestParameters())
+    )
+
+    assert result is fast_response
+    assert set(calls) == {
+        "https://slow.example.test/v1/",
+        "https://fast.example.test/v1/",
+    }
 
 
 def test_knowledge_directory_is_bounded_and_queryable() -> None:

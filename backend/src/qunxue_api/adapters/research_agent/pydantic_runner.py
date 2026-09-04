@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from asyncio import sleep as async_sleep
@@ -332,15 +333,46 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
         super().__init__(*args, **kwargs)
         self._fallback_models = tuple(fallback_models)
 
+    async def _request_model(self, model: OpenAIChatModel, *args, **kwargs):
+        if model is self:
+            return await super()._completions_create(*args, **kwargs)
+        return await model._completions_create(*args, **kwargs)
+
+    async def _race_models(self, models: Sequence[OpenAIChatModel], *args, **kwargs):
+        tasks = {
+            asyncio.create_task(self._request_model(model, *args, **kwargs))
+            for model in models
+        }
+        last_error: Exception | None = None
+        try:
+            while tasks:
+                done, tasks = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in done:
+                    try:
+                        result = task.result()
+                    except (ModelHTTPError, ModelAPIError) as error:
+                        last_error = error
+                        continue
+                    for pending in tasks:
+                        pending.cancel()
+                    return result
+            assert last_error is not None
+            raise last_error
+        finally:
+            for task in tasks:
+                task.cancel()
+
     async def _completions_create(self, *args, **kwargs):
         models = (self, *self._fallback_models)
         last_error: Exception | None = None
         for model_index, model in enumerate(models):
             for retry_delay in (*self._PROVIDER_RETRY_DELAYS, None):
                 try:
-                    if model is self:
-                        return await super()._completions_create(*args, **kwargs)
-                    return await model._completions_create(*args, **kwargs)
+                    if model_index == 0 and retry_delay == self._PROVIDER_RETRY_DELAYS[0]:
+                        return await self._race_models(models, *args, **kwargs)
+                    return await self._request_model(model, *args, **kwargs)
                 except (ModelHTTPError, ModelAPIError) as error:
                     last_error = error
                     if not _is_retryable_model_error(error):
@@ -381,7 +413,6 @@ class PydanticAIKnowledgeRunner:
         if _is_deepseek_flash(base_url=base_url, model=model):
             model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
-
         def build_model(endpoint_url: str, endpoint_key: str | None) -> OpenAIChatModel:
             provider = OpenAIProvider(
                 openai_client=AsyncOpenAI(
@@ -428,11 +459,6 @@ class PydanticAIKnowledgeRunner:
                 "再用 propose_case_comparison 提出支持证据、反例、矛盾材料、竞争解释、"
                 "证据缺口与下一步行动；你只能调用 propose_analysis_code、"
                 "propose_analysis_memo 或 propose_case_comparison 提出候选，"
-                "需要把新片段归入既有确认编码时，必须先读材料原文和代码本，"
-                "再调用 propose_coding_plan；计划的每一项都必须带 material_id、parse_id、"
-                "segment_id、quote 范围、确认的 code_id、置信度和理由；计划永远等待用户逐条确认，"
-                "不能调用工具替用户应用或撤销编码；确认后可用 retrieve_coded_segments "
-                "返回原文和定位。"
                 "不能静默决定、确认或拒绝主题、理论与结论。候选必须等待用户在界面明确确认，"
                 "相关原文仍用 search_research_materials 与 read_research_material_context 核对。"
                 "用户询问工具调用规则、检索策略或调用条件，或者只是在问候、控制流程、询问能力边界时，"
@@ -446,9 +472,6 @@ class PydanticAIKnowledgeRunner:
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
                 "每轮最多调用 3 次 search_knowledge；不要重复相同检索，也不要猜测 knowledge_id；"
                 "当本轮启用联网搜索时，可以调用 search_web 查找当前政策、新闻、报告或其他网页来源；"
-                "检索前先问自己：如果要用网页搜索引擎回答这个问题，我会在搜索框输入什么？"
-                "把真正的社会学概念、现象、群体、地点、时间或制度对象写成短而独立的查询；"
-                "需要不同角度时分次调用 search_web，不要把整句元问题、纠错或反馈原样当作 query；"
                 "采用网页信息前必须再调用 read_web_page 阅读正文，不得只根据搜索摘要下结论。"
                 "只能读取 search_web 本轮实际返回的网址，不能猜测或拼接 URL。"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
@@ -549,111 +572,85 @@ class PydanticAIKnowledgeRunner:
         def search_web(
             ctx: RunContext[KnowledgeToolRegistry], query: str, limit: int = 5
         ) -> list[dict[str, object]] | dict[str, object]:
-            """搜索公开网页。
-
-            先把要回答的问题改写成你会输入网页搜索框的短查询；不要把工具反馈、
-            元问题或整段聊天原样传入。需要互补角度时，分次调用本工具。
-            """
+            """搜索公开网页。适合当前政策、新闻、报告与其他需要联网核对的信息。"""
 
             safe_limit = max(1, min(int(limit), 8))
             call_id = _tool_call_id(ctx, "search_web")
             tool_input = {"query": query, "limit": safe_limit}
-            self._emit_tool_event(
-                AgentToolEvent(
-                    tool="search_web",
-                    phase="started",
-                    call_id=call_id,
-                    input=tool_input,
-                    detail="正在搜索公开网页",
-                )
-            )
+            self._emit_tool_event(AgentToolEvent(
+                tool="search_web",
+                phase="started",
+                call_id=call_id,
+                input=tool_input,
+                detail="正在搜索公开网页",
+            ))
             try:
                 result = ctx.deps.search_web(query, limit=safe_limit)
             except Exception:
-                self._emit_tool_event(
-                    AgentToolEvent(
-                        tool="search_web",
-                        phase="failed",
-                        call_id=call_id,
-                        input=tool_input,
-                        detail="联网搜索暂时失败",
-                        error="web_search_failed",
-                    )
-                )
+                self._emit_tool_event(AgentToolEvent(
+                    tool="search_web",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="联网搜索暂时失败",
+                    error="web_search_failed",
+                ))
                 return {
                     "error": "web_search_failed",
                     "message": "联网搜索暂时失败，本轮没有取得网页证据。",
-                    "retryable": False,
+                    "retryable": True,
                 }
-            if isinstance(result, dict):
-                self._emit_tool_event(
-                    AgentToolEvent(
-                        tool="search_web",
-                        phase="failed",
-                        call_id=call_id,
-                        input=tool_input,
-                        detail=str(result.get("message") or "联网搜索未返回网页证据"),
-                        error=str(result.get("error") or "web_search_failed"),
-                    )
-                )
-                return result
             _select_result_evidence(ctx.deps, result)
-            self._emit_tool_event(
-                AgentToolEvent(
-                    tool="search_web",
-                    phase="finished",
-                    call_id=call_id,
-                    input=tool_input,
-                    output={"result_count": len(result), "items": _trace_items(result)},
-                    detail=f"找到 {len(result)} 个网页结果",
-                )
-            )
+            self._emit_tool_event(AgentToolEvent(
+                tool="search_web",
+                phase="finished",
+                call_id=call_id,
+                input=tool_input,
+                output={"result_count": len(result), "items": _trace_items(result)},
+                detail=f"找到 {len(result)} 个网页结果",
+            ))
             return result
 
         @self._agent.tool(prepare=_prepare_web_tool)
-        def read_web_page(ctx: RunContext[KnowledgeToolRegistry], url: str) -> dict[str, object]:
+        def read_web_page(
+            ctx: RunContext[KnowledgeToolRegistry], url: str
+        ) -> dict[str, object]:
             """读取 search_web 本轮返回网页的正文，以便核对原始内容。"""
 
             call_id = _tool_call_id(ctx, "read_web_page")
             tool_input = {"url": url}
-            self._emit_tool_event(
-                AgentToolEvent(
-                    tool="read_web_page",
-                    phase="started",
-                    call_id=call_id,
-                    input=tool_input,
-                    detail="正在读取网页正文",
-                )
-            )
+            self._emit_tool_event(AgentToolEvent(
+                tool="read_web_page",
+                phase="started",
+                call_id=call_id,
+                input=tool_input,
+                detail="正在读取网页正文",
+            ))
             try:
                 result = ctx.deps.read_web_page(url)
             except Exception:
-                self._emit_tool_event(
-                    AgentToolEvent(
-                        tool="read_web_page",
-                        phase="failed",
-                        call_id=call_id,
-                        input=tool_input,
-                        detail="网页正文暂时无法读取",
-                        error="web_page_read_failed",
-                    )
-                )
+                self._emit_tool_event(AgentToolEvent(
+                    tool="read_web_page",
+                    phase="failed",
+                    call_id=call_id,
+                    input=tool_input,
+                    detail="网页正文暂时无法读取",
+                    error="web_page_read_failed",
+                ))
                 return {
                     "error": "web_page_read_failed",
                     "message": "网页正文暂时无法读取，不能把搜索摘要当作原文。",
-                    "retryable": False,
+                    "retryable": True,
                 }
             _select_result_evidence(ctx.deps, [result])
-            self._emit_tool_event(
-                AgentToolEvent(
-                    tool="read_web_page",
-                    phase="finished",
-                    call_id=call_id,
-                    input=tool_input,
-                    output={"result_count": 1, "items": _trace_items([result])},
-                    detail=f"已读取网页：{result.get('title') or url}",
-                )
-            )
+            self._emit_tool_event(AgentToolEvent(
+                tool="read_web_page",
+                phase="finished",
+                call_id=call_id,
+                input=tool_input,
+                output={"result_count": 1, "items": _trace_items([result])},
+                detail=f"已读取网页：{result.get('title') or url}",
+            ))
             return result
 
         @self._agent.tool(prepare=_prepare_material_tool)
@@ -892,41 +889,6 @@ class PydanticAIKnowledgeRunner:
                 },
                 "正在生成分析备忘候选",
                 candidate=True,
-            )
-
-        @self._agent.tool(prepare=_prepare_analysis_tool)
-        def propose_coding_plan(
-            ctx: RunContext[KnowledgeToolRegistry],
-            title: str,
-            rationale: str,
-            items: list[dict[str, object]],
-        ) -> dict[str, object]:
-            """提出把新材料片段归入既有确认编码的待审计划。"""
-
-            return self._run_analysis_tool(
-                ctx,
-                "propose_coding_plan",
-                {"title": title, "rationale": rationale, "items": items},
-                "正在生成编码计划候选",
-                candidate=True,
-            )
-
-        @self._agent.tool(prepare=_prepare_analysis_tool)
-        def retrieve_coded_segments(
-            ctx: RunContext[KnowledgeToolRegistry],
-            code_ids: list[str],
-            material_id: str | None = None,
-            query: str | None = None,
-            limit: int = 50,
-        ) -> list[dict[str, object]] | dict[str, object]:
-            """读取已确认编码对应的原文片段，不产生写入。"""
-
-            return self._run_analysis_tool(
-                ctx,
-                "retrieve_coded_segments",
-                {"code_ids": code_ids, "material_id": material_id, "query": query, "limit": limit},
-                "正在检索已确认编码片段",
-                candidate=False,
             )
 
         @self._agent.tool(prepare=_prepare_analysis_tool)
@@ -1661,7 +1623,9 @@ class PydanticAIKnowledgeRunner:
         if not _material_tools_available(tools) or not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
-            document_workspace=bool(getattr(tools, "research_document_tools_enabled", False)),
+            document_workspace=bool(
+                getattr(tools, "research_document_tools_enabled", False)
+            ),
             conversation=conversation,
         ):
             return None
