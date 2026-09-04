@@ -450,6 +450,22 @@ class SqliteConversationRepository:
         )
         return replace(run, tool_summary=turn.tool_summary) if turn is not None else run
 
+    def find_run_by_id(self, *, user_id: UUID, run_id: UUID) -> AgentRun | None:
+        row = self._session.scalar(
+            select(AgentRunRow).where(
+                AgentRunRow.run_id == str(run_id),
+                AgentRunRow.user_id == str(user_id),
+            )
+        )
+        if row is None:
+            return None
+        run = _run_from_row(row)
+        if run.status != "completed" or run.turn_id is None:
+            return run
+        conversation = self.get(user_id=user_id, conversation_id=run.conversation_id)
+        turn = next((item for item in conversation.turns if item.turn_id == run.turn_id), None)
+        return replace(run, tool_summary=turn.tool_summary) if turn is not None else run
+
     def finish_run(
         self,
         *,

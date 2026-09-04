@@ -348,6 +348,9 @@ def stream_agent_turn(
                                 document_version=payload.document_version,
                                 theory_plan_id=payload.theory_plan_id,
                                 mode=payload.mode,
+                                deep_research_run_id=payload.deep_research_run_id,
+                                deep_research_action=payload.deep_research_action,
+                                deep_research_selection=payload.deep_research_selection,
                                 on_run_started=on_run_started,
                                 on_delta=on_delta,
                                 on_tool_event=on_tool_event,
@@ -446,6 +449,13 @@ def stream_agent_turn(
                     execution = event_payload
                     if not hasattr(execution, "result"):
                         raise RuntimeError("Agent worker returned no execution")
+                    if execution.pending_research is not None:
+                        pending = execution.pending_research
+                        yield _event("research_waiting", {
+                            "run_id": str(execution.run_id),
+                            **pending,
+                        })
+                        break
                     if not streamed_answer:
                         yield _event("agent_status", {"status": "answering"})
                         for chunk in _chunks(execution.result.answer):

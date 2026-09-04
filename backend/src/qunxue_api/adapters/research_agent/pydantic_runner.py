@@ -594,6 +594,8 @@ class PydanticAIKnowledgeRunner:
                 "只返回结构化规划，不回答研究结论。意图不清时 needs_clarification=true，"
                 "拟定一句简洁的 question，并给出 3 到 5 个互斥选项；意图清楚时给出简洁 title 和"
                 "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
+                "如果当前消息只是切换到深入研究而没有明确研究问题，请先询问用户要继续哪个研究或提供新的问题，"
+                "不要把历史对话中的旧研究默认当成本轮主题。"
             ),
         )
         self._active_tool_event: ContextVar[Callable[[AgentToolEvent], None] | None] = ContextVar(

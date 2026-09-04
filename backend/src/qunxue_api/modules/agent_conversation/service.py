@@ -191,6 +191,12 @@ class _MemoryRepository:
             None,
         )
 
+    def find_run_by_id(self, *, user_id: UUID, run_id: UUID) -> AgentRun | None:
+        run = self.runs.get(run_id)
+        if run is None or run.user_id != user_id:
+            return None
+        return run
+
     def finish_run(
         self,
         *,
@@ -355,6 +361,9 @@ class ConversationService:
 
     def find_run(self, *, user_id: UUID, idempotency_key: str) -> AgentRun | None:
         return self._repository.find_run(user_id=user_id, idempotency_key=idempotency_key)
+
+    def find_run_by_id(self, *, user_id: UUID, run_id: UUID) -> AgentRun | None:
+        return self._repository.find_run_by_id(user_id=user_id, run_id=run_id)
 
     def finish_run(
         self,

@@ -132,6 +132,7 @@ export type AgentEvent =
   | { type: 'research_plan'; title: string; steps: string[] }
   | { type: 'research_step'; step: string; status?: string }
   | { type: 'research_result'; summary?: string; knowledge_count?: number; web_count?: number }
+  | { type: 'research_waiting'; run_id: string; state: 'awaiting_clarification' | 'awaiting_plan_confirmation'; title?: string; question?: string; options?: string[]; steps?: string[]; prompt?: string; selected_intent?: string }
   | { type: 'citation_added'; citation: AgentCitation }
   | { type: 'canvas_patch'; patch: AgentResearchMapPatch }
   | { type: 'turn_completed'; conversation: AgentConversation; knowledge_release_id: string }

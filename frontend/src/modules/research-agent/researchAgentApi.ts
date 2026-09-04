@@ -93,6 +93,18 @@ export function parseAgentEventStream(stream: string): AgentEvent[] {
         knowledge_count: typeof payload.knowledge_count === 'number' ? payload.knowledge_count : undefined,
         web_count: typeof payload.web_count === 'number' ? payload.web_count : undefined,
       })
+    } else if (eventName === 'research_waiting' && typeof payload.run_id === 'string' && (payload.state === 'awaiting_clarification' || payload.state === 'awaiting_plan_confirmation')) {
+      events.push({
+        type: eventName,
+        run_id: payload.run_id,
+        state: payload.state,
+        title: typeof payload.title === 'string' ? payload.title : undefined,
+        question: typeof payload.question === 'string' ? payload.question : undefined,
+        options: Array.isArray(payload.options) ? payload.options.filter((item): item is string => typeof item === 'string') : undefined,
+        steps: Array.isArray(payload.steps) ? payload.steps.filter((item): item is string => typeof item === 'string') : undefined,
+        prompt: typeof payload.prompt === 'string' ? payload.prompt : undefined,
+        selected_intent: typeof payload.selected_intent === 'string' ? payload.selected_intent : undefined,
+      })
     } else if (eventName === 'citation_added' && payload.citation_id) {
       events.push({ type: eventName, citation: payload as unknown as AgentCitation })
     } else if (eventName === 'canvas_patch' && isResearchMapPatch(payload)) {
@@ -283,7 +295,7 @@ export async function confirmResearchStartProposal(
 }
 
 async function streamAgentTurnOnce(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null; deep_research_run_id?: string | null; deep_research_action?: 'clarify' | 'confirm' | null; deep_research_selection?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -306,6 +318,9 @@ async function streamAgentTurnOnce(
       section_id: payload.section_id ?? null,
       document_version: payload.document_version ?? null,
       theory_plan_id: payload.theory_plan_id ?? null,
+      deep_research_run_id: payload.deep_research_run_id ?? null,
+      deep_research_action: payload.deep_research_action ?? null,
+      deep_research_selection: payload.deep_research_selection ?? null,
     }),
     signal,
   })
@@ -325,7 +340,7 @@ async function streamAgentTurnOnce(
     const blocks = buffer.split(/\n\n+/)
     buffer = blocks.pop() ?? ''
     for (const event of parseAgentEventStream(`${blocks.join('\n\n')}\n\n`)) {
-      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed') {
+      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed' || event.type === 'research_waiting') {
         terminalEventSeen = true
       }
       onEvent(event)
@@ -334,7 +349,7 @@ async function streamAgentTurnOnce(
   }
   if (buffer.trim()) {
     for (const event of parseAgentEventStream(buffer)) {
-      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed') {
+      if (event.type === 'turn_completed' || event.type === 'turn_interrupted' || event.type === 'turn_failed' || event.type === 'research_waiting') {
         terminalEventSeen = true
       }
       onEvent(event)
@@ -344,7 +359,7 @@ async function streamAgentTurnOnce(
 }
 
 export async function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null },
+  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null; deep_research_run_id?: string | null; deep_research_action?: 'clarify' | 'confirm' | null; deep_research_selection?: string | null },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
