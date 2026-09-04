@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -283,6 +284,31 @@ def test_fallback_can_override_primary_model() -> None:
     ]
     assert endpoints[1].model == "backup-model"
     assert "fallback-key" not in repr(settings)
+
+
+def test_resolved_model_endpoint_settings_are_immutable_and_secret_safe() -> None:
+    settings = Settings(
+        model_base_url="https://primary.test/v1",
+        model_api_key="primary-secret",
+        model_name="primary-model",
+        model_fallbacks=[
+            {
+                "base_url": "https://backup.test/v1",
+                "api_key": "fallback-secret",
+            }
+        ],
+    )
+
+    primary, fallback = settings.resolved_model_endpoints()
+
+    assert primary.api_key is not None
+    assert primary.api_key.get_secret_value() == "primary-secret"
+    assert fallback.api_key is not None
+    assert fallback.api_key.get_secret_value() == "fallback-secret"
+    assert "primary-secret" not in repr((primary, fallback))
+    assert "fallback-secret" not in repr((primary, fallback))
+    with pytest.raises(FrozenInstanceError):
+        primary.model = "changed-model"
 
 
 def test_legacy_fallback_inherits_primary_model_from_json_environment(

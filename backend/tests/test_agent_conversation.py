@@ -1186,6 +1186,60 @@ def test_deepseek_flash_disables_thinking_by_default() -> None:
     assert runner._usage_limits.tool_calls_limit == 20
 
 
+def test_agent_builds_independent_settings_without_leaking_deepseek_options_to_fallback() -> None:
+    fallback_endpoints = (
+        ("https://openai.example.test/v1", "fallback-key", "gpt-5.6-sol"),
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://api.deepseek.com",
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model="deepseek-v4-flash",
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="primary-key",
+            model="deepseek-v4-flash",
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+
+    primary = runner._agent.model
+    fallback = primary._endpoint_models["fallback-1"]
+
+    assert primary.settings is not fallback.settings
+    assert primary.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert "extra_body" not in fallback.settings
+    assert fallback.model_name == "gpt-5.6-sol"
+
+
+def test_agent_applies_deepseek_options_to_a_deepseek_fallback_only() -> None:
+    fallback_endpoints = (
+        ("https://api.deepseek.com", "fallback-key", "deepseek-v4-flash"),
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://openai.example.test/v1",
+        api_key="primary-key",
+        fallback_endpoints=fallback_endpoints,
+        model="gpt-5.6-sol",
+        timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://openai.example.test/v1",
+            api_key="primary-key",
+            model="gpt-5.6-sol",
+            fallback_endpoints=fallback_endpoints,
+        ),
+    )
+
+    primary = runner._agent.model
+    fallback = primary._endpoint_models["fallback-1"]
+
+    assert primary.settings is not fallback.settings
+    assert "extra_body" not in primary.settings
+    assert fallback.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert fallback.model_name == "deepseek-v4-flash"
+
+
 def test_deep_research_uses_an_emergency_guard_not_the_chat_tool_budget() -> None:
     runner = PydanticAIKnowledgeRunner(
         base_url="https://models.example.test/v1",
@@ -2413,6 +2467,88 @@ def test_agent_shared_router_records_primary_and_fallback_with_run_context(
         for item in records
         for field in ("user_id", "prompt", "material")
     )
+
+
+@pytest.mark.parametrize("outcome", ["normal", "error", "cancelled"])
+def test_planner_route_context_is_correlated_and_reset_after_every_exit(
+    monkeypatch: pytest.MonkeyPatch,
+    outcome: str,
+) -> None:
+    task_id = UUID(int=61)
+    agent_run_id = UUID(int=62)
+    attempts = InMemoryModelAttemptRecorder()
+    router = ModelRouteExecutor(
+        endpoints=(_agent_endpoints()[0],),
+        recorder=attempts,
+    )
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://primary.example.test/v1",
+        api_key="primary-key",
+        model="primary-model",
+        timeout_seconds=30,
+        route_executor=router,
+    )
+    request_count = 0
+
+    async def request_once(self, *args, **kwargs):
+        nonlocal request_count
+        del self, args, kwargs
+        request_count += 1
+        if outcome == "cancelled" and request_count == 1:
+            raise asyncio.CancelledError
+        return object()
+
+    def planner_run_sync(*args, **kwargs):
+        del args, kwargs
+        asyncio.run(
+            runner._planner_agent.model._completions_create(
+                [], False, {}, ModelRequestParameters()
+            )
+        )
+        if outcome == "error":
+            raise RuntimeError("planner failed after completion")
+        return SimpleNamespace(output=SimpleNamespace(request_type="conversation"))
+
+    tools = SimpleNamespace(
+        agent_route_context=lambda: {
+            "user_id": UUID(int=60),
+            "task_id": task_id,
+            "agent_run_id": agent_run_id,
+        }
+    )
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
+    monkeypatch.setattr(runner._planner_agent, "run_sync", planner_run_sync)
+
+    if outcome == "cancelled":
+        with pytest.raises(asyncio.CancelledError):
+            runner.prepare_research(
+                prompt="研究平台劳动关系",
+                conversation=(),
+                tools=tools,
+                on_event=lambda event: None,
+            )
+    else:
+        runner.prepare_research(
+            prompt="研究平台劳动关系",
+            conversation=(),
+            tools=tools,
+            on_event=lambda event: None,
+        )
+
+    asyncio.run(
+        runner._agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
+        )
+    )
+
+    records = attempts.list_all()
+    assert records[0].task_id == task_id
+    assert records[0].agent_run_id == agent_run_id
+    assert records[0].capability == "agent_completion"
+    assert records[-1].task_id is None
+    assert records[-1].agent_run_id is None
+    assert records[-1].capability == "agent_completion"
+    assert all(not hasattr(item, "user_id") for item in records)
 
 
 def test_agent_shared_router_creates_a_fresh_route_for_each_completion(

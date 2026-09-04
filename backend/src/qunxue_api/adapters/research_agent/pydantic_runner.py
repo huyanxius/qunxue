@@ -167,9 +167,10 @@ class DeterministicKnowledgeRunner:
         *,
         prompt: str,
         conversation: Sequence[AgentTurn],
+        tools: AgentToolContext | None = None,
         on_event: Callable[[AgentResearchEvent], None],
     ) -> None:
-        del conversation
+        del conversation, tools
         if prompt.strip() in {"你好", "您好", "嗨", "hello", "hi", "谢谢", "感谢"}:
             return
         if not _has_research_subject(prompt):
@@ -579,16 +580,29 @@ class PydanticAIKnowledgeRunner:
             provider="pydantic-ai",
             model=model,
         )
-        model_settings: OpenAIChatModelSettings = {
-            "timeout": timeout_seconds,
-            "max_tokens": 2400,
-        }
-        if extra_headers:
-            model_settings["extra_headers"] = dict(extra_headers)
-        if reasoning_effort is not None:
-            model_settings["openai_reasoning_effort"] = reasoning_effort
-        if _is_deepseek_flash(base_url=base_url, model=model):
-            model_settings["extra_body"] = {"thinking": {"type": "disabled"}}
+
+        def settings_for(
+            endpoint_url: str,
+            endpoint_model: str,
+        ) -> OpenAIChatModelSettings:
+            endpoint_settings: OpenAIChatModelSettings = {
+                "timeout": timeout_seconds,
+                "max_tokens": 2400,
+            }
+            if extra_headers:
+                endpoint_settings["extra_headers"] = dict(extra_headers)
+            if reasoning_effort is not None:
+                endpoint_settings["openai_reasoning_effort"] = reasoning_effort
+            if _is_deepseek_flash(
+                base_url=endpoint_url,
+                model=endpoint_model,
+            ):
+                endpoint_settings["extra_body"] = {
+                    "thinking": {"type": "disabled"}
+                }
+            return endpoint_settings
+
+        primary_model_settings = settings_for(base_url, model)
         self._usage_limits = UsageLimits(request_limit=12, tool_calls_limit=20)
         self._deep_research_usage_limits = UsageLimits(
             request_limit=48,
@@ -609,7 +623,7 @@ class PydanticAIKnowledgeRunner:
             return OpenAIChatModel(
                 endpoint_model,
                 provider=provider,
-                settings=model_settings,
+                settings=settings_for(endpoint_url, endpoint_model),
             )
 
         fallback_models: dict[str, OpenAIChatModel] = {}
@@ -637,7 +651,7 @@ class PydanticAIKnowledgeRunner:
                     max_retries=0,
                 )
             ),
-            settings=model_settings,
+            settings=primary_model_settings,
             route_executor=route_executor,
             fallback_models=fallback_models,
         )
@@ -763,24 +777,37 @@ class PydanticAIKnowledgeRunner:
         *,
         prompt: str,
         conversation: Sequence[AgentTurn],
+        tools: AgentToolContext,
         on_event: Callable[[AgentResearchEvent], None],
     ) -> None:
         """Ask the model for the research UX envelope before retrieval starts."""
 
+        route_token = _agent_route_correlation.set(
+            _agent_route_context_from_tools(tools)
+        )
         try:
-            decision = self._planner_agent.run_sync(
-                _compose_agent_prompt(prompt=prompt, research_map=None, document_context=None),
-                message_history=_agent_message_history(conversation),
-                usage_limits=UsageLimits(request_limit=2, tool_calls_limit=0),
-            ).output
-        except Exception:
-            # Planning must not make the regular Agent unavailable. The fallback keeps
-            # the contract valid and lets the main run apply the normal evidence policy.
-            decision = DeepResearchDecision(
-                request_type="research" if _has_research_subject(prompt) else "conversation",
-                title="深入研究",
-                steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
-            )
+            try:
+                decision = self._planner_agent.run_sync(
+                    _compose_agent_prompt(
+                        prompt=prompt,
+                        research_map=None,
+                        document_context=None,
+                    ),
+                    message_history=_agent_message_history(conversation),
+                    usage_limits=UsageLimits(request_limit=2, tool_calls_limit=0),
+                ).output
+            except Exception:
+                # Planning must not make the regular Agent unavailable. The fallback keeps
+                # the contract valid and lets the main run apply the normal evidence policy.
+                decision = DeepResearchDecision(
+                    request_type=(
+                        "research" if _has_research_subject(prompt) else "conversation"
+                    ),
+                    title="深入研究",
+                    steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                )
+        finally:
+            _agent_route_correlation.reset(route_token)
         if decision.request_type != "research":
             return
         if decision.needs_clarification and _clarification_is_material(decision, prompt):

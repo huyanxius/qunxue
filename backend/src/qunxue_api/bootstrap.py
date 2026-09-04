@@ -18,6 +18,7 @@ from qunxue_api.account_extension import install_account_management
 from qunxue_api.adapters.email import ResendEmailProvider
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
+    ModelEndpoint,
     ModelGateway,
     ModelInvocationError,
     ModelProvider,
@@ -281,6 +282,11 @@ def create_app(
         resolved_knowledge_retriever = CatalogTheoryLexicalRetriever(app.state.knowledge_catalog)
     app.state.knowledge_retriever = resolved_knowledge_retriever
     builtin_case_catalog = BuiltInCaseCatalog.default()
+    model_endpoints = (
+        _model_endpoints_from_settings(resolved_settings)
+        if _effective_model_runtime_mode(resolved_settings) != "mock"
+        else ()
+    )
     if model_provider is None:
         (
             resolved_model_provider,
@@ -290,6 +296,7 @@ def create_app(
             settings=resolved_settings,
             builtin_case_catalog=builtin_case_catalog,
             database=resolved_database,
+            endpoints=model_endpoints,
         )
     else:
         resolved_model_provider = model_provider
@@ -298,6 +305,7 @@ def create_app(
     model_invocation_recorder = SqliteModelInvocationRecorder(resolved_database)
     app.state.builtin_case_catalog = builtin_case_catalog
     app.state.model_invocation_recorder = model_invocation_recorder
+    app.state.model_endpoints = model_endpoints
     app.state.model_router = model_router
     app.state.model_attempt_recorder = model_attempt_recorder
     app.state.model_gateway = ModelGateway(
@@ -775,7 +783,7 @@ def create_app(
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
             else:
-                agent_endpoints = resolved_settings.resolved_model_endpoints()
+                agent_endpoints = app.state.model_endpoints
                 if not agent_endpoints:
                     raise ValueError(
                         "QUNXUE_MODEL_BASE_URL and QUNXUE_MODEL_NAME are required for Agent runtime"
@@ -790,7 +798,7 @@ def create_app(
                         for endpoint in agent_endpoints[1:]
                     ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
-                    extra_headers=_model_headers_from_settings(resolved_settings),
+                    extra_headers=primary_endpoint.extra_headers,
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                 )
@@ -1141,6 +1149,7 @@ def _model_provider_from_settings(
     settings: Settings,
     builtin_case_catalog: BuiltInCaseCatalog,
     database: Database,
+    endpoints: tuple[ModelEndpoint, ...],
 ) -> tuple[
     ModelProvider,
     ModelRouteExecutor | None,
@@ -1149,14 +1158,12 @@ def _model_provider_from_settings(
     runtime_mode = _effective_model_runtime_mode(settings)
     if runtime_mode == "mock":
         return create_deterministic_mock_provider(catalog=builtin_case_catalog), None, None
-    endpoints = settings.resolved_model_endpoints()
     if not endpoints:
         raise ValueError(
             "QUNXUE_MODEL_BASE_URL (model_base_url) and "
             "QUNXUE_MODEL_NAME (model_name) are required outside mock mode"
         )
 
-    headers = _model_headers_from_settings(settings)
     providers: tuple[ModelProvider, ...] = tuple(
         OpenAICompatibleModelProvider(
             base_url=endpoint.base_url,
@@ -1164,7 +1171,7 @@ def _model_provider_from_settings(
             model=endpoint.model,
             timeout_seconds=endpoint.timeout_seconds,
             capability_tier=runtime_mode,
-            extra_headers=headers,
+            extra_headers=dict(endpoint.extra_headers),
         )
         for endpoint in endpoints
     )
@@ -1174,6 +1181,26 @@ def _model_provider_from_settings(
         RoutedModelProvider(providers=providers, router=router),
         router,
         attempt_recorder,
+    )
+
+
+def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, ...]:
+    headers = _model_headers_from_settings(settings)
+    return tuple(
+        ModelEndpoint(
+            endpoint_id=endpoint.endpoint_id,
+            base_url=endpoint.base_url,
+            api_key=(
+                endpoint.api_key.get_secret_value()
+                if endpoint.api_key is not None
+                else None
+            ),
+            model=endpoint.model,
+            timeout_seconds=endpoint.timeout_seconds,
+            provider="openai-compatible",
+            extra_headers=dict(headers),
+        )
+        for endpoint in settings.resolved_model_endpoints()
     )
 
 

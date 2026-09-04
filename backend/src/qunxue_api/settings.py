@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, cast
@@ -7,8 +7,6 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
-
-from qunxue_api.adapters.model.routing import ModelEndpoint
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 KNOWLEDGE_ROOT = BACKEND_ROOT.parent / "knowledge"
@@ -55,6 +53,17 @@ class RetrievalConfig:
     min_rerank_score: float
     min_lexical_score: float
     recall_limit: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedModelEndpointSettings:
+    """Validated model endpoint configuration without adapter dependencies."""
+
+    endpoint_id: str
+    base_url: str
+    model: str
+    api_key: SecretStr | None = field(repr=False)
+    timeout_seconds: float
 
 
 class ModelFallbackSettings(BaseModel):
@@ -189,7 +198,7 @@ class Settings(BaseSettings):
             and self.transcription_model.strip()
         )
 
-    def resolved_model_endpoints(self) -> tuple[ModelEndpoint, ...]:
+    def resolved_model_endpoints(self) -> tuple[ResolvedModelEndpointSettings, ...]:
         primary_base_url = self.model_base_url or (
             DEFAULT_MODEL_BASE_URL if self.has_model_api_key else None
         )
@@ -201,27 +210,21 @@ class Settings(BaseSettings):
         if primary_base_url is None or primary_model is None:
             raise ValueError("model_base_url and model_name must be configured together")
         endpoints = [
-            ModelEndpoint(
+            ResolvedModelEndpointSettings(
                 endpoint_id="primary",
                 base_url=primary_base_url,
-                api_key=(
-                    self.model_api_key.get_secret_value()
-                    if self.model_api_key is not None
-                    else None
-                ),
+                api_key=self.model_api_key,
                 model=primary_model,
                 timeout_seconds=self.model_timeout_seconds,
-                provider="openai-compatible",
             )
         ]
         endpoints.extend(
-            ModelEndpoint(
+            ResolvedModelEndpointSettings(
                 endpoint_id=f"fallback-{index}",
                 base_url=fallback.base_url,
-                api_key=fallback.api_key.get_secret_value(),
+                api_key=fallback.api_key,
                 model=fallback.model or primary_model,
                 timeout_seconds=self.model_timeout_seconds,
-                provider="openai-compatible",
             )
             for index, fallback in enumerate(self.model_fallbacks, start=1)
         )
