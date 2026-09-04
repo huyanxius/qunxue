@@ -17,6 +17,7 @@ from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegist
 from qunxue_api.adapters.research_agent.pydantic_runner import (
     DeterministicKnowledgeRunner,
     PydanticAIKnowledgeRunner,
+    _append_result_evidence,
 )
 from qunxue_api.adapters.sqlite.agent_conversation_model import AgentRunRow
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
@@ -1541,6 +1542,34 @@ def test_agent_can_search_and_read_web_pages_when_the_turn_opts_in() -> None:
         ("read_web_page", "started"),
         ("read_web_page", "finished"),
     ]
+
+
+def test_read_web_pages_accumulate_as_citations_within_one_turn() -> None:
+    urls = [f"https://www.gov.cn/zhengce/example-{suffix}.html" for suffix in ("a", "b")]
+
+    class _Tools:
+        def __init__(self) -> None:
+            self.evidence = {
+                f"web:{url}": AgentEvidence(
+                    citation_id=f"web:{url}",
+                    label=url.rsplit("/", 1)[-1],
+                    kind="source",
+                    excerpt="正文",
+                    source_id=url,
+                    source_kind="web",
+                )
+                for url in urls
+            }
+            self.selected_evidence_ids: tuple[str, ...] = ()
+
+        def select_evidence(self, citation_ids):
+            self.selected_evidence_ids = tuple(citation_ids)
+
+    tools = _Tools()
+    _append_result_evidence(tools, [{"citation_id": f"web:{urls[0]}"}])
+    _append_result_evidence(tools, [{"citation_id": f"web:{urls[1]}"}])
+
+    assert tools.selected_evidence_ids == tuple(f"web:{url}" for url in urls)
 
 
 def test_agent_policy_searches_for_a_plain_sociology_concept_by_default() -> None:
