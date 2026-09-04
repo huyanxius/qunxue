@@ -206,6 +206,32 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(agent).getByText('这是一段需要正常换行展示的深入研究正文。')).toBeVisible()
   })
 
+  it('shows segmented deep-research progress before the streaming answer', async () => {
+    const stream = deferredStream([
+      ['turn_started', { conversation_id: 'conversation-progress', run_id: 'run-progress', replayed: false, runtime_mode: 'base' }],
+      ['research_step', { step: '检索知识库与个人材料', status: 'running' }],
+      ['assistant_delta', { delta: '正在形成最终回答。' }],
+    ])
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (urlFor(input).pathname === '/api/agent/turns') return stream.response
+      return json({ items: [] })
+    }))
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    fireEvent.click(within(agent).getByRole('button', { name: '选择 Agent 模式' }))
+    fireEvent.click(within(agent).getByRole('menuitemradio', { name: /深入研究/ }))
+    const input = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '研究社区互助的变化。' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+
+    const progress = await within(agent).findByRole('region', { name: '研究进度' })
+    const answer = await within(agent).findByText('正在形成最终回答。')
+    expect(progress.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(progress).getByText('拆解研究问题')).toBeVisible()
+    expect(within(progress).getByText('检索知识库与个人材料')).toBeVisible()
+  })
+
   it('sends the enabled web-search choice with the next question', async () => {
     const completed = conversationFixture({
       id: 'conversation-web-search',

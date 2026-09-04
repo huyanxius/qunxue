@@ -61,6 +61,53 @@ class DeepResearchDecision(BaseModel):
     steps: list[str] = Field(default_factory=list)
 
 
+class VisibleTextStream:
+    """Forward answer text while removing model reasoning tags across chunks."""
+
+    _OPEN = "<thinking>"
+    _CLOSE = "</thinking>"
+
+    def __init__(self, on_text: Callable[[str], None]) -> None:
+        self._on_text = on_text
+        self._buffer = ""
+        self._in_thinking = False
+
+    def push(self, chunk: str) -> None:
+        self._buffer += chunk
+        self._drain()
+
+    def finish(self) -> None:
+        if not self._in_thinking and self._buffer:
+            self._on_text(self._buffer)
+        self._buffer = ""
+
+    def _drain(self) -> None:
+        while self._buffer:
+            marker = self._CLOSE if self._in_thinking else self._OPEN
+            index = self._buffer.find(marker)
+            if index >= 0:
+                if not self._in_thinking and index:
+                    self._on_text(self._buffer[:index])
+                self._buffer = self._buffer[index + len(marker) :]
+                self._in_thinking = not self._in_thinking
+                continue
+            keep = len(marker) - 1
+            if self._in_thinking:
+                self._buffer = self._buffer[-keep:] if keep else ""
+            elif len(self._buffer) > keep:
+                self._on_text(self._buffer[:-keep])
+                self._buffer = self._buffer[-keep:] if keep else ""
+            break
+
+
+def visible_text(answer: str) -> str:
+    chunks: list[str] = []
+    stream = VisibleTextStream(chunks.append)
+    stream.push(answer)
+    stream.finish()
+    return "".join(chunks)
+
+
 _GENERIC_RESEARCH_LENSES = (
     "概念与理论",
     "理论背景",
@@ -1824,6 +1871,7 @@ class PydanticAIKnowledgeRunner:
         is_cancelled: Callable[[], bool] | None = None,
     ) -> AgentRunResult:
         token = self._active_tool_event.set(on_tool_event)
+        visible_stream = VisibleTextStream(on_delta)
 
         async def stream_text(
             _: RunContext[KnowledgeToolRegistry],
@@ -1832,13 +1880,13 @@ class PydanticAIKnowledgeRunner:
             async for event in events:
                 if isinstance(event, PartStartEvent) and isinstance(event.part, TextPart):
                     if event.part.content:
-                        on_delta(event.part.content)
+                        visible_stream.push(event.part.content)
                 elif (
                     isinstance(event, PartDeltaEvent)
                     and isinstance(event.delta, TextPartDelta)
                     and event.delta.content_delta
                 ):
-                    on_delta(event.delta.content_delta)
+                    visible_stream.push(event.delta.content_delta)
 
         try:
             retrieved_evidence = self._preload_bound_research_evidence(
@@ -1891,6 +1939,7 @@ class PydanticAIKnowledgeRunner:
                     return await task
 
                 result = asyncio.run(run_cancellable())
+            visible_stream.finish()
             return _text_result(
                 str(result.output),
                 tools=tools,
@@ -2801,7 +2850,7 @@ def _text_result(
     if any(citation_id not in tools.evidence for citation_id in selected_citation_ids):
         raise ValueError("selected evidence is outside this turn's retrieved closed set")
     return AgentRunResult(
-        answer=answer,
+        answer=visible_text(answer),
         citations=tuple(tools.evidence[item] for item in selected_citation_ids[:8]),
         release_id=tools.release.knowledge_release_id,
         provider="pydantic-ai",
