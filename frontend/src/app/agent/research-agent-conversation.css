@@ -915,6 +915,30 @@
 .research-agent-conversation .deep-research-mock-card__steps div.is-complete { color: var(--app-ink); }
 .research-agent-conversation .deep-research-mock-card__steps span { width: 12px; text-align: center; }
 
+.research-agent-conversation .deep-research-mock-card__progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+
+.research-agent-conversation .deep-research-mock-card__progress-bar {
+  height: 5px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-border) 65%, transparent);
+}
+
+.research-agent-conversation .deep-research-mock-card__progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #76517d;
+  transition: width 220ms ease;
+}
+
 .research-agent-conversation .deep-research-mock-card__details-toggle {
   display: inline-flex;
   gap: 5px;

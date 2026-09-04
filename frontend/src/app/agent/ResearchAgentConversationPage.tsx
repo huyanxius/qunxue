@@ -117,6 +117,7 @@ function DeepResearchMockFlow({
   knowledgeCount,
   webCount,
   toolSteps = [],
+  elapsedSeconds = 0,
 }: {
   stage: DeepResearchMockStage
   question: string
@@ -130,6 +131,7 @@ function DeepResearchMockFlow({
   knowledgeCount?: number
   webCount?: number
   toolSteps?: AgentToolStep[]
+  elapsedSeconds?: number
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -182,6 +184,13 @@ function DeepResearchMockFlow({
       <section className="deep-research-mock-card deep-research-mock-card--progress" aria-label="研究进度" aria-live="polite">
         <div className="deep-research-mock-card__eyebrow">正在深入研究</div>
         <h2>我正在逐步核对证据</h2>
+        <div className="deep-research-mock-card__progress-meta">
+          <span>已运行 {Math.floor(elapsedSeconds / 60)}分{elapsedSeconds % 60}秒</span>
+          <span>{Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}%</span>
+        </div>
+        <div className="deep-research-mock-card__progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}>
+          <span style={{ width: `${Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}%` }} />
+        </div>
         <div className="deep-research-mock-card__steps">
           {DEEP_RESEARCH_MOCK_STEPS.map((step, index) => (
             <div key={step} className={index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
@@ -823,6 +832,16 @@ function updateToolSteps(steps: ResearchToolStep[], event: AgentToolEvent): Rese
       : event.detail || formatToolPayload(event.output),
   }
   return index < 0 ? [...steps, next] : steps.map((step, stepIndex) => stepIndex === index ? next : step)
+}
+
+function researchStepForTools(steps: ResearchToolStep[]): number {
+  const active = [...steps].reverse().find((step) => step.status === 'running')
+  const tool = active?.tool || steps[steps.length - 1]?.tool
+  if (!tool) return 0
+  if (['search_knowledge', 'browse_knowledge_directory', 'search_research_materials'].includes(tool)) return 1
+  if (['search_web', 'read_web_page'].includes(tool)) return 2
+  if (['read_knowledge_entry', 'read_sources', 'read_research_material_context'].includes(tool)) return 2
+  return 3
 }
 
 function persistedToolSteps(traces: AgentToolTrace[] | undefined): ResearchToolStep[] {
@@ -1513,6 +1532,8 @@ export function ResearchAgentConversationPage({
   const [deepResearchMockQuestion, setDeepResearchMockQuestion] = useState('')
   const [deepResearchMockOptions, setDeepResearchMockOptions] = useState<string[]>([])
   const [deepResearchMockStep, setDeepResearchMockStep] = useState(0)
+  const [deepResearchElapsedSeconds, setDeepResearchElapsedSeconds] = useState(0)
+  const deepResearchStartedAt = useRef<number | null>(null)
   const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
   const deepResearchLifecycleStarted = useRef(false)
   const hasDeepResearchMockConversation = deepResearchMockStage !== 'idle'
@@ -1938,7 +1959,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'research_step') {
             deepResearchLifecycleStarted.current = true
             setDeepResearchMockStage('researching')
-            setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
+            setDeepResearchMockStep(Math.min(Math.max(0, DEEP_RESEARCH_MOCK_STEPS.indexOf(event.step)), DEEP_RESEARCH_MOCK_STEPS.length - 1))
           } else if (event.type === 'research_result') {
             deepResearchLifecycleStarted.current = true
             setDeepResearchResult({ summary: event.summary, knowledgeCount: event.knowledge_count, webCount: event.web_count })
@@ -1947,8 +1968,9 @@ export function ResearchAgentConversationPage({
             const next = updateToolSteps(pendingToolSteps.current, event)
             pendingToolSteps.current = next
             if (composerMode === 'deep-research' && event.type === 'tool_started') {
+              if (deepResearchStartedAt.current === null) deepResearchStartedAt.current = Date.now()
               setDeepResearchMockStage('researching')
-              setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
+              setDeepResearchMockStep(researchStepForTools(next))
             }
             setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
             setStreamingTurn((current) => current ? { ...current, toolSteps: next } : current)
@@ -2089,6 +2111,14 @@ export function ResearchAgentConversationPage({
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (deepResearchMockStage !== 'researching' || deepResearchStartedAt.current === null) return undefined
+    const updateElapsed = () => setDeepResearchElapsedSeconds(Math.max(0, Math.floor((Date.now() - (deepResearchStartedAt.current ?? Date.now())) / 1000)))
+    updateElapsed()
+    const timer = window.setInterval(updateElapsed, 1000)
+    return () => window.clearInterval(timer)
+  }, [deepResearchMockStage])
+
   function submitDraft() {
     const normalized = draft.trim()
     const attempt = failedTurnAttempt.current
@@ -2101,12 +2131,21 @@ export function ResearchAgentConversationPage({
     setDeepResearchMockOptions([])
     setDeepResearchMockStep(0)
     setDeepResearchResult({})
+    setDeepResearchElapsedSeconds(0)
+    deepResearchStartedAt.current = null
     deepResearchLifecycleStarted.current = false
   }
 
   function continueDeepResearch(action: 'clarify' | 'confirm' | 'skip', selection?: string) {
     const attempt = activeTurnAttempt.current
     if (!attempt?.runId) return
+    if (action === 'confirm') {
+      deepResearchLifecycleStarted.current = true
+      deepResearchStartedAt.current = Date.now()
+      setDeepResearchElapsedSeconds(0)
+      setDeepResearchMockStage('researching')
+      setDeepResearchMockStep(0)
+    }
     void submitQuestion(attempt.question, attempt.idempotencyKey, { action, selection })
   }
 
@@ -2404,6 +2443,7 @@ export function ResearchAgentConversationPage({
                     knowledgeCount={deepResearchResult.knowledgeCount}
                     webCount={deepResearchResult.webCount}
                     toolSteps={streamingTurn?.toolSteps ?? []}
+                    elapsedSeconds={deepResearchElapsedSeconds}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
                     onSkip={() => continueDeepResearch('skip')}
                     onConfirmPlan={() => continueDeepResearch('confirm')}
