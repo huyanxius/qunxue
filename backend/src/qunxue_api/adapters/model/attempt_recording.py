@@ -1,17 +1,45 @@
 """Durable, content-free persistence for individual model-route attempts."""
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 
-from qunxue_api.adapters.model.routing import ModelAttemptRecord, ModelRouteContext
+from qunxue_api.adapters.model.routing import ModelAttemptRecord
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.model_attempt_model import ModelRouteAttemptRow
 
 
 def _as_utc(value: datetime) -> datetime:
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+@dataclass(frozen=True, slots=True)
+class PersistedModelRouteAttempt:
+    """A content-free audit projection containing only persisted table fields."""
+
+    attempt_id: UUID
+    route_id: UUID
+    trace_id: UUID
+    request_id: UUID
+    task_id: UUID | None
+    agent_run_id: UUID | None
+    capability: str
+    endpoint_id: str
+    provider: str
+    model: str
+    attempt_number: int
+    fallback: bool
+    started_at: datetime
+    completed_at: datetime
+    latency_ms: int
+    success: bool
+    selected: bool
+    failure_retryable: bool | None
+    failure_code: str | None
+    input_tokens: int | None
+    output_tokens: int | None
 
 
 class SqliteModelAttemptRecorder:
@@ -53,16 +81,19 @@ class SqliteModelAttemptRecorder:
                 )
             )
 
-    def list_for_route(self, route_id: UUID) -> tuple[ModelAttemptRecord, ...]:
+    def list_for_route(self, route_id: UUID) -> tuple[PersistedModelRouteAttempt, ...]:
         with self._database.session() as session:
             rows = session.scalars(
                 select(ModelRouteAttemptRow)
                 .where(ModelRouteAttemptRow.route_id == str(route_id))
                 .order_by(ModelRouteAttemptRow.attempt_number, ModelRouteAttemptRow.attempt_id)
             )
-            return tuple(self._to_record(row) for row in rows)
+            return tuple(self._to_persisted(row) for row in rows)
 
-    def list_for_agent_run(self, agent_run_id: UUID) -> tuple[ModelAttemptRecord, ...]:
+    def list_for_agent_run(
+        self,
+        agent_run_id: UUID,
+    ) -> tuple[PersistedModelRouteAttempt, ...]:
         with self._database.session() as session:
             rows = session.scalars(
                 select(ModelRouteAttemptRow)
@@ -73,38 +104,32 @@ class SqliteModelAttemptRecorder:
                     ModelRouteAttemptRow.attempt_id,
                 )
             )
-            return tuple(self._to_record(row) for row in rows)
+            return tuple(self._to_persisted(row) for row in rows)
 
     @staticmethod
-    def _to_record(row: ModelRouteAttemptRow) -> ModelAttemptRecord:
-        return ModelAttemptRecord(
+    def _to_persisted(row: ModelRouteAttemptRow) -> PersistedModelRouteAttempt:
+        return PersistedModelRouteAttempt(
             attempt_id=UUID(row.attempt_id),
-            context=ModelRouteContext(
-                trace_id=UUID(row.trace_id),
-                request_id=UUID(row.request_id),
-                route_id=UUID(row.route_id),
-                operation=row.capability,
-                task_id=_to_optional_uuid(row.task_id),
-                agent_run_id=_to_optional_uuid(row.agent_run_id),
-                capability=row.capability,
-            ),
-            endpoint_id=row.endpoint_id,
             route_id=UUID(row.route_id),
+            trace_id=UUID(row.trace_id),
+            request_id=UUID(row.request_id),
             task_id=_to_optional_uuid(row.task_id),
             agent_run_id=_to_optional_uuid(row.agent_run_id),
             capability=row.capability,
+            endpoint_id=row.endpoint_id,
             provider=row.provider,
             model=row.model,
             fallback=row.fallback,
             attempt_number=row.attempt_number,
-            success=row.success,
-            selected=row.selected,
-            input_tokens=row.input_tokens,
-            output_tokens=row.output_tokens,
-            failure_code=row.failure_code,
-            failure_retryable=row.failure_retryable,
             started_at=_as_utc(row.started_at),
             completed_at=_as_utc(row.completed_at),
+            latency_ms=row.latency_ms,
+            success=row.success,
+            selected=row.selected,
+            failure_retryable=row.failure_retryable,
+            failure_code=row.failure_code,
+            input_tokens=row.input_tokens,
+            output_tokens=row.output_tokens,
         )
 
 

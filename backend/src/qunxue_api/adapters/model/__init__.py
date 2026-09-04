@@ -1,6 +1,9 @@
 """Provider-neutral model gateway and the deterministic demonstration adapter."""
 
-from qunxue_api.adapters.model.attempt_recording import SqliteModelAttemptRecorder
+from qunxue_api.adapters.model.attempt_recording import (
+    PersistedModelRouteAttempt,
+    SqliteModelAttemptRecorder,
+)
 from qunxue_api.adapters.model.cases import (
     BuiltInCase,
     BuiltInCaseCatalog,
@@ -75,6 +78,7 @@ __all__ = [
     "ModelRoutesUnavailable",
     "ModelScenario",
     "OpenAICompatibleModelProvider",
+    "PersistedModelRouteAttempt",
     "SqliteModelInvocationRecorder",
     "SqliteModelAttemptRecorder",
     "current_model_route_scope",
