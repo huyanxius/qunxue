@@ -163,6 +163,7 @@ export function AccountConfirmationDialog({
 type AccountSettingsPageProps = {
   api?: AccountManagementApi
   adminHref?: string
+  onLogout?(): void
   onProfileUpdated?(account: AccountProfile): void
   onSessionExpired?(): void
   onAccountDeactivated?(): void
@@ -214,6 +215,7 @@ function formattedDate(value: string | null, locale = 'zh-CN') {
 export function AccountSettingsPage({
   api = accountManagementApi,
   adminHref = '/admin/users',
+  onLogout,
   onProfileUpdated,
   onSessionExpired,
   onAccountDeactivated,
@@ -552,6 +554,9 @@ export function AccountSettingsPage({
               {partitionLabels[partition]}
             </button>
           ))}
+          <button className="account-settings-nav__logout" type="button" onClick={onLogout}>
+            {text('退出登录', 'Sign out')}
+          </button>
         </nav>
 
         <div className="account-settings-sections">

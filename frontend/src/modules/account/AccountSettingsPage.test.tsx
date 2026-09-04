@@ -126,6 +126,18 @@ function openPartition(name: string) {
 }
 
 describe('AccountSettingsPage', () => {
+  it('shows the sign-out action below the settings navigation', async () => {
+    const onLogout = vi.fn()
+    render(<AccountSettingsPage api={createApi()} onLogout={onLogout} />)
+
+    const navigation = await screen.findByRole('navigation', { name: '账户设置分区' })
+    const button = within(navigation).getByRole('button', { name: '退出登录' })
+    expect(button).toBeVisible()
+
+    fireEvent.click(button)
+    expect(onLogout).toHaveBeenCalledOnce()
+  })
+
   it('shows one settings partition at a time and switches it from the left navigation', async () => {
     render(<AccountSettingsPage api={createApi()} />)
 

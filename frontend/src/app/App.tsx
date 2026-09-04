@@ -285,6 +285,7 @@ function AccountSettingsRoute() {
     <PageShell wide shader>
       <PageContent>
         <AccountSettingsPage
+          onLogout={leaveAccount}
           onProfileUpdated={() => account.retrySession()}
           onSessionExpired={() => account.retrySession()}
           onAccountDeactivated={leaveAccount}

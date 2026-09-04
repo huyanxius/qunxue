@@ -1801,6 +1801,18 @@
   font-weight: 620;
 }
 
+.account-settings-page .account-settings-nav button.account-settings-nav__logout {
+  margin-top: 10px;
+  color: #b42318;
+  background: rgb(180 35 24 / 8%);
+}
+
+.account-settings-page .account-settings-nav button.account-settings-nav__logout:hover,
+.account-settings-page .account-settings-nav button.account-settings-nav__logout:focus-visible {
+  color: #8f1d14;
+  background: rgb(180 35 24 / 14%);
+}
+
 .account-settings-page .account-settings-sections {
   min-height: 0;
 }
