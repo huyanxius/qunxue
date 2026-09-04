@@ -174,6 +174,38 @@ describe('ResearchAgentConversationPage', () => {
     await waitFor(() => expect(composer).not.toHaveClass('is-awaiting-first-message'))
   })
 
+  it('keeps a completed deep-research answer in the standard conversation flow', async () => {
+    const answer = '## 研究结论\n\n这是一段需要正常换行展示的深入研究正文。'
+    const completed = conversationFixture({
+      id: 'conversation-deep-research-result',
+      prompt: '请深入研究社区互助。',
+      answer,
+    })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (urlFor(input).pathname !== '/api/agent/turns') return json({ items: [] })
+      return new Response(eventStream([
+        ['turn_started', { conversation_id: completed.conversation_id, run_id: 'run-deep', replayed: false, runtime_mode: 'base' }],
+        ['research_result', { summary: answer, knowledge_count: 2, web_count: 1 }],
+        ['assistant_delta', { delta: answer }],
+        ['turn_completed', { conversation: completed, knowledge_release_id: 'release-agent' }],
+      ]), { headers: { 'Content-Type': 'text/event-stream' } })
+    }))
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    fireEvent.click(within(agent).getByRole('button', { name: '选择 Agent 模式' }))
+    fireEvent.click(within(agent).getByRole('menuitemradio', { name: /深入研究/ }))
+    const input = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: completed.turns[0].user.content } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+
+    const resultCard = await within(agent).findByRole('region', { name: '研究结论' })
+    expect(within(resultCard).getByRole('heading', { name: '已经整理好一份带证据的结论' })).toBeVisible()
+    expect(within(resultCard).queryByText('这是一段需要正常换行展示的深入研究正文。')).not.toBeInTheDocument()
+    expect(within(agent).getByRole('heading', { name: '研究结论' })).toBeVisible()
+    expect(within(agent).getByText('这是一段需要正常换行展示的深入研究正文。')).toBeVisible()
+  })
+
   it('sends the enabled web-search choice with the next question', async () => {
     const completed = conversationFixture({
       id: 'conversation-web-search',
