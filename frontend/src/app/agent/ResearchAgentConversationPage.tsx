@@ -2,6 +2,7 @@ import {
   ArrowClockwiseIcon,
   ArrowUpIcon,
   BookOpenTextIcon,
+  CaretDownIcon,
   CaretRightIcon,
   CheckIcon,
   CheckCircleIcon,
@@ -93,6 +94,7 @@ const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
 const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
+type AgentComposerMode = 'standard' | 'deep-research'
 
 const knowledgeTools = new Set([
   'search_knowledge',
@@ -1383,6 +1385,8 @@ export function ResearchAgentConversationPage({
   const [contextTab, setContextTab] = useState<ResearchContextTab>('agent')
   const [materialsOpen, setMaterialsOpen] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
+  const [modeMenuOpen, setModeMenuOpen] = useState(false)
+  const [composerMode, setComposerMode] = useState<AgentComposerMode>('standard')
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
@@ -1406,6 +1410,8 @@ export function ResearchAgentConversationPage({
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
   const materialMenuRef = useRef<HTMLDivElement>(null)
   const materialMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const modeMenuRef = useRef<HTMLDivElement>(null)
+  const modeMenuButtonRef = useRef<HTMLButtonElement>(null)
 
   const closeHistory = useCallback(() => setHistoryOpen(false), [])
 
@@ -1439,6 +1445,27 @@ export function ResearchAgentConversationPage({
       document.removeEventListener('pointerdown', closeMaterialMenu)
     }
   }, [materialMenuOpen])
+
+  useEffect(() => {
+    if (!modeMenuOpen) return undefined
+
+    function closeModeMenu(event: globalThis.KeyboardEvent | PointerEvent) {
+      if (event instanceof globalThis.KeyboardEvent) {
+        if (event.key !== 'Escape') return
+        setModeMenuOpen(false)
+        modeMenuButtonRef.current?.focus()
+        return
+      }
+      if (!modeMenuRef.current?.contains(event.target as Node)) setModeMenuOpen(false)
+    }
+
+    document.addEventListener('keydown', closeModeMenu)
+    document.addEventListener('pointerdown', closeModeMenu)
+    return () => {
+      document.removeEventListener('keydown', closeModeMenu)
+      document.removeEventListener('pointerdown', closeModeMenu)
+    }
+  }, [modeMenuOpen])
 
   function openResearchMaterials() {
     setMaterialMenuOpen(false)
@@ -2192,7 +2219,7 @@ export function ResearchAgentConversationPage({
               </div>
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
-              <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}`}>
+              <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>
                 {composerPrefix}
                 <textarea
                   ref={composerInputRef}
@@ -2215,7 +2242,10 @@ export function ResearchAgentConversationPage({
                       aria-expanded={materialMenuOpen}
                       aria-controls="research-agent-material-menu"
                       disabled={isBusy}
-                      onClick={() => setMaterialMenuOpen((open) => !open)}
+                      onClick={() => {
+                        setModeMenuOpen(false)
+                        setMaterialMenuOpen((open) => !open)
+                      }}
                     >
                       <PlusIcon size={18} />
                     </button>
@@ -2249,6 +2279,66 @@ export function ResearchAgentConversationPage({
                     <GlobeHemisphereWestIcon size={16} />
                     <span>{webSearchEnabled ? text('联网已开启', 'Web on') : text('联网搜索', 'Web search')}</span>
                   </button>
+                </div>
+                <div className="research-agent-composer__mode-entry" ref={modeMenuRef}>
+                  <button
+                    ref={modeMenuButtonRef}
+                    type="button"
+                    className={`research-agent-composer__mode-button${composerMode === 'deep-research' ? ' is-deep-research' : ''}`}
+                    aria-label={text('选择 Agent 模式', 'Choose Agent mode')}
+                    aria-expanded={modeMenuOpen}
+                    aria-controls="research-agent-mode-menu"
+                    disabled={isBusy}
+                    onClick={() => {
+                      setMaterialMenuOpen(false)
+                      setModeMenuOpen((open) => !open)
+                    }}
+                  >
+                    <span className="research-agent-composer__mode-label">{composerMode === 'deep-research' ? text('深入研究', 'Deep research') : text('标准', 'Standard')}</span>
+                    <CaretDownIcon size={13} weight="bold" />
+                  </button>
+                  {modeMenuOpen ? (
+                    <div
+                      id="research-agent-mode-menu"
+                      className="research-agent-composer__material-menu research-agent-composer__mode-menu"
+                      role="menu"
+                      aria-label={text('选择 Agent 模式', 'Choose Agent mode')}
+                    >
+                      <button
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={composerMode === 'standard'}
+                        onClick={() => {
+                          setComposerMode('standard')
+                          setModeMenuOpen(false)
+                        }}
+                      >
+                        <span className="research-agent-composer__mode-copy">
+                          <strong>{text('标准模式', 'Standard mode')}</strong>
+                          <small>{text('知识库优先，按需补充联网资料', 'Knowledge first, with web sources as needed')}</small>
+                        </span>
+                        {composerMode === 'standard' ? <CheckIcon size={14} weight="bold" /> : null}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={composerMode === 'deep-research'}
+                        onClick={() => {
+                          setComposerMode('deep-research')
+                          setModeMenuOpen(false)
+                        }}
+                      >
+                        <span className="research-agent-composer__mode-copy">
+                          <strong>{text('深入研究', 'Deep research')}</strong>
+                          <small>{text(
+                            '最大思考强度，多轮检索知识库与网页，并形成详细研究计划',
+                            'Maximum reasoning with multi-round knowledge and web research',
+                          )}</small>
+                        </span>
+                        {composerMode === 'deep-research' ? <CheckIcon size={14} weight="bold" /> : null}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <button
                   type={canStopGeneration ? 'button' : 'submit'}

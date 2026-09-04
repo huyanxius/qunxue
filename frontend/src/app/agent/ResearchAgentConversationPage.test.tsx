@@ -146,6 +146,34 @@ describe('ResearchAgentConversationPage', () => {
     expect(addButton).toHaveFocus()
   })
 
+  it('selects deep research from the composer mode menu and returns focus on Escape', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage()
+
+    const agent = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    const modeButton = within(agent).getByRole('button', { name: '选择 Agent 模式' })
+    expect(modeButton).toHaveTextContent('标准')
+
+    fireEvent.click(modeButton)
+    const menu = within(agent).getByRole('menu', { name: '选择 Agent 模式' })
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /深入研究/ }))
+
+    expect(modeButton).toHaveTextContent('深入研究')
+    const composer = within(agent).getByRole('textbox', { name: '问社会学 Agent' }).closest('.research-agent-composer')
+    expect(composer).toHaveClass('is-awaiting-first-message')
+    expect(within(agent).queryByRole('menu', { name: '选择 Agent 模式' })).not.toBeInTheDocument()
+
+    fireEvent.click(modeButton)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(within(agent).queryByRole('menu', { name: '选择 Agent 模式' })).not.toBeInTheDocument()
+    expect(modeButton).toHaveFocus()
+
+    const input = within(agent).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '比较为何持续发生？' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    await waitFor(() => expect(composer).not.toHaveClass('is-awaiting-first-message'))
+  })
+
   it('sends the enabled web-search choice with the next question', async () => {
     const completed = conversationFixture({
       id: 'conversation-web-search',
