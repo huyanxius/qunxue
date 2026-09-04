@@ -1511,6 +1511,7 @@ export function ResearchAgentConversationPage({
   const [deepResearchMockOptions, setDeepResearchMockOptions] = useState<string[]>([])
   const [deepResearchMockStep, setDeepResearchMockStep] = useState(0)
   const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
+  const deepResearchLifecycleStarted = useRef(false)
   const hasDeepResearchMockConversation = composerMode === 'deep-research'
     && deepResearchMockStage !== 'idle'
     && deepResearchMockStage !== 'clarifying'
@@ -1922,19 +1923,23 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'agent_status') {
             setStatus(event.status === 'answering' ? 'answering' : 'thinking')
           } else if (event.type === 'research_ask') {
+            deepResearchLifecycleStarted.current = true
             setDeepResearchMockQuestion(event.question)
             setDeepResearchMockOptions(event.options)
             setDeepResearchMockStep(0)
             setDeepResearchMockStage('clarifying')
           } else if (event.type === 'research_plan') {
+            deepResearchLifecycleStarted.current = true
             setDeepResearchMockQuestion(event.title)
             setDeepResearchMockOptions(event.steps)
             setDeepResearchMockStep(0)
             setDeepResearchMockStage('planning')
           } else if (event.type === 'research_step') {
+            deepResearchLifecycleStarted.current = true
             setDeepResearchMockStage('researching')
             setDeepResearchMockStep((current) => Math.min(current + 1, DEEP_RESEARCH_MOCK_STEPS.length - 1))
           } else if (event.type === 'research_result') {
+            deepResearchLifecycleStarted.current = true
             setDeepResearchResult({ summary: event.summary, knowledgeCount: event.knowledge_count, webCount: event.web_count })
             setDeepResearchMockStage('completed')
           } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
@@ -1963,6 +1968,7 @@ export function ResearchAgentConversationPage({
               citations: [...current.citations, citation],
             } : current)
           } else if (event.type === 'research_waiting') {
+            deepResearchLifecycleStarted.current = true
             activeRunId.current = event.run_id
             const waitingAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: event.run_id }
             activeTurnAttempt.current = waitingAttempt
@@ -1976,7 +1982,8 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
-            if (composerMode === 'deep-research') setDeepResearchMockStage('completed')
+            if (composerMode === 'deep-research' && deepResearchLifecycleStarted.current) setDeepResearchMockStage('completed')
+            else if (composerMode === 'deep-research') resetDeepResearchMock()
             activeRunId.current = null
             failedTurnAttempt.current = null
             activeTurnAttempt.current = null
@@ -2092,6 +2099,7 @@ export function ResearchAgentConversationPage({
     setDeepResearchMockOptions([])
     setDeepResearchMockStep(0)
     setDeepResearchResult({})
+    deepResearchLifecycleStarted.current = false
   }
 
   function continueDeepResearch(action: 'clarify' | 'confirm', selection?: string) {
