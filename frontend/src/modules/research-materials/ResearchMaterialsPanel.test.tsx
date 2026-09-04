@@ -64,6 +64,39 @@ describe('ResearchMaterialsPanel', () => {
     expect(within(reader).getByRole('button', { name: '下一页' })).toBeVisible()
   })
 
+  it('treats missing analysis collections as empty while opening a material', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/analysis')) return response({ task_id: 'task-1' })
+      if (path.endsWith('/materials/material-1')) {
+        return response({
+          ...material,
+          segments: [{
+            segment_id: 'segment-1',
+            material_id: 'material-1',
+            parse_id: 'parse-1',
+            ordinal: 0,
+            kind: 'paragraph',
+            text: '可继续阅读的材料正文。',
+            locator: { paragraph: 1 },
+          }],
+        })
+      }
+      return response({ task_id: 'task-1', items: [material] })
+    }))
+
+    render(
+      <ResearchMaterialsPanel
+        taskId="task-1"
+        initialMaterialId="material-1"
+        onClose={() => undefined}
+      />,
+    )
+
+    const dialog = await screen.findByRole('dialog', { name: '研究材料' })
+    expect(await within(dialog).findByText('可继续阅读的材料正文。')).toBeVisible()
+  })
+
   it('renders as a persistent workspace without modal semantics', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({ task_id: 'task-1', items: [] })))
 

@@ -2152,12 +2152,17 @@ export function ResearchAgentConversationPage({
     void submitQuestion(question, attempt?.question === question ? attempt.idempotencyKey : undefined)
   }
 
-  function settleInterruptedTurn() {
+  function settleInterruptedTurn({ resumable = true }: { resumable?: boolean } = {}) {
     const attempt = activeTurnAttempt.current
-    if (attempt) {
+    if (attempt && resumable) {
       failedTurnAttempt.current = attempt
       activeTurnAttempt.current = null
       persistPendingTurnAttempt(userId, attempt)
+      updateDraft(attempt.question)
+    } else if (attempt) {
+      failedTurnAttempt.current = null
+      activeTurnAttempt.current = null
+      persistPendingTurnAttempt(userId, null)
       updateDraft(attempt.question)
     }
     const next = interruptedSteps(pendingToolSteps.current, locale)
@@ -2178,7 +2183,8 @@ export function ResearchAgentConversationPage({
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
-    settleInterruptedTurn()
+    resetDeepResearchMock()
+    settleInterruptedTurn({ resumable: false })
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -2640,7 +2646,9 @@ export function ResearchAgentConversationPage({
                 setContextTab('basis')
               }}
               onCitationSelect={(citation) => {
-                const context = citationContexts.find((item) => item.citation.citation_id === citation.id)
+                const context = selectedCitationContext?.citation.citation_id === citation.id
+                  ? selectedCitationContext
+                  : citationContexts.find((item) => item.citation.citation_id === citation.id)
                 if (!context) return
                 setSelectedActivityId(null)
                 setSelectedCitationContext(context)

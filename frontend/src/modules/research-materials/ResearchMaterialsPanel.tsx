@@ -159,9 +159,9 @@ export function ResearchMaterialsPanel({
     try {
       const snapshot = await getAnalysisSnapshot(taskId, signal)
       if (signal?.aborted || generation !== analysisLoadGeneration.current) return
-      setAnalysisAnnotations(snapshot.annotations)
-      setAnalysisCodes(snapshot.codes)
-      setAnalysisMemos(snapshot.memos)
+      setAnalysisAnnotations(snapshot.annotations ?? [])
+      setAnalysisCodes(snapshot.codes ?? [])
+      setAnalysisMemos(snapshot.memos ?? [])
       setAnalysisCodebook(snapshot.workspace?.codebook_entries ?? [])
     } catch (cause: unknown) {
       if ((cause as { name?: string } | null)?.name !== 'AbortError' && !signal?.aborted && generation === analysisLoadGeneration.current) {

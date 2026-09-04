@@ -171,10 +171,22 @@ def test_skipping_clarification_still_requires_plan_confirmation() -> None:
         conversations=ConversationService.in_memory(), runner=Runner(), tools_factory=Tools
     )
     first = app.run_turn(
-        user_id=UUID(int=3), conversation_id=None, prompt="研究青年孤独", idempotency_key="skip-1", mode="deep_research", on_research_event=events.append
+        user_id=UUID(int=3),
+        conversation_id=None,
+        prompt="研究青年孤独",
+        idempotency_key="skip-1",
+        mode="deep_research",
+        on_research_event=events.append,
     )
     skipped = app.run_turn(
-        user_id=UUID(int=3), conversation_id=None, prompt="研究青年孤独", idempotency_key="skip-1", mode="deep_research", deep_research_run_id=first.run_id, deep_research_action="skip", on_research_event=events.append
+        user_id=UUID(int=3),
+        conversation_id=None,
+        prompt="研究青年孤独",
+        idempotency_key="skip-1",
+        mode="deep_research",
+        deep_research_run_id=first.run_id,
+        deep_research_action="skip",
+        on_research_event=events.append,
     )
     assert skipped.pending_research is not None
     assert skipped.pending_research["state"] == "awaiting_plan_confirmation"

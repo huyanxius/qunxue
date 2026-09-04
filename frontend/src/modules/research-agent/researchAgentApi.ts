@@ -390,6 +390,9 @@ export async function stopAgentRun(runId: string): Promise<void> {
   }), {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      'Idempotency-Key': globalThis.crypto?.randomUUID?.() ?? `stop-agent-run:${runId}`,
+    },
   })
   if (!response.ok) throw new Error('无法停止当前回答')
 }

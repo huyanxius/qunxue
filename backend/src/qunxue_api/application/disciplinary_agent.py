@@ -384,9 +384,16 @@ class DisciplinaryAgentApplication:
                     planning_events.clear()
                     planning_failed = True
                 if planning_events or planning_failed:
-                    planning_event = planning_events[-1] if planning_events else AgentResearchEvent(
-                        kind="plan",
-                        payload={"title": "深入研究", "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"]},
+                    planning_event = (
+                        planning_events[-1]
+                        if planning_events
+                        else AgentResearchEvent(
+                            kind="plan",
+                            payload={
+                                "title": "深入研究",
+                                "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                            },
+                        )
                     )
                     if deep_research_action == "skip" and planning_event.kind == "ask":
                         planning_event = AgentResearchEvent(
@@ -401,11 +408,25 @@ class DisciplinaryAgentApplication:
                         if on_research_event is not None:
                             on_research_event(planning_event)
                         deep_research_started = mode == "deep_research"
-                        state = "awaiting_clarification" if planning_event.kind == "ask" else "awaiting_plan_confirmation"
-                        pending = {"kind": "deep_research_pending", "version": 1, "state": state, "prompt": prompt, **dict(planning_event.payload)}
+                        state = (
+                            "awaiting_clarification"
+                            if planning_event.kind == "ask"
+                            else "awaiting_plan_confirmation"
+                        )
+                        pending = {
+                            "kind": "deep_research_pending",
+                            "version": 1,
+                            "state": state,
+                            "prompt": prompt,
+                            **dict(planning_event.payload),
+                        }
                         if deep_research_selection:
                             pending["selected_intent"] = deep_research_selection
-                        self._conversations.finish_run(run_id=run.run_id, status=state, tool_summary=(pending,))
+                        self._conversations.finish_run(
+                            run_id=run.run_id,
+                            status=state,
+                            tool_summary=(pending,),
+                        )
                         if self._credits is not None:
                             self._credits.release(user_id=user_id, run_id=run.run_id)
                         self._conversations.commit()

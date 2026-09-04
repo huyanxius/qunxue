@@ -53,8 +53,8 @@ describe('ResearchMaterialsPage', () => {
     )
 
     const emptyState = await screen.findByRole('region', { name: '还没有研究' })
-    expect(emptyState).toHaveTextContent('先建立一项研究')
-    expect(within(emptyState).getByRole('link', { name: '新建研究' })).toHaveAttribute('href', '/research/new')
+    expect(within(emptyState).getByRole('heading', { name: '从材料开始研究' })).toBeVisible()
+    expect(within(emptyState).getByRole('button', { name: '导入研究材料' })).toBeVisible()
   })
 
   it('confirms when a material upload has finished', async () => {

@@ -572,13 +572,6 @@ class OpenAICompatibleModelProvider:
                 scenario=ModelScenario.TIMEOUT,
             ) from error
         except URLError as error:
-            if isinstance(error.reason, TimeoutError):
-                raise ModelProviderFailure(
-                    code="model_timeout",
-                    message="The model provider timed out. The invocation can be retried.",
-                    knowledge_release_id=knowledge_release_id,
-                    scenario=ModelScenario.TIMEOUT,
-                ) from error
             raise ModelProviderFailure(
                 code="model_unavailable",
                 message="The model provider is unavailable. The invocation can be retried.",
