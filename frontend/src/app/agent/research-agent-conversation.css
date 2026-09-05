@@ -986,27 +986,69 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
-  margin-top: 14px;
+  margin-top: 10px;
   color: #76517d;
   font-size: 11px;
 }
 
-.research-agent-conversation .deep-research-mock-card__result-row {
+/* 完成态和进行中是同一张卡片，只把进度条和步骤色收敛成"已结束"的中性色。 */
+.research-agent-conversation .deep-research-mock-card--done .deep-research-mock-card__progress-bar span {
+  background: color-mix(in srgb, #76517d 55%, var(--app-ink));
+}
+
+.research-agent-conversation .deep-research-mock-card__conclusion {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+}
+
+.research-agent-conversation .deep-research-mock-card__conclusion .deep-research-mock-card__eyebrow {
+  margin-bottom: 6px;
+}
+
+.research-agent-conversation .deep-research-mock-card__conclusion p {
+  margin: 0;
+  color: var(--app-ink);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.research-agent-conversation .deep-research-mock-card__export {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
 }
 
-.research-agent-conversation .deep-research-mock-card__result-row .deep-research-mock-card__eyebrow {
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-.research-agent-conversation .deep-research-mock-card__result-row h2 {
+.research-agent-conversation .deep-research-mock-card__export p {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 1 1 220px;
   margin: 0;
-  font-size: 18px;
+  color: var(--app-ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.research-agent-conversation .deep-research-mock-card__export-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.research-agent-conversation .deep-research-mock-card__export-actions button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.research-agent-conversation .deep-research-mock-card__export-actions button:disabled {
+  cursor: progress;
+  opacity: .55;
 }
 
 .research-agent-conversation .deep-research-mock-card__result-row .deep-research-mock-card__result-meta {
