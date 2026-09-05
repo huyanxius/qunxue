@@ -679,7 +679,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         normalized_query = str(query or "").strip()
         if not normalized_query:
             return []
-        safe_limit = max(1, min(int(limit), 8))
+        safe_limit = max(1, min(int(limit), 50))
         chunks: list[object] = []
         metadata: dict[str, tuple[ResearchMaterial, MaterialBlock]] = {}
         try:

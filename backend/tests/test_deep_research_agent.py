@@ -476,3 +476,19 @@ def test_deep_research_sse_exposes_plan_event(client: TestClient) -> None:
     )
     assert response.status_code == 200
     assert "event: research_plan" in response.text
+
+
+def test_agent_may_select_more_than_eight_evidence_items() -> None:
+    """PR #299 去掉了运行器里的静默裁剪，工具这一侧不能再压回八条上限。
+
+    深入研究读满知识库再补网页，采用十几条是常态；留着上限会让整轮直接抛错。
+    """
+    from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
+
+    tools = KnowledgeToolRegistry.__new__(KnowledgeToolRegistry)
+    tools.evidence = {f"c{index}": object() for index in range(12)}
+    tools.selected_evidence_ids = ()
+
+    selected = KnowledgeToolRegistry.select_evidence(tools, [f"c{index}" for index in range(12)])
+
+    assert len(selected) == 12
