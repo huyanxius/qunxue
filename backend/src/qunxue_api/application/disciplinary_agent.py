@@ -402,6 +402,22 @@ class DisciplinaryAgentApplication:
         tool_events: list[AgentToolEvent] = []
         deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
 
+        def save_initial_title(title: str) -> None:
+            nonlocal current
+            normalized = " ".join(title.split()).strip('"\'“”‘’')[:48].strip()
+            if not normalized:
+                return
+            latest = self.get_conversation(
+                user_id=user_id, conversation_id=current.conversation_id,
+            )
+            # Only replace the initial fallback; a manual rename during planning wins.
+            if latest.title != current.title:
+                current = latest
+                return
+            current = self._conversations.rename_conversation(
+                user_id=user_id, conversation_id=current.conversation_id, title=normalized,
+            )
+
         # Every Agent turn gets the same lightweight intent check. Deep mode
         # additionally pauses on a plan; ordinary mode only pauses when the
         # planner identifies a material clarification question.
@@ -422,6 +438,8 @@ class DisciplinaryAgentApplication:
                         for parameter in parameters.values()
                     ):
                         prepare_kwargs["tools"] = tools
+                    if conversation_was_created and "on_title" in parameters:
+                        prepare_kwargs["on_title"] = save_initial_title
                     prepare_research(
                         **prepare_kwargs,
                     )
