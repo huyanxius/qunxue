@@ -1245,7 +1245,7 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.change(textbox, { target: { value: '把这个现象继续形成研究。' } })
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
 
-    expect(await within(region).findByRole('button', { name: '继续研究' })).toBeVisible()
+    expect(await within(region).findByRole('button', { name: terminalEvent === 'turn_failed' ? '重试本轮' : '继续研究' })).toBeVisible()
     expect(within(region).queryByRole('region', { name: '研究建议' })).not.toBeInTheDocument()
   })
 
@@ -1674,7 +1674,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(fetchMock.mock.calls.some(([input]) => urlFor(input).pathname === '/api/agent/runs/run-stop/stop')).toBe(true)
     first.unmount()
 
-    renderPage('user-stop')
+    renderPage('user-stop', '/agent?conversation_id=conversation-stop')
     const restored = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     expect(within(restored).getByText('已经形成一段可保留的回答。')).toBeVisible()
     expect(within(restored).getByText('本轮已停止，已保留生成内容和 1 个已完成步骤。')).toBeVisible()
@@ -1887,4 +1887,188 @@ it('sends the selected passage with the researcher question and opens its existi
   await waitFor(() => expect(requests).toHaveLength(1))
   expect(requests[0].message).toContain('> 平台改变了所有人的偏好。\n\n这里是否推得太远？')
   expect(requests[0].section_id).toBe('mechanisms')
+})
+
+describe('conversation lifecycle recovery', () => {
+  it('isolates drafts by conversation and retains them after a tab session ends', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const id = urlFor(input).pathname.split('/').at(-1)
+      return id === 'a' || id === 'b' ? json(conversationFixture({ id })) : json({ items: [] })
+    }))
+    const first = renderPage('owner', '/agent?conversation_id=a')
+    const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+    await waitFor(() => expect(input).not.toBeDisabled())
+    fireEvent.change(input, { target: { value: '只属于 A 的草稿' } })
+    first.unmount()
+    const other = renderPage('owner', '/agent?conversation_id=b')
+    expect(await screen.findByRole('textbox', { name: '问社会学 Agent' })).toHaveValue('')
+    other.unmount()
+    window.sessionStorage.clear()
+    renderPage('owner', '/agent?conversation_id=a')
+    expect(await screen.findByRole('textbox', { name: '问社会学 Agent' })).toHaveValue('只属于 A 的草稿')
+  })
+
+  it('keeps an unfinished turn paused on return and resumes its original request', async () => {
+    const requests: RequestInit[] = []
+    const saved = conversationFixture({ id: 'recover-a' })
+    const running = deferredStream([
+      ['turn_started', { conversation_id: saved.conversation_id, run_id: 'recover-run', replayed: false }],
+      ['assistant_delta', { delta: '离开前的部分答案' }],
+    ])
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = urlFor(input).pathname
+      if (path === '/api/agent/turns') { requests.push(init ?? {}); return requests.length === 1 ? running.response : streamResponse(saved) }
+      if (path.endsWith('/stop')) return json({ run_id: 'recover-run', status: 'interrupted', cancel_requested: true })
+      if (path.endsWith('/recover-a')) return json({ ...saved, turns: [], turn_count: 0 })
+      return json({ items: [] })
+    }))
+    const first = renderPage('owner')
+    const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '原始研究问题' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    expect(await screen.findByText('离开前的部分答案')).toBeVisible()
+    first.unmount()
+    renderPage('owner', '/agent?conversation_id=recover-a')
+    expect(await screen.findByText('离开前的部分答案')).toBeVisible()
+    expect(requests).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: '继续研究' }))
+    await waitFor(() => expect(requests).toHaveLength(2))
+    expect(new Headers(requests[1].headers).get('Idempotency-Key')).toBe(new Headers(requests[0].headers).get('Idempotency-Key'))
+    expect(JSON.parse(String(requests[1].body))).toMatchObject({ message: '原始研究问题', mode: 'standard', conversation_id: 'recover-a' })
+  })
+
+  it('pauses on pagehide but continues when only visibility changes', async () => {
+    const pauses: RequestInit[] = []
+    const running = deferredStream([
+      ['turn_started', { conversation_id: 'leave-a', run_id: 'leave-run', replayed: false }],
+      ['assistant_delta', { delta: '正在生成的文本' }],
+    ])
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = urlFor(input).pathname
+      if (path === '/api/agent/turns') return running.response
+      if (path.endsWith('/stop')) { pauses.push(init ?? {}); return json({ run_id: 'leave-run', status: 'interrupted', cancel_requested: true }) }
+      return json({ items: [] })
+    }))
+    renderPage('owner')
+    const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '关闭页面测试' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    expect(await screen.findByText('正在生成的文本')).toBeVisible()
+    fireEvent(document, new Event('visibilitychange'))
+    expect(pauses).toHaveLength(0)
+    fireEvent(window, new Event('pagehide'))
+    await waitFor(() => expect(pauses).toHaveLength(1))
+    expect(pauses[0]).toMatchObject({ keepalive: true })
+  })
+})
+
+it('loads every server-persisted unfinished turn without executing and resumes the selected run', async () => {
+  const requests: RequestInit[] = []
+  const conversation = conversationFixture({ id: 'durable-a' })
+  const unfinished = [
+    { run_id: 'durable-1', idempotency_key: 'durable-key-1', status: 'interrupted', request: { conversation_id: 'durable-a', message: '较早暂停的问题', mode: 'standard', workspace: 'agent', web_search: false }, partial_answer: '较早的半段内容', tool_summary: [], updated_at: '2026-09-06T00:00:00Z', cancel_requested: true },
+    { run_id: 'durable-2', idempotency_key: 'durable-key-2', status: 'interrupted', request: { conversation_id: 'durable-a', message: '最近暂停的问题', mode: 'deep_research', workspace: 'agent', web_search: true }, partial_answer: '最近的半段内容', tool_summary: [], updated_at: '2026-09-06T00:01:00Z', cancel_requested: true },
+  ]
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = urlFor(input).pathname
+    if (path.endsWith('/durable-a')) return json({ ...conversation, unfinished_runs: unfinished })
+    if (path === '/api/agent/turns') { requests.push(init ?? {}); return streamResponse(conversation) }
+    return json({ items: [] })
+  }))
+  renderPage('owner', '/agent?conversation_id=durable-a')
+  expect(await screen.findByText('较早的半段内容')).toBeVisible()
+  expect(screen.getByText('最近的半段内容')).toBeVisible()
+  expect(requests).toHaveLength(0)
+  fireEvent.click(screen.getAllByRole('button', { name: '继续研究' })[0])
+  await waitFor(() => expect(requests).toHaveLength(1))
+  expect(new Headers(requests[0].headers).get('Idempotency-Key')).toBe('durable-key-1')
+  expect(JSON.parse(String(requests[0].body))).toMatchObject({ conversation_id: 'durable-a', message: '较早暂停的问题', web_search: false })
+})
+
+it('waits for stop confirmation and retries a rejected pause before allowing continuation', async () => {
+  let confirmPause: ((response: Response) => void) | undefined
+  let pauses = 0
+  const running = deferredStream([
+    ['turn_started', { conversation_id: 'pause-confirm', run_id: 'pause-confirm-run', replayed: false }],
+    ['assistant_delta', { delta: '暂停确认中的输出' }],
+  ])
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const path = urlFor(input).pathname
+    if (path === '/api/agent/turns') return running.response
+    if (path.endsWith('/stop')) {
+      pauses += 1
+      if (pauses === 1) return json({}, 503)
+      return new Promise<Response>((resolve) => { confirmPause = resolve })
+    }
+    return json({ items: [] })
+  }))
+  renderPage('owner')
+  const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+  fireEvent.change(input, { target: { value: '等待暂停确认' } })
+  fireEvent.submit(input.closest('form') as HTMLFormElement)
+  expect(await screen.findByText('暂停确认中的输出')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '停止生成' }))
+  fireEvent.click(await screen.findByRole('button', { name: '重试暂停' }))
+  expect(screen.getByText('正在暂停，等待当前操作结束…')).toBeVisible()
+  expect(screen.queryByRole('button', { name: '继续研究' })).not.toBeInTheDocument()
+  confirmPause?.(json({ run_id: 'pause-confirm-run', status: 'interrupted', cancel_requested: true }))
+  expect(await screen.findByRole('button', { name: '继续研究' })).toBeEnabled()
+  expect(screen.getByText('暂停确认中的输出')).toBeVisible()
+})
+
+it('cancels a bound conversation when props switch and ignores its late stream', async () => {
+  const old = deferredStream([
+    ['turn_started', { conversation_id: 'bound-a', run_id: 'bound-run-a', replayed: false }],
+    ['assistant_delta', { delta: 'A 的未完成内容' }],
+  ])
+  const pauses: string[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const path = urlFor(input).pathname
+    if (path === '/api/agent/turns') return old.response
+    if (path.endsWith('/stop')) { pauses.push(path); return json({ run_id: 'bound-run-a', status: 'interrupted', cancel_requested: true }) }
+    if (path.endsWith('/bound-a')) return json({ ...conversationFixture({ id: 'bound-a' }), turns: [], turn_count: 0 })
+    if (path.endsWith('/bound-b')) return json(conversationFixture({ id: 'bound-b', answer: 'B 的已保存回答' }))
+    return json({ items: [] })
+  }))
+  const page = render(<MemoryRouter><ResearchAgentConversationPage embedded userId="owner" conversationId="bound-a" /></MemoryRouter>)
+  const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+  await waitFor(() => expect(input).not.toBeDisabled())
+  fireEvent.change(input, { target: { value: 'A 的问题' } })
+  fireEvent.submit(input.closest('form') as HTMLFormElement)
+  expect(await screen.findByText('A 的未完成内容')).toBeVisible()
+  page.rerender(<MemoryRouter><ResearchAgentConversationPage embedded userId="owner" conversationId="bound-b" /></MemoryRouter>)
+  expect(await screen.findByText('B 的已保存回答')).toBeVisible()
+  expect(pauses).toEqual(['/api/agent/runs/bound-run-a/stop'])
+  old.finish([['assistant_delta', { delta: '不能污染 B 的迟到内容' }]])
+  expect(screen.queryByText('A 的未完成内容')).not.toBeInTheDocument()
+  expect(screen.queryByText('不能污染 B 的迟到内容')).not.toBeInTheDocument()
+})
+
+it('retains an earlier paused answer while a new question is running', async () => {
+  let requests = 0
+  const first = deferredStream([
+    ['turn_started', { conversation_id: 'pause-history', run_id: 'old-paused-run', replayed: false }],
+    ['assistant_delta', { delta: '前一轮已经保存的半段' }],
+  ])
+  const second = deferredStream([
+    ['turn_started', { conversation_id: 'pause-history', run_id: 'new-running-run', replayed: false }],
+    ['assistant_delta', { delta: '新问题正在生成' }],
+  ])
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const path = urlFor(input).pathname
+    if (path === '/api/agent/turns') return ++requests === 1 ? first.response : second.response
+    if (path.endsWith('/stop')) return json({ run_id: 'old-paused-run', status: 'interrupted', cancel_requested: true })
+    return json({ items: [] })
+  }))
+  renderPage('owner')
+  const input = await screen.findByRole('textbox', { name: '问社会学 Agent' })
+  fireEvent.change(input, { target: { value: '先问的问题' } })
+  fireEvent.submit(input.closest('form') as HTMLFormElement)
+  expect(await screen.findByText('前一轮已经保存的半段')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '停止生成' }))
+  await screen.findByRole('button', { name: '继续研究' })
+  fireEvent.change(input, { target: { value: '改问另一个问题' } })
+  fireEvent.submit(input.closest('form') as HTMLFormElement)
+  expect(await screen.findByText('新问题正在生成')).toBeVisible()
+  expect(screen.getByText('前一轮已经保存的半段')).toBeVisible()
 })
