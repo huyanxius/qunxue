@@ -41,6 +41,7 @@ from qunxue_api.adapters.research_agent import (
     SiliconFlowRerankerProvider,
 )
 from qunxue_api.adapters.research_agent.memory_extractor import PydanticMemoryExtractor
+from qunxue_api.adapters.research_agent.memory_overview import PydanticMemoryOverview
 from qunxue_api.adapters.research_agent.memory_tools import AgentMemoryTools
 from qunxue_api.adapters.research_exchange import map_published_qunxue_project
 from qunxue_api.adapters.research_materials import parse_material
@@ -147,6 +148,7 @@ from qunxue_api.application import (
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.application.memory_learning import MemoryLearningWorker
+from qunxue_api.application.memory_overview import MemoryOverview
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import CreditService
@@ -929,6 +931,16 @@ def create_app(
             yield MemoryService(SqliteMemoryRepository(memory_session))
 
     app.state.memory_service_scope = memory_service_scope
+    app.state.memory_overview = MemoryOverview()
+    if app.state.model_endpoints:
+        endpoint = app.state.model_endpoints[0]
+        app.state.memory_overview.generate = PydanticMemoryOverview(
+            base_url=endpoint.base_url,
+            api_key=endpoint.api_key,
+            model=endpoint.model,
+            extra_headers=endpoint.extra_headers,
+            timeout_seconds=min(resolved_settings.model_timeout_seconds, 45),
+        )
 
     @contextmanager
     def memory_learning_scope():
@@ -1289,11 +1301,7 @@ def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, .
         ModelEndpoint(
             endpoint_id=endpoint.endpoint_id,
             base_url=endpoint.base_url,
-            api_key=(
-                endpoint.api_key.get_secret_value()
-                if endpoint.api_key is not None
-                else None
-            ),
+            api_key=(endpoint.api_key.get_secret_value() if endpoint.api_key is not None else None),
             model=endpoint.model,
             timeout_seconds=endpoint.timeout_seconds,
             provider="openai-compatible",

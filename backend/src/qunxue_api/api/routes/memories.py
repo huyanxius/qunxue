@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
+from qunxue_api.application.memory_overview import MemoryOverviewBusy, MemoryOverviewUnavailable
 from qunxue_api.modules.agent_memory import MemoryConflict, MemoryNotFound, MemoryService
 
 router = APIRouter(prefix="/api/memories", tags=["memory"])
@@ -58,6 +59,18 @@ class MemorySettingsUpdate(BaseModel):
     expected_version: int = Field(ge=0)
     use_memory: bool
     learn_memory: bool
+
+
+class MemoryOverviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task_id: UUID | None = None
+    expected_version: int = Field(ge=0)
+
+
+class MemoryOverviewResponse(BaseModel):
+    summary: str
+    scope_version: int
+    memory_count: int
 
 
 @contextmanager
@@ -128,6 +141,37 @@ def update_settings(
                 )
             )
         )
+
+
+@router.post("/overview", response_model=MemoryOverviewResponse, operation_id="summarize_memory")
+def summarize_memory(
+    payload: MemoryOverviewRequest, request: Request, current: CurrentSessionDependency
+):
+    user_id = current.user.user_id
+    with service(request) as memory:
+        scope = memory.repository.scope(user_id, payload.task_id)
+        if scope.version != payload.expected_version:
+            raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
+        items = memory.repository.list(user_id, payload.task_id)
+    # Model work runs after releasing the database session. Check again before
+    # returning so a correction or deletion cannot display an obsolete summary.
+    try:
+        summary = request.app.state.memory_overview.summarize(
+            user_id,
+            payload.task_id,
+            scope.version,
+            items,
+        )
+    except MemoryOverviewBusy as error:
+        raise HTTPException(429, str(error)) from error
+    except MemoryOverviewUnavailable as error:
+        raise HTTPException(503, str(error)) from error
+    with service(request) as memory:
+        if memory.repository.scope(user_id, payload.task_id).version != scope.version:
+            raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
+    return MemoryOverviewResponse(
+        summary=summary, scope_version=scope.version, memory_count=len(items)
+    )
 
 
 @router.get("/{memory_id}", response_model=MemoryResponse, operation_id="get_memory")
