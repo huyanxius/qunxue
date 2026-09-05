@@ -1699,3 +1699,58 @@ it('opens the native file chooser from the standalone composer without navigatin
   expect(click).toHaveBeenCalledOnce()
   expect(screen.getByRole('textbox', { name: '问社会学 Agent' })).toBeVisible()
 })
+
+it('starts a project conversation from the standalone Agent folder button', async () => {
+  const requests: Record<string, unknown>[] = []
+  const saved = { ...conversationFixture(), task_id: 'project-a' }
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = urlFor(input)
+    if (url.pathname === '/api/research-tasks') return json({ items: [{ task_id: 'project-a', project_title: '社区研究', status: 'draft' }], next_cursor: null })
+    if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+    if (url.pathname === '/api/agent/turns') {
+      requests.push(JSON.parse(String(init?.body)))
+      return streamResponse(saved)
+    }
+    return json({ items: [] })
+  }))
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: '在社区研究中新建对话' }))
+  expect(screen.getByRole('button', { name: '对话所属项目' })).toHaveTextContent('社区研究')
+  const input = screen.getByRole('textbox', { name: '问社会学 Agent' })
+  await waitFor(() => expect(input).toHaveFocus())
+  fireEvent.change(input, { target: { value: '讨论社区互助' } })
+  fireEvent.submit(input.closest('form')!)
+  await waitFor(() => expect(requests).toHaveLength(1))
+  expect(requests[0]).toMatchObject({ workspace: 'research', task_id: 'project-a', conversation_id: null })
+})
+
+it('keeps an unsent draft when the composer switches between project and independent scope', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => json(urlFor(input).pathname === '/api/research-tasks'
+    ? { items: [{ task_id: 'project-a', project_title: '社区研究', status: 'draft' }], next_cursor: null }
+    : { items: [] })))
+  renderPage()
+  await screen.findByRole('button', { name: '在社区研究中新建对话' })
+  const input = screen.getByRole('textbox', { name: '问社会学 Agent' })
+  fireEvent.change(input, { target: { value: '保留这段未发送的问题' } })
+  const projectSelect = screen.getByRole('button', { name: '对话所属项目' })
+  fireEvent.click(projectSelect)
+  fireEvent.click(screen.getByRole('menuitemradio', { name: '社区研究' }))
+  expect(input).toHaveValue('保留这段未发送的问题')
+  expect(projectSelect).toHaveTextContent('社区研究')
+  fireEvent.click(projectSelect)
+  fireEvent.click(screen.getByRole('menuitemradio', { name: '独立对话' }))
+  expect(input).toHaveValue('保留这段未发送的问题')
+  expect(projectSelect).toHaveTextContent('独立对话')
+})
+
+it('opens project creation in a dismissible sidebar popover', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => json({ items: [], next_cursor: null })))
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: '新建项目' }))
+  const dialog = screen.getByRole('dialog', { name: '新建项目' })
+  expect(within(dialog).getByRole('textbox', { name: '项目名称' })).toHaveFocus()
+  expect(dialog).not.toHaveAttribute('aria-modal', 'true')
+  expect(dialog.closest('.app-frame')).not.toBeNull()
+  fireEvent.click(within(dialog).getByRole('button', { name: '取消' }))
+  expect(screen.queryByRole('dialog', { name: '新建项目' })).toBeNull()
+})
