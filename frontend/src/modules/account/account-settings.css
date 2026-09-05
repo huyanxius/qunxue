@@ -53,7 +53,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--qx-space-6) var(--qx-space-3) var(--qx-space-4);
-  background: var(--qx-color-surface-muted);
+  background: var(--qx-paper-sidebar);
 }
 .qs-identity {
   display: flex;
