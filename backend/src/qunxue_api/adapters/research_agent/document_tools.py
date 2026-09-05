@@ -120,6 +120,8 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def get_state(self, **payload: object) -> dict[str, object]: ...
 
+    def get_project_state(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]: ...
+
     def start_matching(self, **payload: object) -> dict[str, object]: ...
 
     def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
@@ -365,15 +367,6 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         return result
 
     @property
-    def material_prompt_context(self) -> dict[str, object] | None:
-        if not self.research_material_tools_enabled or not self._material_scope:
-            return None
-        return {"attachments": [
-            {"material_id": str(material_id), "parse_id": str(parse_id)}
-            for material_id, parse_id in self._material_scope.items()
-        ]}
-
-    @property
     def document_prompt_context(self) -> dict[str, object] | None:
         if not self.research_document_tools_enabled or self._task_id is None:
             return None
@@ -442,7 +435,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._agent_turn_id = agent_turn_id
         self._task_id = task_id
         self._project_context = (
-            self._workflow.get_state(user_id=user_id, conversation_id=conversation_id)
+            self._workflow.get_project_state(user_id=user_id, task_id=task_id)
             if self._workflow is not None and task_id is not None else None
         )
         self._document_id = document_id
