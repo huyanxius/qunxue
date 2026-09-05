@@ -116,6 +116,10 @@ export type AgentConversationResponse = {
     created_at: string;
     research_map: AgentResearchMapResponse;
     /**
+     * Task Id
+     */
+    task_id?: string | null;
+    /**
      * Title
      */
     title: string;
@@ -141,6 +145,10 @@ export type AgentConversationSummaryResponse = {
      * Conversation Id
      */
     conversation_id: string;
+    /**
+     * Task Id
+     */
+    task_id?: string | null;
     /**
      * Title
      */

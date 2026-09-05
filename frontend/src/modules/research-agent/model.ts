@@ -77,6 +77,7 @@ export type AgentTurn = {
 }
 
 export type AgentConversationSummary = {
+  task_id?: string | null
   conversation_id: string
   title: string
   updated_at: string
