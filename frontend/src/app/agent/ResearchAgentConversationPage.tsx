@@ -3022,7 +3022,7 @@ export function ResearchAgentConversationPage({
           {isEmpty && !embedded ? <div aria-hidden="true" className="research-agent-page__heading-placeholder" /> : (
             <header className="research-agent-page__conversation-heading new-research__agent-header" aria-label={text('对话操作', 'Conversation actions')}>
               <div className="new-research__agent-actions">
-                {workspace === 'research' ? (
+                {workspace === 'research' && !embedded ? (
                   <button
                     type="button"
                     aria-label={text('研究材料', 'Research materials')}
@@ -3040,15 +3040,7 @@ export function ResearchAgentConversationPage({
                     <FileTextIcon size={16} />
                   </button>
                 ) : null}
-                {embedded ? (
-                  <>
-                    <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                    <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><ArticleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                    {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
-                  </>
-                ) : (
-                  <button type="button" aria-label={text('研究面板', 'Research panel')} aria-pressed={contextOpen} title={text('研究面板', 'Research panel')} onClick={toggleResearchPanel}><SidebarSimpleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                )}
+                <button type="button" aria-label={text('研究面板', 'Research panel')} aria-pressed={contextOpen} aria-expanded={contextOpen} title={text('研究面板', 'Research panel')} onClick={toggleResearchPanel}><SidebarSimpleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
               </div>
             </header>
           )}
@@ -3246,7 +3238,7 @@ export function ResearchAgentConversationPage({
                       aria-label={text('添加研究材料', 'Add research material')}
                       aria-expanded={materialMenuOpen}
                       aria-controls="research-agent-material-menu"
-                      disabled={isBusy || materialUploading}
+                      disabled={materialUploading || (isBusy && !embedded)}
                       onClick={() => {
                         setModeMenuOpen(false)
                         setMaterialMenuOpen((open) => !open)
@@ -3261,13 +3253,13 @@ export function ResearchAgentConversationPage({
                         role="menu"
                         aria-label={text('添加研究材料', 'Add research material')}
                       >
-                        <button type="button" role="menuitem" onClick={() => {
+                        <button type="button" role="menuitem" disabled={isBusy} onClick={() => {
                           setMaterialMenuOpen(false)
                           materialFileInputRef.current?.click()
                         }}>
                           <FilePlusIcon size={18} /><span>{text('上传文件', 'Upload a file')}</span>
                         </button>
-                        <button type="button" role="menuitem" onClick={() => { void openMaterialAttachmentPicker() }}>
+                        <button type="button" role="menuitem" disabled={isBusy} onClick={() => { void openMaterialAttachmentPicker() }}>
                           <FolderOpenIcon size={18} /><span>{text('从研究材料添加', 'Add from research materials')}</span>
                         </button>
                         <button type="button" role="menuitem" onClick={openResearchMaterials}>
@@ -3414,7 +3406,7 @@ export function ResearchAgentConversationPage({
               activities={activities}
               citations={citationsForRail}
               selectedCitationId={selectedCitationId}
-              variant={embedded ? 'tabs' : 'sections'}
+              variant="sections"
               elapsedSeconds={embedded ? null : deepResearchElapsedSeconds}
               onClose={closeResearchPanel}
               onBack={backToResearchPanel}
