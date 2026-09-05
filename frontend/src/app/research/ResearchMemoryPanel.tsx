@@ -23,7 +23,6 @@ export function ResearchMemoryPanel({ taskId, projectName, preview = false }: { 
   const [summary, setSummary] = useState('')
   const [summaryBusy, setSummaryBusy] = useState(false)
   const [summaryError, setSummaryError] = useState('')
-  const [summaryReload, setSummaryReload] = useState(0)
   const [origin, setOrigin] = useState('all')
   const [sort, setSort] = useState('recent')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -66,7 +65,7 @@ export function ResearchMemoryPanel({ taskId, projectName, preview = false }: { 
       if (!controller.signal.aborted) setSummaryError(message(cause))
     }).finally(() => { if (!controller.signal.aborted) setSummaryBusy(false) })
     return () => controller.abort()
-  }, [taskId, settings, items, loading, preview, summaryReload])
+  }, [taskId, settings, items, loading, preview])
 
 
   function edit(item: ResearchMemory | 'new') { setDetailsOpen(true); setSelectedId(item === 'new' ? null : item.memory_id); setEditor(item); setContent(item === 'new' ? '' : item.content); setError(''); setNotice('') }
@@ -142,7 +141,7 @@ export function ResearchMemoryPanel({ taskId, projectName, preview = false }: { 
       </header>
       {loading || summaryBusy ? <p className="research-memory__summary-status" role="status">{loading ? '正在读取记忆…' : 'Agent 正在整理记忆概览…'}</p>
         : summary ? <p className="research-memory__summary">{summary}</p>
-        : summaryError ? <div className="research-memory__summary-status"><p>{summaryError}</p><button type="button" onClick={() => setSummaryReload(value => value + 1)}>重新整理</button></div>
+        : summaryError ? <div className="research-memory__summary-status"><p>{summaryError}</p><button type="button" onClick={() => setReload(value => value + 1)}>重新整理</button></div>
         : <p className="research-memory__summary-status">{error ? '暂时无法读取记忆。' : '这里会逐渐形成 Agent 对你的了解。你可以先添加一条记忆，也可以在对话中让它记住。'}</p>}
       <footer className="research-memory__overview-footer">
         <button className="research-memory__disclosure" type="button" aria-expanded={detailsOpen} aria-controls="memory-records" onClick={() => setDetailsOpen(open => !open)}><CaretDownIcon size={15} />{detailsOpen ? '收起记忆明细' : '查看记忆明细'}</button>
