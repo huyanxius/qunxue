@@ -3119,6 +3119,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
+
+/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -4026,6 +4036,138 @@ export type MatrixSubjectKind = 'code' | 'theme';
  * MemoTargetKind
  */
 export type MemoTargetKind = 'project' | 'material' | 'source' | 'code' | 'case' | 'comparison' | 'draft';
+
+/**
+ * MemoryCreate
+ */
+export type MemoryCreate = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Task Id
+     */
+    task_id?: string | null;
+};
+
+/**
+ * MemoryList
+ */
+export type MemoryList = {
+    /**
+     * Items
+     */
+    items: Array<MemoryResponse>;
+};
+
+/**
+ * MemoryResponse
+ */
+export type MemoryResponse = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * Origin
+     */
+    origin: 'manual' | 'explicit' | 'learned';
+    /**
+     * Source Conversation Id
+     */
+    source_conversation_id: string | null;
+    /**
+     * Source Message Id
+     */
+    source_message_id: string | null;
+    /**
+     * Source Quote
+     */
+    source_quote: string | null;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MemorySettings
+ */
+export type MemorySettings = {
+    /**
+     * Learn Memory
+     */
+    learn_memory: boolean;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Use Memory
+     */
+    use_memory: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * MemorySettingsUpdate
+ */
+export type MemorySettingsUpdate = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Learn Memory
+     */
+    learn_memory: boolean;
+    /**
+     * Use Memory
+     */
+    use_memory: boolean;
+};
+
+/**
+ * MemoryUpdate
+ */
+export type MemoryUpdate = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
 
 /**
  * MethodIntentContract
@@ -7939,6 +8081,34 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
+};
+
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -9586,6 +9756,270 @@ export type GetMaterialIntakeRunResponses = {
 };
 
 export type GetMaterialIntakeRunResponse = GetMaterialIntakeRunResponses[keyof GetMaterialIntakeRunResponses];
+
+export type ListMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Task Id
+         */
+        task_id?: string | null;
+    };
+    url: '/api/memories';
+};
+
+export type ListMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListMemoriesError = ListMemoriesErrors[keyof ListMemoriesErrors];
+
+export type ListMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryList;
+};
+
+export type ListMemoriesResponse = ListMemoriesResponses[keyof ListMemoriesResponses];
+
+export type CreateMemoryData = {
+    body: MemoryCreate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/memories';
+};
+
+export type CreateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateMemoryError = CreateMemoryErrors[keyof CreateMemoryErrors];
+
+export type CreateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    201: MemoryResponse;
+};
+
+export type CreateMemoryResponse = CreateMemoryResponses[keyof CreateMemoryResponses];
+
+export type GetMemorySettingsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Task Id
+         */
+        task_id?: string | null;
+    };
+    url: '/api/memories/settings';
+};
+
+export type GetMemorySettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMemorySettingsError = GetMemorySettingsErrors[keyof GetMemorySettingsErrors];
+
+export type GetMemorySettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemorySettings;
+};
+
+export type GetMemorySettingsResponse = GetMemorySettingsResponses[keyof GetMemorySettingsResponses];
+
+export type UpdateMemorySettingsData = {
+    body: MemorySettingsUpdate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Task Id
+         */
+        task_id?: string | null;
+    };
+    url: '/api/memories/settings';
+};
+
+export type UpdateMemorySettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMemorySettingsError = UpdateMemorySettingsErrors[keyof UpdateMemorySettingsErrors];
+
+export type UpdateMemorySettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemorySettings;
+};
+
+export type UpdateMemorySettingsResponse = UpdateMemorySettingsResponses[keyof UpdateMemorySettingsResponses];
+
+export type DeleteMemoryData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query: {
+        /**
+         * Expected Version
+         */
+        expected_version: number;
+    };
+    url: '/api/memories/{memory_id}';
+};
+
+export type DeleteMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteMemoryError = DeleteMemoryErrors[keyof DeleteMemoryErrors];
+
+export type DeleteMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteMemoryResponse = DeleteMemoryResponses[keyof DeleteMemoryResponses];
+
+export type GetMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/memories/{memory_id}';
+};
+
+export type GetMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMemoryError = GetMemoryErrors[keyof GetMemoryErrors];
+
+export type GetMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryResponse;
+};
+
+export type GetMemoryResponse = GetMemoryResponses[keyof GetMemoryResponses];
+
+export type UpdateMemoryData = {
+    body: MemoryUpdate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/memories/{memory_id}';
+};
+
+export type UpdateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMemoryError = UpdateMemoryErrors[keyof UpdateMemoryErrors];
+
+export type UpdateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryResponse;
+};
+
+export type UpdateMemoryResponse = UpdateMemoryResponses[keyof UpdateMemoryResponses];
+
+export type ListMemoryRevisionsData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/memories/{memory_id}/revisions';
+};
+
+export type ListMemoryRevisionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListMemoryRevisionsError = ListMemoryRevisionsErrors[keyof ListMemoryRevisionsErrors];
+
+export type ListMemoryRevisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryList;
+};
+
+export type ListMemoryRevisionsResponse = ListMemoryRevisionsResponses[keyof ListMemoryRevisionsResponses];
 
 export type GetMethodPlanData = {
     body?: never;
