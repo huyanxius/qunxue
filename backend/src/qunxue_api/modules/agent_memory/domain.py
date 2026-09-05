@@ -9,8 +9,12 @@ from uuid import UUID
 
 MemoryOrigin = Literal["manual", "explicit", "learned"]
 CONTEXT_BUDGET = 1200
-PINNED_SCOPE_BUDGET = 400
-DETAIL_BUDGET = 2000
+CONTENT_BUDGET = 2000
+MAX_MEMORIES = 100
+SEARCH_BUDGET = 4096
+# A legal note can expand sixfold when JSON escapes control characters. Reserve
+# metadata space so even that note remains readable, as a single search result.
+SEARCH_SINGLE_BUDGET = CONTENT_BUDGET * 6 + 512
 _SECRET_PATTERN = re.compile(
     r"sk-[A-Za-z0-9_-]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
     r"[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----"
@@ -33,7 +37,7 @@ def validate_content(key: str, content: str) -> tuple[str, str]:
     key, content = key.strip(), content.strip()
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]{0,63}", key):
         raise ValueError("记忆 key 必须为 1–64 位小写英文、数字、点、横线或下划线")
-    if not content or context_cost(content) > DETAIL_BUDGET:
+    if not content or context_cost(content) > CONTENT_BUDGET:
         raise ValueError("记忆内容为空或过长，请拆成简短条目")
     if redact_sensitive(content) != content:
         raise ValueError("记忆不能保存密码或访问凭据")
@@ -117,10 +121,19 @@ def render_context(memories: tuple[Memory, ...]) -> str:
         "Apply silently; do not expose keys or tool mechanics.\n"
     )
     suffix = "</memory>"
+    lines = [
+        memory_line(item)
+        for item in sorted(
+            memories, key=lambda m: (m.origin == "learned", -m.updated_at.timestamp())
+        )
+    ]
+    if context_cost(prefix + "".join(lines) + suffix) <= CONTEXT_BUDGET:
+        return prefix + "".join(lines) + suffix
+    notice = "Additional saved memories were not loaded; search memory if relevant.\n"
     result = prefix
-    # Human-maintained entries are admitted in full at write time. Never cut them.
-    for item in sorted(memories, key=lambda m: (m.origin == "learned", -m.updated_at.timestamp())):
-        line = memory_line(item)
-        if context_cost(result + line + suffix) <= CONTEXT_BUDGET:
+    # Human protection controls writing priority, not unlimited prompt space.
+    # Admit complete entries only, reserving the retrieval hint inside the budget.
+    for line in lines:
+        if context_cost(result + line + notice + suffix) <= CONTEXT_BUDGET:
             result += line
-    return result + suffix
+    return result + notice + suffix

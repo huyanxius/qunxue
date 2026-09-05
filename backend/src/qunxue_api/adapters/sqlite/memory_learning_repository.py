@@ -5,6 +5,7 @@ from sqlalchemy import and_, exists, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
 from qunxue_api.modules.agent_memory import (
+    MAX_MEMORIES,
     LearningBatch,
     Memory,
     MemoryCandidate,
@@ -287,7 +288,8 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                         continue
                 if (
                     not old
-                    and len(self.list(batch.user_id, snapshot.task_id)) + len(pending) >= 100
+                    and len(self.list(batch.user_id, snapshot.task_id)) + len(pending)
+                    >= MAX_MEMORIES
                 ):
                     continue
                 pending[key] = Memory(
