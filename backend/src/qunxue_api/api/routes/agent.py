@@ -619,6 +619,7 @@ def _chunks(value: str, size: int = 72) -> Iterator[str]:
 def _summary(item) -> AgentConversationSummaryResponse:
     return AgentConversationSummaryResponse(
         conversation_id=item.conversation_id,
+        task_id=item.task_id,
         title=item.title,
         updated_at=item.updated_at,
         turn_count=len(item.turns),
@@ -637,6 +638,7 @@ def _conversation(
     resolved_release_ids = release_ids or {}
     return AgentConversationResponse(
         conversation_id=item.conversation_id,
+        task_id=item.task_id,
         title=item.title,
         created_at=item.created_at,
         updated_at=item.updated_at,

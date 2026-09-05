@@ -92,6 +92,7 @@ class AgentTurnResponse(BaseModel):
 
 
 class AgentConversationSummaryResponse(BaseModel):
+    task_id: UUID | None = None
     conversation_id: UUID
     title: str
     updated_at: datetime

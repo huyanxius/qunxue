@@ -191,6 +191,7 @@ class SqliteConversationRepository:
             conversation_id=UUID(row.conversation_id),
             user_id=UUID(row.user_id),
             title=row.title,
+            task_id=UUID(row.current_research_task_id) if row.current_research_task_id else None,
             created_at=_utc(row.created_at),
             updated_at=_utc(row.updated_at),
             turns=tuple(turns),

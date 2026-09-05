@@ -120,6 +120,8 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def get_state(self, **payload: object) -> dict[str, object]: ...
 
+    def get_project_state(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]: ...
+
     def start_matching(self, **payload: object) -> dict[str, object]: ...
 
     def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
@@ -256,6 +258,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._confirmed_plan: ConfirmedTheoryPlanSnapshot | None = None
         self._pending_start_proposal: ResearchStartProposal | None = None
         self._material_scope: dict[UUID, UUID] | None = None
+        self._project_context: dict[str, object] | None = None
         self.research_handoff_tools_enabled = False
         self.research_document_tools_enabled = False
         self.research_material_tools_enabled = False
@@ -364,15 +367,6 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         return result
 
     @property
-    def material_prompt_context(self) -> dict[str, object] | None:
-        if not self.research_material_tools_enabled or not self._material_scope:
-            return None
-        return {"attachments": [
-            {"material_id": str(material_id), "parse_id": str(parse_id)}
-            for material_id, parse_id in self._material_scope.items()
-        ]}
-
-    @property
     def document_prompt_context(self) -> dict[str, object] | None:
         if not self.research_document_tools_enabled or self._task_id is None:
             return None
@@ -383,6 +377,8 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             "document_version": self._document_version,
             "section_id": self._section_id,
         }
+        if self._project_context is not None:
+            context["project"] = self._project_context
         if self._confirmed_plan is not None:
             context["confirmed_plan"] = _confirmed_plan_payload(self._confirmed_plan)
         return context
@@ -438,6 +434,10 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._agent_run_id = agent_run_id
         self._agent_turn_id = agent_turn_id
         self._task_id = task_id
+        self._project_context = (
+            self._workflow.get_project_state(user_id=user_id, task_id=task_id)
+            if self._workflow is not None and task_id is not None else None
+        )
         self._document_id = document_id
         self._section_id = section_id
         self._document_version = document_version

@@ -140,13 +140,10 @@ class ResearchStartApplication:
         task_id: UUID,
     ) -> ResearchTask:
         task = self._tasks.get(task_id, user_id=user_id)
-        if (
-            task.entry_mode is not ResearchEntryMode.FROM_SCRATCH
-            or task.status is not ResearchTaskStatus.DRAFT
-            or task.lifecycle_status is not ProjectLifecycleStatus.DRAFT
-            or task.conversation_id not in {None, conversation_id}
-        ):
-            raise ValueError("Only an unbound from-scratch draft can adopt a conversation.")
+        # The task's conversation_id records its original entry conversation.
+        # Membership is many-to-one in the conversation binding table.
+        if task.lifecycle_status is ProjectLifecycleStatus.ARCHIVED:
+            raise ValueError("Archived projects cannot start new conversations.")
         if task.conversation_id is None:
             saved = self._tasks.save_progress(
                 replace(

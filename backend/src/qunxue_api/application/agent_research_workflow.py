@@ -113,6 +113,9 @@ class AgentResearchWorkflow:
         task_id = restored["task_id"]
         if task_id is None:
             return {"status": "not_started", **restored}
+        return self.get_project_state(user_id=user_id, task_id=task_id)
+
+    def get_project_state(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]:
         task = self._tasks.get(task_id, user_id=user_id)
         progress = self._phenomena.progress(task.task_id)
         match_status = None
@@ -125,6 +128,11 @@ class AgentResearchWorkflow:
         return {
             "task_id": str(task.task_id),
             "status": workflow_status,
+            "project_title": task.project_title,
+            "project_stage": task.project_stage,
+            "method_orientation": task.method_orientation,
+            "research_intent": progress.confirmed.research_intent if progress.confirmed else None,
+            "context": progress.confirmed.context if progress.confirmed else None,
             "task_version": task.version,
             "phenomenon": progress.confirmed.phenomenon if progress.confirmed else None,
             "match_run_id": str(task.current_match_run_id) if task.current_match_run_id else None,
