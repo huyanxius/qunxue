@@ -103,6 +103,7 @@ class AgentConversationResponse(AgentConversationSummaryResponse):
     created_at: datetime
     turns: list[AgentTurnResponse]
     research_map: AgentResearchMapResponse
+    unfinished_runs: list["AgentRunRecoveryResponse"] = Field(default_factory=list)
 
 
 class AgentConversationListResponse(BaseModel):
@@ -131,6 +132,32 @@ class AgentTurnRequest(BaseModel):
     deep_research_run_id: UUID | None = None
     deep_research_action: Literal["clarify", "confirm", "skip"] | None = None
     deep_research_selection: str | None = Field(default=None, max_length=4000)
+
+
+class AgentRunRecoveryResponse(BaseModel):
+    run_id: UUID
+    idempotency_key: str
+    status: Literal[
+        "running", "failed", "interrupted", "awaiting_clarification", "awaiting_plan_confirmation"
+    ]
+    request: AgentTurnRequest
+    partial_answer: str
+    tool_summary: list[dict[str, object]] = Field(default_factory=list)
+    updated_at: datetime
+    cancel_requested: bool
+
+
+class AgentRunStopResponse(BaseModel):
+    run_id: UUID
+    status: Literal[
+        "running",
+        "completed",
+        "failed",
+        "interrupted",
+        "awaiting_clarification",
+        "awaiting_plan_confirmation",
+    ]
+    cancel_requested: bool
 
 
 class ResearchStartProposalResponse(BaseModel):
