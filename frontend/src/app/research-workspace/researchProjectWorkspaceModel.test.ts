@@ -55,6 +55,11 @@ describe('research project workspace routes', () => {
     expect(legacyResearchWorkspaceDestination('/research/materials')).toBeNull()
   })
 
+  it('keeps project folders in the library until a specific file is opened', () => {
+    expect(legacyResearchWorkspaceDestination('/research/materials?task_id=task-1')).toBeNull()
+    expect(legacyResearchWorkspaceDestination('/research/materials?task_id=task-1&tab=memory')).toBeNull()
+  })
+
   it('restores the last tool and key object only inside the same project', () => {
     const values = new Map<string, string>()
     const storage = {
