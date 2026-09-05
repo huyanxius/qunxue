@@ -1917,20 +1917,6 @@
   border-color: color-mix(in srgb, var(--app-ink) 45%, var(--app-border));
 }
 
-.research-agent-conversation--embedded .research-agent-composer textarea {
-  height: 50px;
-  min-height: 50px;
-  padding: 13px 50px 11px 14px;
-  font-size: 12px;
-  line-height: 20px;
-}
-
-.research-agent-conversation--embedded .research-agent-composer.has-prefix textarea {
-  height: 44px;
-  min-height: 44px;
-  padding-top: 8px;
-}
-
 .research-agent-conversation--embedded .research-agent-composer__send {
   right: 9px;
   bottom: 9px;
