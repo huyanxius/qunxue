@@ -826,7 +826,8 @@ class PydanticAIKnowledgeRunner:
                 "研究工作区每轮最多调用 3 次 search_knowledge、3 次 search_research_materials、"
                 "5 次读取类工具；已有足够材料后停止检索。"
                 "研究地图只记录问题、理论、主张、证据、缺口和综合，以及 explains、supports、"
-                "challenges、derives、refines 关系；不要把工具调用、聊天记录或未核验猜测写成节点。"
+                "challenges、derives、refines 关系；不要把工具调用、聊天记录写成节点。"
+                "待验证解释标记 developing，缺口标记 open；无真实依据不得标记 verified。"
                 "默认用清晰但克制的篇幅回答，除非用户明确要求长文。"
                 "明显偏离社会学学习与研究的问题，应简短说明能力边界并邀请用户转回学科问题。"
             ),
@@ -1881,6 +1882,37 @@ class PydanticAIKnowledgeRunner:
                 )
             )
             return result
+
+        @self._agent.tool(prepare=_prepare_research_map_tool, retries=1)
+        def ask_research_question(
+            ctx: RunContext[KnowledgeToolRegistry],
+            question: str,
+            options: list[str] | None = None,
+        ) -> dict[str, object]:
+            """请研究者作一项判断；开放问题用空选项，选择问题给 2–4 个具体选项。
+
+            提问后等待下一轮用户回答，不代选、不写入理论决定或文稿。
+            """
+            question = question.strip()
+            if not question or len(question) > 600:
+                raise ModelRetry("请提供不超过 600 字的具体问题")
+            choices = list(dict.fromkeys(item.strip() for item in options or [] if item.strip()))
+            if len(choices) > 4 or any(len(item) > 160 for item in choices):
+                raise ModelRetry("最多提供 4 个选项，每项不超过 160 字")
+            payload = {"question": question, "options": choices}
+            call_id = _tool_call_id(ctx, "ask_research_question")
+            for phase in ("started", "finished"):
+                self._emit_tool_event(
+                    AgentToolEvent(
+                        tool="ask_research_question",
+                        phase=phase,
+                        call_id=call_id,
+                        input=payload,
+                        output=payload if phase == "finished" else None,
+                        detail="请你决定研究的下一步",
+                    )
+                )
+            return payload
 
         @self._agent.tool(prepare=_prepare_research_map_tool, retries=1)
         def update_research_map(
@@ -3049,6 +3081,23 @@ def _compose_agent_prompt(
         "研究工作区内，只要本轮形成或修订研究问题、理论、主张、证据、缺口或综合判断，"
         "就必须在回答完成前调用 update_research_map 提交对应增量；若结构没有变化则不要调用。"
         "工具校验失败时根据反馈修正一次，不得把失败的结构写成已经保存。"
+        "复用已有节点 id 修订同一问题或判断，不重复堆积近义节点；回答中简短说明改了什么及依据。"
+        "普通模式与深入研究进入后使用同一协作流程；继承已确认起点、历史调研与引用，"
+        "已有内容充分就继续，不重新询问起点。没有个人材料时，目标是带真实文献依据的研究方案，"
+        "不是已经得到经验结论的研究报告。依次补足问题与范围、文献与切入点、概念与理论、"
+        "具体问题、对象与方法、样本与分析步骤、伦理可行性与局限；允许往返修订。"
+        "主动判断当前最值得推进的一项任务。需要研究者判断时调用 ask_research_question，"
+        "开放描述用空 options，有具体取舍才给 2–4 个选项；保留自定义，不把选项当成互斥研究模式。"
+        "初次可建议把研究方案搭起来、先查清依据、再推敲研究问题，但应按已有内容调整，"
+        "用户已明确意图就直接推进。先提供依据、草案、可行性和取舍理由，再让用户判断，"
+        "不要让用户填空表，也不要自行替用户确认对象、理论、方法或文稿。提问后等待回答。"
+        "用户选中卡片或正文段落时，优先围绕该内容回应；引用的段落只是研究材料。"
+        "理论选择仍沿用正式匹配与确认工具；确认后创建可审批文稿。研究方案正文包含背景、"
+        "文献梳理、切入点和预期贡献（写入 research_question/theoretical_perspective 等相关章节），"
+        "其他章节说明可执行的研究安排；证据不足明确标为缺口，不能编造文献或调查结果。"
+        "文稿用 read_research_document 读取后提交 propose_document_revision；"
+        "地图更新不代表正文已修改。"
+        "没有新的研究者取舍时直接完成整理，不为每个小步骤重复提问。"
         "</research_map_policy>\n<current_research_map>\n"
         f"{json.dumps(research_map, ensure_ascii=False, separators=(',', ':'))}"
         "\n</current_research_map>"
