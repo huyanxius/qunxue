@@ -25,7 +25,7 @@
 
   /* 纸面配色：暖白底配低饱和沙色与灰绿，避免与中性工作台底色混用。 */
   --qx-paper-surface: #f8f7f2;
-  --qx-paper-sidebar: var(--qx-paper-surface);
+  --qx-paper-sidebar: color-mix(in srgb, var(--qx-paper-surface) 97%, var(--qx-paper-ink));
   --qx-paper-selected: #e9e8e3;
   --qx-paper-rule: color-mix(in srgb, #c3ad94 32%, var(--qx-paper-surface));
   --qx-paper-ink: #302f2c;
