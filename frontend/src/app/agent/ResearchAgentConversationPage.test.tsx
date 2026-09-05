@@ -1849,3 +1849,42 @@ it('opens project creation in a dismissible sidebar popover', async () => {
   fireEvent.click(within(dialog).getByRole('button', { name: '取消' }))
   expect(screen.queryByRole('dialog', { name: '新建项目' })).toBeNull()
 })
+
+it.each([false, true])('restores a standard research Ask including focused discussion (%s)', async (focused) => {
+  const conversation = conversationFixture()
+  conversation.turns[0].tool_traces = [{ tool: 'ask_research_question', phase: 'finished', call_id: 'ask-1', output: { question: '你能接触到哪些人？', options: ['社团成员', '其他同学'] } }]
+  const requests: Record<string, unknown>[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = urlFor(input).pathname
+    if (path === '/api/agent/turns') { requests.push(JSON.parse(String(init?.body))); return streamResponse(conversationFixture({ answer: '先限定研究对象。' })) }
+    if (path === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+    return json({ items: [] })
+  }))
+  render(<MemoryRouter><ResearchAgentConversationPage userId="u" embedded workspace="research" taskId="t" conversationId={conversation.conversation_id} enableResearchGuidance discussion={focused ? { title: '研究对象', content: '大学生', sectionId: null } : null} /></MemoryRouter>)
+  const ask = await screen.findByRole('region', { name: '研究下一步' })
+  expect(ask).toHaveClass('research-flow-card')
+  fireEvent.click(within(ask).getByRole('radio', { name: /社团成员/ }))
+  await waitFor(() => expect(requests).toHaveLength(1))
+  expect(requests[0]).toMatchObject({ mode: 'standard', workspace: 'research', task_id: 't' })
+  expect(requests[0].message).toContain('关于“你能接触到哪些人？”：社团成员')
+  if (focused) expect(requests[0].message).toContain('> 大学生')
+})
+
+it('sends the selected passage with the researcher question and opens its existing citation', async () => {
+  const conversation = conversationFixture({ citations: [{ citation_id: 'c1', source_id: 's1', kind: 'knowledge', label: '文献依据', excerpt: '原始材料的摘录' }] })
+  const requests: Record<string, unknown>[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = urlFor(input).pathname
+    if (path === '/api/agent/turns') { requests.push(JSON.parse(String(init?.body))); return streamResponse(conversation) }
+    if (path === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+    return json({ items: [] })
+  }))
+  render(<MemoryRouter><ResearchAgentConversationPage userId="u" embedded workspace="research" taskId="t" conversationId={conversation.conversation_id} sectionId="research_question" discussion={{ title: '作用机制', content: '平台改变了所有人的偏好。', sectionId: 'mechanisms' }} citationRequest={{ id: 's1', key: 1 }} /></MemoryRouter>)
+  expect(await screen.findByText('正在讨论：作用机制')).toBeVisible()
+  expect(await screen.findByText('原始材料的摘录')).toBeVisible()
+  fireEvent.change(screen.getByRole('textbox', { name: /问题|Agent/ }), { target: { value: '这里是否推得太远？' } })
+  fireEvent.submit(screen.getByRole('textbox', { name: /问题|Agent/ }).closest('form')!)
+  await waitFor(() => expect(requests).toHaveLength(1))
+  expect(requests[0].message).toContain('> 平台改变了所有人的偏好。\n\n这里是否推得太远？')
+  expect(requests[0].section_id).toBe('mechanisms')
+})

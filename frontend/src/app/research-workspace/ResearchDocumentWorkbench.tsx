@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from '@tiptap/markdown'
@@ -26,7 +28,7 @@ import {
 } from '../../api/researchWorkspace'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
 import { ResearchMapCanvas } from './ResearchMapCanvas'
-import { projectFormalResearchCanvas, projectResearchCanvas, type ResearchCanvasProjection } from '../../modules/research-workspace'
+import { collapseDocumentNodes, projectFormalResearchCanvas, projectResearchCanvas, type ResearchCanvasProjection, type ResearchCanvasStreamingTurn, type ResearchDiscussion } from '../../modules/research-workspace'
 import {
   getAnalysisSnapshot,
   getResearchCycleSnapshot,
@@ -138,6 +140,9 @@ type ResearchDocumentWorkbenchProps = {
   readonly initialSectionId?: string | null
   readonly conversation?: AgentConversation | null
   readonly refreshKey?: number
+  readonly streamingTurn?: ResearchCanvasStreamingTurn | null
+  readonly onDiscuss?: (discussion: ResearchDiscussion) => void
+  readonly onOpenCitation?: (id: string) => void
   readonly onWorkspaceContextChange?: (context: ResearchDocumentWorkspaceContext) => void
 }
 
@@ -182,6 +187,9 @@ export function ResearchDocumentWorkbench({
   initialSectionId = null,
   conversation = null,
   refreshKey = 0,
+  streamingTurn = null,
+  onDiscuss,
+  onOpenCitation,
   onWorkspaceContextChange,
 }: ResearchDocumentWorkbenchProps) {
   const { task_id: taskId, stage: stageParam } = useParams<{ task_id: string; stage?: string }>()
@@ -215,11 +223,18 @@ export function ResearchDocumentWorkbench({
   const [relationDraft, setRelationDraft] = useState({ explanation: '', premise: '', supporting: '', excluding: '', distinguishing: '' })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved')
   const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
+  const [discussion, setDiscussion] = useState<ResearchDiscussion | null>(null)
+  const [citationRequest, setCitationRequest] = useState<{ id: string; key: number } | null>(null)
+  const [wholeDocument, setWholeDocument] = useState(true)
+  const [selectedPassage, setSelectedPassage] = useState<ResearchDiscussion | null>(null)
+  const discuss = (value: ResearchDiscussion) => { setDiscussion(value); onDiscuss?.(value) }
+
   const sectionNodePrefix = `research-section:${taskId ?? 'unknown'}:${mode}:`
   const [selectedMapNodeId, setSelectedMapNodeId] = useState<string | null>(null)
   const matchingAttemptKeyRef = useRef<string | null>(null)
   const matchingInFlightRef = useRef(false)
   const saveInFlightRef = useRef<Promise<ResearchDocumentResponse | null> | null>(null)
+  const saveBaseRef = useRef<ResearchDocumentResponse | null>(null)
   const workspaceRef = useRef<HTMLDivElement | null>(null)
   const activeResizePointer = useRef<number | null>(null)
   const mouseResizeCleanup = useRef<(() => void) | null>(null)
@@ -234,10 +249,11 @@ export function ResearchDocumentWorkbench({
   const selectedTheoryIds = Object.entries(pendingTheoryDecisions).filter(([, value]) => value.action === 'adopt' || value.action === 'combine').map(([candidateId]) => candidateId)
   const multiTheoryRelationReady = selectedTheoryIds.length < 2 || Object.values(relationDraft).every((value) => value.trim())
   const mapConversation = embedded ? conversation : agentConversation
-  const mapProjection = useMemo<ResearchCanvasProjection>(() => projectFormalResearchCanvas({
+  const manuscriptNodeId = `${sectionNodePrefix}document`
+  const mapProjection = useMemo<ResearchCanvasProjection>(() => collapseDocumentNodes(projectFormalResearchCanvas({
     taskId: taskId ?? null,
     mode,
-    agentProjection: projectResearchCanvas({ conversation: mapConversation }),
+    agentProjection: projectResearchCanvas({ conversation: mapConversation, streamingTurn }),
     navigation,
     matchRun,
     pendingTheoryDecisions,
@@ -245,7 +261,7 @@ export function ResearchDocumentWorkbench({
     documentTitle: document?.title,
     analysisSnapshot: mode === 'match' ? analysisSnapshot : null,
     researchCycle,
-  }), [analysisSnapshot, document?.title, mapConversation, matchRun, mode, navigation, pendingTheoryDecisions, researchCycle, sections, taskId])
+  }), manuscriptNodeId, document?.title ?? '研究方案文稿'), [analysisSnapshot, document?.title, mapConversation, matchRun, mode, navigation, pendingTheoryDecisions, researchCycle, sections, taskId, manuscriptNodeId, streamingTurn])
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
     content: activeContent || '在这里写下你的研究判断。每次用户编辑都会形成可恢复的文档版本。',
@@ -271,7 +287,7 @@ export function ResearchDocumentWorkbench({
       : sections[0]?.section_id
     if (!requestedSection) return
     setActiveSectionId(requestedSection)
-    if (focusDocument) setSelectedMapNodeId(`${sectionNodePrefix}${requestedSection}`)
+    if (focusDocument) setSelectedMapNodeId(`${sectionNodePrefix}document`)
   }, [focusDocument, initialSectionId, sectionNodePrefix, sections])
 
   useEffect(() => {
@@ -493,27 +509,39 @@ export function ResearchDocumentWorkbench({
   const saveSection = useCallback((): Promise<ResearchDocumentResponse | null> => {
     if (!editor || !document || !activeSection) return Promise.resolve(document)
     if (saveInFlightRef.current) return saveInFlightRef.current
+    const base = saveBaseRef.current?.document_id === document.document_id && saveBaseRef.current.version > document.version
+      ? saveBaseRef.current : document
     const content = editor.getMarkdown()
-    if (content === activeSection.content) {
+    if (content === base.sections.find(section => section.section_id === activeSection.section_id)?.content) {
       setSaveState('saved')
-      return Promise.resolve(document)
+      setDocument(base)
+      return Promise.resolve(base)
     }
     setSaveState('saving')
-    const nextSections = document.sections.map((section) => section.section_id === activeSection.section_id
-      ? { ...section, content }
-      : section)
     let request: Promise<ResearchDocumentResponse | null>
     request = (async () => {
       try {
-        const result = await updateResearchDocument({
-          path: { document_id: document.document_id },
-          headers: { 'Idempotency-Key': key() },
-          body: { expected_version: document.version, sections: nextSections, change_summary: '用户直接编辑正文', source: 'user_edit' },
-        })
-        if (!result.data) throw new Error('自动保存失败，请重试。')
-        setDocument(result.data)
-        setSaveState('saved')
-        return result.data
+        let latest = base
+        // 等待网络时仍可能继续输入；逐版保存，直到服务器版本包含当前编辑内容。
+        // 中途不回填旧正文，否则会覆盖请求发出后新输入的文字。
+        while (true) {
+          const pendingContent = editor.getMarkdown()
+          const nextSections = latest.sections.map(section => section.section_id === activeSection.section_id
+            ? { ...section, content: pendingContent }
+            : section)
+          const result = await updateResearchDocument({
+            path: { document_id: latest.document_id },
+            headers: { 'Idempotency-Key': key() },
+            body: { expected_version: latest.version, sections: nextSections, change_summary: '用户直接编辑正文', source: 'user_edit' },
+          })
+          if (!result.data) throw new Error('自动保存失败，请重试。')
+          latest = result.data
+          saveBaseRef.current = latest
+          if (editor.getMarkdown() !== pendingContent) continue
+          setDocument(latest)
+          setSaveState('saved')
+          return latest
+        }
       } finally {
         if (saveInFlightRef.current === request) saveInFlightRef.current = null
       }
@@ -585,6 +613,10 @@ export function ResearchDocumentWorkbench({
   }
 
   async function acceptProposal(proposal: ResearchDocumentProposalResponse) {
+    if (saveState !== 'saved') {
+      setError('请等待当前编辑保存完成，再检查并接受修改建议。')
+      return
+    }
     if (proposal.status !== 'pending') return
     if (proposal.kind !== 'create' && !document) return
     if (proposal.kind !== 'create' && proposal.base_document_version !== document!.version) return
@@ -685,7 +717,10 @@ export function ResearchDocumentWorkbench({
 
   async function loadFormalExport() {
     if (!document) return null
-    const result = await exportResearchDocument({ path: { document_id: document.document_id }, query: { version: document.version } })
+    // 导出跟随本次编辑保存后的版本，不能在自动保存期间退回旧正文。
+    const latestDocument = saveState === 'saved' ? document : await saveSection()
+    if (!latestDocument) return null
+    const result = await exportResearchDocument({ path: { document_id: latestDocument.document_id }, query: { version: latestDocument.version } })
     return result.data ?? null
   }
 
@@ -771,7 +806,9 @@ export function ResearchDocumentWorkbench({
 
   function openSectionNode(nodeId: string) {
     setSelectedMapNodeId(nodeId)
-    if (nodeId.startsWith(sectionNodePrefix)) setActiveSectionId(nodeId.slice(sectionNodePrefix.length))
+    if (nodeId.startsWith(sectionNodePrefix) && nodeId !== manuscriptNodeId) setActiveSectionId(nodeId.slice(sectionNodePrefix.length))
+    const node = mapProjection.nodes.find(item => item.id === nodeId)
+    if (node && node.kind !== 'document') discuss({ title: node.title, content: node.summary || node.title, sectionId: null })
   }
 
   function recordTheoryDecision(candidateId: string, candidateVersion: number, action: TheoryDecisionAction) {
@@ -835,6 +872,19 @@ export function ResearchDocumentWorkbench({
 
   const runtimeBoundary = loadState === 'error'
   const statusText = saveState === 'saving' ? '正在保存…' : saveState === 'unsaved' ? '有未保存更改' : null
+  function capturePassage(container: HTMLElement) {
+    const selection = window.getSelection()
+    if (!selection || !container.contains(selection.anchorNode) || !container.contains(selection.focusNode)) return
+    const content = selection.toString().trim().slice(0, 2400)
+    if (!content) { setSelectedPassage(null); return }
+    const element = selection.anchorNode?.nodeType === 1 ? selection.anchorNode as Element : selection.anchorNode?.parentElement
+    const endElement = selection.focusNode?.nodeType === 1 ? selection.focusNode as Element : selection.focusNode?.parentElement
+    const startSection = element?.closest('[data-research-section]')?.getAttribute('data-research-section')
+    const endSection = endElement?.closest('[data-research-section]')?.getAttribute('data-research-section')
+    const selectedSection = wholeDocument ? (startSection === endSection ? sections.find(section => section.section_id === startSection) : null) : activeSection
+    setSelectedPassage({ title: selectedSection?.title ?? document?.title ?? '研究方案文稿', content, sectionId: selectedSection?.section_id ?? null })
+  }
+
   const documentNodeContent = (
     <section className="qx-surface research-document-node" aria-label="研究文档节点">
       <div className="research-document-node__topbar">
@@ -858,7 +908,18 @@ export function ResearchDocumentWorkbench({
         </div>
       </div>
 
-      <div className="research-document-node__body">
+      <div className="research-document-node__body" onMouseUp={(event) => capturePassage(event.currentTarget)} onKeyUp={(event) => capturePassage(event.currentTarget)}>
+        <nav className="research-manuscript-sections" aria-label="文稿章节">
+          <button className="qx-tool-control" type="button" aria-pressed={wholeDocument} onClick={async () => { if (saveState !== 'saved') { try { await saveSection() } catch { setError('请先保存当前修改。'); return } } setWholeDocument(true) }}>全文</button>
+          {sections.map(section => <button className="qx-tool-control" type="button" key={section.section_id} aria-label={`研究章节：${section.title}`} aria-pressed={!wholeDocument && activeSectionId === section.section_id} onClick={async () => {
+            if (saveState !== 'saved') { try { await saveSection() } catch { setError('请先保存当前修改。'); return } }
+            setActiveSectionId(section.section_id); setSelectedPassage(null); setWholeDocument(false)
+          }}>{section.title}</button>)}
+        </nav>
+        {selectedPassage ? <button className="qx-tool-control" type="button" onMouseDown={event => event.preventDefault()} onClick={() => discuss(selectedPassage)}>讨论选中段落</button> : null}
+        <button className="qx-tool-control" type="button" onClick={() => discuss({ title: document?.title ?? '研究方案文稿', sectionId: null, content: document ? '请阅读当前文稿，结合研究地图检查尚缺的论证和依据，先提出下一步研究任务；需要修改时提交可确认的局部修订建议。' : '请承接已确认研究起点和前期调研，一起形成研究方案。先检查研究状态，已有内容直接复用；明确需要我决定什么，先提供依据再用 Ask 提问。理论取舍确认后，整理为可审批的完整研究方案文稿。' })}>围绕文稿继续研究</button>
+        {wholeDocument && document ? <div className="research-manuscript-full" aria-label="研究文稿全文">{document.sections.map(section => <section key={section.section_id} data-research-section={section.section_id}><h2>{section.title}</h2><ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content || '这一节尚待共同补充。'}</ReactMarkdown><button className="qx-tool-control" type="button" onClick={() => { setActiveSectionId(section.section_id); setWholeDocument(false); setSelectedPassage(null) }}>编辑本节</button><button className="qx-tool-control" type="button" onClick={() => { setActiveSectionId(section.section_id); discuss({ title: section.title, content: section.content, sectionId: section.section_id }) }}>讨论本节</button></section>)}</div> : null}
+
         {mode === 'framework' && taskId && navigation?.current_theory_plan_id ? (
           <div className="research-document-workbench__delivery">
             <M5ResearchDeliveryController
@@ -949,7 +1010,7 @@ export function ResearchDocumentWorkbench({
                 <label className="qx-field-control document-formatting__file">导入模板 CSS<input aria-label="导入模板 CSS" type="file" accept=".css,text/css" onChange={(event) => void importPrintCss(event.target.files?.[0])} /></label>
                 <button className="qx-tool-control" type="button" onClick={() => void applyFormatting()}>应用格式并形成新版本</button>
               </section>
-              <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" />
+              {!wholeDocument ? <EditorContent editor={editor} className="research-document-editor" aria-label="研究文档正文" /> : null}
               {activeSection?.citation_refs?.length ? <aside className="document-citations" aria-label="结构化引用">
                 <span>结构化引用</span>
                 <ul>{activeSection.citation_refs.map((citation) => <li key={citation.citation_id}>
@@ -1000,6 +1061,7 @@ export function ResearchDocumentWorkbench({
               onSelectNode={(node) => openSectionNode(node.id)}
               onClearSelection={() => setSelectedMapNodeId(null)}
               onContinueNode={(node) => openSectionNode(node.id)}
+              onOpenCitation={(id) => { setCitationRequest({ id, key: Date.now() }); onOpenCitation?.(id) }}
               expandedNodeContent={selectedMapNodeId?.startsWith(sectionNodePrefix) ? { [selectedMapNodeId]: documentNodeContent } : {}}
             />
 
@@ -1034,6 +1096,10 @@ export function ResearchDocumentWorkbench({
                   documentVersion={document?.version ?? null}
                   theoryPlanId={navigation?.current_theory_plan_id ?? null}
                   onConversationChange={setAgentConversation}
+                  discussion={discussion}
+                  onClearDiscussion={() => setDiscussion(null)}
+                  citationRequest={citationRequest}
+                  enableResearchGuidance={Boolean(navigation?.phenomenon_summary)}
                   onTurnCompleted={() => { void refreshDocumentState() }}
                 />
               </>

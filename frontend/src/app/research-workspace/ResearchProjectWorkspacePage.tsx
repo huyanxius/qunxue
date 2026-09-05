@@ -1,3 +1,4 @@
+import type { ResearchDiscussion, ResearchCanvasStreamingTurn } from '../../modules/research-workspace'
 import {
   ChartBarIcon,
   ArchiveBoxIcon,
@@ -95,6 +96,12 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
     retry: false,
   })
   const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
+  const [discussion, setDiscussion] = useState<ResearchDiscussion | null>(null)
+  const [citationRequest, setCitationRequest] = useState<{ id: string; key: number } | null>(null)
+  const [streamingTurn, setStreamingTurn] = useState<ResearchCanvasStreamingTurn | null>(null)
+  useEffect(() => { setDiscussion(null); setCitationRequest(null) }, [taskId, toolParam])
+  const discuss = (next: ResearchDiscussion) => { setDiscussion(next); setMobilePane('agent') }
+
   const [documentContext, setDocumentContext] = useState<ResearchDocumentWorkspaceContext | null>(null)
   const [centerRefreshKey, setCenterRefreshKey] = useState(0)
   const [mobilePane, setMobilePane] = useState<'center' | 'agent'>('center')
@@ -247,6 +254,9 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
             initialDocumentId={position.documentId ?? null}
             initialSectionId={position.sectionId ?? null}
             conversation={agentConversation}
+            streamingTurn={streamingTurn}
+            onDiscuss={discuss}
+            onOpenCitation={(id) => setCitationRequest({ id, key: Date.now() })}
             refreshKey={centerRefreshKey}
             onWorkspaceContextChange={updateDocumentLocation}
           />
@@ -331,6 +341,11 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
                 documentVersion={documentContext?.documentVersion ?? null}
                 theoryPlanId={navigationData.current_theory_plan_id}
                 onConversationChange={setAgentConversation}
+                onStreamingTurnChange={setStreamingTurn}
+                discussion={discussion}
+                onClearDiscussion={() => setDiscussion(null)}
+                citationRequest={citationRequest}
+                enableResearchGuidance={Boolean(navigationData.phenomenon_summary)}
                 onTurnCompleted={() => setCenterRefreshKey((value) => value + 1)}
                 composerAriaLabel={`和 Agent 讨论当前${tools.find((item) => item.id === tool)?.label ?? '研究'}`}
               />

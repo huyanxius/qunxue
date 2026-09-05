@@ -302,7 +302,7 @@ export function ResearchMapCanvas({
         </ExpandedNodeContentContext.Provider>
         )}
         {!projection.nodes.length ? <MapIdleNote actions={idleActions} /> : null}
-        {projection.nodes.length && !hasDocumentNodes ? (
+        {projection.nodes.length && !focusedDocumentContent ? (
           <>
             {layoutPending ? <div className="research-map__layout-status" role="status">正在整理结构…</div> : null}
 

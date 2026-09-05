@@ -1,3 +1,4 @@
+import type { ResearchDiscussion } from '../../modules/research-workspace'
 import {
   CaretRightIcon,
   CheckCircleIcon,
@@ -171,6 +172,8 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     ?? (journey?.conversationId === requestedConversationId ? journey.taskId : null)
     ?? requestedTaskId ?? materialTaskId
 
+  const [discussion, setDiscussion] = useState<ResearchDiscussion | null>(null)
+  const [citationRequest, setCitationRequest] = useState<{ id: string; key: number } | null>(null)
   const projection = useMemo<ResearchCanvasProjection>(() => {
     const projected = projectResearchCanvas({ conversation, streamingTurn })
     const phenomenon = journey?.proposal?.phenomenon
@@ -316,6 +319,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
     setSelectedNodeId(node.id)
+    setDiscussion({ title: node.title, content: node.summary || node.excerpt || node.title })
     const subject = (node.excerpt || node.title).slice(0, 800)
     const prompt = node.kind === 'question'
       ? `请继续拆解这个研究问题：${node.title}`
@@ -476,6 +480,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
                 onSelectNode={(node) => setSelectedNodeId(node.id)}
                 onClearSelection={() => setSelectedNodeId(null)}
                 onContinueNode={continueNode}
+                onOpenCitation={(id) => setCitationRequest({ id, key: Date.now() })}
               />
             </div>
             <div
@@ -520,6 +525,10 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               onConversationChange={syncConversation}
               onStreamingTurnChange={setStreamingTurn}
               conversationTail={journeyTail}
+              discussion={discussion}
+              onClearDiscussion={() => setDiscussion(null)}
+              citationRequest={citationRequest}
+              enableResearchGuidance={Boolean(journey?.taskId)}
             />
           </div>
         </section>

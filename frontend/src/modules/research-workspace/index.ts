@@ -56,3 +56,5 @@ export type {
   WorkspaceRunState,
   WorkspaceRunStatus,
 } from './types'
+export { composeResearchDiscussion, latestResearchAsk, resolveResearchCitation, collapseDocumentNodes } from './researchCollaboration'
+export type { ResearchDiscussion, ResearchAsk } from './researchCollaboration'

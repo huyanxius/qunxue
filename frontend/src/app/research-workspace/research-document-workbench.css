@@ -292,3 +292,11 @@
   .research-document-workbench__workspace > .research-agent-conversation--embedded { min-height: 38rem; border-top: 1px solid var(--rdw-line); border-left: 0; }
   .research-document-node__actions .document-save-status { display: none; }
 }
+.research-manuscript-sections { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.research-manuscript-sections button[aria-pressed='true'] { color: #fff; background: #68746b; }
+.research-manuscript-full { margin-top: 28px; font-family: var(--serif); line-height: 1.85; }
+.research-manuscript-full > section { margin-bottom: 36px; }
+.research-manuscript-full h2 { margin-bottom: 14px; }
+.research-manuscript-full .qx-tool-control { margin-right: 7px; color: #68746b; }
+.research-document-workbench .research-map__document-focus { inset: 0; }
+.research-document-workbench .research-map__document-focus > .research-document-map-node { border-radius: 0; }
