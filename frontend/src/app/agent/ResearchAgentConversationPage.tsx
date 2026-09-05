@@ -1,3 +1,4 @@
+import { composeResearchDiscussion, latestResearchAsk, resolveResearchCitation, type ResearchDiscussion } from '../../modules/research-workspace'
 import {
   ArrowClockwiseIcon,
   ArticleIcon,
@@ -107,6 +108,7 @@ import { ResearchPromptCarousel } from './ResearchPromptCarousel'
 import deepResearchGuidance from '../../assets/agent/new-research-guidance.webp'
 import { useAppLocale, type AppLocale } from '../i18n/AppLocaleProvider'
 import './research-agent-page.css'
+import './research-agent-conversation.css'
 import './new-research-workspace.css'
 
 // The conversation controller is shared by the standalone Agent and embedded
@@ -162,7 +164,9 @@ function DeepResearchMockFlow({
   onExport,
   onContinueResearch,
   researchEntryBusy = false,
+  collaboration = false,
 }: {
+  collaboration?: boolean
   stage: DeepResearchMockStage
   question: string
   stepIndex: number
@@ -190,8 +194,8 @@ function DeepResearchMockFlow({
   if (stage === 'clarifying') {
     return (
       <section
-        className={`deep-research-mock-card deep-research-mock-card--question${chosenIntent ? ' is-answered' : ''}`}
-        aria-label="确认研究意图"
+        className={`deep-research-mock-card deep-research-mock-card--question${collaboration ? ' research-flow-card' : ''}${chosenIntent ? ' is-answered' : ''}`}
+        aria-label={collaboration ? "研究下一步" : "确认研究意图"}
       >
         <h2>{question}</h2>
         <div className="deep-research-mock-card__options" role="radiogroup" aria-label="研究角度">
@@ -232,7 +236,7 @@ function DeepResearchMockFlow({
         ) : null}
         {chosenIntent ? (
           <p className="deep-research-mock-card__answered" aria-live="polite">
-            已按<strong>{chosenIntent}</strong>这个角度整理研究计划，稍等一下。
+            {collaboration ? <>正在根据你的选择继续讨论。</> : <>已按<strong>{chosenIntent}</strong>这个角度整理研究计划，稍等一下。</>}
           </p>
         ) : null}
       </section>
@@ -355,6 +359,7 @@ const toolLabels: Record<string, string> = {
   read_research_material_context: '读取研究材料原文',
   search_web: '搜索公开网页',
   read_web_page: '读取网页正文',
+  ask_research_question: '讨论研究下一步',
   update_research_map: '更新研究地图',
   propose_start_research: '整理研究起点',
   get_research_workflow_state: '读取研究进度',
@@ -1666,6 +1671,10 @@ type ResearchAgentConversationPageProps = {
   suggestedPrompt?: string | null
   suggestedPromptKey?: number
   introSessionId?: string | null
+  discussion?: ResearchDiscussion | null
+  onClearDiscussion?: () => void
+  citationRequest?: { id: string; key: number } | null
+  enableResearchGuidance?: boolean
 }
 
 export function ResearchAgentConversationPage({
@@ -1690,6 +1699,10 @@ export function ResearchAgentConversationPage({
   suggestedPrompt = null,
   suggestedPromptKey = 0,
   introSessionId = null,
+  discussion = null,
+  onClearDiscussion,
+  citationRequest = null,
+  enableResearchGuidance = false,
 }: ResearchAgentConversationPageProps) {
   const { locale, text } = useAppLocale()
   const location = useLocation()
@@ -1969,6 +1982,25 @@ export function ResearchAgentConversationPage({
   }, [pendingAttachedMaterials])
 
   const turns = useMemo(() => activeConversation?.turns ?? [], [activeConversation])
+  const [guidanceDismissed, setGuidanceDismissed] = useState(false)
+  const researchAsk = latestResearchAsk(activeConversation)
+  const hasResearchWork = turns.some(turn => turn.tool_traces?.some(trace =>
+    ['ask_research_question', 'get_research_state', 'start_theory_matching', 'propose_document_revision', 'propose_document_creation'].includes(trace.tool)))
+  const currentResearchAsk = researchAsk ?? (!hasResearchWork && !guidanceDismissed ? {
+    question: '已有研究起点，接下来你想先推进什么？',
+    options: ['把研究方案搭起来', '先查清依据', '再推敲研究问题'],
+  } : null)
+  useEffect(() => { setGuidanceDismissed(false) }, [requestedConversationId, turns.at(-1)?.turn_id])
+  useEffect(() => {
+    if (!citationRequest || !activeConversation) return
+    const resolved = resolveResearchCitation(activeConversation, citationRequest.id)
+    if (resolved) {
+      setSelectedCitationContext(resolved)
+      setContextTab('sources')
+      setContextOpen(true)
+    } else setError('这条依据未在当前对话中找到，暂时无法打开原文。')
+  }, [citationRequest, activeConversation])
+
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
   const isBusy = status === 'loading' || canStopGeneration
   const canSubmit = draft.trim().length > 0
@@ -2338,7 +2370,12 @@ export function ResearchAgentConversationPage({
   }
 
   async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm' | 'skip'; selection?: string }, researchEntry = false): Promise<AgentConversation | null> {
-    const question = rawQuestion.trim()
+    const question = retryIdempotencyKey || deepAction || researchEntry ? rawQuestion.trim() : composeResearchDiscussion(rawQuestion.trim(), discussion)
+    if (!rawQuestion.trim()) return null
+    if (question.length > MAX_AGENT_MESSAGE_LENGTH) {
+      setError('讨论内容过长，请缩短问题或重新选择较短的段落。')
+      return null
+    }
     if (!question || isBusy || (!researchEntry && researchEntryAbortController.current)) return null
     const turnMode = researchEntry ? 'standard' : composerMode
     let resultConversation: AgentConversation | null = null
@@ -2385,7 +2422,7 @@ export function ResearchAgentConversationPage({
           web_search: webSearchEnabled,
           task_id: workspace === 'research' ? taskId : null,
           document_id: workspace === 'research' ? documentId : null,
-          section_id: workspace === 'research' ? sectionId : null,
+          section_id: workspace === 'research' ? (discussion && 'sectionId' in discussion ? discussion.sectionId : sectionId) : null,
           document_version: workspace === 'research' ? documentVersion : null,
           theory_plan_id: workspace === 'research' ? theoryPlanId : null,
           material_ids: attempt.materialIds,
@@ -3119,6 +3156,16 @@ export function ResearchAgentConversationPage({
                 <button type="button" aria-label={text('关闭错误提示', 'Close error message')} onClick={() => setError(null)}><XIcon size={14} /></button>
               </div>
             ) : null}
+            {enableResearchGuidance && composerMode === 'standard' && currentResearchAsk && !isBusy && !guidanceDismissed && (researchAsk || !discussion) ? (
+              <DeepResearchMockFlow
+                key={`${turns.at(-1)?.turn_id ?? 'entry'}:${currentResearchAsk.question}:${error ?? ''}`}
+                collaboration stage="clarifying" question={currentResearchAsk.question}
+                options={currentResearchAsk.options} stepIndex={0} knowledgeCount={0} webCount={0}
+                onChooseIntent={(answer) => { void submitQuestion(`关于“${currentResearchAsk.question}”：${answer}`) }}
+                onSkip={() => setGuidanceDismissed(true)} onConfirmPlan={() => {}} onEdit={() => composerInputRef.current?.focus()}
+              />
+            ) : null}
+            {discussion ? <div className="research-discussion-focus" role="status"><span>正在讨论：{discussion.title}</span><button type="button" disabled={isBusy} onClick={() => { void submitQuestion('请围绕这项内容继续推进。先说明已有依据和待解决的问题，需要我判断时提出一个具体问题。') }}>继续研究</button><button type="button" aria-label="结束当前讨论" onClick={onClearDiscussion}><XIcon size={14} /></button></div> : null}
             {composerMode === 'deep-research' && deepResearchMockStage === 'clarifying' && !streamingTurn ? (
               <DeepResearchMockFlow
                 stage={deepResearchMockStage}

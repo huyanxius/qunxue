@@ -2616,3 +2616,10 @@
 .research-agent-conversation .research-agent-composer__project-menu button { grid-template-columns: 18px minmax(0, 1fr) 14px; }
 .research-agent-composer__project-menu button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .research-agent-conversation .research-agent-composer__project-menu button[aria-checked='true'] { background: rgb(17 17 17 / 5%); }
+.research-discussion-focus { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 4px 9px; color: #68746b; font-size: 12px; }
+.research-discussion-focus span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.research-discussion-focus button { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.research-discussion-focus button:first-of-type { width: auto; padding: 0 8px; border-radius: 8px; white-space: nowrap; }
+.research-agent-conversation .research-flow-card .deep-research-mock-card__options button b { color: #68746b; background: rgb(104 116 107 / 11%); }
+.research-agent-conversation .research-flow-card .deep-research-mock-card__options button.is-chosen b { color: #fff; background: #68746b; }
+.research-agent-conversation .research-flow-card .deep-research-mock-card__options button em { color: #68746b; }
