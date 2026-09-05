@@ -1,5 +1,7 @@
 import {
   CaretRightIcon,
+  CheckCircleIcon,
+  CompassIcon,
   CircleNotchIcon,
   FileTextIcon,
   FolderOpenIcon,
@@ -85,13 +87,11 @@ function ResearchStartProposalCard({
   onContinue: () => void
 }) {
   return (
-    <section className="deep-research-mock-card new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
-      <div className="deep-research-mock-card__eyebrow">建立研究</div>
-      <h2>请确认 Agent 理解的研究起点</h2>
+    <section className="deep-research-mock-card research-flow-card new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
+      <header className="research-flow-card__heading"><CompassIcon size={22} weight="regular" aria-hidden="true" /><h2>{proposal.phenomenon}</h2></header>
       <dl className="new-research__start-fields">
-        <div><dt>现象</dt><dd>{proposal.phenomenon}</dd></div>
-        <div><dt>意图</dt><dd>{proposal.researchIntent || '还需要通过对话补充研究意图'}</dd></div>
-        <div><dt>情境</dt><dd>{proposal.context || '还需要通过对话补充具体情境'}</dd></div>
+        <div><dt>意图</dt><dd>{proposal.researchIntent || '待补充'}</dd></div>
+        <div><dt>情境</dt><dd>{proposal.context || '待补充'}</dd></div>
       </dl>
       {error ? <p className="new-research__start-error" role="alert"><WarningCircleIcon size={14} />{error}</p> : null}
       <div className="deep-research-mock-card__actions new-research__start-actions">
@@ -106,10 +106,8 @@ function ResearchStartProposalCard({
 
 function ResearchStartReadyCard({ journey, onEnter }: { journey: ResearchStartJourney; onEnter: () => void }) {
   return (
-    <section className="deep-research-mock-card new-research__start-ready" aria-label="研究已建立">
-      <div className="deep-research-mock-card__eyebrow">研究已建立 · 画布梳理中</div>
-      <h2>{journey.proposal?.phenomenon || '当前研究问题'}</h2>
-      <p className="new-research__start-description">继续在左侧整理问题、现象、理论与证据；确认结构清楚后，再展开文档节点。</p>
+    <section className="deep-research-mock-card research-flow-card new-research__start-ready" aria-label="研究已建立">
+      <header className="research-flow-card__heading"><CheckCircleIcon size={22} weight="regular" aria-hidden="true" /><h2>{journey.proposal?.phenomenon || '当前研究问题'}</h2></header>
       <div className="deep-research-mock-card__actions new-research__start-actions">
         <button type="button" className="deep-research-mock-card__continue" onClick={onEnter}>展开文档节点 <CaretRightIcon size={14} /></button>
       </div>
@@ -124,15 +122,14 @@ function ResearchStartRecoveryError({ message, busy, onRetry, onContinue }: {
   onContinue: () => void
 }) {
   return (
-    <section className="deep-research-mock-card new-research__start-recovery" role="alert" aria-label="研究状态恢复失败">
-      <div className="deep-research-mock-card__eyebrow">研究状态</div>
-      <h2>研究状态暂时无法恢复</h2>
-      <p className="new-research__start-description"><span>对话已保留</span>。{message}</p>
+    <section className="deep-research-mock-card research-flow-card new-research__start-recovery" role="alert" aria-label="研究状态恢复失败">
+      <header className="research-flow-card__heading"><WarningCircleIcon size={22} weight="regular" aria-hidden="true" /><h2>研究状态暂时无法恢复</h2></header>
+      <p className="new-research__start-description">{message}</p>
       <div className="deep-research-mock-card__actions new-research__start-actions">
         <button type="button" className={`deep-research-mock-card__continue${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onRetry}>
-          {busy ? <><CircleNotchIcon size={14} />正在恢复…</> : '重试恢复研究状态'}
+          {busy ? <><CircleNotchIcon size={14} />正在恢复…</> : '重试'}
         </button>
-        <button type="button" disabled={busy} onClick={onContinue}>返回继续对话</button>
+        <button type="button" disabled={busy} onClick={onContinue}>继续对话</button>
       </div>
     </section>
   )
