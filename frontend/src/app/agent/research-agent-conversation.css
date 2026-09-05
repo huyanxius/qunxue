@@ -1956,6 +1956,7 @@
 
 /* The document workbench embeds this exact conversation surface instead of
    maintaining a second Agent controller or a visually unrelated side panel. */
+.research-agent-conversation--embedded.new-research__agent-panel.is-agent-synced,
 .research-agent-conversation--embedded,
 .research-agent-conversation--embedded:has(> .new-research__agent-header) {
   --agent-page-content: 100%;
