@@ -126,3 +126,10 @@ describe('ResearchMapCanvas', () => {
     expect(screen.getByRole('region', { name: '研究论证地图' })).toContainElement(screen.getByRole('region', { name: '研究文档节点' }))
   })
 })
+
+it('keeps evidence inspection available when a manuscript card shares the canvas', () => {
+  const onOpenCitation = vi.fn()
+  render(<ResearchMapCanvas projection={{ ...projection, nodes: [...projection.nodes, { id: 'manuscript', kind: 'document', title: '研究方案文稿', status: 'developing', provenance: 'user', citationIds: [] }] }} selectedNodeId="claim" onOpenCitation={onOpenCitation} />)
+  fireEvent.click(screen.getByRole('button', { name: '依据 1' }))
+  expect(onOpenCitation).toHaveBeenCalledWith('knowledge:time')
+})
