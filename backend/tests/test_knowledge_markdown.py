@@ -106,3 +106,14 @@ def test_parse_knowledge_markdown_preserves_source_metadata() -> None:
         "统一前史",
     ]
     assert school_headings == ()
+
+
+def test_sibling_entries_do_not_inherit_previous_entry_or_its_sections() -> None:
+    entries = parse_knowledge_markdown(
+        Path("knowledge/本体论/example.md"),
+        "### 社会资本理论\n\n#### C268 结合型社会资本\n\n"
+        "##### T4 当代发展\n\n原文。\n\n#### C269 桥接型社会资本\n\n正文。\n",
+    )
+    assert [node.title for node in entries[1].directory_path] == ["本体论", "社会资本理论"]
+    assert "原文。" in entries[0].content
+    assert "桥接型" not in entries[0].content
