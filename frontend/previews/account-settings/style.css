@@ -112,8 +112,8 @@ button {
   display: block;
 }
 .settings-modal {
-  width: min(980px, calc(100vw - 64px));
-  height: min(640px, calc(100dvh - 88px));
+  width: min(920px, calc(100vw - 64px));
+  height: min(580px, calc(100dvh - 88px));
   max-width: none;
   max-height: none;
   padding: 0;
@@ -174,7 +174,7 @@ button {
   left: calc(var(--qx-outline-width) + 1px);
   right: 0;
   bottom: 0;
-  padding: var(--qx-space-3) var(--qx-space-12);
+  padding: var(--qx-space-3) var(--qx-space-8);
   color: var(--qx-color-faint);
   background: var(--qx-color-surface);
   border-top: 1px solid var(--qx-color-rule);
