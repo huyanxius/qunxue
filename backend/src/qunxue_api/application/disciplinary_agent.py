@@ -498,8 +498,9 @@ class DisciplinaryAgentApplication:
             if on_tool_event is not None:
                 on_tool_event(event)
 
-        # 深入研究的用时从确认计划那一刻算到出结论，中间等用户回答的时间不计入。
-        research_started_at = time.monotonic() if deep_research_started else None
+        # 澄清、确认、执行各是一次独立调用，所以这里量到的就是真正跑研究那一段，不含
+        # 用户思考的时间。不限定在 confirm 之后，是为了让没经过暂停的深入研究也留痕。
+        research_started_at = time.monotonic() if mode == "deep_research" else None
 
         try:
             stream_runner = getattr(self._runner, "run_stream", None)

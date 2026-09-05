@@ -165,7 +165,7 @@ def test_retry_uses_a_new_parse_id_after_an_unexpected_worker_failure(
 
     with client.app.state.research_material_application_scope() as application:
         original_parser = application._parser
-        failed_at = datetime(2026, 9, 5, tzinfo=UTC)
+        failed_at = datetime.now(UTC) + timedelta(seconds=1)
         application._clock = lambda: failed_at
         application._parser = lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("boom"))
         with pytest.raises(RuntimeError, match="boom"):
@@ -198,7 +198,7 @@ def test_expired_worker_cannot_complete_a_newer_ingestion_attempt(client: TestCl
         files={"file": ("租约.txt", b"lease fencing", "text/plain")},
     )
     job_id = scheduled[0]
-    first_at = datetime(2026, 9, 5, tzinfo=UTC)
+    first_at = datetime.now(UTC) + timedelta(seconds=1)
 
     with client.app.state.research_material_application_scope() as application:
         first = application.claim_ingestion(

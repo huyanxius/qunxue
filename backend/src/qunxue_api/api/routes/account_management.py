@@ -1,10 +1,9 @@
 import json
 import os
-import re
 import subprocess
 import tempfile
-from pathlib import Path
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
@@ -16,11 +15,11 @@ from qunxue_api.api.contracts.account_management import (
     AccountResponse,
     AccountSessionPageResponse,
     AdminRoleUpdateRequest,
+    AdminRuntimeSettingsResponse,
+    AdminRuntimeSettingsUpdateRequest,
     AdminStatusUpdateRequest,
     AdminUserPageResponse,
     AdminUserResponse,
-    AdminRuntimeSettingsResponse,
-    AdminRuntimeSettingsUpdateRequest,
     ChangePasswordRequest,
     ChangePasswordResponse,
     CreditCodeBatchCreateRequest,
@@ -91,7 +90,9 @@ def _runtime_config_path(request: Request):
     if configured:
         return configured
     candidate = "/root/qunxue-config/qunxue.env"
-    return candidate if os.path.exists(candidate) else str(Path(__file__).resolve().parents[4] / ".env")
+    if os.path.exists(candidate):
+        return candidate
+    return str(Path(__file__).resolve().parents[4] / ".env")
 
 
 def _replace_env_values(path: str, values: dict[str, str]) -> None:
@@ -456,6 +457,7 @@ def get_admin_runtime_settings(
 )
 def update_admin_runtime_settings(
     payload: AdminRuntimeSettingsUpdateRequest,
+    _idempotency_key: IdempotencyKey,
     current: CurrentSessionDependency,
     service: AccountManagementServiceDependency,
     request: Request,
@@ -466,7 +468,11 @@ def update_admin_runtime_settings(
         "QUNXUE_MODEL_NAME": payload.model.strip(),
         "QUNXUE_MODEL_REASONING_EFFORT": payload.reasoning_effort,
     })
-    subprocess.Popen(["pm2", "restart", "qunxue-api"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(
+        ["pm2", "restart", "qunxue-api"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     return AdminRuntimeSettingsResponse(
         model=payload.model.strip(),
         reasoning_effort=payload.reasoning_effort,
