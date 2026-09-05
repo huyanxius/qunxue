@@ -741,10 +741,10 @@ describe('NewResearchWorkspacePage', () => {
 
     expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
     const recovery = await screen.findByRole('alert', { name: '研究状态恢复失败' })
-    expect(within(recovery).getByText('对话已保留')).toBeVisible()
-    expect(within(recovery).getByRole('button', { name: '返回继续对话' })).toBeEnabled()
+    expect(recovery).toHaveTextContent('对话已保留')
+    expect(within(recovery).getByRole('button', { name: '继续对话' })).toBeEnabled()
 
-    fireEvent.click(within(recovery).getByRole('button', { name: '重试恢复研究状态' }))
+    fireEvent.click(within(recovery).getByRole('button', { name: '重试' }))
     const proposal = await screen.findByRole('region', { name: '研究建立确认' })
     expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
     expect(journeyAttempts).toBe(2)
