@@ -46,6 +46,7 @@ import { AppHomePage } from './home/AppHomePage'
 import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 import { RouteMotionSurface } from './route-motion'
+import { SettingsModal } from './ui/SettingsModal'
 
 export type SessionState =
   | { status: 'loading' }
@@ -272,6 +273,7 @@ function NewResearchRoute({ userId }: { userId: string | null }) {
 }
 
 function AccountSettingsRoute() {
+  const location = useLocation()
   const account = useAccount()
   const navigate = useNavigate()
   const returnToPublicHome = () => navigate('/', { replace: true, state: { loggedOut: true } })
@@ -283,8 +285,7 @@ function AccountSettingsRoute() {
     })
   }
   return (
-    <PageShell wide shader>
-      <PageContent>
+    <SettingsModal onClose={() => location.state?.settingsBackground ? navigate(-1) : navigate('/app', { replace: true })}>
         <AccountSettingsPage
           onLogout={leaveAccount}
           onProfileUpdated={() => account.retrySession()}
@@ -292,8 +293,7 @@ function AccountSettingsRoute() {
           onAccountDeactivated={leaveAccount}
           onAccountDeleted={leaveAccount}
         />
-      </PageContent>
-    </PageShell>
+    </SettingsModal>
   )
 }
 
@@ -382,6 +382,8 @@ export function AppRoutes({
   const account = useAccount()
   const location = useLocation()
   const resolvedSessionState: SessionState = sessionState ?? account.sessionState
+  const settingsOpen = location.pathname === '/settings' && resolvedSessionState.status === 'authenticated'
+  const settingsBackground = settingsOpen ? location.state?.settingsBackground : undefined
   const isLoggedOutNavigation = Boolean(
     location.state && typeof location.state === 'object' && 'loggedOut' in location.state,
   )
@@ -401,7 +403,7 @@ export function AppRoutes({
   return (
     <RailStateProvider>
       <RouteMotionSurface>
-        <Routes>
+        <Routes location={settingsOpen ? settingsBackground ?? { pathname: '/app' } : location}>
       <Route
         path="/"
         element={resolvedSessionState.status === 'authenticated' && !isLoggedOutNavigation
@@ -451,6 +453,7 @@ export function AppRoutes({
       <Route path="/admin/operations" element={protectedRoute(<AdminOperationsRoute />)} />
         </Routes>
       </RouteMotionSurface>
+      {settingsOpen ? <Routes><Route path="/settings" element={protectedRoute(<AccountSettingsRoute />)} /></Routes> : null}
     </RailStateProvider>
   )
 }

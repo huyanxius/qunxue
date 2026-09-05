@@ -200,7 +200,7 @@ export function PageShell({
               {viewDestination ? <Link to={viewDestination}>{viewLabel}</Link> : null}
               {account.sessionState.status === 'authenticated' ? (
                 <>
-                  <NavLink to="/settings">{text('账户', 'Account')}</NavLink>
+                  <NavLink to="/settings" state={{ settingsBackground: location }}>{text('账户', 'Account')}</NavLink>
                   <button className="nav-action" type="button" onClick={logout}>
                     {logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
                   </button>
@@ -246,7 +246,7 @@ export function PageShell({
                 <>
                   <NavLink
                     className="desktop-rail__identity"
-                    to="/settings"
+                    to="/settings" state={{ settingsBackground: location }}
                     aria-label={text(`账户 ${accountName}`, `Account ${accountName}`)}
                     title={accountName}
                   >
