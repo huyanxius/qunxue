@@ -1,10 +1,12 @@
 import { CheckIcon, FileTextIcon, XIcon } from '@phosphor-icons/react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { ResearchMaterial } from './researchMaterialsModel'
 import './agent-material-attachment-picker.css'
 
 type AgentMaterialAttachmentPickerProps = {
+  inline?: boolean
+  loading?: boolean
   materials: ResearchMaterial[]
   selectedIds: ReadonlySet<string>
   onToggle: (material: ResearchMaterial) => void
@@ -36,11 +38,15 @@ function unavailableReason(material: ResearchMaterial, locale: 'zh-CN' | 'en-US'
 
 export function AgentMaterialAttachmentPicker({
   materials,
+  inline = false,
+  loading = false,
   selectedIds,
   onToggle,
   onClose,
   locale = 'zh-CN',
 }: AgentMaterialAttachmentPickerProps) {
+  const [query, setQuery] = useState('')
+  const visibleMaterials = materials.filter((material) => material.filename.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -50,10 +56,10 @@ export function AgentMaterialAttachmentPicker({
   }, [onClose])
 
   return (
-    <div className="agent-material-picker__backdrop" role="presentation" onMouseDown={(event) => {
+    <div className={inline ? "agent-material-picker__inline" : "agent-material-picker__backdrop"} role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose()
     }}>
-      <section className="agent-material-picker" role="dialog" aria-modal="true" aria-label={locale === 'en-US' ? 'Choose materials for this turn' : '选择本轮材料'}>
+      <section className="agent-material-picker" role="dialog" aria-modal={inline ? undefined : true} aria-label={locale === 'en-US' ? 'Choose materials for this turn' : '选择本轮材料'}>
         <header>
           <div>
             <strong>{locale === 'en-US' ? 'Choose research materials' : '选择研究材料'}</strong>
@@ -61,8 +67,9 @@ export function AgentMaterialAttachmentPicker({
           </div>
           <button type="button" aria-label={locale === 'en-US' ? 'Close' : '关闭'} onClick={onClose}><XIcon size={17} /></button>
         </header>
-        <div className="agent-material-picker__list">
-          {materials.length ? materials.map((material) => {
+        <input className="agent-material-picker__search" type="search" aria-label={locale === 'en-US' ? 'Search files' : '搜索文件'} placeholder={locale === 'en-US' ? 'Search files' : '搜索文件名'} value={query} onChange={(event) => setQuery(event.target.value)} />
+        <div className="agent-material-picker__list" aria-busy={loading}>
+          {visibleMaterials.length ? visibleMaterials.map((material) => {
             const ready = material.status === 'ready'
             const selected = selectedIds.has(material.materialId)
             return (
@@ -82,7 +89,7 @@ export function AgentMaterialAttachmentPicker({
                 {selected ? <CheckIcon size={16} weight="bold" /> : null}
               </label>
             )
-          }) : <p className="agent-material-picker__empty">{locale === 'en-US' ? 'No materials in this task yet.' : '当前任务还没有研究材料。'}</p>}
+          }) : <p className="agent-material-picker__empty">{loading ? (locale === 'en-US' ? 'Loading files…' : '正在加载文件…') : query ? (locale === 'en-US' ? 'No matching files.' : '没有找到匹配的文件。') : (locale === 'en-US' ? 'No files yet. Upload one to get started.' : '还没有文件，可以直接上传。')}</p>}
         </div>
         <footer>
           <span>{locale === 'en-US' ? `${selectedIds.size} selected` : `已选择 ${selectedIds.size} 份`}</span>

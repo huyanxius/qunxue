@@ -265,7 +265,7 @@ def test_search_research_materials_uses_shared_hybrid_retrieval_and_exact_locato
             "material_kind": "interview_transcript",
             "material_format": "docx",
             "excerpt": materials.block.text,
-            "locator": materials.block.locator.as_dict(),
+            "locator": {**materials.block.locator.as_dict(), "task_id": str(TASK_ID)},
             "retrieval_index_id": "materials:test",
             "retrieval_mode": "hybrid_reranked",
             "retrieval_sources": ["lexical", "semantic"],
@@ -278,7 +278,7 @@ def test_search_research_materials_uses_shared_hybrid_retrieval_and_exact_locato
     evidence = registry.evidence[results[0]["citation_id"]]
     assert evidence.kind == "research_material"
     assert evidence.source_kind == "personal_material"
-    assert evidence.locator == materials.block.locator.as_dict()
+    assert evidence.locator == {**materials.block.locator.as_dict(), "task_id": str(TASK_ID)}
 
 
 def test_search_research_materials_reuses_persistent_search_without_loading_parses():
@@ -315,7 +315,7 @@ def test_search_research_materials_reuses_persistent_search_without_loading_pars
     search = _PersistentSearch()
     registry = ResearchDocumentToolRegistry(
         catalog=_Catalog(),
-        retriever=_Retriever(),
+        retriever=None,
         materials=_NoParseMaterials(),
         material_search=search,
         documents=SimpleNamespace(),
@@ -350,7 +350,7 @@ def test_read_research_material_context_returns_only_owned_current_parse_and_reg
 
     assert result["material_id"] == str(MATERIAL_ID)
     assert result["segment_id"] == materials.block.segment_id
-    assert result["locator"] == materials.block.locator.as_dict()
+    assert result["locator"] == {**materials.block.locator.as_dict(), "task_id": str(TASK_ID)}
     assert result["context"][0]["text"] == materials.block.text
     assert result["context"][0]["is_target"] is True
     citation_id = result["citation_id"]
@@ -364,7 +364,7 @@ def test_read_research_material_context_returns_only_owned_current_parse_and_reg
         material_id=str(MATERIAL_ID),
         parse_id=str(PARSE_ID),
         segment_id=materials.block.segment_id,
-        locator=materials.block.locator.as_dict(),
+        locator={**materials.block.locator.as_dict(), "task_id": str(TASK_ID)},
     )
 
 
@@ -382,7 +382,7 @@ def test_read_research_material_context_can_read_historical_parse_after_reparse(
     assert result["parse_id"] == str(HISTORICAL_PARSE_ID)
     assert result["segment_id"] == materials.old_block.segment_id
     assert result["text"] == materials.old_block.text
-    assert result["locator"] == materials.old_block.locator.as_dict()
+    assert result["locator"] == {**materials.old_block.locator.as_dict(), "task_id": str(TASK_ID)}
 
 
 def test_pinned_material_scope_deduplicates_and_blocks_other_parse_versions():

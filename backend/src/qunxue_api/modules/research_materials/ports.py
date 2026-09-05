@@ -36,6 +36,12 @@ class ResearchMaterialRepository(Protocol):
         self, material_id: UUID, *, user_id: UUID, task_id: UUID, include_deleted: bool = False
     ) -> ResearchMaterial | None: ...
 
+    def get_owned(self, material_id: UUID, *, user_id: UUID) -> ResearchMaterial | None: ...
+
+    def list_owned(
+        self, *, user_id: UUID, limit: int = 100, offset: int = 0
+    ) -> tuple[ResearchMaterial, ...]: ...
+
     def list(
         self,
         *,

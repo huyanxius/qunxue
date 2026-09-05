@@ -4,7 +4,7 @@ from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from inspect import Parameter, signature
 from typing import Literal
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from qunxue_api.modules.agent_conversation import (
     AgentCitation,
@@ -17,6 +17,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentToolEvent,
     AgentTurn,
     Conversation,
+    ConversationNotFound,
     ConversationService,
     ConversationTaskBindingConflict,
     IdempotentTurn,
@@ -99,6 +100,36 @@ class DisciplinaryAgentApplication:
             idempotency_key=idempotency_key,
         )
 
+    def prepare_material_context(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID | None,
+        idempotency_key: str,
+    ) -> tuple[UUID, UUID]:
+        """Allocate an upload location without confirming a research start."""
+        if self._ensure_research_draft is None:
+            raise RuntimeError("research material storage is unavailable")
+        if conversation_id is None:
+            conversation_id = uuid5(NAMESPACE_URL, f"agent-files:{user_id}:{idempotency_key}")
+            try:
+                self.get_conversation(user_id=user_id, conversation_id=conversation_id)
+            except ConversationNotFound:
+                self._conversations.create_conversation(
+                    user_id=user_id,
+                    title="新对话",
+                    conversation_id=conversation_id,
+                )
+        else:
+            self.get_conversation(user_id=user_id, conversation_id=conversation_id)
+        task_id = self._ensure_research_draft(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            project_title="对话资料",
+        )
+        self._conversations.commit()
+        return conversation_id, task_id
+
     def run_turn(
         self,
         *,
@@ -129,8 +160,6 @@ class DisciplinaryAgentApplication:
         material_ids = tuple(dict.fromkeys(material_ids))
         if len(material_ids) > 20:
             raise ValueError("an Agent turn accepts at most 20 research materials")
-        if material_ids and workspace != "research":
-            raise ValueError("research material attachments require a research workspace")
         existing_run = self._conversations.find_run(
             user_id=user_id,
             idempotency_key=idempotency_key,
@@ -259,7 +288,7 @@ class DisciplinaryAgentApplication:
                 user_id=user_id,
                 title=prompt,
             )
-        if workspace == "research":
+        if workspace == "research" or material_ids:
             if conversation_was_created and task_id is not None and self._bind_research_draft:
                 task_id = self._bind_research_draft(
                     user_id=user_id,

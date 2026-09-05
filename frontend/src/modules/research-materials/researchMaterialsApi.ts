@@ -1,6 +1,8 @@
 import { apiClient } from '../../api/client'
 import { createMultipartBody } from '../../api/multipart'
 import {
+  prepareAgentMaterialContext as prepareAgentMaterialContextRequest,
+  listAgentMaterials as listAgentMaterialsRequest,
   deleteResearchMaterial as deleteResearchMaterialRequest,
   getResearchMaterial as getResearchMaterialRequest,
   getResearchMaterialSegment as getResearchMaterialSegmentRequest,
@@ -212,4 +214,22 @@ export async function deleteResearchMaterial(
     signal,
   })
   requireSuccess(result, '研究材料删除失败。')
+}
+
+export async function prepareAgentMaterialContext(conversationId: string | null, requestKey: string) {
+  const result = await prepareAgentMaterialContextRequest({
+    client: apiClient, body: { conversation_id: conversationId },
+    headers: { 'Idempotency-Key': requestKey },
+  })
+  return requireData(result, '文件上传暂时不可用。')
+}
+
+export async function listAgentMaterials(signal?: AbortSignal): Promise<ResearchMaterial[]> {
+  const items: ResearchMaterial[] = []
+  for (let offset = 0; ; offset += 100) {
+    const result = await listAgentMaterialsRequest({ client: apiClient, query: { offset, limit: 100 }, signal })
+    const page = requireData(result, '文件列表暂时无法加载。').items
+    items.push(...page.map(normalizeResearchMaterial))
+    if (page.length < 100) return items
+  }
 }

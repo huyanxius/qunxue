@@ -8,6 +8,15 @@ from qunxue_api.api.contracts.research_tasks import ResearchTaskNavigationRespon
 from qunxue_api.modules.research_intake import ResearchStartProposal
 
 
+class AgentMaterialContextRequest(BaseModel):
+    conversation_id: UUID | None = None
+
+
+class AgentMaterialContextResponse(BaseModel):
+    conversation_id: UUID
+    task_id: UUID
+
+
 class AgentCitationResponse(BaseModel):
     citation_id: str
     label: str

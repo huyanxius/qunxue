@@ -201,3 +201,6 @@ class ResearchMaterialBlockRow(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     locator: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    embedding_vectors: Mapped[dict[str, list[float]]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default="{}"
+    )

@@ -87,6 +87,15 @@ class HybridRetrievalTrace:
     result: HybridRetrievalResult
 
 
+class DocumentVectorCache(Protocol):
+    def get_many(
+        self, chunks: Sequence[RetrievalChunk], model: str
+    ) -> list[list[float] | None]: ...
+    def put_many(
+        self, chunks: Sequence[RetrievalChunk], model: str, vectors: Sequence[list[float]]
+    ) -> None: ...
+
+
 class HybridRetriever:
     def __init__(
         self,
@@ -155,6 +164,7 @@ class HybridRetriever:
         chunks: Sequence[RetrievalChunk],
         limit: int,
         retrieval_index_id: str = "external-chunks",
+        vector_cache: DocumentVectorCache | None = None,
     ) -> HybridRetrievalResult:
         """Run the same lexical/semantic/RRF/reranker pipeline over transient chunks.
 
@@ -183,7 +193,25 @@ class HybridRetriever:
         if callable(embed_documents):
             try:
                 query_vector = self._embedder.embed_query(query)
-                vectors = embed_documents([chunk.text for chunk in values])
+                vectors = (
+                    vector_cache.get_many(values, self._embedding_model)
+                    if vector_cache
+                    else [None] * len(values)
+                )
+                missing = [index for index, vector in enumerate(vectors) if vector is None]
+                # Bounded batches keep long attachment sets within provider request limits.
+                for start in range(0, len(missing), 16):
+                    indexes = missing[start : start + 16]
+                    batch = tuple(values[index] for index in indexes)
+                    generated = embed_documents([chunk.text for chunk in batch])
+                    if len(generated) != len(batch):
+                        raise EmbeddingProviderError(
+                            "embedding response count does not match material chunks"
+                        )
+                    if vector_cache:
+                        vector_cache.put_many(batch, self._embedding_model, generated)
+                    for index, vector in zip(indexes, generated, strict=True):
+                        vectors[index] = vector
                 if len(vectors) != len(values):
                     raise EmbeddingProviderError(
                         "embedding response count does not match material chunks"

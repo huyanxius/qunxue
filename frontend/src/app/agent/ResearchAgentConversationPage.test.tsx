@@ -537,7 +537,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(standalone).queryByRole('button', { name: '研究材料' })).not.toBeInTheDocument()
   })
 
-  it('attaches ready task materials to the next Agent turn and clears them after success', async () => {
+  it.each(['agent', 'research'] as const)('attaches ready materials in %s and clears them after success', async (workspace) => {
     const conversation = conversationFixture({ id: 'conversation-material-attachment' })
     const completed = conversationFixture({
       id: conversation.conversation_id,
@@ -547,7 +547,7 @@ describe('ResearchAgentConversationPage', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = urlFor(input)
       if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
-      if (url.pathname === '/api/research-tasks/task-1/materials') return json({
+      if (url.pathname === '/api/agent/materials') return json({
         task_id: 'task-1',
         items: [{
           material_id: 'material-1', task_id: 'task-1', filename: '社区访谈.docx',
@@ -567,8 +567,8 @@ describe('ResearchAgentConversationPage', () => {
           embedded
           userId="user-agent"
           conversationId={conversation.conversation_id}
-          workspace="research"
-          taskId="task-1"
+          workspace={workspace}
+          taskId={workspace === 'research' ? 'task-1' : undefined}
         />
       </MemoryRouter>,
     )
@@ -577,7 +577,7 @@ describe('ResearchAgentConversationPage', () => {
     fireEvent.click(within(agent).getByRole('button', { name: '添加研究材料' }))
     fireEvent.click(within(agent).getByRole('menuitem', { name: '从研究材料添加' }))
     const picker = await screen.findByRole('dialog', { name: '选择本轮材料' })
-    fireEvent.click(within(picker).getByRole('checkbox', { name: /社区访谈\.docx/ }))
+    fireEvent.click(await within(picker).findByRole('checkbox', { name: /社区访谈\.docx/ }))
     fireEvent.click(within(picker).getByRole('button', { name: '完成' }))
 
     expect(within(agent).getByText('社区访谈.docx')).toBeVisible()
@@ -592,7 +592,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(agent).queryByText('社区访谈.docx')).not.toBeInTheDocument()
   })
 
-  it('uploads from the composer and refreshes the attachment until it is searchable', async () => {
+  it.each(['agent', 'research'] as const)('uploads from the %s composer and refreshes the attachment until searchable', async (workspace) => {
     const conversation = conversationFixture({ id: 'conversation-direct-upload' })
     const processing = {
       material_id: 'material-upload', task_id: 'task-1', filename: '田野笔记.txt',
@@ -605,10 +605,9 @@ describe('ResearchAgentConversationPage', () => {
       const url = urlFor(input)
       const method = input instanceof Request ? input.method : init?.method ?? 'GET'
       if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/material-context') return json({ conversation_id: conversation.conversation_id, task_id: 'task-1' })
       if (url.pathname === '/api/research-tasks/task-1/materials' && method === 'POST') return json(processing, 201)
-      if (url.pathname === '/api/research-tasks/task-1/materials') return json({
-        task_id: 'task-1', items: [{ ...processing, status: 'ready', ingestion_status: 'ready', parse_version: 1 }],
-      })
+      if (url.pathname === '/api/research-tasks/task-1/materials/material-upload') return json({ ...processing, status: 'ready', ingestion_status: 'ready', parse_version: 1 })
       return json({}, 404)
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -619,8 +618,8 @@ describe('ResearchAgentConversationPage', () => {
           embedded
           userId="user-agent"
           conversationId={conversation.conversation_id}
-          workspace="research"
-          taskId="task-1"
+          workspace={workspace}
+          taskId={workspace === 'research' ? 'task-1' : undefined}
         />
       </MemoryRouter>,
     )
@@ -1687,4 +1686,16 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(region).queryByText('SFT 模型运行')).not.toBeInTheDocument()
     expect(within(region).queryByText('预览 Agent')).not.toBeInTheDocument()
   })
+})
+
+it('opens the native file chooser from the standalone composer without navigating', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+  renderPage()
+  await screen.findByRole('region', { name: '社会学 Agent 对话' })
+  const chooser = document.querySelector<HTMLInputElement>('input[type="file"]')!
+  const click = vi.spyOn(chooser, 'click')
+  fireEvent.click(screen.getByRole('button', { name: '添加研究材料' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: '上传文件' }))
+  expect(click).toHaveBeenCalledOnce()
+  expect(screen.getByRole('textbox', { name: '问社会学 Agent' })).toBeVisible()
 })
