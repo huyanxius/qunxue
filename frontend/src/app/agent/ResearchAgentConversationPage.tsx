@@ -8,7 +8,6 @@ import {
   CheckCircleIcon,
   CircleNotchIcon,
   CirclesThreeIcon,
-  ClockCounterClockwiseIcon,
   CompassIcon,
   CopyIcon,
   DotsThreeIcon,
@@ -96,6 +95,9 @@ import {
   type ResearchMaterial,
   type ResearchMaterialLocator,
 } from '../../modules/research-materials'
+import { ProjectConversationList } from './ProjectConversationList'
+import { listResearchProjects, type ResearchProject } from '../../modules/research-projects'
+import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchAgentBot } from './ResearchAgentBot'
 import { ResearchAgentShader } from './ResearchAgentShader'
 import { ResearchPromptCarousel } from './ResearchPromptCarousel'
@@ -1059,6 +1061,7 @@ function hasResearchMaterialActivity(steps: ResearchToolStep[]) {
 }
 
 function AgentConversationHistoryRail({
+  selectedTaskId = null,
   activeConversationId,
   conversations,
   loading,
@@ -1067,16 +1070,47 @@ function AgentConversationHistoryRail({
   onOpen,
   onRename,
 }: {
+  selectedTaskId?: string | null
   activeConversationId: string | null
   conversations: AgentConversationSummary[]
   loading: boolean
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
-  onNewConversation: () => void
+  onNewConversation: (taskId?: string) => void
   onOpen: (conversation: AgentConversationSummary) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
 }) {
   const { text } = useAppLocale()
   const safeConversations = Array.isArray(conversations) ? conversations : []
+  const [projects, setProjects] = useState<ResearchProject[]>([])
+  const [projectError, setProjectError] = useState<string | null>(null)
+  const [creatingProject, setCreatingProject] = useState(false)
+  const [projectTitle, setProjectTitle] = useState('')
+  const [savingProject, setSavingProject] = useState(false)
+  const projectScopeKey = safeConversations.map((item) => item.task_id ?? '').join(',')
+  useEffect(() => {
+    const controller = new AbortController()
+    void listResearchProjects(controller.signal).then((items) => {
+      if (!controller.signal.aborted) { setProjects(items); setProjectError(null) }
+    }).catch(() => {
+      if (!controller.signal.aborted) setProjectError(text('项目列表暂时无法加载', 'Projects are unavailable'))
+    })
+    return () => controller.abort()
+  }, [projectScopeKey, text])
+  async function createProject(event: FormEvent) {
+    event.preventDefault()
+    if (!projectTitle.trim() || savingProject) return
+    setSavingProject(true)
+    try {
+      const project = await createMaterialFirstResearchProject(crypto.randomUUID(), projectTitle.trim())
+      const items = await listResearchProjects()
+      setProjects(items)
+      setCreatingProject(false)
+      setProjectTitle('')
+      onNewConversation(project.taskId)
+    } catch (cause) {
+      setProjectError(cause instanceof Error ? cause.message : text('项目创建失败', 'Project could not be created'))
+    } finally { setSavingProject(false) }
+  }
   const railRef = useRef<HTMLElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   const [actionView, setActionView] = useState<{
@@ -1160,20 +1194,27 @@ function AgentConversationHistoryRail({
     <>
       <section ref={railRef} className="agent-conversation-history" aria-label={text('Agent 对话记录', 'Agent conversation history')}>
       <div className="agent-conversation-history__heading">
-        <h2>{text('对话记录', 'Conversation history')}</h2>
+        <h2>{text('项目', 'Projects')}</h2>
+        <button type="button" className="agent-conversation-history__new" aria-label={text('新建项目', 'New project')} onClick={() => setCreatingProject((current) => !current)}><FolderOpenIcon size={16} /></button>
         <button
           className="agent-conversation-history__new"
           type="button"
           aria-label={text('开始新对话', 'Start a new conversation')}
           title={text('开始新对话', 'Start a new conversation')}
-          onClick={onNewConversation}
+          onClick={() => onNewConversation()}
         >
           <PlusIcon size={15} aria-hidden="true" />
         </button>
       </div>
-      {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : safeConversations.length ? (
-        <div className="agent-conversation-history__list">
-          {safeConversations.map((conversation) => {
+      {creatingProject ? <form className="agent-project-create" onSubmit={(event) => { void createProject(event) }}>
+        <input autoFocus aria-label={text('项目名称', 'Project name')} value={projectTitle} maxLength={300} onChange={(event) => setProjectTitle(event.target.value)} />
+        <button type="submit" disabled={savingProject || !projectTitle.trim()}>{text('创建', 'Create')}</button>
+      </form> : null}
+      {projectError ? <p role="alert">{projectError}</p> : null}
+      {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : (
+        <ProjectConversationList projects={projects} conversations={safeConversations}
+          activeTaskId={safeConversations.find((item) => item.conversation_id === activeConversationId)?.task_id ?? selectedTaskId}
+          onStart={onNewConversation} renderConversation={(conversation) => {
             const conversationId = conversation.conversation_id
             return (
               <div className="agent-conversation-history__item" key={conversationId}>
@@ -1213,9 +1254,8 @@ function AgentConversationHistoryRail({
                 </div>
               </div>
             )
-          })}
-        </div>
-      ) : <p>{text('发送第一条消息后会保存在这里', 'Your first message will start a saved conversation')}</p>}
+          }} />
+      )}
       </section>
       {actionView && actionConversation ? createPortal(
         <div
@@ -1264,12 +1304,21 @@ function AgentConversationHistoryRail({
 }
 
 function ConversationHistory({
+  onNewConversation,
+  onRename,
+  onDelete,
+  selectedTaskId,
   conversations,
   activeConversationId,
   loading,
   onOpen,
   onClose,
 }: {
+  onNewConversation: (taskId?: string) => void
+  onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
+  onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  selectedTaskId: string | null
+
   conversations: AgentConversationSummary[]
   activeConversationId: string | null
   loading: boolean
@@ -1303,17 +1352,9 @@ function ConversationHistory({
         <input aria-label={text('搜索研究记录', 'Search research history')} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text('搜索问题', 'Search questions')} />
       </label>
       <div className="new-research__history-list">
-        {loading ? <p role="status">{text('正在加载研究记录…', 'Loading research history…')}</p> : filtered.length ? filtered.map((conversation) => (
-          <button
-            type="button"
-            key={conversation.conversation_id}
-            aria-current={conversation.conversation_id === activeConversationId ? 'true' : undefined}
-            onClick={() => onOpen(conversation)}
-          >
-            <span><strong>{conversation.title}</strong><small>{text(`${conversation.turn_count} 轮对话`, `${conversation.turn_count} conversation turns`)}</small></span>
-            <ClockCounterClockwiseIcon size={15} />
-          </button>
-        )) : <p>{text('还没有保存的 Agent 对话。', 'No Agent conversations have been saved yet.')}</p>}
+        <AgentConversationHistoryRail conversations={filtered} activeConversationId={activeConversationId}
+          selectedTaskId={selectedTaskId} loading={loading} onOpen={onOpen}
+          onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} />
       </div>
     </div>
   )
@@ -2067,6 +2108,11 @@ export function ResearchAgentConversationPage({
 
   useEffect(() => {
     if (requestedConversationId) void loadConversation(requestedConversationId)
+    else {
+      conversationLoadAbortController.current?.abort()
+      conversationLoadGeneration.current += 1
+      setStatus((current) => current === 'loading' ? 'idle' : current)
+    }
   }, [loadConversation, requestedConversationId])
 
   useEffect(() => {
@@ -2119,6 +2165,9 @@ export function ResearchAgentConversationPage({
     setActiveConversation(null)
     setRuntimeMode(null)
     setToolStepsByTurnId({})
+    setAttachedMaterials([])
+    setAvailableMaterials([])
+    setMaterialPickerOpen(false)
     setSelectedCitationContext(null)
     setSelectedActivityId(null)
     setContextOpen(false)
@@ -2129,11 +2178,19 @@ export function ResearchAgentConversationPage({
   }
 
   function openConversation(summary: AgentConversationSummary) {
+    if (location.pathname !== '/research/new') {
+      const next = new URLSearchParams({ conversation_id: summary.conversation_id })
+      if (summary.task_id) next.set('task_id', summary.task_id)
+      navigate(`/research/new?${next}`)
+      return
+    }
     prepareConversationSwitch()
     setHistoryOpen(false)
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       next.set('conversation_id', summary.conversation_id)
+      if (summary.task_id) next.set('task_id', summary.task_id)
+      else next.delete('task_id')
       next.delete('knowledge_release_id')
       return next
     }, { replace: true })
@@ -2165,7 +2222,11 @@ export function ResearchAgentConversationPage({
     }
   }
 
-  function newConversation() {
+  function newConversation(projectId?: string) {
+    if (location.pathname !== '/research/new' && embedded) {
+      navigate(projectId ? `/research/new?task_id=${encodeURIComponent(projectId)}` : '/research/new')
+      return
+    }
     prepareConversationSwitch()
     updateDraft('')
     setError(null)
@@ -2175,6 +2236,8 @@ export function ResearchAgentConversationPage({
       const next = new URLSearchParams(current)
       next.delete('conversation_id')
       next.delete('knowledge_release_id')
+      if (projectId) next.set('task_id', projectId)
+      else next.delete('task_id')
       return next
     }, { replace: true })
   }
@@ -2360,6 +2423,7 @@ export function ResearchAgentConversationPage({
             pendingConversationId.current = completedConversation.conversation_id
             setConversations((current) => [
               {
+                task_id: completedConversation.task_id ?? null,
                 conversation_id: completedConversation.conversation_id,
                 title: completedConversation.title,
                 updated_at: completedConversation.updated_at,
@@ -3184,6 +3248,10 @@ export function ResearchAgentConversationPage({
 
           {showConversationManagement && historyOpen ? (
             <ConversationHistory
+              selectedTaskId={taskId}
+              onNewConversation={newConversation}
+              onRename={renameSavedConversation}
+              onDelete={deleteSavedConversation}
               conversations={conversations}
               activeConversationId={activeConversation?.conversation_id ?? null}
               loading={historyLoading}
@@ -3244,6 +3312,7 @@ export function ResearchAgentConversationPage({
         {conversationSurface}
         {showConversationManagement && historyRailTarget ? createPortal(
           <AgentConversationHistoryRail
+            selectedTaskId={taskId}
             activeConversationId={activeConversation?.conversation_id ?? null}
             conversations={conversations}
             loading={historyLoading}
@@ -3262,6 +3331,7 @@ export function ResearchAgentConversationPage({
     <PageShell
       railContent={(
         <AgentConversationHistoryRail
+          selectedTaskId={taskId}
           activeConversationId={activeConversation?.conversation_id ?? null}
           conversations={conversations}
           loading={historyLoading}

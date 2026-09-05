@@ -170,7 +170,10 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   const [agentPanelWidth, setAgentPanelWidth] = useState(panelWidthRef.current)
   const [agentPanelMaxWidth, setAgentPanelMaxWidth] = useState(MAX_AGENT_PANEL_WIDTH)
   const [resizingAgentPanel, setResizingAgentPanel] = useState(false)
-  const activeTaskId = journey?.taskId ?? materialTaskId ?? requestedTaskId
+  const currentConversation = conversation?.conversation_id === requestedConversationId ? conversation : null
+  const activeTaskId = currentConversation?.task_id
+    ?? (journey?.conversationId === requestedConversationId ? journey.taskId : null)
+    ?? requestedTaskId ?? materialTaskId
 
   const projection = useMemo<ResearchCanvasProjection>(() => {
     const projected = projectResearchCanvas({ conversation, streamingTurn })
@@ -218,6 +221,8 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       next.set('conversation_id', nextConversation.conversation_id)
+      if (nextConversation.task_id) next.set('task_id', nextConversation.task_id)
+      else if (nextConversation.task_id === null) next.delete('task_id')
       if (releaseId) next.set('knowledge_release_id', releaseId)
       return next
     }, { replace: true })
@@ -227,8 +232,23 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   useEffect(() => () => journeyAbortController.current?.abort(), [])
   useEffect(() => () => mouseResizeCleanup.current?.(), [])
   useEffect(() => {
-    if (requestedTaskId) setMaterialTaskId(requestedTaskId)
+    setMaterialTaskId(requestedTaskId)
   }, [requestedTaskId])
+
+  useEffect(() => {
+    if (conversation?.conversation_id === requestedConversationId) return
+    journeyAbortController.current?.abort()
+    setConversation(null)
+    setJourney(null)
+    setJourneyError(null)
+    setJourneyLoading(false)
+    setMaterialSourceNames([])
+    setMaterialEntryError(null)
+    setSelectedNodeId(null)
+    setSuggestedPrompt(null)
+    // Clear only on navigation; a completed turn may arrive before its URL update.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedConversationId])
 
   async function startFromMaterials(files: File[]) {
     if (!files.length || materialUploading) return
@@ -482,7 +502,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               userId={userId}
               conversationId={requestedConversationId}
               knowledgeReleaseId={requestedKnowledgeReleaseId}
-              workspace="research"
+              workspace={activeTaskId ? "research" : "agent"}
               taskId={activeTaskId ?? null}
               composerAriaLabel="和 Agent 讨论你的研究"
               composerPrefix={materialSourceNames.length ? (

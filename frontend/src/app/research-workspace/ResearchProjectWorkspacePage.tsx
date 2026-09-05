@@ -98,6 +98,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const [documentContext, setDocumentContext] = useState<ResearchDocumentWorkspaceContext | null>(null)
   const [centerRefreshKey, setCenterRefreshKey] = useState(0)
   const [mobilePane, setMobilePane] = useState<'center' | 'agent'>('center')
+  const [historyRailTarget, setHistoryRailTarget] = useState<HTMLDivElement | null>(null)
   const [agentWidth, setAgentWidth] = useState(() => readAgentWidth(taskId))
   const resizePointer = useRef<number | null>(null)
   const layoutRef = useRef<HTMLDivElement | null>(null)
@@ -252,7 +253,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
         )
 
   return (
-    <PageShell workspace wide>
+    <PageShell workspace wide railContentRef={setHistoryRailTarget}>
       <PageContent>
         <main className="research-project-workspace" aria-label="研究项目工作区">
           <header className="research-project-workspace__header">
@@ -317,6 +318,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
             />
             <div className="research-project-workspace__agent">
               <ResearchAgentConversationPage
+                showConversationManagement
+                historyRailTarget={historyRailTarget}
                 embedded
                 userId={userId}
                 conversationId={navigationData.conversation_id}
