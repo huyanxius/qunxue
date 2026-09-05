@@ -77,7 +77,7 @@ export function Preview() {
       </div>
       <dialog
         ref={dialog}
-        className="settings-modal"
+        className="settings-modal qs-palette"
         aria-label="账户设置预览"
         onCancel={(event) => {
           event.preventDefault()
