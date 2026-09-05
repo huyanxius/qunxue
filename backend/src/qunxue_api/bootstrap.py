@@ -112,6 +112,7 @@ from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
 from qunxue_api.api.routes.matching import router as matching_router
+from qunxue_api.api.routes.memories import MemoryValidationError
 from qunxue_api.api.routes.memories import router as memories_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
@@ -1146,6 +1147,15 @@ def create_app(
             status_code=response_status,
             content=body.model_dump(mode="json"),
         )
+
+    @app.exception_handler(MemoryValidationError)
+    async def handle_memory_validation_error(
+        _request: Request, error: MemoryValidationError
+    ) -> JSONResponse:
+        body = ErrorResponse(
+            error=ErrorDetail(code="validation_error", message=str(error), trace_id=str(uuid4()))
+        )
+        return JSONResponse(status_code=422, content=body.model_dump(mode="json"))
 
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation_error(

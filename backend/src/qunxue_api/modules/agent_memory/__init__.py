@@ -1,7 +1,9 @@
 from .domain import (
+    CONTENT_BUDGET,
     CONTEXT_BUDGET,
-    DETAIL_BUDGET,
-    PINNED_SCOPE_BUDGET,
+    MAX_MEMORIES,
+    SEARCH_BUDGET,
+    SEARCH_SINGLE_BUDGET,
     LearningBatch,
     Memory,
     MemoryCandidate,
@@ -19,9 +21,11 @@ from .ports import MemoryLearningRepository, MemoryRepository
 from .service import MemoryService
 
 __all__ = [
+    "CONTENT_BUDGET",
     "CONTEXT_BUDGET",
-    "DETAIL_BUDGET",
-    "PINNED_SCOPE_BUDGET",
+    "MAX_MEMORIES",
+    "SEARCH_BUDGET",
+    "SEARCH_SINGLE_BUDGET",
     "LearningBatch",
     "Memory",
     "MemoryCandidate",

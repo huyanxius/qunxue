@@ -2,7 +2,7 @@
 .research-memory__overview { padding: 12px 0 28px; }
 .research-memory__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .research-memory__heading h2 { margin: 0; color: var(--app-ink); font: 500 24px/1.5 var(--serif); text-align: left; }
-.research-memory__heading p { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; color: var(--app-muted); font-size: 12px; }
+.research-memory__heading p { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; color: var(--app-muted); font-size: 12px; }
 .research-memory__summary { max-width: 850px; margin: 28px 0 24px; color: var(--app-ink-soft); font-size: 16px; line-height: 2; overflow-wrap: anywhere; text-align: left; }
 .research-memory__summary-status { max-width: 850px; margin: 28px 0 24px; color: var(--app-muted); font-size: 14px; line-height: 1.9; }
 .research-memory__overview-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin-left: -8px; }
