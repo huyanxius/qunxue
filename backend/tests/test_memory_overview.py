@@ -9,6 +9,7 @@ def overview(client, task_id=None):
     ).json()
     return client.post(
         "/api/memories/overview",
+        headers={"Idempotency-Key": str(uuid4())},
         json={
             "task_id": task_id,
             "expected_version": settings["version"],
@@ -49,7 +50,9 @@ def test_overview_uses_owned_scope_and_does_not_write_memory(plain_client):
     register(client)
     assert (
         client.post(
-            "/api/memories/overview", json={"task_id": task_id, "expected_version": 1}
+            "/api/memories/overview",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"task_id": task_id, "expected_version": 1},
         ).status_code
         == 404
     )
@@ -81,3 +84,74 @@ def test_overview_model_failure_preserves_records(plain_client):
     response = overview(client)
     assert response.status_code == 503
     assert client.get("/api/memories").json() == before
+
+
+def test_overview_reuses_summary_after_settings_changes_and_noop_edit(plain_client):
+    client = plain_client
+    register(client)
+    first = save(client, key="language", content="中文回答。").json()
+    save(client, key="method", content="先开放编码。")
+    summaries = iter(["保留的概览", "不应重新生成"])
+    client.app.state.memory_overview.generate = lambda items: next(summaries)
+    assert overview(client).json()["summary"] == "保留的概览"
+
+    settings = client.get("/api/memories/settings").json()
+    response = client.patch(
+        "/api/memories/settings",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"expected_version": settings["version"], "use_memory": False, "learn_memory": False},
+    )
+    assert response.status_code == 200, response.text
+    assert overview(client).json()["summary"] == "保留的概览"
+    response = client.patch(
+        f"/api/memories/{first['memory_id']}",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"content": first["content"], "expected_version": first["version"]},
+    )
+    assert response.status_code == 200, response.text
+    assert overview(client).json()["summary"] == "保留的概览"
+
+
+def test_overview_reflects_edits_and_deletion(plain_client):
+    client = plain_client
+    register(client)
+    first = save(client, content="中文回答。").json()
+    client.app.state.memory_overview.generate = lambda items: "；".join(m.content for m in items)
+    assert overview(client).json()["summary"] == "中文回答。"
+
+    response = client.patch(
+        f"/api/memories/{first['memory_id']}",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"content": "保留原文。", "expected_version": first["version"]},
+    )
+    assert response.status_code == 200, response.text
+    updated = response.json()
+    assert overview(client).json()["summary"] == "保留原文。"
+    response = client.delete(
+        f"/api/memories/{first['memory_id']}",
+        params={"expected_version": updated["version"]},
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert response.status_code == 204, response.text
+    result = overview(client).json()
+    assert result["summary"] == ""
+    assert result["memory_count"] == 0
+
+
+def test_overview_rejects_deletion_while_generating(plain_client):
+    client = plain_client
+    register(client)
+    first = save(client, content="中文回答。").json()
+
+    def generate(items):
+        response = client.delete(
+            f"/api/memories/{first['memory_id']}",
+            params={"expected_version": first["version"]},
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert response.status_code == 204, response.text
+        return "删除前的概览"
+
+    client.app.state.memory_overview.generate = generate
+    assert overview(client).status_code == 409
+    assert overview(client).json()["summary"] == ""
