@@ -53,13 +53,23 @@
   --qx-font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --qx-font-reading: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
 
+  /* 宋体用于页面题目与阅读内容；用户名、头像、字段、导航、按钮继续用 UI 字体。 */
+
   /* ---- 字阶，比例约 1.25 ---- */
 
   /* 页面标题：库、分析这类中心工具的正题，宋体。 */
+  --qx-text-section--font-family: var(--qx-font-reading);
   --qx-text-section: 1.5rem;
   --qx-text-section--line-height: 1.3;
   --qx-text-section--letter-spacing: -0.025em;
   --qx-text-section--font-weight: 580;
+
+  /* 工作区主标题与操作：标题使用宋体，控件使用 UI 字体。 */
+  --qx-text-workspace-title: 1.625rem;
+  --qx-text-workspace-title--line-height: 1.4;
+  --qx-text-workspace-title--font-weight: 550;
+  --qx-text-control: 0.8125rem;
+  --qx-text-control--line-height: 1.5;
 
   /* 对象标题：一份材料、一条抽屉的名字。 */
   --qx-text-title: 1.125rem;
@@ -103,15 +113,19 @@
   --qx-space-12: 48px;
 
   /*
-   * 圆角三档，逐级放大：紧凑元素、交互控件、内容表面。胶囊和正圆另用 pill。
+   * 常规圆角三档：紧凑元素、交互控件、内容表面；完整任务浮层用 feature，胶囊用 pill。
    * 三档之外不要临时插值——一插就没人知道该用哪个了。
    */
   --qx-radius-compact: 8px;
   --qx-radius-control: 12px;
   --qx-radius-surface: 16px;
+  /* 完整任务浮层沿用 theme.css 已有的 24px 特征容器，不与普通卡片混用。 */
+  --qx-radius-feature: 24px;
   --qx-radius-pill: 999px;
 
   --qx-control-height: 36px;
+  --qx-action-height: 42px;
+  --qx-avatar-size: 40px;
   --qx-icon-control-size: 32px;
 
   /* 阅读宽度按字数定不按像素：中文一行 40 字上下最好跟读。 */
