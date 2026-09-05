@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ResearchMaterialsPage } from './ResearchMaterialsPage'
@@ -38,6 +38,8 @@ const secondResearch = {
   resume_path: '/research/task-2/match',
 }
 
+function LocationProbe() { const location = useLocation(); return <output>{location.pathname}{location.search}</output> }
+
 describe('ResearchMaterialsPage', () => {
   it('keeps the new-research guidance above the materials background when no research exists', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -47,7 +49,7 @@ describe('ResearchMaterialsPage', () => {
     }))
 
     render(
-      <MemoryRouter initialEntries={['/research/materials']}>
+      <MemoryRouter initialEntries={['/research/materials?tab=files']}>
         <ResearchMaterialsPage userId="user-1" />
       </MemoryRouter>,
     )
@@ -77,14 +79,15 @@ describe('ResearchMaterialsPage', () => {
     }))
 
     render(
-      <MemoryRouter initialEntries={['/research/materials']}>
+      <MemoryRouter initialEntries={['/research/materials?tab=files']}>
         <ResearchMaterialsPage userId="user-1" />
       </MemoryRouter>,
     )
 
     const library = await screen.findByRole('region', { name: '全部研究材料' })
-    fireEvent.click(within(library).getByRole('button', { name: '添加材料' }))
-    const input = within(library).getByRole('dialog', { name: '添加材料' })
+    await screen.findAllByRole('option', { name: research.phenomenon_summary.phenomenon })
+    fireEvent.click(screen.getByRole('button', { name: '添加材料' }))
+    const input = screen.getByRole('dialog', { name: '添加材料' })
       .querySelector<HTMLInputElement>('input[type="file"]')
     expect(input).not.toBeNull()
     fireEvent.change(input!, { target: { files: [new File(['audio'], '访谈.m4a', { type: 'audio/mp4' })] } })
@@ -93,7 +96,7 @@ describe('ResearchMaterialsPage', () => {
     expect(within(library).getByRole('link', { name: /访谈\.m4a/ })).toBeVisible()
   })
 
-  it('shows materials from every research as cards without a research-selection gate', async () => {
+  it('shows searchable file rows from every research with the permanent app navigation', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
       if (path === '/api/research-tasks') return json({ items: [research, secondResearch], next_cursor: null })
@@ -103,30 +106,117 @@ describe('ResearchMaterialsPage', () => {
     }))
 
     render(
-      <MemoryRouter initialEntries={['/research/materials']}>
+      <MemoryRouter initialEntries={['/research/materials?tab=files']}>
         <ResearchMaterialsPage userId="user-1" />
       </MemoryRouter>,
     )
 
     const library = await screen.findByRole('region', { name: '全部研究材料' })
-    expect(await within(library).findByRole('link', { name: /家庭照护访谈\.md/ })).toHaveAttribute('href', '/research/materials?task_id=task-1&material_id=material-1')
-    expect(await within(library).findByRole('link', { name: /社区观察记录\.pdf/ })).toHaveAttribute('href', '/research/materials?task_id=task-2&material_id=material-2')
+    expect(await within(library).findByRole('table', { name: '研究材料文件列表' })).toBeVisible()
+    expect(screen.getByRole('searchbox', { name: '搜索研究材料' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '桌面主导航' })).toBeVisible()
+    expect(screen.queryByRole('complementary', { name: '材料分类' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '材料分类与研究' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('navigation', { name: '桌面主导航' })).getByRole('link', { name: '我的研究' })).toBeVisible()
+    expect(screen.getByRole('combobox', { name: '按研究筛选材料' })).toBeVisible()
+    expect(await within(library).findByRole('link', { name: /家庭照护访谈\.md/ })).toHaveAttribute('href', '/research/task-1/workspace/materials?material_id=material-1')
+    expect(await within(library).findByRole('link', { name: /社区观察记录\.pdf/ })).toHaveAttribute('href', '/research/task-2/workspace/materials?material_id=material-2')
     expect(screen.queryByRole('region', { name: '选择研究' })).not.toBeInTheDocument()
-    const addMaterialButton = within(library).getByRole('button', { name: '添加材料' })
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: '家庭' } })
+    expect(screen.queryByRole('link', { name: /社区观察记录/ })).not.toBeInTheDocument()
+    const addMaterialButton = screen.getByRole('button', { name: '添加材料' })
     expect(addMaterialButton).toHaveAttribute('aria-expanded', 'false')
     expect(within(library).queryByRole('dialog', { name: '添加材料' })).not.toBeInTheDocument()
 
     fireEvent.click(addMaterialButton)
 
-    const uploadPopover = within(library).getByRole('dialog', { name: '添加材料' })
+    const uploadPopover = screen.getByRole('dialog', { name: '添加材料' })
     expect(uploadPopover).toBeVisible()
     expect(uploadPopover).toHaveClass('qx-popover-surface')
     expect(addMaterialButton).toHaveAttribute('aria-expanded', 'true')
-    expect(within(library).getByRole('combobox', { name: '材料所属研究' })).toHaveValue('task-1')
+    expect(screen.getByRole('combobox', { name: '材料所属研究' })).toHaveValue('task-1')
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(within(library).queryByRole('dialog', { name: '添加材料' })).not.toBeInTheDocument()
     expect(addMaterialButton).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('starts with projects and separates personal memory from project materials', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
+      if (path === '/api/research-tasks') return json({ items: [{ ...research, project_title: '家庭照护研究' }], next_cursor: null })
+      if (path.endsWith('/materials')) return json({ task_id: 'task-1', items: [] })
+      return json({}, 404)
+    }))
+    render(<MemoryRouter initialEntries={['/research/materials']}><ResearchMaterialsPage /></MemoryRouter>)
+    expect(screen.getByRole('tab', { name: '研究项目' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('link', { name: /打开研究 家庭照护研究/ })).toBeVisible()
+    fireEvent.click(screen.getByRole('tab', { name: '个人记忆' }))
+    expect(screen.getByRole('heading', { name: '属于你的长期记忆' })).toBeVisible()
+    expect(screen.getByText('记忆管理尚未接入')).toBeVisible()
+    fireEvent.click(screen.getByRole('tab', { name: '研究项目' }))
+    fireEvent.click(screen.getByRole('link', { name: /打开研究 家庭照护研究/ }))
+    expect(await screen.findByRole('heading', { name: '家庭照护研究' })).toBeVisible()
+    expect(screen.getByRole('tab', { name: '项目记忆' })).toBeVisible()
+    expect(screen.queryByRole('tab', { name: '个人记忆' })).not.toBeInTheDocument()
+  })
+
+  it('opens a project immediately without waiting for another project and manages its files', async () => {
+    const material = { material_id: 'material-2', task_id: 'task-2', filename: '社区观察记录.pdf', media_type: 'application/pdf', size_bytes: 4096, status: 'ready', version: 1, parse_version: 1, segment_count: 1, updated_at: '2026-09-02T10:00:00Z', error_code: null, material_kind: 'observation_record' }
+    const deleted: string[] = []
+    const uploaded: string[] = []
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('confirm', confirm)
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init)
+      const path = new URL(request.url).pathname
+      if (path === '/api/research-tasks') return json({ items: [research, secondResearch], next_cursor: null })
+      if (path === '/api/research-tasks/task-1/materials') return new Promise<Response>(() => {})
+      if (path === '/api/research-tasks/task-2/materials' && request.method === 'GET') return json({ task_id: 'task-2', items: [material] })
+      if (path === '/api/research-tasks/task-2/materials' && request.method === 'POST') { uploaded.push(path); return json({ ...material, material_id: 'material-new', filename: '补充记录.txt', media_type: 'text/plain' }, 201) }
+      if (path === '/api/research-tasks/task-2/materials/material-2' && request.method === 'DELETE') { deleted.push(path); return new Response(null, { status: 204 }) }
+      return json({}, 404)
+    }))
+    render(<MemoryRouter initialEntries={['/research/materials']}><ResearchMaterialsPage /></MemoryRouter>)
+    const project = await screen.findByRole('link', { name: /打开研究 社区互助网络如何形成/ })
+    expect(await within(project).findByText('1 份文件')).toBeVisible()
+    fireEvent.click(project)
+    expect(await screen.findByRole('link', { name: '打开材料 社区观察记录.pdf' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: /打开材料 家庭/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '添加材料' }))
+    expect(screen.queryByRole('combobox', { name: '材料所属研究' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '选择文件' })).toBeVisible()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: '删除文件 社区观察记录.pdf' }))
+    expect(deleted).toEqual([])
+    expect(screen.getByRole('link', { name: '打开材料 社区观察记录.pdf' })).toBeVisible()
+    confirm.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: '删除文件 社区观察记录.pdf' }))
+    await waitFor(() => expect(screen.queryByRole('link', { name: '打开材料 社区观察记录.pdf' })).not.toBeInTheDocument())
+    expect(deleted).toEqual(['/api/research-tasks/task-2/materials/material-2'])
+    expect(screen.getByText('0 份文件')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '添加材料' }))
+    const input = screen.getByRole('dialog', { name: '添加材料' }).querySelector('input[type=file]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(['补充记录'], '补充记录.txt', { type: 'text/plain' })] } })
+    expect(await screen.findByRole('link', { name: '打开材料 补充记录.txt' })).toBeVisible()
+    expect(uploaded).toEqual(['/api/research-tasks/task-2/materials'])
+    expect(screen.getByText('1 份文件')).toBeVisible()
+  })
+
+  it('shows a failed project file request as an error and can retry it', async () => {
+    let attempts = 0
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), 'http://localhost').pathname
+      if (path === '/api/research-tasks') return json({ items: [research], next_cursor: null })
+      if (path.endsWith('/materials')) return ++attempts === 1 ? json({}, 503) : json({ task_id: 'task-1', items: [] })
+      return json({}, 404)
+    }))
+    render(<MemoryRouter initialEntries={['/research/materials?task_id=task-1']}><ResearchMaterialsPage /></MemoryRouter>)
+    expect(await screen.findByRole('alert')).toHaveTextContent('当前项目的文件暂时无法读取')
+    expect(screen.queryByRole('region', { name: '材料列表为空' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(await screen.findByRole('region', { name: '材料列表为空' })).toBeVisible()
+    expect(screen.getByText('0 份文件')).toBeVisible()
   })
 
   it('opens a selected material directly without another research workspace layer', async () => {
@@ -141,14 +231,12 @@ describe('ResearchMaterialsPage', () => {
     }))
 
     render(
-      <MemoryRouter initialEntries={['/research/materials?task_id=task-1']}>
+      <MemoryRouter initialEntries={['/research/materials?task_id=task-1&material_id=material-1']}>
+        <LocationProbe />
         <ResearchMaterialsPage userId="user-1" />
       </MemoryRouter>,
     )
 
-    const reader = await screen.findByRole('region', { name: '材料阅读' })
-    expect(within(reader).getByRole('region', { name: '研究材料' })).toBeVisible()
-    expect(within(reader).getByRole('button', { name: '关闭研究材料' })).toBeVisible()
-    expect(within(reader).queryByRole('complementary', { name: '研究 Agent 对话栏' })).not.toBeInTheDocument()
+    expect(await screen.findByText('/research/task-1/workspace/materials?material_id=material-1')).toBeVisible()
   })
 })
