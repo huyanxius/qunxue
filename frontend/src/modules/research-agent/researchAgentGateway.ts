@@ -1,4 +1,5 @@
 import {
+  saveCanvasNode as saveNode,
   confirmResearchStartProposal as confirmStartProposal,
   deleteAgentConversation as deleteConversation,
   getAgentConversation as getConversation,
@@ -59,4 +60,8 @@ export function streamAgentTurn(
   signal?: AbortSignal,
 ) {
   return streamTurn(payload, onEvent, signal)
+}
+
+export function saveCanvasNode(...args: Parameters<typeof saveNode>) {
+  return saveNode(...args)
 }
