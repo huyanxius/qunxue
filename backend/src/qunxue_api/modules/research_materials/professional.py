@@ -95,7 +95,6 @@ class DeidentificationStatus(StrEnum):
 
 
 class ModelProcessingScope(StrEnum):
-    NOT_ASSESSED = "not_assessed"
     MANUAL_ONLY = "manual_only"
     LOCAL_ONLY = "local_only"
     EXTERNAL_ALLOWED = "external_allowed"
@@ -158,8 +157,8 @@ class MaterialArchiveProfile:
         tags: tuple[str, ...] = (),
         sensitivity: SensitivityLevel = SensitivityLevel.INTERNAL,
         consent_scope: ConsentScope = ConsentScope.PROJECT_ONLY,
-        deidentification_status: DeidentificationStatus = DeidentificationStatus.PENDING,
-        model_processing_scope: ModelProcessingScope = ModelProcessingScope.NOT_ASSESSED,
+        deidentification_status: DeidentificationStatus = DeidentificationStatus.NOT_REQUIRED,
+        model_processing_scope: ModelProcessingScope = ModelProcessingScope.EXTERNAL_ALLOWED,
         collection_ids: tuple[UUID, ...] = (),
         now: datetime,
     ) -> MaterialArchiveProfile:
