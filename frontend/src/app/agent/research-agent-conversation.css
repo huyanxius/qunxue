@@ -1105,6 +1105,43 @@
   background: #634369;
 }
 
+/* 普通研究沿用文档工作区的绿色，紫色只属于深入研究。 */
+.research-agent-conversation .deep-research-mock-card.research-flow-card {
+  --research-card-accent: #68746b;
+}
+
+.research-flow-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.research-flow-card__heading > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--research-card-accent);
+}
+
+.research-agent-conversation .deep-research-mock-card.research-flow-card button:hover:not(:disabled) {
+  border-color: var(--research-card-accent);
+  background: color-mix(in srgb, var(--research-card-accent) 8%, transparent);
+}
+
+.research-agent-conversation .deep-research-mock-card.research-flow-card .deep-research-mock-card__continue {
+  border-color: var(--research-card-accent);
+  background: var(--research-card-accent);
+}
+
+.research-agent-conversation .deep-research-mock-card.research-flow-card .deep-research-mock-card__continue:hover:not(:disabled) {
+  border-color: #56635a;
+  background: #56635a;
+}
+
+.research-agent-conversation .deep-research-mock-card.research-flow-card button:focus-visible {
+  outline: 2px solid var(--research-card-accent);
+  outline-offset: 2px;
+}
+
 .research-agent-conversation .deep-research-mock-card__export-actions button:disabled {
   cursor: progress;
   opacity: .55;

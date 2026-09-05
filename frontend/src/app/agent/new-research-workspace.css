@@ -233,10 +233,9 @@
 /* 研究流程卡片共用深入研究的外观，这里只定义起点字段与操作区排布。 */
 .new-research__start-fields { display: grid; gap: 14px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--app-border); }
 .new-research__start-fields > div { display: grid; gap: 5px; min-width: 0; }
-.new-research__start-fields dt { color: #76517d; font-family: var(--sans); font-size: 10px; font-weight: 700; }
+.new-research__start-fields dt { color: var(--research-card-accent); font-family: var(--sans); font-size: 10px; font-weight: 700; }
 .new-research__start-fields dd { margin: 0; color: var(--app-ink); font-family: var(--serif); font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .research-agent-conversation .deep-research-mock-card .new-research__start-description { margin-top: 12px; }
-.new-research__start-actions { padding-top: 14px; border-top: 1px solid var(--app-border); }
 .new-research__start-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .new-research__start-actions button:disabled { cursor: wait; opacity: .55; }
 .new-research__start-actions button.is-loading svg:first-child { animation: new-research-spin 1.1s linear infinite; }
