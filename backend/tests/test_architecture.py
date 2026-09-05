@@ -14,6 +14,7 @@ MODULE_PACKAGE = "qunxue_api.modules"
 ALLOWED_MODULE_DEPENDENCIES = {
     "account_management": {"identity"},
     "agent_conversation": set(),
+    "agent_memory": set(),
     "billing": set(),
     "identity": set(),
     "knowledge_catalog": set(),
