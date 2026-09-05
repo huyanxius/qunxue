@@ -191,6 +191,7 @@
   place-items: center;
   color: var(--app-ink);
   background: currentColor;
+  mask-image: url("../assets/qunxue-brand-mark.svg");
   mask-position: center;
   mask-size: 26px 26px;
   mask-repeat: no-repeat;

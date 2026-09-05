@@ -16,7 +16,6 @@ import {
   XIcon,
 } from '@phosphor-icons/react'
 
-import brandMark from '../../assets/qunxue-brand-mark.svg'
 import { useAccount } from '../../modules/account'
 import { useAppLocale } from '../i18n/AppLocaleProvider'
 import { AppFrameShader } from './AppFrameShader'
@@ -47,7 +46,7 @@ export function RailStateProvider({ children }: PropsWithChildren) {
 
 function ProductMark() {
   return (
-    <span className="product-mark" aria-hidden="true" style={{ maskImage: `url(${brandMark})` }} />
+    <span className="product-mark" aria-hidden="true" />
   )
 }
 
