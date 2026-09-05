@@ -37,6 +37,32 @@ export type AcknowledgePartialMatchRequest = {
 };
 
 /**
+ * AgentCanvasNodeEditRequest
+ */
+export type AgentCanvasNodeEditRequest = {
+    /**
+     * Expected Summary
+     */
+    expected_summary?: string | null;
+    /**
+     * Expected Title
+     */
+    expected_title: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * AgentCitationResponse
  */
 export type AgentCitationResponse = {
@@ -106,6 +132,10 @@ export type AgentConversationListResponse = {
  * AgentConversationResponse
  */
 export type AgentConversationResponse = {
+    /**
+     * Canvas Edit Version
+     */
+    canvas_edit_version?: number;
     /**
      * Conversation Id
      */
@@ -285,6 +315,10 @@ export type AgentResearchMapNodeResponse = {
      * Title
      */
     title: string;
+    /**
+     * User Edited
+     */
+    user_edited?: boolean;
 };
 
 /**
@@ -8337,6 +8371,58 @@ export type GetAgentResearchJourneyResponses = {
 };
 
 export type GetAgentResearchJourneyResponse = GetAgentResearchJourneyResponses[keyof GetAgentResearchJourneyResponses];
+
+export type EditAgentCanvasNodeData = {
+    body: AgentCanvasNodeEditRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+        /**
+         * Node Id
+         */
+        node_id: string;
+    };
+    query?: never;
+    url: '/api/agent/conversations/{conversation_id}/research-map/nodes/{node_id}';
+};
+
+export type EditAgentCanvasNodeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type EditAgentCanvasNodeError = EditAgentCanvasNodeErrors[keyof EditAgentCanvasNodeErrors];
+
+export type EditAgentCanvasNodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConversationResponse;
+};
+
+export type EditAgentCanvasNodeResponse = EditAgentCanvasNodeResponses[keyof EditAgentCanvasNodeResponses];
 
 export type GetAgentResearchStartProposalData = {
     body?: never;
