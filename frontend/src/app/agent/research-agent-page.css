@@ -1189,6 +1189,10 @@
 }
 
 .research-agent-handoff__link {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 5px;

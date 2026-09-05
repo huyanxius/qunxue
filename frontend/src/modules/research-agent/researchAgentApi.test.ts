@@ -330,6 +330,7 @@ describe('research agent SSE adapter', () => {
         task_id: 'task-1',
         status: 'in_progress',
         current_stage: 'theory_matching',
+        phenomenon_summary: '社区互助正在减少',
         current_framework_id: null,
         allowed_actions: ['start_matching'],
         resume_path: '/research/task-1/match',
@@ -357,6 +358,8 @@ describe('research agent SSE adapter', () => {
         version: 3,
         status: 'pending_confirmation',
       },
+      knowledgeReleaseId: 'release-formal-1',
+      phenomenonConfirmed: false,
       resumePath: null,
     })
     await expect(confirmResearchStartProposal({
@@ -378,6 +381,8 @@ describe('research agent SSE adapter', () => {
         version: 3,
         status: 'confirmed',
       },
+      knowledgeReleaseId: 'release-formal-1',
+      phenomenonConfirmed: true,
       resumePath: '/research/task-1/match',
     })
 

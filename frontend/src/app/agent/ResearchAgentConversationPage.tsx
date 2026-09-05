@@ -59,6 +59,7 @@ import { PageContent, PageShell } from '../ui/PageShell'
 import {
   deleteAgentConversation,
   getAgentConversation,
+  getResearchStartJourney,
   listAgentConversations,
   renameAgentConversation,
   stopAgentRun,
@@ -159,7 +160,8 @@ function DeepResearchMockFlow({
   conclusion,
   exportState = 'idle',
   onExport,
-  continueResearchHref = '/research/new',
+  onContinueResearch,
+  researchEntryBusy = false,
 }: {
   stage: DeepResearchMockStage
   question: string
@@ -176,7 +178,8 @@ function DeepResearchMockFlow({
   conclusion?: string
   exportState?: DeepResearchExportState
   onExport?: (kind: 'docx' | 'pdf') => void
-  continueResearchHref?: string
+  onContinueResearch?: () => void
+  researchEntryBusy?: boolean
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -318,9 +321,10 @@ function DeepResearchMockFlow({
                 <FilePdfIcon size={14} />{exportState === 'pdf' ? '正在生成 PDF…' : '下载 PDF'}
               </button>
             </> : null}
-            <Link className="deep-research-mock-card__continue" to={continueResearchHref}>
-              继续形成研究<CaretRightIcon size={14} />
-            </Link>
+            <button type="button" className="deep-research-mock-card__continue"
+              disabled={researchEntryBusy} onClick={onContinueResearch}>
+              {researchEntryBusy ? '正在整理研究起点…' : '继续形成研究'}<CaretRightIcon size={14} />
+            </button>
           </div>
         </div>
       ) : null}
@@ -516,12 +520,8 @@ function researchStartHandoffFromSteps(steps: ResearchToolStep[]): ResearchStart
   return null
 }
 
-function ResearchStartHandoffCard({ handoff }: { handoff: ResearchStartHandoff }) {
+function ResearchStartHandoffCard({ handoff, onContinueResearch, busy }: { handoff: ResearchStartHandoff; onContinueResearch?: () => void; busy?: boolean }) {
   const { text } = useAppLocale()
-  const query = new URLSearchParams({
-    conversation_id: handoff.conversationId,
-    knowledge_release_id: handoff.knowledgeReleaseId,
-  })
   return (
     <section className="research-agent-handoff" aria-label={text('研究建议', 'Research suggestion')} data-proposal-id={handoff.proposalId}>
       <span className="research-agent-handoff__mark" aria-hidden="true"><CompassIcon size={24} weight="duotone" /></span>
@@ -530,9 +530,9 @@ function ResearchStartHandoffCard({ handoff }: { handoff: ResearchStartHandoff }
         <strong>{handoff.phenomenon}</strong>
         {handoff.researchIntent ? <p>{handoff.researchIntent}</p> : null}
       </div>
-      <Link className="research-agent-handoff__link" to={`/research/new?${query.toString()}`}>
-        {text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
-      </Link>
+      <button type="button" className="research-agent-handoff__link" disabled={busy} onClick={onContinueResearch}>
+        {busy ? text('正在整理研究起点…', 'Preparing research…') : text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
+      </button>
     </section>
   )
 }
@@ -1556,6 +1556,8 @@ function AssistantTurn({
   onOpenActivity,
   onSelectCitation,
   onRegenerate,
+  onContinueResearch,
+  researchEntryBusy,
 }: {
   question: string
   answer: string
@@ -1573,6 +1575,8 @@ function AssistantTurn({
   onOpenActivity: () => void
   onSelectCitation: (citation: AgentCitation, knowledgeReleaseId: string | null) => void
   onRegenerate?: () => void
+  onContinueResearch?: () => void
+  researchEntryBusy?: boolean
 }) {
   const { text } = useAppLocale()
   const researchHandoff = researchStartHandoffFromSteps(toolSteps)
@@ -1631,7 +1635,7 @@ function AssistantTurn({
         {knowledgeHandoffCitation && conversationId && knowledgeReleaseId
           ? <KnowledgeHandoffCards citation={knowledgeHandoffCitation} conversationId={conversationId} knowledgeReleaseId={knowledgeReleaseId} />
           : null}
-        {showResearchHandoff && researchHandoff ? <ResearchStartHandoffCard handoff={researchHandoff} /> : null}
+        {showResearchHandoff && researchHandoff ? <ResearchStartHandoffCard handoff={researchHandoff} onContinueResearch={onContinueResearch} busy={researchEntryBusy} /> : null}
         {!streaming && answer && onRegenerate ? <AssistantActions content={answer} onRegenerate={onRegenerate} /> : null}
       </div>
     </article>
@@ -1760,6 +1764,8 @@ export function ResearchAgentConversationPage({
   const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
   const deepResearchLifecycleStarted = useRef(false)
   const [reportExportState, setReportExportState] = useState<DeepResearchExportState>('idle')
+  const [researchEntryBusy, setResearchEntryBusy] = useState(false)
+  const researchEntryAbortController = useRef<AbortController | null>(null)
   const hasDeepResearchMockConversation = deepResearchMockStage !== 'idle'
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ taskId?: string; materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
@@ -1965,6 +1971,7 @@ export function ResearchAgentConversationPage({
   const isBusy = status === 'loading' || canStopGeneration
   const canSubmit = draft.trim().length > 0
     && !isBusy
+    && !researchEntryBusy
     && !materialUploading
     && attachedMaterials.every((material) => material.status === 'ready')
   const isEmpty = !turns.length && !streamingTurn && !hasDeepResearchMockConversation
@@ -2132,6 +2139,7 @@ export function ResearchAgentConversationPage({
   }, [streamingTurn?.answer, streamingTurn?.toolSteps.length, turns.length])
 
   useEffect(() => () => {
+    researchEntryAbortController.current?.abort()
     const runId = activeRunId.current
     if (runId) void stopAgentRun(runId).catch(() => undefined)
     streamGeneration.current += 1
@@ -2141,6 +2149,9 @@ export function ResearchAgentConversationPage({
   }, [])
 
   function cancelActiveStream() {
+    researchEntryAbortController.current?.abort()
+    researchEntryAbortController.current = null
+    setResearchEntryBusy(false)
     const runId = activeRunId.current
     if (runId) {
       void stopAgentRun(runId).catch(() => undefined)
@@ -2259,9 +2270,55 @@ export function ResearchAgentConversationPage({
     if (pendingDraft) updateDraft(pendingDraft)
   }
 
-  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm' | 'skip'; selection?: string }) {
+  async function continueResearch() {
+    const conversation = activeConversation
+    if (!conversation || isBusy || materialUploading || attachedMaterials.some((material) => material.status !== 'ready') || researchEntryAbortController.current) return
+    const controller = new AbortController()
+    researchEntryAbortController.current = controller
+    setResearchEntryBusy(true)
+    setError(null)
+    try {
+      let journey = await getResearchStartJourney(conversation.conversation_id, controller.signal)
+      if (controller.signal.aborted) return
+      let completed = conversation
+      if (!journey.proposal && !journey.phenomenonConfirmed) {
+        // 两个入口都走普通 Agent 的同一工具，深入研究仅在已有对话中多一份调研参照。
+        const hasResearchReference = conversation.turns.some((turn) => deepResearchRecord(turn))
+        const prompt = '请基于这段对话整理待确认的研究起点，包括现象、研究意图与情境，等待我确认。不要重新运行深入研究，不要替我确认或开展理论匹配。'
+          + (hasResearchReference ? '前面已完成的调研报告及其引用是参考资料，请沿用已有成果和来源，不要从零追问，也不要把初步结论当作我已确认的研究判断。' : '')
+        setComposerMode('standard')
+        const retryKey = failedTurnAttempt.current?.question === prompt ? failedTurnAttempt.current.idempotencyKey : undefined
+        const result = await submitQuestion(prompt, retryKey, undefined, true)
+        if (!result || controller.signal.aborted) return
+        completed = result
+        journey = await getResearchStartJourney(conversation.conversation_id, controller.signal)
+      }
+      if (controller.signal.aborted) return
+      if (!journey.proposal && !journey.phenomenonConfirmed) {
+        setError('尚未形成待确认的研究起点，请根据 Agent 的回复补充信息后再继续。')
+        return
+      }
+      const releaseId = journey.knowledgeReleaseId || completed.turns.at(-1)?.knowledge_release_id
+        || knowledgeReleaseByConversationId[conversation.conversation_id] || requestedKnowledgeReleaseId
+      const query = new URLSearchParams({ conversation_id: conversation.conversation_id })
+      if (releaseId) query.set('knowledge_release_id', releaseId)
+      if (journey.taskId) query.set('task_id', journey.taskId)
+      navigate(`/research/new?${query.toString()}`)
+    } catch (cause: unknown) {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : '研究起点暂时无法恢复，请重试。')
+    } finally {
+      if (researchEntryAbortController.current === controller) {
+        researchEntryAbortController.current = null
+        setResearchEntryBusy(false)
+      }
+    }
+  }
+
+  async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm' | 'skip'; selection?: string }, researchEntry = false): Promise<AgentConversation | null> {
     const question = rawQuestion.trim()
-    if (!question || isBusy) return
+    if (!question || isBusy || (!researchEntry && researchEntryAbortController.current)) return null
+    const turnMode = researchEntry ? 'standard' : composerMode
+    let resultConversation: AgentConversation | null = null
     const idempotencyKey = retryIdempotencyKey
       ?? globalThis.crypto?.randomUUID?.()
       ?? `agent-${Date.now()}`
@@ -2299,7 +2356,7 @@ export function ResearchAgentConversationPage({
         {
           conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
           message: question,
-          mode: composerMode === 'deep-research' ? 'deep_research' : 'standard',
+          mode: turnMode === 'deep-research' ? 'deep_research' : 'standard',
           idempotencyKey,
           workspace,
           web_search: webSearchEnabled,
@@ -2366,7 +2423,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
             const next = updateToolSteps(pendingToolSteps.current, event)
             pendingToolSteps.current = next
-            if (composerMode === 'deep-research' && event.type === 'tool_started') {
+            if (turnMode === 'deep-research' && event.type === 'tool_started') {
               if (deepResearchStartedAt.current === null) deepResearchStartedAt.current = Date.now()
               setDeepResearchMockStage('researching')
               setDeepResearchMockStep(researchStepForTools(next))
@@ -2410,11 +2467,11 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
-            if (composerMode === 'deep-research' && deepResearchLifecycleStarted.current) {
+            if (turnMode === 'deep-research' && deepResearchLifecycleStarted.current) {
               settleDeepResearchElapsed()
               setDeepResearchMockStage('completed')
             }
-            else if (composerMode === 'deep-research') resetDeepResearchMock()
+            else if (turnMode === 'deep-research') resetDeepResearchMock()
             activeRunId.current = null
             failedTurnAttempt.current = null
             activeTurnAttempt.current = null
@@ -2426,6 +2483,7 @@ export function ResearchAgentConversationPage({
               (conversation, materialId) => tombstoneConversationMaterial(conversation, materialId),
               attachLocalToolSteps(event.conversation, localToolSteps),
             )
+            resultConversation = completedConversation
             const completedTurn = completedConversation.turns.at(-1)
             const releaseId = event.knowledge_release_id.trim()
             if (releaseId) rememberKnowledgeRelease(completedConversation.conversation_id, releaseId)
@@ -2508,6 +2566,7 @@ export function ResearchAgentConversationPage({
     } finally {
       if (streamAbortController.current === controller) streamAbortController.current = null
     }
+    return controller.signal.aborted || streamGeneration.current !== runGeneration ? null : resultConversation
   }
 
   useEffect(() => {
@@ -2683,7 +2742,8 @@ export function ResearchAgentConversationPage({
     const record = deepResearchRecord(turns.at(-1))
     if (!record) return
     deepResearchLifecycleStarted.current = true
-    setComposerMode('deep-research')
+    // 恢复历史报告只改变展示，研究画布仍使用共同的协作模式。
+    if (workspace !== 'research' && !researchEntryAbortController.current) setComposerMode('deep-research')
     setDeepResearchMockStage('completed')
     setDeepResearchMockStep(DEEP_RESEARCH_MOCK_STEPS.length)
     setDeepResearchElapsedSeconds(record.elapsedSeconds)
@@ -2692,7 +2752,7 @@ export function ResearchAgentConversationPage({
       knowledgeCount: record.knowledgeCount,
       webCount: record.webCount,
     }))
-  }, [streamingTurn, turns])
+  }, [streamingTurn, turns, workspace])
 
   // 这一轮结束后 streamingTurn 已清空，卡片上"查看工具调用"要改从落库的这一轮里取。
   const lastTurnToolSteps = useMemo(() => {
@@ -2954,6 +3014,8 @@ export function ResearchAgentConversationPage({
                   knowledgeReleaseId={turn.knowledge_release_id?.trim() || null}
                   embedded={embedded}
                   showResearchHandoff={!embedded}
+                  onContinueResearch={() => { void continueResearch() }}
+                  researchEntryBusy={researchEntryBusy || isBusy || materialUploading || attachedMaterials.some((material) => material.status !== 'ready')}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                     onSelectCitation={openCitation}
                     onRegenerate={() => { void submitQuestion(turn.user.content) }}
@@ -3010,12 +3072,8 @@ export function ResearchAgentConversationPage({
                     conclusion={deepResearchConclusion}
                     exportState={reportExportState}
                     onExport={activeConversation ? (kind) => { void exportResearchReport(kind) } : undefined}
-                    continueResearchHref={`/research/new?${new URLSearchParams({
-                      ...(activeConversation ? { conversation_id: activeConversation.conversation_id } : {}),
-                      ...((activeConversation?.turns.at(-1)?.knowledge_release_id || boundKnowledgeReleaseId)
-                        ? { knowledge_release_id: activeConversation?.turns.at(-1)?.knowledge_release_id || boundKnowledgeReleaseId! } : {}),
-                      ...(taskId ? { task_id: taskId } : {}),
-                    }).toString()}`}
+                    onContinueResearch={() => { void continueResearch() }}
+                    researchEntryBusy={researchEntryBusy || isBusy || materialUploading || attachedMaterials.some((material) => material.status !== 'ready')}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
                     onSkip={() => continueDeepResearch('skip')}
                     onConfirmPlan={() => continueDeepResearch('confirm')}
