@@ -120,7 +120,6 @@ describe('knowledge graph API adapter', () => {
       releaseId: 'release-a',
       knowledgeId: 'D1:C001:E001',
     })).resolves.toEqual({
-      content: '', sources: [],
       knowledgeId: 'D1:C001:E001',
       title: '社会资本',
       reviewStatus: 'reviewed',

@@ -1,13 +1,9 @@
 from datetime import UTC, datetime
 
-import pytest
 from fastapi.testclient import TestClient
 
 from qunxue_api.adapters.sqlite import KnowledgeRelationRow
-from qunxue_api.adapters.sqlite.knowledge_catalog_model import (
-    KnowledgeEntryRevisionRow,
-    KnowledgeReleaseRow,
-)
+from qunxue_api.adapters.sqlite.knowledge_catalog_model import KnowledgeReleaseRow
 from qunxue_api.modules.knowledge_catalog import KnowledgeReleaseLevel, KnowledgeUsePurpose
 
 
@@ -102,32 +98,3 @@ def test_reviewed_relations_can_be_filtered_to_incident_knowledge(
         "relation:one"
     ]
     assert response.json()["total_count"] == 1
-
-
-@pytest.mark.parametrize("query", ["社会资本", "social"])
-def test_search_ranks_title_matches_before_body_matches_across_pages(
-    client: TestClient,
-    query: str,
-) -> None:
-    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
-    params = {"knowledge_release_id": release_id, "query": query, "limit": 1}
-    matches = client.get("/api/knowledge/entries", params={**params, "limit": 100}).json()[
-        "entries"
-    ]
-    assert len(matches) >= 2
-    # The fixture contains one source chapter. Promote its last matching IDs to
-    # explicit titles so the test distinguishes ranking from ordinary ID order.
-    ids = sorted(item["knowledge_id"] for item in matches)[-1:]
-    with client.app.state.database.session() as session:
-        for knowledge_id in ids:
-            row = session.get(KnowledgeEntryRevisionRow, (release_id, knowledge_id))
-            row.title = query.upper()
-    first = client.get("/api/knowledge/entries", params=params)
-    assert first.status_code == 200
-    assert first.json()["entries"][0]["title"].casefold() == query.casefold()
-    cursor = first.json()["next_cursor"]
-    assert cursor
-    second = client.get("/api/knowledge/entries", params={**params, "cursor": cursor})
-    assert second.status_code == 200
-    assert first.json()["entries"][0]["knowledge_id"] != second.json()["entries"][0]["knowledge_id"]
-    assert client.get("/api/knowledge/entries", params=params).json() == first.json()

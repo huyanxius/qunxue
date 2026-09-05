@@ -33,8 +33,6 @@ export interface KnowledgeGraphProjection {
 }
 
 export interface KnowledgeGraphFocusEntry {
-  readonly content?: string
-  readonly sources?: readonly { sourceId: string; title: string; locator?: string; url?: string; status: string }[]
   readonly knowledgeId: string
   readonly title: string
   readonly reviewStatus: string

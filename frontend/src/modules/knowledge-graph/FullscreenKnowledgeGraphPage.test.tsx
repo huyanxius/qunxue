@@ -1,107 +1,410 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { StrictMode, useState } from 'react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { useCallback, useState } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { FullscreenKnowledgeGraphPage, type FullscreenKnowledgeGraphState } from './FullscreenKnowledgeGraphPage'
-const api = vi.hoisted(() => ({
-  readCurrentKnowledgeGraphRelease: vi.fn(), readKnowledgeGraphFocusEntry: vi.fn(),
-  readStructuralConnectionPage: vi.fn(), readIncidentRelationPage: vi.fn(),
-  readIncidentCandidatePage: vi.fn(), searchKnowledgeGraphEntries: vi.fn(),
+
+const cytoscapeMock = vi.hoisted(() => vi.fn())
+const readIncidentCandidatePage = vi.hoisted(() => vi.fn())
+const readIncidentRelationPage = vi.hoisted(() => vi.fn())
+const readKnowledgeGraphFocusEntry = vi.hoisted(() => vi.fn())
+const readStructuralConnectionPage = vi.hoisted(() => vi.fn())
+const searchKnowledgeGraphEntries = vi.hoisted(() => vi.fn())
+
+vi.mock('cytoscape', () => ({ default: cytoscapeMock }))
+vi.mock('./knowledgeGraphApi', () => ({
+  readIncidentCandidatePage,
+  readIncidentRelationPage,
+  readKnowledgeGraphFocusEntry,
+  readStructuralConnectionPage,
+  searchKnowledgeGraphEntries,
 }))
-vi.mock('./knowledgeGraphApi', () => api)
-vi.mock('./ExplorationCanvas', () => ({ ExplorationCanvas: ({ onSelect }: { onSelect: (id: string) => void }) =>
-  <button onClick={() => onSelect('b')}>图中选择另一概念</button> }))
-const entry = (id: string) => ({ knowledgeId: id, title: id === 'a' ? '社会资本' : '互惠规范',
-  reviewStatus: 'reviewed', directoryPath: [], content: '## 概念\n\n可以阅读的原文释义。', sources: [] })
-let releaseNumber = 0
-function Harness() {
-  const [state, setState] = useState<FullscreenKnowledgeGraphState>({ releaseId: `r${releaseNumber}`, centerId: 'a' })
-  return <><button onClick={() => setState((old) => ({ ...old, centerId: "b" }))}>选择下一中心</button><output aria-label="路由中心">{state.centerId}</output><FullscreenKnowledgeGraphPage state={state}
-    onStateChange={(change) => setState((old) => ({ ...old, ...change }))} renderEntryLink={(id, label) => <a href={`/knowledge/${id}`}>{label}</a>} /></>
+
+import {
+  FullscreenKnowledgeGraphPage,
+  type FullscreenKnowledgeGraphState,
+} from './FullscreenKnowledgeGraphPage'
+
+const entries = {
+  center: {
+    knowledgeId: 'D1:C001:E001', title: '社会资本', reviewStatus: 'reviewed',
+    directoryPath: [
+      { nodeId: 'D1', nodeType: 'dimension' as const, title: '本体论' },
+      { nodeId: 'D1:C001', nodeType: 'category' as const, title: '社会关系' },
+    ],
+  },
+  second: {
+    knowledgeId: 'D1:C001:E002', title: '关系资源', reviewStatus: 'reviewed',
+    directoryPath: [
+      { nodeId: 'D1', nodeType: 'dimension' as const, title: '本体论' },
+      { nodeId: 'D1:C001', nodeType: 'category' as const, title: '社会关系' },
+    ],
+  },
+  child: {
+    knowledgeId: 'D1:C001:E001:H001', title: '强关系', reviewStatus: 'pending',
+    directoryPath: [],
+  },
+  reviewed: {
+    knowledgeId: 'D2:C002:E009', title: '互惠规范', reviewStatus: 'reviewed',
+    directoryPath: [],
+  },
+  candidateOnly: {
+    knowledgeId: 'D4:V154', title: '数据殖民主义', reviewStatus: 'pending',
+    directoryPath: [],
+  },
 }
+
+const pathConnection = {
+  connection_id: 'structure:d1-category', connection_kind: 'structure',
+  source_node_id: 'D1', source_node_type: 'dimension', source_title: '本体论',
+  target_node_id: 'D1:C001', target_node_type: 'category', target_title: '社会关系',
+  connection_type: 'contains', direction: 'outbound',
+}
+const centerConnection = {
+  connection_id: 'structure:category-center', connection_kind: 'structure',
+  source_node_id: 'D1:C001', source_node_type: 'category', source_title: '社会关系',
+  target_node_id: 'D1:C001:E001', target_node_type: 'entry', target_title: '社会资本',
+  connection_type: 'contains', direction: 'outbound',
+}
+const siblingConnection = {
+  ...centerConnection,
+  connection_id: 'structure:category-sibling',
+  target_node_id: 'D1:C001:E002', target_title: '关系资源',
+}
+const childConnection = {
+  ...centerConnection,
+  connection_id: 'structure:center-child',
+  source_node_id: 'D1:C001:E001', source_node_type: 'entry', source_title: '社会资本',
+  target_node_id: 'D1:C001:E001:H001', target_title: '强关系',
+}
+
+const cores: Array<{
+  fit: ReturnType<typeof vi.fn>
+  layout: ReturnType<typeof vi.fn>
+  on: ReturnType<typeof vi.fn>
+}> = []
+
+function renderPage(path = '/knowledge/graph?knowledge_release_id=release-a') {
+  const params = new URL(path, 'https://qunxue.local').searchParams
+  const initialState: FullscreenKnowledgeGraphState = {
+    releaseId: params.get('knowledge_release_id') ?? undefined,
+    query: params.get('query') ?? undefined,
+    centerId: params.get('center') ?? undefined,
+    pendingEnabled: params.get('pending') === '1',
+  }
+
+  function Harness() {
+    const [state, setState] = useState(initialState)
+    const updateState = useCallback((changes: Partial<FullscreenKnowledgeGraphState>) => {
+      setState((current) => ({ ...current, ...changes }))
+    }, [])
+    return (
+      <FullscreenKnowledgeGraphPage
+        state={state}
+        onStateChange={updateState}
+        entryHref={(knowledgeId) => `/knowledge/${encodeURIComponent(knowledgeId)}`}
+      />
+    )
+  }
+
+  return render(<Harness />)
+}
+
 beforeEach(() => {
-  releaseNumber++
-  vi.resetAllMocks()
-  api.readKnowledgeGraphFocusEntry.mockImplementation(async ({ knowledgeId }) => entry(knowledgeId))
-  api.readStructuralConnectionPage.mockResolvedValue({ connections: [], nextCursor: undefined })
-  api.readIncidentRelationPage.mockResolvedValue({ relations: [{ relation_id: 'ab', source_knowledge_id: 'a', target_knowledge_id: 'b', relation_type: '支持', direction: 'directed', description: '关系的依据', evidence_source_ids: [], content_version: 1 }], totalCount: 1 })
-  api.readIncidentCandidatePage.mockResolvedValue({ candidates: [], totalCount: 0 })
-  api.searchKnowledgeGraphEntries.mockResolvedValue({ entries: [entry('a')] })
+  vi.clearAllMocks()
+  cores.length = 0
+  cytoscapeMock.mockReset()
+  cytoscapeMock.mockImplementation(() => {
+    const elements = {
+      boundingBox: vi.fn(() => ({ x1: 0, x2: 100, y1: 0, y2: 100 })),
+      removeClass: vi.fn(),
+    }
+    const core = {
+      container: vi.fn(() => ({ clientWidth: 1000, clientHeight: 700 })),
+      center: vi.fn(),
+      destroy: vi.fn(),
+      elements: vi.fn(() => elements),
+      fit: vi.fn(),
+      getElementById: vi.fn(() => ({
+        closedNeighborhood: vi.fn(() => ({ kind: 'neighborhood' })),
+        empty: vi.fn(() => false),
+        nonempty: vi.fn(() => true),
+        position: vi.fn(() => ({ x: 50, y: 50 })),
+      })),
+      layout: vi.fn(() => ({ run: vi.fn() })),
+      maxZoom: vi.fn(() => 3.2),
+      minZoom: vi.fn(() => 0.16),
+      nodes: vi.fn(() => ({ addClass: vi.fn(), removeClass: vi.fn() })),
+      one: vi.fn(),
+      edges: vi.fn(() => ({ addClass: vi.fn(), removeClass: vi.fn() })),
+      on: vi.fn(),
+      resize: vi.fn(),
+      viewport: vi.fn(),
+    }
+    cores.push(core)
+    return core
+  })
+  searchKnowledgeGraphEntries.mockResolvedValue({
+    entries: [entries.center, entries.second],
+    nextCursor: undefined,
+  })
+  readKnowledgeGraphFocusEntry.mockImplementation(async ({ knowledgeId }) => (
+    Object.values(entries).find((entry) => entry.knowledgeId === knowledgeId)
+      ?? { ...entries.reviewed, knowledgeId, title: knowledgeId }
+  ))
+  readStructuralConnectionPage.mockImplementation(async ({ sourceNodeId }) => {
+    if (sourceNodeId === 'D1') return { connections: [pathConnection] }
+    if (sourceNodeId === 'D1:C001') {
+      return { connections: [centerConnection, siblingConnection], nextCursor: 'siblings-2' }
+    }
+    return { connections: [childConnection], nextCursor: 'children-2' }
+  })
+  readIncidentRelationPage.mockResolvedValue({
+    relations: [{
+      relation_id: 'relation:reviewed',
+      source_knowledge_id: entries.center.knowledgeId,
+      target_knowledge_id: entries.reviewed.knowledgeId,
+      relation_type: 'supports', direction: 'outbound',
+      description: '社会资本支持互惠规范。', evidence_source_ids: ['source:1'],
+      evidence_grade: 'reviewed', content_version: 1, review_status: 'reviewed',
+    }],
+    nextCursor: 'relations-2', totalCount: 2,
+  })
+  readIncidentCandidatePage.mockResolvedValue({
+    candidates: [{
+      candidate_id: 'candidate:pending',
+      source_knowledge_id: entries.center.knowledgeId,
+      target_knowledge_id: entries.candidateOnly.knowledgeId,
+      suggested_relation_type: 'extends', direction: 'outbound',
+      evidence_excerpt: '社会资本扩展了关系资源讨论。',
+      evidence_locator: '本体论/社会关系.md#content-line-9',
+      evidence_source_id: 'source:1', source_content_version: 1,
+      target_content_version: 1, producer: 'explicit-title-trigger',
+      producer_config_version: 'explicit-title-trigger-v1', score: 1,
+      trigger_reason: 'trigger=扩展了', review_status: 'pending', review_record_id: null,
+    }],
+    nextCursor: 'candidates-2', totalCount: 2,
+  })
 })
+
 afterEach(cleanup)
-it('selects a node for reading without changing the network center', async () => {
-  render(<Harness />)
-  await screen.findByText('可以阅读的原文释义。')
-  fireEvent.click(screen.getByText('图中选择另一概念'))
-  await screen.findByRole('heading', { name: '互惠规范' })
-  expect(screen.getByLabelText('路由中心')).toHaveTextContent('a')
-  fireEvent.click(screen.getByRole('button', { name: '以此为中心' }))
-  await waitFor(() => expect(screen.getByLabelText('路由中心')).toHaveTextContent('b'))
-})
-it('shows knowledge relation counts separately from directory connections', async () => {
-  render(<Harness />)
-  await screen.findByText('可以阅读的原文释义。')
-  expect(screen.getByLabelText('网络统计')).toHaveTextContent('知识关系 1')
-  expect(screen.getByLabelText('网络统计')).toHaveTextContent('目录连接 0')
-})
-it('offers an explicit undo after expansion', async () => {
-  render(<Harness />)
-  await screen.findByText('可以阅读的原文释义。')
-  fireEvent.click(screen.getByText('图中选择另一概念'))
-  await screen.findByRole('heading', { name: '互惠规范' })
-  fireEvent.click(screen.getByRole('button', { name: '展开关联' }))
-  await screen.findByRole('button', { name: '撤回上次展开' })
-  fireEvent.click(screen.getByRole('button', { name: '撤回上次展开' }))
-  expect(screen.queryByRole('button', { name: '撤回上次展开' })).not.toBeInTheDocument()
+
+it('does not run an internal transition in the fullscreen graph', () => {
+  renderPage()
+
+  const options = cytoscapeMock.mock.calls[0]?.[0]
+  expect(options.layout.animate).toBe(false)
+  for (const selector of ['node', 'edge']) {
+    expect(options.style.find((rule: { selector: string }) => rule.selector === selector))
+      .toEqual(expect.objectContaining({
+        style: expect.objectContaining({ 'transition-duration': 0 }),
+      }))
+  }
 })
 
-it('ignores a late old center response after a new center is loaded', async () => {
-  let resolveOld!: (value: unknown) => void
-  api.readIncidentRelationPage.mockImplementation(({ knowledgeId }) => knowledgeId === 'a'
-    ? new Promise((resolve) => { resolveOld = resolve }) : Promise.resolve({ relations: [], totalCount: 0 }))
-  render(<Harness />)
-  await waitFor(() => expect(resolveOld).toBeTypeOf('function'))
-  fireEvent.click(screen.getByText('选择下一中心'))
-  await screen.findByRole('heading', { name: '互惠规范' })
-  resolveOld({ relations: [], totalCount: 0 })
-  await waitFor(() => expect(screen.getByLabelText('路由中心')).toHaveTextContent('b'))
-  expect(screen.queryByRole('heading', { name: '社会资本' })).not.toBeInTheDocument()
-})
-it('loads directory pages and can undo them without turning them into knowledge relations', async () => {
-  render(<Harness />)
-  await screen.findByText('可以阅读的原文释义。')
-  fireEvent.click(screen.getByRole('button', { name: '实践论' }))
-  api.readStructuralConnectionPage.mockResolvedValueOnce({ connections: [{
-    connection_id: 'dir', source_node_id: 'D2', source_title: '实践论', source_node_type: 'dimension',
-    target_node_id: 'cat', target_title: '田野方法', target_node_type: 'category', connection_type: 'contains', direction: 'outbound',
-  }], nextCursor: 'page2' })
-  fireEvent.click(screen.getByRole('button', { name: '展开目录' }))
-  await screen.findByText('田野方法')
-  expect(screen.getByLabelText('网络统计')).toHaveTextContent('目录连接 1')
-  expect(screen.getByLabelText('网络统计')).toHaveTextContent('知识关系 1')
-  expect(screen.getByRole('button', { name: '继续展开目录' })).toBeEnabled()
-  fireEvent.click(screen.getByRole('button', { name: '撤回上次展开' }))
-  expect(screen.queryByText('田野方法')).not.toBeInTheDocument()
-})
-it('does not apply candidate responses after their layer is disabled', async () => {
-  let resolveCandidates!: (value: unknown) => void
-  api.readIncidentCandidatePage.mockImplementation(() => new Promise((resolve) => { resolveCandidates = resolve }))
-  render(<Harness />)
-  await screen.findByText('可以阅读的原文释义。')
-  fireEvent.click(screen.getByRole('checkbox', { name: '查看当前概念的候选关系' }))
-  await waitFor(() => expect(resolveCandidates).toBeTypeOf('function'))
-  fireEvent.click(screen.getByRole('checkbox', { name: '查看当前概念的候选关系' }))
-  resolveCandidates({ candidates: [{ candidate_id: 'c', source_knowledge_id: 'a', target_knowledge_id: 'b', suggested_relation_type: 'extends' }], totalCount: 1 })
-  await waitFor(() => expect(screen.queryByText('正在读取候选关系…')).not.toBeInTheDocument())
-  expect(screen.getByLabelText('网络统计')).not.toHaveTextContent('候选关系 1')
+it('opens a dimension node as one bounded directory page', async () => {
+  readStructuralConnectionPage.mockResolvedValueOnce({
+    connections: [pathConnection],
+    nextCursor: 'dimension-2',
+  }).mockResolvedValueOnce({
+    connections: [],
+    nextCursor: undefined,
+  })
+  renderPage()
+
+  const nodeTap = cores[0]?.on.mock.calls.find(
+    ([event, selector]) => event === 'tap' && selector === 'node',
+  )?.[2]
+  nodeTap?.({
+    target: {
+      data: (key: string) => key === 'nodeType' ? 'dimension' : undefined,
+      id: () => 'D1',
+    },
+  })
+
+  await waitFor(() => expect(readStructuralConnectionPage).toHaveBeenCalledWith({
+    releaseId: 'release-a',
+    sourceNodeId: 'D1',
+  }))
+  fireEvent.click(screen.getByRole('button', { name: '加载更多目录节点' }))
+  await waitFor(() => expect(readStructuralConnectionPage).toHaveBeenCalledWith({
+    releaseId: 'release-a',
+    sourceNodeId: 'D1',
+    cursor: 'dimension-2',
+  }))
 })
 
-it('restores the selected node after reading, including StrictMode remounts', async () => {
-  const page = render(<StrictMode><Harness /></StrictMode>)
+it('searches a real entry and builds a bounded structural and reviewed neighborhood', async () => {
+  renderPage()
+
+  expect(cytoscapeMock.mock.calls[0]?.[0].elements.filter(
+    (element: { data: { source?: string } }) => !element.data.source,
+  )).toHaveLength(7)
+  const initialOptions = cytoscapeMock.mock.calls[0]?.[0]
+  expect(initialOptions.style).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      selector: 'node',
+      style: expect.objectContaining({
+        shape: 'ellipse',
+        width: 10,
+        height: 10,
+        label: 'data(label)',
+        'text-valign': 'top',
+        'min-zoomed-font-size': 8,
+      }),
+    }),
+    expect.objectContaining({
+      selector: 'node.node--dimension',
+      style: expect.objectContaining({ width: 16, height: 16 }),
+    }),
+  ]))
+  expect(screen.getByRole('button', { name: '适应画布' })).toBeVisible()
+  expect(screen.getByRole('button', { name: '重新布局' })).toBeVisible()
+  expect(readIncidentCandidatePage).not.toHaveBeenCalled()
+  expect(readStructuralConnectionPage).not.toHaveBeenCalledWith({
+    releaseId: 'release-a', sourceNodeId: 'D1',
+  })
+
+  fireEvent.change(screen.getByRole('searchbox', { name: '搜索真实条目' }), {
+    target: { value: '社会' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: '搜索' }))
+  fireEvent.click(await screen.findByRole('button', { name: /社会资本/ }))
+
+  expect(await screen.findByRole('heading', { name: '社会资本' })).toBeVisible()
+  expect(screen.queryByText('没有找到匹配的真实条目。')).not.toBeInTheDocument()
+  expect(within(screen.getByLabelText('当前中心')).getByText('本体论 / 社会关系')).toBeVisible()
+  expect(screen.getByRole('button', { name: '加载更多直接子级' })).toBeVisible()
+  expect(screen.getByRole('button', { name: '加载更多同父条目' })).toBeVisible()
+  expect(screen.getByRole('button', { name: '加载更多正式关系' })).toBeVisible()
+  expect(readIncidentCandidatePage).not.toHaveBeenCalled()
+
+  const latestElements = cytoscapeMock.mock.calls.at(-1)?.[0].elements
+  expect(latestElements.map((element: { data: { id: string } }) => element.data.id)).toEqual(
+    expect.arrayContaining([
+      'D1', 'D1:C001', entries.center.knowledgeId, entries.second.knowledgeId,
+      entries.child.knowledgeId, entries.reviewed.knowledgeId, 'relation:reviewed',
+    ]),
+  )
+  const focusedOptions = cytoscapeMock.mock.calls.at(-1)?.[0]
+  expect(focusedOptions.layout).toEqual(expect.objectContaining({ name: 'cose' }))
+  expect(focusedOptions.style).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      selector: 'node.node--focus',
+      style: expect.objectContaining({ width: 16, height: 16 }),
+    }),
+    expect.objectContaining({
+      selector: 'edge.edge--candidate',
+      style: expect.objectContaining({ 'line-style': 'dashed' }),
+    }),
+    expect.objectContaining({
+      selector: 'edge',
+      style: expect.objectContaining({ 'curve-style': 'straight' }),
+    }),
+  ]))
+
+  const edgeTap = cores.at(-1)?.on.mock.calls.find(
+    ([event, selector]) => event === 'tap' && selector === 'edge',
+  )?.[2]
+  const renderCountBeforeEdgeSelection = cytoscapeMock.mock.calls.length
+  edgeTap?.({
+    target: {
+      id: () => 'structure:path:D1:D1:C001',
+      select: vi.fn(),
+    },
+  })
+  expect(await screen.findByLabelText('知识结构说明')).toHaveTextContent(
+    '仅表达目录与层级结构，不是正式语义关系',
+  )
+  expect(cytoscapeMock).toHaveBeenCalledTimes(renderCountBeforeEdgeSelection)
+})
+
+it('loads each local layer without exposing review workflow language', async () => {
+  renderPage()
+  fireEvent.change(screen.getByRole('searchbox', { name: '搜索真实条目' }), {
+    target: { value: '社会' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: '搜索' }))
+  fireEvent.click(await screen.findByRole('button', { name: /社会资本/ }))
   await screen.findByRole('heading', { name: '社会资本' })
-  fireEvent.click(screen.getByText('图中选择另一概念'))
-  await screen.findByRole('heading', { name: '互惠规范' })
-  page.unmount()
-  render(<StrictMode><Harness /></StrictMode>)
-  await screen.findByRole('heading', { name: '互惠规范' })
-  expect(screen.getByLabelText('路由中心')).toHaveTextContent('a')
+
+  fireEvent.click(screen.getByRole('button', { name: '加载更多直接子级' }))
+  await waitFor(() => expect(readStructuralConnectionPage).toHaveBeenCalledWith({
+    releaseId: 'release-a', sourceNodeId: entries.center.knowledgeId, cursor: 'children-2',
+  }))
+  fireEvent.click(screen.getByRole('button', { name: '加载更多同父条目' }))
+  await waitFor(() => expect(readStructuralConnectionPage).toHaveBeenCalledWith({
+    releaseId: 'release-a', sourceNodeId: 'D1:C001', cursor: 'siblings-2',
+  }))
+  fireEvent.click(screen.getByRole('button', { name: '加载更多正式关系' }))
+  await waitFor(() => expect(readIncidentRelationPage).toHaveBeenCalledWith({
+    releaseId: 'release-a', knowledgeId: entries.center.knowledgeId, cursor: 'relations-2',
+  }))
+
+  fireEvent.click(screen.getByRole('button', { name: '显示候选关系' }))
+  expect(await screen.findByText('候选关系不是正式知识，不会计入知识关系数量。')).toBeVisible()
+  await waitFor(() => {
+    const pendingElements = cytoscapeMock.mock.calls.at(-1)?.[0].elements
+    expect(pendingElements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ data: expect.objectContaining({ id: entries.candidateOnly.knowledgeId }) }),
+      expect.objectContaining({ data: expect.objectContaining({ id: 'candidate:pending' }) }),
+    ]))
+  })
+  expect(screen.getByRole('button', { name: '加载更多候选关系' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '加载更多候选关系' }))
+  await waitFor(() => expect(readIncidentCandidatePage).toHaveBeenCalledWith({
+    releaseId: 'release-a', knowledgeId: entries.center.knowledgeId, cursor: 'candidates-2',
+  }))
+
+  const edgeTap = cores.at(-1)?.on.mock.calls.find(
+    ([event, selector]) => event === 'tap' && selector === 'edge',
+  )?.[2]
+  edgeTap?.({ target: { id: () => 'candidate:pending', select: vi.fn() } })
+  const evidence = await screen.findByLabelText('候选关系证据')
+  expect(within(evidence).getByText('社会资本扩展了关系资源讨论。')).toBeVisible()
+  expect(within(evidence).getByText(/确定性规则命中，不是校准置信度/)).toBeVisible()
+
+  fireEvent.click(screen.getByRole('button', { name: '隐藏候选关系' }))
+  await waitFor(() => {
+    const hiddenElements = cytoscapeMock.mock.calls.at(-1)?.[0].elements
+    const ids = hiddenElements.map((element: { data: { id: string } }) => element.data.id)
+    expect(ids).not.toContain('candidate:pending')
+    expect(ids).not.toContain(entries.candidateOnly.knowledgeId)
+    expect(ids).toEqual(expect.arrayContaining([
+      'D1', 'D1:C001', entries.center.knowledgeId, entries.second.knowledgeId,
+      entries.child.knowledgeId, entries.reviewed.knowledgeId, 'relation:reviewed',
+    ]))
+  })
+})
+
+it('ignores an older center response after the user selects another result', async () => {
+  let releaseOldPath: ((value: { connections: (typeof pathConnection)[] }) => void) | undefined
+  const oldPath = new Promise<{ connections: (typeof pathConnection)[] }>((resolve) => {
+    releaseOldPath = resolve
+  })
+  let firstDimensionRead = true
+  readStructuralConnectionPage.mockImplementation(async ({ sourceNodeId }) => {
+    if (sourceNodeId === 'D1' && firstDimensionRead) {
+      firstDimensionRead = false
+      return oldPath
+    }
+    if (sourceNodeId === 'D1') return { connections: [pathConnection] }
+    if (sourceNodeId === 'D1:C001') return { connections: [centerConnection, siblingConnection] }
+    return { connections: [] }
+  })
+
+  renderPage()
+  fireEvent.change(screen.getByRole('searchbox', { name: '搜索真实条目' }), {
+    target: { value: '社会' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: '搜索' }))
+  fireEvent.click(await screen.findByRole('button', { name: /社会资本/ }))
+  fireEvent.click(screen.getByRole('button', { name: /关系资源/ }))
+
+  expect(await screen.findByRole('heading', { name: '关系资源' })).toBeVisible()
+  releaseOldPath?.({ connections: [pathConnection] })
+  await waitFor(() => {
+    const focused = cytoscapeMock.mock.calls.at(-1)?.[0].elements.find(
+      (element: { data: { focus?: boolean } }) => element.data.focus,
+    )
+    expect(focused?.data.id).toBe(entries.second.knowledgeId)
+  })
 })
