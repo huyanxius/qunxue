@@ -5,6 +5,7 @@ import {
   BellIcon,
   BooksIcon,
   ChatCircleDotsIcon,
+  DotsThreeIcon,
   FileTextIcon,
   HouseIcon,
   PlusIcon,
@@ -12,6 +13,7 @@ import {
   ToolboxIcon,
   TreeStructureIcon,
   UserCircleIcon,
+  XIcon,
 } from '@phosphor-icons/react'
 
 import brandMark from '../../assets/qunxue-brand-mark.svg'
@@ -55,10 +57,16 @@ function PrimaryNavigation({
   className,
   label,
   compact = false,
+  mobile = false,
+  moreExpanded = false,
+  onMore,
 }: {
   className: string
   label: string
   compact?: boolean
+  mobile?: boolean
+  moreExpanded?: boolean
+  onMore?: () => void
 }) {
   const { text } = useAppLocale()
   const navigationItems = [
@@ -70,9 +78,18 @@ function PrimaryNavigation({
     { href: '/knowledge', label: text('知识库', 'Knowledge base'), mobileLabel: text('知识', 'Library'), icon: BooksIcon, end: true },
     { href: '/knowledge/graph', label: text('知识图谱', 'Knowledge graph'), mobileLabel: text('图谱', 'Graph'), icon: TreeStructureIcon },
   ]
+  const visibleItems = mobile
+    ? navigationItems.filter(({ href }) => [
+      '/app',
+      '/agent',
+      '/research/new',
+      '/research/materials',
+      '/knowledge',
+    ].includes(href))
+    : navigationItems
   return (
     <nav className={className} aria-label={label}>
-      {navigationItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => (
+      {visibleItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => (
         <NavLink key={href} to={href} end={end}>
           <span className="navigation-icon" aria-hidden="true">
             <NavigationIcon size={18} weight="regular" />
@@ -80,6 +97,20 @@ function PrimaryNavigation({
           <span className="navigation-label">{compact ? mobileLabel : itemLabel}</span>
         </NavLink>
       ))}
+      {mobile ? (
+        <button
+          className="mobile-navigation__more"
+          type="button"
+          aria-expanded={moreExpanded}
+          aria-controls="mobile-more-panel"
+          onClick={onMore}
+        >
+          <span className="navigation-icon" aria-hidden="true">
+            <DotsThreeIcon size={20} weight="bold" />
+          </span>
+          <span className="navigation-label">{text('更多', 'More')}</span>
+        </button>
+      ) : null}
     </nav>
   )
 }
@@ -107,6 +138,7 @@ export function PageShell({
   const navigate = useNavigate()
   const [logoutFailed, setLogoutFailed] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'updates' | 'messages'>('all')
   const sharedRailState = useContext(RailStateContext)
   const [localRailCollapsed, setLocalRailCollapsed] = useState(defaultRailCollapsed)
@@ -266,7 +298,46 @@ export function PageShell({
         wide ? 'page-shell--wide' : '',
       ].filter(Boolean).join(' ')} id="main-content">{children}</main>
 
-      {immersive ? null : <PrimaryNavigation className="mobile-navigation" label={text('移动主导航', 'Mobile navigation')} compact />}
+      {immersive ? null : (
+        <>
+          <PrimaryNavigation
+            className="mobile-navigation"
+            label={text('移动主导航', 'Mobile navigation')}
+            compact
+            mobile
+            moreExpanded={mobileMoreOpen}
+            onMore={() => setMobileMoreOpen((open) => !open)}
+          />
+          {mobileMoreOpen ? (
+            <div className="mobile-more" id="mobile-more-panel">
+              <button
+                className="mobile-more__backdrop"
+                type="button"
+                aria-label={text('关闭更多功能', 'Close more features')}
+                onClick={() => setMobileMoreOpen(false)}
+              />
+              <section className="mobile-more__sheet" role="dialog" aria-modal="true" aria-label={text('更多功能', 'More features')}>
+                <header>
+                  <strong>{text('更多功能', 'More features')}</strong>
+                  <button type="button" aria-label={text('关闭更多功能', 'Close more features')} onClick={() => setMobileMoreOpen(false)}>
+                    <XIcon size={20} aria-hidden="true" />
+                  </button>
+                </header>
+                <nav aria-label={text('更多功能', 'More features')}>
+                  <NavLink to="/research/tools" onClick={() => setMobileMoreOpen(false)}>
+                    <ToolboxIcon size={20} aria-hidden="true" />
+                    <span>{text('研究工具', 'Research tools')}</span>
+                  </NavLink>
+                  <NavLink to="/knowledge/graph" onClick={() => setMobileMoreOpen(false)}>
+                    <TreeStructureIcon size={20} aria-hidden="true" />
+                    <span>{text('知识图谱', 'Knowledge graph')}</span>
+                  </NavLink>
+                </nav>
+              </section>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   )
 }
