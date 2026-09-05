@@ -29,7 +29,7 @@ const PRINT_CSS = `
   .letterhead svg { width: 30px; height: 30px; flex: 0 0 auto; }
   .letterhead b {
     font-family: "Times New Roman", "Heiti SC", "黑体", "Noto Sans CJK SC", sans-serif;
-    font-size: 12pt;
+    font-size: 13pt;
     font-weight: 700;
     letter-spacing: .02em;
   }

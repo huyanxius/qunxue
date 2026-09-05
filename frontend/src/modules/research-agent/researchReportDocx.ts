@@ -241,7 +241,7 @@ function letterhead() {
     indent: { firstLine: 0 },
     children: [
       brandMarkRun(),
-      new TextRun({ text: '  群学致知', bold: true, size: 24, font: headingFonts, color: '1B1B18' }),
+      new TextRun({ text: '  群学致知', bold: true, size: 26, font: headingFonts, color: '1B1B18' }),
     ],
   })
 }
