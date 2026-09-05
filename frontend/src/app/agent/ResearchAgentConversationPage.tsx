@@ -87,7 +87,9 @@ import {
   AgentMaterialAttachmentPicker,
   formatMaterialLocator,
   isSupportedResearchMaterialFile,
-  listResearchLibraryMaterials,
+  listAgentMaterials,
+  prepareAgentMaterialContext,
+  getAgentAttachmentMaterial,
   normalizeMaterialLocator,
   RESEARCH_MATERIAL_ACCEPT,
   ResearchMaterialsPanel,
@@ -1690,6 +1692,8 @@ export function ResearchAgentConversationPage({
   const [materialPickerOpen, setMaterialPickerOpen] = useState(false)
   const [materialPickerLoading, setMaterialPickerLoading] = useState(false)
   const [availableMaterials, setAvailableMaterials] = useState<ResearchMaterial[]>([])
+  const materialContextKey = useRef<string | null>(null)
+  const uploadTaskId = useRef<string | null>(null)
   const [attachedMaterials, setAttachedMaterials] = useState<ResearchMaterial[]>([])
   const [materialUploading, setMaterialUploading] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
@@ -1708,7 +1712,7 @@ export function ResearchAgentConversationPage({
   const [reportExportState, setReportExportState] = useState<DeepResearchExportState>('idle')
   const hasDeepResearchMockConversation = deepResearchMockStage !== 'idle'
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
-  const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
+  const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ taskId?: string; materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
   const [selectedCitationContext, setSelectedCitationContext] = useState<SelectedCitationContext | null>(null)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const [landingBackdropPhase, setLandingBackdropPhase] = useState<'visible' | 'leaving' | 'hidden'>('visible')
@@ -1817,15 +1821,10 @@ export function ResearchAgentConversationPage({
 
   async function openMaterialAttachmentPicker() {
     setMaterialMenuOpen(false)
-    if (workspace !== 'research' || !taskId) {
-      navigate('/research/materials')
-      return
-    }
     setMaterialPickerOpen(true)
     setMaterialPickerLoading(true)
     try {
-      const result = await listResearchLibraryMaterials(taskId)
-      setAvailableMaterials(result.items)
+      setAvailableMaterials(await listAgentMaterials())
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : text('研究材料暂时无法加载。', 'Research materials are unavailable.'))
       setMaterialPickerOpen(false)
@@ -1849,10 +1848,8 @@ export function ResearchAgentConversationPage({
   }
 
   async function uploadComposerMaterials(files: File[]) {
-    if (workspace !== 'research' || !taskId) {
-      navigate('/research/materials')
-      return
-    }
+    if (!files.length || materialUploading) return
+    const generation = conversationLoadGeneration.current
     const unsupported = files.find((file) => !isSupportedResearchMaterialFile(file))
     if (unsupported) {
       setError(text(`不支持“${unsupported.name}”的文件格式。`, `The file type for “${unsupported.name}” is not supported.`))
@@ -1866,18 +1863,22 @@ export function ResearchAgentConversationPage({
     setMaterialUploading(true)
     setError(null)
     try {
-      const uploaded: ResearchMaterial[] = []
-      for (const file of files) uploaded.push(await addResearchLibraryMaterial(taskId, file))
-      setAttachedMaterials((current) => {
-        const byId = new Map(current.map((item) => [item.materialId, item]))
-        for (const item of uploaded) byId.set(item.materialId, item)
-        return [...byId.values()].slice(0, 20)
-      })
-      setAvailableMaterials((current) => {
-        const byId = new Map(current.map((item) => [item.materialId, item]))
-        for (const item of uploaded) byId.set(item.materialId, item)
-        return [...byId.values()]
-      })
+      let destinationTaskId = taskId ?? uploadTaskId.current
+      if (!destinationTaskId) {
+        const context = await prepareAgentMaterialContext(
+          activeConversation?.conversation_id ?? pendingConversationId.current, materialContextKey.current ??= crypto.randomUUID(),
+        )
+        if (generation !== conversationLoadGeneration.current) return
+        pendingConversationId.current = context.conversation_id
+        uploadTaskId.current = context.task_id
+        destinationTaskId = context.task_id
+      }
+      for (const file of files) {
+        const material = await addResearchLibraryMaterial(destinationTaskId, file)
+        if (generation !== conversationLoadGeneration.current) return
+        setAttachedMaterials((current) => [...current.filter((item) => item.materialId !== material.materialId), material])
+        setAvailableMaterials((current) => [material, ...current.filter((item) => item.materialId !== material.materialId)])
+      }
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : text('研究材料上传失败。', 'Research material upload failed.'))
     } finally {
@@ -1885,30 +1886,29 @@ export function ResearchAgentConversationPage({
       if (materialFileInputRef.current) materialFileInputRef.current.value = ''
     }
   }
-  const pendingAttachedMaterialIds = attachedMaterials
+  const pendingAttachedMaterials = attachedMaterials
     .filter((material) => material.ingestionStatus === 'queued' || material.ingestionStatus === 'processing')
-    .map((material) => material.materialId)
-    .join(',')
+    .map((material) => `${material.taskId}/${material.materialId}`).join(',')
 
   useEffect(() => {
-    if (!taskId || !pendingAttachedMaterialIds) return undefined
+    if (!pendingAttachedMaterials) return undefined
     let active = true
-    const refresh = () => {
-      void listResearchLibraryMaterials(taskId)
-        .then((result) => {
-          if (!active) return
-          const byId = new Map(result.items.map((item) => [item.materialId, item]))
-          setAttachedMaterials((current) => current.map((item) => byId.get(item.materialId) ?? item))
-          setAvailableMaterials(result.items)
-        })
-        .catch(() => undefined)
+    let running = false
+    const refresh = async () => {
+      if (running) return
+      running = true
+      const results = await Promise.allSettled(pendingAttachedMaterials.split(',').map((key) => {
+        const [sourceTaskId, materialId] = key.split('/')
+        return getAgentAttachmentMaterial(sourceTaskId, materialId)
+      }))
+      running = false
+      if (!active) return
+      const byId = new Map(results.flatMap((result) => result.status === 'fulfilled' ? [[result.value.materialId, result.value] as const] : []))
+      setAttachedMaterials((current) => current.map((item) => byId.get(item.materialId) ?? item))
     }
-    const timer = window.setInterval(refresh, 750)
-    return () => {
-      active = false
-      window.clearInterval(timer)
-    }
-  }, [pendingAttachedMaterialIds, taskId])
+    const timer = window.setInterval(() => { void refresh() }, 1000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [pendingAttachedMaterials])
 
   const turns = useMemo(() => activeConversation?.turns ?? [], [activeConversation])
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
@@ -2106,6 +2106,11 @@ export function ResearchAgentConversationPage({
   }
 
   function prepareConversationSwitch() {
+    setAttachedMaterials([])
+    setAvailableMaterials([])
+    setMaterialPickerOpen(false)
+    uploadTaskId.current = null
+    materialContextKey.current = null
     cancelActiveStream()
     conversationLoadAbortController.current?.abort()
     conversationLoadGeneration.current += 1
@@ -2223,7 +2228,7 @@ export function ResearchAgentConversationPage({
           section_id: workspace === 'research' ? sectionId : null,
           document_version: workspace === 'research' ? documentVersion : null,
           theory_plan_id: workspace === 'research' ? theoryPlanId : null,
-          material_ids: workspace === 'research' ? attempt.materialIds : [],
+          material_ids: attempt.materialIds,
           deep_research_run_id: deepAction ? (activeTurnAttempt.current?.runId ?? null) : null,
           deep_research_action: deepAction?.action ?? null,
           deep_research_selection: deepAction?.selection ?? null,
@@ -2761,12 +2766,13 @@ export function ResearchAgentConversationPage({
       {selectedMaterialCitation.locator
         ? <p className="new-research__basis-locator">{formatMaterialLocator(selectedMaterialCitation.locator)}</p>
         : null}
-      {workspace === 'research' && taskId && selectedMaterialCitation.materialId && !selectedCitation.deleted
+      {(typeof selectedCitation.locator?.task_id === 'string' || taskId || uploadTaskId.current) && selectedMaterialCitation.materialId && !selectedCitation.deleted
         ? <div className="research-agent-basis-actions">
             <button
               type="button"
               onClick={() => {
                 setMaterialLocatorTarget({
+                  taskId: typeof selectedCitation.locator?.task_id === 'string' ? selectedCitation.locator.task_id : taskId ?? uploadTaskId.current ?? undefined,
                   materialId: selectedMaterialCitation.materialId as string,
                   parseId: selectedMaterialCitation.parseId,
                   segmentId: selectedMaterialCitation.segmentId,
@@ -2971,7 +2977,36 @@ export function ResearchAgentConversationPage({
             ) : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
               <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${attachedMaterials.length || materialUploading ? ' has-attachments' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>
+                {materialPickerOpen ? (
+                  <AgentMaterialAttachmentPicker
+                    inline
+                    loading={materialPickerLoading}
+                    materials={materialPickerLoading ? [] : availableMaterials}
+                    selectedIds={new Set(attachedMaterials.map((item) => item.materialId))}
+                    locale={locale}
+                    onToggle={toggleAttachedMaterial}
+                    onClose={() => setMaterialPickerOpen(false)}
+                  />
+                ) : null}
                 {composerPrefix}
+                {attachedMaterials.length || materialUploading ? (
+                  <div className="research-agent-composer__attachments" aria-label={text('本轮附件', 'Attachments for this turn')}>
+                    {attachedMaterials.map((material) => (
+                      <span className={`research-agent-composer__attachment is-${material.status}`} key={material.materialId}>
+                        <FileTextIcon size={14} aria-hidden="true" />
+                        <span title={material.filename}>{material.filename}</span>
+                        <small>{material.status === 'ready' ? text('已添加', 'Added') : attachmentStatusLabel(material, locale)}</small>
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          aria-label={text(`移除附件 ${material.filename}`, `Remove attachment ${material.filename}`)}
+                          onClick={() => setAttachedMaterials((current) => current.filter((item) => item.materialId !== material.materialId))}
+                        ><XIcon size={12} /></button>
+                      </span>
+                    ))}
+                    {materialUploading ? <span className="research-agent-composer__uploading" role="status"><CircleNotchIcon size={14} className="spin" />{text('正在上传…', 'Uploading…')}</span> : null}
+                  </div>
+                ) : null}
                 <textarea
                   ref={composerInputRef}
                   aria-label={composerAriaLabel ?? text('问社会学 Agent', 'Ask the Sociology Agent')}
@@ -2993,24 +3028,6 @@ export function ResearchAgentConversationPage({
                   aria-hidden="true"
                   onChange={(event) => { void uploadComposerMaterials([...event.currentTarget.files ?? []]) }}
                 />
-                {attachedMaterials.length || materialUploading ? (
-                  <div className="research-agent-composer__attachments" aria-label={text('本轮附件', 'Attachments for this turn')}>
-                    {attachedMaterials.map((material) => (
-                      <span className={`research-agent-composer__attachment is-${material.status}`} key={material.materialId}>
-                        <FileTextIcon size={14} aria-hidden="true" />
-                        <span title={material.filename}>{material.filename}</span>
-                        {material.status !== 'ready' ? <small>{attachmentStatusLabel(material, locale)}</small> : null}
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          aria-label={text(`移除附件 ${material.filename}`, `Remove attachment ${material.filename}`)}
-                          onClick={() => setAttachedMaterials((current) => current.filter((item) => item.materialId !== material.materialId))}
-                        ><XIcon size={12} /></button>
-                      </span>
-                    ))}
-                    {materialUploading ? <span className="research-agent-composer__uploading" role="status"><CircleNotchIcon size={14} className="spin" />{text('正在上传…', 'Uploading…')}</span> : null}
-                  </div>
-                ) : null}
                 <div className="research-agent-composer__controls">
                   <div className="research-agent-composer__material-entry" ref={materialMenuRef}>
                     <button
@@ -3037,8 +3054,7 @@ export function ResearchAgentConversationPage({
                       >
                         <button type="button" role="menuitem" onClick={() => {
                           setMaterialMenuOpen(false)
-                          if (workspace === 'research' && taskId) materialFileInputRef.current?.click()
-                          else openResearchMaterials()
+                          materialFileInputRef.current?.click()
                         }}>
                           <FilePlusIcon size={18} /><span>{text('上传文件', 'Upload a file')}</span>
                         </button>
@@ -3205,9 +3221,9 @@ export function ResearchAgentConversationPage({
             />
           ) : null}
 
-          {materialsOpen && workspace === 'research' && taskId ? (
+          {materialsOpen && (materialLocatorTarget?.taskId ?? taskId) ? (
             <ResearchMaterialsPanel
-              taskId={taskId}
+              taskId={(materialLocatorTarget?.taskId ?? taskId)!}
               initialMaterialId={materialLocatorTarget?.materialId ?? null}
               initialParseId={materialLocatorTarget?.parseId ?? null}
               initialSegmentId={materialLocatorTarget?.segmentId ?? null}
@@ -3218,15 +3234,7 @@ export function ResearchAgentConversationPage({
               }}
             />
           ) : null}
-          {materialPickerOpen ? (
-            <AgentMaterialAttachmentPicker
-              materials={materialPickerLoading ? [] : availableMaterials}
-              selectedIds={new Set(attachedMaterials.map((item) => item.materialId))}
-              locale={locale}
-              onToggle={toggleAttachedMaterial}
-              onClose={() => setMaterialPickerOpen(false)}
-            />
-          ) : null}
+
         </section>
   )
 

@@ -34,3 +34,5 @@ export type { ResearchAnalysisSnapshot } from './researchAnalysisModel'
 export type { ResearchCycleSnapshot } from './researchCycleModel'
 export type { ResearchMaterialsPanelProps } from './ResearchMaterialsPanel'
 export type { ResearchAnalysisPanelProps } from './ResearchAnalysisPanel'
+
+export { prepareAgentMaterialContext, listAgentMaterials, getAgentAttachmentMaterial } from './researchMaterialsLibrary'

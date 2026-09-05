@@ -268,15 +268,15 @@ function SectionsRail({
             >
               <SourcesPanel citations={web} selectedCitationId={selectedCitationId} onSelect={onCitationSelect} numberOf={numberOf} />
             </RailSection>
-            {materials.length ? (
-              <RailSection title={text('研究材料', 'Research materials')} count={materials.length} index={2} emptyHint="">
+            {(
+              <RailSection title={text('用户文件', 'Your files')} count={materials.length} index={2} emptyHint={text('这次回答还没有引用你选择的文件。', 'This answer has not cited your selected files yet.')}>
                 <SourcesPanel citations={materials} selectedCitationId={selectedCitationId} onSelect={onCitationSelect} numberOf={numberOf} />
               </RailSection>
-            ) : null}
+            )}
             <RailSection
               title={text('工作流程', 'Workflow')}
               count={activities.length}
-              index={materials.length ? 3 : 2}
+              index={3}
               meta={workflowMeta}
               emptyHint={text('Agent 开始检索后，这里按步骤记录它做了什么。', 'Steps appear here once the Agent starts retrieving.')}
             >
