@@ -33,6 +33,8 @@ it('shows empty search results and dismisses without changing project', () => {
   const search = screen.getByRole('searchbox', { name: '搜索项目' })
   fireEvent.change(search, { target: { value: '不存在' } })
   expect(screen.getByText('没有匹配的项目')).toBeVisible()
+  expect(fireEvent.keyDown(search, { key: 'Enter', cancelable: true })).toBe(false)
+  expect(screen.getByRole('dialog', { name: '切换项目' })).toBeVisible()
   fireEvent.keyDown(search, { key: 'Escape' })
   expect(trigger).toHaveFocus()
   expect(onChange).not.toHaveBeenCalled()
