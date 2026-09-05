@@ -1,4 +1,24 @@
-/* Shared research tokens define the settings surfaces and controls. */
+/* Settings use the shared paper palette while retaining workspace type and spacing. */
+.qs-palette,
+.qs-settings,
+.qs-confirmation,
+.qs-state {
+  --qx-color-surface: var(--qx-paper-surface);
+  --qx-color-surface-raised: color-mix(in srgb, white 48%, var(--qx-paper-surface));
+  --qx-color-surface-muted: var(--qx-paper-sidebar);
+  --qx-color-surface-strong: var(--qx-paper-selected);
+  --qx-color-rule: var(--qx-paper-rule);
+  --qx-color-rule-strong: color-mix(in srgb, var(--qx-paper-muted) 35%, var(--qx-paper-surface));
+  --qx-color-ink: var(--qx-paper-ink);
+  --qx-color-ink-soft: var(--qx-paper-ink);
+  --qx-color-muted: var(--qx-paper-muted);
+  --qx-color-faint: var(--qx-paper-muted);
+  --qx-color-accent: var(--qx-paper-ink);
+  --qx-color-accent-hover: color-mix(in srgb, var(--qx-paper-ink) 88%, var(--qx-paper-surface));
+  --qx-color-on-accent: var(--qx-paper-surface);
+  --qx-color-notice-soft: var(--qx-paper-selected);
+}
+
 .qs-settings,
 .qs-confirmation,
 .qs-state {
@@ -33,7 +53,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--qx-space-6) var(--qx-space-3) var(--qx-space-4);
-  background: var(--qx-color-surface);
+  background: var(--qx-color-surface-muted);
 }
 .qs-identity {
   display: flex;
@@ -92,7 +112,7 @@
   border: 0;
   border-radius: var(--qx-radius-compact);
   background: transparent;
-  color: var(--qx-color-muted);
+  color: var(--qx-color-ink-soft);
   font-size: var(--qx-text-control);
   text-align: left;
   cursor: pointer;
@@ -106,7 +126,7 @@
 }
 .qs-sidebar button[aria-current='page'] {
   color: var(--qx-color-ink);
-  background: var(--qx-color-surface-muted);
+  background: var(--qx-color-surface-strong);
   font-weight: 500;
 }
 .qs-sidebar-footer {
@@ -275,7 +295,7 @@
   border: 1px solid var(--qx-color-rule);
   border-radius: var(--qx-radius-control);
   color: var(--qx-color-ink);
-  background: var(--qx-color-surface);
+  background: var(--qx-color-surface-raised);
   font-size: var(--qx-text-meta);
   line-height: var(--qx-text-meta--line-height);
 }
