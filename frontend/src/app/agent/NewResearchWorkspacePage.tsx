@@ -39,7 +39,7 @@ import {
 } from '../../modules/research-materials'
 import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchMapCanvas } from '../research-workspace/ResearchMapCanvas'
-import { legacyResearchWorkspaceDestination } from '../research-workspace/researchProjectWorkspaceModel'
+import { legacyResearchWorkspaceDestination, researchWorkspaceDestination } from '../research-workspace/researchProjectWorkspaceModel'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
 import './new-research-workspace.css'
@@ -305,12 +305,17 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   }
 
   function enterDocumentResearch() {
-    const resumePath = journey?.taskId ? journey.resumePath?.trim() : ''
-    if (!resumePath) {
+    const taskId = journey?.taskId
+    const resumePath = taskId ? journey?.resumePath?.trim() : ''
+    if (!taskId || !resumePath) {
       setJourneyError('研究已建立，但下一阶段暂时无法打开。请稍后重试恢复研究状态。')
       return
     }
-    navigate(legacyResearchWorkspaceDestination(resumePath) ?? resumePath)
+    // resume_path 恢复上次使用的位置，可能就是当前画布；展开文档必须进入文档工作区。
+    const destination = new URL(resumePath, window.location.origin).pathname === '/research/new'
+      ? researchWorkspaceDestination(taskId, 'map')
+      : legacyResearchWorkspaceDestination(resumePath) ?? resumePath
+    navigate(destination)
   }
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
