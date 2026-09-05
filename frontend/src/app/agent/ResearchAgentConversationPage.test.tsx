@@ -201,7 +201,8 @@ describe('ResearchAgentConversationPage', () => {
   })
 
   it('keeps a completed deep-research answer in the standard conversation flow', async () => {
-    const answer = '## 研究结论\n\n这是一段需要正常换行展示的深入研究正文。'
+    const body = '这是一段需要正常换行展示的深入研究正文，它写得足够长，长到卡片上那句结论必须被截断，这样才能看出卡片摘的是一句结论，而不是把整段正文原样搬了过去；完整的正文仍旧留在对话流里，读者往上翻就能看到它，卡片只负责给出一个可以一眼读完的判断。'
+    const answer = `## 研究结论\n\n${body}`
     const completed = conversationFixture({
       id: 'conversation-deep-research-result',
       prompt: '请深入研究社区互助。',
@@ -211,6 +212,8 @@ describe('ResearchAgentConversationPage', () => {
       if (urlFor(input).pathname !== '/api/agent/turns') return json({ items: [] })
       return new Response(eventStream([
         ['turn_started', { conversation_id: completed.conversation_id, run_id: 'run-deep', replayed: false, runtime_mode: 'base' }],
+        ['tool_started', { tool: 'search_knowledge', call_id: 'call-deep-1' }],
+        ['tool_finished', { tool: 'search_knowledge', call_id: 'call-deep-1', detail: '命中 2 条' }],
         ['research_result', { summary: answer, knowledge_count: 2, web_count: 1 }],
         ['assistant_delta', { delta: answer }],
         ['turn_completed', { conversation: completed, knowledge_release_id: 'release-agent' }],
@@ -227,9 +230,14 @@ describe('ResearchAgentConversationPage', () => {
 
     const resultCard = await within(agent).findByRole('region', { name: '研究结论' })
     expect(within(resultCard).getByRole('heading', { name: '已经整理好一份带证据的结论' })).toBeVisible()
-    expect(within(resultCard).queryByText('这是一段需要正常换行展示的深入研究正文。')).not.toBeInTheDocument()
+    // 卡片摘一句结论，正文照旧留在对话流里，两边不重复。
+    expect(within(resultCard).getByText(/^这是一段需要正常换行展示的深入研究正文.+…$/)).toBeVisible()
+    expect(within(resultCard).queryByText(body)).not.toBeInTheDocument()
+    expect(within(resultCard).getByText('用时 1 秒')).toBeVisible()
+    expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
+    expect(within(resultCard).getByRole('button', { name: '下载 PDF' })).toBeVisible()
     expect(within(agent).getByRole('heading', { name: '研究结论' })).toBeVisible()
-    expect(within(agent).getByText('这是一段需要正常换行展示的深入研究正文。')).toBeVisible()
+    expect(within(agent).getByText(body)).toBeVisible()
   })
 
   it('shows segmented deep-research progress before the streaming answer', async () => {

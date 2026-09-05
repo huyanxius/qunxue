@@ -12,6 +12,8 @@ import {
   CompassIcon,
   CopyIcon,
   DotsThreeIcon,
+  DownloadSimpleIcon,
+  FilePdfIcon,
   FilePlusIcon,
   FileTextIcon,
   FolderOpenIcon,
@@ -67,6 +69,14 @@ import {
   type AgentRuntimeMode,
   type AgentToolStep,
   type AgentToolTrace,
+  buildResearchReport,
+  collectReferences,
+  conclusionDigest,
+  createResearchReportDocx,
+  displayAgentText,
+  formatElapsed,
+  openResearchReportPrintWindow,
+  researchReportDocxFilename,
 } from '../../modules/research-agent'
 import type { ResearchCanvasStreamingTurn } from '../../modules/research-workspace'
 import {
@@ -106,6 +116,7 @@ const RAIL_EXIT_MS = 220
 const DELETED_MATERIAL_ANSWER = '该回答引用的个人研究材料已删除，原回答内容已隐藏。'
 type AgentComposerMode = 'standard' | 'deep-research'
 type DeepResearchMockStage = 'idle' | 'clarifying' | 'planning' | 'researching' | 'completed'
+type DeepResearchExportState = 'idle' | 'docx' | 'pdf'
 
 function attachmentStatusLabel(material: ResearchMaterial, locale: 'zh-CN' | 'en-US') {
   if (material.unavailableReason === 'ocr_required') return locale === 'en-US' ? 'OCR required' : '需要 OCR'
@@ -136,6 +147,9 @@ function DeepResearchMockFlow({
   webCount,
   toolSteps = [],
   elapsedSeconds = 0,
+  conclusion,
+  exportState = 'idle',
+  onExport,
 }: {
   stage: DeepResearchMockStage
   question: string
@@ -149,6 +163,9 @@ function DeepResearchMockFlow({
   webCount?: number
   toolSteps?: AgentToolStep[]
   elapsedSeconds?: number
+  conclusion?: string
+  exportState?: DeepResearchExportState
+  onExport?: (kind: 'docx' | 'pdf') => void
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -193,53 +210,74 @@ function DeepResearchMockFlow({
     )
   }
 
-  if (stage === 'researching') {
-    const toolCalls = toolSteps.length
-      ? toolSteps.map((step) => ({ tool: step.tool, label: step.label, detail: step.detail || '' }))
-      : [{ tool: 'research', label: '等待工具调用', detail: '研究即将开始' }]
-    return (
-      <section className="deep-research-mock-card deep-research-mock-card--progress" aria-label="研究进度" aria-live="polite">
-        <div className="deep-research-mock-card__eyebrow">正在深入研究</div>
-        <h2>我正在逐步核对证据</h2>
-        <div className="deep-research-mock-card__progress-meta">
-          <span>已运行 {Math.floor(elapsedSeconds / 60)}分{elapsedSeconds % 60}秒</span>
-          <span>{Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}%</span>
+  // 进行中与已完成是同一张卡片，只是状态变了：进度条走满、步骤全部打勾、多出结论与导出。
+  const done = stage === 'completed'
+  const percent = done
+    ? 100
+    : Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)
+  const reachedIndex = done ? DEEP_RESEARCH_MOCK_STEPS.length : stepIndex
+  const toolCalls = toolSteps.length
+    ? toolSteps.map((step) => ({ tool: step.tool, label: step.label, detail: step.detail || '' }))
+    : [{ tool: 'research', label: done ? '工具调用已完成' : '等待工具调用', detail: done ? '' : '研究即将开始' }]
+  return (
+    <section
+      className={`deep-research-mock-card deep-research-mock-card--progress${done ? ' deep-research-mock-card--done' : ''}`}
+      aria-label={done ? '研究结论' : '研究进度'}
+      aria-live="polite"
+    >
+      <div className="deep-research-mock-card__eyebrow">{done ? '研究完成' : '正在深入研究'}</div>
+      <h2>{done ? '已经整理好一份带证据的结论' : '我正在逐步核对证据'}</h2>
+      <div className="deep-research-mock-card__progress-meta">
+        <span>{elapsedSeconds > 0 ? `${done ? '用时' : '已运行'} ${formatElapsed(elapsedSeconds)}` : done ? '研究已完成' : '正在开始'}</span>
+        <span>{percent}%</span>
+      </div>
+      <div className="deep-research-mock-card__progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <div className="deep-research-mock-card__steps">
+        {DEEP_RESEARCH_MOCK_STEPS.map((step, index) => (
+          <div key={step} className={index < reachedIndex ? 'is-complete' : index === reachedIndex ? 'is-active' : ''}>
+            <span aria-hidden="true">{index < reachedIndex ? '✓' : index === reachedIndex ? '•' : '○'}</span>{step}
+          </div>
+        ))}
+      </div>
+      {done ? (
+        <div className="deep-research-mock-card__conclusion">
+          <div className="deep-research-mock-card__eyebrow">研究结论</div>
+          <p>{conclusion || '这一轮没有产生可摘录的结论，完整回答见上方正文。'}</p>
+          <div className="deep-research-mock-card__result-meta">
+            <span>知识库 {knowledgeCount ?? 0} 条</span>
+            <span>网页资料 {webCount ?? 0} 条</span>
+          </div>
         </div>
-        <div className="deep-research-mock-card__progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}>
-          <span style={{ width: `${Math.round(((Math.min(stepIndex, DEEP_RESEARCH_MOCK_STEPS.length - 1) + 0.5) / DEEP_RESEARCH_MOCK_STEPS.length) * 100)}%` }} />
-        </div>
-        <div className="deep-research-mock-card__steps">
-          {DEEP_RESEARCH_MOCK_STEPS.map((step, index) => (
-            <div key={step} className={index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
-              <span aria-hidden="true">{index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>{step}
+      ) : null}
+      <button type="button" className="deep-research-mock-card__details-toggle" onClick={() => setDetailsOpen((open) => !open)} aria-expanded={detailsOpen}>
+        {detailsOpen ? '收起工具调用' : '查看工具调用'}<CaretDownIcon size={13} weight="bold" className={detailsOpen ? 'is-open' : ''} />
+      </button>
+      {detailsOpen ? (
+        <div className="deep-research-mock-card__tool-calls">
+          {toolCalls.map((call, index) => (
+            <div key={`${call.tool}-${index}`} className={toolSteps[index]?.status === 'completed' || index < reachedIndex ? 'is-complete' : index === reachedIndex ? 'is-active' : ''}>
+              <span>{toolSteps[index]?.status === 'completed' || index < reachedIndex ? '✓' : index === reachedIndex ? '•' : '○'}</span>
+              <strong>{call.label}</strong>
+              <small>{call.detail}</small>
             </div>
           ))}
         </div>
-        <button type="button" className="deep-research-mock-card__details-toggle" onClick={() => setDetailsOpen((open) => !open)} aria-expanded={detailsOpen}>
-          {detailsOpen ? '收起工具调用' : '查看工具调用'}<CaretDownIcon size={13} weight="bold" className={detailsOpen ? 'is-open' : ''} />
-        </button>
-        {detailsOpen ? (
-          <div className="deep-research-mock-card__tool-calls">
-            {toolCalls.map((call, index) => (
-              <div key={`${call.tool}-${index}`} className={toolSteps[index]?.status === 'completed' || index < stepIndex ? 'is-complete' : index === stepIndex ? 'is-active' : ''}>
-                <span>{toolSteps[index]?.status === 'completed' || index < stepIndex ? '✓' : index === stepIndex ? '•' : '○'}</span>
-                <strong>{call.label}</strong>
-                <small>{call.detail}</small>
-              </div>
-            ))}
+      ) : null}
+      {done && onExport ? (
+        <div className="deep-research-mock-card__export">
+          <p>这一轮的问答连同全部引用，可以直接导出成一份带来源的研究报告。</p>
+          <div className="deep-research-mock-card__export-actions">
+            <button type="button" className="is-primary" disabled={exportState !== 'idle'} onClick={() => onExport('docx')}>
+              <DownloadSimpleIcon size={14} weight="bold" />{exportState === 'docx' ? '正在生成 Word…' : '下载 Word'}
+            </button>
+            <button type="button" disabled={exportState !== 'idle'} onClick={() => onExport('pdf')}>
+              <FilePdfIcon size={14} />{exportState === 'pdf' ? '正在生成 PDF…' : '下载 PDF'}
+            </button>
           </div>
-        ) : null}
-      </section>
-    )
-  }
-
-  return (
-    <section className="deep-research-mock-card deep-research-mock-card--result" aria-label="研究结论">
-      <div className="deep-research-mock-card__result-row">
-        <div className="deep-research-mock-card__eyebrow">研究完成</div>
-        <h2>已经整理好一份带证据的结论</h2>
-        <div className="deep-research-mock-card__result-meta"><span>知识库 {knowledgeCount ?? 0} 条</span><span>网页资料 {webCount ?? 0} 条</span></div>
-      </div>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -721,10 +759,6 @@ function resultItemsFromOutput(output: unknown): NonNullable<ResearchActivity['r
         : `${title}-${index}`
     return [{ id, title, excerpt }]
   })
-}
-
-function displayAgentText(value: string) {
-  return value.replace(/\[(?:citation_id:)?(?:knowledge|source):[A-Za-z0-9_.:-]+\]/g, '')
 }
 
 function citationKindLabel(kind: string, locale: AppLocale) {
@@ -1606,6 +1640,7 @@ export function ResearchAgentConversationPage({
   const deepResearchStartedAt = useRef<number | null>(null)
   const [deepResearchResult, setDeepResearchResult] = useState<{ summary?: string; knowledgeCount?: number; webCount?: number }>({})
   const deepResearchLifecycleStarted = useRef(false)
+  const [reportExportState, setReportExportState] = useState<DeepResearchExportState>('idle')
   const hasDeepResearchMockConversation = deepResearchMockStage !== 'idle'
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [materialLocatorTarget, setMaterialLocatorTarget] = useState<{ materialId: string; parseId: string | null; segmentId: string | null } | null>(null)
@@ -2158,6 +2193,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'research_result') {
             deepResearchLifecycleStarted.current = true
             setDeepResearchResult({ summary: event.summary, knowledgeCount: event.knowledge_count, webCount: event.web_count })
+            settleDeepResearchElapsed()
             setDeepResearchMockStage('completed')
           } else if (event.type === 'tool_started' || event.type === 'tool_finished' || event.type === 'tool_failed') {
             const next = updateToolSteps(pendingToolSteps.current, event)
@@ -2201,7 +2237,10 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
-            if (composerMode === 'deep-research' && deepResearchLifecycleStarted.current) setDeepResearchMockStage('completed')
+            if (composerMode === 'deep-research' && deepResearchLifecycleStarted.current) {
+              settleDeepResearchElapsed()
+              setDeepResearchMockStage('completed')
+            }
             else if (composerMode === 'deep-research') resetDeepResearchMock()
             activeRunId.current = null
             failedTurnAttempt.current = null
@@ -2322,6 +2361,41 @@ export function ResearchAgentConversationPage({
     void submitQuestion(normalized, attempt?.question === normalized ? attempt.idempotencyKey : undefined)
   }
 
+  // 计时器一秒一跳，收尾时按真实起止时间再算一次，卡片上不会出现少一秒的用时。
+  function settleDeepResearchElapsed() {
+    const startedAt = deepResearchStartedAt.current
+    if (startedAt === null) return
+    setDeepResearchElapsedSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)))
+  }
+
+  async function exportResearchReport(kind: 'docx' | 'pdf') {
+    const conversation = activeConversation
+    if (!conversation || reportExportState !== 'idle') return
+    setReportExportState(kind)
+    try {
+      const report = buildResearchReport({
+        conversation,
+        elapsedSeconds: deepResearchElapsedSeconds,
+        fallbackTitle: deepResearchMockQuestion,
+      })
+      if (kind === 'pdf') {
+        openResearchReportPrintWindow(report)
+        return
+      }
+      const blob = await createResearchReportDocx(report)
+      const url = URL.createObjectURL(blob)
+      const anchor = globalThis.document.createElement('a')
+      anchor.href = url
+      anchor.download = researchReportDocxFilename(report)
+      anchor.click()
+      URL.revokeObjectURL(url)
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : '导出研究报告失败，请重试。')
+    } finally {
+      setReportExportState('idle')
+    }
+  }
+
   function resetDeepResearchMock() {
     setDeepResearchMockStage('idle')
     setDeepResearchMockQuestion('')
@@ -2427,6 +2501,28 @@ export function ResearchAgentConversationPage({
     return [...new Map(values.map((context) => [context.citation.citation_id, context])).values()]
   }, [activeConversation?.conversation_id, embedded, knowledgeReleaseByConversationId, streamingTurn?.citations, turns])
   const citations = useMemo(() => citationContexts.map((context) => context.citation), [citationContexts])
+
+  // 这一轮结束后 streamingTurn 已清空，卡片上"查看工具调用"要改从落库的这一轮里取。
+  const lastTurnToolSteps = useMemo(() => {
+    const lastTurn = turns.at(-1)
+    if (!lastTurn) return []
+    return toolStepsByTurnId[lastTurn.turn_id] ?? persistedToolSteps(lastTurn.tool_traces)
+  }, [toolStepsByTurnId, turns])
+
+  // 结论优先取深度研究事件带回的正文；普通轮次没有这个事件，就退回最后一轮回答。
+  const deepResearchConclusion = useMemo(() => {
+    const summary = deepResearchResult.summary ?? turns.at(-1)?.assistant.content ?? ''
+    return summary ? conclusionDigest(summary) : ''
+  }, [deepResearchResult.summary, turns])
+
+  // research_result 只在确认计划的深度研究里发出，条数缺席时按整段对话的引用现算。
+  const reportReferenceCounts = useMemo(() => {
+    const references = collectReferences(citations)
+    return {
+      knowledge: references.filter((reference) => reference.group === 'knowledge').length,
+      web: references.filter((reference) => reference.group === 'web').length,
+    }
+  }, [citations])
   const citationsForRail = useMemo(() => citations.map((citation) => citationToRail(citation, locale)), [citations, locale])
   const selectedCitation = selectedCitationContext?.citation ?? null
   const selectedCitationId = selectedCitation?.citation_id ?? null
@@ -2710,10 +2806,13 @@ export function ResearchAgentConversationPage({
                     question={deepResearchMockQuestion}
                     stepIndex={deepResearchMockStep}
                     options={deepResearchMockOptions}
-                    knowledgeCount={deepResearchResult.knowledgeCount}
-                    webCount={deepResearchResult.webCount}
-                    toolSteps={streamingTurn?.toolSteps ?? []}
+                    knowledgeCount={deepResearchResult.knowledgeCount ?? reportReferenceCounts.knowledge}
+                    webCount={deepResearchResult.webCount ?? reportReferenceCounts.web}
+                    toolSteps={streamingTurn?.toolSteps ?? lastTurnToolSteps}
                     elapsedSeconds={deepResearchElapsedSeconds}
+                    conclusion={deepResearchConclusion}
+                    exportState={reportExportState}
+                    onExport={activeConversation ? (kind) => { void exportResearchReport(kind) } : undefined}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
                     onSkip={() => continueDeepResearch('skip')}
                     onConfirmPlan={() => continueDeepResearch('confirm')}

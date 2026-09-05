@@ -30,3 +30,20 @@ export type {
   ResearchStartJourney,
   ResearchStartProposal,
 } from './researchStart'
+export {
+  buildResearchReport,
+  collectReferences,
+  conclusionDigest,
+  displayAgentText,
+  formatElapsed,
+  referenceGroupTitles,
+  researchReportFilename,
+} from './researchReportContent'
+export type {
+  ResearchReference,
+  ResearchReferenceGroup,
+  ResearchReport,
+  ResearchReportSection,
+} from './researchReportContent'
+export { createResearchReportDocx, researchReportDocxFilename } from './researchReportDocx'
+export { buildResearchReportHtml, openResearchReportPrintWindow } from './researchReportPrint'
