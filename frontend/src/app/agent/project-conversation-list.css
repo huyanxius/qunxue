@@ -27,3 +27,16 @@
 
 .project-conversation-list__delete-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-conversation-list__delete-description { margin: 0; color: var(--app-muted); font-size: 12px; line-height: 1.6; }
+
+@media (hover: hover) and (pointer: fine) {
+  .project-conversation-list__heading :is(.project-conversation-list__actions, .project-conversation-list__new) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .project-conversation-list__heading:hover :is(.project-conversation-list__actions, .project-conversation-list__new),
+  .project-conversation-list__heading:has(:focus-visible) :is(.project-conversation-list__actions, .project-conversation-list__new),
+  .project-conversation-list__heading:has(.project-conversation-list__actions[aria-expanded='true']) :is(.project-conversation-list__actions, .project-conversation-list__new) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
