@@ -26,12 +26,12 @@
   --qx-color-surface-strong: light-dark(#ededed, #303331);
 
   /* 纸面配色：暖白底配低饱和沙色与灰绿，避免与中性工作台底色混用。 */
-  --qx-paper-surface: #f8f7f2;
+  --qx-paper-surface: light-dark(#f8f7f2, #242625);
   --qx-paper-sidebar: color-mix(in srgb, var(--qx-paper-surface) 97%, var(--qx-paper-ink));
-  --qx-paper-selected: #e9e8e3;
+  --qx-paper-selected: light-dark(#e9e8e3, #353834);
   --qx-paper-rule: color-mix(in srgb, #c3ad94 32%, var(--qx-paper-surface));
-  --qx-paper-ink: #302f2c;
-  --qx-paper-muted: #74736b;
+  --qx-paper-ink: light-dark(#302f2c, #e6e7e3);
+  --qx-paper-muted: light-dark(#74736b, #a4aaa2);
 
   /* ---- 墨色：ink 是标题与强调，ink-soft 是正文，muted 是元信息，faint 是几乎不看的定位符 ---- */
   --qx-color-ink: light-dark(#111111, #e6e7e3);

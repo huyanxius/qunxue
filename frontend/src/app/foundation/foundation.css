@@ -4356,3 +4356,48 @@
     display: none;
   }
 }
+
+/* The Agent and method chapter already use a dark field in both appearances. */
+@media (prefers-color-scheme: dark) {
+  .public-header .public-wordmark img {
+    filter: brightness(0) invert(.9);
+  }
+
+  .foundation-agent__dialog {
+    border-color: rgb(255 255 255 / 14%);
+    background: rgb(24 28 27 / 88%);
+  }
+
+  .foundation-agent__question-field strong,
+  .foundation-agent__composer strong {
+    color: #e6e7e3;
+  }
+
+  .foundation-agent__question-field input {
+    caret-color: #e6e7e3;
+  }
+
+  .foundation-agent__composer > a {
+    color: #20241f;
+    background: #e0e4db;
+  }
+
+  .public-site > main > .foundation-method,
+  .public-site.is-agent-expanded > main > .foundation-method,
+  .public-site.is-dark-backdrop-active > main > .foundation-method,
+  .foundation-method__shader {
+    color: #e6e7e3;
+    background: #1a1d1b;
+  }
+
+  .public-site .foundation-method .foundation-section-heading h2,
+  .public-site .foundation-method .foundation-method__steps h3 {
+    color: #e6e7e3;
+  }
+
+  .public-site .foundation-method .foundation-section-heading > p,
+  .public-site .foundation-method .foundation-method__steps p,
+  .public-site .foundation-method .foundation-kicker {
+    color: #b9bfb7;
+  }
+}

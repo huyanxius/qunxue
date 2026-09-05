@@ -4,7 +4,7 @@
 .qs-confirmation,
 .qs-state {
   --qx-color-surface: var(--qx-paper-surface);
-  --qx-color-surface-raised: color-mix(in srgb, white 48%, var(--qx-paper-surface));
+  --qx-color-surface-raised: color-mix(in srgb, light-dark(white, #303330) 48%, var(--qx-paper-surface));
   --qx-color-surface-muted: var(--qx-paper-sidebar);
   --qx-color-surface-strong: var(--qx-paper-selected);
   --qx-color-rule: var(--qx-paper-rule);
