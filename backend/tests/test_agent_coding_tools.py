@@ -367,3 +367,15 @@ def test_user_can_revoke_an_applied_plan_without_removing_the_original_code(anal
     assert "coding_plan.revoked" in {
         event.action for event in app.list_audit_events(user_id=user_id, task_id=task_id)
     }
+
+
+def test_agent_can_propose_a_grounded_new_code_without_existing_marks(analysis_context):
+    app, materials, block, user_id, task_id, _ = analysis_context
+    code = app.propose_source_code_from_agent(user_id=user_id, task_id=task_id,
+        material_id=block.material_id, parse_id=block.parse_id, segment_id=block.segment_id,
+        quote_start=9, quote_end=18, label="照护劳动集中", definition="日常照护集中于某一家庭成员。",
+        rationale="描述姐姐承担大部分照护。", conversation_id=uuid4(), agent_run_id=uuid4(), agent_turn_id=uuid4(), tool_call_id="source-code")
+    assert code.status.value == "candidate"
+    snapshot = app.list_snapshot(user_id=user_id, task_id=task_id)
+    assert snapshot["annotations"][0].quote == block.text[9:18]
+    assert app.retrieve_coded_segments(user_id=user_id, task_id=task_id) == ()
