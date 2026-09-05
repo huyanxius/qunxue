@@ -1,8 +1,8 @@
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -196,6 +196,14 @@ class SqliteConversationRepository:
             updated_at=_utc(row.updated_at),
             turns=tuple(turns),
             research_map=aggregate_research_map(all_patches),
+            unfinished_runs=tuple(
+                self._safe_unfinished_run(run) for run in self._session.scalars(
+                    select(AgentRunRow).where(
+                        AgentRunRow.conversation_id == str(conversation_id),
+                        AgentRunRow.status != "completed",
+                    ).order_by(AgentRunRow.started_at).execution_options(populate_existing=True)
+                )
+            ),
         )
 
     def list(self, *, user_id: UUID) -> list[Conversation]:
@@ -260,7 +268,7 @@ class SqliteConversationRepository:
             select(AgentRunRow).where(
                 AgentRunRow.conversation_id == str(conversation.conversation_id),
                 AgentRunRow.idempotency_key == idempotency_key,
-            )
+            ).execution_options(populate_existing=True)
         )
         if existing is not None and existing.status == "completed":
             return IdempotentTurn(UUID(existing.turn_id or existing.run_id))
@@ -377,6 +385,19 @@ class SqliteConversationRepository:
             if active is not None:
                 raise RunAlreadyActive(str(run.conversation_id))
             try:
+                # Two clients may read the same paused row. A unique index on running
+                # conversations does not distinguish two writers updating that one row.
+                claimed = self._session.execute(
+                    update(AgentRunRow).where(
+                        AgentRunRow.run_id == existing.run_id,
+                        AgentRunRow.user_id == str(run.user_id),
+                        AgentRunRow.status == existing.status,
+                        AgentRunRow.lease_token == existing.lease_token,
+                    ).values(status="running", lease_token=run.lease_token)
+                ).rowcount
+                if not claimed:
+                    self._session.rollback()
+                    raise RunAlreadyActive(str(run.conversation_id))
                 existing.status = "running"
                 existing.error = None
                 existing.completed_at = None
@@ -385,6 +406,13 @@ class SqliteConversationRepository:
                 existing.provider = run.provider
                 existing.model = run.model
                 existing.turn_id = None
+                existing.request_snapshot = dict(
+                    run.request_snapshot or existing.request_snapshot or {}
+                )
+                existing.cancel_requested = False
+                existing.lease_token = run.lease_token
+                existing.lease_expires_at = run.lease_expires_at
+                existing.updated_at = run.updated_at
                 self._session.flush()
                 return _run_from_row(existing)
             except IntegrityError as error:
@@ -437,6 +465,12 @@ class SqliteConversationRepository:
                         for item in run.material_attachments
                     ],
                     started_at=datetime.now(UTC),
+                    request_snapshot=dict(run.request_snapshot),
+                    partial_answer=run.partial_answer,
+                    updated_at=run.updated_at,
+                    cancel_requested=False,
+                    lease_token=run.lease_token,
+                    lease_expires_at=run.lease_expires_at,
                 )
             )
             self._session.flush()
@@ -468,13 +502,13 @@ class SqliteConversationRepository:
             select(AgentRunRow).where(
                 AgentRunRow.user_id == str(user_id),
                 AgentRunRow.idempotency_key == idempotency_key,
-            )
+            ).execution_options(populate_existing=True)
         )
         if row is None:
             return None
         run = _run_from_row(row)
         if run.status != "completed" or run.turn_id is None:
-            return run
+            return self._safe_unfinished_run(row)
         conversation = self.get(
             user_id=user_id,
             conversation_id=run.conversation_id,
@@ -490,13 +524,13 @@ class SqliteConversationRepository:
             select(AgentRunRow).where(
                 AgentRunRow.run_id == str(run_id),
                 AgentRunRow.user_id == str(user_id),
-            )
+            ).execution_options(populate_existing=True)
         )
         if row is None:
             return None
         run = _run_from_row(row)
         if run.status != "completed" or run.turn_id is None:
-            return run
+            return self._safe_unfinished_run(row)
         conversation = self.get(user_id=user_id, conversation_id=run.conversation_id)
         turn = next((item for item in conversation.turns if item.turn_id == run.turn_id), None)
         return replace(run, tool_summary=turn.tool_summary) if turn is not None else run
@@ -511,10 +545,23 @@ class SqliteConversationRepository:
         tool_summary: tuple[dict[str, object], ...] = (),
         provider: str | None = None,
         model: str | None = None,
+        lease_token: str | None = None,
     ) -> None:
-        row = self._session.get(AgentRunRow, str(run_id))
+        row = self._session.get(AgentRunRow, str(run_id), populate_existing=True)
         if row is None:
             return
+        if lease_token is not None:
+            # Claim the terminal write before touching related records. A reclaimed worker
+            # must never overwrite a newer attempt of the same durable request.
+            claimed = self._session.execute(
+                update(AgentRunRow).where(
+                    AgentRunRow.run_id == str(run_id),
+                    AgentRunRow.lease_token == lease_token,
+                    AgentRunRow.status == "running",
+                ).values(status=status)
+            ).rowcount
+            if not claimed:
+                return
         row.status = status
         row.error = error
         if turn_id is not None:
@@ -533,7 +580,104 @@ class SqliteConversationRepository:
             row.model = normalized_model
         row.tool_summary = [dict(item) for item in tool_summary]
         row.completed_at = datetime.now(UTC)
+        row.updated_at = row.completed_at
+        row.lease_expires_at = None
         self._session.flush()
+
+
+    def _safe_unfinished_run(self, row: AgentRunRow) -> AgentRun:
+        run = _run_from_row(row)
+        if not run.partial_answer and not run.tool_summary:
+            return run
+        attachments = {
+            str(item.material_id): str(item.parse_id) for item in run.material_attachments
+        }
+        task_id = self.get_research_task_id(
+            user_id=run.user_id, conversation_id=run.conversation_id
+        )
+        unavailable = _unavailable_trace_material_ids(
+            (*run.tool_summary, *({"material_id": key} for key in attachments)),
+            session=self._session, user_id=run.user_id, task_id=task_id, attachments=attachments,
+        )
+        if not unavailable:
+            return run
+        # A draft can contain derivatives of a deleted attachment in any tool result,
+        # including a memo or document proposal. Retain identity without source text.
+        safe_traces = _redact_deleted_material_traces(
+            run.tool_summary, unavailable_material_ids=unavailable, force_material_tools=True,
+        )
+        return replace(
+            run,
+            partial_answer=_DELETED_MATERIAL_ANSWER,
+            request_snapshot={
+                **run.request_snapshot,
+                "_unavailable_materials": sorted(unavailable),
+            },
+            tool_summary=tuple(
+                {
+                    key: value
+                    for key, value in entry.items()
+                    if key in {"tool", "phase", "call_id", "error"}
+                }
+                for entry in safe_traces
+            ),
+        )
+
+    def checkpoint_run(
+        self, *, user_id: UUID, run_id: UUID, lease_token: str | None = None,
+        partial_answer: str | None = None,
+        tool_summary: tuple[dict[str, object], ...] | None = None,
+        request_snapshot: dict[str, object] | None = None,
+        require_not_cancelled: bool = False,
+    ) -> bool:
+        now = datetime.now(UTC)
+        values = {"updated_at": now, "lease_expires_at": now + timedelta(seconds=30)}
+        if partial_answer is not None:
+            values["partial_answer"] = partial_answer
+        if tool_summary is not None:
+            values["tool_summary"] = [dict(item) for item in tool_summary]
+        if request_snapshot is not None:
+            values["request_snapshot"] = dict(request_snapshot)
+        query = update(AgentRunRow).where(
+            AgentRunRow.run_id == str(run_id), AgentRunRow.user_id == str(user_id),
+            AgentRunRow.status == "running",
+        )
+        if require_not_cancelled:
+            query = query.where(AgentRunRow.cancel_requested.is_(False))
+        if lease_token is not None:
+            query = query.where(AgentRunRow.lease_token == lease_token)
+        return bool(self._session.execute(query.values(**values)).rowcount)
+
+    def request_cancel(self, *, user_id: UUID, run_id: UUID) -> AgentRun:
+        run = self.find_run_by_id(user_id=user_id, run_id=run_id)
+        if run is None:
+            raise ConversationNotFound(str(run_id))
+        self._session.execute(update(AgentRunRow).where(
+            AgentRunRow.run_id == str(run_id), AgentRunRow.user_id == str(user_id),
+            AgentRunRow.status == "running",
+        ).values(cancel_requested=True, updated_at=datetime.now(UTC)))
+        return self.find_run_by_id(user_id=user_id, run_id=run_id)
+
+    def recover_expired_runs(self, *, user_id: UUID, conversation_id: UUID) -> tuple[AgentRun, ...]:
+        now = datetime.now(UTC)
+        rows = self._session.scalars(
+            select(AgentRunRow).where(
+                AgentRunRow.user_id == str(user_id),
+                AgentRunRow.conversation_id == str(conversation_id),
+                AgentRunRow.status == "running",
+                or_(AgentRunRow.lease_expires_at.is_(None), AgentRunRow.lease_expires_at <= now),
+            ).execution_options(populate_existing=True)
+        ).all()
+        recovered = []
+        for row in rows:
+            changed = self._session.execute(update(AgentRunRow).where(
+                AgentRunRow.run_id == row.run_id, AgentRunRow.status == "running",
+                or_(AgentRunRow.lease_expires_at.is_(None), AgentRunRow.lease_expires_at <= now),
+            ).values(status="interrupted", cancel_requested=True, updated_at=now,
+                     lease_expires_at=None, completed_at=now)).rowcount
+            if changed:
+                recovered.append(_run_from_row(row))
+        return tuple(recovered)
 
 
 def _citation_dict(item: AgentCitation) -> dict[str, object]:
@@ -565,6 +709,12 @@ def _run_from_row(row: AgentRunRow) -> AgentRun:
         knowledge_release_id=row.knowledge_release_id,
         turn_id=UUID(row.turn_id) if row.turn_id else None,
         tool_summary=tuple(dict(item) for item in row.tool_summary),
+        request_snapshot=dict(row.request_snapshot or {}),
+        partial_answer=row.partial_answer or "",
+        updated_at=_utc(row.updated_at or row.started_at),
+        cancel_requested=bool(row.cancel_requested),
+        lease_expires_at=_utc(row.lease_expires_at) if row.lease_expires_at else None,
+        lease_token=row.lease_token or "",
         material_attachments=tuple(
             AgentMaterialAttachment(
                 material_id=UUID(str(item["material_id"])),
