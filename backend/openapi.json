@@ -7352,6 +7352,56 @@
         "title": "MemoryList",
         "type": "object"
       },
+      "MemoryOverviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "MemoryOverviewRequest",
+        "type": "object"
+      },
+      "MemoryOverviewResponse": {
+        "properties": {
+          "memory_count": {
+            "title": "Memory Count",
+            "type": "integer"
+          },
+          "scope_version": {
+            "title": "Scope Version",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "scope_version",
+          "memory_count"
+        ],
+        "title": "MemoryOverviewResponse",
+        "type": "object"
+      },
       "MemoryResponse": {
         "properties": {
           "content": {
@@ -18017,6 +18067,47 @@
           }
         },
         "summary": "Create Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/memories/overview": {
+      "post": {
+        "operationId": "summarize_memory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoryOverviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryOverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summarize Memory",
         "tags": [
           "memory"
         ]
