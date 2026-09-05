@@ -233,6 +233,13 @@
             "title": "Turns",
             "type": "array"
           },
+          "unfinished_runs": {
+            "items": {
+              "$ref": "#/components/schemas/AgentRunRecoveryResponse"
+            },
+            "title": "Unfinished Runs",
+            "type": "array"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -646,6 +653,97 @@
           "relations"
         ],
         "title": "AgentResearchMapResponse",
+        "type": "object"
+      },
+      "AgentRunRecoveryResponse": {
+        "properties": {
+          "cancel_requested": {
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "partial_answer": {
+            "title": "Partial Answer",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/AgentTurnRequest"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "failed",
+              "interrupted",
+              "awaiting_clarification",
+              "awaiting_plan_confirmation"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tool_summary": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Tool Summary",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "idempotency_key",
+          "status",
+          "request",
+          "partial_answer",
+          "updated_at",
+          "cancel_requested"
+        ],
+        "title": "AgentRunRecoveryResponse",
+        "type": "object"
+      },
+      "AgentRunStopResponse": {
+        "properties": {
+          "cancel_requested": {
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "completed",
+              "failed",
+              "interrupted",
+              "awaiting_clarification",
+              "awaiting_plan_confirmation"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status",
+          "cancel_requested"
+        ],
+        "title": "AgentRunStopResponse",
         "type": "object"
       },
       "AgentToolTraceResponse": {
@@ -15533,8 +15631,25 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunStopResponse"
+                }
+              }
+            },
             "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunStopResponse"
+                }
+              }
+            },
+            "description": "Accepted"
           },
           "401": {
             "content": {

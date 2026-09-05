@@ -278,6 +278,17 @@ describe('NewResearchWorkspacePage', () => {
       return new URL(request.url).pathname.endsWith('/materials')
     })
     expect(uploadRequests).toHaveLength(2)
+    await waitFor(() => expect(screen.getByRole('status', { name: '材料来源' })).toHaveTextContent('已添加'))
+    fireEvent.click(within(screen.getByRole('navigation', { name: '桌面主导航' })).getByRole('link', { name: '新建研究' }))
+    fireEvent.change(await screen.findByLabelText('从材料开始研究'), {
+      target: { files: [new File(['另一项研究'], '另一项研究.txt', { type: 'text/plain' })] },
+    })
+    await waitFor(() => {
+      const creationRequests = fetch.mock.calls.map(([input, init]) => input instanceof Request ? input : new Request(input, init))
+        .filter((request) => new URL(request.url).pathname === '/api/research-tasks' && request.method === 'POST')
+      expect(creationRequests).toHaveLength(2)
+      expect(new Set(creationRequests.map((request) => request.headers.get('Idempotency-Key'))).size).toBe(2)
+    })
   })
 
   it('shows saved Agent conversations in the left rail', async () => {
@@ -501,7 +512,7 @@ describe('NewResearchWorkspacePage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '展开文档节点' }))
     expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(
-      '/research/task-bound/workspace/map?section_id=research_question',
+      '/research/task-bound/workspace/map?section_id=research_question&conversation_id=conversation-research-new',
     )
   })
 
@@ -631,7 +642,7 @@ describe('NewResearchWorkspacePage', () => {
     expect(randomUUID).toHaveBeenCalledTimes(1)
   })
 
-  it('resumes a started Agent run automatically after the mobile page is reopened', async () => {
+  it('stabilizes the first run URL and waits for explicit resume after reopening', async () => {
     const question = '切回微信后继续回答这个问题'
     const conversation = conversationFixture(question, '后台生成的回答已经恢复。')
     const first = pausableStream()
@@ -644,6 +655,8 @@ describe('NewResearchWorkspacePage', () => {
         return turnRequests === 1 ? first.response : streamResponse(conversation, 'base')
       }
       if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname.endsWith('/stop')) return json({ run_id: 'run-stop', status: 'interrupted', cancel_requested: true })
+      if (url.pathname.endsWith('/conversation-research-new')) return json({ ...conversation, turns: [], turn_count: 0 })
       if (url.pathname.endsWith('/journey')) return json(researchStartJourneyFixture({ proposal: null }))
       return json({}, 404)
     }))
@@ -655,9 +668,13 @@ describe('NewResearchWorkspacePage', () => {
     fireEvent.submit(textbox.closest('form') as HTMLFormElement)
     await within(firstWorkspace).findByRole('button', { name: '停止生成' })
 
+    await waitFor(() => expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new?conversation_id=conversation-research-new'))
     firstPage.unmount()
     first.close()
-    renderPage()
+    renderPage('/research/new?conversation_id=conversation-research-new')
+    const resume = await screen.findByRole('button', { name: '继续研究' })
+    expect(turnRequests).toBe(1)
+    fireEvent.click(resume)
 
     expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
     expect(turnRequests).toBe(2)
@@ -686,7 +703,7 @@ describe('NewResearchWorkspacePage', () => {
     expect(await within(firstWorkspace).findByRole('alert')).toHaveTextContent('本轮回答超时')
     firstPage.unmount()
 
-    renderPage()
+    renderPage('/research/new?conversation_id=conversation-timeout')
     const restoredWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
     expect(await within(restoredWorkspace).findByText('本轮回答超时，已停止生成。')).toBeVisible()
     expect(within(restoredWorkspace).getByRole('textbox', { name: '和 Agent 讨论你的研究' })).toHaveValue(question)
