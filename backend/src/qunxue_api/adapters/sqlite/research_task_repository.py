@@ -5,7 +5,7 @@ from sqlalchemy import delete, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from qunxue_api.adapters.sqlite import ModelInvocationRow, ResearchTaskRow
+from qunxue_api.adapters.sqlite import AgentConversationRow, ModelInvocationRow, ResearchTaskRow
 from qunxue_api.modules.research_intake import (
     EntryType,
     ProjectLifecycleStatus,
@@ -53,6 +53,13 @@ class SqliteResearchTaskRepository(ResearchTaskRepository):
         if row is None:
             return None
         task = self._to_domain(row)
+        # SQLite added this pointer in place without a foreign key to preserve
+        # existing conversations. Detach it explicitly before deleting a project.
+        self._session.execute(
+            update(AgentConversationRow)
+            .where(AgentConversationRow.current_research_task_id == str(task_id))
+            .values(current_research_task_id=None)
+        )
         self._session.execute(
             delete(ModelInvocationRow).where(
                 ModelInvocationRow.task_id == str(task_id),
