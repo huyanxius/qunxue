@@ -39,6 +39,7 @@ export function ProjectScopeMenu({ projects, taskId, disabled, onChange }: {
     return () => document.removeEventListener('pointerdown', dismiss)
   }, [open])
   return <div ref={entryRef} className="research-agent-composer__project-entry" onKeyDown={(event) => {
+    if (event.key === 'Enter' && event.target instanceof HTMLInputElement) { event.preventDefault(); return }
     if (event.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); event.stopPropagation() }
     if (event.key === 'Tab') setOpen(false)
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
