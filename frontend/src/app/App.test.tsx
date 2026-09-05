@@ -368,16 +368,29 @@ describe('App routes', () => {
       '知识库',
       '知识图谱',
     ])
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(7)
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(5)
+    expect(within(mobileNavigation).getByRole('link', { name: '知识' })).toHaveAttribute(
+      'href',
+      '/knowledge',
+    )
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',
     )
     expect(within(desktopNavigation).queryByRole('link', { name: '首页' })).not.toBeInTheDocument()
-    expect(within(mobileNavigation).getByRole('link', { name: '图谱' })).toHaveAttribute(
+    fireEvent.click(within(mobileNavigation).getByRole('button', { name: '更多' }))
+
+    const mobileMore = screen.getByRole('dialog', { name: '更多功能' })
+    expect(within(mobileMore).getByRole('link', { name: '研究工具' })).toHaveAttribute(
+      'href',
+      '/research/tools',
+    )
+    expect(within(mobileMore).getByRole('link', { name: '知识图谱' })).toHaveAttribute(
       'href',
       '/knowledge/graph',
     )
+    fireEvent.click(within(mobileMore).getByRole('button', { name: '关闭更多功能' }))
+    expect(screen.queryByRole('dialog', { name: '更多功能' })).not.toBeInTheDocument()
   })
 
   it('opens a compact research tools catalog from the primary navigation', async () => {
