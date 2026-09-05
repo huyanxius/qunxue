@@ -47,3 +47,5 @@ export type {
 } from './researchReportContent'
 export { createResearchReportDocx, researchReportDocxFilename } from './researchReportDocx'
 export { buildResearchReportHtml, openResearchReportPrintWindow } from './researchReportPrint'
+export { canvasSuggestions } from './canvasEditing'
+export { saveCanvasNode } from './researchAgentGateway'
