@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -104,6 +104,7 @@ class Conversation:
     turns: tuple[AgentTurn, ...] = ()
     research_map: dict[str, object] = field(default_factory=empty_research_map)
     task_id: UUID | None = None
+    unfinished_runs: tuple["AgentRun", ...] = ()
 
 
 UserConversation = Conversation
@@ -140,3 +141,13 @@ class AgentRun:
     turn_id: UUID | None = None
     tool_summary: tuple[dict[str, object], ...] = ()
     material_attachments: tuple[AgentMaterialAttachment, ...] = ()
+
+    # A run is a durable request. Partial output is deliberately outside completed turns.
+    request_snapshot: dict[str, object] = field(default_factory=dict)
+    partial_answer: str = ""
+    updated_at: datetime = field(default_factory=_now)
+    cancel_requested: bool = False
+    lease_expires_at: datetime | None = field(
+        default_factory=lambda: _now() + timedelta(seconds=30)
+    )
+    lease_token: str = field(default_factory=lambda: str(uuid4()))
