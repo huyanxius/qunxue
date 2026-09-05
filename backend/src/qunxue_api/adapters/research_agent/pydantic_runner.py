@@ -797,7 +797,8 @@ class PydanticAIKnowledgeRunner:
                 "把真正的社会学概念、现象、群体、地点、时间或制度对象写成短而独立的查询；"
                 "需要不同角度时分次调用 search_web，不要把整句元问题、纠错或反馈原样当作 query；"
                 "采用网页信息前必须再调用 read_web_page 阅读正文，不得只根据搜索摘要下结论。"
-                "只能读取 search_web 本轮实际返回的网址，不能猜测或拼接 URL。"
+                "用户提供的网址、检索返回的网址和已读页面给出的链接都可直接读取；"
+                "不要猜测或拼接 URL。"
                 "目录 node_id 只能说明覆盖范围，不能交给 read_knowledge_entry。"
                 "凡是声称来自知识库的内容都必须来自本轮工具实际返回的闭集；来源卡片由结构化"
                 "证据选择生成，不要在正文中打印 citation_id 来伪造引用。"
@@ -1053,11 +1054,11 @@ class PydanticAIKnowledgeRunner:
             ))
             return result
 
-        @self._agent.tool(prepare=_prepare_web_tool)
+        @self._agent.tool(prepare=_prepare_web_read_tool)
         def read_web_page(
             ctx: RunContext[KnowledgeToolRegistry], url: str
         ) -> dict[str, object]:
-            """读取 search_web 本轮返回网页的正文，以便核对原始内容。"""
+            """直接读取用户提供或检索发现的网页正文，并登记可引用来源。"""
 
             call_id = _tool_call_id(ctx, "read_web_page")
             tool_input = {"url": url}
@@ -3037,6 +3038,18 @@ def _prepare_web_tool(
     return (
         definition
         if getattr(ctx.deps, "web_search_enabled", False)
+        and callable(getattr(ctx.deps, definition.name, None))
+        else None
+    )
+
+
+def _prepare_web_read_tool(
+    ctx: RunContext[KnowledgeToolRegistry],
+    definition: ToolDefinition,
+) -> ToolDefinition | None:
+    return (
+        definition
+        if getattr(ctx.deps, "web_read_enabled", getattr(ctx.deps, "web_search_enabled", False))
         and callable(getattr(ctx.deps, definition.name, None))
         else None
     )

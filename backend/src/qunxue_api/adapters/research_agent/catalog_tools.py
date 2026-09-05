@@ -53,22 +53,32 @@ class KnowledgeToolRegistry:
         self._catalog = catalog
         self._retriever = retriever
         self._web_research = web_research
-        # Agent runs share M4/M5's audited final release identity. If that
-        # release is absent, the knowledge tool is unavailable rather than
-        # silently switching to preview content.
+        # Keep an installed theory release and its index usable. Uploads are already
+        # reviewed, so the optional theory bundle must never gate ordinary Agent use.
         try:
             self.release = catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
-        except LookupError as error:
-            raise RetrievalPipelineUnavailable(
-                "final MATCH knowledge release is unavailable"
-            ) from error
+        except LookupError:
+            self.release = catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
+        require_ready = getattr(retriever, "require_ready_manifest", None)
+        if callable(require_ready):
+            try:
+                require_ready(
+                    knowledge_release_id=self.release.knowledge_release_id,
+                    release_content_hash=self.release.content_hash,
+                )
+            except RetrievalPipelineUnavailable:
+                self._retriever = None
+        if self._retriever is None:
+            from qunxue_api.adapters.theory_evidence import CatalogTheoryLexicalRetriever
+
+            self._retriever = CatalogTheoryLexicalRetriever(catalog)
         self.evidence: dict[str, KnowledgeEvidence] = {}
         self.selected_evidence_ids: tuple[str, ...] = ()
         self._allowed_source_ids: set[str] = set()
         self.research_map_enabled = False
         self.deep_research_enabled = False
         self.web_search_enabled = False
-        self._allowed_web_urls: set[str] = set()
+        self.web_read_enabled = web_research is not None
         self._web_queries: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
 
@@ -125,7 +135,6 @@ class KnowledgeToolRegistry:
                 continue
             excerpt = item.get("snippet", "").strip()
             citation_id = f"web:{url}"
-            self._allowed_web_urls.add(url)
             self.evidence[citation_id] = AgentEvidence(
                 citation_id=citation_id,
                 label=title,
@@ -147,15 +156,19 @@ class KnowledgeToolRegistry:
         return results
 
     def read_web_page(self, url: str) -> dict[str, object]:
-        if not self.web_search_enabled or self._web_research is None:
-            raise ValueError("联网搜索未开启")
-        if url not in self._allowed_web_urls:
-            raise ValueError("请先通过联网搜索取得网页地址")
+        if self._web_research is None:
+            raise ValueError("网页读取服务不可用")
+        from qunxue_api.adapters.research_agent.web_research import _ensure_public_url
+
+        _ensure_public_url(url)
         page = self._web_research.read(url)
         content = page.get("content", "").strip()
         title = page.get("title", "").strip()
         citation_id = f"web:{url}"
-        existing = self.evidence[citation_id]
+        existing = self.evidence.get(citation_id) or AgentEvidence(
+            citation_id=citation_id, label=title or url, kind="source",
+            excerpt="", source_id=url, source_kind="web",
+        )
         if content:
             self.evidence[citation_id] = replace(
                 existing,
