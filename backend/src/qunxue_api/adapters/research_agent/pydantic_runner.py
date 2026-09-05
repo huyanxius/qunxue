@@ -764,7 +764,8 @@ class PydanticAIKnowledgeRunner:
                 "当质性分析工具可用时，先调用 get_research_analysis 读取用户已有标注、编码和备忘；"
                 "跨材料、案例或时间比较时，先调用 get_research_comparison_context，"
                 "再用 propose_case_comparison 提出支持证据、反例、矛盾材料、竞争解释、"
-                "证据缺口与下一步行动；你只能调用 propose_analysis_code、"
+                "证据缺口与下一步行动；没有现成标注时，读取原文后调用 propose_source_code 提出新编码。"
+                "已有标注时调用 propose_analysis_code、"
                 "propose_analysis_memo 或 propose_case_comparison 提出候选，"
                 "需要把新片段归入既有确认编码时，必须先读材料原文和代码本，"
                 "再调用 propose_coding_plan；计划的每一项都必须带 material_id、parse_id、"
@@ -1308,6 +1309,19 @@ class PydanticAIKnowledgeRunner:
                 "正在生成编码候选",
                 candidate=True,
             )
+
+        @self._agent.tool(prepare=_prepare_analysis_tool)
+        def propose_source_code(
+            ctx: RunContext[KnowledgeToolRegistry], material_id: str, parse_id: str,
+            segment_id: str, quote_start: int, quote_end: int, label: str,
+            definition: str, rationale: str,
+        ) -> dict[str, object]:
+            """从已读取的原文精确片段提出新编码，无需预先人工标注；只保存待确认候选。"""
+            return self._run_analysis_tool(ctx, "propose_source_code", {
+                "material_id": material_id, "parse_id": parse_id, "segment_id": segment_id,
+                "quote_start": quote_start, "quote_end": quote_end, "label": label,
+                "definition": definition, "rationale": rationale,
+            }, "正在从原文提出编码", candidate=True)
 
         @self._agent.tool(prepare=_prepare_analysis_tool)
         def propose_analysis_memo(

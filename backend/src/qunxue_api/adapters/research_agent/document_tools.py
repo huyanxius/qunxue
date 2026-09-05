@@ -462,6 +462,22 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         )
         return _candidate_analysis_payload(result)
 
+    def propose_source_code(
+        self, *, material_id: str, parse_id: str, segment_id: str,
+        quote_start: int, quote_end: int, label: str, definition: str,
+        rationale: str, tool_call_id: str,
+    ) -> dict[str, object]:
+        """Create a pending interpretation directly from an authorized source span."""
+        user_id, task_id, conversation_id, run_id, turn_id, analysis = self._analysis_context()
+        result = analysis.propose_source_code_from_agent(
+            user_id=user_id, task_id=task_id, material_id=UUID(material_id), parse_id=UUID(parse_id),
+            segment_id=segment_id, quote_start=quote_start, quote_end=quote_end,
+            label=label, definition=definition, rationale=rationale,
+            conversation_id=conversation_id, agent_run_id=run_id, agent_turn_id=turn_id,
+            tool_call_id=_required_tool_call_id(tool_call_id),
+        )
+        return _candidate_analysis_payload(result)
+
     def propose_analysis_memo(
         self,
         *,

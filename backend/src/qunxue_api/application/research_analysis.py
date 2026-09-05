@@ -176,6 +176,43 @@ class ResearchAnalysisApplication:
         self._commit()
         return result
 
+    def propose_source_code_from_agent(
+        self, *, user_id: UUID, task_id: UUID, material_id: UUID, parse_id: UUID,
+        segment_id: str, quote_start: int, quote_end: int, label: str, definition: str,
+        rationale: str, conversation_id: UUID, agent_run_id: UUID,
+        agent_turn_id: UUID, tool_call_id: str,
+    ) -> AnalysisCode:
+        """A source mark records evidence; its interpretation stays a reviewable candidate."""
+        if not label.strip() or not definition.strip() or not rationale.strip():
+            raise ValueError("source code needs a label, definition and rationale")
+        if len(label.strip()) > 256:
+            raise ValueError("code label is too long")
+        source_key = hashlib.sha256(
+            f"{conversation_id}:{agent_run_id}:{agent_turn_id}:{tool_call_id}".encode()
+        ).hexdigest()
+        annotation = self.create_annotation(
+            user_id=user_id, task_id=task_id, idempotency_key=f"agent-source:{source_key}",
+            material_id=material_id, parse_id=parse_id, segment_id=segment_id,
+            quote_start=quote_start, quote_end=quote_end,
+            annotation_kind=AnalysisAnnotationKind.DESCRIPTIVE,
+            note="Agent 提议的原文证据；对应编码等待研究者确认。",
+        )
+        code = self.propose_code_from_agent(
+            user_id=user_id, task_id=task_id, label=label, definition=definition,
+            annotation_ids=(annotation.annotation_id,), rationale=rationale,
+            conversation_id=conversation_id, agent_run_id=agent_run_id,
+            agent_turn_id=agent_turn_id, tool_call_id=tool_call_id,
+        )
+        self._record_audit(
+            user_id=user_id, task_id=task_id, actor="agent", action="source_code.proposed",
+            entity_kind="code", entity_id=code.code_id,
+            annotation_id=annotation.annotation_id, code_id=code.code_id,
+            provenance={"agent_run_id": str(agent_run_id), "tool_call_id": tool_call_id},
+            payload={"source_status": "candidate"},
+        )
+        self._commit()
+        return code
+
     def propose_code_from_agent(
         self,
         *,
