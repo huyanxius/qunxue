@@ -99,7 +99,7 @@ import {
 import { ProjectCreatePopover } from './ProjectCreatePopover'
 import { ProjectScopeMenu } from './ProjectScopeMenu'
 import { ProjectConversationList } from './ProjectConversationList'
-import { listResearchProjects, type ResearchProject } from '../../modules/research-projects'
+import { deleteResearchProject, listResearchProjects, type ResearchProject } from '../../modules/research-projects'
 import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchAgentBot } from './ResearchAgentBot'
 import { ResearchAgentShader } from './ResearchAgentShader'
@@ -523,16 +523,14 @@ function researchStartHandoffFromSteps(steps: ResearchToolStep[]): ResearchStart
 function ResearchStartHandoffCard({ handoff, onContinueResearch, busy }: { handoff: ResearchStartHandoff; onContinueResearch?: () => void; busy?: boolean }) {
   const { text } = useAppLocale()
   return (
-    <section className="research-agent-handoff" aria-label={text('研究建议', 'Research suggestion')} data-proposal-id={handoff.proposalId}>
-      <span className="research-agent-handoff__mark" aria-hidden="true"><CompassIcon size={24} weight="duotone" /></span>
-      <div className="research-agent-handoff__copy">
-        <small>{text('继续形成研究', 'Continue developing this study')}</small>
-        <strong>{handoff.phenomenon}</strong>
-        {handoff.researchIntent ? <p>{handoff.researchIntent}</p> : null}
+    <section className="deep-research-mock-card research-flow-card" aria-label={text('研究建议', 'Research suggestion')} data-proposal-id={handoff.proposalId}>
+      <header className="research-flow-card__heading"><CompassIcon size={22} weight="regular" aria-hidden="true" /><h2>{handoff.phenomenon}</h2></header>
+      {handoff.researchIntent ? <div className="deep-research-mock-card__conclusion"><p>{handoff.researchIntent}</p></div> : null}
+      <div className="deep-research-mock-card__actions deep-research-mock-card__export-actions">
+        <button type="button" className="deep-research-mock-card__continue" disabled={busy} onClick={onContinueResearch}>
+          {busy ? text('正在整理研究起点…', 'Preparing research…') : text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
+        </button>
       </div>
-      <button type="button" className="research-agent-handoff__link" disabled={busy} onClick={onContinueResearch}>
-        {busy ? text('正在整理研究起点…', 'Preparing research…') : text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
-      </button>
     </section>
   )
 }
@@ -1071,6 +1069,7 @@ function AgentConversationHistoryRail({
   conversations,
   loading,
   onDelete,
+  onDeleteProject,
   onNewConversation,
   onOpen,
   onRename,
@@ -1084,6 +1083,7 @@ function AgentConversationHistoryRail({
   conversations: AgentConversationSummary[]
   loading: boolean
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  onDeleteProject: (taskId: string) => Promise<void>
   onNewConversation: (taskId?: string) => void
   onOpen: (conversation: AgentConversationSummary) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
@@ -1198,7 +1198,7 @@ function AgentConversationHistoryRail({
         onTitleChange={setProjectTitle} onCancel={() => setProjectCreateAnchor(null)} onSubmit={(event) => { void createProject(event) }} /> : null}
       {projectListError ? <p role="alert">{projectListError}</p> : null}
       {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : (
-        <ProjectConversationList projects={projects} conversations={safeConversations}
+        <ProjectConversationList projects={projects} conversations={safeConversations} onDeleteProject={onDeleteProject}
           activeTaskId={safeConversations.find((item) => item.conversation_id === activeConversationId)?.task_id ?? selectedTaskId}
           onStart={onNewConversation} onStartIndependent={() => onNewConversation()} renderConversation={(conversation) => {
             const conversationId = conversation.conversation_id
@@ -1295,6 +1295,7 @@ function ConversationHistory({
   onNewConversation,
   onRename,
   onDelete,
+  onDeleteProject,
   selectedTaskId,
   conversations,
   activeConversationId,
@@ -1308,6 +1309,7 @@ function ConversationHistory({
   onNewConversation: (taskId?: string) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  onDeleteProject: (taskId: string) => Promise<void>
   selectedTaskId: string | null
 
   conversations: AgentConversationSummary[]
@@ -1345,7 +1347,7 @@ function ConversationHistory({
       <div className="new-research__history-list">
         <AgentConversationHistoryRail projects={projects} setProjects={setProjects} conversations={filtered} activeConversationId={activeConversationId}
           selectedTaskId={selectedTaskId} loading={loading} onOpen={onOpen}
-          onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} />
+          onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} onDeleteProject={onDeleteProject} />
       </div>
     </div>
   )
@@ -2240,6 +2242,27 @@ export function ResearchAgentConversationPage({
       || requestedConversationId === summary.conversation_id
     ) {
       newConversation()
+    }
+  }
+
+  async function deleteSavedProject(projectId: string) {
+    if (taskId === projectId && (isBusy || materialUploading)) throw new Error(text('请先结束当前回答或材料上传，再删除项目', 'Finish the current answer or upload before deleting this project'))
+    await deleteResearchProject(projectId)
+    setProjects((current) => current.filter((project) => project.task_id !== projectId))
+    setConversations((current) => current.map((conversation) => conversation.task_id === projectId
+      ? { ...conversation, task_id: null } : conversation))
+    setActiveConversation((current) => current?.task_id === projectId ? { ...current, task_id: null } : current)
+    if (taskId === projectId) {
+      setAttachedMaterials([])
+      if (embedded) {
+        navigate(requestedConversationId ? `/agent?conversation_id=${encodeURIComponent(requestedConversationId)}` : '/agent')
+      } else {
+        setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          next.delete('task_id')
+          return next
+        }, { replace: true })
+      }
     }
   }
 
@@ -3329,7 +3352,7 @@ export function ResearchAgentConversationPage({
               selectedTaskId={taskId}
               onNewConversation={newConversation}
               onRename={renameSavedConversation}
-              onDelete={deleteSavedConversation}
+              onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
               conversations={conversations}
               activeConversationId={activeConversation?.conversation_id ?? null}
               loading={historyLoading}
@@ -3395,7 +3418,7 @@ export function ResearchAgentConversationPage({
             activeConversationId={activeConversation?.conversation_id ?? null}
             conversations={conversations}
             loading={historyLoading}
-            onDelete={deleteSavedConversation}
+            onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
             onNewConversation={newConversation}
             onOpen={openConversation}
             onRename={renameSavedConversation}
@@ -3415,7 +3438,7 @@ export function ResearchAgentConversationPage({
           activeConversationId={activeConversation?.conversation_id ?? null}
           conversations={conversations}
           loading={historyLoading}
-          onDelete={deleteSavedConversation}
+          onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
           onNewConversation={newConversation}
           onOpen={openConversation}
           onRename={renameSavedConversation}

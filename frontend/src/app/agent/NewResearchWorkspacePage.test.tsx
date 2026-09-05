@@ -457,6 +457,27 @@ describe('NewResearchWorkspacePage', () => {
     expect(await screen.findByText('/resume/from-server')).toBeVisible()
   })
 
+  it('opens document nodes when the server resume path points back to the current canvas', async () => {
+    const conversation = conversationFixture()
+    const journey = researchStartJourneyFixture({
+      status: 'task_bound', task_id: 'task-bound',
+      proposal: { ...researchStartJourneyFixture().proposal!, status: 'confirmed' },
+      navigation: researchStartNavigationFixture({
+        task_id: 'task-bound', resume_path: `/research/new?conversation_id=${conversation.conversation_id}`,
+      }),
+    })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), 'http://localhost')
+      if (url.pathname.endsWith('/journey')) return json(journey)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
+    fireEvent.click(await screen.findByRole('button', { name: '展开文档节点' }))
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/task-bound/workspace/map')
+  })
+
   it('carries the bound Agent conversation into the canonical project workspace', async () => {
     const conversation = conversationFixture()
     const journey = researchStartJourneyFixture({
@@ -720,10 +741,10 @@ describe('NewResearchWorkspacePage', () => {
 
     expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
     const recovery = await screen.findByRole('alert', { name: '研究状态恢复失败' })
-    expect(within(recovery).getByText('对话已保留')).toBeVisible()
-    expect(within(recovery).getByRole('button', { name: '返回继续对话' })).toBeEnabled()
+    expect(recovery).toHaveTextContent('对话已保留')
+    expect(within(recovery).getByRole('button', { name: '继续对话' })).toBeEnabled()
 
-    fireEvent.click(within(recovery).getByRole('button', { name: '重试恢复研究状态' }))
+    fireEvent.click(within(recovery).getByRole('button', { name: '重试' }))
     const proposal = await screen.findByRole('region', { name: '研究建立确认' })
     expect(within(proposal).getByText(journey.proposal!.phenomenon)).toBeVisible()
     expect(journeyAttempts).toBe(2)

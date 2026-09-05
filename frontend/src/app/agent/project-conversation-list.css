@@ -1,11 +1,13 @@
-.project-conversation-list { display: grid; gap: 12px; min-height: 0; overflow-y: auto; }
+.project-conversation-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; }
 .project-conversation-list__heading { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
 .project-conversation-list__heading[data-current] { background: var(--app-surface-strong); }
 .project-conversation-list__heading button { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px 4px; color: inherit; background: transparent; border: 0; cursor: pointer; }
 .project-conversation-list__heading button:first-child { flex: 1; text-align: left; }
 .project-conversation-list__heading button svg { flex-shrink: 0; }
 .project-conversation-list__heading button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-.project-conversation-list__heading .project-conversation-list__new { padding: 8px; color: var(--app-muted); border-radius: 7px; }
+.project-conversation-list__heading .project-conversation-list__actions,
+.project-conversation-list__heading .project-conversation-list__new { flex-shrink: 0; padding: 8px; color: var(--app-muted); border-radius: 7px; }
+.project-conversation-list__heading .project-conversation-list__actions:hover,
 .project-conversation-list__heading .project-conversation-list__new:hover { color: var(--app-ink); background: var(--app-surface-strong); }
 .project-conversation-list__children { padding: 3px 0 0 20px; }
 .project-conversation-list__resources { display: flex; gap: 12px; padding: 7px 8px 9px; font-size: 11px; opacity: .7; }
@@ -22,3 +24,6 @@
 
 .project-conversation-list p { margin: 4px 8px; font-size: 11px; color: var(--app-muted); line-height: 1.55; }
 .agent-conversation-history__heading h2 { flex: 1; }
+
+.project-conversation-list__delete-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-conversation-list__delete-description { margin: 0; color: var(--app-muted); font-size: 12px; line-height: 1.6; }

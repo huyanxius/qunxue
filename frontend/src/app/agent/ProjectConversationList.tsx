@@ -5,13 +5,15 @@ import { groupProjectConversations } from '../../modules/research-projects'
 import type { AgentConversationSummary } from '../../modules/research-agent'
 import { useAppLocale } from '../i18n/AppLocaleProvider'
 import './project-conversation-list.css'
+import { ProjectActionsMenu } from './ProjectActionsMenu'
 
-export function ProjectConversationList({ projects, conversations, activeTaskId, onStart, onStartIndependent, renderConversation }: {
+export function ProjectConversationList({ projects, conversations, activeTaskId, onStart, onStartIndependent, onDeleteProject, renderConversation }: {
   projects: { task_id: string; project_title: string; status: string }[]
   conversations: AgentConversationSummary[]
   activeTaskId: string | null
   onStart: (taskId: string) => void
   onStartIndependent?: () => void
+  onDeleteProject?: (taskId: string) => Promise<void>
   renderConversation: (conversation: AgentConversationSummary) => ReactNode
 }) {
   const { text } = useAppLocale()
@@ -35,6 +37,7 @@ export function ProjectConversationList({ projects, conversations, activeTaskId,
             {open ? <FolderOpenIcon size={18} /> : <FolderIcon size={18} />}
             <span>{project.project_title}</span>
           </button>
+          {onDeleteProject ? <ProjectActionsMenu taskId={project.task_id} title={project.project_title} onDelete={onDeleteProject} /> : null}
           {project.status !== 'archived' ? <button type="button" className="project-conversation-list__new" aria-label={text(`在${project.project_title}中新建对话`, `New conversation in ${project.project_title}`)} title={text('新建对话', 'New conversation')} onClick={() => onStart(project.task_id)}><PlusIcon size={15} /></button> : null}
         </div>
         {open ? <div className="project-conversation-list__children">

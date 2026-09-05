@@ -1,4 +1,4 @@
-import { listResearchProjects as listProjects } from './projectApi'
+import { deleteResearchProject as deleteProject, listResearchProjects as listProjects } from './projectApi'
 
 export type ResearchProject = {
   task_id: string
@@ -8,6 +8,10 @@ export type ResearchProject = {
 
 export function listResearchProjects(signal?: AbortSignal): Promise<ResearchProject[]> {
   return listProjects(signal)
+}
+
+export function deleteResearchProject(taskId: string): Promise<void> {
+  return deleteProject(taskId)
 }
 
 export function groupProjectConversations<
