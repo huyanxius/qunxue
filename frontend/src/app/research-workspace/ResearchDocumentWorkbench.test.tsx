@@ -120,6 +120,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
     expect(await screen.findByText('建议基线 v2')).toBeVisible()
     expect(screen.getByText('当前文稿已是 v3，建议基线发生冲突。')).toBeVisible()
@@ -152,6 +153,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
     expect(screen.getByRole('complementary', { name: '结构化引用' })).toHaveTextContent('literature-entry-1')
     expect(screen.getByRole('complementary', { name: '结构化引用' })).toHaveTextContent('待核实')
@@ -174,7 +176,7 @@ describe('ResearchDocumentWorkbench', () => {
     expect(screen.getByRole('button', { name: '下载审计 JSON' })).toBeVisible()
   })
 
-  it('keeps document research on the canvas as editable section nodes beside the shared Agent', async () => {
+  it('keeps one expandable manuscript on the canvas beside the shared Agent', async () => {
     render(
       <MemoryRouter initialEntries={['/research/task-1/match']}>
         <Routes>
@@ -183,11 +185,11 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
-    const questionCard = await screen.findByRole('button', { name: '研究章节：研究问题' })
+    const questionCard = await screen.findByRole('button', { name: '研究章节：研究方案文稿' })
+    fireEvent.click(questionCard)
     expect(screen.getByRole('region', { name: '研究论证地图' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '研究章节：核心现象' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '研究章节：候选理论' })).toBeInTheDocument()
-    fireEvent.click(questionCard)
     expect(screen.getByRole('region', { name: '研究文档节点' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: '文档结构' })).not.toBeInTheDocument()
     const agent = screen.getByRole('complementary', { name: '研究 Agent 对话栏' })
@@ -317,6 +319,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：研究问题' }))
     expect(await screen.findByText(/当前 Agent 运行环境未连接/)).toBeInTheDocument()
     expect(screen.getAllByText(/不会把静态示例当作真实研究结果/).length).toBeGreaterThan(0)
@@ -377,6 +380,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
 
@@ -455,6 +459,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     await screen.findByRole('button', { name: '开始理论匹配' })
     fireEvent.click(screen.getByRole('button', { name: '完成 Agent 回合' }))
@@ -529,6 +534,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     expect(await screen.findByRole('heading', { name: '旧理论' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: '完成 Agent 回合' }))
@@ -597,6 +603,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '重新匹配' }))
 
@@ -646,6 +653,7 @@ describe('ResearchDocumentWorkbench', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '开始理论匹配' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('网络连接中断')
@@ -704,6 +712,7 @@ describe('ResearchDocumentWorkbench', () => {
     )
 
     expect(screen.queryByText('release-formal-1')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: /^研究章节：/ }))
     fireEvent.click(await screen.findByRole('button', { name: '研究章节：候选理论' }))
     fireEvent.click(await screen.findByRole('button', { name: '确认理论方案，进入 M5' }))
 
