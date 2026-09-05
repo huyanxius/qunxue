@@ -45,6 +45,7 @@ import {
 import { createPortal, flushSync } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { remarkProgressParagraphs } from './remarkProgressParagraphs'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import {
@@ -438,6 +439,7 @@ type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answeri
 type AgentToolEvent = Extract<AgentEvent, { type: 'tool_started' | 'tool_finished' | 'tool_failed' }>
 type ResearchToolStep = AgentToolStep & { interrupted?: boolean }
 type StreamingTurn = {
+  progressEnd?: number
   question: string
   answer: string
   citations: AgentCitation[]
@@ -1505,6 +1507,7 @@ function AssistantTurn({
   failure,
   streaming,
   streamingStatus,
+  progressEnd = 0,
   embedded,
   showResearchHandoff,
   knowledgeReleaseId,
@@ -1521,6 +1524,7 @@ function AssistantTurn({
   failure?: string
   streaming?: boolean
   streamingStatus?: AgentPageStatus
+  progressEnd?: number
   embedded?: boolean
   showResearchHandoff?: boolean
   knowledgeReleaseId: string | null
@@ -1544,7 +1548,10 @@ function AssistantTurn({
         </div>
         {streaming && streamingStatus ? <StreamingRunStatus status={streamingStatus} steps={toolSteps} /> : null}
         <ToolTraceTimeline steps={toolSteps} onOpenActivity={onOpenActivity} />
-        {answer ? <div className="new-research__markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer)}</ReactMarkdown></div> : null}
+        {answer ? <div className="new-research__markdown">
+          {progressEnd > 0 ? <ReactMarkdown remarkPlugins={[remarkGfm, remarkProgressParagraphs]}>{displayAgentText(answer.slice(0, progressEnd))}</ReactMarkdown> : null}
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer.slice(progressEnd))}</ReactMarkdown>
+        </div> : null}
         {!streaming && !answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />{text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')}</p> : null}
         {interrupted ? (
           <p className="qx-notice-surface new-research__turn-note is-interrupted">
@@ -2254,7 +2261,12 @@ export function ResearchAgentConversationPage({
               setDeepResearchMockStep(researchStepForTools(next))
             }
             setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
-            setStreamingTurn((current) => current ? { ...current, toolSteps: next } : current)
+            // 工具开始前的文字是阶段说明；之后的最终回答仍保留原段落。
+            setStreamingTurn((current) => current ? {
+              ...current,
+              toolSteps: next,
+              progressEnd: event.type === 'tool_started' ? current.answer.length : current.progressEnd,
+            } : current)
           } else if (event.type === 'assistant_delta') {
             setStatus('answering')
             if (!redactedStreamingMaterialIds.current.size) {
@@ -2865,6 +2877,7 @@ export function ResearchAgentConversationPage({
                     failure={streamingTurn.failure}
                     streaming={canStopGeneration && !streamingTurn.interrupted && !streamingTurn.failure}
                     streamingStatus={status}
+                    progressEnd={streamingTurn.progressEnd}
                     embedded={embedded}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                     onSelectCitation={openCitation}

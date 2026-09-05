@@ -1,10 +1,31 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { remarkProgressParagraphs } from './remarkProgressParagraphs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { AgentCitation, AgentConversation } from '../../modules/research-agent'
 import { AppLocaleProvider } from '../../i18n/AppLocaleProvider'
 import { ResearchAgentConversationPage } from './ResearchAgentConversationPage'
+
+it('preserves structured Markdown and decimal numbers in stage notes', () => {
+  const { container } = render(<ReactMarkdown remarkPlugins={[remarkGfm, remarkProgressParagraphs]}>{[
+    '样本比例为 1.25。继续检索。',
+    '他说“先核对！”然后继续。',
+    '[研究来源](https://example.com/a?q=1.2)。继续查看。',
+    '`value = "你好。再见。"`。继续查看。',
+    '- 列表第一句。第二句。',
+    '```text\n代码第一句。第二句。\n```',
+  ].join('\n\n')}</ReactMarkdown>)
+  expect(screen.getByText('样本比例为 1.25。', { selector: 'p' })).toBeVisible()
+  expect(screen.getByText('继续检索。', { selector: 'p' })).toBeVisible()
+  expect(screen.getByText('他说“先核对！”', { selector: 'p' })).toBeVisible()
+  expect(screen.getByRole('link', { name: '研究来源' })).toHaveAttribute('href', 'https://example.com/a?q=1.2')
+  expect(container.querySelector('li')).toHaveTextContent('列表第一句。第二句。')
+  expect(container.querySelector('pre code')).toHaveTextContent('代码第一句。第二句。')
+  expect(container.querySelectorAll('code')).toHaveLength(2)
+})
 
 afterEach(() => {
   cleanup()
@@ -1420,6 +1441,40 @@ describe('ResearchAgentConversationPage', () => {
       expect(within(region).queryByText(late.turns[0].assistant.content)).not.toBeInTheDocument()
       expect(within(region).getByText(saved.turns[0].assistant.content)).toBeVisible()
     })
+  })
+
+  it('splits tool-stage sentences across stream chunks without splitting the final report', async () => {
+    const progress = '先检索。再核对“关系机制。”最后比较！还有疑问？继续查'
+    const final = '\n\n## 结论\n\n第一句。第二句。'
+    const conversation = conversationFixture({ answer: progress + final })
+    const live = deferredStream([
+      ['turn_started', { conversation_id: conversation.conversation_id, run_id: 'run-paragraphs', replayed: false, runtime_mode: 'base' }],
+      ['assistant_delta', { delta: '先检索。再核对“关系机制。' }],
+      ['assistant_delta', { delta: '”最后比较！还有疑问？继续查' }],
+      ['tool_started', { tool: 'search_web', call_id: 'web-1', input: { query: '关系' } }],
+    ])
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === '/api/agent/turns') return live.response
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      return json({}, 404)
+    }))
+    renderPage()
+    const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
+    const textbox = within(region).getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(textbox, { target: { value: conversation.title } })
+    fireEvent.submit(textbox.closest('form') as HTMLFormElement)
+    expect(await within(region).findByText('先检索。', { selector: '.new-research__markdown p' })).toBeVisible()
+    expect(within(region).getByText('再核对“关系机制。”', { selector: 'p' })).toBeVisible()
+    expect(within(region).getByText('最后比较！', { selector: 'p' })).toBeVisible()
+    expect(within(region).getByText('还有疑问？', { selector: 'p' })).toBeVisible()
+    expect(within(region).getByText('继续查', { selector: 'p' })).toBeVisible()
+    live.finish([
+      ['tool_finished', { tool: 'search_web', call_id: 'web-1', output: {} }],
+      ['assistant_delta', { delta: final }],
+      ['turn_completed', { conversation, knowledge_release_id: 'release-agent' }],
+    ])
+    expect(await within(region).findByText('第一句。第二句。', { selector: 'p' })).toBeVisible()
   })
 
   it('expands complete tool output and opens an Activity result in Basis', async () => {
