@@ -66,7 +66,7 @@
   --radius-compact: 8px;
   --radius-field: 12px;
   --radius-surface: 16px;
-  --radius-feature: 24px;
+  --radius-feature: var(--qx-radius-feature);
   --radius-pill: 999px;
 
   --shadow-surface: var(--shadow-sm);
