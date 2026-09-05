@@ -366,12 +366,6 @@
   background: rgb(255 255 255 / 38%);
 }
 
-.app-frame:has(.research-materials-page__shader) .app-frame__backdrop {
-  background:
-    radial-gradient(ellipse at 8% 18%, rgb(143 191 192 / 20%), transparent 58%),
-    #f7f7f3;
-}
-
 .app-frame:has(.knowledge-library__shader) .app-frame__backdrop {
   background:
     radial-gradient(ellipse at 8% 18%, rgb(143 164 191 / 18%), transparent 58%),

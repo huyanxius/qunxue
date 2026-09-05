@@ -74,7 +74,7 @@ function PrimaryNavigation({
     { href: '/agent', label: text('研究 Agent', 'Research Agent'), mobileLabel: 'Agent', icon: ChatCircleDotsIcon, end: true },
     { href: '/research/new', label: text('新建研究', 'New research'), mobileLabel: text('新建', 'New'), icon: PlusIcon },
     { href: '/research/tools', label: text('研究工具', 'Research tools'), mobileLabel: text('工具', 'Tools'), icon: ToolboxIcon, end: true },
-    { href: '/research/materials', label: text('研究材料', 'Research materials'), mobileLabel: text('材料', 'Materials'), icon: FileTextIcon, end: true },
+    { href: '/research/materials', label: text('我的研究', 'My research'), mobileLabel: text('研究', 'Research'), icon: FileTextIcon, end: true },
     { href: '/knowledge', label: text('知识库', 'Knowledge base'), mobileLabel: text('知识', 'Library'), icon: BooksIcon, end: true },
     { href: '/knowledge/graph', label: text('知识图谱', 'Knowledge graph'), mobileLabel: text('图谱', 'Graph'), icon: TreeStructureIcon },
   ]
@@ -121,6 +121,7 @@ export function PageShell({
   immersive = false,
   wide = false,
   shader = false,
+  backdrop,
   defaultRailCollapsed = false,
   railContent,
   railContentRef,
@@ -129,6 +130,7 @@ export function PageShell({
   immersive?: boolean
   wide?: boolean
   shader?: boolean
+  backdrop?: ReactNode
   defaultRailCollapsed?: boolean
   railContent?: ReactNode
   railContentRef?: Ref<HTMLDivElement>
@@ -168,7 +170,7 @@ export function PageShell({
     ].filter(Boolean).join(' ')}>
       {immersive ? null : (
         <div className="app-frame__backdrop" aria-hidden="true">
-          {shader ? <AppFrameShader /> : null}
+          {backdrop ?? (shader ? <AppFrameShader /> : null)}
         </div>
       )}
       <NetworkStatusNotice />
