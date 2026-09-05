@@ -73,11 +73,11 @@ def test_web_tools_are_opt_in_and_keep_results_inside_the_evidence_set() -> None
     assert tools.evidence[results[0]["citation_id"]].excerpt == page["content"]
 
 
-def test_web_page_reader_rejects_urls_outside_the_current_search_results() -> None:
+def test_web_page_reader_preserves_private_network_boundary() -> None:
     tools = KnowledgeToolRegistry(_Catalog(), web_research=_WebResearch())
     tools.enable_web_search()
 
-    with pytest.raises(ValueError, match="先通过联网搜索取得网页地址"):
+    with pytest.raises(ValueError, match="不能读取本机或内网地址"):
         tools.read_web_page("http://127.0.0.1/private")
 
 
@@ -335,3 +335,15 @@ def test_tavily_provider_uses_sdk_search_and_preserves_raw_content(monkeypatch) 
             },
         )
     ]
+
+
+def test_user_url_is_readable_and_citable_without_search_or_review():
+    client = _WebResearch()
+    tools = KnowledgeToolRegistry(_Catalog(), web_research=client)
+    url = "https://example.org/user-provided-article"
+    page = tools.read_web_page(url)
+    assert page["content"]
+    assert client.read_urls == [url]
+    assert tools.evidence[page["citation_id"]].excerpt == page["content"]
+    assert tools.web_read_enabled
+    assert not tools.web_search_enabled
