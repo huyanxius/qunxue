@@ -40,6 +40,8 @@ from qunxue_api.adapters.research_agent import (
     ResearchDocumentToolRegistry,
     SiliconFlowRerankerProvider,
 )
+from qunxue_api.adapters.research_agent.memory_extractor import PydanticMemoryExtractor
+from qunxue_api.adapters.research_agent.memory_tools import AgentMemoryTools
 from qunxue_api.adapters.research_exchange import map_published_qunxue_project
 from qunxue_api.adapters.research_materials import parse_material
 from qunxue_api.adapters.research_materials.doi import CrossrefDoiMetadataResolver
@@ -50,11 +52,13 @@ from qunxue_api.adapters.retrieval import (
 )
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
+from qunxue_api.adapters.sqlite.agent_memory_repository import SqliteMemoryRepository
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.material_vector_cache import SqliteMaterialVectorCache
+from qunxue_api.adapters.sqlite.memory_learning_repository import SqliteMemoryLearningRepository
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
 from qunxue_api.adapters.sqlite.professional_material_repository import (
     SqliteProfessionalMaterialRepository,
@@ -107,6 +111,7 @@ from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
 from qunxue_api.api.routes.matching import router as matching_router
+from qunxue_api.api.routes.memories import router as memories_router
 from qunxue_api.api.routes.phenomena import example_router as phenomenon_examples_router
 from qunxue_api.api.routes.phenomena import material_router as material_intakes_router
 from qunxue_api.api.routes.phenomena import router as phenomena_router
@@ -141,7 +146,9 @@ from qunxue_api.application import (
     TranscriptionApplication,
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
+from qunxue_api.application.memory_learning import MemoryLearningWorker
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
+from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import CreditService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -235,6 +242,20 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         probe_task = None
+        memory_task = None
+        if resolved_settings.memory_learning_enabled and app.state.model_endpoints:
+
+            async def learn_memories():
+                while True:
+                    try:
+                        await asyncio.to_thread(app.state.memory_worker.run_once)
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        logger.warning("Memory learning scheduler will retry later.")
+                    await asyncio.sleep(60)
+
+            memory_task = asyncio.create_task(learn_memories(), name="qunxue-memory-learning")
         if app.state.model_router is not None:
             probe_task = asyncio.create_task(
                 run_model_probe_loop(app),
@@ -244,6 +265,10 @@ def create_app(
         try:
             yield
         finally:
+            if memory_task is not None:
+                memory_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await memory_task
             if probe_task is not None:
                 probe_task.cancel()
                 with suppress(asyncio.CancelledError):
@@ -839,6 +864,9 @@ def create_app(
                 )
             try:
                 yield DisciplinaryAgentApplication(
+                    memory_tools_factory=lambda **scope: AgentMemoryTools(
+                        memory_service_scope, **scope
+                    ),
                     conversations=conversations,
                     runner=runner,
                     credits=CreditService(
@@ -894,6 +922,37 @@ def create_app(
                 raise
 
     app.state.disciplinary_agent_scope = disciplinary_agent_scope
+
+    @contextmanager
+    def memory_service_scope():
+        with resolved_database.session() as memory_session:
+            yield MemoryService(SqliteMemoryRepository(memory_session))
+
+    app.state.memory_service_scope = memory_service_scope
+
+    @contextmanager
+    def memory_learning_scope():
+        with resolved_database.session() as memory_session:
+            yield SqliteMemoryLearningRepository(memory_session)
+
+    memory_extractor = None
+    if app.state.model_endpoints and resolved_settings.memory_learning_enabled:
+        memory_endpoint = app.state.model_endpoints[0]
+        memory_extractor = PydanticMemoryExtractor(
+            base_url=memory_endpoint.base_url,
+            api_key=memory_endpoint.api_key,
+            model=memory_endpoint.model,
+            extra_headers=memory_endpoint.extra_headers,
+            timeout_seconds=min(resolved_settings.model_timeout_seconds, 45),
+        )
+    app.state.memory_worker = MemoryLearningWorker(
+        memory_learning_scope,
+        extractor=memory_extractor,
+        idle_seconds=resolved_settings.memory_learning_idle_seconds,
+        daily_calls=resolved_settings.memory_learning_daily_calls,
+        daily_tokens=resolved_settings.memory_learning_daily_tokens,
+    )
+    app.include_router(memories_router)
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
     app.include_router(session_router)
