@@ -287,7 +287,7 @@ export function ResearchMapCanvas({
           proOptions={{ hideAttribution: true }}
           aria-label={projection.nodes.length ? '可缩放、可拖动的社会学论证地图' : '空白研究画布'}
         >
-          <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8d6cf" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="light-dark(#d8d6cf, #444842)" />
           {projection.nodes.length ? <Controls position="bottom-left" showInteractive={false} /> : null}
           {!hasDocumentNodes && projection.nodes.length >= 16 ? (
             <MiniMap
@@ -428,8 +428,8 @@ async function layoutArgumentMap(
         strokeWidth: edge.relation === 'challenges' ? 1.8 : 1.45,
         strokeDasharray: edge.relation === 'challenges' || edge.relation === 'refines' ? '6 5' : undefined,
       },
-      labelStyle: { fill: '#78766f', fontSize: 10, fontWeight: 600 },
-      labelBgStyle: { fill: '#f7f7f4', fillOpacity: 0.94 },
+      labelStyle: { fill: 'light-dark(#78766f, #a9afa4)', fontSize: 10, fontWeight: 600 },
+      labelBgStyle: { fill: 'light-dark(#f7f7f4, #222520)', fillOpacity: 0.94 },
       labelBgPadding: [5, 3],
       labelBgBorderRadius: 4,
     })),

@@ -1,3 +1,4 @@
+import { useColorScheme } from '../../styles/useColorScheme'
 import { MeshGradient } from '@paper-design/shaders-react'
 import { useEffect, useState } from 'react'
 
@@ -21,6 +22,7 @@ function usePrefersReducedMotion() {
 
 /** 工具页用局部矿物黄光晕，与冷色研究页面区分，但不覆盖整张纸面。 */
 export function ResearchToolsShader() {
+  const dark = useColorScheme()
   const reducedMotion = usePrefersReducedMotion()
   if (typeof window === 'undefined' || !('WebGL2RenderingContext' in window)) return null
 
@@ -28,7 +30,7 @@ export function ResearchToolsShader() {
     <div className="research-tools-page__shader" aria-hidden="true">
       <MeshGradient
         className="research-tools-page__shader-canvas"
-        colors={['#fafaf3', '#e6e8b8', '#9eaa52', '#d8dfbd']}
+        colors={dark ? ['#25271e', '#414832', '#677449', '#494f39'] : ['#fafaf3', '#e6e8b8', '#9eaa52', '#d8dfbd']}
         distortion={0.42}
         fit="cover"
         frame={1080}

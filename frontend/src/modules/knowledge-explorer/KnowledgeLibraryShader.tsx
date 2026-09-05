@@ -1,3 +1,4 @@
+import { useColorScheme } from '../../styles/useColorScheme'
 import { Warp } from '@paper-design/shaders-react'
 import { useEffect, useState } from 'react'
 
@@ -21,6 +22,7 @@ function usePrefersReducedMotion() {
 }
 
 export function KnowledgeLibraryShader() {
+  const dark = useColorScheme()
   const reducedMotion = usePrefersReducedMotion()
   const supportsWebGl2 = typeof window !== 'undefined' && 'WebGL2RenderingContext' in window
 
@@ -29,7 +31,7 @@ export function KnowledgeLibraryShader() {
       {supportsWebGl2 ? (
         <Warp
           className="knowledge-library__shader-canvas"
-          colors={['#f3f5f8', '#d7e0eb', '#8fa4bf', '#e8edf3']}
+          colors={dark ? ['#20262b', '#34434f', '#566d81', '#414f5b'] : ['#f3f5f8', '#d7e0eb', '#8fa4bf', '#e8edf3']}
           distortion={0.12}
           fit="cover"
           frame={760}

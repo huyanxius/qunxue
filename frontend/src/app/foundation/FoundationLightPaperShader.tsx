@@ -1,7 +1,9 @@
+import { useColorScheme } from '../../styles/useColorScheme'
 import { GrainGradient } from '@paper-design/shaders-react'
 import { useEffect, useRef, useState } from 'react'
 
 export function FoundationLightPaperShader() {
+  const dark = useColorScheme()
   const fieldRef = useRef<HTMLDivElement>(null)
   const [nearby, setNearby] = useState(false)
   const [reduceMotion, setReduceMotion] = useState(false)
@@ -35,8 +37,9 @@ export function FoundationLightPaperShader() {
       {nearby && !reduceMotion ? (
         <GrainGradient
           className="foundation-knowledge__paper-flow"
-          colorBack="#f7f7f2"
-          colors={['#fbfaf4', '#d8d0c1', '#888b83', '#c2b29b']}
+          data-color-scheme={dark ? 'dark' : 'light'}
+          colorBack={dark ? '#242620' : '#f7f7f2'}
+          colors={dark ? ['#262821', '#464637', '#686b57', '#565040'] : ['#fbfaf4', '#d8d0c1', '#888b83', '#c2b29b']}
           softness={0.72}
           intensity={0.42}
           noise={0.18}

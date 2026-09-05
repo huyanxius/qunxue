@@ -9,6 +9,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
 import './styles/mobile.css'
+import './styles/system-theme.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

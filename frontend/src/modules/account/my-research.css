@@ -212,7 +212,7 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(23 23 22 / 24%);
+  background: light-dark(rgb(23 23 22 / 24%), rgb(228 228 226 / 0.24));
   backdrop-filter: blur(2px);
 }
 
@@ -232,7 +232,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--app-danger);
-  background: #fff1f0;
+  background: light-dark(#fff1f0, #1e1818);
 }
 
 .delete-dialog h2 {
@@ -280,7 +280,7 @@
 
 .delete-dialog__actions .delete-dialog__confirm {
   border-color: var(--app-danger);
-  color: #fff;
+  color: light-dark(#fff, #212121);
   background: var(--app-danger);
 }
 

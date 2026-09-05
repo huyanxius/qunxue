@@ -97,7 +97,7 @@
 
 .research-project-workspace__tools a:hover,
 .research-project-workspace__tools a[aria-current='page'] { color: var(--research-shell-ink); }
-.research-project-workspace__tools a[aria-current='page']::after { background: #68746b; }
+.research-project-workspace__tools a[aria-current='page']::after { background: light-dark(#68746b, #8c978f); }
 
 .research-project-workspace__layout {
   position: relative;
@@ -145,7 +145,7 @@
 
 .research-project-workspace__separator:hover::after,
 .research-project-workspace__separator:focus-visible::after {
-  background: #68746b;
+  background: light-dark(#68746b, #8c978f);
   box-shadow: 0 0 0 3px rgb(104 116 107 / 10%);
 }
 

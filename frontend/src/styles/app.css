@@ -1,16 +1,16 @@
 .app-frame {
-  --app-canvas: #ffffff;
-  --app-sidebar: #f6f6f6;
-  --app-surface-subtle: #f8f8f8;
-  --app-surface: #f1f1f1;
-  --app-surface-strong: #e9e9e9;
-  --app-ink: #111111;
-  --app-ink-soft: #303030;
-  --app-muted: #6f6f6f;
-  --app-border: #e4e4e4;
-  --app-border-strong: #cecece;
-  --app-danger: #b42318;
-  --app-focus: #111111;
+  --app-canvas: light-dark(#ffffff, #202221);
+  --app-sidebar: light-dark(#f6f6f6, #1b1d1c);
+  --app-surface-subtle: light-dark(#f8f8f8, #242725);
+  --app-surface: light-dark(#f1f1f1, #2b2f2b);
+  --app-surface-strong: light-dark(#e9e9e9, #363c35);
+  --app-ink: light-dark(#111111, #e6e7e3);
+  --app-ink-soft: light-dark(#303030, #c9ccc6);
+  --app-muted: light-dark(#6f6f6f, #a4aaa2);
+  --app-border: light-dark(#e4e4e4, #383d38);
+  --app-border-strong: light-dark(#cecece, #50574f);
+  --app-danger: light-dark(#b42318, #c7928e);
+  --app-focus: light-dark(#111111, #c9d0c4);
   --bg: var(--app-canvas);
   --surface: var(--app-canvas);
   --surface-2: var(--app-sidebar);
@@ -18,14 +18,14 @@
   --ink-strong: var(--app-ink);
   --ink: var(--app-ink-soft);
   --ink-soft: var(--app-muted);
-  --quiet: #929292;
+  --quiet: light-dark(#929292, #858585);
   --rule: var(--app-border);
   --rule-strong: var(--app-border-strong);
   --accent: var(--app-ink);
   --accent-soft: var(--app-surface);
   --accent-dark: var(--app-ink);
   --danger: var(--app-danger);
-  --danger-soft: #fff1f0;
+  --danger-soft: light-dark(#fff1f0, #241312);
   --radius: 10px;
   --radius-control: 8px;
   --radius-large: 14px;
@@ -48,7 +48,7 @@
   --qx-color-ink: var(--app-ink);
   --qx-color-ink-soft: var(--app-ink-soft);
   --qx-color-muted: var(--app-muted);
-  --qx-color-faint: #929292;
+  --qx-color-faint: light-dark(#929292, #858585);
   --qx-color-rule: var(--app-border);
   --qx-color-rule-strong: var(--app-border-strong);
   --qx-color-accent: var(--app-ink);
@@ -57,8 +57,8 @@
   --qx-color-accent-muted: var(--app-surface-subtle);
   --qx-color-on-accent: var(--app-canvas);
   --qx-color-danger: var(--app-danger);
-  --qx-color-danger-line: #e2c2bd;
-  --qx-color-danger-soft: #fff1f0;
+  --qx-color-danger-line: light-dark(#e2c2bd, #503430);
+  --qx-color-danger-soft: light-dark(#fff1f0, #241312);
   --qx-color-notice: var(--app-ink-soft);
   --qx-color-notice-line: var(--app-border-strong);
   --qx-color-notice-soft: var(--app-surface-subtle);
@@ -79,25 +79,16 @@
   z-index: 0;
   inset: 0;
   overflow: hidden;
-  background: #f7f7f3;
+  background: light-dark(#f7f7f3, #202421);
   pointer-events: none;
-}
-
-.app-frame__backdrop::after {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  background: repeating-linear-gradient(0deg, rgb(17 17 17 / 1.1%) 0 1px, transparent 1px 4px);
-  content: '';
-  opacity: 0.22;
 }
 
 .app-frame__shader-canvas {
   position: absolute;
   z-index: 0;
   inset: 0;
-  opacity: 0.44;
-  filter: saturate(0.74) contrast(1.01);
+  opacity: 0.8;
+  filter: none;
 }
 
 .app-frame--rail-collapsed {
@@ -145,8 +136,8 @@
   flex-direction: column;
   border-right: 0;
   background:
-    linear-gradient(108deg, rgb(255 255 255 / 30%), transparent 42%),
-    linear-gradient(180deg, rgb(250 250 247 / 52%), rgb(244 246 242 / 34%));
+    linear-gradient(108deg, light-dark(rgb(255 255 255 / 30%), rgb(33 33 33 / 0.3)), transparent 42%),
+    linear-gradient(180deg, light-dark(rgb(250 250 247 / 52%), rgb(31 31 23 / 0.52)), light-dark(rgb(244 246 242 / 34%), rgb(27 30 24 / 0.34)));
   box-shadow: none;
   backdrop-filter: blur(24px) saturate(1.08) contrast(1.02);
   -webkit-backdrop-filter: blur(24px) saturate(1.08) contrast(1.02);
@@ -278,13 +269,13 @@
 }
 
 .desktop-navigation a:hover {
-  background: rgb(255 255 255 / 38%);
+  background: light-dark(rgb(255 255 255 / 38%), rgb(33 33 33 / 0.38));
 }
 
 .desktop-navigation a[aria-current='page'] {
   color: var(--app-ink);
-  background: rgb(30 35 32 / 7%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 42%);
+  background: light-dark(rgb(30 35 32 / 7%), rgb(226 228 227 / 0.07));
+  box-shadow: inset 0 0 0 1px light-dark(rgb(255 255 255 / 42%), transparent);
 }
 
 .navigation-icon {
@@ -354,22 +345,22 @@
   right: 8px;
   width: 7px;
   height: 7px;
-  border: 1.5px solid rgb(248 248 245);
+  border: 1.5px solid light-dark(rgb(248 248 245), #474738);
   border-radius: 50%;
-  background: #c73b32;
+  background: light-dark(#c73b32, #b7716c);
 }
 
 .desktop-rail__account > a:hover,
 .desktop-rail__account > button:hover,
 .desktop-rail__account > a[aria-current='page'] {
   color: var(--app-ink);
-  background: rgb(255 255 255 / 38%);
+  background: light-dark(rgb(255 255 255 / 38%), rgb(33 33 33 / 0.38));
 }
 
 .app-frame:has(.knowledge-library__shader) .app-frame__backdrop {
   background:
-    radial-gradient(ellipse at 8% 18%, rgb(143 164 191 / 18%), transparent 58%),
-    #f7f7f3;
+    radial-gradient(ellipse at 8% 18%, light-dark(rgb(143 164 191 / 18%), rgb(57 67 81 / 0.18)), transparent 58%),
+    light-dark(#f7f7f3, #1e1e17);
 }
 
 .desktop-rail__avatar {
@@ -380,7 +371,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--app-ink);
-  background: rgb(255 255 255 / 72%);
+  background: light-dark(rgb(255 255 255 / 72%), rgb(33 33 33 / 0.72));
   font-size: 15px;
   font-weight: 500;
 }
@@ -406,7 +397,7 @@
   border: 1px solid var(--app-border);
   border-radius: 16px;
   color: var(--app-ink);
-  background: rgb(255 255 255 / 98%);
+  background: light-dark(rgb(255 255 255 / 98%), rgb(33 33 33 / 0.98));
   box-shadow: 0 14px 36px rgb(31 37 33 / 14%);
   overflow-y: auto;
 }
@@ -466,7 +457,7 @@
 
 .desktop-rail__notification-item time,
 .desktop-rail__notification-empty {
-  color: #9a9a9a;
+  color: light-dark(#9a9a9a, #858585);
   font-size: 10px;
 }
 
@@ -786,7 +777,7 @@
 .fatal-error {
   width: min(680px, calc(100% - 40px));
   margin: 15vh auto 0;
-  color: var(--ink-strong, #111111);
+  color: var(--ink-strong, light-dark(#111111, #e3e3e3));
 }
 
 .fatal-error h1,
@@ -801,7 +792,7 @@
 .not-found-state > p:not(.eyebrow) {
   max-width: 520px;
   margin: 14px 0 0;
-  color: var(--ink-soft, #6f6f6f);
+  color: var(--ink-soft, light-dark(#6f6f6f, #ababab));
   line-height: 1.65;
 }
 
@@ -824,18 +815,18 @@
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  border: 1px solid var(--app-border-strong, #cecece);
+  border: 1px solid var(--app-border-strong, light-dark(#cecece, #404040));
   border-radius: 999px;
-  color: var(--app-ink, #111111);
-  background: var(--app-canvas, #ffffff);
+  color: var(--app-ink, light-dark(#111111, #e3e3e3));
+  background: var(--app-canvas, light-dark(#ffffff, #212121));
   text-decoration: none;
   cursor: pointer;
 }
 
 .fatal-error__actions button {
-  border-color: var(--app-ink, #111111);
-  color: var(--app-canvas, #ffffff);
-  background: var(--app-ink, #111111);
+  border-color: var(--app-ink, light-dark(#111111, #9e9e9e));
+  color: var(--app-canvas, light-dark(#ffffff, #212121));
+  background: var(--app-ink, light-dark(#111111, #e3e3e3));
 }
 
 .network-status-notice {
@@ -845,10 +836,10 @@
   right: 14px;
   max-width: min(460px, calc(100vw - 32px));
   padding: 9px 12px;
-  border: 1px solid var(--app-border-strong, #cecece);
+  border: 1px solid var(--app-border-strong, light-dark(#cecece, #404040));
   border-radius: 9px;
-  color: var(--app-ink-soft, #303030);
-  background: var(--app-canvas, #ffffff);
+  color: var(--app-ink-soft, light-dark(#303030, #c7c7c7));
+  background: var(--app-canvas, light-dark(#ffffff, #212121));
   box-shadow: 0 8px 24px rgb(17 17 17 / 10%);
   font-size: 12px;
   line-height: 1.5;
@@ -901,7 +892,7 @@
     justify-content: space-between;
     padding: 0 14px;
     border-bottom: 1px solid var(--app-border);
-    background: rgb(255 255 255 / 96%);
+    background: light-dark(rgb(255 255 255 / 96%), rgb(33 33 33 / 0.96));
     backdrop-filter: blur(12px);
   }
 
@@ -957,7 +948,7 @@
     grid-template-columns: repeat(6, 1fr);
     padding: 5px 6px max(5px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--app-border);
-    background: rgb(255 255 255 / 97%);
+    background: light-dark(rgb(255 255 255 / 97%), rgb(33 33 33 / 0.97));
     backdrop-filter: blur(12px);
   }
 
@@ -1011,7 +1002,7 @@
     width: 100%;
     padding: 0;
     border: 0;
-    background: rgb(17 17 17 / 24%);
+    background: light-dark(rgb(17 17 17 / 24%), rgb(227 227 227 / 0.24));
     backdrop-filter: blur(2px);
   }
 
@@ -1023,7 +1014,7 @@
     padding: 10px;
     border: 1px solid var(--app-border);
     border-radius: 16px;
-    background: rgb(255 255 255 / 98%);
+    background: light-dark(rgb(255 255 255 / 98%), rgb(33 33 33 / 0.98));
     box-shadow: 0 20px 64px rgb(17 17 17 / 22%);
   }
 

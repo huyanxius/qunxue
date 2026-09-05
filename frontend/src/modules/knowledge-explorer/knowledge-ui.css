@@ -1,84 +1,84 @@
 .knowledge-surface {
-  --taxonomy-ink: #43639a;
-  --taxonomy-soft: #eaf0f8;
-  --taxonomy-border: #cbd8eb;
+  --taxonomy-ink: light-dark(#43639a, #95a5c0);
+  --taxonomy-soft: light-dark(#eaf0f8, #171a1e);
+  --taxonomy-border: light-dark(#cbd8eb, #2d3c52);
   min-height: 100dvh;
   color: var(--app-ink-soft, var(--ink));
-  background: var(--app-canvas, #fff);
+  background: var(--app-canvas, light-dark(#fff, #212121));
   font-family: var(--sans);
 }
 
 .knowledge-surface[data-dimension-tone='ontology'],
 .knowledge-surface [data-dimension-tone='ontology'] {
-  --taxonomy-ink: #43639a;
-  --taxonomy-soft: #eaf0f8;
-  --taxonomy-border: #cbd8eb;
+  --taxonomy-ink: light-dark(#43639a, #95a5c0);
+  --taxonomy-soft: light-dark(#eaf0f8, #171a1e);
+  --taxonomy-border: light-dark(#cbd8eb, #2d3c52);
 }
 
 .knowledge-surface[data-dimension-tone='practice'],
 .knowledge-surface [data-dimension-tone='practice'] {
-  --taxonomy-ink: #44745f;
-  --taxonomy-soft: #eaf3ee;
-  --taxonomy-border: #c9dfd3;
+  --taxonomy-ink: light-dark(#44745f, #9db9ad);
+  --taxonomy-soft: light-dark(#eaf3ee, #1a1c1b);
+  --taxonomy-border: light-dark(#c9dfd3, #354a3f);
 }
 
 .knowledge-surface[data-dimension-tone='method'],
 .knowledge-surface [data-dimension-tone='method'] {
-  --taxonomy-ink: #367083;
-  --taxonomy-soft: #e8f3f5;
-  --taxonomy-border: #c4dde3;
+  --taxonomy-ink: light-dark(#367083, #94b6c2);
+  --taxonomy-soft: light-dark(#e8f3f5, #181d1e);
+  --taxonomy-border: light-dark(#c4dde3, #31494f);
 }
 
 .knowledge-surface[data-dimension-tone='value'],
 .knowledge-surface [data-dimension-tone='value'] {
-  --taxonomy-ink: #985067;
-  --taxonomy-soft: #f7edf1;
-  --taxonomy-border: #e6cbd4;
+  --taxonomy-ink: light-dark(#985067, #bc9aa5);
+  --taxonomy-soft: light-dark(#f7edf1, #1b1a1a);
+  --taxonomy-border: light-dark(#e6cbd4, #4e313b);
 }
 
 .knowledge-surface[data-dimension-tone='epistemology'],
 .knowledge-surface [data-dimension-tone='epistemology'] {
-  --taxonomy-ink: #8a6b2f;
-  --taxonomy-soft: #f7f1e3;
-  --taxonomy-border: #e5d5aa;
+  --taxonomy-ink: light-dark(#8a6b2f, #c6b390);
+  --taxonomy-soft: light-dark(#f7f1e3, #1e1c18);
+  --taxonomy-border: light-dark(#e5d5aa, #554a2a);
 }
 
 .knowledge-surface[data-dimension-tone='tradition'],
 .knowledge-surface [data-dimension-tone='tradition'] {
-  --taxonomy-ink: #695b91;
-  --taxonomy-soft: #f0edf7;
-  --taxonomy-border: #d8d0e9;
+  --taxonomy-ink: light-dark(#695b91, #a59eb7);
+  --taxonomy-soft: light-dark(#f0edf7, #1a1a1b);
+  --taxonomy-border: light-dark(#d8d0e9, #3a314f);
 }
 
 .knowledge-surface[data-dimension-tone='history'],
 .knowledge-surface [data-dimension-tone='history'] {
-  --taxonomy-ink: #925c49;
-  --taxonomy-soft: #f7eee9;
-  --taxonomy-border: #e5d0c5;
+  --taxonomy-ink: light-dark(#925c49, #bda299);
+  --taxonomy-soft: light-dark(#f7eee9, #1e1a18);
+  --taxonomy-border: light-dark(#e5d0c5, #503b30);
 }
 
 .knowledge-surface [data-stage='1'] {
-  --stage-ink: #3f6fb2;
-  --stage-soft: #eaf1fb;
-  --stage-border: #c7d9f1;
+  --stage-ink: light-dark(#3f6fb2, #91a7c5);
+  --stage-soft: light-dark(#eaf1fb, #181a1e);
+  --stage-border: light-dark(#c7d9f1, #2a3d55);
 }
 
 .knowledge-surface [data-stage='2'] {
-  --stage-ink: #7661a8;
-  --stage-soft: #f1edfa;
-  --stage-border: #d9d0ee;
+  --stage-ink: light-dark(#7661a8, #a49bbb);
+  --stage-soft: light-dark(#f1edfa, #1a181e);
+  --stage-border: light-dark(#d9d0ee, #382c53);
 }
 
 .knowledge-surface [data-stage='3'] {
-  --stage-ink: #a76428;
-  --stage-soft: #fbf0e4;
-  --stage-border: #ebd1b5;
+  --stage-ink: light-dark(#a76428, #c7a98e);
+  --stage-soft: light-dark(#fbf0e4, #1e1b18);
+  --stage-border: light-dark(#ebd1b5, #55412a);
 }
 
 .knowledge-surface [data-stage='4'] {
-  --stage-ink: #3f7a5b;
-  --stage-soft: #eaf4ee;
-  --stage-border: #c9dfd2;
+  --stage-ink: light-dark(#3f7a5b, #99bcaa);
+  --stage-soft: light-dark(#eaf4ee, #1a1b1a);
+  --stage-border: light-dark(#c9dfd2, #354a3e);
 }
 
 .knowledge-surface button,

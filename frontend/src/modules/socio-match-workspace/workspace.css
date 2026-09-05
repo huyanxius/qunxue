@@ -260,7 +260,7 @@
   border: 1px solid var(--ink-strong);
   border-radius: 7px;
   background: var(--ink-strong);
-  color: #fff;
+  color: light-dark(#fff, #212121);
   font: inherit;
 }
 

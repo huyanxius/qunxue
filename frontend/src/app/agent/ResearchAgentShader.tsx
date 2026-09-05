@@ -1,3 +1,4 @@
+import { useColorScheme } from '../../styles/useColorScheme'
 import { NeuroNoise } from '@paper-design/shaders-react'
 import { useEffect, useState } from 'react'
 
@@ -21,6 +22,7 @@ function usePrefersReducedMotion() {
 }
 
 export function ResearchAgentShader() {
+  const dark = useColorScheme()
   const reducedMotion = usePrefersReducedMotion()
   const supportsWebGl2 = typeof window !== 'undefined' && 'WebGL2RenderingContext' in window
 
@@ -30,9 +32,9 @@ export function ResearchAgentShader() {
         <NeuroNoise
           brightness={0.04}
           className="research-agent-page__shader-canvas"
-          colorBack="#f7f4f2"
-          colorFront="#94869a"
-          colorMid="#c9c0cc"
+          colorBack={dark ? '#252229' : '#f7f4f2'}
+          colorFront={dark ? '#6c5c73' : '#94869a'}
+          colorMid={dark ? '#49404f' : '#c9c0cc'}
           contrast={0.28}
           fit="none"
           frame={1840}
