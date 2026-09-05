@@ -1,3 +1,4 @@
+import time
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
@@ -497,6 +498,9 @@ class DisciplinaryAgentApplication:
             if on_tool_event is not None:
                 on_tool_event(event)
 
+        # 深入研究的用时从确认计划那一刻算到出结论，中间等用户回答的时间不计入。
+        research_started_at = time.monotonic() if deep_research_started else None
+
         try:
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
@@ -564,13 +568,17 @@ class DisciplinaryAgentApplication:
                         output_tokens=result.output_tokens,
                         model=result.model,
                     )
+                completed_tool_summary = (
+                    *(_tool_summary(item) for item in tool_events),
+                    *_deep_research_summary(result, research_started_at),
+                )
                 self._conversations.finish_run(
                     run_id=run.run_id,
                     status="completed",
                     turn_id=(
                         turn_result.turn_id if isinstance(turn_result, AgentTurn) else None
                     ),
-                    tool_summary=tuple(_tool_summary(item) for item in tool_events),
+                    tool_summary=completed_tool_summary,
                     provider=result.provider,
                     model=result.model,
                 )
@@ -630,7 +638,7 @@ class DisciplinaryAgentApplication:
             result=result,
             turn=turn_result,
             replayed=False,
-            tool_summary=tuple(_tool_summary(item) for item in tool_events),
+            tool_summary=completed_tool_summary,
         )
 
 
@@ -727,6 +735,34 @@ def _evidence_from_citation(item):
         segment_id=item.segment_id,
         locator=dict(item.locator) if item.locator is not None else None,
         deleted=item.deleted,
+    )
+
+
+def _deep_research_summary(
+    result: AgentRunResult,
+    started_at: float | None,
+) -> tuple[dict[str, object], ...]:
+    """一条深入研究结束的留痕，让重开对话时还能还原那张研究完成卡片。
+
+    走的是工具轨迹这条已有通道（研究地图的画布补丁也存在这里），所以不必为它单开
+    一个契约字段；前端按 tool 名把它挑出来，不当普通工具调用展示。
+    """
+    if started_at is None:
+        return ()
+    return (
+        {
+            "tool": "deep_research",
+            "phase": "finished",
+            "call_id": "deep-research",
+            "output": {
+                "schema_version": 1,
+                "elapsed_seconds": round(time.monotonic() - started_at, 1),
+                "knowledge_count": sum(
+                    1 for item in result.citations if item.kind in {"entry", "theory", "source"}
+                ),
+                "web_count": sum(1 for item in result.citations if item.source_kind == "web"),
+            },
+        },
     )
 
 

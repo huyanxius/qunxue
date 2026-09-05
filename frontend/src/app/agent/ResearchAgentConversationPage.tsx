@@ -69,6 +69,7 @@ import {
   type AgentRuntimeMode,
   type AgentToolStep,
   type AgentToolTrace,
+  type AgentTurn,
   buildResearchReport,
   collectReferences,
   conclusionDigest,
@@ -930,9 +931,28 @@ function researchStepForTools(steps: ResearchToolStep[]): number {
   return 3
 }
 
+const DEEP_RESEARCH_TRACE = 'deep_research'
+
+type DeepResearchRecord = { elapsedSeconds: number; knowledgeCount: number; webCount: number }
+
+/** 深入研究完成时后端留在工具轨迹里的一条记录，重开对话靠它还原那张卡片。 */
+function deepResearchRecord(turn: AgentTurn | undefined): DeepResearchRecord | null {
+  const trace = turn?.tool_traces?.find((item) => item.tool === DEEP_RESEARCH_TRACE)
+  const output = trace?.output
+  if (!output || typeof output !== 'object') return null
+  const value = output as Record<string, unknown>
+  if (value.schema_version !== 1) return null
+  return {
+    elapsedSeconds: typeof value.elapsed_seconds === 'number' ? value.elapsed_seconds : 0,
+    knowledgeCount: typeof value.knowledge_count === 'number' ? value.knowledge_count : 0,
+    webCount: typeof value.web_count === 'number' ? value.web_count : 0,
+  }
+}
+
 function persistedToolSteps(traces: AgentToolTrace[] | undefined): ResearchToolStep[] {
   let steps: ResearchToolStep[] = []
   for (const trace of traces ?? []) {
+    if (trace.tool === DEEP_RESEARCH_TRACE) continue
     const event: AgentToolEvent = trace.phase === 'started'
       ? { type: 'tool_started', tool: trace.tool, call_id: trace.call_id, input: trace.input ?? undefined, detail: trace.detail }
       : trace.phase === 'failed'
@@ -2501,6 +2521,24 @@ export function ResearchAgentConversationPage({
     return [...new Map(values.map((context) => [context.citation.citation_id, context])).values()]
   }, [activeConversation?.conversation_id, embedded, knowledgeReleaseByConversationId, streamingTurn?.citations, turns])
   const citations = useMemo(() => citationContexts.map((context) => context.citation), [citationContexts])
+
+  // 深入研究是这段对话的既成事实，重开时要连卡片带输入器模式一起回来；只认最后一轮，
+  // 后面接了普通提问就不该再把研究完成卡片挂在末尾。
+  useEffect(() => {
+    if (streamingTurn) return
+    const record = deepResearchRecord(turns.at(-1))
+    if (!record) return
+    deepResearchLifecycleStarted.current = true
+    setComposerMode('deep-research')
+    setDeepResearchMockStage('completed')
+    setDeepResearchMockStep(DEEP_RESEARCH_MOCK_STEPS.length)
+    setDeepResearchElapsedSeconds(record.elapsedSeconds)
+    setDeepResearchResult((current) => ({
+      ...current,
+      knowledgeCount: record.knowledgeCount,
+      webCount: record.webCount,
+    }))
+  }, [streamingTurn, turns])
 
   // 这一轮结束后 streamingTurn 已清空，卡片上"查看工具调用"要改从落库的这一轮里取。
   const lastTurnToolSteps = useMemo(() => {

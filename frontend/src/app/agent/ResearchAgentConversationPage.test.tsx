@@ -295,6 +295,36 @@ describe('ResearchAgentConversationPage', () => {
     expect(JSON.parse(String(turnCall?.[1]?.body))).toMatchObject({ web_search: true })
   })
 
+  it('restores the completed deep-research card when the conversation is reopened', async () => {
+    const conversation = conversationFixture({
+      id: 'conversation-deep-research-reopen',
+      prompt: '不平等的社会根源是什么？',
+      answer: '不平等首先是一种结构位置的产物，而不是个体努力的残差，这一点在跨国面板数据里反复出现。',
+    })
+    // 后端在深入研究结束时留在工具轨迹里的那条记录。
+    conversation.turns[0].tool_traces = [{
+      tool: 'deep_research',
+      phase: 'finished',
+      call_id: 'deep-research',
+      output: { schema_version: 1, elapsed_seconds: 267, knowledge_count: 7, web_count: 1 },
+    }]
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({}, 404)
+    }))
+    renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
+
+    const resultCard = await screen.findByRole('region', { name: '研究结论' })
+    expect(within(resultCard).getByRole('heading', { name: '已经整理好一份带证据的结论' })).toBeVisible()
+    expect(within(resultCard).getByText('用时 4 分 27 秒')).toBeVisible()
+    expect(within(resultCard).getByText('知识库 7 条')).toBeVisible()
+    expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
+    // 输入器也要留在深入研究，不能悄悄退回标准。
+    expect(screen.getByRole('button', { name: '选择 Agent 模式' })).toHaveTextContent('深入研究')
+  })
+
   it('starts a new conversation from the history rail and keeps one panel toggle in the header', async () => {
     const conversation = conversationFixture({ id: 'conversation-history-rail' })
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
