@@ -1,7 +1,7 @@
-import { listResearchMaterials, uploadResearchMaterial, listAgentMaterials as listAgentMaterialsRequest, prepareAgentMaterialContext as prepareAgentMaterialContextRequest, getResearchMaterial } from './researchMaterialsApi'
+import { deleteResearchMaterial, listResearchMaterials, uploadResearchMaterial, listAgentMaterials as listAgentMaterialsRequest, prepareAgentMaterialContext as prepareAgentMaterialContextRequest, getResearchMaterial } from './researchMaterialsApi'
 
 /**
- * 聚合材料页只需要列举和添加普通材料，不应把 HTTP adapter 暴露到模块公共入口。
+ * 聚合材料页只需要列举、添加和删除普通材料，不应把 HTTP adapter 暴露到模块公共入口。
  * 这里固定上传种类，避免页面层复制材料 API 的传输参数。
  */
 export function listResearchLibraryMaterials(taskId: string, signal?: AbortSignal) {
@@ -22,4 +22,8 @@ export function prepareAgentMaterialContext(conversationId: string | null, reque
 
 export function getAgentAttachmentMaterial(taskId: string, materialId: string) {
   return getResearchMaterial(taskId, materialId)
+}
+
+export function removeResearchLibraryMaterial(taskId: string, materialId: string) {
+  return deleteResearchMaterial(taskId, materialId)
 }
