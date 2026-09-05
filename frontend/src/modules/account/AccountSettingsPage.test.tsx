@@ -126,12 +126,22 @@ function openPartition(name: string) {
 }
 
 describe('AccountSettingsPage', () => {
+  it('omits notification controls without a delivery service while preserving the stored preference', async () => {
+    const updatePreferences = vi.fn(async () => account.preferences)
+    render(<AccountSettingsPage api={createApi({ updatePreferences })} />)
+    await screen.findByRole('heading', { name: '个人资料' })
+    openPartition('使用偏好')
+    expect(screen.queryByRole('checkbox', { name: /研究进度与内测通知/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '保存偏好' }))
+    await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith(expect.objectContaining({ researchUpdatesEnabled: true })))
+  })
+
   it('shows the sign-out action below the settings navigation', async () => {
     const onLogout = vi.fn()
     render(<AccountSettingsPage api={createApi()} onLogout={onLogout} />)
 
-    const navigation = await screen.findByRole('navigation', { name: '账户设置分区' })
-    const button = within(navigation).getByRole('button', { name: '退出登录' })
+    await screen.findByRole('navigation', { name: '账户设置分区' })
+    const button = screen.getByRole('button', { name: '退出登录' })
     expect(button).toBeVisible()
 
     fireEvent.click(button)
@@ -208,7 +218,7 @@ describe('AccountSettingsPage', () => {
     fireEvent.click(within(navigation).getByRole('button', { name: '积分与用量' }))
 
     expect(getCreditSummary).toHaveBeenCalledOnce()
-    expect(screen.getByText('1,162 / 3,000')).toBeVisible()
+    expect(screen.getByLabelText('积分余额数值')).toHaveTextContent('1,162/ 3,000')
     expect(screen.getByRole('progressbar', { name: '积分余额' })).toHaveAttribute('aria-valuenow', '39')
     expect(screen.getByText('剩余 39%')).toBeVisible()
     expect(screen.getByText('600 输入 · 800 输出 token')).toBeVisible()
@@ -313,7 +323,7 @@ describe('AccountSettingsPage', () => {
       code: 'QX-7KDM-4XJP-9TWR-P6AC',
       idempotencyKey: expect.any(String),
     }))
-    expect(await screen.findByText('3,000 / 3,000')).toBeVisible()
+    await waitFor(() => expect(screen.getByLabelText('积分余额数值')).toHaveTextContent('3,000/ 3,000'))
     expect(screen.getByRole('status')).toHaveTextContent('积分已恢复至 3,000')
   })
 
@@ -360,7 +370,7 @@ describe('AccountSettingsPage', () => {
     fireEvent.click(within(loadError).getByRole('button', { name: '重试' }))
 
     expect(await screen.findByRole('heading', { name: '账户设置' })).toBeVisible()
-    expect(screen.getByText('lin@example.com')).toBeVisible()
+    expect(within(screen.getByRole('region', { name: '个人资料' })).getByText('lin@example.com')).toBeVisible()
     openPartition('安全')
     expect(screen.getByText('没有其他活跃会话')).toBeVisible()
   })
@@ -372,6 +382,7 @@ describe('AccountSettingsPage', () => {
     const api = createApi({ updateProfile })
     render(<AccountSettingsPage api={api} onProfileUpdated={onProfileUpdated} />)
 
+    fireEvent.click(await screen.findByRole('button', { name: '修改显示名称' }))
     const displayName = await screen.findByLabelText('显示名称')
     fireEvent.change(displayName, { target: { value: '林研究员' } })
     const save = screen.getByRole('button', { name: '保存资料' })
@@ -388,7 +399,8 @@ describe('AccountSettingsPage', () => {
 
     update.resolve({ ...account, displayName: '林研究员', version: 4 })
     expect(await screen.findByRole('status')).toHaveTextContent('资料已保存')
-    expect(displayName).toHaveValue('林研究员')
+    expect(screen.queryByRole('button', { name: '保存资料' })).not.toBeInTheDocument()
+    expect(screen.getAllByText('林研究员').length).toBeGreaterThan(0)
     expect(onProfileUpdated).toHaveBeenCalledWith(expect.objectContaining({
       displayName: '林研究员',
       version: 4,
@@ -401,6 +413,7 @@ describe('AccountSettingsPage', () => {
       .mockResolvedValueOnce({ ...account, displayName: '林研究员', version: 4 })
     render(<AccountSettingsPage api={createApi({ updateProfile })} />)
 
+    fireEvent.click(await screen.findByRole('button', { name: '修改显示名称' }))
     const displayName = await screen.findByLabelText('显示名称')
     fireEvent.change(displayName, { target: { value: '林研究员' } })
     const save = screen.getByRole('button', { name: '保存资料' })
