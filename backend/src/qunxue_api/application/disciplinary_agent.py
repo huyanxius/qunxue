@@ -250,6 +250,9 @@ class DisciplinaryAgentApplication:
         if self._credits is not None:
             self._credits.ensure_can_start(user_id=user_id)
             self._conversations.commit()
+        # The first library read can import a snapshot in its own SQLite transaction.
+        # Finish that before creating the conversation, which acquires the write lock.
+        tools = self._tools_factory()
         conversation_was_created = conversation is None
         if conversation is None:
             conversation = self._conversations.create_conversation(
@@ -269,7 +272,6 @@ class DisciplinaryAgentApplication:
                     conversation_id=conversation.conversation_id,
                     project_title=prompt,
                 )
-        tools = self._tools_factory()
         if mode == "deep_research":
             enable_deep_research = getattr(tools, "enable_deep_research", None)
             if callable(enable_deep_research):
@@ -417,6 +419,8 @@ class DisciplinaryAgentApplication:
             current = self._conversations.rename_conversation(
                 user_id=user_id, conversation_id=current.conversation_id, title=normalized,
             )
+            # The answer's model telemetry writes through another database session.
+            self._conversations.commit()
 
         # Every Agent turn gets the same lightweight intent check. Deep mode
         # additionally pauses on a plan; ordinary mode only pauses when the
