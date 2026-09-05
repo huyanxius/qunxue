@@ -129,6 +129,16 @@ function LocationProbe() {
 }
 
 describe('ResearchAgentConversationPage', () => {
+  it('opens standalone history from the mobile entry', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: '打开研究记录' }))
+    const history = await screen.findByRole('dialog', { name: '研究记录' })
+    expect(within(history).getByRole('textbox', { name: '搜索研究记录' })).toBeInTheDocument()
+    fireEvent.click(within(history).getByRole('button', { name: '关闭研究记录' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '研究记录' })).not.toBeInTheDocument())
+  })
+
   it('introduces deep research with a dismissible bubble that expires after five seconds', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
@@ -346,7 +356,7 @@ describe('ResearchAgentConversationPage', () => {
     const historyRail = screen.getByRole('region', { name: 'Agent 对话记录' })
     expect(historyRail).toBeVisible()
     expect(within(historyRail).getByRole('button', { name: '开始新对话' })).toBeVisible()
-    expect(screen.queryByRole('button', { name: '打开研究记录' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '打开研究记录' })).toHaveClass('mobile-only')
     expect(screen.getByRole('button', { name: '研究面板' })).toBeVisible()
   })
 

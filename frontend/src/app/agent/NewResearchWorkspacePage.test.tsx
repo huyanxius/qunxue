@@ -182,6 +182,18 @@ function renderPage(path = '/research/new', strict = false, userId = 'user-a') {
 }
 
 describe('NewResearchWorkspacePage', () => {
+  it('keeps the draft when switching between mobile Agent and map panes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
+    renderPage()
+    const input = await screen.findByRole('textbox', { name: '和 Agent 讨论你的研究' })
+    fireEvent.change(input, { target: { value: '需要保留的研究问题' } })
+    const tabs = screen.getByRole('navigation', { name: '研究工作区视图' })
+    fireEvent.click(within(tabs).getByRole('button', { name: '研究地图' }))
+    expect(within(tabs).getByRole('button', { name: '研究地图' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(within(tabs).getByRole('button', { name: /^Agent$/ }))
+    expect(input).toHaveValue('需要保留的研究问题')
+  })
+
   it('keeps the research entry actions inside the empty-map hierarchy', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
 
