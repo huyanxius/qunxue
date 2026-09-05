@@ -103,6 +103,7 @@ class Conversation:
     updated_at: datetime
     turns: tuple[AgentTurn, ...] = ()
     research_map: dict[str, object] = field(default_factory=empty_research_map)
+    task_id: UUID | None = None
 
 
 UserConversation = Conversation

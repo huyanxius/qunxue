@@ -51,6 +51,9 @@ class _MemoryRepository:
                 "The conversation is already bound to a different research task."
             )
         self.research_task_ids[conversation_id] = task_id
+        self.conversations[conversation_id] = replace(
+            self.conversations[conversation_id], task_id=task_id
+        )
 
     def get(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
         conversation = self.conversations.get(conversation_id)
