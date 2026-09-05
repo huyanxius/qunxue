@@ -523,16 +523,14 @@ function researchStartHandoffFromSteps(steps: ResearchToolStep[]): ResearchStart
 function ResearchStartHandoffCard({ handoff, onContinueResearch, busy }: { handoff: ResearchStartHandoff; onContinueResearch?: () => void; busy?: boolean }) {
   const { text } = useAppLocale()
   return (
-    <section className="research-agent-handoff" aria-label={text('研究建议', 'Research suggestion')} data-proposal-id={handoff.proposalId}>
-      <span className="research-agent-handoff__mark" aria-hidden="true"><CompassIcon size={24} weight="duotone" /></span>
-      <div className="research-agent-handoff__copy">
-        <small>{text('继续形成研究', 'Continue developing this study')}</small>
-        <strong>{handoff.phenomenon}</strong>
-        {handoff.researchIntent ? <p>{handoff.researchIntent}</p> : null}
+    <section className="deep-research-mock-card research-flow-card" aria-label={text('研究建议', 'Research suggestion')} data-proposal-id={handoff.proposalId}>
+      <header className="research-flow-card__heading"><CompassIcon size={22} weight="regular" aria-hidden="true" /><h2>{handoff.phenomenon}</h2></header>
+      {handoff.researchIntent ? <div className="deep-research-mock-card__conclusion"><p>{handoff.researchIntent}</p></div> : null}
+      <div className="deep-research-mock-card__actions deep-research-mock-card__export-actions">
+        <button type="button" className="deep-research-mock-card__continue" disabled={busy} onClick={onContinueResearch}>
+          {busy ? text('正在整理研究起点…', 'Preparing research…') : text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
+        </button>
       </div>
-      <button type="button" className="research-agent-handoff__link" disabled={busy} onClick={onContinueResearch}>
-        {busy ? text('正在整理研究起点…', 'Preparing research…') : text('去新建研究', 'Open new research')} <CaretRightIcon size={14} aria-hidden="true" />
-      </button>
     </section>
   )
 }
