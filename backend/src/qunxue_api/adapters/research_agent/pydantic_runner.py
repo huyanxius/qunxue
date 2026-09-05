@@ -758,6 +758,9 @@ class PydanticAIKnowledgeRunner:
                 "取得知识库依据，即使用户只问‘什么是异化’这类简短问题。"
                 "当当前对话绑定研究任务且个人材料工具可用时，研究问题默认同轮调用"
                 "search_research_materials；必须把个人材料与群学公共知识分开标记，不能把一方冒充另一方。"
+                "用户已附加文件时，使用上下文给出的 material_id 直接调用"
+                " read_research_material_context，省略 segment_id 即可从开头读；"
+                "不需要先用关键词搜索，长文件用 next_segment_id 继续读取。"
                 "需要解释个人材料中的片段时，先调用"
                 " read_research_material_context 获取目标位置及有限前后文，"
                 "不得脱离原文上下文或编造页码、章节和段落。"
@@ -1173,13 +1176,14 @@ class PydanticAIKnowledgeRunner:
         def read_research_material_context(
             ctx: RunContext[KnowledgeToolRegistry],
             material_id: str,
-            segment_id: str,
+            segment_id: str | None = None,
             parse_id: str | None = None,
             before: int = 2,
             after: int = 2,
         ) -> dict[str, object]:
-            """沿稳定 locator 读取个人材料目标片段及有限前后文。
+            """用 material_id 直接打开文件；省略 segment_id 从正文开头读，无需先搜索。
 
+            长文件可用结果中的 next_segment_id 继续读取后文。
             重解析后重新打开历史引用时，必须把引用携带的 ``parse_id``
             一并传入；省略它只读取材料当前解析版本。
             """
@@ -2025,6 +2029,7 @@ class PydanticAIKnowledgeRunner:
                     if getattr(tools, "research_map_enabled", False)
                     else None,
                     document_context=getattr(tools, "document_prompt_context", None),
+                    material_context=getattr(tools, "material_prompt_context", None),
                     retrieved_evidence=retrieved_evidence,
                 ),
                 message_history=_agent_message_history(conversation),
@@ -2085,6 +2090,7 @@ class PydanticAIKnowledgeRunner:
                         if getattr(tools, "research_map_enabled", False)
                         else None,
                         document_context=getattr(tools, "document_prompt_context", None),
+                        material_context=getattr(tools, "material_prompt_context", None),
                         retrieved_evidence=retrieved_evidence,
                     ),
                     message_history=_agent_message_history(conversation),
@@ -2102,6 +2108,7 @@ class PydanticAIKnowledgeRunner:
                                 if getattr(tools, "research_map_enabled", False)
                                 else None,
                                 document_context=getattr(tools, "document_prompt_context", None),
+                                material_context=getattr(tools, "material_prompt_context", None),
                                 retrieved_evidence=retrieved_evidence,
                             ),
                             message_history=_agent_message_history(conversation),
@@ -2944,6 +2951,7 @@ def _compose_agent_prompt(
     prompt: str,
     research_map: Mapping[str, object] | None = None,
     document_context: Mapping[str, object] | None = None,
+    material_context: Mapping[str, object] | None = None,
     retrieved_evidence: Mapping[str, object] | None = None,
 ) -> str:
     map_context = (
@@ -2964,6 +2972,12 @@ def _compose_agent_prompt(
         if document_context is not None
         else ""
     )
+    material_context_text = (
+        "\n\n<attached_materials>\n"
+        f"{json.dumps(material_context, ensure_ascii=False, separators=(',', ':'))}"
+        "\n</attached_materials>"
+        if material_context is not None else ""
+    )
     retrieved_evidence_text = (
         "\n\n<retrieved_research_evidence_policy>"
         "服务端已为本轮同时检索群学公共知识与当前任务的个人材料。"
@@ -2975,7 +2989,10 @@ def _compose_agent_prompt(
         if retrieved_evidence is not None
         else ""
     )
-    return f"{prompt}{map_context}{document_context_text}{retrieved_evidence_text}"
+    return (
+        f"{prompt}{map_context}{document_context_text}"
+        f"{material_context_text}{retrieved_evidence_text}"
+    )
 
 
 def _agent_message_history(

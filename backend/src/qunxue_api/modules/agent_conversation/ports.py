@@ -94,7 +94,7 @@ class AgentToolContext(Protocol):
     def read_research_material_context(
         self,
         material_id: str,
-        segment_id: str,
+        segment_id: str | None = None,
         *,
         parse_id: str | None = None,
         before: int = 2,
