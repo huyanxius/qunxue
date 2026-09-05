@@ -166,6 +166,40 @@ export type AgentConversationUpdateRequest = {
 };
 
 /**
+ * AgentMaterialContextRequest
+ */
+export type AgentMaterialContextRequest = {
+    /**
+     * Conversation Id
+     */
+    conversation_id?: string | null;
+};
+
+/**
+ * AgentMaterialContextResponse
+ */
+export type AgentMaterialContextResponse = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Task Id
+     */
+    task_id: string;
+};
+
+/**
+ * AgentMaterialListResponse
+ */
+export type AgentMaterialListResponse = {
+    /**
+     * Items
+     */
+    items: Array<ResearchMaterialResponse>;
+};
+
+/**
  * AgentMessageResponse
  */
 export type AgentMessageResponse = {
@@ -8131,6 +8165,87 @@ export type GetAgentResearchStartProposalResponses = {
 };
 
 export type GetAgentResearchStartProposalResponse = GetAgentResearchStartProposalResponses[keyof GetAgentResearchStartProposalResponses];
+
+export type PrepareAgentMaterialContextData = {
+    body: AgentMaterialContextRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/agent/material-context';
+};
+
+export type PrepareAgentMaterialContextErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type PrepareAgentMaterialContextError = PrepareAgentMaterialContextErrors[keyof PrepareAgentMaterialContextErrors];
+
+export type PrepareAgentMaterialContextResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentMaterialContextResponse;
+};
+
+export type PrepareAgentMaterialContextResponse = PrepareAgentMaterialContextResponses[keyof PrepareAgentMaterialContextResponses];
+
+export type ListAgentMaterialsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/agent/materials';
+};
+
+export type ListAgentMaterialsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListAgentMaterialsError = ListAgentMaterialsErrors[keyof ListAgentMaterialsErrors];
+
+export type ListAgentMaterialsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentMaterialListResponse;
+};
+
+export type ListAgentMaterialsResponse = ListAgentMaterialsResponses[keyof ListAgentMaterialsResponses];
 
 export type ConfirmAgentResearchStartData = {
     body: ConfirmResearchStartRequest;

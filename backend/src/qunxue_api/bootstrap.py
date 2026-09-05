@@ -54,6 +54,7 @@ from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
+from qunxue_api.adapters.sqlite.material_vector_cache import SqliteMaterialVectorCache
 from qunxue_api.adapters.sqlite.phenomenon_repository import SqlitePhenomenonRepository
 from qunxue_api.adapters.sqlite.professional_material_repository import (
     SqliteProfessionalMaterialRepository,
@@ -880,6 +881,9 @@ def create_app(
                         workflow=agent_research_workflow,
                         materials=material_repository,
                         material_search=SqliteResearchMaterialSearchRepository(session),
+                        material_vector_cache_factory=lambda **scope: SqliteMaterialVectorCache(
+                            session, **scope
+                        ),
                         analysis=analysis_application,
                     ),
                 )

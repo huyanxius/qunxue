@@ -278,6 +278,11 @@ class ResearchMaterialApplication:
         self._commit()
         return completed
 
+    def list_owned(
+        self, *, user_id: UUID, limit: int = 100, offset: int = 0
+    ) -> tuple[ResearchMaterial, ...]:
+        return self._materials.list_owned(user_id=user_id, limit=limit, offset=offset)
+
     def list(self, *, user_id: UUID, task_id: UUID) -> tuple[ResearchMaterial, ...]:
         self._require_task(user_id=user_id, task_id=task_id)
         return self._materials.list(user_id=user_id, task_id=task_id)

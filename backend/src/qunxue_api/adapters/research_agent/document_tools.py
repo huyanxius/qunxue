@@ -230,6 +230,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         workflow: ResearchWorkflowCoordinator | None = None,
         materials: ResearchMaterialReader | None = None,
         material_search: ResearchMaterialSearchReader | None = None,
+        material_vector_cache_factory=None,
         analysis: ResearchAnalysisAgentFacade | None = None,
     ) -> None:
         super().__init__(catalog, retriever=retriever, web_research=web_research)
@@ -238,6 +239,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._workflow = workflow
         self._materials = materials
         self._material_search = material_search
+        # Public-catalog lexical fallback must not replace the private FTS index.
+        self._material_retriever = retriever
+        self._material_vector_cache_factory = material_vector_cache_factory
         self._analysis = analysis
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
@@ -287,11 +291,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             raise ValueError("an Agent turn accepts at most 20 research materials")
         attachments: list[AgentMaterialAttachment] = []
         for material_id in unique_ids:
-            material = self._materials.get(
-                material_id,
-                user_id=user_id,
-                task_id=task_id,
-            )
+            material = self._owned_material(material_id, user_id=user_id, task_id=task_id)
             if (
                 material is None
                 or material.status is not MaterialStatus.READY
@@ -302,7 +302,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 material_id,
                 material.current_parse_id,
                 user_id=user_id,
-                task_id=task_id,
+                task_id=material.task_id,
             )
             if parsed is None or parsed.status is not MaterialStatus.READY:
                 raise ValueError("attached research material requires a ready current parse")
@@ -325,6 +325,43 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._material_scope = (
             {item.material_id: item.parse_id for item in attachments}
         )
+
+    def _owned_material(self, material_id: UUID, *, user_id: UUID, task_id: UUID):
+        get_owned = getattr(self._materials, "get_owned", None)
+        if callable(get_owned):
+            return get_owned(material_id, user_id=user_id)
+        return self._materials.get(material_id, user_id=user_id, task_id=task_id)
+
+    @property
+    def material_prompt_context(self) -> list[dict[str, object]]:
+        context = self._material_context()
+        if context is None or not self._material_scope:
+            return []
+        user_id, task_id, materials = context
+        result = []
+        for material_id, parse_id in self._material_scope.items():
+            material = self._owned_material(material_id, user_id=user_id, task_id=task_id)
+            if material is None or not self._material_allows_external_model(
+                materials,
+                material_id,
+                user_id=user_id,
+                task_id=material.task_id,
+            ):
+                continue
+            parsed = materials.get_parse(
+                material_id, parse_id, user_id=user_id, task_id=material.task_id
+            )
+            if parsed is not None and parsed.blocks:
+                result.append(
+                    {
+                        "material_id": str(material_id),
+                        "parse_id": str(parse_id),
+                        "filename": material.display_name or material.original_filename,
+                        "first_segment_id": parsed.blocks[0].segment_id,
+                        "segment_count": len(parsed.blocks),
+                    }
+                )
+        return result
 
     @property
     def document_prompt_context(self) -> dict[str, object] | None:
@@ -663,7 +700,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         """Search the current task's readable material blocks.
 
         Authorization is applied before retrieval: deleted materials, stale
-        parse versions, and blocks from another user/task never enter the
+        parse versions, and blocks outside the owned selection never enter the
         candidate set.  The shared ``HybridRetriever.search_chunks`` method is
         used when configured; a deterministic lexical fallback keeps the
         zero-config local runner useful without introducing another index.
@@ -682,19 +719,27 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         safe_limit = max(1, min(int(limit), 50))
         chunks: list[object] = []
         metadata: dict[str, tuple[ResearchMaterial, MaterialBlock]] = {}
-        try:
-            rows = materials.list(
-                user_id=user_id,
-                task_id=task_id,
-                include_deleted=False,
-                limit=500,
-                offset=0,
+        if self._material_scope is not None:
+            rows = tuple(
+                material
+                for material_id in self._material_scope
+                if (material := self._owned_material(material_id, user_id=user_id, task_id=task_id))
+                is not None
             )
-        except TypeError:
-            # Keep compatibility with narrow test doubles and older adapters;
-            # ownership is still supplied to every subsequent read.
-            rows = materials.list(user_id=user_id, task_id=task_id)
-
+        else:
+            try:
+                rows = materials.list(
+                    user_id=user_id,
+                    task_id=task_id,
+                    include_deleted=False,
+                    limit=500,
+                    offset=0,
+                )
+            except TypeError:
+                # Keep compatibility with narrow test doubles and older adapters;
+                # ownership is still supplied to every subsequent read.
+                rows = materials.list(user_id=user_id, task_id=task_id)
+        scoped_parses: dict[UUID, MaterialParseVersion] = {}
         allowed_materials: dict[UUID, ResearchMaterial] = {}
         for material in rows:
             scoped_parse_id = (
@@ -709,20 +754,43 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                     material.material_id,
                     scoped_parse_id,
                     user_id=user_id,
-                    task_id=task_id,
+                    task_id=material.task_id,
                 )
                 if scoped_parse is None or scoped_parse.status is not MaterialStatus.READY:
                     continue
+                scoped_parses[material.material_id] = scoped_parse
             elif material.status is not MaterialStatus.READY or material.current_parse_id is None:
                 continue
             if self._material_allows_external_model(
                 materials,
                 material.material_id,
                 user_id=user_id,
-                task_id=task_id,
+                task_id=material.task_id,
             ):
                 allowed_materials[material.material_id] = material
-        if self._material_search is not None:
+        # A small selected corpus fits in the answer context without model retrieval.
+        # Keep the same source IDs and block locators as the long-file search path.
+        if self._material_scope and allowed_materials:
+            small_blocks = [
+                (material_id, block)
+                for material_id in allowed_materials
+                for block in scoped_parses[material_id].blocks
+            ]
+            if (
+                len(small_blocks) <= safe_limit
+                and sum(len(block.text) for _, block in small_blocks) <= 6000
+            ):
+                direct = []
+                for material_id, block in small_blocks:
+                    item = self.read_research_material_context(
+                        str(material_id), block.segment_id, before=0, after=0,
+                    )
+                    if "error" not in item:
+                        direct.append({**item, "retrieval_mode": "direct"})
+                return direct
+        if self._material_search is not None and not callable(
+            getattr(self._material_retriever, "search_chunks", None)
+        ):
             if not allowed_materials:
                 return []
             material_parse_ids = (
@@ -734,19 +802,27 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 if self._material_scope is not None
                 else ()
             )
-            result = self._material_search.search(
-                user_id=user_id,
-                task_id=task_id,
-                query=normalized_query,
-                material_ids=(
-                    () if material_parse_ids else tuple(allowed_materials)
-                ),
-                material_parse_ids=material_parse_ids,
-                limit=safe_limit,
-                offset=0,
-            )
+            search_hits = []
+            for source_task_id in dict.fromkeys(
+                item.task_id for item in allowed_materials.values()
+            ):
+                source_ids = tuple(
+                    key for key, item in allowed_materials.items() if item.task_id == source_task_id
+                )
+                result = self._material_search.search(
+                    user_id=user_id,
+                    task_id=source_task_id,
+                    query=normalized_query,
+                    material_ids=source_ids,
+                    material_parse_ids=tuple(
+                        pair for pair in material_parse_ids if pair[0] in source_ids
+                    ),
+                    limit=safe_limit,
+                    offset=0,
+                )
+                search_hits.extend(result.items)
             values: list[dict[str, object]] = []
-            for hit in result.items:
+            for hit in sorted(search_hits, key=lambda item: -item.score)[:safe_limit]:
                 if hit.material_id not in allowed_materials:
                     continue
                 citation_id = _material_citation_id(hit.material_id, hit.segment_id)
@@ -761,7 +837,10 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                     material_id=str(hit.material_id),
                     parse_id=str(hit.parse_id),
                     segment_id=hit.segment_id,
-                    locator=hit.locator.as_dict(),
+                    locator={
+                        **hit.locator.as_dict(),
+                        "task_id": str(allowed_materials[hit.material_id].task_id),
+                    },
                 )
                 self.evidence[citation_id] = evidence
                 values.append(
@@ -777,7 +856,10 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                         "material_kind": hit.material_kind.value,
                         "material_format": hit.material_format.value,
                         "excerpt": hit.excerpt,
-                        "locator": hit.locator.as_dict(),
+                        "locator": {
+                            **hit.locator.as_dict(),
+                            "task_id": str(allowed_materials[hit.material_id].task_id),
+                        },
                         "retrieval_index_id": "research-material-fts5",
                         "retrieval_mode": "fts5",
                         "retrieval_sources": ["lexical"],
@@ -806,14 +888,14 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 materials,
                 material.material_id,
                 user_id=user_id,
-                task_id=task_id,
+                task_id=material.task_id,
             ):
                 continue
             parsed = materials.get_parse(
                 material.material_id,
                 resolved_parse_id,
                 user_id=user_id,
-                task_id=task_id,
+                task_id=material.task_id,
             )
             if parsed is None or parsed.status is not MaterialStatus.READY:
                 continue
@@ -853,7 +935,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 material_id=str(material.material_id),
                 parse_id=str(block.parse_id),
                 segment_id=block.segment_id,
-                locator=block.locator.as_dict(),
+                locator={**block.locator.as_dict(), "task_id": str(material.task_id)},
             )
             self.evidence[citation_id] = evidence
             values.append(
@@ -869,7 +951,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                     "material_kind": material.material_kind.value,
                     "material_format": material.material_format.value,
                     "excerpt": block.text,
-                    "locator": block.locator.as_dict(),
+                    "locator": {**block.locator.as_dict(), "task_id": str(material.task_id)},
                     "retrieval_index_id": result.retrieval_index_id,
                     "retrieval_mode": result.mode,
                     "retrieval_sources": list(hit.retrieval_sources),
@@ -918,10 +1000,10 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 "error": "research_material_outside_turn_scope",
                 "material_id": material_id,
             }
-        material = materials.get(
-            parsed_material_id,
-            user_id=user_id,
-            task_id=task_id,
+        material = (
+            self._owned_material(parsed_material_id, user_id=user_id, task_id=task_id)
+            if scoped_parse_id is not None
+            else materials.get(parsed_material_id, user_id=user_id, task_id=task_id)
         )
         if material is None or (
             scoped_parse_id is None and material.status is not MaterialStatus.READY
@@ -931,7 +1013,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             materials,
             parsed_material_id,
             user_id=user_id,
-            task_id=task_id,
+            task_id=material.task_id,
         ):
             return {
                 "error": "research_material_model_processing_restricted",
@@ -968,7 +1050,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             parsed_material_id,
             resolved_parse_id,
             user_id=user_id,
-            task_id=task_id,
+            task_id=material.task_id,
         )
         if parsed is None or parsed.status is not MaterialStatus.READY:
             return {
@@ -1006,7 +1088,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             material_id=str(material.material_id),
             parse_id=str(target.parse_id),
             segment_id=target.segment_id,
-            locator=target.locator.as_dict(),
+            locator={**target.locator.as_dict(), "task_id": str(material.task_id)},
         )
         return {
             "citation_id": citation_id,
@@ -1021,8 +1103,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             "material_format": material.material_format.value,
             "text": target.text,
             "excerpt": target.text,
-            "locator": target.locator.as_dict(),
+            "locator": {**target.locator.as_dict(), "task_id": str(material.task_id)},
             "context": context_items,
+            "next_segment_id": parsed.blocks[end].segment_id if end < len(parsed.blocks) else None,
             "evidence_status": "verified",
         }
 
@@ -1061,13 +1144,27 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         limit: int,
         task_id: UUID,
     ):
-        search_chunks = getattr(self._retriever, "search_chunks", None)
+        search_chunks = getattr(self._material_retriever, "search_chunks", None)
         if callable(search_chunks):
-            return search_chunks(
-                query=query,
-                chunks=tuple(chunks),
-                limit=limit,
-            )
+            from inspect import signature
+
+            from qunxue_api.adapters.retrieval import RetrievalPipelineUnavailable
+
+            cache_factory = self._material_vector_cache_factory
+            options = {}
+            if (
+                self._material_scope
+                and callable(cache_factory)
+                and "vector_cache" in signature(search_chunks).parameters
+            ):
+                options["vector_cache"] = cache_factory(
+                    user_id=self._user_id, parse_ids=self._material_scope
+                )
+            try:
+                return search_chunks(query=query, chunks=tuple(chunks), limit=limit, **options)
+            except RetrievalPipelineUnavailable:
+                # Keep a source-grounded lexical path when optional model retrieval is unavailable.
+                pass
         # Test/local retrievers that predate the shared transient-chunk method
         # still receive deterministic lexical ranking; production configured
         # HybridRetriever always takes the branch above.

@@ -142,6 +142,10 @@ class ResearchMaterialResponse(BaseModel):
         )
 
 
+class AgentMaterialListResponse(BaseModel):
+    items: list[ResearchMaterialResponse]
+
+
 class ResearchMaterialListResponse(BaseModel):
     task_id: UUID
     items: list[ResearchMaterialResponse]

@@ -150,6 +150,32 @@ class SqliteResearchMaterialRepository:
             query = query.where(ResearchMaterialRow.status != MaterialStatus.DELETED.value)
         return self._to_domain(self._session.scalar(query))
 
+    def get_owned(self, material_id: UUID, *, user_id: UUID) -> ResearchMaterial | None:
+        return self._to_domain(
+            self._session.scalar(
+                select(ResearchMaterialRow).where(
+                    ResearchMaterialRow.material_id == str(material_id),
+                    ResearchMaterialRow.user_id == str(user_id),
+                    ResearchMaterialRow.status != MaterialStatus.DELETED.value,
+                )
+            )
+        )
+
+    def list_owned(
+        self, *, user_id: UUID, limit: int = 100, offset: int = 0
+    ) -> tuple[ResearchMaterial, ...]:
+        rows = self._session.scalars(
+            select(ResearchMaterialRow)
+            .where(
+                ResearchMaterialRow.user_id == str(user_id),
+                ResearchMaterialRow.status != MaterialStatus.DELETED.value,
+            )
+            .order_by(ResearchMaterialRow.created_at.desc(), ResearchMaterialRow.material_id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return tuple(self._to_domain(row) for row in rows)
+
     def is_external_model_processable(
         self,
         material_id: UUID,

@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 from qunxue_api.api.contracts.agent import (
@@ -16,6 +16,8 @@ from qunxue_api.api.contracts.agent import (
     AgentConversationResponse,
     AgentConversationSummaryResponse,
     AgentConversationUpdateRequest,
+    AgentMaterialContextRequest,
+    AgentMaterialContextResponse,
     AgentMessageResponse,
     AgentResearchJourneyResponse,
     AgentTurnRequest,
@@ -25,7 +27,12 @@ from qunxue_api.api.contracts.agent import (
     ResearchStartProposalResponse,
 )
 from qunxue_api.api.contracts.common import ErrorResponse
-from qunxue_api.api.dependencies import CurrentSessionDependency
+from qunxue_api.api.contracts.research_materials import AgentMaterialListResponse
+from qunxue_api.api.dependencies import (
+    CurrentSessionDependency,
+    ResearchMaterialApplicationDependency,
+)
+from qunxue_api.api.routes.research_materials import _material_response
 from qunxue_api.api.routes.research_tasks import _match_status, _navigation_response
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.agent_conversation import (
@@ -100,6 +107,45 @@ def _effective_agent_runtime_mode(request: Request) -> AgentRuntimeMode:
     if settings.runtime_mode != "mock":
         return settings.runtime_mode
     return "base" if settings.has_model_api_key else "mock"
+
+
+@router.post(
+    "/material-context",
+    response_model=AgentMaterialContextResponse,
+    operation_id="prepare_agent_material_context",
+)
+def prepare_agent_material_context(
+    payload: AgentMaterialContextRequest,
+    request: Request,
+    current: CurrentSessionDependency,
+    idempotency_key: IdempotencyKey,
+) -> AgentMaterialContextResponse:
+    with request.app.state.disciplinary_agent_scope() as app:
+        conversation_id, task_id = app.prepare_material_context(
+            user_id=current.user.user_id,
+            conversation_id=payload.conversation_id,
+            idempotency_key=idempotency_key,
+        )
+        return AgentMaterialContextResponse(conversation_id=conversation_id, task_id=task_id)
+
+
+@router.get(
+    "/materials", response_model=AgentMaterialListResponse, operation_id="list_agent_materials"
+)
+def list_agent_materials(
+    current: CurrentSessionDependency,
+    application: ResearchMaterialApplicationDependency,
+    limit: int = Query(100, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> AgentMaterialListResponse:
+    return AgentMaterialListResponse(
+        items=[
+            _material_response(application, item)
+            for item in application.list_owned(
+                user_id=current.user.user_id, limit=limit, offset=offset
+            )
+        ]
+    )
 
 
 @router.get(

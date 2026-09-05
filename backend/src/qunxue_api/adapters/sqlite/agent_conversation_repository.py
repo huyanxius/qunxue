@@ -2,7 +2,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -102,6 +102,19 @@ class SqliteConversationRepository:
                 .order_by(AgentMessageRow.sequence)
             )
         )
+        run_attachments = {
+            run.turn_id: {
+                str(item["material_id"]): str(item["parse_id"])
+                for item in (run.material_attachments or [])
+            }
+            for run in self._session.scalars(
+                select(AgentRunRow).where(
+                    AgentRunRow.conversation_id == str(conversation_id),
+                    AgentRunRow.status == "completed",
+                    AgentRunRow.turn_id.is_not(None),
+                )
+            )
+        }
         run_summaries = {
             row.turn_id: tuple(dict(item) for item in (row.tool_summary or []))
             for row in self._session.scalars(
@@ -118,10 +131,12 @@ class SqliteConversationRepository:
             user_row, assistant_row = messages[index : index + 2]
             if user_row.role != "user" or assistant_row.role != "assistant":
                 continue
+            selected = run_attachments.get(str(user_row.turn_id), {})
             citations = tuple(
                 _restore_citation(
                     item,
                     session=self._session,
+                    attachments=selected,
                     user_id=UUID(row.user_id),
                     task_id=(
                         UUID(row.current_research_task_id)
@@ -134,6 +149,7 @@ class SqliteConversationRepository:
             raw_tool_summary = run_summaries.get(str(user_row.turn_id), ())
             unavailable_trace_material_ids = _unavailable_trace_material_ids(
                 raw_tool_summary,
+                attachments=selected,
                 session=self._session,
                 user_id=UUID(row.user_id),
                 task_id=(
@@ -247,7 +263,11 @@ class SqliteConversationRepository:
         )
         if existing is not None and existing.status == "completed":
             return IdempotentTurn(UUID(existing.turn_id or existing.run_id))
-        self._require_live_material_citations(conversation=conversation, turn=turn)
+        self._require_live_material_citations(
+            conversation=conversation,
+            turn=turn,
+            attachments=existing.material_attachments if existing else (),
+        )
         self._session.add_all(
             [
                 AgentMessageRow(
@@ -284,7 +304,9 @@ class SqliteConversationRepository:
         *,
         conversation: Conversation,
         turn: AgentTurn,
+        attachments=(),
     ) -> None:
+        selected = {str(item["material_id"]): str(item["parse_id"]) for item in attachments}
         material_citations = tuple(
             citation
             for citation in turn.assistant_message.citations
@@ -304,12 +326,16 @@ class SqliteConversationRepository:
                 select(ResearchMaterialRow).where(
                     ResearchMaterialRow.material_id == citation.material_id,
                     ResearchMaterialRow.user_id == str(conversation.user_id),
-                    ResearchMaterialRow.task_id == task_id,
                     ResearchMaterialRow.status != "deleted",
                 )
             )
             if (
                 material is None
+                or (
+                    material.task_id != task_id
+                    and selected.get(citation.material_id) != citation.parse_id
+                )
+                or (selected and selected.get(citation.material_id) != citation.parse_id)
                 or citation.parse_id is None
                 or citation.segment_id is None
             ):
@@ -577,6 +603,7 @@ def _restore_citation(
     session: Session,
     user_id: UUID,
     task_id: UUID | None,
+    attachments: dict[str, str] | None = None,
 ) -> AgentCitation:
     citation = _citation(item)
     if not citation.material_id:
@@ -589,8 +616,10 @@ def _restore_citation(
     if (
         material is None
         or material.user_id != str(user_id)
-        or task_id is None
-        or material.task_id != str(task_id)
+        or (
+            material.task_id != str(task_id)
+            and (attachments or {}).get(citation.material_id) != citation.parse_id
+        )
         or material.status == "deleted"
     ):
         return _redact_deleted_material_citation(citation)
@@ -621,16 +650,20 @@ def _unavailable_trace_material_ids(
     session: Session,
     user_id: UUID,
     task_id: UUID | None,
+    attachments: dict[str, str] | None = None,
 ) -> set[str]:
     referenced = _material_ids(tool_summary)
-    if not referenced or task_id is None:
+    if not referenced:
         return referenced
     live = set(
         session.scalars(
             select(ResearchMaterialRow.material_id).where(
                 ResearchMaterialRow.material_id.in_(referenced),
                 ResearchMaterialRow.user_id == str(user_id),
-                ResearchMaterialRow.task_id == str(task_id),
+                or_(
+                    ResearchMaterialRow.task_id == str(task_id),
+                    ResearchMaterialRow.material_id.in_(tuple(attachments or {})),
+                ),
                 ResearchMaterialRow.status != "deleted",
             )
         )
