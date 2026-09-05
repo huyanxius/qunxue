@@ -1,5 +1,6 @@
 import { MeshGradient } from '@paper-design/shaders-react'
 import { useEffect, useState } from 'react'
+import './research-map-idle-shader.css'
 
 function usePrefersReducedMotion() {
   const [reducedMotion, setReducedMotion] = useState(() => (
@@ -19,7 +20,9 @@ function usePrefersReducedMotion() {
   return reducedMotion
 }
 
-export function ResearchMapIdleShader() {
+export function ResearchMapIdleShader({
+  colors = ['#f7f7f4', '#e8ede9', '#cbd6cf', '#ece5e1'],
+}: { colors?: string[] }) {
   const reducedMotion = usePrefersReducedMotion()
   const supportsWebGl2 = typeof window !== 'undefined' && 'WebGL2RenderingContext' in window
 
@@ -29,7 +32,7 @@ export function ResearchMapIdleShader() {
     <div aria-hidden="true" className="research-map__idle-shader">
       <MeshGradient
         className="research-map__idle-shader-canvas"
-        colors={['#f7f7f4', '#e8ede9', '#cbd6cf', '#ece5e1']}
+        colors={colors}
         distortion={0.56}
         fit="cover"
         frame={980}
