@@ -7,10 +7,11 @@ from collections.abc import Iterator
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 from qunxue_api.api.contracts.agent import (
+    AgentCanvasNodeEditRequest,
     AgentCitationResponse,
     AgentConversationListResponse,
     AgentConversationResponse,
@@ -39,6 +40,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentInterrupted,
     AgentResearchEvent,
     AgentToolEvent,
+    CanvasEditConflict,
     ConversationNotFound,
     ConversationTaskBindingConflict,
     ResearchMaterialCitationUnavailable,
@@ -206,6 +208,35 @@ def update_agent_conversation(
                 title=payload.title,
             )
         )
+
+
+@router.patch(
+    "/conversations/{conversation_id}/research-map/nodes/{node_id}",
+    response_model=AgentConversationResponse,
+    operation_id="edit_agent_canvas_node",
+    responses={409: {"model": ErrorResponse}},
+)
+def edit_agent_canvas_node(
+    conversation_id: UUID,
+    node_id: str,
+    payload: AgentCanvasNodeEditRequest,
+    request: Request,
+    current: CurrentSessionDependency,
+    _idempotency_key: IdempotencyKey,
+) -> AgentConversationResponse:
+    with request.app.state.disciplinary_agent_scope() as app:
+        try:
+            result = app.edit_canvas_node(
+                user_id=current.user.user_id,
+                conversation_id=conversation_id,
+                node_id=node_id,
+                **payload.model_dump(),
+            )
+        except CanvasEditConflict as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return _conversation(result, release_ids=app.release_ids_by_turn(
+            user_id=current.user.user_id, conversation_id=conversation_id,
+        ))
 
 
 @router.delete(
@@ -498,10 +529,13 @@ def stream_agent_turn(
                         raise RuntimeError("Agent worker returned no execution")
                     if execution.pending_research is not None:
                         pending = execution.pending_research
-                        yield _event("research_waiting", {
-                            "run_id": str(execution.run_id),
-                            **pending,
-                        })
+                        yield _event(
+                            "research_waiting",
+                            {
+                                "run_id": str(execution.run_id),
+                                **pending,
+                            },
+                        )
                         break
                     if not streamed_answer:
                         yield _event("agent_status", {"status": "answering"})
@@ -658,6 +692,7 @@ def _conversation(
             for turn in item.turns
         ],
         research_map=dict(item.research_map),
+        canvas_edit_version=item.canvas_edit_version,
     )
 
 

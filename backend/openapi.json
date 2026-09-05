@@ -58,6 +58,52 @@
         "title": "AcknowledgePartialMatchRequest",
         "type": "object"
       },
+      "AgentCanvasNodeEditRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_summary": {
+            "anyOf": [
+              {
+                "maxLength": 1200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Summary"
+          },
+          "expected_title": {
+            "maxLength": 240,
+            "title": "Expected Title",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "summary": {
+            "maxLength": 1200,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "expected_title",
+          "expected_version"
+        ],
+        "title": "AgentCanvasNodeEditRequest",
+        "type": "object"
+      },
       "AgentCitationResponse": {
         "properties": {
           "citation_id": {
@@ -193,6 +239,11 @@
       },
       "AgentConversationResponse": {
         "properties": {
+          "canvas_edit_version": {
+            "default": 0,
+            "title": "Canvas Edit Version",
+            "type": "integer"
+          },
           "conversation_id": {
             "format": "uuid",
             "title": "Conversation Id",
@@ -514,6 +565,11 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "user_edited": {
+            "default": false,
+            "title": "User Edited",
+            "type": "boolean"
           }
         },
         "required": [
@@ -15207,6 +15263,109 @@
           }
         },
         "summary": "Get Agent Research Journey",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/agent/conversations/{conversation_id}/research-map/nodes/{node_id}": {
+      "patch": {
+        "operationId": "edit_agent_canvas_node",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCanvasNodeEditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConversationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Edit Agent Canvas Node",
         "tags": [
           "agent"
         ]

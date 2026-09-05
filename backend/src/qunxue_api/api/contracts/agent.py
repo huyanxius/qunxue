@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from qunxue_api.api.contracts.research_tasks import ResearchTaskNavigationResponse
 from qunxue_api.modules.research_intake import ResearchStartProposal
@@ -52,6 +52,7 @@ class AgentToolTraceResponse(BaseModel):
 
 
 class AgentResearchMapNodeResponse(BaseModel):
+    user_edited: bool = Field(default=False, exclude_if=lambda value: not value)
     id: str
     kind: Literal["question", "theory", "claim", "evidence", "gap", "synthesis"]
     title: str
@@ -100,6 +101,7 @@ class AgentConversationSummaryResponse(BaseModel):
 
 
 class AgentConversationResponse(AgentConversationSummaryResponse):
+    canvas_edit_version: int = 0
     created_at: datetime
     turns: list[AgentTurnResponse]
     research_map: AgentResearchMapResponse
@@ -150,9 +152,7 @@ class ResearchStartProposalResponse(BaseModel):
     confirmed_at: datetime | None
 
     @classmethod
-    def from_domain(
-        cls, proposal: ResearchStartProposal
-    ) -> "ResearchStartProposalResponse":
+    def from_domain(cls, proposal: ResearchStartProposal) -> "ResearchStartProposalResponse":
         return cls(
             proposal_id=proposal.proposal_id,
             conversation_id=proposal.conversation_id,
@@ -192,3 +192,12 @@ class AgentResearchJourneyResponse(BaseModel):
     task_id: UUID | None
     proposal: ResearchStartProposalResponse | None
     navigation: ResearchTaskNavigationResponse | None
+
+
+class AgentCanvasNodeEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=240)]
+    summary: str = Field(max_length=1200)
+    expected_title: str = Field(max_length=240)
+    expected_summary: str | None = Field(default=None, max_length=1200)
+    expected_version: int = Field(ge=0)
