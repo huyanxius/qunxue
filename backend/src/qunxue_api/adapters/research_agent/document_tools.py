@@ -364,6 +364,15 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         return result
 
     @property
+    def material_prompt_context(self) -> dict[str, object] | None:
+        if not self.research_material_tools_enabled or not self._material_scope:
+            return None
+        return {"attachments": [
+            {"material_id": str(material_id), "parse_id": str(parse_id)}
+            for material_id, parse_id in self._material_scope.items()
+        ]}
+
+    @property
     def document_prompt_context(self) -> dict[str, object] | None:
         if not self.research_document_tools_enabled or self._task_id is None:
             return None
@@ -966,13 +975,16 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     def read_research_material_context(
         self,
         material_id: str,
-        segment_id: str,
+        segment_id: str | None = None,
         *,
         parse_id: str | None = None,
         before: int = 2,
         after: int = 2,
     ) -> dict[str, object]:
-        """Read a target segment with bounded neighboring source blocks.
+        """Open a file from its first block, or reopen a cited segment.
+
+        An omitted segment ID lets an attachment open without a search hit.
+        The returned next segment ID allows sequential reading of longer files.
 
         A citation may point at an immutable parse that is no longer current.
         Callers should pass its ``parse_id`` when reopening that citation;
@@ -1059,7 +1071,8 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
                 "parse_id": parse_id,
             }
         target_index = next(
-            (index for index, block in enumerate(parsed.blocks) if block.segment_id == segment_id),
+            (index for index, block in enumerate(parsed.blocks)
+             if segment_id is None or block.segment_id == segment_id),
             None,
         )
         if target_index is None:
