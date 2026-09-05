@@ -6,25 +6,33 @@ import type { KnowledgeGraphProjection } from './types'
 
 const views = new Map<string, { positions: Record<string, { x: number; y: number }>; zoom: number; pan: { x: number; y: number } }>()
 
-const style: cytoscape.StylesheetJson = [
+function canvasStyle(element: HTMLElement): cytoscape.StylesheetJson {
+  const tokens = getComputedStyle(element)
+  const token = (name: string) => tokens.getPropertyValue(name).trim()
+  const ink = token('--qx-color-ink')
+  const muted = token('--qx-color-muted')
+  const border = token('--qx-color-rule')
+  const surface = token('--qx-color-surface-muted')
+  return [
   { selector: 'node', style: {
-    label: 'data(label)', 'background-color': '#777d7e', width: 13, height: 13,
-    color: '#303331', 'font-size': 13, 'font-family': '"Songti SC", serif',
+    label: 'data(label)', 'background-color': muted, width: 13, height: 13,
+    color: ink, 'font-size': 13, 'font-family': token('--qx-font-ui'),
     'text-valign': 'bottom', 'text-margin-y': 10, 'text-wrap': 'ellipsis',
     'text-max-width': '160px', 'min-zoomed-font-size': 9, 'overlay-padding': 12,
-    'border-width': 3, 'border-color': '#f5f5f7',
+    'border-width': 3, 'border-color': surface,
   } },
-  { selector: 'node[nodeType = "dimension"]', style: { width: 27, height: 27, 'background-color': '#343c38', 'font-size': 16, 'font-weight': 600 } },
-  { selector: 'node[nodeType = "category"]', style: { width: 19, height: 19, 'background-color': '#a0a6a1', 'font-size': 14 } },
-  { selector: 'node.active', style: { width: 24, height: 24, 'background-color': '#405b49', 'border-color': '#ced9cf', 'border-width': 6, 'font-weight': 600, 'font-size': 16 } },
-  { selector: 'edge', style: { 'curve-style': 'bezier', width: 1.5, 'line-color': '#b7beb9', 'target-arrow-color': '#64766a', 'arrow-scale': 0.8, 'overlay-padding': 8 } },
-  { selector: 'edge[layer = "structure"]', style: { width: 1, 'line-color': '#cbd0cd', 'line-style': 'dotted' } },
-  { selector: 'edge[layer = "reviewed"]', style: { width: 2, 'line-color': '#64766a' } },
-  { selector: 'edge[layer = "candidate"]', style: { 'line-style': 'dashed', 'line-color': '#a28558' } },
+  { selector: 'node[nodeType = "dimension"]', style: { width: 27, height: 27, 'background-color': ink, 'font-size': 16, 'font-weight': 600 } },
+  { selector: 'node[nodeType = "category"]', style: { width: 19, height: 19, 'background-color': muted, 'font-size': 14 } },
+  { selector: 'node.active', style: { width: 24, height: 24, 'background-color': ink, 'border-color': border, 'border-width': 6, 'font-weight': 600, 'font-size': 16 } },
+  { selector: 'edge', style: { 'curve-style': 'bezier', width: 1.5, 'line-color': border, 'target-arrow-color': muted, 'arrow-scale': 0.8, 'overlay-padding': 8 } },
+  { selector: 'edge[layer = "structure"]', style: { width: 1, 'line-color': border, 'line-style': 'dotted' } },
+  { selector: 'edge[layer = "reviewed"]', style: { width: 2, 'line-color': muted } },
+  { selector: 'edge[layer = "candidate"]', style: { 'line-style': 'dashed', 'line-color': muted } },
   { selector: 'edge[direction = "outbound"], edge[direction = "directed"], edge[direction = "bidirectional"]', style: { 'target-arrow-shape': 'triangle' } },
-  { selector: 'edge[direction = "bidirectional"]', style: { 'source-arrow-shape': 'triangle', 'source-arrow-color': '#64766a' } },
-  { selector: 'edge.active, edge:selected', style: { label: 'data(label)', 'font-size': 12, color: '#34443a', 'text-background-color': '#f5f5f7', 'text-background-opacity': 1, 'text-background-padding': '5px', width: 2.5 } },
-]
+  { selector: 'edge[direction = "bidirectional"]', style: { 'source-arrow-shape': 'triangle', 'source-arrow-color': muted } },
+  { selector: 'edge.active, edge:selected', style: { label: 'data(label)', 'font-size': 12, color: ink, 'text-background-color': surface, 'text-background-opacity': 1, 'text-background-padding': '5px', width: 2.5 } },
+  ]
+}
 
 export function ExplorationCanvas({ projection, selectedId, centerId, resetKey, sessionKey, onSelect, onEdge }: {
   sessionKey: string
@@ -49,7 +57,7 @@ export function ExplorationCanvas({ projection, selectedId, centerId, resetKey, 
     let cy: Core | undefined
     let resize: ResizeObserver | undefined
     try {
-      cy = cytoscape({ container: canvas.current, elements: [], layout: { name: 'preset' }, style,
+      cy = cytoscape({ container: canvas.current, elements: [], layout: { name: 'preset' }, style: canvasStyle(canvas.current),
         minZoom: 0.3, maxZoom: 2.6, wheelSensitivity: 0.2, boxSelectionEnabled: false })
       graph.current = cy
       cy.on('tap', 'node', (event) => callbacks.current.onSelect(event.target.id()))
