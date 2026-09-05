@@ -417,3 +417,14 @@ describe('research agent SSE adapter', () => {
     })
   })
 })
+
+it('ends repeated connection failures so the user can recover explicitly', async () => {
+  vi.useFakeTimers()
+  const fetch = vi.fn(async () => { throw new TypeError('offline') })
+  vi.stubGlobal('fetch', fetch)
+  const result = expect(streamAgentTurn({ conversation_id: 'a', message: '保留问题', idempotencyKey: 'same-run' }, () => undefined)).rejects.toThrow(/连接|offline|中断/)
+  await vi.advanceTimersByTimeAsync(10_000)
+  expect(fetch.mock.calls.length).toBeLessThanOrEqual(4)
+  await result
+  vi.useRealTimers()
+})
