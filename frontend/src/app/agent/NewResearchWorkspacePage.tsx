@@ -141,6 +141,7 @@ function ResearchStartRecoveryError({ message, busy, onRetry, onContinue }: {
 
 export function NewResearchWorkspacePage({ userId }: { userId: string | null }) {
   const navigate = useNavigate()
+  const [mobilePane, setMobilePane] = useState<'agent' | 'map'>('agent')
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = searchParams.get('knowledge_release_id')
@@ -415,7 +416,11 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     <PageShell workspace wide railContentRef={setHistoryRailTarget}>
       <PageContent>
         <section className="new-research" aria-label="新建研究工作区">
-          <div ref={workspaceRef} className="new-research__workspace" data-resizing={resizingAgentPanel} style={{ '--new-research-agent-width': `${agentPanelWidth}px` } as CSSProperties}>
+          <nav className="mobile-only mobile-pane-tabs" aria-label="研究工作区视图">
+            <button type="button" aria-pressed={mobilePane === 'agent'} onClick={() => setMobilePane('agent')}>Agent</button>
+            <button type="button" aria-pressed={mobilePane === 'map'} onClick={() => setMobilePane('map')}>研究地图</button>
+          </nav>
+          <div data-mobile-pane={mobilePane} ref={workspaceRef} className="new-research__workspace" data-resizing={resizingAgentPanel} style={{ '--new-research-agent-width': `${agentPanelWidth}px` } as CSSProperties}>
             <div className="new-research__map-column">
               <ResearchMapCanvas
                 projection={projection}
