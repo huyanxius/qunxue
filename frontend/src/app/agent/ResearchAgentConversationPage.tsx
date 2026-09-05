@@ -99,7 +99,7 @@ import {
 import { ProjectCreatePopover } from './ProjectCreatePopover'
 import { ProjectScopeMenu } from './ProjectScopeMenu'
 import { ProjectConversationList } from './ProjectConversationList'
-import { listResearchProjects, type ResearchProject } from '../../modules/research-projects'
+import { deleteResearchProject, listResearchProjects, type ResearchProject } from '../../modules/research-projects'
 import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
 import { ResearchAgentBot } from './ResearchAgentBot'
 import { ResearchAgentShader } from './ResearchAgentShader'
@@ -1071,6 +1071,7 @@ function AgentConversationHistoryRail({
   conversations,
   loading,
   onDelete,
+  onDeleteProject,
   onNewConversation,
   onOpen,
   onRename,
@@ -1084,6 +1085,7 @@ function AgentConversationHistoryRail({
   conversations: AgentConversationSummary[]
   loading: boolean
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  onDeleteProject: (taskId: string) => Promise<void>
   onNewConversation: (taskId?: string) => void
   onOpen: (conversation: AgentConversationSummary) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
@@ -1198,7 +1200,7 @@ function AgentConversationHistoryRail({
         onTitleChange={setProjectTitle} onCancel={() => setProjectCreateAnchor(null)} onSubmit={(event) => { void createProject(event) }} /> : null}
       {projectListError ? <p role="alert">{projectListError}</p> : null}
       {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : (
-        <ProjectConversationList projects={projects} conversations={safeConversations}
+        <ProjectConversationList projects={projects} conversations={safeConversations} onDeleteProject={onDeleteProject}
           activeTaskId={safeConversations.find((item) => item.conversation_id === activeConversationId)?.task_id ?? selectedTaskId}
           onStart={onNewConversation} onStartIndependent={() => onNewConversation()} renderConversation={(conversation) => {
             const conversationId = conversation.conversation_id
@@ -1295,6 +1297,7 @@ function ConversationHistory({
   onNewConversation,
   onRename,
   onDelete,
+  onDeleteProject,
   selectedTaskId,
   conversations,
   activeConversationId,
@@ -1308,6 +1311,7 @@ function ConversationHistory({
   onNewConversation: (taskId?: string) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
+  onDeleteProject: (taskId: string) => Promise<void>
   selectedTaskId: string | null
 
   conversations: AgentConversationSummary[]
@@ -1345,7 +1349,7 @@ function ConversationHistory({
       <div className="new-research__history-list">
         <AgentConversationHistoryRail projects={projects} setProjects={setProjects} conversations={filtered} activeConversationId={activeConversationId}
           selectedTaskId={selectedTaskId} loading={loading} onOpen={onOpen}
-          onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} />
+          onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} onDeleteProject={onDeleteProject} />
       </div>
     </div>
   )
@@ -2240,6 +2244,27 @@ export function ResearchAgentConversationPage({
       || requestedConversationId === summary.conversation_id
     ) {
       newConversation()
+    }
+  }
+
+  async function deleteSavedProject(projectId: string) {
+    if (taskId === projectId && (isBusy || materialUploading)) throw new Error(text('请先结束当前回答或材料上传，再删除项目', 'Finish the current answer or upload before deleting this project'))
+    await deleteResearchProject(projectId)
+    setProjects((current) => current.filter((project) => project.task_id !== projectId))
+    setConversations((current) => current.map((conversation) => conversation.task_id === projectId
+      ? { ...conversation, task_id: null } : conversation))
+    setActiveConversation((current) => current?.task_id === projectId ? { ...current, task_id: null } : current)
+    if (taskId === projectId) {
+      setAttachedMaterials([])
+      if (embedded) {
+        navigate(requestedConversationId ? `/agent?conversation_id=${encodeURIComponent(requestedConversationId)}` : '/agent')
+      } else {
+        setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          next.delete('task_id')
+          return next
+        }, { replace: true })
+      }
     }
   }
 
@@ -3329,7 +3354,7 @@ export function ResearchAgentConversationPage({
               selectedTaskId={taskId}
               onNewConversation={newConversation}
               onRename={renameSavedConversation}
-              onDelete={deleteSavedConversation}
+              onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
               conversations={conversations}
               activeConversationId={activeConversation?.conversation_id ?? null}
               loading={historyLoading}
@@ -3395,7 +3420,7 @@ export function ResearchAgentConversationPage({
             activeConversationId={activeConversation?.conversation_id ?? null}
             conversations={conversations}
             loading={historyLoading}
-            onDelete={deleteSavedConversation}
+            onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
             onNewConversation={newConversation}
             onOpen={openConversation}
             onRename={renameSavedConversation}
@@ -3415,7 +3440,7 @@ export function ResearchAgentConversationPage({
           activeConversationId={activeConversation?.conversation_id ?? null}
           conversations={conversations}
           loading={historyLoading}
-          onDelete={deleteSavedConversation}
+          onDelete={deleteSavedConversation} onDeleteProject={deleteSavedProject}
           onNewConversation={newConversation}
           onOpen={openConversation}
           onRename={renameSavedConversation}

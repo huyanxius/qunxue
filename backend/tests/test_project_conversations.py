@@ -99,3 +99,51 @@ def test_new_project_conversation_receives_shared_project_context(client, monkey
         assert context["project"]["task_id"] == task_id
         assert context["project"]["project_title"] == "社区研究"
         assert context["project"]["project_stage"] == "资料整理"
+
+
+def test_delete_project_preserves_conversations_as_independent(client):
+    register(client)
+    task_id = project(client)
+    conversation = next(
+        event["conversation"] for event in turn(client, task_id) if "conversation" in event
+    )
+    conversation_id = conversation["conversation_id"]
+    before = client.get(f"/api/agent/conversations/{conversation_id}").json()
+    upload = client.post(
+        f"/api/research-tasks/{task_id}/materials",
+        headers={"Idempotency-Key": str(uuid4())},
+        data={"material_kind": "interview_transcript"},
+        files={"file": ("notes.txt", b"local test notes", "text/plain")},
+    )
+    assert upload.status_code == 201
+    response = client.delete(
+        f"/api/research-tasks/{task_id}", headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert response.status_code == 200, response.text
+    assert client.get(f"/api/research-tasks/{task_id}").status_code == 404
+    after = client.get(f"/api/agent/conversations/{conversation_id}").json()
+    assert after["task_id"] is None
+    assert after["turns"] == before["turns"]
+    assert (
+        next(
+            item
+            for item in client.get("/api/agent/conversations").json()["items"]
+            if item["conversation_id"] == conversation_id
+        )["task_id"]
+        is None
+    )
+
+
+def test_delete_project_rejects_another_user(client):
+    register(client)
+    task_id = project(client)
+    owner_cookies = dict(client.cookies)
+    client.cookies.clear()
+    register(client)
+    response = client.delete(
+        f"/api/research-tasks/{task_id}", headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert response.status_code == 404
+    client.cookies.clear()
+    client.cookies.update(owner_cookies)
+    assert client.get(f"/api/research-tasks/{task_id}").status_code == 200

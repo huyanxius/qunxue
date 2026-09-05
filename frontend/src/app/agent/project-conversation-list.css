@@ -5,7 +5,9 @@
 .project-conversation-list__heading button:first-child { flex: 1; text-align: left; }
 .project-conversation-list__heading button svg { flex-shrink: 0; }
 .project-conversation-list__heading button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.project-conversation-list__heading .project-conversation-list__actions,
 .project-conversation-list__heading .project-conversation-list__new { flex-shrink: 0; padding: 8px; color: var(--app-muted); border-radius: 7px; }
+.project-conversation-list__heading .project-conversation-list__actions:hover,
 .project-conversation-list__heading .project-conversation-list__new:hover { color: var(--app-ink); background: var(--app-surface-strong); }
 .project-conversation-list__children { padding: 3px 0 0 20px; }
 .project-conversation-list__resources { display: flex; gap: 12px; padding: 7px 8px 9px; font-size: 11px; opacity: .7; }
@@ -22,3 +24,6 @@
 
 .project-conversation-list p { margin: 4px 8px; font-size: 11px; color: var(--app-muted); line-height: 1.55; }
 .agent-conversation-history__heading h2 { flex: 1; }
+
+.project-conversation-list__delete-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-conversation-list__delete-description { margin: 0; color: var(--app-muted); font-size: 12px; line-height: 1.6; }
