@@ -113,6 +113,10 @@ class Settings(BaseSettings):
     )
     runtime_mode: Literal["mock", "base", "sft"] = "mock"
     database_url: str = DEFAULT_DATABASE_URL
+    memory_learning_enabled: bool = True
+    memory_learning_idle_seconds: int = Field(default=600, ge=60)
+    memory_learning_daily_calls: int = Field(default=8, ge=0, le=32)
+    memory_learning_daily_tokens: int = Field(default=64000, ge=0, le=256000)
     session_cookie_name: str = "qunxue_session"
     session_ttl_seconds: int = 60 * 60 * 24 * 7
     session_cookie_secure: bool = False
