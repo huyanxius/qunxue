@@ -150,9 +150,6 @@ def _ancestor_headings(
         while stack and stack[-1].level >= heading.level:
             stack.pop()
         stack.append(heading)
-    # Siblings and their sections belong to the previous entry, not this path.
-    while stack and stack[-1].level >= headings[entry_index].level:
-        stack.pop()
     return tuple(heading for heading in stack if heading.level > 1)
 
 

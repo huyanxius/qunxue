@@ -13,8 +13,6 @@ const cytoscapeMock = vi.hoisted(() => vi.fn(() => ({
   on: vi.fn(),
 })))
 
-vi.mock("../modules/knowledge-graph/ExplorationCanvas", () => ({ ExplorationCanvas: () => <div aria-label="图谱画布" /> }))
-
 vi.mock('cytoscape', () => ({ default: cytoscapeMock }))
 vi.mock('@paper-design/shaders-react', () => ({
   GrainGradient: () => null,
