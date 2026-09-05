@@ -225,3 +225,60 @@ class _PassingReranker:
         return tuple(
             RerankScore(index=index, score=0.8) for index, _document in enumerate(documents)
         )
+
+
+def test_material_vectors_are_reused_across_questions(tmp_path):
+    index, _ = _ready_index(tmp_path)
+    document_calls = []
+
+    class Embedder:
+        def embed_query(self, query):
+            return [1.0, 0.0]
+
+        def embed_documents(self, texts):
+            document_calls.append(tuple(texts))
+            return [[1.0, 0.0] for _ in texts]
+
+    class Reranker:
+        def rerank(self, *, query, documents, top_n):
+            return tuple(RerankScore(index=i, score=0.9) for i in range(len(documents)))
+
+    class Cache:
+        values = {}
+
+        def get_many(self, chunks, model):
+            return [
+                self.values.get((chunk.chunk_id, chunk.content_hash, model)) for chunk in chunks
+            ]
+
+        def put_many(self, chunks, model, vectors):
+            for chunk, vector in zip(chunks, vectors, strict=True):
+                self.values[(chunk.chunk_id, chunk.content_hash, model)] = vector
+
+    retriever = HybridRetriever(
+        index=index,
+        embedder=Embedder(),
+        embedding_model="test-embedding",
+        chunk_schema_version="1",
+        reranker=Reranker(),
+        reranker_model="test-reranker",
+        min_rerank_score=0,
+    )
+    chunks = (
+        RetrievalChunk(
+            chunk_id="file-1:parse-1:segment-1",
+            document_kind="research_material",
+            knowledge_id=None,
+            theory_id=None,
+            content_version=1,
+            content_hash="content-1",
+            title="记录",
+            text="紫藤社区有37人参加夜间互助",
+            source_ids=(),
+        ),
+    )
+    cache = Cache()
+    for question in ("紫藤社区人数", "多少居民参与互助"):
+        result = retriever.search_chunks(query=question, chunks=chunks, limit=5, vector_cache=cache)
+        assert result.hits[0].chunk.text == "紫藤社区有37人参加夜间互助"
+    assert document_calls == [("紫藤社区有37人参加夜间互助",)]
