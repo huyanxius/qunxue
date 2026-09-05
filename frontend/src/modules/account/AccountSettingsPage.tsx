@@ -1,12 +1,12 @@
 import {
   SignOutIcon,
-  SlidersHorizontalIcon,
-  CoinsIcon,
-  DatabaseIcon,
-  LockKeyIcon,
-  PowerIcon,
+  GearSixIcon,
+  ChartBarIcon,
+  ShieldIcon,
+  LockSimpleIcon,
+  UserGearIcon,
   ShieldCheckIcon,
-  UserCircleIcon,
+  UserIcon,
   WarningIcon,
 } from '@phosphor-icons/react'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -184,12 +184,12 @@ type SettingsPartition =
   'profile' | 'credits' | 'preferences' | 'security' | 'privacy' | 'danger'
 
 const partitionIcons = {
-  profile: UserCircleIcon,
-  credits: CoinsIcon,
-  preferences: SlidersHorizontalIcon,
-  security: LockKeyIcon,
-  privacy: DatabaseIcon,
-  danger: PowerIcon,
+  profile: UserIcon,
+  credits: ChartBarIcon,
+  preferences: GearSixIcon,
+  security: LockSimpleIcon,
+  privacy: ShieldIcon,
+  danger: UserGearIcon,
 }
 
 const settingsPartitions: SettingsPartition[] = [
@@ -617,7 +617,7 @@ export function AccountSettingsPage({
                   setActionError(null)
                 }}
               >
-                <Icon size={18} aria-hidden="true" />
+                <Icon size={20} weight="regular" aria-hidden="true" />
                 {partitionLabels[partition]}
               </button>
             )
@@ -630,7 +630,7 @@ export function AccountSettingsPage({
             </a>
           ) : null}
           <button type="button" onClick={onLogout}>
-            <SignOutIcon size={18} aria-hidden="true" />
+            <SignOutIcon size={20} weight="regular" aria-hidden="true" />
             {text('退出登录', 'Sign out')}
           </button>
         </div>
