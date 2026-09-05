@@ -51,6 +51,7 @@ class DisciplinaryAgentApplication:
         atomic: Callable[[], AbstractContextManager[object]] | None = None,
         ensure_research_draft: Callable[..., UUID] | None = None,
         bind_research_draft: Callable[..., UUID] | None = None,
+        memory_tools_factory: Callable[..., object] | None = None,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
@@ -59,6 +60,7 @@ class DisciplinaryAgentApplication:
         self._atomic = atomic or nullcontext
         self._ensure_research_draft = ensure_research_draft
         self._bind_research_draft = bind_research_draft
+        self._memory_tools_factory = memory_tools_factory
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
@@ -431,6 +433,14 @@ class DisciplinaryAgentApplication:
             raise AgentInterrupted("Agent run was interrupted by the client")
 
         conversation_history = current.turns[-8:]
+        if self._memory_tools_factory is not None:
+            tools.memory = self._memory_tools_factory(
+                user_id=user_id,
+                task_id=task_id,
+                conversation_id=current.conversation_id,
+                prompt=prompt,
+                run_id=run.run_id,
+            )
         tool_events: list[AgentToolEvent] = []
         deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
 

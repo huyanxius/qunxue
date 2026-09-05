@@ -13,6 +13,14 @@ from qunxue_api.adapters.sqlite.agent_conversation_model import (
     AgentMessageRow,
     AgentRunRow,
 )
+from qunxue_api.adapters.sqlite.agent_memory_model import (
+    MemoryJobRow,
+    MemoryRequestRow,
+    MemoryRevisionRow,
+    MemoryRow,
+    MemoryScopeRow,
+    MemoryUsageRow,
+)
 from qunxue_api.adapters.sqlite.base import Base
 from qunxue_api.adapters.sqlite.billing_model import (
     CreditAccountRow,
@@ -117,6 +125,12 @@ from qunxue_api.adapters.sqlite.theory_matching_model import (
 )
 
 __all__ = [
+    "MemoryJobRow",
+    "MemoryRequestRow",
+    "MemoryRevisionRow",
+    "MemoryRow",
+    "MemoryScopeRow",
+    "MemoryUsageRow",
     "Base",
     "AccountAuditEventRow",
     "AccountMutationRequestRow",

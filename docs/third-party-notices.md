@@ -1,6 +1,12 @@
 # Third-party notices
 
-群学致知的网页搜索适配器复用了以下 MIT 许可证项目中的实现片段，并保留其版权归属。项目自身其余代码继续遵守仓库根目录许可证与贡献规范。
+群学致知的网页搜索适配器复用了以下 MIT 许可证项目中的实现片段，记忆提取提示词复用了 Apache-2.0 片段，并保留其版权归属。项目自身其余代码继续遵守仓库根目录许可证与贡献规范。
+
+## OpenAI Codex
+
+- Source: <https://github.com/openai/codex/tree/2bd71f96d41809b95ea881429a1b68eb48d089b6>
+- License: Apache-2.0; LICENSE and NOTICE retained in [`third_party/openai-codex`](../third_party/openai-codex/).
+- Adapted area: memory extraction hygiene and minimum-signal prompt sections. Output schema and research-specific rules are adapted; [modification notice](../third_party/openai-codex/README.md).
 
 ## Stanford STORM
 
