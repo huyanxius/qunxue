@@ -98,7 +98,8 @@ const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v1'
 const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
-const DEEP_RESEARCH_INTRO_TIMEOUT_MS = 5000
+const DEEP_RESEARCH_INTRO_SESSION_KEY = 'qunxue.agent.deep-research-intro-session.v1'
+const DEEP_RESEARCH_INTRO_TIMEOUT_MS = 10_000
 // 退场动画时长，和 research-agent-conversation.css 里 agent-rail-leave 保持一致。
 const RAIL_EXIT_MS = 220
 
@@ -1525,6 +1526,7 @@ type ResearchAgentConversationPageProps = {
   composerAriaLabel?: string
   suggestedPrompt?: string | null
   suggestedPromptKey?: number
+  introSessionId?: string | null
 }
 
 export function ResearchAgentConversationPage({
@@ -1548,6 +1550,7 @@ export function ResearchAgentConversationPage({
   composerAriaLabel,
   suggestedPrompt = null,
   suggestedPromptKey = 0,
+  introSessionId = null,
 }: ResearchAgentConversationPageProps) {
   const { locale, text } = useAppLocale()
   const location = useLocation()
@@ -1800,11 +1803,16 @@ export function ResearchAgentConversationPage({
 
   useEffect(() => {
     if (embedded || !isEmpty || composerMode !== 'standard' || deepResearchIntroShown.current) return undefined
+    if (introSessionId && window.localStorage.getItem(DEEP_RESEARCH_INTRO_SESSION_KEY) === introSessionId) return undefined
     deepResearchIntroShown.current = true
+    if (introSessionId) window.localStorage.setItem(DEEP_RESEARCH_INTRO_SESSION_KEY, introSessionId)
     setDeepResearchIntroVisible(true)
-    const timeout = window.setTimeout(() => setDeepResearchIntroVisible(false), DEEP_RESEARCH_INTRO_TIMEOUT_MS)
+    const timeout = window.setTimeout(
+      () => setDeepResearchIntroVisible(false),
+      introSessionId ? DEEP_RESEARCH_INTRO_TIMEOUT_MS : 5000,
+    )
     return () => window.clearTimeout(timeout)
-  }, [composerMode, embedded, isEmpty])
+  }, [composerMode, embedded, introSessionId, isEmpty])
 
   useEffect(() => {
     onStreamingTurnChange?.(streamingTurn)
