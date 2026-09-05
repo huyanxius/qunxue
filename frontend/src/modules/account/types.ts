@@ -19,6 +19,7 @@ export type AccountSessionState =
 
 export type MyResearchItem = {
   taskId: string
+  projectTitle?: string
   stageLabel: string
   nextActionLabel: string
   entryPath: string
