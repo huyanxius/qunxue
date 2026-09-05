@@ -319,7 +319,8 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
     setSelectedNodeId(node.id)
-    setDiscussion({ title: node.title, content: node.summary || node.excerpt || node.title })
+    setMobilePane('agent')
+    setDiscussion({ nodeId: node.id, title: node.title, content: node.summary || node.excerpt || node.title })
     const subject = (node.excerpt || node.title).slice(0, 800)
     const prompt = node.kind === 'question'
       ? `请继续拆解这个研究问题：${node.title}`
@@ -449,6 +450,8 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
             <div className="new-research__map-column">
               <ResearchMapCanvas
                 projection={projection}
+                conversation={conversation}
+                onConversationChange={syncConversation}
                 idleActions={!activeTaskId ? (
                   <div className="new-research__entry-actions" role="group" aria-label="研究起点">
                     <p className="research-map__idle-guidance">直接提问，或先放入一批材料</p>
