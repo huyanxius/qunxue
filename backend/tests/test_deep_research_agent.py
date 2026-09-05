@@ -225,6 +225,123 @@ def test_confirmed_deep_research_passes_cancellation_into_the_stream_runner() ->
     assert cancellation_checks >= 3
 
 
+def test_confirmed_deep_research_persists_a_completion_record_for_the_card() -> None:
+    """重开对话时前端要还原那张研究完成卡片，用时与条数只能从这条留痕里读。"""
+
+    class Release:
+        knowledge_release_id = "release-test"
+
+    class Citation:
+        def __init__(self, kind, source_kind=None):
+            self.kind = kind
+            self.source_kind = source_kind
+            self.citation_id = f"c-{kind}-{source_kind}"
+            self.label = kind
+            self.excerpt = None
+            self.knowledge_id = None
+            self.source_id = None
+            self.material_id = None
+            self.parse_id = None
+            self.segment_id = None
+            self.locator = None
+            self.deleted = False
+
+    cited = (Citation("entry"), Citation("theory"), Citation("source", source_kind="web"))
+
+    class Tools:
+        release = Release()
+        evidence = {item.citation_id: item for item in cited}
+        research_map_enabled = False
+        web_search_enabled = False
+        deep_research_enabled = False
+
+        def enable_web_search(self):
+            self.web_search_enabled = True
+
+        def enable_deep_research(self):
+            self.deep_research_enabled = True
+
+    class Runner:
+        runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
+
+        def prepare_research(self, *, prompt, conversation, on_event):
+            on_event(AgentResearchEvent(kind="plan", payload={"title": prompt, "steps": ["调查"]}))
+
+        def run(self, *, prompt, conversation, tools):
+            return AgentRunResult(
+                answer="完整结论",
+                citations=cited,
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="test",
+            )
+
+    conversations = ConversationService.in_memory()
+    app = DisciplinaryAgentApplication(
+        conversations=conversations, runner=Runner(), tools_factory=Tools
+    )
+    planned = app.run_turn(
+        user_id=UUID(int=7),
+        conversation_id=None,
+        prompt="研究社区照护",
+        idempotency_key="record-1",
+        mode="deep_research",
+    )
+    completed = app.run_turn(
+        user_id=UUID(int=7),
+        conversation_id=None,
+        prompt="研究社区照护",
+        idempotency_key="record-1",
+        mode="deep_research",
+        deep_research_run_id=planned.run_id,
+        deep_research_action="confirm",
+    )
+
+    records = [item for item in completed.tool_summary if item.get("tool") == "deep_research"]
+    assert len(records) == 1
+    output = records[0]["output"]
+    assert output["schema_version"] == 1
+    assert output["knowledge_count"] == 3
+    assert output["web_count"] == 1
+    assert output["elapsed_seconds"] >= 0
+
+
+def test_standard_turn_leaves_no_deep_research_record() -> None:
+    class Release:
+        knowledge_release_id = "release-test"
+
+    class Tools:
+        release = Release()
+        evidence = {}
+        research_map_enabled = False
+        web_search_enabled = False
+
+    class Runner:
+        runtime_identity = type("Identity", (), {"provider": "test", "model": "test"})()
+
+        def run(self, *, prompt, conversation, tools):
+            return AgentRunResult(
+                answer="普通回答",
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="test",
+                model="test",
+            )
+
+    app = DisciplinaryAgentApplication(
+        conversations=ConversationService.in_memory(), runner=Runner(), tools_factory=Tools
+    )
+    completed = app.run_turn(
+        user_id=UUID(int=8),
+        conversation_id=None,
+        prompt="随便问问",
+        idempotency_key="record-2",
+        mode="standard",
+    )
+
+    assert all(item.get("tool") != "deep_research" for item in completed.tool_summary)
+
+
 def test_skipping_clarification_still_requires_plan_confirmation() -> None:
     events: list[AgentResearchEvent] = []
 
