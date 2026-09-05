@@ -268,9 +268,7 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
     expect(within(resultCard).getByRole('button', { name: '下载 PDF' })).toBeVisible()
     expect(within(resultCard).queryByText('拆解研究问题')).not.toBeInTheDocument()
-    expect(within(resultCard).getByRole('link', { name: '继续形成研究' })).toHaveAttribute(
-      'href', '/research/new?conversation_id=conversation-deep-research-result&knowledge_release_id=release-agent',
-    )
+    expect(within(resultCard).getByRole('button', { name: '继续形成研究' })).toBeEnabled()
     expect(within(agent).getByRole('heading', { name: '研究结论' })).toBeVisible()
     expect(within(agent).getByText(body)).toBeVisible()
   })
@@ -345,6 +343,8 @@ describe('ResearchAgentConversationPage', () => {
     }]
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = urlFor(input)
+      if (url.pathname.endsWith('/journey')) return json({ conversation_id: conversation.conversation_id, status: 'proposal_pending', task_id: null, proposal: { proposal_id: 'reused', knowledge_release_id: 'release-pinned', status: 'pending_confirmation', version: 1, phenomenon: '不平等', research_intent: '研究', context: null }, navigation: null })
+      if (url.pathname === '/api/agent/turns') throw new Error('已有提案不得重新生成')
       if (url.pathname === '/api/agent/conversations') return json({ items: [] })
       if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
       return json({}, 404)
@@ -361,11 +361,109 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(resultCard).getByText('用时 4 分 27 秒')).toBeVisible()
     expect(within(resultCard).getByText('知识库 7 条')).toBeVisible()
     expect(within(resultCard).queryByText('拆解研究问题')).not.toBeInTheDocument()
-    fireEvent.click(within(resultCard).getByRole('link', { name: '继续形成研究' }))
-    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new?conversation_id=conversation-deep-research-reopen&knowledge_release_id=release-agent')
+    fireEvent.click(within(resultCard).getByRole('button', { name: '继续形成研究' }))
+    await waitFor(() => expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new?conversation_id=conversation-deep-research-reopen&knowledge_release_id=release-pinned'))
     expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
     // 输入器也要留在深入研究，不能悄悄退回标准。
     expect(screen.getByRole('button', { name: '选择 Agent 模式' })).toHaveTextContent('深入研究')
+  })
+
+  it.each(['standard', 'deep_research'])('prepares an entry through the standard tool flow from %s before navigating', async (mode) => {
+    const conversation = conversationFixture({ id: `entry-${mode}` })
+    const proposal = {
+      proposal_id: 'entry-proposal', conversation_id: conversation.conversation_id,
+      knowledge_release_id: 'release-agent', phenomenon: '社区互助', research_intent: '理解变化',
+      context: '城市社区', version: 1, status: 'pending_confirmation', requires_user_confirmation: true,
+    }
+    conversation.turns[0].tool_traces = mode === 'deep_research'
+      ? [{ tool: 'deep_research', phase: 'finished', call_id: 'deep', output: { schema_version: 1 } }]
+      : [{ tool: 'propose_start_research', phase: 'finished', call_id: 'old-proposal', output: proposal }]
+    const stream = deferredStream([
+      ['turn_started', { conversation_id: conversation.conversation_id, run_id: 'entry-run', replayed: false, runtime_mode: 'base' }],
+      ['tool_started', { tool: 'propose_start_research', call_id: 'entry-call' }],
+    ])
+    let prepared = false
+    const requests: Record<string, unknown>[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = urlFor(input).pathname
+      if (path.endsWith('/journey')) return json({
+        conversation_id: conversation.conversation_id, status: prepared ? 'proposal_pending' : 'task_bound',
+        task_id: 'uploaded-file-task', proposal: prepared ? proposal : null, navigation: null,
+      })
+      if (path === '/api/agent/turns') {
+        requests.push(JSON.parse(String(init?.body)))
+        return stream.response
+      }
+      if (path === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({ items: [] })
+    }))
+    render(<MemoryRouter initialEntries={[`/agent?conversation_id=${conversation.conversation_id}`]}>
+      <ResearchAgentConversationPage userId="user-agent" /><LocationProbe />
+    </MemoryRouter>)
+    const link = await screen.findByRole('button', { name: mode === 'deep_research' ? '继续形成研究' : '去新建研究' })
+    fireEvent.click(link)
+    fireEvent.click(link)
+    await waitFor(() => expect(requests).toHaveLength(1))
+    expect(requests[0]).toMatchObject({ mode: 'standard', workspace: 'agent', conversation_id: conversation.conversation_id })
+    expect(String(requests[0].message)).toContain('待确认的研究起点')
+    if (mode === 'deep_research') expect(String(requests[0].message)).toContain('参考')
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(`/agent?conversation_id=${conversation.conversation_id}`)
+    prepared = true
+    const completed = structuredClone(conversation)
+    const newTurn = conversationFixture({ id: 'entry-turn', answer: '已整理待确认的研究起点。' }).turns[0]
+    newTurn.tool_traces = [{ tool: 'propose_start_research', phase: 'finished', call_id: 'entry-call', output: proposal }]
+    completed.turns.push(newTurn)
+    stream.finish([
+      ['tool_finished', { tool: 'propose_start_research', call_id: 'entry-call', output: proposal }],
+      ['turn_completed', { conversation: completed, knowledge_release_id: 'release-agent' }],
+    ])
+    await waitFor(() => expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(
+      `/research/new?conversation_id=${conversation.conversation_id}&knowledge_release_id=release-agent&task_id=uploaded-file-task`,
+    ))
+    expect(screen.getByText(conversation.turns[0].assistant.content)).toBeVisible()
+  })
+
+  it('continues in standard collaboration mode when the canvas restores a deep-research report', async () => {
+    const conversation = conversationFixture({ id: 'entry-canvas' })
+    conversation.turns[0].tool_traces = [{ tool: 'deep_research', phase: 'finished', call_id: 'deep', output: { schema_version: 1 } }]
+    const requests: Record<string, unknown>[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = urlFor(input).pathname
+      if (path === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      if (path === '/api/agent/turns') {
+        requests.push(JSON.parse(String(init?.body)))
+        return streamResponse(conversation)
+      }
+      return json({ items: [] })
+    }))
+    render(<MemoryRouter initialEntries={['/research/new']}>
+      <ResearchAgentConversationPage embedded userId="user-agent" workspace="research"
+        conversationId={conversation.conversation_id} taskId="uploaded-file-task" />
+    </MemoryRouter>)
+    await screen.findByRole('region', { name: '研究结论' })
+    const input = screen.getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(input, { target: { value: '根据之前的调研继续梳理。' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    await waitFor(() => expect(requests).toHaveLength(1))
+    expect(requests[0]).toMatchObject({ mode: 'standard', workspace: 'research', task_id: 'uploaded-file-task', conversation_id: conversation.conversation_id })
+  })
+
+  it('stays in the conversation when the Agent finishes without a research proposal', async () => {
+    const conversation = conversationFixture({ id: 'entry-no-proposal' })
+    conversation.turns[0].tool_traces = [{ tool: 'deep_research', phase: 'finished', call_id: 'deep', output: { schema_version: 1 } }]
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = urlFor(input).pathname
+      if (path.endsWith('/journey')) return json({ conversation_id: conversation.conversation_id, status: 'collecting', task_id: null, proposal: null, navigation: null })
+      if (path === '/api/agent/turns') return streamResponse(conversation)
+      if (path === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({ items: [] })
+    }))
+    render(<MemoryRouter initialEntries={[`/agent?conversation_id=${conversation.conversation_id}`]}>
+      <ResearchAgentConversationPage userId="user-agent" /><LocationProbe />
+    </MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: '继续形成研究' }))
+    await screen.findByText(/尚未形成待确认的研究起点/)
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/agent?conversation_id=entry-no-proposal')
   })
 
   it('starts a new conversation from the history rail and keeps one panel toggle in the header', async () => {
@@ -1051,10 +1149,7 @@ describe('ResearchAgentConversationPage', () => {
     const region = await screen.findByRole('region', { name: '社会学 Agent 对话' })
     const handoff = await within(region).findByRole('region', { name: '研究建议' })
     expect(within(handoff).getByText('社区成员流动正在改变邻里互助')).toBeVisible()
-    expect(within(handoff).getByRole('link', { name: '去新建研究' })).toHaveAttribute(
-      'href',
-      '/research/new?conversation_id=conversation-handoff&knowledge_release_id=release-pinned-handoff',
-    )
+    expect(within(handoff).getByRole('button', { name: '去新建研究' })).toBeEnabled()
     expect(within(handoff).queryByRole('button', { name: /确认|创建/ })).not.toBeInTheDocument()
   })
 
