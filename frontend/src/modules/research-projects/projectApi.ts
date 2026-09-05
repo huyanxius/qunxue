@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client'
-import { listResearchTasks } from '../../api/generated'
+import { deleteResearchTask, listResearchTasks } from '../../api/generated'
 import type { ResearchProject } from './projectContext'
 
 /** All project resources use the existing task ID, including conversations and materials. */
@@ -15,4 +15,13 @@ export async function listResearchProjects(signal?: AbortSignal): Promise<Resear
     cursor = data.next_cursor ?? undefined
   } while (cursor)
   return projects
+}
+
+export async function deleteResearchProject(taskId: string): Promise<void> {
+  const { data } = await deleteResearchTask({
+    client: apiClient,
+    path: { task_id: taskId },
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+  if (!data?.deleted) throw new Error('项目删除失败，请重试')
 }
