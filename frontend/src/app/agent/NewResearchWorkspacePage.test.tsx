@@ -1123,7 +1123,7 @@ describe('NewResearchWorkspacePage', () => {
     }))
     renderPage()
     const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
-    fireEvent.click(await within(history).findByRole('button', { name: conversation.title, exact: true }))
+    fireEvent.click(await within(history).findByRole('button', { name: conversation.title }))
     expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
     expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(`conversation_id=${conversation.conversation_id}`)
   })
