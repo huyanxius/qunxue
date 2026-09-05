@@ -1,6 +1,6 @@
 export { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
 export { AgentMaterialAttachmentPicker } from './AgentMaterialAttachmentPicker'
-export { addResearchLibraryMaterial, listResearchLibraryMaterials } from './researchMaterialsLibrary'
+export { addResearchLibraryMaterial, listResearchLibraryMaterials, removeResearchLibraryMaterial } from './researchMaterialsLibrary'
 export { ResearchAnalysisPanel } from './ResearchAnalysisPanel'
 export { uploadInitialResearchMaterials } from './initialResearchMaterials'
 export { getAnalysisSnapshot } from './researchAnalysis'
