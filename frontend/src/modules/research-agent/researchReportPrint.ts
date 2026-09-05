@@ -25,8 +25,6 @@ const PRINT_CSS = `
     display: flex;
     align-items: center;
     gap: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #1b1b18;
   }
   .letterhead svg { width: 20px; height: 20px; flex: 0 0 auto; }
   .letterhead b {
@@ -35,12 +33,7 @@ const PRINT_CSS = `
     font-weight: 700;
     letter-spacing: .02em;
   }
-  .letterhead span {
-    font-family: "Kaiti SC", "楷体", "Times New Roman", serif;
-    font-size: 9pt;
-    color: #6b665c;
-  }
-  .masthead { margin: 24pt 0 18pt; text-align: center; }
+  .masthead { margin: 30pt 0 18pt; text-align: center; }
   .masthead h1 {
     margin: 0 0 6pt;
     font-family: "Times New Roman", "Heiti SC", "黑体", "Noto Sans CJK SC", sans-serif;
@@ -162,7 +155,7 @@ export function buildResearchReportHtml(report: ResearchReport) {
   return `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title>
 <style>${PRINT_CSS}</style></head><body>
-  <header class="letterhead">${brandMarkSvg}<b>群学致知</b><span>社会学研究 Agent</span></header>
+  <header class="letterhead">${brandMarkSvg}<b>群学致知</b></header>
   <div class="masthead">
     <h1>${escapeHtml(report.title)}</h1>
     <p class="subtitle">${escapeHtml(report.subtitle)}</p>

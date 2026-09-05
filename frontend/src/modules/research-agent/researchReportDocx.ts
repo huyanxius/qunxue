@@ -237,13 +237,11 @@ function brandMarkRun() {
 
 function letterhead() {
   return new Paragraph({
-    spacing: { before: 0, after: 60, line: 240, lineRule: 'auto' },
+    spacing: { before: 0, after: 120, line: 240, lineRule: 'auto' },
     indent: { firstLine: 0 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '1B1B18', space: 8 } },
     children: [
       brandMarkRun(),
       new TextRun({ text: '  群学致知', bold: true, size: 24, font: headingFonts, color: '1B1B18' }),
-      new TextRun({ text: '  社会学研究 Agent', size: 18, font: kaiFonts, color: '6B665C' }),
     ],
   })
 }
