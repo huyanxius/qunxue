@@ -26,6 +26,9 @@ function toResearchStartJourney(response: AgentResearchJourneyResponse): Researc
           status: response.proposal.status,
         }
       : null,
+    knowledgeReleaseId: response.proposal?.knowledge_release_id ?? response.navigation?.knowledge_release_id ?? null,
+    // 文件上传也会绑定草稿任务；只有已确认现象才允许跳过研究起点提案。
+    phenomenonConfirmed: Boolean(response.navigation?.phenomenon_summary),
     resumePath: response.navigation?.resume_path ?? null,
   }
 }
