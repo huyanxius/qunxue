@@ -170,27 +170,57 @@ function DeepResearchMockFlow({
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
+  // 选完到计划卡出现之间要等一次往返，中间没有反馈就像点空了。
+  const [chosenIntent, setChosenIntent] = useState<string | null>(null)
   if (stage === 'idle') return null
 
   if (stage === 'clarifying') {
     return (
-      <section className="deep-research-mock-card deep-research-mock-card--question" aria-label="确认研究意图">
+      <section
+        className={`deep-research-mock-card deep-research-mock-card--question${chosenIntent ? ' is-answered' : ''}`}
+        aria-label="确认研究意图"
+      >
         <h2>{question}</h2>
-        <div className="deep-research-mock-card__options">
+        <div className="deep-research-mock-card__options" role="radiogroup" aria-label="研究角度">
           {options.filter((option) => option !== '更多自定义').map((option, index) => (
-            <button key={option} type="button" onClick={() => onChooseIntent(option)}><b>{String.fromCharCode(65 + index)}</b>{option}</button>
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={chosenIntent === option}
+              disabled={chosenIntent !== null}
+              className={chosenIntent === option ? 'is-chosen' : undefined}
+              onClick={() => { setChosenIntent(option); onChooseIntent(option) }}
+            >
+              <b>{chosenIntent === option ? <CheckIcon size={14} weight="bold" /> : String.fromCharCode(65 + index)}</b>
+              {option}
+              {chosenIntent === option ? <em>已选择</em> : null}
+            </button>
           ))}
         </div>
         <div className="deep-research-mock-card__options deep-research-mock-card__options--custom">
-          <button type="button" onClick={() => setCustomIntent((current) => current || ' ')}><b>E</b>更多自定义</button>
-          <button type="button" onClick={onSkip}>跳过</button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={chosenIntent === customIntent.trim() && customIntent.trim() !== ''}
+            disabled={chosenIntent !== null}
+            onClick={() => setCustomIntent((current) => current || ' ')}
+          >
+            <b>E</b>更多自定义
+          </button>
+          <button type="button" disabled={chosenIntent !== null} onClick={() => { setChosenIntent('跳过'); onSkip() }}>跳过</button>
         </div>
-        {customIntent !== '' ? (
+        {customIntent !== '' && chosenIntent === null ? (
           <label className="deep-research-mock-card__other">
             <span>补充方向</span>
             <input autoFocus value={customIntent.trim()} onChange={(event) => setCustomIntent(event.target.value)} placeholder="写下你想研究的方向" />
-            <button type="button" disabled={!customIntent.trim()} onClick={() => onChooseIntent(customIntent.trim())}>继续</button>
+            <button type="button" disabled={!customIntent.trim()} onClick={() => { setChosenIntent(customIntent.trim()); onChooseIntent(customIntent.trim()) }}>继续</button>
           </label>
+        ) : null}
+        {chosenIntent ? (
+          <p className="deep-research-mock-card__answered" aria-live="polite">
+            已按<strong>{chosenIntent}</strong>这个角度整理研究计划，稍等一下。
+          </p>
         ) : null}
       </section>
     )

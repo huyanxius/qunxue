@@ -824,6 +824,47 @@
   margin-top: 10px;
 }
 
+/* 选中之后：选中的那条留下勾和"已选择"，其余淡出但仍可读，避免点完像点空了。 */
+.research-agent-conversation .deep-research-mock-card--question .deep-research-mock-card__options button:disabled {
+  cursor: default;
+  opacity: .42;
+}
+
+.research-agent-conversation .deep-research-mock-card--question .deep-research-mock-card__options button.is-chosen {
+  color: var(--app-ink);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.research-agent-conversation .deep-research-mock-card__options button.is-chosen b {
+  color: var(--app-canvas);
+  background: #76517d;
+}
+
+.research-agent-conversation .deep-research-mock-card__options button em {
+  margin-left: 8px;
+  color: #76517d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.research-agent-conversation .deep-research-mock-card__answered {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+  color: var(--app-ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.research-agent-conversation .deep-research-mock-card__answered strong {
+  color: var(--app-ink);
+  font-weight: 600;
+}
+
 .research-agent-conversation .deep-research-mock-card button.is-primary {
   border-color: var(--app-ink);
   color: var(--app-canvas);
