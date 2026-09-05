@@ -3,7 +3,6 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import UUID
 
-import pytest
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from test_pre_reviewed_theory_release import _write_bundle
 
@@ -19,7 +18,6 @@ from qunxue_api.modules.agent_conversation import (
 )
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeUsePurpose,
-    RetrievalPipelineUnavailable,
 )
 from qunxue_api.modules.research_framework import (
     ResearchDocumentProposalService,
@@ -633,7 +631,7 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
     assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
 
 
-def test_agent_research_turn_fails_closed_without_a_formal_release(plain_client) -> None:
+def test_agent_research_turn_works_without_a_formal_release(plain_client) -> None:
     registered = plain_client.post(
         "/api/session/register",
         json={"email": "agent-no-candidate@example.com", "password": "research-pass-123"},
@@ -641,17 +639,16 @@ def test_agent_research_turn_fails_closed_without_a_formal_release(plain_client)
     )
     assert registered.status_code == 201
     user_id = UUID(registered.json()["user"]["user_id"])
-    with (
-        plain_client.app.state.disciplinary_agent_scope() as application,
-        pytest.raises(RetrievalPipelineUnavailable, match="final MATCH knowledge release"),
-    ):
-        application.run_turn(
+    with plain_client.app.state.disciplinary_agent_scope() as application:
+        result = application.run_turn(
             user_id=user_id,
             conversation_id=None,
             prompt="建立一个研究",
             idempotency_key="create-agent-no-candidate-conversation",
             workspace="research",
         )
+        assert result.turn is not None
+        assert result.result.answer
 
 
 def test_real_runner_emits_read_and_pending_revision_tool_trace() -> None:

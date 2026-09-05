@@ -45,8 +45,6 @@ class PublishedReleaseCorpusCollector:
         release = page.release
         if release.knowledge_release_id != release_id:
             raise ValueError("knowledge catalog returned a different release")
-        if release.level is not KnowledgeReleaseLevel.FINAL:
-            raise ValueError("retrieval corpus requires an immutable final release")
         summaries = list(page.entries)
         while page.next_cursor is not None:
             page = self._catalog.browse(
@@ -75,7 +73,10 @@ class PublishedReleaseCorpusCollector:
             for detail, summary in zip(entries, summaries, strict=True)
         ):
             raise ValueError("knowledge entry is not bound to the collected release")
-        profiles = self._catalog.list_match_profiles(release_id=release_id)
+        profiles = (
+            self._catalog.list_match_profiles(release_id=release_id)
+            if release.level is KnowledgeReleaseLevel.FINAL else ()
+        )
         allowed_review_statuses = {
             KnowledgeReviewStatus.PRE_REVIEW_COMPLETED,
             KnowledgeReviewStatus.REVIEWED,

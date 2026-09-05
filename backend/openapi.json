@@ -7803,7 +7803,6 @@
       },
       "ModelProcessingScope": {
         "enum": [
-          "not_assessed",
           "manual_only",
           "local_only",
           "external_allowed"

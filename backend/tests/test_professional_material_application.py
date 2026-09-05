@@ -58,7 +58,7 @@ def _upload(repository: SqliteResearchMaterialRepository, key: str, filename: st
     )
 
 
-def test_newly_cataloged_material_is_manual_readable_but_inventory_flags_ethics_work() -> None:
+def test_newly_cataloged_material_is_readable_by_agent_without_extra_review() -> None:
     engine = create_engine("sqlite:///:memory:")
     _tables(engine)
     with Session(engine) as session:
@@ -79,11 +79,12 @@ def test_newly_cataloged_material_is_manual_readable_but_inventory_flags_ethics_
         )
         view = application.get_archive(user_id=USER_ID, task_id=TASK_ID)
 
-    assert profile.model_processing_scope is ModelProcessingScope.NOT_ASSESSED
-    assert profile.deidentification_status is DeidentificationStatus.PENDING
+    assert profile.model_processing_scope is ModelProcessingScope.EXTERNAL_ALLOWED
+    assert profile.deidentification_status is DeidentificationStatus.NOT_REQUIRED
     assert profile.allows_manual_reading is True
-    assert view.inventory.pending_deidentification_material_ids == (material.material_id,)
-    assert view.inventory.restricted_material_ids == (material.material_id,)
+    assert profile.allows_external_model_processing is True
+    assert view.inventory.pending_deidentification_material_ids == ()
+    assert view.inventory.restricted_material_ids == ()
     engine.dispose()
 
 

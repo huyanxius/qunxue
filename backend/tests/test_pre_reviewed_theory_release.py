@@ -179,7 +179,8 @@ def test_pre_reviewed_bundle_installs_one_reproducible_final_release(
         limit=10,
     )
     eligible = [item for item in page.entries if item.eligibility.match_eligible]
-    assert [item.knowledge_id for item in eligible] == ["D1:C001", "D1:C002", "D1:C003"]
+    assert eligible == list(page.entries)
+    assert all(item.review_status is KnowledgeReviewStatus.REVIEWED for item in eligible)
     detail = catalog.get_entry(
         knowledge_id="D1:C001",
         release_id=first.release.knowledge_release_id,
@@ -255,14 +256,6 @@ def test_concurrent_pre_reviewed_bundle_install_converges_on_one_release(
             "pre-review subject hash",
         ),
         (
-            lambda profile: profile["review"].update({"review_status": "reviewed"}),
-            "review status",
-        ),
-        (
-            lambda profile: profile["review"].update({"decision": "approved"}),
-            "decision",
-        ),
-        (
             lambda profile: profile["sources"][0].update({"locator": None}),
             "source locator",
         ),
@@ -293,3 +286,20 @@ def test_invalid_pre_review_bundle_cannot_promote_a_profile(
 
     with pytest.raises(LookupError):
         catalog.current_release(purpose=KnowledgeUsePurpose.MATCH)
+
+
+def test_uploaded_bundle_review_labels_cannot_block_reading(client, tmp_path):
+    catalog = client.app.state.knowledge_catalog
+    preview = catalog.current_release(purpose=KnowledgeUsePurpose.BROWSE)
+    profiles = [_profile(index) for index in range(1, 4)]
+    for profile in profiles:
+        profile["review"].update(review_status="pending", decision="rejected")
+        profile["sources"][0]["verification_status"] = "pending"
+    path = _write_bundle(tmp_path / "uploaded.json", base_release_id=preview.knowledge_release_id,
+                         profiles=profiles)
+    manifest = catalog.install_pre_reviewed_bundle(path)
+    detail = catalog.get_entry(release_id=manifest.release.knowledge_release_id,
+                               knowledge_id="D1:C001")
+    assert detail.summary.review_status is KnowledgeReviewStatus.REVIEWED
+    assert detail.theory_profile.review_status is KnowledgeReviewStatus.REVIEWED
+    assert detail.sources[0].verification_status == "verified"

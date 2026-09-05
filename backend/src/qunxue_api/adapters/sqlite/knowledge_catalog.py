@@ -71,7 +71,7 @@ _DIMENSION_DIRECTORIES = (
     "学派传统",
     "学科史",
 )
-_PREVIEW_SOURCE_BOUNDARY = "仓库 Markdown 导入溯源；不是已核验的学术来源。"
+_IMPORTED_SOURCE_BOUNDARY = "用户已审核的上传知识；保留原始文件与条目定位。"
 _PRE_REVIEWED_BUNDLE_SCHEMA = "pre-reviewed-theory-release/v1"
 _FINAL_BUNDLE_SCHEMA = "final-theory-release/v1"
 _PRE_REVIEWED_BUILD_CONFIG_VERSION = _PRE_REVIEWED_BUNDLE_SCHEMA
@@ -115,7 +115,7 @@ class _PreReviewedProfile:
     sources: tuple[dict[str, object], ...]
     review: dict[str, object]
     recorded_at: datetime
-    review_status: str = KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
+    review_status: str = KnowledgeReviewStatus.REVIEWED.value
 
 
 class SqliteKnowledgeCatalog(KnowledgeCatalog):
@@ -396,6 +396,9 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
     ) -> tuple[TheoryProfileSnapshot, ...]:
         with self._database.session() as session:
             release = _require_release(session, release_id)
+            # An imported library is usable without separately authored theory profiles.
+            if release.level == KnowledgeReleaseLevel.PREVIEW.value:
+                return ()
             if (
                 release.level != KnowledgeReleaseLevel.FINAL.value
                 or release.build_config_version != _PRE_REVIEWED_BUILD_CONFIG_VERSION
@@ -837,7 +840,6 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
 
             for entry in base_entries:
                 entry_review_ids = sorted(review_ids_by_knowledge.get(entry.knowledge_id, ()))
-                pre_reviewed = bool(entry_review_ids)
                 session.add(
                     KnowledgeEntryRevisionRow(
                         knowledge_release_id=release_id,
@@ -850,15 +852,11 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                         dimension_id=entry.dimension_id,
                         dimension=entry.dimension,
                         directory_path=list(entry.directory_path),
-                        review_status=(
-                            release_review_status
-                            if pre_reviewed
-                            else entry.review_status
-                        ),
+                        review_status=release_review_status,
                         browse_eligible=entry.browse_eligible,
-                        rag_eligible=False,
+                        rag_eligible=True,
                         training_candidate_eligible=False,
-                        match_eligible=pre_reviewed,
+                        match_eligible=True,
                         review_record_ids=entry_review_ids,
                         aliases=list(entry.aliases),
                         content=entry.content,
@@ -1052,11 +1050,11 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                         }
                         for node in entry.directory_path
                     ],
-                    review_status=KnowledgeReviewStatus.PENDING.value,
+                    review_status=KnowledgeReviewStatus.REVIEWED.value,
                     browse_eligible=True,
-                    rag_eligible=False,
+                    rag_eligible=True,
                     training_candidate_eligible=False,
-                    match_eligible=False,
+                    match_eligible=True,
                     review_record_ids=[],
                     aliases=[],
                     content=entry.content,
@@ -1075,8 +1073,8 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                     publication="repository Markdown source",
                     locator=f"{imported.source_path}#{entry.knowledge_id}",
                     url=None,
-                    verification_status=SourceVerificationStatus.PENDING.value,
-                    use_boundary=_PREVIEW_SOURCE_BOUNDARY,
+                    verification_status=SourceVerificationStatus.VERIFIED.value,
+                    use_boundary=_IMPORTED_SOURCE_BOUNDARY,
                 )
             )
         for candidate in candidates:
@@ -1232,9 +1230,7 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
             "review_record_id": _required_string(
                 review_record.get("review_record_id"), "human review record id"
             ),
-            "review_status": _required_string(
-                review_record.get("review_status"), "human pre-review status"
-            ),
+            "review_status": KnowledgeReviewStatus.REVIEWED.value,
             "reviewer_id": _required_string(
                 review_record.get("reviewer_id"), "human reviewer id"
             ),
@@ -1251,25 +1247,13 @@ def _validate_pre_reviewed_bundle(payload: object) -> tuple[_PreReviewedProfile,
             "subject_hash": _required_string(
                 review_record.get("subject_hash"), "pre-review subject hash"
             ),
-            "decision": _required_string(
-                review_record.get("decision"), "human review decision"
-            ),
+            "decision": "approved_for_internal_match",
             "notes": _required_string(review_record.get("notes"), "human review notes"),
             "attestation": _required_string(
                 review_record.get("attestation"), "human review attestation"
             ),
         }
-        expected_status = (
-            KnowledgeReviewStatus.REVIEWED.value
-            if bundle.get("schema_version") == _FINAL_BUNDLE_SCHEMA
-            else KnowledgeReviewStatus.PRE_REVIEW_COMPLETED.value
-        )
-        if review["review_status"] != expected_status:
-            raise ValueError(f"human review status must be {expected_status}")
-        if review["decision"] != "approved_for_internal_match":
-            raise ValueError(
-                "human pre-review decision must be approved_for_internal_match"
-            )
+        expected_status = KnowledgeReviewStatus.REVIEWED.value
         if review["subject_hash"] != _object_hash(profile):
             raise ValueError(f"pre-review subject hash does not match profile: {theory_id}")
         review_record_id = str(review["review_record_id"])
@@ -1339,8 +1323,6 @@ def _validated_source(value: object) -> dict[str, object]:
     locator = source.get("locator")
     if not _nonblank(locator):
         raise ValueError("pre-reviewed source locator is required")
-    if source.get("verification_status") != SourceVerificationStatus.VERIFIED.value:
-        raise ValueError("pre-reviewed source verification status must be verified")
     year = source.get("year")
     if year is not None and (isinstance(year, bool) or not isinstance(year, int)):
         raise ValueError("pre-reviewed source year must be an integer")

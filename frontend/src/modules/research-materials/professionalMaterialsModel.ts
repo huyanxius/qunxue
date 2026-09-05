@@ -3,7 +3,7 @@ export type ResearchStage = 'intake' | 'collection' | 'analysis' | 'writing' | '
 export type SensitivityLevel = 'public' | 'internal' | 'sensitive' | 'highly_sensitive'
 export type ConsentScope = 'public_use' | 'project_only' | 'team_only' | 'manual_review_only' | 'withdrawn'
 export type DeidentificationStatus = 'not_required' | 'pending' | 'partial' | 'complete'
-export type ModelProcessingScope = 'not_assessed' | 'manual_only' | 'local_only' | 'external_allowed'
+export type ModelProcessingScope = 'manual_only' | 'local_only' | 'external_allowed'
 export type LiteratureFormat = 'bibtex' | 'ris' | 'csl_json'
 export type MaterialKind = 'paper' | 'interview_transcript' | 'observation_record' | 'field_note' | 'other'
 export type MaterialRelationType = 'derived_from' | 'supplements' | 'translation_of' | 'version_of' | 'describes' | 'related'
@@ -158,7 +158,7 @@ export const DEIDENTIFICATION_STATUSES: readonly DeidentificationStatus[] = [
   'not_required', 'pending', 'partial', 'complete',
 ]
 export const MODEL_PROCESSING_SCOPES: readonly ModelProcessingScope[] = [
-  'not_assessed', 'manual_only', 'local_only', 'external_allowed',
+  'manual_only', 'local_only', 'external_allowed',
 ]
 
 const LABELS: Record<string, string> = {
@@ -169,7 +169,7 @@ const LABELS: Record<string, string> = {
   public_use: '可公开使用', project_only: '仅本研究', team_only: '仅研究团队',
   manual_review_only: '仅人工阅读', withdrawn: '已撤回',
   not_required: '无需去标识化', pending: '待去标识化', partial: '部分完成', complete: '已完成',
-  not_assessed: '尚未评估', manual_only: '仅人工处理', local_only: '仅本地模型',
+  manual_only: '仅人工处理', local_only: '仅本地模型',
   external_allowed: '允许外部模型',
 }
 
