@@ -1,10 +1,11 @@
+import threading
 import time
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from inspect import Parameter, signature
 from typing import Literal
-from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from qunxue_api.modules.agent_conversation import (
     AgentCitation,
@@ -21,6 +22,7 @@ from qunxue_api.modules.agent_conversation import (
     ConversationService,
     ConversationTaskBindingConflict,
     IdempotentTurn,
+    ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
     SubjectAgentRunner,
 )
@@ -66,6 +68,15 @@ class DisciplinaryAgentApplication:
         return self._conversations.list_conversations(user_id=user_id)
 
     def get_conversation(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
+        expired = self._conversations.recover_expired_runs(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+        for run in expired:
+            if self._credits is not None:
+                self._credits.release(user_id=user_id, run_id=run.run_id)
+        if expired:
+            self._conversations.commit()
         return self._conversations.get_conversation(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -101,6 +112,33 @@ class DisciplinaryAgentApplication:
             user_id=user_id,
             idempotency_key=idempotency_key,
         )
+
+    def request_cancel(self, *, user_id: UUID, run_id: UUID):
+        run = self._conversations.request_cancel(user_id=user_id, run_id=run_id)
+        self._conversations.commit()
+        return run
+
+    def heartbeat(self, *, user_id: UUID, run_id: UUID, lease_token: str | None = None) -> bool:
+        run = self._conversations.find_run_by_id(user_id=user_id, run_id=run_id)
+        if (
+            run is None
+            or run.status != "running"
+            or run.cancel_requested
+            or (lease_token is not None and run.lease_token != lease_token)
+        ):
+            return True
+        renewed = self._conversations.checkpoint_run(
+            user_id=user_id,
+            run_id=run_id,
+            lease_token=lease_token,
+        )
+        self._conversations.commit()
+        return not renewed
+
+    def get_recovery_runs(self, *, user_id: UUID, conversation_id: UUID):
+        return self.get_conversation(
+            user_id=user_id, conversation_id=conversation_id
+        ).unfinished_runs
 
     def prepare_material_context(
         self,
@@ -175,6 +213,8 @@ class DisciplinaryAgentApplication:
             existing_run = pending_run
         conversation: Conversation | None = None
         if existing_run is not None:
+            if conversation_id is not None and conversation_id != existing_run.conversation_id:
+                raise ValueError("idempotency key belongs to another conversation")
             existing_conversation = self.get_conversation(
                 user_id=user_id,
                 conversation_id=existing_run.conversation_id,
@@ -185,6 +225,10 @@ class DisciplinaryAgentApplication:
                 conversation_id=existing_conversation.conversation_id,
                 requested_task_id=task_id,
             )
+            # Reading the conversation may have reclaimed an expired worker lease.
+            existing_run = self._conversations.find_run_by_id(
+                user_id=user_id, run_id=existing_run.run_id
+            )
             persisted_material_ids = tuple(
                 item.material_id for item in existing_run.material_attachments
             )
@@ -192,6 +236,27 @@ class DisciplinaryAgentApplication:
                 raise ValueError("idempotent Agent run material scope does not match")
             if existing_run.status == "running":
                 raise RunAlreadyActive(str(existing_run.conversation_id))
+            if existing_run.request_snapshot:
+                snapshot = existing_run.request_snapshot
+                if snapshot.get("_unavailable_materials"):
+                    raise ResearchMaterialCitationUnavailable("interrupted run source was deleted")
+                prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
+                workspace = snapshot.get("workspace", "agent")
+                web_search = bool(snapshot.get("web_search", False))
+                mode = snapshot.get("mode", "standard")
+                document_id = _snapshot_uuid(snapshot, "document_id")
+                section_id = snapshot.get("section_id")
+                document_version = snapshot.get("document_version")
+                theory_plan_id = _snapshot_uuid(snapshot, "theory_plan_id")
+                material_ids = persisted_material_ids
+                if existing_run.status not in {
+                    "awaiting_clarification",
+                    "awaiting_plan_confirmation",
+                }:
+                    deep_research_run_id = _snapshot_uuid(snapshot, "deep_research_run_id")
+                    deep_research_action = snapshot.get("deep_research_action")
+                    deep_research_selection = snapshot.get("deep_research_selection")
+
             if existing_run.status in {"awaiting_clarification", "awaiting_plan_confirmation"}:
                 pending = _pending_research(existing_run)
                 if pending is None:
@@ -314,9 +379,7 @@ class DisciplinaryAgentApplication:
             enable_web_search = getattr(tools, "enable_web_search", None)
             if callable(enable_web_search):
                 enable_web_search()
-        enable_research_handoff_tools = getattr(
-            tools, "enable_research_handoff_tools", None
-        )
+        enable_research_handoff_tools = getattr(tools, "enable_research_handoff_tools", None)
         # Deep research owns its full plan/retrieve/conclusion lifecycle. The
         # legacy handoff tool is available only to ordinary Agent turns; if it
         # is exposed here the model can bypass the research cards and jump to
@@ -348,6 +411,27 @@ class DisciplinaryAgentApplication:
         else:
             material_attachments = ()
         runtime_identity = _runner_identity(self._runner)
+        request_snapshot = {
+            "conversation_id": str(conversation.conversation_id),
+            "message": (
+                existing_run.request_snapshot.get("message", prompt)
+                if existing_run is not None
+                else prompt
+            ),
+            "workspace": workspace,
+            "web_search": web_search,
+            "mode": mode,
+            "task_id": str(task_id) if task_id else None,
+            "document_id": str(document_id) if document_id else None,
+            "section_id": section_id,
+            "document_version": document_version,
+            "theory_plan_id": str(theory_plan_id) if theory_plan_id else None,
+            "material_ids": [str(item) for item in material_ids],
+            "deep_research_run_id": str(deep_research_run_id) if deep_research_run_id else None,
+            "deep_research_action": deep_research_action,
+            "deep_research_selection": deep_research_selection,
+            "_execution_prompt": prompt,
+        }
         run = self._conversations.start_run(
             user_id=user_id,
             conversation_id=conversation.conversation_id,
@@ -356,226 +440,318 @@ class DisciplinaryAgentApplication:
             provider=runtime_identity.provider,
             model=runtime_identity.model,
             material_attachments=material_attachments,
+            request_snapshot=request_snapshot,
         )
-        if self._credits is not None:
-            try:
-                self._credits.reserve(user_id=user_id, run_id=run.run_id)
-                self._conversations.commit()
-            except Exception as error:
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    status="failed",
-                    error=str(error),
-                )
-                self._conversations.commit()
-                raise
-        current = self.get_conversation(
-            user_id=user_id,
-            conversation_id=conversation.conversation_id,
+        self._conversations.commit()
+        prior_summary = (
+            tuple(item for item in run.tool_summary if item.get("kind") != "deep_research_pending")
+            if existing_run is not None
+            else ()
         )
-        planned_turn_id = uuid4()
-        bind_agent_context = getattr(tools, "bind_agent_context", None)
-        if callable(bind_agent_context):
-            bind_agent_context(
-                user_id=user_id,
-                conversation_id=run.conversation_id,
-                agent_run_id=run.run_id,
-                agent_turn_id=planned_turn_id,
-                task_id=task_id,
-                document_id=document_id,
-                section_id=section_id,
-                document_version=document_version,
-                theory_plan_id=theory_plan_id,
-            )
-        bind_research_material_scope = getattr(tools, "bind_research_material_scope", None)
-        if callable(bind_research_material_scope):
-            bind_research_material_scope(run.material_attachments)
-        if workspace == "research":
-            enable_research_document_tools = getattr(
-                tools, "enable_research_document_tools", None
-            )
-            if callable(enable_research_document_tools):
-                enable_research_document_tools()
-            enable_research_map = getattr(tools, "enable_research_map", None)
-            if not callable(enable_research_map):
-                raise RuntimeError("research workspace tools are unavailable")
-            enable_research_map(current.research_map)
-        if on_run_started is not None:
-            on_run_started(run.run_id, run.conversation_id, run.status == "completed")
-        if run.status == "completed" and run.turn_id is not None:
-            completed_turn = _find_turn(current, run.turn_id)
-            if completed_turn is None:
-                raise RuntimeError("completed Agent run is missing its persisted turn")
-            return AgentTurnExecution(
-                conversation=current,
-                run_id=run.run_id,
-                result=_result_from_turn(
-                    completed_turn,
-                    release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
-                    provider=run.provider,
-                    model=run.model,
-                ),
-                turn=completed_turn,
-                replayed=True,
-                tool_summary=run.tool_summary,
-            )
-
-        cancelled = is_cancelled or (lambda: False)
-        if cancelled():
-            if self._credits is not None:
-                self._credits.release(user_id=user_id, run_id=run.run_id)
-            self._conversations.finish_run(
-                run_id=run.run_id,
-                status="interrupted",
-                tool_summary=(),
-            )
-            self._conversations.commit()
-            raise AgentInterrupted("Agent run was interrupted by the client")
-
-        conversation_history = current.turns[-8:]
-        if self._memory_tools_factory is not None:
-            tools.memory = self._memory_tools_factory(
-                user_id=user_id,
-                task_id=task_id,
-                conversation_id=current.conversation_id,
-                prompt=prompt,
-                run_id=run.run_id,
-            )
         tool_events: list[AgentToolEvent] = []
-        deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
+        active_tool_calls: set[str] = set()
+        tool_events_lock = threading.RLock()
+        partial_answer = run.partial_answer
+        received_delta = False
+        last_checkpoint = 0.0
+        last_cancel_check = 0.0
+        persisted_cancelled = False
 
-        def save_initial_title(title: str) -> None:
-            nonlocal current
-            normalized = " ".join(title.split()).strip('"\'“”‘’')[:48].strip()
-            if not normalized:
-                return
-            latest = self.get_conversation(
-                user_id=user_id, conversation_id=current.conversation_id,
+        def owns_run() -> bool:
+            latest = self._conversations.find_run_by_id(user_id=user_id, run_id=run.run_id)
+            return (
+                latest is not None
+                and latest.lease_token == run.lease_token
+                and latest.status == "running"
             )
-            # Only replace the initial fallback; a manual rename during planning wins.
-            if latest.title != current.title:
-                current = latest
+
+        def cancelled() -> bool:
+            nonlocal last_cancel_check, persisted_cancelled
+            if is_cancelled is not None and is_cancelled():
+                return True
+            with tool_events_lock:
+                if active_tool_calls:
+                    return persisted_cancelled
+                now = time.monotonic()
+                if now - last_cancel_check >= 0.2:
+                    last_cancel_check = now
+                    latest = self._conversations.find_run_by_id(user_id=user_id, run_id=run.run_id)
+                    persisted_cancelled = (
+                        latest is None
+                        or latest.cancel_requested
+                        or latest.lease_token != run.lease_token
+                        or latest.status != "running"
+                    )
+                return persisted_cancelled
+
+        def saved_summary() -> tuple[dict[str, object], ...]:
+            return (*prior_summary, *(_tool_summary(item) for item in tool_events))
+
+        def safe_checkpoint() -> None:
+            with tool_events_lock:
+                if not active_tool_calls:
+                    checkpoint()
+
+        def checkpoint(*, force: bool = False) -> None:
+            nonlocal last_checkpoint
+            now = time.monotonic()
+            if not force and now - last_checkpoint < 0.25:
                 return
-            current = self._conversations.rename_conversation(
-                user_id=user_id, conversation_id=current.conversation_id, title=normalized,
-            )
-            # The answer's model telemetry writes through another database session.
+            if not self._conversations.checkpoint_run(
+                user_id=user_id,
+                run_id=run.run_id,
+                lease_token=run.lease_token,
+                partial_answer=partial_answer,
+                tool_summary=saved_summary(),
+            ):
+                raise AgentInterrupted("Agent execution lease was replaced")
             self._conversations.commit()
+            last_checkpoint = now
 
-        # Every Agent turn gets the same lightweight intent check. Deep mode
-        # additionally pauses on a plan; ordinary mode only pauses when the
-        # planner identifies a material clarification question.
-        if deep_research_action not in {"clarify", "confirm"}:
-            prepare_research = getattr(self._runner, "prepare_research", None)
-            planning_events: list[AgentResearchEvent] = []
-            planning_failed = False
-            if callable(prepare_research):
-                try:
-                    prepare_kwargs = {
-                        "prompt": prompt,
-                        "conversation": conversation_history,
-                        "on_event": planning_events.append,
-                    }
-                    parameters = signature(prepare_research).parameters
-                    if "tools" in parameters or any(
-                        parameter.kind is Parameter.VAR_KEYWORD
-                        for parameter in parameters.values()
-                    ):
-                        prepare_kwargs["tools"] = tools
-                    if conversation_was_created and "on_title" in parameters:
-                        prepare_kwargs["on_title"] = save_initial_title
-                    prepare_research(
-                        **prepare_kwargs,
-                    )
-                except Exception:
-                    planning_events.clear()
-                    planning_failed = True
-                if planning_events or planning_failed:
-                    planning_event = (
-                        planning_events[-1]
-                        if planning_events
-                        else AgentResearchEvent(
-                            kind="plan",
-                            payload={
-                                "title": "深入研究",
-                                "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                            },
-                        )
-                    )
-                    if deep_research_action == "skip" and planning_event.kind == "ask":
-                        planning_event = AgentResearchEvent(
-                            kind="plan",
-                            payload={
-                                "title": prompt.strip()[:80] or "深入研究",
-                                "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                            },
-                        )
-                    should_pause = mode == "deep_research" or planning_event.kind == "ask"
-                    if should_pause:
-                        if on_research_event is not None:
-                            on_research_event(planning_event)
-                        deep_research_started = mode == "deep_research"
-                        state = (
-                            "awaiting_clarification"
-                            if planning_event.kind == "ask"
-                            else "awaiting_plan_confirmation"
-                        )
-                        pending = {
-                            "kind": "deep_research_pending",
-                            "version": 1,
-                            "state": state,
-                            "prompt": prompt,
-                            **dict(planning_event.payload),
-                        }
-                        if deep_research_selection:
-                            pending["selected_intent"] = deep_research_selection
-                        self._conversations.finish_run(
-                            run_id=run.run_id,
-                            status=state,
-                            tool_summary=(pending,),
-                        )
-                        if self._credits is not None:
-                            self._credits.release(user_id=user_id, run_id=run.run_id)
-                        self._conversations.commit()
-                        return AgentTurnExecution(
-                            conversation=current,
-                            run_id=run.run_id,
-                            result=AgentRunResult(
-                                answer="",
-                                citations=(),
-                                release_id=(
-                                    run.knowledge_release_id or tools.release.knowledge_release_id
-                                ),
-                                provider=run.provider,
-                                model=run.model,
-                            ),
-                            turn=None,
-                            replayed=False,
-                            tool_summary=(pending,),
-                            pending_research=pending,
-                        )
-
-        def record_tool_event(event: AgentToolEvent) -> None:
-            tool_events.append(event)
-            if on_tool_event is not None:
-                on_tool_event(event)
-
-        # 澄清、确认、执行各是一次独立调用，所以这里量到的就是真正跑研究那一段，不含
-        # 用户思考的时间。不限定在 confirm 之后，是为了让没经过暂停的深入研究也留痕。
-        research_started_at = time.monotonic() if mode == "deep_research" else None
+        def record_delta(delta: str) -> None:
+            nonlocal partial_answer, received_delta
+            if not received_delta:
+                partial_answer = ""
+                received_delta = True
+            partial_answer += delta
+            safe_checkpoint()
+            if on_delta is not None:
+                on_delta(delta)
 
         try:
+            if self._credits is not None:
+                self._credits.reserve(user_id=user_id, run_id=run.run_id)
+                self._conversations.commit()
+            current = self.get_conversation(
+                user_id=user_id,
+                conversation_id=conversation.conversation_id,
+            )
+            planned_turn_id = uuid5(run.run_id, "turn")
+            tools.agent_run_checkpoint = {
+                "partial_answer": run.partial_answer,
+                "tool_summary": list(prior_summary),
+            }
+            bind_agent_context = getattr(tools, "bind_agent_context", None)
+            if callable(bind_agent_context):
+                bind_agent_context(
+                    user_id=user_id,
+                    conversation_id=run.conversation_id,
+                    agent_run_id=run.run_id,
+                    agent_turn_id=planned_turn_id,
+                    task_id=task_id,
+                    document_id=document_id,
+                    section_id=section_id,
+                    document_version=document_version,
+                    theory_plan_id=theory_plan_id,
+                )
+            bind_research_material_scope = getattr(tools, "bind_research_material_scope", None)
+            if callable(bind_research_material_scope):
+                bind_research_material_scope(run.material_attachments)
+            if workspace == "research":
+                enable_research_document_tools = getattr(
+                    tools, "enable_research_document_tools", None
+                )
+                if callable(enable_research_document_tools):
+                    enable_research_document_tools()
+                enable_research_map = getattr(tools, "enable_research_map", None)
+                if not callable(enable_research_map):
+                    raise RuntimeError("research workspace tools are unavailable")
+                enable_research_map(current.research_map)
+            if on_run_started is not None:
+                callback_kwargs = (
+                    {"lease_token": run.lease_token}
+                    if "lease_token" in signature(on_run_started).parameters
+                    else {}
+                )
+                on_run_started(
+                    run.run_id, run.conversation_id, run.status == "completed", **callback_kwargs
+                )
+            if run.status == "completed" and run.turn_id is not None:
+                completed_turn = _find_turn(current, run.turn_id)
+                if completed_turn is None:
+                    raise RuntimeError("completed Agent run is missing its persisted turn")
+                return AgentTurnExecution(
+                    conversation=current,
+                    run_id=run.run_id,
+                    result=_result_from_turn(
+                        completed_turn,
+                        release_id=run.knowledge_release_id or tools.release.knowledge_release_id,
+                        provider=run.provider,
+                        model=run.model,
+                    ),
+                    turn=completed_turn,
+                    replayed=True,
+                    tool_summary=run.tool_summary,
+                )
+
+            if cancelled():
+                raise AgentInterrupted("Agent run was interrupted by the client")
+
+            conversation_history = current.turns[-8:]
+            if self._memory_tools_factory is not None:
+                tools.memory = self._memory_tools_factory(
+                    user_id=user_id,
+                    task_id=task_id,
+                    conversation_id=current.conversation_id,
+                    prompt=prompt,
+                    run_id=run.run_id,
+                )
+            deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
+
+            def save_initial_title(title: str) -> None:
+                nonlocal current
+                normalized = " ".join(title.split()).strip("\"'“”‘’")[:48].strip()
+                if not normalized:
+                    return
+                latest = self.get_conversation(
+                    user_id=user_id,
+                    conversation_id=current.conversation_id,
+                )
+                # Only replace the initial fallback; a manual rename during planning wins.
+                if latest.title != current.title:
+                    current = latest
+                    return
+                current = self._conversations.rename_conversation(
+                    user_id=user_id,
+                    conversation_id=current.conversation_id,
+                    title=normalized,
+                )
+                # The answer's model telemetry writes through another database session.
+                self._conversations.commit()
+
+            # Every Agent turn gets the same lightweight intent check. Deep mode
+            # additionally pauses on a plan; ordinary mode only pauses when the
+            # planner identifies a material clarification question.
+            if deep_research_action not in {"clarify", "confirm"} and not (
+                run.partial_answer or prior_summary
+            ):
+                prepare_research = getattr(self._runner, "prepare_research", None)
+                planning_events: list[AgentResearchEvent] = []
+                planning_failed = False
+                if callable(prepare_research):
+                    try:
+                        prepare_kwargs = {
+                            "prompt": prompt,
+                            "conversation": conversation_history,
+                            "on_event": planning_events.append,
+                        }
+                        parameters = signature(prepare_research).parameters
+                        if "tools" in parameters or any(
+                            parameter.kind is Parameter.VAR_KEYWORD
+                            for parameter in parameters.values()
+                        ):
+                            prepare_kwargs["tools"] = tools
+                        if "is_cancelled" in parameters:
+                            prepare_kwargs["is_cancelled"] = cancelled
+                        if conversation_was_created and "on_title" in parameters:
+                            prepare_kwargs["on_title"] = save_initial_title
+                        prepare_research(
+                            **prepare_kwargs,
+                        )
+                        if cancelled():
+                            raise AgentInterrupted("Agent run was interrupted during planning")
+                    except AgentInterrupted:
+                        raise
+                    except Exception:
+                        planning_events.clear()
+                        planning_failed = True
+                    if planning_events or planning_failed:
+                        planning_event = (
+                            planning_events[-1]
+                            if planning_events
+                            else AgentResearchEvent(
+                                kind="plan",
+                                payload={
+                                    "title": "深入研究",
+                                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                                },
+                            )
+                        )
+                        if deep_research_action == "skip" and planning_event.kind == "ask":
+                            planning_event = AgentResearchEvent(
+                                kind="plan",
+                                payload={
+                                    "title": prompt.strip()[:80] or "深入研究",
+                                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
+                                },
+                            )
+                        should_pause = mode == "deep_research" or planning_event.kind == "ask"
+                        if should_pause:
+                            if on_research_event is not None:
+                                on_research_event(planning_event)
+                            deep_research_started = mode == "deep_research"
+                            state = (
+                                "awaiting_clarification"
+                                if planning_event.kind == "ask"
+                                else "awaiting_plan_confirmation"
+                            )
+                            pending = {
+                                "kind": "deep_research_pending",
+                                "version": 1,
+                                "state": state,
+                                "prompt": prompt,
+                                **dict(planning_event.payload),
+                            }
+                            if deep_research_selection:
+                                pending["selected_intent"] = deep_research_selection
+                            self._conversations.finish_run(
+                                run_id=run.run_id,
+                                lease_token=run.lease_token,
+                                status=state,
+                                tool_summary=(pending,),
+                            )
+                            if self._credits is not None:
+                                self._credits.release(user_id=user_id, run_id=run.run_id)
+                            self._conversations.commit()
+                            return AgentTurnExecution(
+                                conversation=current,
+                                run_id=run.run_id,
+                                result=AgentRunResult(
+                                    answer="",
+                                    citations=(),
+                                    release_id=(
+                                        run.knowledge_release_id
+                                        or tools.release.knowledge_release_id
+                                    ),
+                                    provider=run.provider,
+                                    model=run.model,
+                                ),
+                                turn=None,
+                                replayed=False,
+                                tool_summary=(pending,),
+                                pending_research=pending,
+                            )
+
+            def record_tool_event(event: AgentToolEvent) -> None:
+                with tool_events_lock:
+                    tool_events.append(event)
+                    if event.phase == "started":
+                        active_tool_calls.add(event.call_id)
+                    else:
+                        active_tool_calls.discard(event.call_id)
+                if on_tool_event is not None:
+                    on_tool_event(event)
+
+            # 澄清、确认、执行各是一次独立调用，所以这里量到的就是真正跑研究那一段，不含
+            # 用户思考的时间。不限定在 confirm 之后，是为了让没经过暂停的深入研究也留痕。
+            research_started_at = time.monotonic() if mode == "deep_research" else None
+
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
                 runner_kwargs = {
                     "prompt": prompt,
                     "conversation": conversation_history,
                     "tools": tools,
-                    "on_delta": on_delta,
+                    "on_delta": record_delta,
                     "on_tool_event": record_tool_event,
                 }
                 if "is_cancelled" in __import__("inspect").signature(stream_runner).parameters:
                     runner_kwargs["is_cancelled"] = cancelled
+                parameters = signature(stream_runner).parameters
+                if "on_checkpoint" in parameters:
+                    runner_kwargs["on_checkpoint"] = safe_checkpoint
+                if "can_cancel" in parameters:
+                    runner_kwargs["can_cancel"] = lambda: not active_tool_calls
                 result = stream_runner(
                     **runner_kwargs,
                 )
@@ -603,21 +779,22 @@ class DisciplinaryAgentApplication:
                     )
                 )
             if cancelled():
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    status="interrupted",
-                    tool_summary=tuple(_tool_summary(item) for item in tool_events),
-                )
-                self._conversations.commit()
                 raise AgentInterrupted("Agent run was interrupted by the client")
             citations = tuple(_agent_citation(item) for item in result.citations)
             evidence_ids = frozenset(tools.evidence)
             with self._atomic():
+                if not self._conversations.checkpoint_run(
+                    user_id=user_id,
+                    run_id=run.run_id,
+                    lease_token=run.lease_token,
+                    require_not_cancelled=True,
+                ):
+                    raise AgentInterrupted("Agent execution lease was replaced")
                 turn_result = self._conversations.append_turn(
                     user_id=user_id,
                     conversation_id=conversation.conversation_id,
                     idempotency_key=idempotency_key,
-                    user_content=prompt,
+                    user_content=str(request_snapshot["message"]),
                     assistant_content=result.answer,
                     citations=citations,
                     evidence_ids=evidence_ids,
@@ -632,15 +809,14 @@ class DisciplinaryAgentApplication:
                         model=result.model,
                     )
                 completed_tool_summary = (
-                    *(_tool_summary(item) for item in tool_events),
+                    *saved_summary(),
                     *_deep_research_summary(result, research_started_at),
                 )
                 self._conversations.finish_run(
                     run_id=run.run_id,
+                    lease_token=run.lease_token,
                     status="completed",
-                    turn_id=(
-                        turn_result.turn_id if isinstance(turn_result, AgentTurn) else None
-                    ),
+                    turn_id=(turn_result.turn_id if isinstance(turn_result, AgentTurn) else None),
                     tool_summary=completed_tool_summary,
                     provider=result.provider,
                     model=result.model,
@@ -649,26 +825,19 @@ class DisciplinaryAgentApplication:
                     finalize_agent_turn = getattr(tools, "finalize_agent_turn", None)
                     if callable(finalize_agent_turn):
                         finalize_agent_turn(source_turn_id=turn_result.turn_id)
-        except AgentInterrupted:
-            if self._credits is not None:
-                self._credits.release(user_id=user_id, run_id=run.run_id)
-            self._conversations.finish_run(
-                run_id=run.run_id,
-                status="interrupted",
-                tool_summary=tuple(_tool_summary(item) for item in tool_events),
-            )
-            self._conversations.commit()
-            raise
         except Exception as error:
-            if self._credits is not None:
-                self._credits.release(user_id=user_id, run_id=run.run_id)
-            self._conversations.finish_run(
-                run_id=run.run_id,
-                status="failed",
-                error=str(error),
-                tool_summary=tuple(_tool_summary(item) for item in tool_events),
-            )
-            self._conversations.commit()
+            if owns_run():
+                checkpoint(force=True)
+                if self._credits is not None:
+                    self._credits.release(user_id=user_id, run_id=run.run_id)
+                self._conversations.finish_run(
+                    run_id=run.run_id,
+                    lease_token=run.lease_token,
+                    status="interrupted" if isinstance(error, AgentInterrupted) else "failed",
+                    error=None if isinstance(error, AgentInterrupted) else str(error),
+                    tool_summary=saved_summary(),
+                )
+                self._conversations.commit()
             raise
         if isinstance(turn_result, IdempotentTurn):
             refreshed = self.get_conversation(
@@ -689,7 +858,7 @@ class DisciplinaryAgentApplication:
                 ),
                 turn=replayed_turn,
                 replayed=True,
-                tool_summary=tuple(_tool_summary(item) for item in tool_events),
+                tool_summary=saved_summary(),
             )
         refreshed = self.get_conversation(
             user_id=user_id,
@@ -854,3 +1023,8 @@ def _sanitize_tool_value(value):
     if isinstance(value, (list, tuple, set, frozenset)):
         return [_sanitize_tool_value(item) for item in value]
     return {"type": type(value).__name__}
+
+
+def _snapshot_uuid(snapshot: dict[str, object], key: str) -> UUID | None:
+    value = snapshot.get(key)
+    return UUID(str(value)) if value else None
