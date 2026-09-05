@@ -41,7 +41,7 @@ def _upload(client: TestClient, task_id: str, filename: str = "访谈.txt") -> d
     return response.json()
 
 
-def test_upload_creates_restricted_archive_profile_then_explicit_policy_unlocks_agent_use(
+def test_upload_is_immediately_available_to_agent(
     client: TestClient,
 ) -> None:
     _authenticate(client)
@@ -53,8 +53,9 @@ def test_upload_creates_restricted_archive_profile_then_explicit_policy_unlocks_
     assert archive.status_code == 200
     profile = archive.json()["profiles"][0]
     assert profile["material_id"] == material["material_id"]
-    assert profile["model_processing_scope"] == "not_assessed"
-    assert archive.json()["inventory"]["restricted_material_ids"] == [material["material_id"]]
+    assert profile["model_processing_scope"] == "external_allowed"
+    assert profile["allows_external_model_processing"] is True
+    assert archive.json()["inventory"]["restricted_material_ids"] == []
 
     updated = client.patch(
         f"/api/research-tasks/{task_id}/material-archive/materials/{material['material_id']}",

@@ -99,7 +99,7 @@ class _FailingExternalProvider(_ExternalProvider):
         raise TranscriptionError("provider failed")
 
 
-def test_explicit_external_transcription_authorizes_a_new_unassessed_material() -> None:
+def test_new_upload_can_be_transcribed_without_additional_review() -> None:
     material = ResearchMaterial.create(
         user_id=UUID(int=1),
         task_id=UUID(int=2),
@@ -116,8 +116,6 @@ def test_explicit_external_transcription_authorizes_a_new_unassessed_material() 
         user_id=material.user_id,
         task_id=material.task_id,
         consent_scope=ConsentScope.PROJECT_ONLY,
-        deidentification_status=DeidentificationStatus.PENDING,
-        model_processing_scope=ModelProcessingScope.NOT_ASSESSED,
         now=NOW,
     )
     archive = _Archive(profile)
@@ -140,7 +138,7 @@ def test_explicit_external_transcription_authorizes_a_new_unassessed_material() 
     assert version.segments[0].text == "不会被调用"
     assert materials.read_count == 1
     assert archive.profile.model_processing_scope is ModelProcessingScope.EXTERNAL_ALLOWED
-    assert archive.profile.deidentification_status is DeidentificationStatus.COMPLETE
+    assert archive.profile.deidentification_status is DeidentificationStatus.NOT_REQUIRED
 
 
 def test_explicit_external_transcription_keeps_manual_only_material_denied() -> None:
