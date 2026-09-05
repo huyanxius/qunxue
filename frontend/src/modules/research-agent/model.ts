@@ -85,11 +85,49 @@ export type AgentConversationSummary = {
   turn_count: number
 }
 
+// 恢复时使用接受问题时的完整上下文，避免入口或编辑位置变化改变原轮次。
+export type AgentTurnRequest = {
+  conversation_id?: string | null
+  message: string
+  mode?: 'standard' | 'deep_research'
+  workspace?: 'agent' | 'research'
+  web_search?: boolean
+  task_id?: string | null
+  document_id?: string | null
+  section_id?: string | null
+  document_version?: number | null
+  theory_plan_id?: string | null
+  material_ids?: string[]
+  deep_research_run_id?: string | null
+  deep_research_action?: 'clarify' | 'confirm' | 'skip' | null
+  deep_research_selection?: string | null
+}
+
+type AgentUnfinishedRunStatus = 'running' | 'failed' | 'interrupted' | 'awaiting_clarification' | 'awaiting_plan_confirmation'
+
+export type AgentRunRecovery = {
+  run_id: string
+  idempotency_key: string
+  status: AgentUnfinishedRunStatus
+  request: AgentTurnRequest
+  partial_answer: string
+  tool_summary?: Record<string, unknown>[]
+  updated_at: string
+  cancel_requested: boolean
+}
+
+export type AgentRunStopResult = {
+  run_id: string
+  status: AgentUnfinishedRunStatus | 'completed'
+  cancel_requested: boolean
+}
+
 export type AgentConversation = AgentConversationSummary & {
   canvas_edit_version?: number
   created_at: string
   turns: AgentTurn[]
   research_map?: AgentResearchMap
+  unfinished_runs?: AgentRunRecovery[]
 }
 
 export type AgentRuntimeMode = 'mock' | 'base' | 'sft'

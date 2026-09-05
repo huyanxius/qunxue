@@ -13,6 +13,7 @@ import type {
   AgentConversation,
   AgentConversationSummary,
   AgentEvent,
+  AgentTurnRequest,
 } from './model'
 import type { ResearchStartJourney } from './researchStart'
 
@@ -32,8 +33,8 @@ export function deleteAgentConversation(conversationId: string) {
   return deleteConversation(conversationId)
 }
 
-export function stopAgentRun(runId: string) {
-  return stopRun(runId)
+export function stopAgentRun(runId: string, options?: { keepalive?: boolean }) {
+  return stopRun(runId, options)
 }
 
 export function getResearchStartJourney(conversationId: string, signal?: AbortSignal) {
@@ -55,7 +56,7 @@ export function confirmResearchStartProposal(
 }
 
 export function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null; material_ids?: string[]; deep_research_run_id?: string | null; deep_research_action?: 'clarify' | 'confirm' | 'skip' | null; deep_research_selection?: string | null },
+  payload: AgentTurnRequest & { idempotencyKey: string },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ) {

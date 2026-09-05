@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from qunxue_api.modules.agent_conversation.domain import (
@@ -67,8 +67,13 @@ class _MemoryRepository:
             and run.status == "completed"
             and run.turn_id is not None
         }
+        unfinished = tuple(
+            run
+            for run in self.runs.values()
+            if run.conversation_id == conversation_id and run.status != "completed"
+        )
         if not runs_by_turn:
-            return conversation
+            return replace(conversation, unfinished_runs=unfinished)
         patches_by_turn = {
             turn_id: patches_from_tool_summary(summary) for turn_id, summary in runs_by_turn.items()
         }
@@ -95,6 +100,7 @@ class _MemoryRepository:
                 ),
                 self.canvas_edits.get(conversation_id, {}),
             ),
+            unfinished_runs=unfinished,
         )
 
     def edit_canvas_node(
@@ -189,6 +195,7 @@ class _MemoryRepository:
             created_at=conversation.created_at,
             updated_at=datetime.now(UTC),
             turns=turns,
+            task_id=conversation.task_id,
         )
         self.conversations[conversation.conversation_id] = updated
         self.turn_keys[key] = turn.turn_id
@@ -209,17 +216,18 @@ class _MemoryRepository:
                 raise RunAlreadyActive(str(run.conversation_id))
             if existing.status == "completed":
                 return existing
-            run = AgentRun(
-                run_id=existing.run_id,
-                conversation_id=run.conversation_id,
-                user_id=run.user_id,
-                idempotency_key=run.idempotency_key,
+            run = replace(
+                existing,
                 status="running",
                 provider=run.provider,
                 model=run.model,
                 knowledge_release_id=run.knowledge_release_id,
                 turn_id=None,
-                tool_summary=(),
+                request_snapshot=run.request_snapshot or existing.request_snapshot,
+                cancel_requested=False,
+                lease_token=run.lease_token,
+                lease_expires_at=run.lease_expires_at,
+                updated_at=run.updated_at,
             )
         if any(
             item.conversation_id == run.conversation_id and item.status == "running"
@@ -255,27 +263,84 @@ class _MemoryRepository:
         tool_summary: tuple[dict[str, object], ...] = (),
         provider: str | None = None,
         model: str | None = None,
+        lease_token: str | None = None,
     ) -> None:
         del error
         current = self.runs[run_id]
-        self.runs[run_id] = AgentRun(
-            run_id=current.run_id,
-            conversation_id=current.conversation_id,
-            user_id=current.user_id,
-            idempotency_key=current.idempotency_key,
-            status=status,  # type: ignore[arg-type]
+        if lease_token is not None and (
+            current.lease_token != lease_token or current.status != "running"
+        ):
+            return
+        self.runs[run_id] = replace(
+            current,
+            status=status,
             provider=provider or current.provider,
             model=model or current.model,
-            knowledge_release_id=current.knowledge_release_id,
-            turn_id=(
-                None
-                if status != "completed" and turn_id is None
-                else current.turn_id
-                if turn_id is None
-                else turn_id
-            ),
+            turn_id=turn_id,
             tool_summary=tool_summary,
+            updated_at=datetime.now(UTC),
+            lease_expires_at=None,
         )
+
+    def checkpoint_run(
+        self,
+        *,
+        user_id,
+        run_id,
+        lease_token=None,
+        partial_answer=None,
+        tool_summary=None,
+        request_snapshot=None,
+        require_not_cancelled=False,
+    ) -> bool:
+        run = self.find_run_by_id(user_id=user_id, run_id=run_id)
+        if (
+            run is None
+            or run.status != "running"
+            or (require_not_cancelled and run.cancel_requested)
+            or (lease_token is not None and run.lease_token != lease_token)
+        ):
+            return False
+        now = datetime.now(UTC)
+        changes = {"updated_at": now, "lease_expires_at": now + timedelta(seconds=30)}
+        if partial_answer is not None:
+            changes["partial_answer"] = partial_answer
+        if tool_summary is not None:
+            changes["tool_summary"] = tool_summary
+        if request_snapshot is not None:
+            changes["request_snapshot"] = dict(request_snapshot)
+        self.runs[run_id] = replace(run, **changes)
+        return True
+
+    def request_cancel(self, *, user_id: UUID, run_id: UUID) -> AgentRun:
+        run = self.find_run_by_id(user_id=user_id, run_id=run_id)
+        if run is None:
+            raise ConversationNotFound(str(run_id))
+        if run.status == "running":
+            run = replace(run, cancel_requested=True, updated_at=datetime.now(UTC))
+            self.runs[run_id] = run
+        return run
+
+    def recover_expired_runs(self, *, user_id: UUID, conversation_id: UUID) -> tuple[AgentRun, ...]:
+        now = datetime.now(UTC)
+        expired = []
+        for run in tuple(self.runs.values()):
+            if (
+                run.user_id == user_id
+                and run.conversation_id == conversation_id
+                and run.status == "running"
+                and (run.lease_expires_at is None or run.lease_expires_at <= now)
+            ):
+                recovered = replace(
+                    run,
+                    status="interrupted",
+                    cancel_requested=True,
+                    updated_at=now,
+                    lease_expires_at=None,
+                )
+                self.runs[run.run_id] = recovered
+                expired.append(recovered)
+        return tuple(expired)
 
 
 class ConversationService:
@@ -414,6 +479,7 @@ class ConversationService:
         provider: str = "pydantic-ai",
         model: str = "knowledge-agent",
         material_attachments: tuple[AgentMaterialAttachment, ...] = (),
+        request_snapshot: dict[str, object] | None = None,
     ) -> AgentRun:
         self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         normalized_provider = provider.strip()
@@ -431,6 +497,7 @@ class ConversationService:
                 model=normalized_model,
                 knowledge_release_id=knowledge_release_id,
                 material_attachments=material_attachments,
+                request_snapshot=dict(request_snapshot or {}),
             )
         )
 
@@ -450,6 +517,7 @@ class ConversationService:
         tool_summary: tuple[dict[str, object], ...] = (),
         provider: str | None = None,
         model: str | None = None,
+        lease_token: str | None = None,
     ) -> None:
         self._repository.finish_run(
             run_id=run_id,
@@ -459,4 +527,16 @@ class ConversationService:
             tool_summary=tool_summary,
             provider=provider,
             model=model,
+            lease_token=lease_token,
+        )
+
+    def checkpoint_run(self, **kwargs) -> bool:
+        return self._repository.checkpoint_run(**kwargs)
+
+    def request_cancel(self, *, user_id: UUID, run_id: UUID) -> AgentRun:
+        return self._repository.request_cancel(user_id=user_id, run_id=run_id)
+
+    def recover_expired_runs(self, *, user_id: UUID, conversation_id: UUID) -> tuple[AgentRun, ...]:
+        return self._repository.recover_expired_runs(
+            user_id=user_id, conversation_id=conversation_id
         )

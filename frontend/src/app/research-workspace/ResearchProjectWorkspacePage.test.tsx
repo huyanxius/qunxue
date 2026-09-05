@@ -4,20 +4,21 @@ import { useState, type ReactNode } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { ResearchDocumentWorkspaceContext } from './ResearchDocumentWorkbench'
 import { ResearchProjectWorkspacePage } from './ResearchProjectWorkspacePage'
 
 const agentInstances = vi.hoisted(() => ({ count: 0 }))
 
 vi.mock('../agent/ResearchAgentConversationPage', () => ({
-  ResearchAgentConversationPage: ({ conversationId, taskId }: { conversationId: string; taskId: string }) => {
+  ResearchAgentConversationPage: ({ conversationId, taskId, onConversationStarted }: { conversationId: string; taskId: string; onConversationStarted?: (identity: { conversation_id: string; task_id: string }) => void }) => {
     const [instance] = useState(() => ++agentInstances.count)
-    return <aside aria-label="研究 Agent 对话栏" data-instance={instance}>{conversationId}:{taskId}</aside>
+    return <aside aria-label="研究 Agent 对话栏" data-instance={instance}>{conversationId}:{taskId}<button onClick={() => onConversationStarted?.({ conversation_id: 'conversation-created', task_id: taskId })}>开始首轮</button></aside>
   },
 }))
 
 vi.mock('./ResearchDocumentWorkbench', () => ({
-  ResearchDocumentWorkbench: ({ workspaceMode }: { workspaceMode: string }) => (
-    <section aria-label="文档中心">{workspaceMode}</section>
+  ResearchDocumentWorkbench: ({ workspaceMode, onWorkspaceContextChange }: { workspaceMode: string; onWorkspaceContextChange?: (context: ResearchDocumentWorkspaceContext) => void }) => (
+    <section aria-label="文档中心">{workspaceMode}<button onClick={() => onWorkspaceContextChange?.({ mode: 'framework', documentId: 'document-1', sectionId: 'research_question', documentVersion: 2, theoryPlanId: null })}>定位章节</button></section>
   ),
 }))
 
@@ -25,13 +26,14 @@ vi.mock('../../modules/research-materials', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../modules/research-materials')>()
   return {
     ...actual,
-    ResearchMaterialsPanel: ({ initialMaterialId, initialSegmentId, agentPanel, analysisPanel, workspaceNavigation }: {
+    ResearchMaterialsPanel: ({ initialMaterialId, initialSegmentId, agentPanel, analysisPanel, workspaceNavigation, onWorkspaceLocationChange }: {
+      onWorkspaceLocationChange?: (next: { materialId: string; parseId: string; segmentId: string }) => void
       agentPanel?: ReactNode
       analysisPanel?: ReactNode
       workspaceNavigation?: ReactNode
       initialMaterialId: string | null
       initialSegmentId: string | null
-    }) => <section aria-label="材料中心">{initialMaterialId}:{initialSegmentId}{workspaceNavigation}{analysisPanel}{agentPanel}</section>,
+    }) => <section aria-label="材料中心">{initialMaterialId}:{initialSegmentId}{workspaceNavigation}{analysisPanel}{agentPanel}<button onClick={() => onWorkspaceLocationChange?.({ materialId: 'material-2', parseId: 'parse-2', segmentId: 'segment-2' })}>定位材料</button></section>,
     ResearchAnalysisPanel: () => <section aria-label="分析中心">分析</section>,
   }
 })
@@ -91,11 +93,12 @@ function LocationProbe() {
   return <output aria-label="当前地址">{location.pathname}{location.search}</output>
 }
 
-function renderWorkspace(path: string) {
+function renderWorkspace(path: string, conversationTaskId = 'task-1', primaryConversationId: string | null = 'conversation-1') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : input)
-    if (url.pathname === '/api/research-tasks/task-1/navigation') return json(navigation())
+    if (url.pathname === '/api/agent/conversations/conversation-b') return json({ conversation_id: 'conversation-b', task_id: conversationTaskId, title: '后续对话', created_at: '2026-09-05T00:00:00Z', updated_at: '2026-09-05T00:00:00Z', turn_count: 0, turns: [] })
+    if (url.pathname === '/api/research-tasks/task-1/navigation') return json({ ...navigation(), conversation_id: primaryConversationId })
     if (url.pathname === '/api/research-tasks/task-1') return json(task())
     return json({})
   }))
@@ -112,6 +115,50 @@ function renderWorkspace(path: string) {
 }
 
 describe('ResearchProjectWorkspacePage', () => {
+  it('preserves a later project conversation through tool navigation', async () => {
+    renderWorkspace('/research/task-1/workspace/map?conversation_id=conversation-b')
+    const tools = await screen.findByRole('navigation', { name: '研究中心工具' })
+    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveTextContent('conversation-b:task-1')
+    expect(within(tools).getByRole('link', { name: '文稿' })).toHaveAttribute('href', '/research/task-1/workspace/writing?conversation_id=conversation-b')
+    fireEvent.click(within(tools).getByRole('link', { name: '文稿' }))
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/writing?conversation_id=conversation-b')
+    const requests = vi.mocked(fetch).mock.calls.map(([input]) => new URL(input instanceof Request ? input.url : String(input)).pathname)
+    expect(requests).toContain('/api/agent/conversations/conversation-b')
+  })
+
+  it('rejects a conversation from another project before displaying the workspace', async () => {
+    renderWorkspace('/research/task-1/workspace/map?conversation_id=conversation-b', 'another-task')
+    expect(await screen.findByText('这段对话不属于当前研究项目。')).toBeVisible()
+    expect(screen.queryByRole('navigation', { name: '研究中心工具' })).not.toBeInTheDocument()
+  })
+
+  it('preserves explicit conversation identity when resolving a missing tool', async () => {
+    renderWorkspace('/research/task-1/workspace?conversation_id=conversation-b')
+    await waitFor(() => expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/materials?conversation_id=conversation-b'))
+  })
+
+  it('preserves conversation identity when selecting a document section', async () => {
+    renderWorkspace('/research/task-1/workspace/writing?conversation_id=conversation-b')
+    fireEvent.click(await screen.findByRole('button', { name: '定位章节' }))
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/writing?document_id=document-1&section_id=research_question&version=2&conversation_id=conversation-b')
+  })
+
+  it('preserves conversation identity when locating a material segment', async () => {
+    renderWorkspace('/research/task-1/workspace/materials?material_id=material-1&conversation_id=conversation-b&batch_run_id=batch-1')
+    fireEvent.click(await screen.findByRole('button', { name: '定位材料' }))
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/materials?material_id=material-2&parse_id=parse-2&segment_id=segment-2&batch_run_id=batch-1&conversation_id=conversation-b')
+  })
+
+  it('records the first conversation before completion without remounting the active Agent', async () => {
+    renderWorkspace('/research/task-1/workspace/map', 'task-1', null)
+    fireEvent.click(await screen.findByRole('button', { name: '开始首轮' }))
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/map?conversation_id=conversation-created')
+    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveAttribute('data-instance', '1')
+    fireEvent.click(screen.getByRole('link', { name: '材料' }))
+    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/materials?conversation_id=conversation-created')
+    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveTextContent('conversation-created:task-1')
+  })
+
   it('opens the document full screen with the project Agent and analysis inside the reader', async () => {
     renderWorkspace('/research/task-1/workspace/materials?material_id=material-1&segment_id=segment-1')
     const reader = await screen.findByRole('region', { name: '材料中心' })

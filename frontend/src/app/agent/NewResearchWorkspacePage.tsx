@@ -214,6 +214,15 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     }
   }, [])
 
+  const syncConversationIdentity = useCallback((identity: { conversation_id: string; task_id: string | null }) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('conversation_id', identity.conversation_id)
+      if (identity.task_id) next.set('task_id', identity.task_id)
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
+
   const syncConversation = useCallback((nextConversation: AgentConversation) => {
     setConversation(nextConversation)
     const releaseId = [...nextConversation.turns].reverse().map((turn) => turn.knowledge_release_id?.trim()).find(Boolean) ?? null
@@ -232,6 +241,11 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
   useEffect(() => () => mouseResizeCleanup.current?.(), [])
   useEffect(() => {
     setMaterialTaskId(requestedTaskId)
+    if (!requestedTaskId) {
+      materialEntryRequestKey.current = null
+      setMaterialSourceNames([])
+      setMaterialEntryError(null)
+    }
   }, [requestedTaskId])
 
   useEffect(() => {
@@ -314,7 +328,11 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
     const destination = new URL(resumePath, window.location.origin).pathname === '/research/new'
       ? researchWorkspaceDestination(taskId, 'map')
       : legacyResearchWorkspaceDestination(resumePath) ?? resumePath
-    navigate(destination)
+    const target = new URL(destination, window.location.origin)
+    if (target.pathname.startsWith(`/research/${encodeURIComponent(taskId)}/workspace/`) && requestedConversationId) {
+      target.searchParams.set('conversation_id', requestedConversationId)
+    }
+    navigate(`${target.pathname}${target.search}${target.hash}`)
   }
 
   function continueNode(node: ResearchCanvasProjection['nodes'][number]) {
@@ -525,6 +543,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
               ) : null}
               suggestedPrompt={suggestedPrompt}
               suggestedPromptKey={suggestedPromptKey}
+              onConversationStarted={syncConversationIdentity}
               onConversationChange={syncConversation}
               onStreamingTurnChange={setStreamingTurn}
               conversationTail={journeyTail}

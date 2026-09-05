@@ -1,13 +1,14 @@
+import asyncio
 import json
 import logging
 import queue
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 
 from qunxue_api.api.contracts.agent import (
@@ -21,6 +22,8 @@ from qunxue_api.api.contracts.agent import (
     AgentMaterialContextResponse,
     AgentMessageResponse,
     AgentResearchJourneyResponse,
+    AgentRunRecoveryResponse,
+    AgentRunStopResponse,
     AgentTurnRequest,
     AgentTurnResponse,
     ConfirmResearchStartRequest,
@@ -373,17 +376,36 @@ def stream_agent_turn(
     current: CurrentSessionDependency,
     idempotency_key: IdempotencyKey,
 ) -> StreamingResponse:
-    def events() -> Iterator[str]:
+    async def events() -> AsyncIterator[str]:
         event_queue: queue.Queue[tuple[str, object]] = queue.Queue()
         cancel_event = threading.Event()
         user_id = current.user.user_id
         deadline = time.monotonic() + _AGENT_TURN_TIMEOUT_SECONDS
         runtime_mode = _effective_agent_runtime_mode(request)
         registered_run_id: UUID | None = None
+        registered_lease_token: str | None = None
+        next_heartbeat = time.monotonic() + _SSE_HEARTBEAT_SECONDS
 
-        def on_run_started(run_id: UUID, conversation_id: UUID, replayed: bool) -> None:
-            nonlocal registered_run_id
+        def heartbeat() -> bool:
+            if registered_run_id is None:
+                return cancel_event.is_set()
+            with request.app.state.disciplinary_agent_scope() as app:
+                return app.heartbeat(
+                    user_id=user_id,
+                    run_id=registered_run_id,
+                    lease_token=registered_lease_token,
+                )
+
+        def on_run_started(
+            run_id: UUID,
+            conversation_id: UUID,
+            replayed: bool,
+            *,
+            lease_token: str | None = None,
+        ) -> None:
+            nonlocal registered_run_id, registered_lease_token
             registered_run_id = run_id
+            registered_lease_token = lease_token
             if not replayed:
                 _register_active_run(user_id, run_id, cancel_event)
             event_queue.put(
@@ -459,23 +481,27 @@ def stream_agent_turn(
         streamed_answer = False
         try:
             while True:
+                if time.monotonic() >= next_heartbeat:
+                    if await asyncio.to_thread(heartbeat):
+                        cancel_event.set()
+                    next_heartbeat = time.monotonic() + _SSE_HEARTBEAT_SECONDS
+                    yield ": keep-alive\n\n"
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     yield _event(
                         "turn_failed",
                         {
                             "code": "turn_timeout",
-                            "message": "连接等待超时，回答仍在后台生成，可重连恢复。",
+                            "message": "连接等待超时，本轮正在暂停，已生成的内容会保留。",
                         },
                     )
                     break
                 try:
-                    event_name, event_payload = event_queue.get(
-                        timeout=min(_SSE_HEARTBEAT_SECONDS, remaining)
-                    )
+                    event_name, event_payload = event_queue.get_nowait()
                 except queue.Empty:
-                    if time.monotonic() < deadline:
-                        yield ": keep-alive\n\n"
+                    # An async wait lets StreamingResponse cancel this generator
+                    # immediately on disconnect, including while the model is silent.
+                    await asyncio.sleep(0.05)
                     continue
                 deadline = time.monotonic() + _AGENT_TURN_TIMEOUT_SECONDS
                 if event_name == "started":
@@ -598,7 +624,7 @@ def stream_agent_turn(
         except AgentInterrupted:
             yield _event(
                 "turn_interrupted",
-                {"code": "interrupted", "message": "已停止生成，未保存未完成的回答。"},
+                {"code": "interrupted", "message": "已暂停，已生成的内容已保存，可以继续。"},
             )
         except RetrievalPipelineUnavailable:
             logger.exception("Agent retrieval failed")
@@ -630,15 +656,28 @@ def stream_agent_turn(
 
 @router.post(
     "/runs/{run_id}/stop",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=AgentRunStopResponse,
+    responses={202: {"model": AgentRunStopResponse}},
     operation_id="stop_agent_run",
 )
 def stop_agent_run(
     run_id: UUID,
+    request: Request,
+    response: Response,
     current: CurrentSessionDependency,
     _idempotency_key: IdempotencyKey,
-) -> None:
+) -> AgentRunStopResponse:
+    with request.app.state.disciplinary_agent_scope() as app:
+        run = app.request_cancel(user_id=current.user.user_id, run_id=run_id)
     _cancel_active_run(current.user.user_id, run_id)
+    response.status_code = (
+        status.HTTP_202_ACCEPTED if run.status == "running" else status.HTTP_200_OK
+    )
+    return AgentRunStopResponse(
+        run_id=run.run_id,
+        status=run.status,
+        cancel_requested=run.cancel_requested,
+    )
 
 
 def _event(name: str, payload: dict[str, object]) -> str:
@@ -693,6 +732,20 @@ def _conversation(
         ],
         research_map=dict(item.research_map),
         canvas_edit_version=item.canvas_edit_version,
+        unfinished_runs=[
+            AgentRunRecoveryResponse(
+                run_id=run.run_id,
+                idempotency_key=run.idempotency_key,
+                status=run.status,
+                request=AgentTurnRequest.model_validate(run.request_snapshot),
+                partial_answer=run.partial_answer,
+                tool_summary=list(run.tool_summary),
+                updated_at=run.updated_at,
+                cancel_requested=run.cancel_requested,
+            )
+            for run in item.unfinished_runs
+            if run.request_snapshot
+        ],
     )
 
 

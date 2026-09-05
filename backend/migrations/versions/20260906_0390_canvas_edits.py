@@ -3,8 +3,8 @@
 import sqlalchemy as sa
 from alembic import op
 
-revision = "20260906_0380"
-down_revision = "20260905_0370"
+revision = "20260906_0390"
+down_revision = "20260906_0380"
 branch_labels = None
 depends_on = None
 

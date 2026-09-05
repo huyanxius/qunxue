@@ -162,6 +162,10 @@ export type AgentConversationResponse = {
      */
     turns: Array<AgentTurnResponse>;
     /**
+     * Unfinished Runs
+     */
+    unfinished_runs?: Array<AgentRunRecoveryResponse>;
+    /**
      * Updated At
      */
     updated_at: string;
@@ -389,6 +393,61 @@ export type AgentResearchMapResponse = {
      * Schema Version
      */
     schema_version: 1;
+};
+
+/**
+ * AgentRunRecoveryResponse
+ */
+export type AgentRunRecoveryResponse = {
+    /**
+     * Cancel Requested
+     */
+    cancel_requested: boolean;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Partial Answer
+     */
+    partial_answer: string;
+    request: AgentTurnRequest;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: 'running' | 'failed' | 'interrupted' | 'awaiting_clarification' | 'awaiting_plan_confirmation';
+    /**
+     * Tool Summary
+     */
+    tool_summary?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * AgentRunStopResponse
+ */
+export type AgentRunStopResponse = {
+    /**
+     * Cancel Requested
+     */
+    cancel_requested: boolean;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: 'running' | 'completed' | 'failed' | 'interrupted' | 'awaiting_clarification' | 'awaiting_plan_confirmation';
 };
 
 /**
@@ -8630,7 +8689,11 @@ export type StopAgentRunResponses = {
     /**
      * Successful Response
      */
-    204: void;
+    200: AgentRunStopResponse;
+    /**
+     * Accepted
+     */
+    202: AgentRunStopResponse;
 };
 
 export type StopAgentRunResponse = StopAgentRunResponses[keyof StopAgentRunResponses];

@@ -203,4 +203,23 @@ class ConversationRepository(Protocol):
         tool_summary: tuple[dict[str, object], ...] = (),
         provider: str | None = None,
         model: str | None = None,
+        lease_token: str | None = None,
     ) -> None: ...
+
+    def checkpoint_run(
+        self,
+        *,
+        user_id: UUID,
+        run_id: UUID,
+        lease_token: str | None = None,
+        partial_answer: str | None = None,
+        tool_summary: tuple[dict[str, object], ...] | None = None,
+        request_snapshot: dict[str, object] | None = None,
+        require_not_cancelled: bool = False,
+    ) -> bool: ...
+
+    def request_cancel(self, *, user_id: UUID, run_id: UUID) -> AgentRun: ...
+
+    def recover_expired_runs(
+        self, *, user_id: UUID, conversation_id: UUID
+    ) -> tuple[AgentRun, ...]: ...

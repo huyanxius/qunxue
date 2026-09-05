@@ -42,6 +42,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
+  type SetStateAction,
 } from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
@@ -73,6 +74,8 @@ import {
   type AgentToolStep,
   type AgentToolTrace,
   type AgentTurn,
+  type AgentTurnRequest,
+  type AgentRunRecovery,
   buildResearchReport,
   collectReferences,
   conclusionDigest,
@@ -115,9 +118,9 @@ import './new-research-workspace.css'
 // research workspaces. Embedded callers provide the research context explicitly;
 // the standalone route remains isolated in the read-only Agent workspace.
 const MAX_AGENT_MESSAGE_LENGTH = 12_000
-const DRAFT_STORAGE_KEY = 'qunxue.agent.composer-draft.v1'
-const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v1'
-const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v1'
+const DRAFT_STORAGE_KEY = 'qunxue.agent.composer-draft.v2'
+const PENDING_TURN_STORAGE_KEY = 'qunxue.agent.pending-turn.v2'
+const INTERRUPTED_TURN_STORAGE_KEY = 'qunxue.agent.interrupted-turn.v2'
 const KNOWLEDGE_RELEASE_STORAGE_KEY = 'qunxue.agent.knowledge-releases.v1'
 const AGENT_RUNTIME_STORAGE_KEY = 'qunxue.agent.runtime-modes.v1'
 const DEEP_RESEARCH_INTRO_SESSION_KEY = 'qunxue.agent.deep-research-intro-session.v1'
@@ -458,10 +461,11 @@ function localizedTurnFailure(code: string, message: string, locale: AppLocale) 
   return 'The Agent cannot complete this answer right now. Please try again later.'
 }
 
-type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answering' | 'error'
+type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answering' | 'pausing' | 'pause-failed' | 'error'
 type AgentToolEvent = Extract<AgentEvent, { type: 'tool_started' | 'tool_finished' | 'tool_failed' }>
 type ResearchToolStep = AgentToolStep & { interrupted?: boolean }
 type StreamingTurn = {
+  runId?: string | null
   progressEnd?: number
   question: string
   answer: string
@@ -478,6 +482,7 @@ type PendingTurnAttempt = {
   conversationId: string | null
   runId?: string | null
   materialIds: string[]
+  request?: AgentTurnRequest
 }
 
 type ResearchStartHandoff = {
@@ -591,6 +596,10 @@ function KnowledgeHandoffCards({
   )
 }
 
+function conversationStorageScope(userId: string | null, conversationId: string | null, taskId: string | null, workspace: string) {
+  return userId ? `${encodeURIComponent(userId)}.${conversationId ? `conversation.${encodeURIComponent(conversationId)}` : `draft.${workspace}.${encodeURIComponent(taskId ?? 'independent')}`}` : null
+}
+
 function scopedSessionKey(base: string, userId: string | null) {
   return userId ? `${base}.${userId}` : null
 }
@@ -600,7 +609,7 @@ function readStoredDraft(userId: string | null) {
   try {
     const storageKey = scopedSessionKey(DRAFT_STORAGE_KEY, userId)
     return storageKey
-      ? window.sessionStorage.getItem(storageKey)?.slice(0, MAX_AGENT_MESSAGE_LENGTH) ?? ''
+      ? window.localStorage.getItem(storageKey)?.slice(0, MAX_AGENT_MESSAGE_LENGTH) ?? ''
       : ''
   } catch {
     return ''
@@ -612,8 +621,8 @@ function persistDraft(userId: string | null, value: string) {
   try {
     const storageKey = scopedSessionKey(DRAFT_STORAGE_KEY, userId)
     if (!storageKey) return
-    if (value) window.sessionStorage.setItem(storageKey, value)
-    else window.sessionStorage.removeItem(storageKey)
+    if (value) window.localStorage.setItem(storageKey, value)
+    else window.localStorage.removeItem(storageKey)
   } catch {
     // Storage recovery is optional; the controlled composer remains usable.
   }
@@ -624,7 +633,7 @@ function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | nul
   try {
     const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
     if (!storageKey) return null
-    const raw = window.sessionStorage.getItem(storageKey)
+    const raw = window.localStorage.getItem(storageKey)
     if (!raw) return null
     const value = JSON.parse(raw) as Partial<PendingTurnAttempt>
     if (
@@ -640,6 +649,7 @@ function readPendingTurnAttempt(userId: string | null): PendingTurnAttempt | nul
       idempotencyKey: value.idempotencyKey,
       conversationId: value.conversationId ?? null,
       runId: typeof value.runId === 'string' && value.runId ? value.runId : null,
+      request: value.request && typeof value.request.message === 'string' ? value.request : undefined,
       materialIds: Array.isArray(value.materialIds)
         ? value.materialIds.filter((item): item is string => typeof item === 'string').slice(0, 20)
         : [],
@@ -654,8 +664,8 @@ function persistPendingTurnAttempt(userId: string | null, value: PendingTurnAtte
   try {
     const storageKey = scopedSessionKey(PENDING_TURN_STORAGE_KEY, userId)
     if (!storageKey) return
-    if (value) window.sessionStorage.setItem(storageKey, JSON.stringify(value))
-    else window.sessionStorage.removeItem(storageKey)
+    if (value) window.localStorage.setItem(storageKey, JSON.stringify(value))
+    else window.localStorage.removeItem(storageKey)
   } catch {
     // The in-memory idempotency key still protects the active retry.
   }
@@ -666,7 +676,7 @@ function readInterruptedTurn(userId: string | null): StreamingTurn | null {
   try {
     const storageKey = scopedSessionKey(INTERRUPTED_TURN_STORAGE_KEY, userId)
     if (!storageKey) return null
-    const raw = window.sessionStorage.getItem(storageKey)
+    const raw = window.localStorage.getItem(storageKey)
     if (!raw) return null
     const value = objectRecord(JSON.parse(raw))
     if (
@@ -691,6 +701,7 @@ function readInterruptedTurn(userId: string | null): StreamingTurn | null {
       )
     })
     return {
+      runId: typeof value.runId === 'string' ? value.runId : null,
       question: value.question,
       answer: value.answer,
       citations: value.citations as AgentCitation[],
@@ -710,8 +721,8 @@ function persistInterruptedTurn(userId: string | null, value: StreamingTurn | nu
   try {
     const storageKey = scopedSessionKey(INTERRUPTED_TURN_STORAGE_KEY, userId)
     if (!storageKey) return
-    if (value) window.sessionStorage.setItem(storageKey, JSON.stringify(value))
-    else window.sessionStorage.removeItem(storageKey)
+    if (value) window.localStorage.setItem(storageKey, JSON.stringify(value))
+    else window.localStorage.removeItem(storageKey)
   } catch {
     // The stopped turn remains visible in memory when storage is unavailable.
   }
@@ -1619,11 +1630,11 @@ function AssistantTurn({
           <div className="new-research__assistant-actions">
             <button
               type="button"
-              aria-label={interrupted ? text('继续研究', 'Continue research') : text('重试本轮', 'Retry this turn')}
+              aria-label={interrupted && !failure ? text('继续研究', 'Continue research') : text('重试本轮', 'Retry this turn')}
               onClick={onRegenerate}
             >
               {interrupted ? <CaretRightIcon size={14} /> : <ArrowClockwiseIcon size={14} />}
-              {interrupted ? text('继续研究', 'Continue research') : text('从本轮问题重试', 'Retry this question')}
+              {interrupted && !failure ? text('继续研究', 'Continue research') : text('从本轮问题重试', 'Retry this question')}
             </button>
           </div>
         ) : null}
@@ -1661,6 +1672,7 @@ type ResearchAgentConversationPageProps = {
   documentVersion?: number | null
   theoryPlanId?: string | null
   onTurnCompleted?: () => void
+  onConversationStarted?: (identity: { conversation_id: string; task_id: string | null }) => void
   onConversationChange?: (conversation: AgentConversation) => void
   onStreamingTurnChange?: (turn: ResearchCanvasStreamingTurn | null) => void
   conversationTail?: ReactNode
@@ -1690,6 +1702,7 @@ export function ResearchAgentConversationPage({
   theoryPlanId = null,
   onTurnCompleted,
   onConversationChange,
+  onConversationStarted,
   onStreamingTurnChange,
   conversationTail,
   composerPrefix,
@@ -1710,9 +1723,11 @@ export function ResearchAgentConversationPage({
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = embedded ? boundConversationId : searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = embedded ? boundKnowledgeReleaseId : searchParams.get('knowledge_release_id')
-  const restoredPendingTurn = useRef<PendingTurnAttempt | null>(readPendingTurnAttempt(userId))
-  const restoredInterruptedTurn = useRef<StreamingTurn | null>(readInterruptedTurn(userId))
-  const [draft, setDraft] = useState(() => readStoredDraft(userId) || restoredPendingTurn.current?.question || '')
+  const requestedScope = conversationStorageScope(userId, requestedConversationId, embedded ? boundTaskId : searchParams.get('task_id'), embedded ? boundWorkspace : 'agent')
+  const storageScope = useRef(requestedScope)
+  const restoredPendingTurn = useRef<PendingTurnAttempt | null>(readPendingTurnAttempt(storageScope.current))
+  const restoredInterruptedTurn = useRef<StreamingTurn | null>(readInterruptedTurn(storageScope.current))
+  const [draft, setDraft] = useState(() => readStoredDraft(storageScope.current) || restoredPendingTurn.current?.question || '')
   const [conversations, setConversations] = useState<AgentConversationSummary[]>([])
   const [activeConversation, setActiveConversation] = useState<AgentConversation | null>(null)
   const taskId = embedded ? boundTaskId : (
@@ -1733,7 +1748,13 @@ export function ResearchAgentConversationPage({
     return () => controller.abort()
   }, [projectScopeKey, text])
 
-  const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(restoredInterruptedTurn.current)
+  const [streamingTurn, setStreamingTurnState] = useState<StreamingTurn | null>(restoredInterruptedTurn.current)
+  const streamingTurnRef = useRef(streamingTurn)
+  const setStreamingTurn = useCallback((update: SetStateAction<StreamingTurn | null>) => {
+    const next = typeof update === 'function' ? update(streamingTurnRef.current) : update
+    streamingTurnRef.current = next
+    setStreamingTurnState(next)
+  }, [])
   const [toolStepsByTurnId, setToolStepsByTurnId] = useState<Record<string, ResearchToolStep[]>>({})
   const [knowledgeReleaseByConversationId, setKnowledgeReleaseByConversationId] = useState<Record<string, string>>(() => {
     const stored = readStringMap(userId, KNOWLEDGE_RELEASE_STORAGE_KEY)
@@ -1767,7 +1788,7 @@ export function ResearchAgentConversationPage({
   const [materialUploading, setMaterialUploading] = useState(false)
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
-  const [composerMode, setComposerMode] = useState<AgentComposerMode>(() => restoredPendingTurn.current?.runId ? 'deep-research' : 'standard')
+  const [composerMode, setComposerMode] = useState<AgentComposerMode>(() => restoredPendingTurn.current?.request?.mode === 'deep_research' ? 'deep-research' : 'standard')
   const [deepResearchIntroVisible, setDeepResearchIntroVisible] = useState(false)
   const deepResearchIntroShown = useRef(false)
   const [deepResearchMockStage, setDeepResearchMockStage] = useState<DeepResearchMockStage>('idle')
@@ -1789,7 +1810,7 @@ export function ResearchAgentConversationPage({
   const [landingBackdropPhase, setLandingBackdropPhase] = useState<'visible' | 'leaving' | 'hidden'>('visible')
   const streamAbortController = useRef<AbortController | null>(null)
   const activeRunId = useRef<string | null>(null)
-  const pendingResumeStarted = useRef(false)
+  const pausePending = useRef(false)
   const streamGeneration = useRef(0)
   const conversationLoadAbortController = useRef<AbortController | null>(null)
   const conversationLoadGeneration = useRef(0)
@@ -2002,7 +2023,7 @@ export function ResearchAgentConversationPage({
   }, [citationRequest, activeConversation])
 
   const canStopGeneration = status === 'thinking' || status === 'retrieving' || status === 'answering'
-  const isBusy = status === 'loading' || canStopGeneration
+  const isBusy = status === 'loading' || status === 'pausing' || status === 'pause-failed' || canStopGeneration
   const canSubmit = draft.trim().length > 0
     && !isBusy
     && !researchEntryBusy
@@ -2045,10 +2066,10 @@ export function ResearchAgentConversationPage({
 
   function updateDraft(value: string) {
     setDraft(value)
-    persistDraft(userId, value)
+    persistDraft(storageScope.current, value)
   }
 
-  async function revealFirstStreamingTurn(turn: StreamingTurn) {
+  async function revealFirstStreamingTurn(turn: StreamingTurn, isCurrent: () => boolean) {
     const transitionDocument = document as Document & {
       startViewTransition?: (update: () => void) => { ready: Promise<void> }
     }
@@ -2058,19 +2079,20 @@ export function ResearchAgentConversationPage({
       '.research-agent-conversation.is-empty .research-agent-page__empty-copy [data-research-agent-bot]',
     )
     if (!homeBot || reducedMotion || !transitionDocument.startViewTransition) {
-      setStreamingTurn(turn)
+      if (isCurrent()) setStreamingTurn(turn)
       return
     }
 
     let updated = false
     try {
       const transition = transitionDocument.startViewTransition(() => {
+        if (!isCurrent()) return
         updated = true
         flushSync(() => setStreamingTurn(turn))
       })
       await transition.ready
     } catch {
-      if (!updated) setStreamingTurn(turn)
+      if (!updated && isCurrent()) setStreamingTurn(turn)
     }
   }
 
@@ -2092,7 +2114,92 @@ export function ResearchAgentConversationPage({
     })
   }, [userId])
 
+  function retainUnfinishedTurn(attempt: PendingTurnAttempt, turn: StreamingTurn) {
+    if (!attempt.runId || !attempt.conversationId || !attempt.request) return
+    const saved: AgentRunRecovery = {
+      run_id: attempt.runId,
+      idempotency_key: attempt.idempotencyKey,
+      status: turn.failure ? 'failed' : 'interrupted',
+      request: attempt.request,
+      partial_answer: turn.answer,
+      tool_summary: turn.toolSteps.map((step) => ({
+        tool: step.tool,
+        phase: step.status === 'completed' ? 'finished' : step.status === 'failed' ? 'failed' : 'started',
+        call_id: step.id,
+        input: objectRecord(step.input),
+        output: step.output,
+        detail: step.detail,
+      })),
+      updated_at: new Date().toISOString(),
+      cancel_requested: true,
+    }
+    setActiveConversation((current) => {
+      const conversation = current ?? {
+        conversation_id: attempt.conversationId!, title: attempt.question,
+        task_id: attempt.request?.task_id ?? null,
+        created_at: new Date(turn.startedAt).toISOString(), updated_at: saved.updated_at,
+        turn_count: 0, turns: [],
+      }
+      return { ...conversation, unfinished_runs: [...(conversation.unfinished_runs ?? []).filter((run) => run.run_id !== saved.run_id), saved] }
+    })
+  }
+
+  function recoveryAttempt(run: AgentRunRecovery): PendingTurnAttempt {
+    return {
+      question: run.request.message,
+      idempotencyKey: run.idempotency_key,
+      conversationId: run.request.conversation_id ?? null,
+      runId: run.run_id,
+      materialIds: run.request.material_ids ?? [],
+      request: run.request,
+    }
+  }
+
+  function recoveryTurn(run: AgentRunRecovery): StreamingTurn {
+    const traces = (run.tool_summary ?? []).filter((item) => typeof item.tool === 'string' && typeof item.phase === 'string') as AgentToolTrace[]
+    return {
+      runId: run.run_id,
+      question: run.request.message,
+      answer: run.partial_answer,
+      citations: [],
+      toolSteps: run.status === 'running' ? persistedToolSteps(traces) : interruptedSteps(persistedToolSteps(traces), locale),
+      canvasPatches: [],
+      startedAt: Date.parse(run.updated_at) || Date.now(),
+      interrupted: run.status !== 'running' && !run.status.startsWith('awaiting_'),
+      failure: run.status === 'failed' ? text('这轮回答未完成，可以从保存的位置重试。', 'This answer did not finish. Retry from the saved state.') : undefined,
+    }
+  }
+
+  function restoreRecovery(run: AgentRunRecovery) {
+    const attempt = recoveryAttempt(run)
+    const turn = recoveryTurn(run)
+    failedTurnAttempt.current = attempt
+    activeTurnAttempt.current = run.status === 'running' || run.status.startsWith('awaiting_') ? attempt : null
+    activeRunId.current = run.status === 'running' ? run.run_id : null
+    pendingToolSteps.current = turn.toolSteps
+    setStreamingTurn(turn)
+    setComposerMode(run.request.mode === 'deep_research' ? 'deep-research' : 'standard')
+    persistPendingTurnAttempt(storageScope.current, attempt)
+    persistInterruptedTurn(storageScope.current, { ...turn, interrupted: true })
+    const waiting = (run.tool_summary ?? []).find((item) => 'kind' in item && item.kind === 'deep_research_pending') as Record<string, unknown> | undefined
+    if (run.status.startsWith('awaiting_') && waiting) {
+      setDeepResearchMockStage(run.status === 'awaiting_clarification' ? 'clarifying' : 'planning')
+      setDeepResearchMockQuestion(String(waiting.question ?? waiting.title ?? run.request.message))
+      const options = waiting.options ?? waiting.steps
+      setDeepResearchMockOptions(Array.isArray(options) ? options.filter((item): item is string => typeof item === 'string') : [])
+      deepResearchLifecycleStarted.current = true
+    }
+    setStatus(run.status === 'running' ? 'thinking' : 'idle')
+  }
+
+  function resumeRecovery(run: AgentRunRecovery) {
+    if (isBusy) return
+    failedTurnAttempt.current = recoveryAttempt(run)
+    void submitQuestion(run.request.message, run.idempotency_key)
+  }
+
   const loadConversation = useCallback(async (conversationId: string) => {
+    if (activeTurnAttempt.current?.conversationId === conversationId && streamAbortController.current) return
     if (loadedConversationId.current === conversationId && activeConversation?.conversation_id === conversationId) return
     conversationLoadAbortController.current?.abort()
     const controller = new AbortController()
@@ -2112,6 +2219,19 @@ export function ResearchAgentConversationPage({
         || (conversationId === requestedConversationId ? requestedKnowledgeReleaseId : null)
         || persistedReleaseId
       setActiveConversation(conversation)
+      if (conversation.unfinished_runs) {
+        const unfinished = conversation.unfinished_runs
+        const selected = unfinished.find((run) => run.status === 'running' || run.status.startsWith('awaiting_'))
+          ?? unfinished.find((run) => run.run_id === failedTurnAttempt.current?.runId)
+          ?? unfinished.at(-1)
+        if (selected) restoreRecovery(selected)
+        else {
+          setStreamingTurn(null)
+          failedTurnAttempt.current = null
+          persistPendingTurnAttempt(storageScope.current, null)
+          persistInterruptedTurn(storageScope.current, null)
+        }
+      }
       onConversationChange?.(conversation)
       setRuntimeMode(runtimeModeByConversationId[conversationId] ?? null)
       loadedConversationId.current = conversationId
@@ -2132,7 +2252,7 @@ export function ResearchAgentConversationPage({
         setError(text('这段对话暂时无法打开。你可以从一个新问题继续。', 'This conversation cannot be opened right now. You can continue with a new question.'))
       }
     } finally {
-      if (!controller.signal.aborted && requestGeneration === conversationLoadGeneration.current) setStatus('idle')
+      if (!controller.signal.aborted && requestGeneration === conversationLoadGeneration.current) setStatus((current) => current === 'loading' ? 'idle' : current)
       if (conversationLoadAbortController.current === controller) conversationLoadAbortController.current = null
     }
   }, [activeConversation?.conversation_id, embedded, knowledgeReleaseByConversationId, onConversationChange, rememberKnowledgeRelease, requestedConversationId, requestedKnowledgeReleaseId, runtimeModeByConversationId, setSearchParams])
@@ -2154,7 +2274,7 @@ export function ResearchAgentConversationPage({
         if (!controller.signal.aborted) setHistoryLoading(false)
       })
     return () => controller.abort()
-  }, [showConversationManagement, text])
+  }, [showConversationManagement, text, userId])
 
   useEffect(() => {
     if (requestedConversationId) void loadConversation(requestedConversationId)
@@ -2172,36 +2292,73 @@ export function ResearchAgentConversationPage({
     }
   }, [streamingTurn?.answer, streamingTurn?.toolSteps.length, turns.length])
 
-  useEffect(() => () => {
+  const leaveConversation = useRef<() => void>(() => undefined)
+  leaveConversation.current = () => {
     researchEntryAbortController.current?.abort()
-    const runId = activeRunId.current
-    if (runId) void stopAgentRun(runId).catch(() => undefined)
-    streamGeneration.current += 1
-    streamAbortController.current?.abort()
-    conversationLoadGeneration.current += 1
-    conversationLoadAbortController.current?.abort()
-  }, [])
-
-  function cancelActiveStream() {
-    researchEntryAbortController.current?.abort()
-    researchEntryAbortController.current = null
-    setResearchEntryBusy(false)
-    const runId = activeRunId.current
-    if (runId) {
-      void stopAgentRun(runId).catch(() => undefined)
-      settleInterruptedTurn()
+    const attempt = activeTurnAttempt.current ?? failedTurnAttempt.current
+    if (attempt && streamingTurnRef.current) {
+      const saved = { ...streamingTurnRef.current, interrupted: true, toolSteps: interruptedSteps(pendingToolSteps.current, locale) }
+      persistPendingTurnAttempt(storageScope.current, attempt)
+      persistInterruptedTurn(storageScope.current, saved)
     }
+    const runId = activeRunId.current
     activeRunId.current = null
+    pausePending.current = false
+    if (runId) void stopAgentRun(runId, { keepalive: true }).catch(() => undefined)
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
+    conversationLoadGeneration.current += 1
+    conversationLoadAbortController.current?.abort()
+  }
+
+  useEffect(() => {
+    const onPageHide = () => {
+      leaveConversation.current()
+      failedTurnAttempt.current = activeTurnAttempt.current ?? failedTurnAttempt.current
+      activeTurnAttempt.current = null
+      setStreamingTurn(readInterruptedTurn(storageScope.current))
+      resetDeepResearchMock()
+      setStatus('idle')
+    }
+    window.addEventListener('pagehide', onPageHide)
+    return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      leaveConversation.current()
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    if (storageScope.current === requestedScope) return
+    leaveConversation.current()
+    storageScope.current = requestedScope
+    const pending = readPendingTurnAttempt(requestedScope)
+    failedTurnAttempt.current = pending
+    activeTurnAttempt.current = null
+    pendingConversationId.current = requestedConversationId
+    loadedConversationId.current = null
+    setActiveConversation(null)
+    setStreamingTurn(readInterruptedTurn(requestedScope))
+    setDraft(readStoredDraft(requestedScope))
+    setStatus('idle')
+    setError(null)
+    setAttachedMaterials([])
+    setToolStepsByTurnId({})
+    setRuntimeMode(null)
+    setKnowledgeReleaseByConversationId(readStringMap(userId, KNOWLEDGE_RELEASE_STORAGE_KEY))
+    setRuntimeModeByConversationId(readStoredRuntimeModes(userId))
+    pendingToolSteps.current = []
+    resetDeepResearchMock()
+    setComposerMode(pending?.request?.mode === 'deep_research' ? 'deep-research' : 'standard')
+  }, [requestedScope, requestedConversationId, setStreamingTurn])
+
+  function cancelActiveStream() {
+    leaveConversation.current()
+    researchEntryAbortController.current = null
+    setResearchEntryBusy(false)
     pendingToolSteps.current = []
     failedTurnAttempt.current = null
     activeTurnAttempt.current = null
-    if (!runId) {
-      persistPendingTurnAttempt(userId, null)
-      persistInterruptedTurn(userId, null)
-    }
     setStreamingTurn(null)
   }
 
@@ -2304,6 +2461,7 @@ export function ResearchAgentConversationPage({
       return
     }
     prepareConversationSwitch()
+    storageScope.current = conversationStorageScope(userId, null, projectId || null, embedded ? boundWorkspace : 'agent')
     updateDraft('')
     setError(null)
     setStatus('idle')
@@ -2322,6 +2480,7 @@ export function ResearchAgentConversationPage({
   function switchComposerProject(projectId: string) {
     const pendingDraft = !activeConversation?.turn_count ? draft : ''
     newConversation(projectId || undefined)
+    storageScope.current = conversationStorageScope(userId, null, projectId || null, embedded ? boundWorkspace : 'agent')
     if (pendingDraft) updateDraft(pendingDraft)
   }
 
@@ -2376,8 +2535,8 @@ export function ResearchAgentConversationPage({
       setError('讨论内容过长，请缩短问题或重新选择较短的段落。')
       return null
     }
-    if (!question || isBusy || (!researchEntry && researchEntryAbortController.current)) return null
-    const turnMode = researchEntry ? 'standard' : composerMode
+    if (!question || isBusy || streamAbortController.current || (!researchEntry && researchEntryAbortController.current)) return null
+    const turnMode = researchEntry ? 'standard' : (failedTurnAttempt.current?.idempotencyKey === retryIdempotencyKey && failedTurnAttempt.current?.request ? failedTurnAttempt.current.request.mode === 'deep_research' ? 'deep-research' : 'standard' : composerMode)
     let resultConversation: AgentConversation | null = null
     const idempotencyKey = retryIdempotencyKey
       ?? globalThis.crypto?.randomUUID?.()
@@ -2393,31 +2552,36 @@ export function ResearchAgentConversationPage({
       conversationId: activeConversation?.conversation_id ?? pendingConversationId.current,
       runId: resumableAttempt?.runId ?? null,
       materialIds: resumableAttempt?.materialIds ?? attachedMaterials.map((item) => item.materialId),
+      request: resumableAttempt?.request,
+    }
+    const previousAttempt = failedTurnAttempt.current ?? activeTurnAttempt.current
+    const previousTurn = streamingTurnRef.current
+    if (previousAttempt && previousAttempt.idempotencyKey !== idempotencyKey && previousTurn && (previousTurn.interrupted || previousTurn.failure)) {
+      retainUnfinishedTurn(previousAttempt, previousTurn)
     }
     activeTurnAttempt.current = attempt
     failedTurnAttempt.current = null
-    persistInterruptedTurn(userId, null)
-    persistPendingTurnAttempt(userId, attempt)
+    persistInterruptedTurn(storageScope.current, null)
+    persistPendingTurnAttempt(storageScope.current, attempt)
     updateDraft('')
     setError(null)
     setStatus('thinking')
     pendingToolSteps.current = []
     redactedStreamingMaterialIds.current.clear()
-    const firstStreamingTurn: StreamingTurn = { question, answer: '', citations: [], toolSteps: [], canvasPatches: [], startedAt: Date.now() }
-    if (isEmpty) await revealFirstStreamingTurn(firstStreamingTurn)
-    else setStreamingTurn(firstStreamingTurn)
+    const firstStreamingTurn: StreamingTurn = { runId: attempt.runId, question, answer: '', citations: [], toolSteps: [], canvasPatches: [], startedAt: Date.now() }
     const controller = new AbortController()
     const runGeneration = streamGeneration.current + 1
     streamGeneration.current = runGeneration
     streamAbortController.current = controller
+    pausePending.current = false
+    if (isEmpty) await revealFirstStreamingTurn(firstStreamingTurn, () => !controller.signal.aborted && streamGeneration.current === runGeneration)
+    else setStreamingTurn(firstStreamingTurn)
+    if (controller.signal.aborted || streamGeneration.current !== runGeneration) return null
 
-    try {
-      await streamAgentTurn(
-        {
+    const request: AgentTurnRequest = attempt.request ? { ...attempt.request, conversation_id: attempt.conversationId } : {
           conversation_id: activeConversation?.conversation_id ?? pendingConversationId.current,
           message: question,
           mode: turnMode === 'deep-research' ? 'deep_research' : 'standard',
-          idempotencyKey,
           workspace,
           web_search: webSearchEnabled,
           task_id: workspace === 'research' ? taskId : null,
@@ -2429,7 +2593,17 @@ export function ResearchAgentConversationPage({
           deep_research_run_id: deepAction ? (activeTurnAttempt.current?.runId ?? null) : null,
           deep_research_action: deepAction?.action ?? null,
           deep_research_selection: deepAction?.selection ?? null,
-        },
+    }
+    if (deepAction) {
+      request.deep_research_run_id = attempt.runId ?? null
+      request.deep_research_action = deepAction.action
+      request.deep_research_selection = deepAction.selection ?? null
+    }
+    attempt.request = request
+    persistPendingTurnAttempt(storageScope.current, attempt)
+    try {
+      await streamAgentTurn(
+        { ...request, idempotencyKey },
         (event: AgentEvent) => {
           if (streamGeneration.current !== runGeneration) return
           if (event.type === 'turn_started') {
@@ -2440,8 +2614,27 @@ export function ResearchAgentConversationPage({
               conversationId: event.conversation_id,
               runId: event.run_id,
             }
+            startedAttempt.request = { ...request, conversation_id: event.conversation_id }
             activeTurnAttempt.current = startedAttempt
-            persistPendingTurnAttempt(userId, startedAttempt)
+            const nextScope = conversationStorageScope(userId, event.conversation_id, taskId, workspace)
+            if (storageScope.current !== nextScope) {
+              persistPendingTurnAttempt(storageScope.current, null)
+              persistInterruptedTurn(storageScope.current, null)
+              persistDraft(storageScope.current, '')
+              storageScope.current = nextScope
+            }
+            setStreamingTurn((current) => current ? { ...current, runId: event.run_id } : current)
+            persistPendingTurnAttempt(storageScope.current, startedAttempt)
+            setConversations((current) => current.some((item) => item.conversation_id === event.conversation_id) ? current : [{
+              conversation_id: event.conversation_id, task_id: taskId,
+              title: question.slice(0, 100), updated_at: new Date().toISOString(), turn_count: 0,
+            }, ...current])
+            if (!embedded) setSearchParams((current) => {
+              const next = new URLSearchParams(current)
+              next.set('conversation_id', event.conversation_id)
+              return next
+            }, { replace: true })
+            else onConversationStarted?.({ conversation_id: event.conversation_id, task_id: taskId })
             if (event.runtime_mode) {
               setRuntimeMode(event.runtime_mode)
               rememberRuntimeMode(event.conversation_id, event.runtime_mode)
@@ -2456,9 +2649,9 @@ export function ResearchAgentConversationPage({
                 canvasPatches: [],
               } : current)
             }
-            setStatus('thinking')
+            if (!pausePending.current) setStatus('thinking')
           } else if (event.type === 'agent_status') {
-            setStatus(event.status === 'answering' ? 'answering' : 'thinking')
+            if (!pausePending.current) setStatus(event.status === 'answering' ? 'answering' : 'thinking')
           } else if (event.type === 'research_ask') {
             deepResearchLifecycleStarted.current = true
             setDeepResearchMockQuestion(event.question)
@@ -2488,7 +2681,7 @@ export function ResearchAgentConversationPage({
               setDeepResearchMockStage('researching')
               setDeepResearchMockStep(researchStepForTools(next))
             }
-            setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
+            if (!pausePending.current) setStatus(event.type === 'tool_started' ? 'retrieving' : 'thinking')
             // 工具开始前的文字是阶段说明；之后的最终回答仍保留原段落。
             setStreamingTurn((current) => current ? {
               ...current,
@@ -2496,7 +2689,7 @@ export function ResearchAgentConversationPage({
               progressEnd: event.type === 'tool_started' ? current.answer.length : current.progressEnd,
             } : current)
           } else if (event.type === 'assistant_delta') {
-            setStatus('answering')
+            if (!pausePending.current) setStatus('answering')
             if (!redactedStreamingMaterialIds.current.size) {
               setStreamingTurn((current) => current ? { ...current, answer: current.answer + event.delta } : current)
             }
@@ -2516,7 +2709,7 @@ export function ResearchAgentConversationPage({
             activeRunId.current = event.run_id
             const waitingAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: event.run_id }
             activeTurnAttempt.current = waitingAttempt
-            persistPendingTurnAttempt(userId, waitingAttempt)
+            persistPendingTurnAttempt(storageScope.current, waitingAttempt)
             setDeepResearchMockQuestion(event.question ?? event.title ?? question)
             setDeepResearchMockOptions(event.options ?? event.steps ?? [])
             setDeepResearchMockStep(0)
@@ -2527,6 +2720,7 @@ export function ResearchAgentConversationPage({
           } else if (event.type === 'canvas_patch') {
             setStreamingTurn((current) => current ? { ...current, canvasPatches: [...current.canvasPatches, event.patch] } : current)
           } else if (event.type === 'turn_completed') {
+            pausePending.current = false
             if (turnMode === 'deep-research' && deepResearchLifecycleStarted.current) {
               settleDeepResearchElapsed()
               setDeepResearchMockStage('completed')
@@ -2535,9 +2729,9 @@ export function ResearchAgentConversationPage({
             activeRunId.current = null
             failedTurnAttempt.current = null
             activeTurnAttempt.current = null
-            persistPendingTurnAttempt(userId, null)
-            persistInterruptedTurn(userId, null)
-            persistDraft(userId, '')
+            persistPendingTurnAttempt(storageScope.current, null)
+            persistInterruptedTurn(storageScope.current, null)
+            persistDraft(storageScope.current, '')
             const localToolSteps = pendingToolSteps.current
             const completedConversation = [...locallyDeletedMaterialIds.current].reduce(
               (conversation, materialId) => tombstoneConversationMaterial(conversation, materialId),
@@ -2580,20 +2774,22 @@ export function ResearchAgentConversationPage({
             }
             onTurnCompleted?.()
           } else if (event.type === 'turn_interrupted') {
+            pausePending.current = false
             activeRunId.current = null
             settleInterruptedTurn()
           } else if (event.type === 'turn_failed') {
+            pausePending.current = false
             activeRunId.current = null
-            const failedAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: null }
+            const failedAttempt = { ...(activeTurnAttempt.current ?? attempt) }
             failedTurnAttempt.current = failedAttempt
             activeTurnAttempt.current = null
-            persistPendingTurnAttempt(userId, failedAttempt)
+            persistPendingTurnAttempt(storageScope.current, failedAttempt)
             updateDraft(question)
             const failureMessage = localizedTurnFailure(event.code, event.message, locale)
             setStreamingTurn((current) => {
               if (!current) return current
               const failedTurn = { ...current, interrupted: true, failure: failureMessage }
-              persistInterruptedTurn(userId, failedTurn)
+              persistInterruptedTurn(storageScope.current, failedTurn)
               return failedTurn
             })
             setError(failureMessage)
@@ -2614,12 +2810,17 @@ export function ResearchAgentConversationPage({
             : causeMessage && causeMessage !== 'Agent 暂时无法连接'
               ? causeMessage
               : 'Agent 暂时无法连接。请检查模型服务后重试，这一轮不会伪造回答。'
-        const failedAttempt = { ...(activeTurnAttempt.current ?? attempt), runId: null }
+        const failedAttempt = { ...(activeTurnAttempt.current ?? attempt) }
         failedTurnAttempt.current = failedAttempt
         activeTurnAttempt.current = null
-        persistPendingTurnAttempt(userId, failedAttempt)
+        persistPendingTurnAttempt(storageScope.current, failedAttempt)
         updateDraft(question)
-        setStreamingTurn((current) => current ? { ...current, failure: message } : current)
+        setStreamingTurn((current) => {
+          if (!current) return current
+          const failed = { ...current, failure: message }
+          persistInterruptedTurn(storageScope.current, { ...failed, interrupted: true })
+          return failed
+        })
         setError(message)
         setStatus('error')
       }
@@ -2628,17 +2829,6 @@ export function ResearchAgentConversationPage({
     }
     return controller.signal.aborted || streamGeneration.current !== runGeneration ? null : resultConversation
   }
-
-  useEffect(() => {
-    if (pendingResumeStarted.current) return
-    if (restoredInterruptedTurn.current) return
-    const pending = restoredPendingTurn.current
-    if (!pending?.runId) return
-    pendingResumeStarted.current = true
-    void submitQuestion(pending.question, pending.idempotencyKey)
-    // A persisted run is resumed only on mount; conversation state changes must not resubmit it.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     if (deepResearchMockStage !== 'researching' || deepResearchStartedAt.current === null) return undefined
@@ -2723,12 +2913,12 @@ export function ResearchAgentConversationPage({
     if (attempt && resumable) {
       failedTurnAttempt.current = attempt
       activeTurnAttempt.current = null
-      persistPendingTurnAttempt(userId, attempt)
+      persistPendingTurnAttempt(storageScope.current, attempt)
       updateDraft(attempt.question)
     } else if (attempt) {
       failedTurnAttempt.current = null
       activeTurnAttempt.current = null
-      persistPendingTurnAttempt(userId, null)
+      persistPendingTurnAttempt(storageScope.current, null)
       updateDraft(attempt.question)
     }
     const next = interruptedSteps(pendingToolSteps.current, locale)
@@ -2736,25 +2926,49 @@ export function ResearchAgentConversationPage({
     setStreamingTurn((current) => {
       if (!current) return current
       const interruptedTurn = { ...current, interrupted: true, toolSteps: next, failure: undefined }
-      persistInterruptedTurn(userId, interruptedTurn)
+      persistInterruptedTurn(storageScope.current, interruptedTurn)
       return interruptedTurn
     })
     setStatus('idle')
   }
 
-  function stopGeneration() {
-    const runId = activeRunId.current
-    activeRunId.current = null
+  async function stopGeneration() {
+    const runId = activeRunId.current ?? activeTurnAttempt.current?.runId ?? failedTurnAttempt.current?.runId
+    if (status === 'pausing') return
+    pausePending.current = true
+    setStatus('pausing')
+    setError(null)
+    const generation = streamGeneration.current
     if (runId) {
-      void stopAgentRun(runId).catch(() => {
-        setError(text('停止请求未被服务端确认，请稍后重试。', 'The server did not confirm the stop request. Try again.'))
-      })
+      try {
+        const result = await stopAgentRun(runId)
+        if (generation !== streamGeneration.current) return
+        if (result.status === 'completed') {
+          activeRunId.current = null
+          if (pendingConversationId.current) {
+            streamAbortController.current?.abort()
+            streamAbortController.current = null
+            activeTurnAttempt.current = null
+            loadedConversationId.current = null
+            await loadConversation(pendingConversationId.current)
+          }
+          return
+        }
+      } catch (cause) {
+        if (generation !== streamGeneration.current) return
+        setError(cause instanceof Error ? cause.message : text('暂停未被服务端确认，请重试暂停。', 'The server has not confirmed the pause. Try again.'))
+        pausePending.current = false
+        setStatus('pause-failed')
+        return
+      }
     }
+    activeRunId.current = null
     streamGeneration.current += 1
     streamAbortController.current?.abort()
     streamAbortController.current = null
+    pausePending.current = false
     resetDeepResearchMock()
-    settleInterruptedTurn({ resumable: false })
+    settleInterruptedTurn()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -2902,7 +3116,7 @@ export function ResearchAgentConversationPage({
       const citations = current.citations.map((citation) => tombstoneMaterialCitation(citation, materialId))
       if (!citations.some((citation, index) => citation !== current.citations[index])) return current
       const next = { ...current, answer: DELETED_MATERIAL_ANSWER, citations }
-      if (next.interrupted) persistInterruptedTurn(userId, next)
+      if (next.interrupted) persistInterruptedTurn(storageScope.current, next)
       return next
     })
     setSelectedCitationContext((current) => current
@@ -3022,7 +3236,7 @@ export function ResearchAgentConversationPage({
           {isEmpty && !embedded ? <div aria-hidden="true" className="research-agent-page__heading-placeholder" /> : (
             <header className="research-agent-page__conversation-heading new-research__agent-header" aria-label={text('对话操作', 'Conversation actions')}>
               <div className="new-research__agent-actions">
-                {workspace === 'research' ? (
+                {workspace === 'research' && !embedded ? (
                   <button
                     type="button"
                     aria-label={text('研究材料', 'Research materials')}
@@ -3040,15 +3254,7 @@ export function ResearchAgentConversationPage({
                     <FileTextIcon size={16} />
                   </button>
                 ) : null}
-                {embedded ? (
-                  <>
-                    <button type="button" aria-label={text('查看活动', 'View activity')} aria-pressed={contextOpen && contextTab === 'activity'} title={text('查看活动', 'View activity')} onClick={() => { setContextTab('activity'); setContextOpen(true) }}><CircleNotchIcon size={16} />{activities.length ? <i>{activities.length}</i> : null}</button>
-                    <button type="button" aria-label={text('查看来源', 'View sources')} aria-pressed={contextOpen && contextTab === 'sources'} title={text('查看来源', 'View sources')} onClick={() => { setContextTab('sources'); setContextOpen(true) }}><ArticleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                    {showConversationManagement ? <button type="button" aria-label={text('打开研究记录', 'Open research history')} aria-pressed={historyOpen} title={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={16} /></button> : null}
-                  </>
-                ) : (
-                  <button type="button" aria-label={text('研究面板', 'Research panel')} aria-pressed={contextOpen} title={text('研究面板', 'Research panel')} onClick={toggleResearchPanel}><SidebarSimpleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
-                )}
+                <button type="button" aria-label={text('研究面板', 'Research panel')} aria-pressed={contextOpen} aria-expanded={contextOpen} title={text('研究面板', 'Research panel')} onClick={toggleResearchPanel}><SidebarSimpleIcon size={16} />{citations.length ? <i>{citations.length}</i> : null}</button>
               </div>
             </header>
           )}
@@ -3081,6 +3287,24 @@ export function ResearchAgentConversationPage({
                     onRegenerate={() => { void submitQuestion(turn.user.content) }}
                   />
                 ))}
+                {(activeConversation?.unfinished_runs ?? []).filter((run) => run.run_id !== streamingTurn?.runId).map((run) => {
+                  const saved = recoveryTurn(run)
+                  return <AssistantTurn
+                    key={run.run_id}
+                    question={saved.question}
+                    answer={saved.answer}
+                    citations={saved.citations}
+                    toolSteps={saved.toolSteps}
+                    conversationId={activeConversation?.conversation_id ?? null}
+                    knowledgeReleaseId={null}
+                    interrupted={saved.interrupted}
+                    failure={saved.failure}
+                    embedded={embedded}
+                    onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
+                    onSelectCitation={openCitation}
+                    onRegenerate={isBusy ? undefined : () => resumeRecovery(run)}
+                  />
+                })}
                 {streamingTurn && deepResearchMockStage === 'researching' ? (
                   <DeepResearchMockFlow
                     stage={deepResearchMockStage}
@@ -3100,6 +3324,8 @@ export function ResearchAgentConversationPage({
                     }}
                   />
                 ) : null}
+                {status === 'pausing' ? <p role="status">正在暂停，等待当前操作结束…</p> : null}
+                {status === 'pause-failed' ? <button type="button" onClick={() => { void stopGeneration() }}>重试暂停</button> : null}
                 {streamingTurn ? (
                   <AssistantTurn
                     question={streamingTurn.question}
@@ -3116,7 +3342,7 @@ export function ResearchAgentConversationPage({
                     embedded={embedded}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                     onSelectCitation={openCitation}
-                    onRegenerate={() => retryFailedTurn(streamingTurn.question)}
+                    onRegenerate={isBusy ? undefined : () => retryFailedTurn(streamingTurn.question)}
                   />
                 ) : null}
                 {hasDeepResearchMockConversation && deepResearchMockStage !== 'researching' ? (
@@ -3246,7 +3472,7 @@ export function ResearchAgentConversationPage({
                       aria-label={text('添加研究材料', 'Add research material')}
                       aria-expanded={materialMenuOpen}
                       aria-controls="research-agent-material-menu"
-                      disabled={isBusy || materialUploading}
+                      disabled={materialUploading || (isBusy && !embedded)}
                       onClick={() => {
                         setModeMenuOpen(false)
                         setMaterialMenuOpen((open) => !open)
@@ -3261,13 +3487,13 @@ export function ResearchAgentConversationPage({
                         role="menu"
                         aria-label={text('添加研究材料', 'Add research material')}
                       >
-                        <button type="button" role="menuitem" onClick={() => {
+                        <button type="button" role="menuitem" disabled={isBusy} onClick={() => {
                           setMaterialMenuOpen(false)
                           materialFileInputRef.current?.click()
                         }}>
                           <FilePlusIcon size={18} /><span>{text('上传文件', 'Upload a file')}</span>
                         </button>
-                        <button type="button" role="menuitem" onClick={() => { void openMaterialAttachmentPicker() }}>
+                        <button type="button" role="menuitem" disabled={isBusy} onClick={() => { void openMaterialAttachmentPicker() }}>
                           <FolderOpenIcon size={18} /><span>{text('从研究材料添加', 'Add from research materials')}</span>
                         </button>
                         <button type="button" role="menuitem" onClick={openResearchMaterials}>
@@ -3414,7 +3640,7 @@ export function ResearchAgentConversationPage({
               activities={activities}
               citations={citationsForRail}
               selectedCitationId={selectedCitationId}
-              variant={embedded ? 'tabs' : 'sections'}
+              variant="sections"
               elapsedSeconds={embedded ? null : deepResearchElapsedSeconds}
               onClose={closeResearchPanel}
               onBack={backToResearchPanel}
