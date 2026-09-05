@@ -388,6 +388,9 @@ export function AppRoutes({
   const authenticatedUserId = account.sessionState.status === 'authenticated'
     ? account.sessionState.session.user.userId
     : null
+  const authenticatedSessionId = account.sessionState.status === 'authenticated'
+    ? account.sessionState.session.sessionId
+    : null
   const protectedRoute = (element: ReactNode) => (
     <ProtectedRoute sessionState={resolvedSessionState}>{element}</ProtectedRoute>
   )
@@ -407,7 +410,7 @@ export function AppRoutes({
       />
       <Route path="/welcome" element={productHome} />
       <Route path="/app" element={protectedRoute(<AppHomePage />)} />
-      <Route path="/agent" element={protectedRoute(<ResearchAgentPage userId={authenticatedUserId} />)} />
+      <Route path="/agent" element={protectedRoute(<ResearchAgentPage userId={authenticatedUserId} introSessionId={authenticatedSessionId} />)} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
       <Route path="/knowledge/graph" element={<KnowledgeGraphRoute />} />
       <Route path="/knowledge/:knowledge_id" element={<KnowledgeEntryRoute />} />
