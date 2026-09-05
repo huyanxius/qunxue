@@ -54,3 +54,42 @@ select:focus-visible {
   color: var(--paper);
   background: var(--accent);
 }
+
+@media (max-width: 760px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    touch-action: manipulation;
+  }
+
+  main img,
+  main video,
+  main canvas,
+  main svg {
+    max-width: 100%;
+  }
+
+  main pre,
+  main table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  main p,
+  main li,
+  main dd,
+  main td,
+  main th,
+  main code {
+    overflow-wrap: anywhere;
+  }
+}

@@ -1310,8 +1310,21 @@
 
   .research-agent-prompt {
     min-height: 4.1em;
-    font-size: clamp(30px, 9vw, 38px);
+    padding-inline: 2px;
+    font-size: clamp(27px, 8.4vw, 36px);
     line-height: 1.32;
+  }
+
+  .research-agent-prompt button {
+    overflow: hidden;
+  }
+
+  .research-agent-prompt__copy,
+  .research-agent-prompt .kinetic-copy-line,
+  .research-agent-prompt .kinetic-copy-line-inner {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
   }
 
   .research-agent-handoff {

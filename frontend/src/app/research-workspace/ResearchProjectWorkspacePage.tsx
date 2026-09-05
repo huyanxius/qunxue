@@ -97,6 +97,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
   const [documentContext, setDocumentContext] = useState<ResearchDocumentWorkspaceContext | null>(null)
   const [centerRefreshKey, setCenterRefreshKey] = useState(0)
+  const [mobilePane, setMobilePane] = useState<'center' | 'agent'>('center')
   const [agentWidth, setAgentWidth] = useState(() => readAgentWidth(taskId))
   const resizePointer = useRef<number | null>(null)
   const layoutRef = useRef<HTMLDivElement | null>(null)
@@ -271,6 +272,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
                   key={id}
                   to={researchWorkspaceDestination(taskId, id)}
                   aria-current={tool === id ? 'page' : undefined}
+                  onClick={() => setMobilePane('center')}
                 >
                   <Icon size={16} aria-hidden="true" />
                   <span>{label}</span>
@@ -279,9 +281,20 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
             </nav>
           </header>
 
+          <div className="research-project-workspace__mobile-switcher" role="group" aria-label="移动工作区视图">
+            <button type="button" aria-pressed={mobilePane === 'center'} onClick={() => setMobilePane('center')}>
+              内容
+            </button>
+            <button type="button" aria-pressed={mobilePane === 'agent'} onClick={() => setMobilePane('agent')}>
+              Agent
+            </button>
+          </div>
+
           <div
             ref={layoutRef}
             className="research-project-workspace__layout"
+            data-mobile-pane={mobilePane}
+            data-testid="research-workspace-layout"
             style={{ '--research-agent-width': `${agentWidth}px` } as CSSProperties}
           >
             <section className="research-project-workspace__center" aria-label="中心工具区">
