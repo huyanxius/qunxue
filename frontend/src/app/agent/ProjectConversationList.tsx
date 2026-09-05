@@ -1,4 +1,4 @@
-import { CaretDownIcon, CaretRightIcon, FolderIcon, FolderOpenIcon, PencilLineIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, CaretRightIcon, FolderIcon, FolderOpenIcon, PlusIcon } from '@phosphor-icons/react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { groupProjectConversations } from '../../modules/research-projects'
@@ -6,11 +6,12 @@ import type { AgentConversationSummary } from '../../modules/research-agent'
 import { useAppLocale } from '../i18n/AppLocaleProvider'
 import './project-conversation-list.css'
 
-export function ProjectConversationList({ projects, conversations, activeTaskId, onStart, renderConversation }: {
+export function ProjectConversationList({ projects, conversations, activeTaskId, onStart, onStartIndependent, renderConversation }: {
   projects: { task_id: string; project_title: string; status: string }[]
   conversations: AgentConversationSummary[]
   activeTaskId: string | null
   onStart: (taskId: string) => void
+  onStartIndependent?: () => void
   renderConversation: (conversation: AgentConversationSummary) => ReactNode
 }) {
   const { text } = useAppLocale()
@@ -34,7 +35,7 @@ export function ProjectConversationList({ projects, conversations, activeTaskId,
             {open ? <FolderOpenIcon size={18} /> : <FolderIcon size={18} />}
             <span>{project.project_title}</span>
           </button>
-          {project.status !== 'archived' ? <button type="button" className="project-conversation-list__new" aria-label={text(`在${project.project_title}中新建对话`, `New conversation in ${project.project_title}`)} onClick={() => onStart(project.task_id)}><PencilLineIcon size={17} /></button> : null}
+          {project.status !== 'archived' ? <button type="button" className="project-conversation-list__new" aria-label={text(`在${project.project_title}中新建对话`, `New conversation in ${project.project_title}`)} title={text('新建对话', 'New conversation')} onClick={() => onStart(project.task_id)}><PlusIcon size={15} /></button> : null}
         </div>
         {open ? <div className="project-conversation-list__children">
           <div className="project-conversation-list__resources">
@@ -47,7 +48,9 @@ export function ProjectConversationList({ projects, conversations, activeTaskId,
       </section>
     })}
     <section role="group" aria-label={text('独立对话', 'Independent conversations')}>
-      <h3>{text('独立对话', 'Independent conversations')}</h3>
+      <div className="project-conversation-list__independent-heading"><h3>{text('独立对话', 'Independent conversations')}</h3>
+        {onStartIndependent ? <button type="button" className="agent-conversation-history__new" aria-label={text('开始新对话', 'Start a new conversation')} title={text('开始新对话', 'Start a new conversation')} onClick={onStartIndependent}><PlusIcon size={15} /></button> : null}
+      </div>
       {groups.unassigned.map(renderConversation)}
       {!groups.unassigned.length ? <p>{text('未归属项目的对话会显示在这里', 'Conversations without a project appear here')}</p> : null}
     </section>
