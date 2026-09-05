@@ -152,6 +152,7 @@ function DeepResearchMockFlow({
   conclusion,
   exportState = 'idle',
   onExport,
+  continueResearchHref = '/research/new',
 }: {
   stage: DeepResearchMockStage
   question: string
@@ -168,6 +169,7 @@ function DeepResearchMockFlow({
   conclusion?: string
   exportState?: DeepResearchExportState
   onExport?: (kind: 'docx' | 'pdf') => void
+  continueResearchHref?: string
 }) {
   const [customIntent, setCustomIntent] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -242,7 +244,7 @@ function DeepResearchMockFlow({
     )
   }
 
-  // 进行中与已完成是同一张卡片，只是状态变了：进度条走满、步骤全部打勾、多出结论与导出。
+  // 完成后以结论和后续操作替代过程清单，详细过程仍可展开工具调用查看。
   const done = stage === 'completed'
   const percent = done
     ? 100
@@ -266,13 +268,13 @@ function DeepResearchMockFlow({
       <div className="deep-research-mock-card__progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
         <span style={{ width: `${percent}%` }} />
       </div>
-      <div className="deep-research-mock-card__steps">
+      {!done ? <div className="deep-research-mock-card__steps">
         {DEEP_RESEARCH_MOCK_STEPS.map((step, index) => (
           <div key={step} className={index < reachedIndex ? 'is-complete' : index === reachedIndex ? 'is-active' : ''}>
             <span aria-hidden="true">{index < reachedIndex ? '✓' : index === reachedIndex ? '•' : '○'}</span>{step}
           </div>
         ))}
-      </div>
+      </div> : null}
       {done ? (
         <div className="deep-research-mock-card__conclusion">
           <div className="deep-research-mock-card__eyebrow">研究结论</div>
@@ -297,16 +299,21 @@ function DeepResearchMockFlow({
           ))}
         </div>
       ) : null}
-      {done && onExport ? (
+      {done ? (
         <div className="deep-research-mock-card__export">
           <p>这一轮的问答连同全部引用，可以直接导出成一份带来源的研究报告。</p>
           <div className="deep-research-mock-card__export-actions">
-            <button type="button" className="is-primary" disabled={exportState !== 'idle'} onClick={() => onExport('docx')}>
-              <DownloadSimpleIcon size={14} weight="bold" />{exportState === 'docx' ? '正在生成 Word…' : '下载 Word'}
-            </button>
-            <button type="button" disabled={exportState !== 'idle'} onClick={() => onExport('pdf')}>
-              <FilePdfIcon size={14} />{exportState === 'pdf' ? '正在生成 PDF…' : '下载 PDF'}
-            </button>
+            {onExport ? <>
+              <button type="button" disabled={exportState !== 'idle'} onClick={() => onExport('docx')}>
+                <DownloadSimpleIcon size={14} weight="bold" />{exportState === 'docx' ? '正在生成 Word…' : '下载 Word'}
+              </button>
+              <button type="button" disabled={exportState !== 'idle'} onClick={() => onExport('pdf')}>
+                <FilePdfIcon size={14} />{exportState === 'pdf' ? '正在生成 PDF…' : '下载 PDF'}
+              </button>
+            </> : null}
+            <Link className="deep-research-mock-card__continue" to={continueResearchHref}>
+              继续形成研究<CaretRightIcon size={14} />
+            </Link>
           </div>
         </div>
       ) : null}
@@ -2897,6 +2904,12 @@ export function ResearchAgentConversationPage({
                     conclusion={deepResearchConclusion}
                     exportState={reportExportState}
                     onExport={activeConversation ? (kind) => { void exportResearchReport(kind) } : undefined}
+                    continueResearchHref={`/research/new?${new URLSearchParams({
+                      ...(activeConversation ? { conversation_id: activeConversation.conversation_id } : {}),
+                      ...((activeConversation?.turns.at(-1)?.knowledge_release_id || boundKnowledgeReleaseId)
+                        ? { knowledge_release_id: activeConversation?.turns.at(-1)?.knowledge_release_id || boundKnowledgeReleaseId! } : {}),
+                      ...(taskId ? { task_id: taskId } : {}),
+                    }).toString()}`}
                     onChooseIntent={(intent) => continueDeepResearch('clarify', intent)}
                     onSkip={() => continueDeepResearch('skip')}
                     onConfirmPlan={() => continueDeepResearch('confirm')}
