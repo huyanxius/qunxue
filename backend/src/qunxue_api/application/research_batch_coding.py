@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Protocol
 from uuid import UUID
@@ -68,7 +68,11 @@ class ResearchBatchCodingApplication:
         research_tasks,
         batches: BatchCodingRepository | None = None,
         clock: Callable[[], datetime] | None = None,
+        analyzer: Callable | None = None,
+        commit: Callable[[], None] | None = None,
     ) -> None:
+        self._analyzer = analyzer
+        self._commit = commit or (lambda: None)
         self.analysis = analysis
         self._materials = materials
         self._research_tasks = research_tasks
@@ -140,85 +144,75 @@ class ResearchBatchCodingApplication:
         return self.analysis.snapshot(user_id=user_id, task_id=task_id)
 
     def _process(self, run: BatchCodingRun, *, segments=None) -> BatchCodingRun:
+        from qunxue_api.application.research_analysis import ResearchAnalysisApplication
+
         try:
+            if self._analyzer is None:
+                raise RuntimeError("coding_model_unavailable")
             run = self._batches.save(run.processing(now=self._clock()))
+            self._commit()
+            material = self._materials.get(run.material_id, user_id=run.user_id, task_id=run.task_id)
+            if material is None:
+                raise LookupError(run.material_id)
             if segments is None:
-                material = self._materials.get(
-                    run.material_id, user_id=run.user_id, task_id=run.task_id
-                )
-                if material is None:
-                    raise LookupError(run.material_id)
-                segments = self._segments(
-                    material, user_id=run.user_id, task_id=run.task_id, parse_id=run.parse_id
-                )
-            by_label: dict[str, list[UUID]] = {}
-            for block in segments[run.processed_segments :]:
-                low_confidence = len(block.text.strip()) < 24
-                annotation = self._create_annotation(run, block, low_confidence)
-                label = _open_label(block.text)
-                by_label.setdefault(label, []).append(annotation.annotation_id)
-                code = self._propose_code(run, label, by_label[label])
-                run = self._batches.save(
-                    run.progress(
+                segments = self._segments(material, user_id=run.user_id, task_id=run.task_id, parse_id=run.parse_id)
+            app = ResearchAnalysisApplication(analysis=self.analysis, materials=self._materials,
+                research_tasks=self._research_tasks, clock=self._clock())
+            while run.processed_segments < len(segments):
+                chunk = segments[run.processed_segments:run.processed_segments + 8]
+                snapshot = self.analysis.snapshot(user_id=run.user_id, task_id=run.task_id)
+                task = self._research_tasks.get(run.task_id, run.user_id)
+                context = {
+                    "research_question": getattr(task, "phenomenon_research_intent", None),
+                    "method": getattr(task, "method_orientation", None),
+                    "codes": [{"label": c.label, "definition": c.definition, "status": c.status.value}
+                              for c in snapshot["codes"]],
+                }
+                proposals = tuple(self._analyzer(segments=chunk, context=context,
+                    user_id=run.user_id, task_id=run.task_id, run_id=run.run_id))
+                by_segment = {block.segment_id: [] for block in chunk}
+                for proposal in proposals:
+                    block = next((item for item in chunk if item.segment_id == proposal["segment_id"]), None)
+                    if block is None:
+                        raise ValueError("coding_source_not_in_batch")
+                    quote = str(proposal["quote"])
+                    start = int(proposal.get("quote_start", block.text.find(quote)))
+                    if not quote.strip() or start < 0 or block.text[start:start + len(quote)] != quote:
+                        raise ValueError("coding_quote_not_in_source")
+                    if any(not str(proposal[key]).strip() for key in ("label", "definition", "rationale")):
+                        raise ValueError("coding_interpretation_incomplete")
+                    by_segment[block.segment_id].append((proposal, start))
+                # Validate every source before persisting this chunk. Each source/label has
+                # its own idempotency key; repeated concepts cannot collide with other rows.
+                for block in chunk:
+                    annotations, codes = list(run.annotation_ids), list(run.code_ids)
+                    uncertain = False
+                    for index, (proposal, start) in enumerate(by_segment[block.segment_id]):
+                        code = app.propose_source_code_from_agent(
+                            user_id=run.user_id, task_id=run.task_id, material_id=run.material_id,
+                            parse_id=run.parse_id, segment_id=block.segment_id,
+                            quote_start=start, quote_end=start + len(str(proposal["quote"])),
+                            label=str(proposal["label"]), definition=str(proposal["definition"]),
+                            rationale=str(proposal["rationale"]), conversation_id=run.run_id,
+                            agent_run_id=run.run_id, agent_turn_id=run.run_id,
+                            tool_call_id=f"batch:{run.run_id}:{block.segment_id}:{index}",
+                        )
+                        annotations.extend(code.annotation_ids)
+                        codes.append(code.code_id)
+                        uncertain = uncertain or float(proposal.get("confidence", 0)) < 0.65
+                    run = self._batches.save(replace(run,
                         processed_segments=run.processed_segments + 1,
-                        annotation_id=annotation.annotation_id,
-                        code_id=code.code_id,
-                        low_confidence=low_confidence,
-                        segment_id=block.segment_id,
-                        now=self._clock(),
-                    )
-                )
-            return self._batches.save(run.complete(now=self._clock()))
+                        annotation_ids=tuple(dict.fromkeys(annotations)), code_ids=tuple(dict.fromkeys(codes)),
+                        low_confidence_segments=run.low_confidence_segments + ((block.segment_id,) if uncertain else ()),
+                        updated_at=self._clock()))
+                    self._commit()
+            run = self._batches.save(run.complete(now=self._clock()))
         except Exception as error:
-            return self._batches.save(run.fail(error_code=type(error).__name__, now=self._clock()))
-
-    def _create_annotation(self, run, block, low_confidence):
-        from qunxue_api.application.research_analysis import ResearchAnalysisApplication
-
-        analysis_app = ResearchAnalysisApplication(
-            analysis=self.analysis,
-            materials=self._materials,
-            research_tasks=self._research_tasks,
-            clock=self._clock,
-        )
-        return analysis_app.create_annotation(
-            user_id=run.user_id,
-            task_id=run.task_id,
-            idempotency_key=f"batch-annotation:{run.run_id}:{block.segment_id}",
-            material_id=run.material_id,
-            parse_id=run.parse_id,
-            segment_id=block.segment_id,
-            quote_start=0,
-            quote_end=len(block.text),
-            annotation_kind=AnalysisAnnotationKind.DESCRIPTIVE,
-            note=(
-                "批量编码候选；低确定性片段，需用户复核。"
-                if low_confidence
-                else "批量编码候选；请在原文中复核。"
-            ),
-        )
-
-    def _propose_code(self, run, label, annotation_ids):
-        from qunxue_api.application.research_analysis import ResearchAnalysisApplication
-
-        analysis_app = ResearchAnalysisApplication(
-            analysis=self.analysis,
-            materials=self._materials,
-            research_tasks=self._research_tasks,
-            clock=self._clock,
-        )
-        return analysis_app.propose_code_from_agent(
-            user_id=run.user_id,
-            task_id=run.task_id,
-            label=label,
-            definition=f"由整份材料批量遍历得到的开放编码候选：{label}",
-            annotation_ids=tuple(annotation_ids),
-            rationale="第一阶段逐段开放编码；第二阶段按相同候选标签合并原文证据。",
-            conversation_id=run.run_id,
-            agent_run_id=run.run_id,
-            agent_turn_id=run.run_id,
-            tool_call_id=f"batch-code:{run.run_id}:{label}",
-        )
+            run = self._batches.save(run.fail(error_code=str(error) if str(error) in {
+                "coding_model_unavailable", "coding_quote_not_in_source", "coding_source_not_in_batch",
+                "coding_interpretation_incomplete"} else type(error).__name__, now=self._clock()))
+        self._commit()
+        return run
 
     def _require_task(self, user_id, task_id):
         if self._research_tasks.get(task_id, user_id) is None:
@@ -241,9 +235,3 @@ class ResearchBatchCodingApplication:
         if parsed is None:
             raise LookupError(resolved_parse_id)
         return tuple(parsed.blocks)
-
-
-def _open_label(text: str) -> str:
-    normalized = re.sub(r"\s+", " ", text.strip())
-    normalized = re.sub(r"[。！？；;,.，、]+$", "", normalized)
-    return normalized[:48] or "未命名开放编码"
