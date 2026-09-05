@@ -70,7 +70,7 @@ class DeepResearchDecision(BaseModel):
     needs_clarification: bool = False
     question: str = ""
     options: list[str] = Field(default_factory=list)
-    title: str = "深入研究"
+    title: str = ""
     steps: list[str] = Field(default_factory=list)
 
 
@@ -849,6 +849,12 @@ class PydanticAIKnowledgeRunner:
                 "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
                 "如果当前消息只是切换到深入研究而没有明确研究问题，请先询问用户要继续哪个研究或提供新的问题，"
                 "不要把历史对话中的旧研究默认当成本轮主题。"
+                "无论 research、conversation 或需要澄清，都必须填写 title，概括当前对话主题，"
+                "用于侧栏历史列表。沿用用户语言：中文通常 6 到 14 字，最多 18 字；"
+                "英文 3 到 7 个词，最多 48 字符。突出具体对象和核心问题，去掉‘我想’、"
+                "‘帮我’、‘研究一下’等开场白，不照抄首句，不加引号、句末标点或‘标题：’前缀。"
+                "例如‘我想快速研究一下年轻人为什么感到孤独’可概括为‘青年孤独的社会成因’；"
+                "只有问候时用‘日常问候’，不要凭空编造研究主题。"
             ),
         )
         self._active_tool_event: ContextVar[Callable[[AgentToolEvent], None] | None] = ContextVar(
@@ -864,6 +870,7 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
         on_event: Callable[[AgentResearchEvent], None],
+        on_title: Callable[[str], None] | None = None,
     ) -> None:
         """Ask the model for the research UX envelope before retrieval starts."""
 
@@ -888,11 +895,13 @@ class PydanticAIKnowledgeRunner:
                     request_type=(
                         "research" if _has_research_subject(prompt) else "conversation"
                     ),
-                    title="深入研究",
+                    title="",
                     steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
                 )
         finally:
             _agent_route_correlation.reset(route_token)
+        if on_title is not None and decision.title.strip():
+            on_title(decision.title)
         if decision.request_type != "research":
             return
         if decision.needs_clarification and _clarification_is_material(decision, prompt):
