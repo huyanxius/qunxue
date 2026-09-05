@@ -998,7 +998,7 @@ class PydanticAIKnowledgeRunner:
             元问题或整段聊天原样传入。需要互补角度时，分次调用本工具。
             """
 
-            safe_limit = max(1, min(int(limit), 8))
+            safe_limit = max(1, min(int(limit), 50))
             call_id = _tool_call_id(ctx, "search_web")
             tool_input = {"query": query, "limit": safe_limit}
             self._emit_tool_event(AgentToolEvent(
@@ -1095,7 +1095,7 @@ class PydanticAIKnowledgeRunner:
             结果总是带有 ``research_material`` 类型、稳定 segment locator 和
             ``personal_material`` 来源标记；工具不会访问其他任务或已删除正文。
             """
-            safe_limit = max(1, min(int(limit), 8))
+            safe_limit = max(1, min(int(limit), 50))
             call_id = _tool_call_id(ctx, "search_research_materials")
             tool_input = {"query": query, "limit": safe_limit}
             self._emit_tool_event(
@@ -1474,7 +1474,7 @@ class PydanticAIKnowledgeRunner:
             仅在用户要求出处、原始文献或可核验来源时使用，并且 source_ids 必须来自先前读取的条目。
             """
             call_id = _tool_call_id(ctx, "read_sources")
-            safe_source_ids = list(source_ids[:8])
+            safe_source_ids = list(source_ids)
             self._emit_tool_event(
                 AgentToolEvent(
                     tool="read_sources",

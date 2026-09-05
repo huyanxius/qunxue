@@ -87,8 +87,6 @@ class KnowledgeToolRegistry:
         """Bind this turn's source cards to a validated structured evidence set."""
 
         selected = tuple(dict.fromkeys(str(value) for value in citation_ids))
-        if len(selected) > 8:
-            raise ValueError("an Agent answer can select at most eight evidence items")
         if any(citation_id not in self.evidence for citation_id in selected):
             raise ValueError("selected evidence is outside this turn's retrieved closed set")
         self.selected_evidence_ids = selected
@@ -118,7 +116,7 @@ class KnowledgeToolRegistry:
                 "retryable": False,
             }
         self._web_queries.add(query_key)
-        raw_results = self._web_research.search(safe_query, limit=max(1, min(limit, 8)))
+        raw_results = self._web_research.search(safe_query, limit=max(1, min(limit, 50)))
         results: list[dict[str, object]] = []
         for item in raw_results:
             url = item.get("url", "").strip()
@@ -221,7 +219,7 @@ class KnowledgeToolRegistry:
             knowledge_release_id=self.release.knowledge_release_id,
             release_content_hash=self.release.content_hash,
             document_kind=None,
-            limit=max(1, min(limit, 8)),
+            limit=max(1, min(limit, 50)),
         )
         values: list[dict[str, object]] = []
         seen_knowledge_ids: set[str] = set()
@@ -322,7 +320,7 @@ class KnowledgeToolRegistry:
 
     def read_sources(self, source_ids: list[str]) -> list[dict[str, object]]:
         requested = [
-            source_id for source_id in source_ids[:8] if source_id in self._allowed_source_ids
+            source_id for source_id in source_ids if source_id in self._allowed_source_ids
         ]
         sources = self._catalog.get_sources(
             source_ids=tuple(requested),
@@ -402,7 +400,7 @@ class KnowledgeToolRegistry:
             category_id=node.node_id if node_type == "category" else None,
             dimension_id=node.node_id if node_type == "dimension" else None,
             cursor=None,
-            limit=max(1, min(limit, 8)),
+            limit=max(1, min(limit, 50)),
         )
         previews: list[dict[str, object]] = []
         for item in page.entries:

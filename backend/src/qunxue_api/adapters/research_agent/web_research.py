@@ -312,11 +312,11 @@ class OpenWebResearchClient:
         raise ValueError(f"搜索提供方 {provider} 缺少有效配置")
 
     def search(self, query: str, *, limit: int = 5) -> list[dict[str, str]]:
-        safe_limit = max(1, min(limit, 8))
+        safe_limit = max(1, min(limit, 50))
         candidates: list[dict[str, str]] = []
         seen_urls: set[str] = set()
         for planned_query in plan_web_queries(query, profile=self._profile):
-            recall_limit = max(8, min(32, safe_limit * 4))
+            recall_limit = max(8, min(200, safe_limit * 4))
             for item in self._search(planned_query, recall_limit):
                 title = str(item.get("title") or item.get("name") or "").strip()
                 url = str(item.get("href") or item.get("url") or "").strip()
