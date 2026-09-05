@@ -230,7 +230,7 @@ function brandMarkRun() {
     type: 'svg',
     data: Uint8Array.from(new TextEncoder().encode(brandMarkSvg)),
     fallback: { type: 'png', data: base64ToBytes(BRAND_MARK_PNG_BASE64) },
-    transformation: { width: 26, height: 26 },
+    transformation: { width: 30, height: 30 },
     altText: { name: '群学致知', title: '群学致知', description: '群学致知品牌标志' },
   })
 }

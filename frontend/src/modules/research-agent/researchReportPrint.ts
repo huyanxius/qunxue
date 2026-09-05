@@ -24,9 +24,9 @@ const PRINT_CSS = `
   .letterhead {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
-  .letterhead svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .letterhead svg { width: 30px; height: 30px; flex: 0 0 auto; }
   .letterhead b {
     font-family: "Times New Roman", "Heiti SC", "黑体", "Noto Sans CJK SC", sans-serif;
     font-size: 12pt;
