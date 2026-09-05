@@ -1,7 +1,5 @@
 import {
-  ArrowUpIcon,
   CaretRightIcon,
-  CheckIcon,
   CircleNotchIcon,
   FileTextIcon,
   FolderOpenIcon,
@@ -87,17 +85,18 @@ function ResearchStartProposalCard({
   onContinue: () => void
 }) {
   return (
-    <section className="new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
-      <header><span>建立研究</span><strong>请确认 Agent 理解的研究起点</strong></header>
-      <dl>
+    <section className="deep-research-mock-card new-research__start-proposal" aria-label="研究建立确认" aria-busy={busy}>
+      <div className="deep-research-mock-card__eyebrow">建立研究</div>
+      <h2>请确认 Agent 理解的研究起点</h2>
+      <dl className="new-research__start-fields">
         <div><dt>现象</dt><dd>{proposal.phenomenon}</dd></div>
         <div><dt>意图</dt><dd>{proposal.researchIntent || '还需要通过对话补充研究意图'}</dd></div>
         <div><dt>情境</dt><dd>{proposal.context || '还需要通过对话补充具体情境'}</dd></div>
       </dl>
       {error ? <p className="new-research__start-error" role="alert"><WarningCircleIcon size={14} />{error}</p> : null}
-      <div className="new-research__start-actions">
-        <button type="button" className={`is-primary${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onConfirm}>
-          {busy ? <><CircleNotchIcon size={14} />正在建立研究…</> : <>{error ? '重试建立研究' : '确认研究起点'}<ArrowUpIcon size={14} /></>}
+      <div className="deep-research-mock-card__actions new-research__start-actions">
+        <button type="button" className={`deep-research-mock-card__continue${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onConfirm}>
+          {busy ? <><CircleNotchIcon size={14} />正在建立研究…</> : <>{error ? '重试建立研究' : '确认研究起点'}<CaretRightIcon size={14} /></>}
         </button>
         <button type="button" disabled={busy} onClick={onContinue}>{error ? '返回继续修改' : '继续修改'}</button>
       </div>
@@ -107,14 +106,13 @@ function ResearchStartProposalCard({
 
 function ResearchStartReadyCard({ journey, onEnter }: { journey: ResearchStartJourney; onEnter: () => void }) {
   return (
-    <section className="new-research__start-ready" aria-label="研究已建立">
-      <span className="new-research__start-ready-mark"><CheckIcon size={15} weight="bold" /></span>
-      <div>
-        <small>研究已建立 · 画布梳理中</small>
-        <strong>{journey.proposal?.phenomenon || '当前研究问题'}</strong>
-        <p>继续在左侧整理问题、现象、理论与证据；确认结构清楚后，再展开文档节点。</p>
+    <section className="deep-research-mock-card new-research__start-ready" aria-label="研究已建立">
+      <div className="deep-research-mock-card__eyebrow">研究已建立 · 画布梳理中</div>
+      <h2>{journey.proposal?.phenomenon || '当前研究问题'}</h2>
+      <p className="new-research__start-description">继续在左侧整理问题、现象、理论与证据；确认结构清楚后，再展开文档节点。</p>
+      <div className="deep-research-mock-card__actions new-research__start-actions">
+        <button type="button" className="deep-research-mock-card__continue" onClick={onEnter}>展开文档节点 <CaretRightIcon size={14} /></button>
       </div>
-      <button type="button" onClick={onEnter}>展开文档节点 <CaretRightIcon size={14} /></button>
     </section>
   )
 }
@@ -126,11 +124,12 @@ function ResearchStartRecoveryError({ message, busy, onRetry, onContinue }: {
   onContinue: () => void
 }) {
   return (
-    <section className="new-research__start-recovery" role="alert" aria-label="研究状态恢复失败">
-      <div><WarningCircleIcon size={15} /><strong>研究状态暂时无法恢复</strong></div>
-      <p><span>对话已保留</span>。{message}</p>
-      <div className="new-research__start-actions">
-        <button type="button" className={`is-primary${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onRetry}>
+    <section className="deep-research-mock-card new-research__start-recovery" role="alert" aria-label="研究状态恢复失败">
+      <div className="deep-research-mock-card__eyebrow">研究状态</div>
+      <h2>研究状态暂时无法恢复</h2>
+      <p className="new-research__start-description"><span>对话已保留</span>。{message}</p>
+      <div className="deep-research-mock-card__actions new-research__start-actions">
+        <button type="button" className={`deep-research-mock-card__continue${busy ? ' is-loading' : ''}`} disabled={busy} onClick={onRetry}>
           {busy ? <><CircleNotchIcon size={14} />正在恢复…</> : '重试恢复研究状态'}
         </button>
         <button type="button" disabled={busy} onClick={onContinue}>返回继续对话</button>
