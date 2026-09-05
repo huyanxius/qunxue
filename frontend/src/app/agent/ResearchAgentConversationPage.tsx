@@ -35,6 +35,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -1732,6 +1733,24 @@ export function ResearchAgentConversationPage({
   const materialFileInputRef = useRef<HTMLInputElement>(null)
   const modeMenuRef = useRef<HTMLDivElement>(null)
   const modeMenuButtonRef = useRef<HTMLButtonElement>(null)
+
+  useLayoutEffect(() => {
+    const input = composerInputRef.current
+    if (!input) return
+    const resize = () => {
+      input.style.height = 'auto'
+      input.style.height = `${input.scrollHeight}px`
+    }
+    resize()
+    let width = input.clientWidth
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+      if (input.clientWidth === width) return
+      width = input.clientWidth
+      resize()
+    })
+    observer?.observe(input)
+    return () => observer?.disconnect()
+  }, [draft])
 
 
   function openMaterials() {
