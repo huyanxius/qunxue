@@ -2075,7 +2075,15 @@
   border-radius: 12px;
 }
 
-/* 对话栏里的五个入口共用同一控制尺寸，三类内容面板共用同一抽屉外壳。 */
+/* 窄对话栏使用浮层，顶部开关始终可点，不为面板分配对话列宽。 */
+.research-agent-conversation.research-agent-conversation--embedded > .research-context-rail--sections {
+  position: absolute;
+  inset: 52px 12px auto auto;
+  width: min(404px, calc(100% - 24px));
+  max-height: calc(100% - 64px);
+}
+
+/* 研究面板、记录与材料库共用克制的浮层边框。 */
 .research-agent-conversation--embedded .new-research__agent-actions button {
   width: 30px;
   height: 30px;

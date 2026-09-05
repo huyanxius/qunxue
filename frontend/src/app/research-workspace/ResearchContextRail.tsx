@@ -47,8 +47,8 @@ type ResearchContextRailProps = {
   readonly basisContent?: ReactNode
   readonly selectedCitationId?: string | null
   /**
-   * tabs：一次只显示一个面板，由外部按钮切换，用于研究工作区里内嵌的窄栏。
-   * sections：知识库 / 网页 / 工作流程同屏堆叠，用于独立 Agent 页右侧那一列。
+   * tabs：一次只显示一个面板，由外部按钮切换。
+   * sections：知识库 / 网页 / 工作流程同屏堆叠，供独立侧栏与工作区浮层共用。
    */
   readonly variant?: 'tabs' | 'sections'
   readonly elapsedSeconds?: number | null
