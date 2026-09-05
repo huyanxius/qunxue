@@ -22,6 +22,8 @@ from qunxue_api.modules.agent_conversation.research_map import (
     patches_from_tool_summary,
 )
 
+from .canvas_editing import CanvasEditConflict, apply_canvas_edits, prepare_canvas_edit
+
 
 class _MemoryRepository:
     def __init__(self) -> None:
@@ -29,6 +31,7 @@ class _MemoryRepository:
         self.turn_keys: dict[tuple[UUID, str], UUID] = {}
         self.runs: dict[UUID, AgentRun] = {}
         self.research_task_ids: dict[UUID, UUID] = {}
+        self.canvas_edits: dict[UUID, dict] = {}
 
     def commit(self) -> None:
         return None
@@ -87,9 +90,52 @@ class _MemoryRepository:
                 )
                 for turn in conversation.turns
             ),
-            research_map=aggregate_research_map(all_patches),
+            research_map=apply_canvas_edits(
+                aggregate_research_map(
+                    all_patches,
+                    protected_since={
+                        key: value.get("_patch_count", 0)
+                        for key, value in self.canvas_edits.get(conversation_id, {}).items()
+                    },
+                ),
+                self.canvas_edits.get(conversation_id, {}),
+            ),
             unfinished_runs=unfinished,
         )
+
+    def edit_canvas_node(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        node_id: str,
+        title: str,
+        summary: str,
+        expected_title: str,
+        expected_summary: str | None,
+        expected_version: int,
+    ) -> Conversation:
+        current = self.get(user_id=user_id, conversation_id=conversation_id)
+        if current.canvas_edit_version != expected_version:
+            raise CanvasEditConflict("卡片已经更新，请重新载入后再保存。")
+        edit = prepare_canvas_edit(
+            current.research_map,
+            node_id=node_id,
+            title=title,
+            summary=summary,
+            expected_title=expected_title,
+            expected_summary=expected_summary,
+        )
+        previous = self.canvas_edits.get(conversation_id, {}).get(node_id, {})
+        edit["_patch_count"] = min(
+            edit["_patch_count"], previous.get("_patch_count", edit["_patch_count"])
+        )
+        edit["user_edit_version"] = expected_version + 1
+        self.canvas_edits.setdefault(conversation_id, {})[node_id] = edit
+        self.conversations[conversation_id] = replace(
+            current, canvas_edit_version=expected_version + 1, updated_at=datetime.now(UTC)
+        )
+        return self.get(user_id=user_id, conversation_id=conversation_id)
 
     def list(self, *, user_id: UUID) -> Sequence[Conversation]:
         return tuple(
@@ -355,6 +401,29 @@ class ConversationService:
             conversation_id=conversation_id,
             title=normalized_title[:120],
             updated_at=datetime.now(UTC),
+        )
+
+    def edit_canvas_node(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        node_id: str,
+        title: str,
+        summary: str,
+        expected_title: str,
+        expected_summary: str | None,
+        expected_version: int,
+    ) -> Conversation:
+        return self._repository.edit_canvas_node(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            node_id=node_id,
+            title=title,
+            summary=summary,
+            expected_title=expected_title,
+            expected_summary=expected_summary,
+            expected_version=expected_version,
         )
 
     def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:

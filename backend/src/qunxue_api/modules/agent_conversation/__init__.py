@@ -37,7 +37,12 @@ from qunxue_api.modules.agent_conversation.research_map import (
 )
 from qunxue_api.modules.agent_conversation.service import ConversationService
 
+from .canvas_editing import CanvasEditConflict, apply_canvas_edits, prepare_canvas_edit
+
 __all__ = [
+    "CanvasEditConflict",
+    "apply_canvas_edits",
+    "prepare_canvas_edit",
     "AgentCitation",
     "AgentMaterialAttachment",
     "AgentEvidence",

@@ -1,3 +1,4 @@
+import { editAgentCanvasNode, type AgentCanvasNodeEditRequest } from '../../api/generated'
 import { apiClient } from '../../api/client'
 import type {
   AgentResearchJourneyResponse,
@@ -416,4 +417,12 @@ export async function stopAgentRun(runId: string, options: { keepalive?: boolean
     if (attempt >= 39) throw new Error('暂停仍未确认，请重试暂停。')
     await new Promise<void>((resolve) => globalThis.setTimeout(resolve, 250))
   }
+}
+
+export async function saveCanvasNode(conversationId: string, nodeId: string, body: AgentCanvasNodeEditRequest): Promise<AgentConversation> {
+  const result = await editAgentCanvasNode({ client: apiClient, headers: { 'Idempotency-Key': crypto.randomUUID() }, path: { conversation_id: conversationId, node_id: nodeId }, body })
+  if (!result.data) {
+    throw new Error(result.response.status === 409 ? '卡片已在另一处更新。你的草稿仍保留，请载入最新版本后核对。' : '卡片未保存，请检查连接后重试。')
+  }
+  return result.data as AgentConversation
 }

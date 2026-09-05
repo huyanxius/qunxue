@@ -2034,6 +2034,10 @@ class PydanticAIKnowledgeRunner:
                     detail=(
                         f"已更新 {len(result.get('nodes', []))} 个研究节点与 "
                         f"{len(result.get('relations', []))} 条关系"
+                        + (
+                            f"；{len(result['suggested_nodes'])} 条改写建议等待你确认"
+                            if result.get("suggested_nodes") else ""
+                        )
                     ),
                 )
             )
@@ -3112,6 +3116,9 @@ def _compose_agent_prompt(
         "\n\n<research_map_policy>"
         "研究工作区内，只要本轮形成或修订研究问题、理论、主张、证据、缺口或综合判断，"
         "就必须在回答完成前调用 update_research_map 提交对应增量；若结构没有变化则不要调用。"
+        "节点带 user_edited 时表示用户亲自编辑过。针对它继续讨论应复用原 ID；"
+        "工具会将文字修改放入 suggested_nodes 等待用户采纳，不会直接覆盖。"
+        "不得声称建议已经保存，不得换 ID 绕开保护。"
         "工具校验失败时根据反馈修正一次，不得把失败的结构写成已经保存。"
         "复用已有节点 id 修订同一问题或判断，不重复堆积近义节点；回答中简短说明改了什么及依据。"
         "普通模式与深入研究进入后使用同一协作流程；继承已确认起点、历史调研与引用，"

@@ -162,6 +162,19 @@ class ConversationRepository(Protocol):
         updated_at: datetime,
     ) -> Conversation: ...
 
+    def edit_canvas_node(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        node_id: str,
+        title: str,
+        summary: str,
+        expected_title: str,
+        expected_summary: str | None,
+        expected_version: int,
+    ) -> Conversation: ...
+
     def delete(self, *, user_id: UUID, conversation_id: UUID) -> None: ...
 
     def release_ids_by_turn(self, *, conversation_id: UUID) -> Mapping[UUID, str]: ...
