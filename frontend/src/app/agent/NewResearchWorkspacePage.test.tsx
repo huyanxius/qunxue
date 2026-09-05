@@ -536,7 +536,8 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     await within(workspace).findByRole('region', { name: '研究已建立' })
-    expect(within(workspace).getByRole('button', { name: '研究材料' })).toBeVisible()
+    fireEvent.click(within(workspace).getByRole('button', { name: '添加研究材料' }))
+    expect(within(workspace).getByRole('menuitem', { name: '查看材料库' })).toBeVisible()
   })
 
   it('loads the proposal persisted by a completed Agent turn', async () => {
@@ -998,7 +999,7 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：互惠规范/ }))
-    const sources = await screen.findByRole('region', { name: '来源' })
+    const sources = await screen.findByRole('group', { name: '知识库' })
     fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
 
     const basis = await screen.findByRole('region', { name: '依据' })
@@ -1028,7 +1029,7 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：社区互助工作笔记/ }))
-    const sources = await screen.findByRole('region', { name: '来源' })
+    const sources = await screen.findByRole('group', { name: '知识库' })
     expect(sources).toHaveTextContent('知识条目')
     expect(sources).not.toHaveTextContent('未审核')
     fireEvent.click(within(sources).getByRole('button', { name: /社区互助工作笔记/ }))
@@ -1058,7 +1059,7 @@ describe('NewResearchWorkspacePage', () => {
 
     const workspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(workspace).findByRole('button', { name: /查看证据：互惠规范/ }))
-    const sources = await screen.findByRole('region', { name: '来源' })
+    const sources = await screen.findByRole('group', { name: '知识库' })
     fireEvent.click(within(sources).getByRole('button', { name: /互惠规范/ }))
 
     const basis = await screen.findByRole('region', { name: '依据' })
@@ -1102,7 +1103,7 @@ describe('NewResearchWorkspacePage', () => {
     renderPage(`/research/new?conversation_id=${conversation.conversation_id}`)
     const refreshedWorkspace = await screen.findByRole('region', { name: '新建研究工作区' })
     fireEvent.click(await within(refreshedWorkspace).findByRole('button', { name: /查看证据：社会资本与互助/ }))
-    const sources = await screen.findByRole('region', { name: '来源' })
+    const sources = await screen.findByRole('group', { name: '知识库' })
     fireEvent.click(within(sources).getByRole('button', { name: /社会资本与互助/ }))
     const basis = await screen.findByRole('region', { name: '依据' })
 
@@ -1112,19 +1113,19 @@ describe('NewResearchWorkspacePage', () => {
     )
   })
 
-  it('treats research history as a dismissible dialog with an Escape route', async () => {
+  it('opens a saved research conversation from the shared history rail', async () => {
+    const conversation = conversationFixture()
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? new URL(input, 'http://localhost') : new URL(input instanceof Request ? input.url : input.toString())
-      if (url.pathname === '/api/agent/conversations') return json({ items: [] })
+      const url = new URL(input instanceof Request ? input.url : String(input), 'http://localhost')
+      if (url.pathname === '/api/agent/conversations') return json({ items: [conversation] })
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
       return json({}, 404)
     }))
-    const workspace = renderPage().container
-    const region = await within(workspace).findByRole('region', { name: '新建研究工作区' })
-    fireEvent.click(within(region).getAllByRole('button', { name: '打开研究记录' })[0])
-
-    const dialog = await within(region).findByRole('dialog', { name: '研究记录' })
-    fireEvent.keyDown(dialog, { key: 'Escape' })
-    expect(within(region).queryByRole('dialog', { name: '研究记录' })).not.toBeInTheDocument()
+    renderPage()
+    const history = await screen.findByRole('region', { name: 'Agent 对话记录' })
+    fireEvent.click(await within(history).findByRole('button', { name: conversation.title }))
+    expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent(`conversation_id=${conversation.conversation_id}`)
   })
 
   it('lets the conversation panel be resized by dragging or keyboard and remembers the width', async () => {
@@ -1210,7 +1211,7 @@ describe('NewResearchWorkspacePage', () => {
 
     expect(await within(workspace).findByText('Agent 已完成工具调用')).toBeVisible()
     fireEvent.click(within(workspace).getAllByRole('button', { name: '查看活动' })[0])
-    const activityPanel = await screen.findByRole('region', { name: '活动' })
+    const activityPanel = await screen.findByRole('group', { name: '工作流程' })
     expect(activityPanel).toHaveTextContent('检索知识库')
     expect(activityPanel).toHaveTextContent('找到 1 条知识条目')
     expect(activityPanel).not.toHaveTextContent('未审核')

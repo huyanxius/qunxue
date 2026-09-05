@@ -24,6 +24,7 @@ export type ResearchCanvasNodeStatus = AgentResearchNodeStatus
 type ResearchCanvasToolStep = AgentToolStep & { interrupted?: boolean }
 
 export type ResearchCanvasNode = {
+  userEdited?: boolean
   id: string
   kind: ResearchCanvasNodeKind
   title: string
@@ -106,9 +107,9 @@ function conversationMap(conversation: AgentConversation | null): AgentResearchM
 function applyPatch(map: AgentResearchMap, patch: AgentResearchMapPatch): AgentResearchMap {
   const nodes = new Map(map.nodes.map((node) => [node.id, node]))
   const relations = new Map(map.relations.map((relation) => [relation.id, relation]))
-  for (const id of patch.remove_node_ids) nodes.delete(id)
+  for (const id of patch.remove_node_ids) if (!nodes.get(id)?.user_edited) nodes.delete(id)
   for (const id of patch.remove_relation_ids) relations.delete(id)
-  for (const node of patch.nodes) nodes.set(node.id, node)
+  for (const node of patch.nodes) if (!nodes.get(node.id)?.user_edited) nodes.set(node.id, node)
   for (const relation of patch.relations) relations.set(relation.id, relation)
   const valid = new Set(nodes.keys())
   return {
@@ -124,6 +125,7 @@ function toCanvasNode(node: AgentResearchMapNode, conversation: AgentConversatio
   )?.turn_id
   return {
     id: node.id,
+    userEdited: node.user_edited,
     kind: node.kind,
     title: node.title,
     excerpt: node.summary ?? null,

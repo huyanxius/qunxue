@@ -166,8 +166,12 @@ class KnowledgeToolRegistry:
         title = page.get("title", "").strip()
         citation_id = f"web:{url}"
         existing = self.evidence.get(citation_id) or AgentEvidence(
-            citation_id=citation_id, label=title or url, kind="source",
-            excerpt="", source_id=url, source_kind="web",
+            citation_id=citation_id,
+            label=title or url,
+            kind="source",
+            excerpt="",
+            source_id=url,
+            source_kind="web",
         )
         if content:
             self.evidence[citation_id] = replace(
@@ -209,18 +213,58 @@ class KnowledgeToolRegistry:
     ) -> dict[str, object]:
         if not self.research_map_enabled:
             raise ValueError("research map is only available in the research workspace")
+        existing = {str(node["id"]): node for node in self.research_map.get("nodes", [])}
+        protected = {key for key, node in existing.items() if node.get("user_edited")}
+        validated_nodes = []
+        for raw in nodes or ():
+            if not isinstance(raw, Mapping):
+                raise ValueError("research map node must be an object")
+            raw_id = str(raw.get("id", raw.get("node_id", ""))).strip()
+            # 原节点可保留自己的来源；跨节点添加引用必须有本轮检索依据。
+            allowed = set(self.evidence) | set(existing.get(raw_id, {}).get("citation_ids", []))
+            validated_nodes.extend(
+                normalize_research_map_patch(nodes=[raw], evidence_ids=allowed)["nodes"]
+            )
         patch = normalize_research_map_patch(
-            nodes=nodes,
+            nodes=validated_nodes,
             relations=relations,
             remove_node_ids=remove_node_ids,
             remove_relation_ids=remove_relation_ids,
-            known_node_ids={
-                str(item["id"])
-                for item in self.research_map.get("nodes", [])
-                if isinstance(item, Mapping) and item.get("id")
-            },
-            evidence_ids=set(self.evidence),
+            known_node_ids=set(existing),
         )
+        if protected.intersection(patch["remove_node_ids"]):
+            raise ValueError("用户编辑过的卡片不能删除；请先与用户讨论。")
+        suggestions = []
+        applied = []
+        for node in patch["nodes"]:
+            if node["id"] in protected:
+                original = existing[node["id"]]
+                if node["title"] != original["title"] or (node.get("summary") or "") != (
+                    original.get("summary") or ""
+                ):
+                    suggestions.append(
+                        {
+                            **node,
+                            "expected_title": original["title"],
+                            "expected_summary": original.get("summary"),
+                        }
+                    )
+                else:
+                    applied.append(
+                        {
+                            **node,
+                            "user_edited": True,
+                            "reviewed_user_version": original.get("user_edit_version"),
+                            "user_edit_version": original.get("user_edit_version"),
+                            "reviewed_user_title": original["title"],
+                            "reviewed_user_summary": original.get("summary"),
+                        }
+                    )
+            else:
+                applied.append(node)
+        patch["nodes"] = applied
+        if suggestions:
+            patch["suggested_nodes"] = suggestions
         self.research_map = apply_research_map_patch(self.research_map, patch)
         return patch
 
@@ -332,9 +376,7 @@ class KnowledgeToolRegistry:
         }
 
     def read_sources(self, source_ids: list[str]) -> list[dict[str, object]]:
-        requested = [
-            source_id for source_id in source_ids if source_id in self._allowed_source_ids
-        ]
+        requested = [source_id for source_id in source_ids if source_id in self._allowed_source_ids]
         sources = self._catalog.get_sources(
             source_ids=tuple(requested),
             release_id=self.release.knowledge_release_id,

@@ -17,6 +17,7 @@ from qunxue_api.modules.agent_conversation import (
     AgentMessage,
     AgentRun,
     AgentTurn,
+    CanvasEditConflict,
     Conversation,
     ConversationNotFound,
     ConversationTaskBindingConflict,
@@ -24,12 +25,12 @@ from qunxue_api.modules.agent_conversation import (
     ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
     aggregate_research_map,
+    apply_canvas_edits,
     patches_from_tool_summary,
+    prepare_canvas_edit,
 )
 
-_MATERIAL_TOOL_NAMES = frozenset(
-    {"search_research_materials", "read_research_material_context"}
-)
+_MATERIAL_TOOL_NAMES = frozenset({"search_research_materials", "read_research_material_context"})
 _DELETED_MATERIAL_ANSWER = "该回答引用的个人研究材料已删除，原回答内容已隐藏。"
 _DELETED_MATERIAL_TRACE_DETAIL = "个人研究材料已删除，历史工具结果已隐藏。"
 
@@ -139,9 +140,7 @@ class SqliteConversationRepository:
                     attachments=selected,
                     user_id=UUID(row.user_id),
                     task_id=(
-                        UUID(row.current_research_task_id)
-                        if row.current_research_task_id
-                        else None
+                        UUID(row.current_research_task_id) if row.current_research_task_id else None
                     ),
                 )
                 for item in assistant_row.citations
@@ -153,14 +152,11 @@ class SqliteConversationRepository:
                 session=self._session,
                 user_id=UUID(row.user_id),
                 task_id=(
-                    UUID(row.current_research_task_id)
-                    if row.current_research_task_id
-                    else None
+                    UUID(row.current_research_task_id) if row.current_research_task_id else None
                 ),
             )
             deleted_citation = any(
-                citation.deleted and citation.material_id is not None
-                for citation in citations
+                citation.deleted and citation.material_id is not None for citation in citations
             )
             tool_summary = _redact_deleted_material_traces(
                 raw_tool_summary,
@@ -195,7 +191,16 @@ class SqliteConversationRepository:
             created_at=_utc(row.created_at),
             updated_at=_utc(row.updated_at),
             turns=tuple(turns),
-            research_map=aggregate_research_map(all_patches),
+            research_map=apply_canvas_edits(
+                aggregate_research_map(
+                    all_patches,
+                    protected_since={
+                        key: value.get("_patch_count", 0) for key, value in row.canvas_edits.items()
+                    },
+                ),
+                row.canvas_edits,
+            ),
+            canvas_edit_version=row.canvas_edit_version,
             unfinished_runs=tuple(
                 self._safe_unfinished_run(run) for run in self._session.scalars(
                     select(AgentRunRow).where(
@@ -205,6 +210,54 @@ class SqliteConversationRepository:
                 )
             ),
         )
+
+    def edit_canvas_node(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        node_id: str,
+        title: str,
+        summary: str,
+        expected_title: str,
+        expected_summary: str | None,
+        expected_version: int,
+    ) -> Conversation:
+        current = self.get(user_id=user_id, conversation_id=conversation_id)
+        if current.canvas_edit_version != expected_version:
+            raise CanvasEditConflict("卡片已经更新，请重新载入后再保存。")
+        edit = prepare_canvas_edit(
+            current.research_map,
+            node_id=node_id,
+            title=title,
+            summary=summary,
+            expected_title=expected_title,
+            expected_summary=expected_summary,
+        )
+        row = self._session.get(AgentConversationRow, str(conversation_id))
+        edit["_patch_count"] = min(
+            edit["_patch_count"],
+            row.canvas_edits.get(node_id, {}).get("_patch_count", edit["_patch_count"]),
+        )
+        edit["user_edit_version"] = expected_version + 1
+        edits = {**row.canvas_edits, node_id: edit}
+        result = self._session.execute(
+            update(AgentConversationRow)
+            .where(
+                AgentConversationRow.conversation_id == str(conversation_id),
+                AgentConversationRow.user_id == str(user_id),
+                AgentConversationRow.canvas_edit_version == expected_version,
+            )
+            .values(
+                canvas_edits=edits,
+                canvas_edit_version=expected_version + 1,
+                updated_at=datetime.now(UTC),
+            )
+        )
+        if result.rowcount != 1:
+            raise CanvasEditConflict("卡片已经更新，请重新载入后再保存。")
+        self._session.flush()
+        return self.get(user_id=user_id, conversation_id=conversation_id)
 
     def list(self, *, user_id: UUID) -> list[Conversation]:
         rows = self._session.scalars(
@@ -864,9 +917,7 @@ def _message(
         role=row.role,  # type: ignore[arg-type]
         content=row.content if content is None else content,
         citations=(
-            citations
-            if citations is not None
-            else tuple(_citation(item) for item in row.citations)
+            citations if citations is not None else tuple(_citation(item) for item in row.citations)
         ),
         sequence=row.sequence,
         created_at=_utc(row.created_at),

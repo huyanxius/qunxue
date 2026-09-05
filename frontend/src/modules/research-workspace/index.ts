@@ -58,3 +58,4 @@ export type {
 } from './types'
 export { composeResearchDiscussion, latestResearchAsk, resolveResearchCitation, collapseDocumentNodes } from './researchCollaboration'
 export type { ResearchDiscussion, ResearchAsk } from './researchCollaboration'
+export { arrangeResearchCanvas, researchCanvasStages, CANVAS_CARD_SIZE, CANVAS_COLUMN_GAP } from './researchCanvasLayout'

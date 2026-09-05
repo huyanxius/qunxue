@@ -206,11 +206,23 @@ def patches_from_tool_summary(
     return tuple(patches)
 
 
-def aggregate_research_map(patches: Sequence[Mapping[str, object]] | None) -> dict[str, object]:
+def aggregate_research_map(
+    patches: Sequence[Mapping[str, object]] | None,
+    *,
+    protected_since: Mapping[str, int] | None = None,
+) -> dict[str, object]:
     state = empty_research_map()
-    for patch in patches or ():
+    for index, patch in enumerate(patches or ()):
+        # 人工保存后的旧运行不能删除该卡或顺带清掉关系；保存前的历史照常回放。
+        protected = {key for key, since in (protected_since or {}).items() if index >= since}
+        patch = {
+            **patch,
+            "remove_node_ids": [
+                key for key in patch.get("remove_node_ids", []) if key not in protected
+            ],
+        }
         state = apply_research_map_patch(state, patch)
-    return state
+    return {**state, "_patch_count": len(patches or ())}
 
 
 def _required_text(raw: Mapping[str, object], key: str, *, max_length: int) -> str:

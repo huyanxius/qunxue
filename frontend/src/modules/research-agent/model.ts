@@ -18,6 +18,7 @@ export type AgentResearchNodeStatus = 'developing' | 'grounded' | 'open' | 'veri
 export type AgentResearchRelationKind = 'explains' | 'supports' | 'challenges' | 'derives' | 'refines'
 
 export type AgentResearchMapNode = {
+  user_edited?: boolean
   id: string
   kind: AgentResearchNodeKind
   title: string
@@ -122,6 +123,7 @@ export type AgentRunStopResult = {
 }
 
 export type AgentConversation = AgentConversationSummary & {
+  canvas_edit_version?: number
   created_at: string
   turns: AgentTurn[]
   research_map?: AgentResearchMap

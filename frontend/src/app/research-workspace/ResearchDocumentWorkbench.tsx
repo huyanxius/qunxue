@@ -248,7 +248,11 @@ export function ResearchDocumentWorkbench({
   const activeContent = activeSection?.content ?? ''
   const selectedTheoryIds = Object.entries(pendingTheoryDecisions).filter(([, value]) => value.action === 'adopt' || value.action === 'combine').map(([candidateId]) => candidateId)
   const multiTheoryRelationReady = selectedTheoryIds.length < 2 || Object.values(relationDraft).every((value) => value.trim())
-  const mapConversation = embedded ? conversation : agentConversation
+  const [editedConversation, setEditedConversation] = useState<AgentConversation | null>(null)
+  const baseMapConversation = embedded ? conversation : agentConversation
+  const mapConversation = editedConversation?.conversation_id === baseMapConversation?.conversation_id
+    && (editedConversation?.canvas_edit_version ?? 0) > (baseMapConversation?.canvas_edit_version ?? 0)
+    ? editedConversation : baseMapConversation
   const manuscriptNodeId = `${sectionNodePrefix}document`
   const mapProjection = useMemo<ResearchCanvasProjection>(() => collapseDocumentNodes(projectFormalResearchCanvas({
     taskId: taskId ?? null,
@@ -808,7 +812,7 @@ export function ResearchDocumentWorkbench({
     setSelectedMapNodeId(nodeId)
     if (nodeId.startsWith(sectionNodePrefix) && nodeId !== manuscriptNodeId) setActiveSectionId(nodeId.slice(sectionNodePrefix.length))
     const node = mapProjection.nodes.find(item => item.id === nodeId)
-    if (node && node.kind !== 'document') discuss({ title: node.title, content: node.summary || node.title, sectionId: null })
+    if (node && node.kind !== 'document') discuss({ nodeId: node.id, title: node.title, content: node.summary || node.title, sectionId: null })
   }
 
   function recordTheoryDecision(candidateId: string, candidateVersion: number, action: TheoryDecisionAction) {
@@ -1057,8 +1061,10 @@ export function ResearchDocumentWorkbench({
           >
             <ResearchMapCanvas
               projection={mapProjection}
+              conversation={mapConversation}
+              onConversationChange={setEditedConversation}
               selectedNodeId={selectedMapNodeId}
-              onSelectNode={(node) => openSectionNode(node.id)}
+              onSelectNode={(node) => node.kind === 'document' ? openSectionNode(node.id) : setSelectedMapNodeId(node.id)}
               onClearSelection={() => setSelectedMapNodeId(null)}
               onContinueNode={(node) => openSectionNode(node.id)}
               onOpenCitation={(id) => { setCitationRequest({ id, key: Date.now() }); onOpenCitation?.(id) }}

@@ -223,12 +223,7 @@ def test_research_map_tool_schema_requires_canonical_nodes_and_relations() -> No
     schemas: dict[str, dict[str, object]] = {}
 
     async def model_stream(_messages, info):
-        schemas.update(
-            {
-                tool.name: tool.parameters_json_schema
-                for tool in info.function_tools
-            }
-        )
+        schemas.update({tool.name: tool.parameters_json_schema for tool in info.function_tools})
         yield "继续梳理研究地图。"
 
     runner = PydanticAIKnowledgeRunner(
@@ -512,3 +507,48 @@ def test_research_workspace_streams_and_rehydrates_canvas_patch(
     assert detail.status_code == 200
     assert detail.json()["research_map"] == conversation["research_map"]
     assert detail.json()["turns"][0]["canvas_patches"] == [patch]
+
+
+def test_researcher_card_changes_become_suggestions_without_overwriting():
+    registry = KnowledgeToolRegistry(_Catalog())
+    current = _patch()["nodes"][1]
+    current = {**current, "user_edited": True}
+    registry.enable_research_map({"schema_version": 1, "nodes": [current], "relations": []})
+    result = registry.update_research_map(nodes=[{**current, "title": "Agent 建议的新标题"}])
+    assert registry.research_map["nodes"][0]["title"] == current["title"]
+    assert result["suggested_nodes"][0]["title"] == "Agent 建议的新标题"
+    with pytest.raises(ValueError, match="用户"):
+        registry.update_research_map(remove_node_ids=[current["id"]])
+
+
+def test_protected_card_can_gain_evidence_without_changing_researcher_text():
+    registry = KnowledgeToolRegistry(_Catalog())
+    node = {**_patch()["nodes"][1], "user_edited": True, "status": "developing"}
+    registry.enable_research_map({"nodes": [node], "relations": []})
+    registry.evidence["new-source"] = object()
+    patch = registry.update_research_map(
+        nodes=[{**node, "status": "grounded", "citation_ids": ["new-source"]}]
+    )
+    assert patch["nodes"][0]["reviewed_user_title"] == node["title"]
+    assert patch["nodes"][0]["citation_ids"] == ["new-source"]
+    assert registry.research_map["nodes"][0]["user_edited"] is True
+    with pytest.raises(ValueError, match="用户"):
+        registry.update_research_map(remove_node_ids=[f" {node['id']} "])
+
+
+def test_historical_citations_cannot_be_attached_to_another_card_without_retrieval():
+    registry = KnowledgeToolRegistry(_Catalog())
+    node = {**_patch()["nodes"][1], "citation_ids": ["old-material"]}
+    registry.enable_research_map({"nodes": [node], "relations": []})
+    registry.update_research_map(nodes=[node])
+    with pytest.raises(ValueError, match="current evidence"):
+        registry.update_research_map(nodes=[{**node, "id": "invented-claim"}])
+
+
+def test_empty_summary_is_not_a_text_revision():
+    registry = KnowledgeToolRegistry(_Catalog())
+    node = {**_patch()["nodes"][1], "summary": "", "user_edited": True, "user_edit_version": 4}
+    registry.enable_research_map({"nodes": [node], "relations": []})
+    patch = registry.update_research_map(nodes=[{**node, "status": "challenged"}])
+    assert not patch.get("suggested_nodes")
+    assert patch["nodes"][0]["reviewed_user_version"] == 4

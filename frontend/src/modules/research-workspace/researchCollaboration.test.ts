@@ -28,3 +28,9 @@ describe('research collaboration', () => {
     expect(resolveResearchCitation(conversation, 'missing')).toBeNull()
   })
 })
+
+it('addresses an existing card by its stable identity', () => {
+  const prompt = composeResearchDiscussion('请补证', { nodeId: 'claim-1', title: '同名主张', content: '待验证' })
+  expect(prompt).toContain('当前画布卡片 ID：claim-1')
+  expect(prompt).toContain('复用该 ID')
+})

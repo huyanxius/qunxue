@@ -1,7 +1,7 @@
 import type { AgentConversation } from '../research-agent'
 import type { ResearchCanvasProjection } from './researchCanvasProjection'
 
-export type ResearchDiscussion = { title: string; content: string; sectionId?: string | null }
+export type ResearchDiscussion = { title: string; content: string; sectionId?: string | null; nodeId?: string | null }
 export type ResearchAsk = { question: string; options: string[] }
 
 export function collapseDocumentNodes(projection: ResearchCanvasProjection, id: string, title: string): ResearchCanvasProjection {
@@ -18,7 +18,7 @@ export function collapseDocumentNodes(projection: ResearchCanvasProjection, id: 
 export function composeResearchDiscussion(question: string, focus: ResearchDiscussion | null): string {
   if (!focus) return question
   const quoted = focus.content.slice(0, 2400).split('\n').map(line => `> ${line}`).join('\n')
-  return `围绕「${focus.title}」继续讨论：\n${quoted}\n\n${question}`
+  return `${focus.nodeId ? `当前画布卡片 ID：${focus.nodeId}（修改此卡请复用该 ID；正式研究记录请使用对应工具）。\n` : ''}围绕「${focus.title}」继续讨论：\n${quoted}\n\n${question}`
 }
 
 export function latestResearchAsk(conversation: AgentConversation | null): ResearchAsk | null {
