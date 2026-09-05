@@ -282,25 +282,26 @@ class DisciplinaryAgentApplication:
         # The first library read can import a snapshot in its own SQLite transaction.
         # Finish that before creating the conversation, which acquires the write lock.
         tools = self._tools_factory()
-        conversation_was_created = conversation is None
-        if conversation is None:
-            conversation = self._conversations.create_conversation(
-                user_id=user_id,
-                title=prompt,
-            )
-        if workspace == "research" or material_ids:
-            if conversation_was_created and task_id is not None and self._bind_research_draft:
-                task_id = self._bind_research_draft(
+        with self._atomic():
+            conversation_was_created = conversation is None
+            if conversation is None:
+                conversation = self._conversations.create_conversation(
                     user_id=user_id,
-                    conversation_id=conversation.conversation_id,
-                    task_id=task_id,
+                    title=prompt,
                 )
-            elif task_id is None and self._ensure_research_draft:
-                task_id = self._ensure_research_draft(
-                    user_id=user_id,
-                    conversation_id=conversation.conversation_id,
-                    project_title=prompt,
-                )
+            if workspace == "research" or material_ids:
+                if conversation_was_created and task_id is not None and self._bind_research_draft:
+                    task_id = self._bind_research_draft(
+                        user_id=user_id,
+                        conversation_id=conversation.conversation_id,
+                        task_id=task_id,
+                    )
+                elif task_id is None and self._ensure_research_draft:
+                    task_id = self._ensure_research_draft(
+                        user_id=user_id,
+                        conversation_id=conversation.conversation_id,
+                        project_title=prompt,
+                    )
         if mode == "deep_research":
             enable_deep_research = getattr(tools, "enable_deep_research", None)
             if callable(enable_deep_research):
