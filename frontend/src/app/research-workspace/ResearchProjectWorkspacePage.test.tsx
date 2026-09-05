@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -25,10 +25,13 @@ vi.mock('../../modules/research-materials', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../modules/research-materials')>()
   return {
     ...actual,
-    ResearchMaterialsPanel: ({ initialMaterialId, initialSegmentId }: {
+    ResearchMaterialsPanel: ({ initialMaterialId, initialSegmentId, agentPanel, analysisPanel, workspaceNavigation }: {
+      agentPanel?: ReactNode
+      analysisPanel?: ReactNode
+      workspaceNavigation?: ReactNode
       initialMaterialId: string | null
       initialSegmentId: string | null
-    }) => <section aria-label="材料中心">{initialMaterialId}:{initialSegmentId}</section>,
+    }) => <section aria-label="材料中心">{initialMaterialId}:{initialSegmentId}{workspaceNavigation}{analysisPanel}{agentPanel}</section>,
     ResearchAnalysisPanel: () => <section aria-label="分析中心">分析</section>,
   }
 })
@@ -109,22 +112,15 @@ function renderWorkspace(path: string) {
 }
 
 describe('ResearchProjectWorkspacePage', () => {
-  it('keeps one project-bound Agent mounted while central tools change', async () => {
+  it('opens the document full screen with the project Agent and analysis inside the reader', async () => {
     renderWorkspace('/research/task-1/workspace/materials?material_id=material-1&segment_id=segment-1')
-
-    expect(await screen.findByRole('heading', { name: '社区照护田野研究' })).toBeVisible()
-    expect(screen.getByRole('region', { name: '材料中心' })).toHaveTextContent('material-1:segment-1')
-    const agent = screen.getByRole('complementary', { name: '研究 Agent 对话栏' })
-    expect(agent).toHaveAttribute('data-instance', '1')
-    expect(agent).toHaveTextContent('conversation-1:task-1')
-
-    fireEvent.click(screen.getByRole('link', { name: '分析' }))
-
-    // 材料和分析是两个中心工具，不再是同一个组件的两种模式；切过去材料中心整个让位。
-    expect(await screen.findByRole('region', { name: '分析中心' })).toBeVisible()
-    expect(screen.queryByRole('region', { name: '材料中心' })).not.toBeInTheDocument()
-    expect(screen.getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveAttribute('data-instance', '1')
-    expect(screen.getByLabelText('当前地址')).toHaveTextContent('/research/task-1/workspace/analysis')
+    const reader = await screen.findByRole('region', { name: '材料中心' })
+    expect(reader).toHaveTextContent('material-1:segment-1')
+    expect(within(reader).getByRole('complementary', { name: '研究 Agent 对话栏' })).toHaveTextContent('conversation-1:task-1')
+    expect(within(reader).getByRole('region', { name: '分析中心' })).toBeVisible()
+    expect(within(reader).getByRole('link', { name: '返回材料库' })).toHaveAttribute('href', '/research/materials')
+    expect(screen.queryByRole('navigation', { name: '桌面主导航' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('research-workspace-layout')).not.toBeInTheDocument()
   })
 
   it('uses the project lifecycle central tool when opening the workspace without a tool', async () => {
@@ -132,8 +128,9 @@ describe('ResearchProjectWorkspacePage', () => {
 
     await waitFor(() => expect(screen.getByLabelText('当前地址')).toHaveTextContent(
       '/research/task-1/workspace/materials',
-    ))
+    ), { timeout: 5000 })
     expect(screen.getByRole('region', { name: '材料中心' })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: '桌面主导航' })).toBeVisible()
   })
 
   it('adds project archive through the unified workspace public route', async () => {

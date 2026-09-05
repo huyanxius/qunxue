@@ -4066,6 +4066,38 @@ export type MemoryList = {
 };
 
 /**
+ * MemoryOverviewRequest
+ */
+export type MemoryOverviewRequest = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Task Id
+     */
+    task_id?: string | null;
+};
+
+/**
+ * MemoryOverviewResponse
+ */
+export type MemoryOverviewResponse = {
+    /**
+     * Memory Count
+     */
+    memory_count: number;
+    /**
+     * Scope Version
+     */
+    scope_version: number;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
  * MemoryResponse
  */
 export type MemoryResponse = {
@@ -9817,6 +9849,31 @@ export type CreateMemoryResponses = {
 };
 
 export type CreateMemoryResponse = CreateMemoryResponses[keyof CreateMemoryResponses];
+
+export type SummarizeMemoryData = {
+    body: MemoryOverviewRequest;
+    path?: never;
+    query?: never;
+    url: '/api/memories/overview';
+};
+
+export type SummarizeMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SummarizeMemoryError = SummarizeMemoryErrors[keyof SummarizeMemoryErrors];
+
+export type SummarizeMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryOverviewResponse;
+};
+
+export type SummarizeMemoryResponse = SummarizeMemoryResponses[keyof SummarizeMemoryResponses];
 
 export type GetMemorySettingsData = {
     body?: never;

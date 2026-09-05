@@ -1,5 +1,5 @@
 import { ArchiveBoxIcon, CheckCircleIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type ChangeEvent } from 'react'
 
 import { MaterialAnnotationDrawer, type AnnotationKind } from './MaterialAnnotationDrawer'
 import { MaterialLibraryView } from './MaterialLibraryView'
@@ -49,6 +49,10 @@ import './research-materials.css'
 const READER_PAGE_SIZE = 24
 
 type ResearchMaterialsPanelProps = {
+  readonly agentPanel?: ReactNode
+  readonly analysisPanel?: ReactNode
+  readonly workspaceNavigation?: ReactNode
+  readonly refreshKey?: number
   readonly taskId: string
   readonly onClose?: () => void
   readonly presentation?: 'dialog' | 'workspace'
@@ -73,6 +77,10 @@ type ResearchMaterialsPanelProps = {
  */
 export function ResearchMaterialsPanel({
   taskId,
+  agentPanel,
+  analysisPanel,
+  workspaceNavigation,
+  refreshKey = 0,
   onClose,
   presentation = 'dialog',
   onMaterialDeleted,
@@ -238,7 +246,7 @@ export function ResearchMaterialsPanel({
       controller.abort()
       analysisLoadGeneration.current += 1
     }
-  }, [taskId])
+  }, [taskId, refreshKey])
 
   useEffect(() => {
     return () => {
@@ -659,6 +667,7 @@ export function ResearchMaterialsPanel({
       {mediaSelected ? (
         <section className="qx-reader qx-reader--media" aria-label="材料阅读台">
           <header className={`qx-reader__bar${workspacePresentation ? ' is-workspace-chrome' : ''}`}>
+            {workspaceNavigation}
             {!workspacePresentation ? <>
               <button type="button" className="qx-reader__back" onClick={returnToLibrary}>材料库</button>
               <div className="qx-reader__identity">
@@ -681,6 +690,9 @@ export function ResearchMaterialsPanel({
         </section>
       ) : (
         <MaterialReaderView
+          agentPanel={agentPanel}
+          analysisPanel={analysisPanel}
+          workspaceNavigation={workspaceNavigation}
           material={selectedMaterial}
           segments={pagedReaderSegments}
           allSegments={segments}
@@ -786,6 +798,7 @@ export function ResearchMaterialsPanel({
         {annotationError ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{annotationError}</p> : null}
         {annotationNotice ? <p className="qx-message is-success" role="status"><CheckCircleIcon size={15} aria-hidden="true" />{annotationNotice}</p> : null}
 
+        {!selectedMaterial ? workspaceNavigation : null}
         {body}
 
         {archiveOpen && selectedMaterial ? (

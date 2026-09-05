@@ -364,7 +364,7 @@ describe('App routes', () => {
       '研究 Agent',
       '新建研究',
       '研究工具',
-      '研究材料',
+      '我的研究',
       '知识库',
       '知识图谱',
     ])
@@ -546,6 +546,24 @@ describe('App routes', () => {
     expect(await screen.findByRole('region', { name: '研究论证地图' })).toBeVisible()
     expect(document.querySelector('main.research-document-workbench[data-stage="framework"]')).toBeInTheDocument()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/writing')
+  })
+
+  it('opens a project folder in file management through the real app route', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = requestUrl(input).pathname
+      if (path === '/api/research-tasks') {
+        const task = await researchWorkspaceResponse('http://localhost/api/research-tasks/task-1', '/research/task-1/match').json()
+        return json({ items: [{ ...task, stage_label: '理论分析' }], next_cursor: null })
+      }
+      if (path.endsWith('/materials')) return json({ task_id: 'task-1', items: [] })
+      return json({}, 404)
+    }))
+    renderRoute('/research/materials', { status: 'authenticated' })
+    fireEvent.click(await screen.findByRole('link', { name: '打开研究 社区互助研究' }))
+    expect(await screen.findByRole('heading', { name: '社区互助研究' })).toBeVisible()
+    expect(screen.getByTestId('route-location').textContent).toBe('/research/materials?task_id=task-1')
+    expect(screen.getByRole('button', { name: '添加材料' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: '研究论证地图' })).not.toBeInTheDocument()
   })
 
   it('preserves a material position while upgrading the legacy material deep link', async () => {
@@ -815,7 +833,7 @@ describe('App routes', () => {
     // 独立 Agent 页右上角只留研究面板一个开关，来源、活动、研究记录都不再各占一个按钮。
     expect(within(agentConversation).getByRole('button', { name: '研究面板' })).toBeVisible()
     expect(within(agentConversation).queryByRole('button', { name: '查看来源' })).not.toBeInTheDocument()
-    expect(within(agentConversation).queryByRole('button', { name: '打开研究记录' })).not.toBeInTheDocument()
+    expect(within(agentConversation).getByRole('button', { name: '打开研究记录' })).toHaveClass('mobile-only')
     expect(await within(agentConversation).findByText('Agent 已完成工具调用')).toBeVisible()
     expect(within(agentConversation).getByRole('table')).toBeVisible()
     expect(within(agentConversation).getByRole('button', { name: '复制回答' })).toBeVisible()
@@ -1267,7 +1285,7 @@ describe('App routes', () => {
   it('returns to the protected deep link after a real login response', async () => {
     const destination = '/research/task-1/framework?from=my#methods'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const request = input as Request
+      const request = input instanceof Request ? input : new Request(String(input))
       const url = requestUrl(input)
       if (request.method === 'GET' && url.pathname === '/api/session') {
         return new Response(
@@ -1394,6 +1412,7 @@ describe('App routes', () => {
   it('opens a release-pinned detail and returns to the supplied research task', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = requestUrl(input)
+      if (request.pathname === '/api/agent/conversations') return json({ items: [] })
       if (request.pathname.startsWith('/api/research-tasks/')) {
         return researchWorkspaceResponse(input, '/research/task-1/match')
       }
@@ -1451,6 +1470,7 @@ describe('App routes', () => {
       if (request.pathname === '/api/knowledge/entries/D1%3AC001') {
         return json(knowledgeDetailWithTheoryProfile())
       }
+      if (request.pathname === '/api/agent/conversations') return json({ items: [] })
       if (request.pathname === '/api/phenomenon-examples') return json({ items: [] })
       return json(knowledgeDetailWithTheoryProfile())
     }))

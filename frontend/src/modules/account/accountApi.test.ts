@@ -115,6 +115,7 @@ describe('account API adapter', () => {
         entry_type: 'direct_input',
         knowledge_release_id: 'release-formal-1',
         next_action_label: '由服务端决定的下一步',
+        project_title: '线上互助研究',
         phenomenon_summary: {
           phenomenon: '平台迁移后，线上互助为何持续减少？',
           phenomenon_query_id: '59f192dd-85fc-41bf-abaf-d66caa7df958',
@@ -142,6 +143,7 @@ describe('account API adapter', () => {
       createdAt: '2026-08-21T08:00:00Z',
       entryPath: '/research/task-1/framework',
       nextActionLabel: '由服务端决定的下一步',
+      projectTitle: '线上互助研究',
       phenomenonSummary: '平台迁移后，线上互助为何持续减少？',
       retry,
       stageLabel: '由服务端决定的阶段',

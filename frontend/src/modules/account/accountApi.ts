@@ -120,6 +120,7 @@ export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
   return data.items.map((item) => {
     return {
       taskId: item.task_id,
+      ...(item.project_title?.trim() ? { projectTitle: item.project_title.trim() } : {}),
       stageLabel: item.stage_label,
       nextActionLabel: item.next_action_label,
       entryPath: item.resume_path,

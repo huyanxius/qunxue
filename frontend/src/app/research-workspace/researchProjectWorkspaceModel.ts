@@ -120,7 +120,7 @@ export function legacyResearchWorkspaceDestination(value: string): string | null
   const url = new URL(value, 'https://qunxue.local')
   if (url.pathname === '/research/materials') {
     const taskId = url.searchParams.get('task_id')
-    if (!taskId) return null
+    if (!taskId || !url.searchParams.get('material_id')) return null
     url.searchParams.delete('task_id')
     const query = url.searchParams.toString()
     return `${researchWorkspaceDestination(taskId, 'materials')}${query ? `?${query}` : ''}${url.hash}`

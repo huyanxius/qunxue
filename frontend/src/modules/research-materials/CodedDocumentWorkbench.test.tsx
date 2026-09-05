@@ -82,7 +82,7 @@ const code: AnalysisCode = {
   version: 1,
 }
 
-function renderReader() {
+function renderReader(extra: Partial<React.ComponentProps<typeof CodedDocumentWorkbench>> = {}) {
   return render(
     <CodedDocumentWorkbench
       material={material}
@@ -110,6 +110,7 @@ function renderReader() {
       onSelectSegment={vi.fn()}
       onTextSelection={vi.fn()}
       onPageChange={vi.fn()}
+      {...extra}
     />
   )
 }
@@ -130,4 +131,21 @@ describe('coded document workbench', () => {
     expect(within(retrieved).getByText('检索编码片段')).toBeVisible()
     expect(within(retrieved).getByText('重新分配了照护责任')).toBeVisible()
   })
+})
+
+
+it('keeps the document and Agent draft mounted while switching the integrated inspector', () => {
+  renderReader({
+    agentPanel: <textarea aria-label="Agent 草稿" defaultValue="比较这两段" />,
+    analysisPanel: <div>当前研究的代码本</div>,
+  })
+  fireEvent.click(screen.getByRole('tab', { name: 'Agent' }))
+  const draft = screen.getByRole('textbox', { name: 'Agent 草稿' })
+  fireEvent.change(draft, { target: { value: '保留我的编码讨论' } })
+  fireEvent.click(screen.getByRole('tab', { name: '分析' }))
+  expect(screen.getByText('当前研究的代码本')).toBeVisible()
+  expect(screen.getByLabelText('Agent 草稿')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('tab', { name: 'Agent' }))
+  expect(draft).toHaveValue('保留我的编码讨论')
+  expect(screen.getByRole('region', { name: '材料阅读台' })).toBeVisible()
 })
