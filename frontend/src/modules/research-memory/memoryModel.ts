@@ -18,3 +18,9 @@ export interface ResearchMemorySettings {
   use_memory: boolean
   learn_memory: boolean
 }
+export interface ResearchMemoryLimits {
+  max_entries: number
+  max_content_bytes: number
+}
+
+export const memoryPreviewLimits: ResearchMemoryLimits = { max_entries: 100, max_content_bytes: 2000 }
