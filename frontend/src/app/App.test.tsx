@@ -548,6 +548,24 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/writing')
   })
 
+  it('opens a project folder in file management through the real app route', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = requestUrl(input).pathname
+      if (path === '/api/research-tasks') {
+        const task = await researchWorkspaceResponse('http://localhost/api/research-tasks/task-1', '/research/task-1/match').json()
+        return json({ items: [{ ...task, stage_label: '理论分析' }], next_cursor: null })
+      }
+      if (path.endsWith('/materials')) return json({ task_id: 'task-1', items: [] })
+      return json({}, 404)
+    }))
+    renderRoute('/research/materials', { status: 'authenticated' })
+    fireEvent.click(await screen.findByRole('link', { name: '打开研究 社区互助研究' }))
+    expect(await screen.findByRole('heading', { name: '社区互助研究' })).toBeVisible()
+    expect(screen.getByTestId('route-location').textContent).toBe('/research/materials?task_id=task-1')
+    expect(screen.getByRole('button', { name: '添加材料' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: '研究论证地图' })).not.toBeInTheDocument()
+  })
+
   it('preserves a material position while upgrading the legacy material deep link', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       return researchWorkspaceResponse(input, '/research/task-1/match')
