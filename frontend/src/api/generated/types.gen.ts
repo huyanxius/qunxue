@@ -3119,16 +3119,6 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -4038,6 +4028,17 @@ export type MatrixSubjectKind = 'code' | 'theme';
 export type MemoTargetKind = 'project' | 'material' | 'source' | 'code' | 'case' | 'comparison' | 'draft';
 
 /**
+ * MemoryCollection
+ */
+export type MemoryCollection = {
+    /**
+     * Items
+     */
+    items: Array<MemoryResponse>;
+    limits: MemoryLimits;
+};
+
+/**
  * MemoryCreate
  */
 export type MemoryCreate = {
@@ -4053,6 +4054,20 @@ export type MemoryCreate = {
      * Task Id
      */
     task_id?: string | null;
+};
+
+/**
+ * MemoryLimits
+ */
+export type MemoryLimits = {
+    /**
+     * Max Content Bytes
+     */
+    max_content_bytes: number;
+    /**
+     * Max Entries
+     */
+    max_entries: number;
 };
 
 /**
@@ -8113,34 +8128,6 @@ export type UpdateResearchTaskRequest = {
     project_title?: string | null;
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type ListAgentConversationsData = {
     body?: never;
     path?: never;
@@ -9803,9 +9790,9 @@ export type ListMemoriesData = {
 
 export type ListMemoriesErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListMemoriesError = ListMemoriesErrors[keyof ListMemoriesErrors];
@@ -9814,7 +9801,7 @@ export type ListMemoriesResponses = {
     /**
      * Successful Response
      */
-    200: MemoryList;
+    200: MemoryCollection;
 };
 
 export type ListMemoriesResponse = ListMemoriesResponses[keyof ListMemoriesResponses];
@@ -9834,9 +9821,9 @@ export type CreateMemoryData = {
 
 export type CreateMemoryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateMemoryError = CreateMemoryErrors[keyof CreateMemoryErrors];
@@ -9852,6 +9839,12 @@ export type CreateMemoryResponse = CreateMemoryResponses[keyof CreateMemoryRespo
 
 export type SummarizeMemoryData = {
     body: MemoryOverviewRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/api/memories/overview';
@@ -9859,9 +9852,9 @@ export type SummarizeMemoryData = {
 
 export type SummarizeMemoryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type SummarizeMemoryError = SummarizeMemoryErrors[keyof SummarizeMemoryErrors];
@@ -9889,9 +9882,9 @@ export type GetMemorySettingsData = {
 
 export type GetMemorySettingsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetMemorySettingsError = GetMemorySettingsErrors[keyof GetMemorySettingsErrors];
@@ -9925,9 +9918,9 @@ export type UpdateMemorySettingsData = {
 
 export type UpdateMemorySettingsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateMemorySettingsError = UpdateMemorySettingsErrors[keyof UpdateMemorySettingsErrors];
@@ -9966,9 +9959,9 @@ export type DeleteMemoryData = {
 
 export type DeleteMemoryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DeleteMemoryError = DeleteMemoryErrors[keyof DeleteMemoryErrors];
@@ -9996,9 +9989,9 @@ export type GetMemoryData = {
 
 export type GetMemoryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetMemoryError = GetMemoryErrors[keyof GetMemoryErrors];
@@ -10032,9 +10025,9 @@ export type UpdateMemoryData = {
 
 export type UpdateMemoryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateMemoryError = UpdateMemoryErrors[keyof UpdateMemoryErrors];
@@ -10062,9 +10055,9 @@ export type ListMemoryRevisionsData = {
 
 export type ListMemoryRevisionsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListMemoryRevisionsError = ListMemoryRevisionsErrors[keyof ListMemoryRevisionsErrors];

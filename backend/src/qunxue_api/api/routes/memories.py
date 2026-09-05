@@ -8,24 +8,41 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
-from qunxue_api.application.memory_overview import MemoryOverviewBusy, MemoryOverviewUnavailable
-from qunxue_api.modules.agent_memory import MemoryConflict, MemoryNotFound, MemoryService
+from qunxue_api.application.memory_overview import (
+    MemoryOverviewBusy,
+    MemoryOverviewUnavailable,
+    memory_overview_fingerprint,
+)
+from qunxue_api.modules.agent_memory import (
+    CONTENT_BUDGET,
+    MAX_MEMORIES,
+    MemoryConflict,
+    MemoryNotFound,
+    MemoryService,
+)
 
-router = APIRouter(prefix="/api/memories", tags=["memory"])
+router = APIRouter(
+    prefix="/api/memories", tags=["memory"], responses={422: {"model": ErrorResponse}}
+)
+
+
+class MemoryValidationError(Exception):
+    """A controlled memory validation reason safe to return to its author."""
 
 
 class MemoryCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     task_id: UUID | None = None
     key: str = Field(min_length=1, max_length=64)
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=CONTENT_BUDGET)
 
 
 class MemoryUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=CONTENT_BUDGET)
     expected_version: int = Field(ge=1)
 
 
@@ -45,6 +62,15 @@ class MemoryResponse(BaseModel):
 
 class MemoryList(BaseModel):
     items: list[MemoryResponse]
+
+
+class MemoryLimits(BaseModel):
+    max_entries: int = Field(ge=1)
+    max_content_bytes: int = Field(ge=1)
+
+
+class MemoryCollection(MemoryList):
+    limits: MemoryLimits
 
 
 class MemorySettings(BaseModel):
@@ -83,17 +109,18 @@ def service(request: Request) -> Iterator[MemoryService]:
     except MemoryConflict as error:
         raise HTTPException(409, str(error)) from error
     except ValueError as error:
-        raise HTTPException(422, str(error)) from error
+        raise MemoryValidationError(str(error)) from error
 
 
-@router.get("", response_model=MemoryList, operation_id="list_memories")
+@router.get("", response_model=MemoryCollection, operation_id="list_memories")
 def list_memories(request: Request, current: CurrentSessionDependency, task_id: UUID | None = None):
     with service(request) as memory:
-        return MemoryList(
+        return MemoryCollection(
             items=[
                 MemoryResponse(**asdict(m))
                 for m in memory.repository.list(current.user.user_id, task_id)
-            ]
+            ],
+            limits=MemoryLimits(max_entries=MAX_MEMORIES, max_content_bytes=CONTENT_BUDGET),
         )
 
 
@@ -145,7 +172,10 @@ def update_settings(
 
 @router.post("/overview", response_model=MemoryOverviewResponse, operation_id="summarize_memory")
 def summarize_memory(
-    payload: MemoryOverviewRequest, request: Request, current: CurrentSessionDependency
+    payload: MemoryOverviewRequest,
+    request: Request,
+    current: CurrentSessionDependency,
+    _idempotency_key: IdempotencyKey,
 ):
     user_id = current.user.user_id
     with service(request) as memory:
@@ -167,10 +197,14 @@ def summarize_memory(
     except MemoryOverviewUnavailable as error:
         raise HTTPException(503, str(error)) from error
     with service(request) as memory:
-        if memory.repository.scope(user_id, payload.task_id).version != scope.version:
+        latest = memory.repository.scope(user_id, payload.task_id)
+        if latest.version != scope.version and memory_overview_fingerprint(
+            memory.repository.list(user_id, payload.task_id)
+        ) != memory_overview_fingerprint(items):
+            request.app.state.memory_overview.invalidate(user_id, payload.task_id)
             raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
     return MemoryOverviewResponse(
-        summary=summary, scope_version=scope.version, memory_count=len(items)
+        summary=summary, scope_version=latest.version, memory_count=len(items)
     )
 
 
@@ -190,19 +224,18 @@ def update_memory(
 ):
     with service(request) as memory:
         existing = memory.repository.get(current.user.user_id, memory_id)
-        return MemoryResponse(
-            **asdict(
-                memory.save(
-                    user_id=current.user.user_id,
-                    task_id=existing.task_id,
-                    key=existing.key,
-                    memory_id=memory_id,
-                    **payload.model_dump(),
-                    origin="manual",
-                    idempotency_key=idempotency_key,
-                )
-            )
+        updated = memory.save(
+            user_id=current.user.user_id,
+            task_id=existing.task_id,
+            key=existing.key,
+            memory_id=memory_id,
+            **payload.model_dump(),
+            origin="manual",
+            idempotency_key=idempotency_key,
         )
+    if (updated.content, updated.origin) != (existing.content, existing.origin):
+        request.app.state.memory_overview.invalidate(current.user.user_id, existing.task_id)
+    return MemoryResponse(**asdict(updated))
 
 
 @router.delete("/{memory_id}", status_code=204, operation_id="delete_memory")
@@ -214,7 +247,9 @@ def delete_memory(
     expected_version: int = Query(ge=1),
 ):
     with service(request) as memory:
+        existing = memory.repository.get(current.user.user_id, memory_id)
         memory.repository.delete(current.user.user_id, memory_id, expected_version)
+    request.app.state.memory_overview.invalidate(current.user.user_id, existing.task_id)
     return Response(status_code=204)
 
 
