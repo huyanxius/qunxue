@@ -20,7 +20,7 @@ import {
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
 import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
-import type { AgentConversation } from '../../modules/research-agent'
+import { getAgentConversation, type AgentConversation } from '../../modules/research-agent'
 import { ResearchArchivePanel } from '../../modules/research-exchange'
 import { ResearchAnalysisPanel, ResearchMaterialsPanel } from '../../modules/research-materials'
 import { MethodPlanWorkspace } from '../../modules/research-method'
@@ -86,7 +86,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const { task_id: taskId = '', tool: toolParam } = useParams<{ task_id: string; tool?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedConversationId = searchParams.get('conversation_id')
   const task = useResearchTask(taskId)
   const navigation = useQuery({
     queryKey: ['research-project-navigation', taskId],
@@ -95,7 +96,37 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
     refetchOnWindowFocus: false,
     retry: false,
   })
+  const [startedConversation, setStartedConversation] = useState<{ conversation_id: string; task_id: string | null } | null>(null)
+  const knownConversationId = startedConversation?.task_id === taskId ? startedConversation.conversation_id : null
+  const conversationQuery = useQuery({
+    queryKey: ['research-project-conversation', taskId, requestedConversationId],
+    queryFn: ({ signal }) => getAgentConversation(requestedConversationId!, signal),
+    enabled: Boolean(requestedConversationId && requestedConversationId !== knownConversationId),
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
+  const syncConversationIdentity = useCallback((identity: { conversation_id: string; task_id: string | null }) => {
+    if (identity.task_id !== taskId) return
+    setStartedConversation(identity)
+    setSearchParams((current) => {
+      if (current.get('conversation_id') === identity.conversation_id) return current
+      const next = new URLSearchParams(current)
+      next.set('conversation_id', identity.conversation_id)
+      return next
+    }, { replace: true })
+  }, [setSearchParams, taskId])
   const [agentConversation, setAgentConversation] = useState<AgentConversation | null>(null)
+  const syncConversation = useCallback((conversation: AgentConversation) => {
+    setAgentConversation(conversation)
+    syncConversationIdentity({ conversation_id: conversation.conversation_id, task_id: conversation.task_id ?? null })
+  }, [syncConversationIdentity])
+  const preserveConversation = useCallback((path: string) => {
+    const conversationId = requestedConversationId ?? knownConversationId
+    if (!conversationId) return path
+    const target = new URL(path, window.location.origin)
+    target.searchParams.set('conversation_id', conversationId)
+    return `${target.pathname}${target.search}${target.hash}`
+  }, [knownConversationId, requestedConversationId])
   const [discussion, setDiscussion] = useState<ResearchDiscussion | null>(null)
   const [citationRequest, setCitationRequest] = useState<{ id: string; key: number } | null>(null)
   const [streamingTurn, setStreamingTurn] = useState<ResearchCanvasStreamingTurn | null>(null)
@@ -177,9 +208,9 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
     const params = new URLSearchParams(researchWorkspaceDestination(taskId, 'materials', next).split('?')[1])
     const batchRunId = new URLSearchParams(location.search).get('batch_run_id')
     if (batchRunId) params.set('batch_run_id', batchRunId)
-    const destination = `${researchWorkspaceDestination(taskId, 'materials')}?${params}`
+    const destination = preserveConversation(`${researchWorkspaceDestination(taskId, 'materials')}?${params}`)
     if (`${location.pathname}${location.search}` !== destination) navigate(destination, { replace: true })
-  }, [location.pathname, location.search, navigate, taskId])
+  }, [location.pathname, location.search, navigate, preserveConversation, taskId])
 
   const updateDocumentLocation = useCallback((next: ResearchDocumentWorkspaceContext) => {
     setDocumentContext((current) => current
@@ -191,13 +222,13 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       ? current
       : next)
     const nextTool = next.mode === 'framework' ? 'writing' : tool === 'map' ? 'map' : 'theory'
-    const destination = researchWorkspaceDestination(taskId, nextTool, {
+    const destination = preserveConversation(researchWorkspaceDestination(taskId, nextTool, {
       documentId: next.documentId,
       sectionId: next.sectionId,
       version: next.documentVersion,
-    })
+    }))
     if (`${location.pathname}${location.search}` !== destination) navigate(destination, { replace: true })
-  }, [location.pathname, location.search, navigate, taskId, tool])
+  }, [location.pathname, location.search, navigate, preserveConversation, taskId, tool])
 
   if (!taskId) return <ErrorState detail="研究项目地址无效。" />
   if (task.isPending || navigation.isPending) return <LoadingState message="正在恢复研究项目" />
@@ -208,6 +239,14 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       onRetry={() => { void Promise.all([task.refetch(), navigation.refetch()]) }}
     />
   }
+  if (requestedConversationId && requestedConversationId !== knownConversationId) {
+    if (conversationQuery.isPending) return <LoadingState message="正在恢复研究对话" />
+    if (conversationQuery.isError || !conversationQuery.data) return <ErrorState
+      detail="研究对话暂时无法打开。"
+      onRetry={() => { void conversationQuery.refetch() }}
+    />
+    if (conversationQuery.data.task_id !== taskId) return <ErrorState detail="这段对话不属于当前研究项目。" />
+  }
   if (!tool) {
     const restored = readResearchWorkspaceResumePath(taskId)
     const destination = restored
@@ -215,7 +254,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
         taskId,
         researchWorkspaceToolFromProject(task.data.lastCentralTool),
       )
-    return <Navigate replace to={destination} />
+    return <Navigate replace to={preserveConversation(destination)} />
   }
 
   const taskData = task.data
@@ -235,7 +274,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const agentPanel = <ResearchAgentConversationPage
     embedded
     userId={userId}
-    conversationId={navigationData.conversation_id}
+    conversationId={requestedConversationId ?? knownConversationId ?? navigationData.conversation_id}
     knowledgeReleaseId={navigationData.knowledge_release_id}
     workspace="research"
     taskId={taskId}
@@ -243,7 +282,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
     sectionId={documentContext?.sectionId ?? null}
     documentVersion={documentContext?.documentVersion ?? null}
     theoryPlanId={navigationData.current_theory_plan_id}
-    onConversationChange={setAgentConversation}
+    onConversationStarted={syncConversationIdentity}
+    onConversationChange={syncConversation}
     onTurnCompleted={() => setCenterRefreshKey((value) => value + 1)}
     composerAriaLabel="和 Agent 讨论当前研究材料与编码"
   />
@@ -261,7 +301,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
       analysisPanel={<ResearchAnalysisPanel taskId={taskId} refreshKey={centerRefreshKey} embedded onChanged={() => setCenterRefreshKey((value) => value + 1)} />}
       workspaceNavigation={<div className="coding-workspace__navigation">
         <Link to="/research/materials" aria-label="返回材料库" title="返回材料库">‹</Link>
-        <details><summary>{projectTitle(taskData, navigationData)}</summary><nav aria-label="研究工具">{tools.filter(({ id }) => id !== 'materials' && id !== 'analysis').map(({ id, label }) => <Link key={id} to={researchWorkspaceDestination(taskId, id)}>{label}</Link>)}</nav></details>
+        <details><summary>{projectTitle(taskData, navigationData)}</summary><nav aria-label="研究工具">{tools.filter(({ id }) => id !== 'materials' && id !== 'analysis').map(({ id, label }) => <Link key={id} to={preserveConversation(researchWorkspaceDestination(taskId, id))}>{label}</Link>)}</nav></details>
       </div>}
     />
   </section></PageShell>
@@ -310,7 +350,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
               {tools.map(({ id, label, icon: Icon }) => (
                 <Link
                   key={id}
-                  to={researchWorkspaceDestination(taskId, id)}
+                  to={preserveConversation(researchWorkspaceDestination(taskId, id))}
                   aria-current={tool === id ? 'page' : undefined}
                   onClick={() => setMobilePane('center')}
                 >
@@ -361,7 +401,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
                 historyRailTarget={historyRailTarget}
                 embedded
                 userId={userId}
-                conversationId={navigationData.conversation_id}
+                conversationId={requestedConversationId ?? knownConversationId ?? navigationData.conversation_id}
                 knowledgeReleaseId={navigationData.knowledge_release_id}
                 workspace="research"
                 taskId={taskId}
@@ -369,7 +409,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
                 sectionId={documentContext?.sectionId ?? null}
                 documentVersion={documentContext?.documentVersion ?? null}
                 theoryPlanId={navigationData.current_theory_plan_id}
-                onConversationChange={setAgentConversation}
+                onConversationStarted={syncConversationIdentity}
+                onConversationChange={syncConversation}
                 onStreamingTurnChange={setStreamingTurn}
                 discussion={discussion}
                 onClearDiscussion={() => setDiscussion(null)}
