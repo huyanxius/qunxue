@@ -9,7 +9,7 @@ from hashlib import sha256
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from sqlalchemy import func, or_, select, text, update
+from sqlalchemy import case, func, or_, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -61,7 +61,7 @@ from qunxue_api.modules.knowledge_catalog import (
     TheoryProfileSnapshot,
 )
 
-_BUILD_CONFIG_VERSION = "markdown-preview-v2+explicit-title-trigger-v1"
+_BUILD_CONFIG_VERSION = "markdown-preview-v3+explicit-title-trigger-v1"
 _DIMENSION_DIRECTORIES = (
     "本体论",
     "实践论",
@@ -211,9 +211,30 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             )
             if offset > total_count:
                 raise ValueError("invalid knowledge cursor")
+            # Rank across the entire matching set before applying the page cursor.
+            ordering = [KnowledgeEntryRevisionRow.knowledge_id]
+            if normalized_query:
+                ordering.insert(
+                    0,
+                    case(
+                        (
+                            func.lower(KnowledgeEntryRevisionRow.title) == normalized_query.lower(),
+                            0,
+                        ),
+                        (
+                            func.instr(
+                                func.lower(KnowledgeEntryRevisionRow.title),
+                                normalized_query.lower(),
+                            )
+                            > 0,
+                            1,
+                        ),
+                        else_=2,
+                    ),
+                )
             rows = list(
                 session.scalars(
-                    statement.order_by(KnowledgeEntryRevisionRow.knowledge_id)
+                    statement.order_by(*ordering)
                     .offset(offset)
                     .limit(limit)
                 )
@@ -1568,6 +1589,7 @@ def _browse_cursor_scope(
             "category": category,
             "category_id": category_id,
             "dimension_id": dimension_id,
+            **({"search_order": "title-v1"} if query else {}),
         },
         ensure_ascii=False,
         sort_keys=True,

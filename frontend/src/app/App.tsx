@@ -1,5 +1,6 @@
 import {
   BrowserRouter,
+  Link,
   Navigate,
   Route,
   Routes,
@@ -203,7 +204,7 @@ function KnowledgeGraphRoute() {
       <FullscreenKnowledgeGraphPage
         state={state}
         onStateChange={updateState}
-        entryHref={entryHref}
+        renderEntryLink={(id, label) => <Link className="graph-read" to={entryHref(id)}>{label}</Link>}
       />
     </PageShell>
   )
