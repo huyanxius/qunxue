@@ -298,7 +298,7 @@ export function ResearchMapCanvas({
           proOptions={{ hideAttribution: true }}
           aria-label={projection.nodes.length ? '可缩放、可拖动的社会学论证地图' : '空白研究画布'}
         >
-          <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8d6cf" />
+          {projection.nodes.length ? <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8d6cf" /> : null}
           {projection.nodes.length ? <Controls position="bottom-left" showInteractive={false} /> : null}
           {!hasDocumentNodes && projection.nodes.length >= 16 ? (
             <MiniMap
