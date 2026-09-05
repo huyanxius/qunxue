@@ -267,6 +267,10 @@ describe('ResearchAgentConversationPage', () => {
     expect(within(resultCard).getByText('用时 1 秒')).toBeVisible()
     expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
     expect(within(resultCard).getByRole('button', { name: '下载 PDF' })).toBeVisible()
+    expect(within(resultCard).queryByText('拆解研究问题')).not.toBeInTheDocument()
+    expect(within(resultCard).getByRole('link', { name: '继续形成研究' })).toHaveAttribute(
+      'href', '/research/new?conversation_id=conversation-deep-research-result&knowledge_release_id=release-agent',
+    )
     expect(within(agent).getByRole('heading', { name: '研究结论' })).toBeVisible()
     expect(within(agent).getByText(body)).toBeVisible()
   })
@@ -345,12 +349,20 @@ describe('ResearchAgentConversationPage', () => {
       if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
       return json({}, 404)
     }))
-    renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
+    render(
+      <MemoryRouter initialEntries={[`/agent?conversation_id=${conversation.conversation_id}`]}>
+        <ResearchAgentConversationPage userId="user-agent" />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
 
     const resultCard = await screen.findByRole('region', { name: '研究结论' })
     expect(within(resultCard).getByRole('heading', { name: '已经整理好一份带证据的结论' })).toBeVisible()
     expect(within(resultCard).getByText('用时 4 分 27 秒')).toBeVisible()
     expect(within(resultCard).getByText('知识库 7 条')).toBeVisible()
+    expect(within(resultCard).queryByText('拆解研究问题')).not.toBeInTheDocument()
+    fireEvent.click(within(resultCard).getByRole('link', { name: '继续形成研究' }))
+    expect(screen.getByLabelText('当前测试路径')).toHaveTextContent('/research/new?conversation_id=conversation-deep-research-reopen&knowledge_release_id=release-agent')
     expect(within(resultCard).getByRole('button', { name: '下载 Word' })).toBeVisible()
     // 输入器也要留在深入研究，不能悄悄退回标准。
     expect(screen.getByRole('button', { name: '选择 Agent 模式' })).toHaveTextContent('深入研究')
