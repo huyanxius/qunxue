@@ -2047,8 +2047,8 @@
 .research-agent-conversation--embedded .research-agent-page__composer-dock {
   width: 100%;
   padding: 10px 12px 12px;
-  border-top: 1px solid var(--app-border);
-  background: #fbfaf7;
+  border-top: 0;
+  background: transparent;
 }
 
 .research-agent-conversation--embedded .research-agent-composer,
