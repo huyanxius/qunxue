@@ -47,9 +47,7 @@ export function RailStateProvider({ children }: PropsWithChildren) {
 
 function ProductMark() {
   return (
-    <span className="product-mark" aria-hidden="true">
-      <img src={brandMark} alt="" />
-    </span>
+    <span className="product-mark" aria-hidden="true" style={{ maskImage: `url(${brandMark})` }} />
   )
 }
 

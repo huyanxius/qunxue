@@ -190,12 +190,10 @@
   flex: 0 0 auto;
   place-items: center;
   color: var(--app-ink);
-}
-
-.product-mark img {
-  width: 26px;
-  height: 26px;
-  display: block;
+  background: currentColor;
+  mask-position: center;
+  mask-size: 26px 26px;
+  mask-repeat: no-repeat;
 }
 
 .desktop-rail__collapse {
