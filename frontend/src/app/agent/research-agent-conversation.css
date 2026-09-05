@@ -1128,6 +1128,11 @@
 
 .research-agent-conversation .research-agent-composer {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 11px;
   isolation: isolate;
   overflow: visible;
   border: 0;
@@ -1183,9 +1188,16 @@
 .research-agent-conversation .research-agent-composer textarea {
   position: relative;
   z-index: 2;
-  height: 96px;
-  min-height: 96px;
-  padding: 17px 58px 52px 18px;
+  grid-column: 1 / -1;
+  min-width: 0;
+  height: auto;
+  min-height: 64px;
+  max-height: min(320px, 40dvh);
+  padding: 9px 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 24px;
 }
@@ -1194,10 +1206,9 @@
   outline: 0;
 }
 
-.research-agent-conversation .research-agent-composer.has-attachments textarea {
-  height: 132px;
-  min-height: 132px;
-  padding-bottom: 88px;
+.research-agent-conversation .research-agent-composer > .new-research__material-source {
+  grid-column: 1 / -1;
+  min-width: 0;
 }
 
 .research-agent-conversation .research-agent-composer__file-input {
@@ -1209,11 +1220,9 @@
 }
 
 .research-agent-conversation .research-agent-composer__attachments {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  right: 14px;
-  bottom: 52px;
-  left: 14px;
+  grid-column: 1 / -1;
   display: flex;
   min-width: 0;
   align-items: center;
@@ -1268,10 +1277,10 @@
 }
 
 .research-agent-conversation .research-agent-composer__controls {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  left: 12px;
-  bottom: 11px;
+  grid-column: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -1282,10 +1291,9 @@
 }
 
 .research-agent-conversation .research-agent-composer__mode-entry {
-  position: absolute;
+  position: relative;
   z-index: 4;
-  right: 54px;
-  bottom: 12px;
+  grid-column: 2;
 }
 
 .research-agent-conversation .deep-research-intro {
@@ -1655,10 +1663,9 @@
 }
 
 .research-agent-conversation .research-agent-composer__send {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  right: 12px;
-  bottom: 12px;
+  grid-column: 3;
   display: grid;
   place-items: center;
   width: 34px;
@@ -2019,8 +2026,6 @@
 }
 
 .research-agent-conversation--embedded .research-agent-composer__send {
-  right: 9px;
-  bottom: 9px;
   width: 32px;
   height: 32px;
 }
@@ -2220,14 +2225,10 @@
   }
 
   .research-agent-conversation .research-agent-composer textarea {
-    height: 54px;
-    min-height: 54px;
-    padding: 15px 54px 13px 16px;
+    padding-inline: 4px;
   }
 
   .research-agent-conversation .research-agent-composer__send {
-    right: 10px;
-    bottom: 11px;
     width: 32px;
     height: 32px;
   }
