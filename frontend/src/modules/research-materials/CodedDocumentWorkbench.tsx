@@ -83,6 +83,10 @@ export type MaterialReaderViewProps = {
   readonly codes?: readonly AnalysisCode[]
   readonly memos?: readonly AnalysisMemo[]
   readonly codebook?: readonly CodebookEntry[]
+  readonly agentPanel?: ReactNode
+  readonly analysisPanel?: ReactNode
+  readonly workspaceNavigation?: ReactNode
+  readonly codingAction?: ReactNode
   readonly workspaceChrome?: boolean
   readonly registerSegment: (segmentId: string, element: HTMLElement | null) => void
   readonly onBack: () => void
@@ -200,6 +204,10 @@ export function CodedDocumentWorkbench({
   memos = [],
   codebook = [],
   workspaceChrome = false,
+  agentPanel,
+  analysisPanel,
+  workspaceNavigation,
+  codingAction,
   registerSegment,
   onBack,
   onToggleOutline,
@@ -215,6 +223,7 @@ export function CodedDocumentWorkbench({
   onCreateMemo,
   onDecideMemo,
 }: MaterialReaderViewProps) {
+  const [panel, setPanel] = useState<'evidence' | 'analysis' | 'agent'>('evidence')
   const frameRef = useRef<HTMLElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [narrow, setNarrow] = useState(false)
@@ -286,6 +295,10 @@ export function CodedDocumentWorkbench({
     : null
 
   const codeParentById = useMemo(() => new Map(codebook.map((entry) => [entry.code_id, entry.parent_code_id])), [codebook])
+
+  useEffect(() => {
+    if (selectedAnnotationId || selectedCodeId) setPanel('evidence')
+  }, [selectedAnnotationId, selectedCodeId])
 
   const selectedMemos = useMemo(() => {
     if (!selectedAnnotation) return []
@@ -633,6 +646,7 @@ export function CodedDocumentWorkbench({
             </div>
           </>
         ) : null}
+        {workspaceNavigation}
         <div className="qx-reader__tools">
           <div className="qx-reader__tool-group" aria-label="阅读工具">
             <button type="button" className="qx-icon-button" aria-pressed={outlineOpen} aria-controls="research-materials-outline" aria-label={outlineOpen ? '收起侧栏' : '展开侧栏'} title={outlineOpen ? '收起侧栏' : '展开侧栏'} onClick={onToggleOutline}><SidebarSimpleIcon size={17} aria-hidden="true" /></button>
@@ -644,7 +658,7 @@ export function CodedDocumentWorkbench({
             <button type="button" aria-pressed={viewMode === 'coding'} onClick={() => setViewMode('coding')}>编码视图<span>{annotations.length}</span></button>
           </div>
             <button type="button" className="qx-reader__tool-button" aria-expanded={codeFilterOpen} onClick={() => setCodeFilterOpen((open) => !open)}><TagIcon size={15} aria-hidden="true" />筛选{activeCodeIds.length ? ` ${activeCodeIds.length}` : ''}</button>
-          <button type="button" className={`qx-reader__tool-button${inspectorMode === 'retrieved' ? ' is-active' : ''}`} aria-pressed={inspectorMode === 'retrieved'} title="检索编码片段（⌘⇧R）" onClick={() => { setInspectorMode('retrieved'); setSelectedAnnotationId(null); setSelectedCodeId(null) }}><ListBulletsIcon size={15} aria-hidden="true" />检索<span>{retrievalRows.length}</span></button>
+          <button type="button" className={`qx-reader__tool-button${inspectorMode === 'retrieved' ? ' is-active' : ''}`} aria-pressed={inspectorMode === 'retrieved'} title="检索编码片段（⌘⇧R）" onClick={() => { setPanel('evidence'); setInspectorMode('retrieved'); setSelectedAnnotationId(null); setSelectedCodeId(null) }}><ListBulletsIcon size={15} aria-hidden="true" />检索<span>{retrievalRows.length}</span></button>
           <div className="qx-reader__export-wrap">
             <button type="button" className="qx-reader__tool-button" aria-expanded={exportOpen} onClick={() => setExportOpen((open) => !open)}><DownloadSimpleIcon size={15} aria-hidden="true" />导出</button>
             {exportOpen ? (
@@ -661,8 +675,9 @@ export function CodedDocumentWorkbench({
       </header>
 
       <div className="qx-reader__coding-toolbar" aria-label="编码工具">
-        <div className="qx-reader__document-path"><span className="qx-reader__path-dot" aria-hidden="true" />{material.filename}<CaretDownIcon size={13} aria-hidden="true" /></div>
+        <button type="button" className="qx-reader__document-path" onClick={onBack} title="切换材料"><span className="qx-reader__path-dot" aria-hidden="true" />{material.filename}<CaretDownIcon size={13} aria-hidden="true" /></button>
         <div className="qx-reader__coding-actions">
+          {codingAction}
           <button type="button" className="qx-reader__coding-action" disabled={!selectedAnnotation || !onCreateCode} title={selectedAnnotation ? '为当前片段新建编码' : '先点击一条编码片段'} onClick={() => setCodeComposerOpen(true)}><PlusIcon size={15} aria-hidden="true" />新建编码</button>
           <button type="button" className="qx-reader__coding-action" disabled={!selectedAnnotation || !onCreateCode || Boolean(busyAction)} title={selectedAnnotation ? '使用原文中的词语建立代码' : '先点击一条编码片段'} onClick={() => void createInVivoCode()}><QuotesIcon size={15} aria-hidden="true" />原词编码</button>
           <button type="button" className="qx-reader__coding-action" disabled={!selectedAnnotation || !onCreateMemo} title={selectedAnnotation ? '为当前片段写分析备忘' : '先点击一条编码片段'} onClick={() => setMemoComposerOpen(true)}><NoteIcon size={15} aria-hidden="true" />备忘</button>
@@ -694,7 +709,7 @@ export function CodedDocumentWorkbench({
         </div>
       ) : null}
 
-      <div className={`qx-reader__body${outlineOpen ? ' is-outline-open' : ''}${inspectorMode !== 'empty' ? ' has-inspector' : ''}`}>
+      <div className={`qx-reader__body${outlineOpen ? ' is-outline-open' : ''}${inspectorMode !== 'empty' || panel !== 'evidence' ? ' has-inspector' : ''}`}>
         <aside id="research-materials-outline" className="qx-reader__sidebar" aria-label="材料导航" aria-hidden={!outlineOpen}>
           <div className="qx-reader__sidebar-tabs" role="tablist" aria-label="材料导航视图">
             <button type="button" role="tab" aria-selected={sidebarTab === 'chapters'} onClick={() => setSidebarTab('chapters')}><ListBulletsIcon size={14} aria-hidden="true" />章节</button>
@@ -766,7 +781,11 @@ export function CodedDocumentWorkbench({
           {pageCount > 1 ? <footer className="qx-reader__pagination" aria-label="文档分页"><button type="button" aria-label="上一页" disabled={page === 0} onClick={() => onPageChange(Math.max(0, page - 1))}>上一页</button><span>第 {page + 1} / {pageCount} 页</span><button type="button" aria-label="下一页" disabled={page >= pageCount - 1} onClick={() => onPageChange(Math.min(pageCount - 1, page + 1))}>下一页</button></footer> : null}
         </main>
 
-        <aside className="qx-reader__inspector" aria-label={inspectorMode === 'retrieved' ? '检索编码片段' : '编码证据检查器'}>
+        <aside className={`qx-reader__inspector${agentPanel ? ' is-integrated' : ''}`} aria-label={agentPanel ? '编码协作侧栏' : inspectorMode === 'retrieved' ? '检索编码片段' : '编码证据检查器'}>
+          {agentPanel || analysisPanel ? <div className="qx-reader__panel-tabs" role="tablist" aria-label="编码协作工具">
+            {(['evidence', 'analysis', 'agent'] as const).filter((id) => id === 'evidence' || (id === 'analysis' ? analysisPanel : agentPanel)).map((id) => <button key={id} type="button" role="tab" id={`coding-tab-${id}`} aria-controls={`coding-panel-${id}`} aria-selected={panel === id} onClick={() => setPanel(id)}>{id === 'evidence' ? '证据' : id === 'analysis' ? '分析' : 'Agent'}</button>)}
+          </div> : null}
+          <div role="tabpanel" id="coding-panel-evidence" aria-labelledby={agentPanel || analysisPanel ? "coding-tab-evidence" : undefined} className="qx-reader__panel-content" hidden={panel !== 'evidence'} aria-label={inspectorMode === 'retrieved' ? '检索编码片段' : '编码证据检查器'}>
           {inspectorMode === 'retrieved' ? (
             <div className="qx-retrieved">
               <header className="qx-inspector__head"><div><span className="qx-eyebrow">RETRIEVED SEGMENTS</span><strong>检索编码片段</strong><small>{retrievalRows.length} 条结果 · 点击来源回到原文</small></div><button type="button" className="qx-icon-button" aria-label="关闭检索结果" onClick={() => setInspectorMode('empty')}><XIcon size={16} aria-hidden="true" /></button></header>
@@ -838,6 +857,9 @@ export function CodedDocumentWorkbench({
           ) : (
             <div className="qx-inspector__empty"><InfoIcon size={24} aria-hidden="true" /><strong>选择一条编码证据</strong><p>点击正文中的编码条或高亮文字，这里会显示代码定义、研究者备注、备忘和来源定位。</p><span>Esc 关闭面板 · ⌘⇧R 打开检索结果</span></div>
           )}
+          </div>
+          {analysisPanel ? <div role="tabpanel" id="coding-panel-analysis" aria-labelledby="coding-tab-analysis" className="qx-reader__panel-content" hidden={panel !== 'analysis'}>{analysisPanel}</div> : null}
+          {agentPanel ? <div role="tabpanel" id="coding-panel-agent" aria-labelledby="coding-tab-agent" className="qx-reader__panel-content qx-reader__agent-panel" hidden={panel !== 'agent'}>{agentPanel}</div> : null}
         </aside>
       </div>
 
