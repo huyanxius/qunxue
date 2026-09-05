@@ -84,6 +84,29 @@ class DisciplinaryAgentApplication:
             title=title,
         )
 
+    def edit_canvas_node(
+        self,
+        *,
+        user_id: UUID,
+        conversation_id: UUID,
+        node_id: str,
+        title: str,
+        summary: str,
+        expected_title: str,
+        expected_summary: str | None,
+        expected_version: int,
+    ) -> Conversation:
+        return self._conversations.edit_canvas_node(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            node_id=node_id,
+            title=title,
+            summary=summary,
+            expected_title=expected_title,
+            expected_summary=expected_summary,
+            expected_version=expected_version,
+        )
+
     def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:
         self._conversations.delete_conversation(
             user_id=user_id,
