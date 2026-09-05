@@ -16,39 +16,41 @@
  * 改字号时别顺手把行高调回去。
  */
 :root {
+  /* 浏览器在首帧及系统外观变化时直接选择颜色，原生控件也使用同一主题。 */
+  color-scheme: light dark;
   /* ---- 表面：从最底的画布到浮起的纸面 ---- */
-  --qx-color-canvas: #f5f5f5;
-  --qx-color-surface: #ffffff;
-  --qx-color-surface-raised: #ffffff;
-  --qx-color-surface-muted: #f7f7f7;
-  --qx-color-surface-strong: #ededed;
+  --qx-color-canvas: light-dark(#f5f5f5, #1c1e1d);
+  --qx-color-surface: light-dark(#ffffff, #242625);
+  --qx-color-surface-raised: light-dark(#ffffff, #2b2d2c);
+  --qx-color-surface-muted: light-dark(#f7f7f7, #202221);
+  --qx-color-surface-strong: light-dark(#ededed, #303331);
 
   /* ---- 墨色：ink 是标题与强调，ink-soft 是正文，muted 是元信息，faint 是几乎不看的定位符 ---- */
-  --qx-color-ink: #111111;
-  --qx-color-ink-soft: #303030;
-  --qx-color-muted: #6c6c6c;
-  --qx-color-faint: #969696;
+  --qx-color-ink: light-dark(#111111, #e6e7e3);
+  --qx-color-ink-soft: light-dark(#303030, #c9ccc6);
+  --qx-color-muted: light-dark(#6c6c6c, #a4aaa2);
+  --qx-color-faint: light-dark(#969696, #92998f);
 
-  --qx-color-rule: #e3e3e3;
-  --qx-color-rule-strong: #cccccc;
+  --qx-color-rule: light-dark(#e3e3e3, #383d38);
+  --qx-color-rule-strong: light-dark(#cccccc, #50574f);
 
   /* ---- 强调色就是墨黑：层级靠字号、留白和分隔线拉开，不靠彩色。on-accent 是压在强调色上的字。 ---- */
-  --qx-color-accent: #111111;
-  --qx-color-accent-hover: #303030;
-  --qx-color-accent-soft: #ececec;
-  --qx-color-accent-muted: #f4f4f4;
-  --qx-color-on-accent: #ffffff;
+  --qx-color-accent: light-dark(#111111, #e0e4db);
+  --qx-color-accent-hover: light-dark(#303030, #c9d0c4);
+  --qx-color-accent-soft: light-dark(#ececec, #303630);
+  --qx-color-accent-muted: light-dark(#f4f4f4, #262b26);
+  --qx-color-on-accent: light-dark(#ffffff, #20241f);
 
   /*
    * 状态色只有 danger 是彩的——它必须在余光里就拦住人。notice 是"读一下就好"的提示，
    * 走中性灰加一道左线；给它一个语义位，组件才不会各自发明一种棕黄。
    */
-  --qx-color-danger: #98434b;
-  --qx-color-danger-line: #d8b3b7;
-  --qx-color-danger-soft: #f8edef;
-  --qx-color-notice: #303030;
-  --qx-color-notice-line: #b8b8b8;
-  --qx-color-notice-soft: #f2f2f2;
+  --qx-color-danger: light-dark(#98434b, #e2a3a6);
+  --qx-color-danger-line: light-dark(#d8b3b7, #704b4f);
+  --qx-color-danger-soft: light-dark(#f8edef, #382729);
+  --qx-color-notice: light-dark(#303030, #c9ccc6);
+  --qx-color-notice-line: light-dark(#b8b8b8, #50574f);
+  --qx-color-notice-soft: light-dark(#f2f2f2, #2a2e29);
 
   --qx-font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --qx-font-reading: "Songti SC", "Noto Serif CJK SC", Georgia, serif;

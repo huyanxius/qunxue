@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: minmax(360px, 0.88fr) minmax(520px, 1.12fr);
   overflow: hidden;
-  background: #f1f4f6;
+  background: light-dark(#f1f4f6, #1a1b1c);
 }
 
 .account-portal__story {
@@ -14,8 +14,8 @@
   justify-content: space-between;
   padding: clamp(52px, 7vw, 92px) clamp(44px, 6vw, 84px);
   overflow: hidden;
-  color: #f5f9fb;
-  background: #2d668f;
+  color: light-dark(#f5f9fb, #1a1b1b);
+  background: light-dark(#2d668f, #6c97b7);
   isolation: isolate;
 }
 
@@ -38,7 +38,7 @@
   display: inline-flex;
   gap: 16px;
   align-items: center;
-  color: #f7fafc;
+  color: light-dark(#f7fafc, #1a1b1c);
   text-decoration: none;
 }
 
@@ -48,7 +48,7 @@
   display: grid;
   place-items: center;
   border-radius: 20px;
-  background: #f7fafc;
+  background: light-dark(#f7fafc, #1a1b1c);
   box-shadow: 0 24px 56px rgb(12 43 65 / 24%);
   transition: box-shadow 240ms var(--ease), transform 240ms var(--ease);
 }
@@ -71,7 +71,7 @@
 }
 
 .account-portal__brand-copy small {
-  color: rgb(242 248 251 / 62%);
+  color: light-dark(rgb(242 248 251 / 62%), rgb(26 27 28 / 0.62));
   font-size: 0.5rem;
   font-weight: 680;
   letter-spacing: 0.2em;
@@ -86,7 +86,7 @@
 .account-portal__story h1 {
   position: relative;
   margin: auto 0 0;
-  color: #f7fafc;
+  color: light-dark(#f7fafc, #1a1b1c);
   font-family: var(--serif);
   font-size: clamp(5.4rem, 10vw, 9.4rem);
   font-weight: 560;
@@ -100,7 +100,7 @@
   flex-wrap: wrap;
   gap: 12px 30px;
   margin-top: clamp(42px, 7vh, 74px);
-  color: rgb(241 248 252 / 68%);
+  color: light-dark(rgb(241 248 252 / 68%), rgb(26 27 28 / 0.68));
   font-size: 0.69rem;
   font-weight: 680;
   letter-spacing: 0.08em;
@@ -111,7 +111,7 @@
   display: grid;
   place-items: center;
   padding: clamp(52px, 8vw, 112px);
-  background: #f1f4f6;
+  background: light-dark(#f1f4f6, #1a1b1c);
 }
 
 .account-portal__entry-inner {
@@ -120,7 +120,7 @@
 
 .account-portal__form-label {
   margin: 0 0 36px;
-  color: #40525e;
+  color: light-dark(#40525e, #c0c8ce);
   font-family: var(--serif);
   font-size: clamp(1.3rem, 2.2vw, 1.65rem);
   font-weight: 620;
@@ -139,7 +139,7 @@
 .account-field {
   display: grid;
   gap: 9px;
-  color: #3e505c;
+  color: light-dark(#3e505c, #c0c8ce);
   font-size: 0.78rem;
   font-weight: 680;
 }
@@ -154,8 +154,8 @@
   padding: 11px 18px;
   border: 1px solid transparent;
   border-radius: 14px;
-  color: #2f414c;
-  background: #e4eaee;
+  color: light-dark(#2f414c, #bec9cf);
+  background: light-dark(#e4eaee, #1a1b1c);
   font: inherit;
   transition:
     background-color 180ms ease,
@@ -165,9 +165,9 @@
 }
 
 .account-form input:focus-visible {
-  border-color: #7e9db3;
+  border-color: light-dark(#7e9db3, #8ea1ae);
   outline: 0;
-  background: #fbfcfd;
+  background: light-dark(#fbfcfd, #202122);
   box-shadow: 0 0 0 4px rgb(62 124 177 / 12%), 0 18px 46px rgb(33 64 83 / 8%);
   transform: translateY(-1px);
 }
@@ -190,7 +190,7 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: #686b67;
+  color: light-dark(#686b67, #aaaca9);
   background: transparent;
   cursor: pointer;
   place-items: center;
@@ -199,12 +199,12 @@
 }
 
 .account-password-field__toggle:hover {
-  color: #151515;
-  background: rgb(116 90 53 / 8%);
+  color: light-dark(#151515, #e3e3e3);
+  background: light-dark(rgb(116 90 53 / 8%), rgb(172 150 119 / 0.08));
 }
 
 .account-password-field__toggle:focus-visible {
-  outline: 2px solid #745a35;
+  outline: 2px solid light-dark(#745a35, #b6a287);
   outline-offset: 2px;
 }
 
@@ -227,8 +227,8 @@
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  color: #f7fafc;
-  background: #2d668f;
+  color: light-dark(#f7fafc, #1a1b1c);
+  background: light-dark(#2d668f, #6c97b7);
   cursor: pointer;
   font-weight: 720;
   transition:
@@ -239,7 +239,7 @@
 }
 
 .account-primary:hover:not(:disabled) {
-  background: #245775;
+  background: light-dark(#245775, #b4ccda);
   box-shadow: 0 18px 42px rgb(35 76 104 / 18%);
   transform: translateY(-2px);
 }
@@ -286,7 +286,7 @@
   display: grid;
   gap: 10px;
   margin: -4px 0 26px;
-  color: #686b67;
+  color: light-dark(#686b67, #aaaca9);
   font-size: 0.72rem;
   font-weight: 680;
   letter-spacing: 0.04em;
@@ -295,13 +295,13 @@
 .account-register-progress__track {
   height: 2px;
   overflow: hidden;
-  background: rgb(21 21 21 / 12%);
+  background: light-dark(rgb(21 21 21 / 12%), rgb(227 227 227 / 0.12));
 }
 
 .account-register-progress__track > span {
   height: 100%;
   display: block;
-  background: #151515;
+  background: light-dark(#151515, #e3e3e3);
   transition: width 240ms var(--ease);
 }
 
@@ -311,15 +311,15 @@
   gap: 3px 16px;
   align-items: center;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgb(21 21 21 / 12%);
-  color: #686b67;
+  border-bottom: 1px solid light-dark(rgb(21 21 21 / 12%), rgb(158 158 158 / 0.12));
+  color: light-dark(#686b67, #aaaca9);
   font-size: 0.76rem;
 }
 
 .account-register-summary strong {
   grid-column: 1;
   overflow: hidden;
-  color: #151515;
+  color: light-dark(#151515, #e3e3e3);
   font-size: 0.9rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -331,7 +331,7 @@
   min-height: 44px;
   padding: 0;
   border: 0;
-  color: #686b67;
+  color: light-dark(#686b67, #aaaca9);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -342,7 +342,7 @@
 .account-secondary {
   min-height: 44px;
   border: 0;
-  color: #686b67;
+  color: light-dark(#686b67, #aaaca9);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -410,15 +410,15 @@
 /* Editorial account portal: restrained, quiet, and materially related to the
    public page without repeating its hero composition. */
 .account-portal {
-  background: #f5f6f4;
-  color: #1f292c;
+  background: light-dark(#f5f6f4, #1b1b1a);
+  color: light-dark(#1f292c, #e0e5e6);
 }
 
 .account-portal__story {
-  color: #f5f7f5;
+  color: light-dark(#f5f7f5, #1a1b1a);
   background:
-    radial-gradient(circle at 74% 24%, rgb(174 188 180 / 28%), transparent 34%),
-    linear-gradient(145deg, #243536 0%, #36484a 54%, #1c282a 100%);
+    radial-gradient(circle at 74% 24%, light-dark(rgb(174 188 180 / 28%), rgb(48 54 51 / 0.28)), transparent 34%),
+    linear-gradient(145deg, light-dark(#243536, #c0cdce) 0%, light-dark(#36484a, #c1cbcd) 54%, light-dark(#1c282a, #dfe6e7) 100%);
 }
 
 .account-portal__story::after {
@@ -427,36 +427,36 @@
   bottom: -28%;
   width: 72%;
   aspect-ratio: 1;
-  border: 1px solid rgb(255 255 255 / 18%);
+  border: 1px solid light-dark(rgb(255 255 255 / 18%), rgb(64 64 64 / 0.18));
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 32%, rgb(255 255 255 / 18%), transparent 56%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%), 0 34px 90px rgb(0 0 0 / 18%);
+  background: radial-gradient(circle at 35% 32%, light-dark(rgb(255 255 255 / 18%), rgb(33 33 33 / 0.18)), transparent 56%);
+  box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 24%), transparent), 0 34px 90px rgb(0 0 0 / 18%);
   content: '';
   pointer-events: none;
 }
 
 .account-portal__brand-mark {
-  border: 1px solid rgb(255 255 255 / 42%);
+  border: 1px solid light-dark(rgb(255 255 255 / 42%), rgb(64 64 64 / 0.42));
   border-radius: 18px;
-  background: rgb(255 255 255 / 16%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 24px 56px rgb(0 0 0 / 18%);
+  background: light-dark(rgb(255 255 255 / 16%), rgb(33 33 33 / 0.16));
+  box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 30%), transparent), 0 24px 56px rgb(0 0 0 / 18%);
   backdrop-filter: blur(16px) saturate(1.08);
   -webkit-backdrop-filter: blur(16px) saturate(1.08);
 }
 
 .account-portal__entry {
-  background: #f5f6f4;
+  background: light-dark(#f5f6f4, #1b1b1a);
 }
 
 .account-portal__entry-inner {
   padding: clamp(30px, 5vw, 56px);
-  border: 1px solid rgb(31 41 44 / 10%);
+  border: 1px solid light-dark(rgb(31 41 44 / 10%), rgb(147 164 169 / 0.1));
   border-radius: 32px;
   background:
-    linear-gradient(145deg, rgb(255 255 255 / 92%), rgb(255 255 255 / 66%)),
-    rgb(255 255 255 / 72%);
+    linear-gradient(145deg, light-dark(rgb(255 255 255 / 92%), rgb(33 33 33 / 0.92)), light-dark(rgb(255 255 255 / 66%), rgb(33 33 33 / 0.66))),
+    light-dark(rgb(255 255 255 / 72%), rgb(33 33 33 / 0.72));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 96%),
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 96%), transparent),
     0 28px 80px rgb(31 45 48 / 10%);
   backdrop-filter: blur(20px) saturate(1.04);
   -webkit-backdrop-filter: blur(20px) saturate(1.04);
@@ -464,61 +464,61 @@
 
 .account-portal__form-label {
   margin-bottom: 30px;
-  color: #1f292c;
+  color: light-dark(#1f292c, #e0e5e6);
   letter-spacing: -0.03em;
 }
 
 .account-form label,
 .account-field {
-  color: #47575a;
+  color: light-dark(#47575a, #c4c9ca);
 }
 
 .account-form input {
-  border-color: rgb(31 41 44 / 12%);
+  border-color: light-dark(rgb(31 41 44 / 12%), rgb(147 164 169 / 0.12));
   border-radius: 16px;
-  background: rgb(239 242 239 / 78%);
-  color: #1f292c;
+  background: light-dark(rgb(239 242 239 / 78%), rgb(26 27 26 / 0.78));
+  color: light-dark(#1f292c, #e0e5e6);
 }
 
 .account-form input:focus-visible {
-  border-color: #7e9a8c;
-  background: rgb(255 255 255 / 92%);
+  border-color: light-dark(#7e9a8c, #96a69e);
+  background: light-dark(rgb(255 255 255 / 92%), rgb(33 33 33 / 0.92));
   box-shadow: 0 0 0 4px rgb(126 154 140 / 14%), 0 18px 46px rgb(33 64 83 / 8%);
 }
 
 .account-primary {
-  border: 1px solid rgb(255 255 255 / 16%);
+  border: 1px solid light-dark(rgb(255 255 255 / 16%), rgb(64 64 64 / 0.16));
   border-radius: 16px;
-  background: #26383a;
+  background: light-dark(#26383a, #bfcdce);
   box-shadow: 0 16px 32px rgb(38 56 58 / 16%);
 }
 
 .account-primary:hover:not(:disabled) {
-  background: #1d2e30;
+  background: light-dark(#1d2e30, #dee7e7);
   box-shadow: 0 20px 42px rgb(38 56 58 / 22%);
 }
 
 .account-switch a {
-  color: #476e5e;
+  color: light-dark(#476e5e, #9fb7ad);
 }
 
 /* Match the public page palette exactly: ink, muted graphite, paper and amber. */
 .account-portal,
 .account-portal__entry {
-  background: #f6f7f7;
+  background: light-dark(#f6f7f7, #1a1b1b);
 }
 
 .account-portal__brand,
 .account-portal__brand-copy strong,
 .account-portal__form-label {
-  color: #151515;
+  color: light-dark(#151515, #e3e3e3);
 }
 
 .account-portal__brand-copy small,
 .account-form label,
 .account-field,
 .account-switch {
-  color: #686b67;
+  color: light-dark(#686b67, #aaaca9);
 }
 
 .account-portal__form-heading > img {
@@ -526,30 +526,30 @@
 }
 
 .account-form input {
-  border-color: rgb(21 21 21 / 16%);
-  background: #fff;
-  color: #151515;
+  border-color: light-dark(rgb(21 21 21 / 16%), rgb(158 158 158 / 0.16));
+  background: light-dark(#fff, #212121);
+  color: light-dark(#151515, #e3e3e3);
 }
 
 .account-form input:focus-visible {
-  border-color: #65451d;
+  border-color: light-dark(#65451d, #bfa27d);
   box-shadow: 0 0 0 4px rgb(101 69 29 / 12%), 0 18px 46px rgb(21 21 21 / 8%);
 }
 
 .account-primary {
-  color: #fff;
-  background: #151515;
+  color: light-dark(#fff, #212121);
+  background: light-dark(#151515, #e3e3e3);
   box-shadow: 0 16px 32px rgb(21 21 21 / 14%);
 }
 
 .account-primary:hover:not(:disabled) {
-  color: #fff;
-  background: #23241f;
+  color: light-dark(#fff, #212121);
+  background: light-dark(#23241f, #e4e4e2);
   box-shadow: 0 20px 42px rgb(21 21 21 / 20%);
 }
 
 .account-switch a {
-  color: #65451d;
+  color: light-dark(#65451d, #dac9b4);
 }
 
 /* Single-column sign-in: one calm surface, one action, no split-screen story. */
@@ -559,14 +559,14 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   overflow: auto;
-  background: #f5f6f4;
+  background: light-dark(#f5f6f4, #1b1b1a);
 }
 
 .account-portal__story {
   min-height: 0;
   display: block;
   padding: 28px clamp(24px, 5vw, 72px);
-  color: #1f292c;
+  color: light-dark(#1f292c, #e0e5e6);
   background: transparent;
 }
 
@@ -578,7 +578,7 @@
 }
 
 .account-portal__brand {
-  color: #1f292c;
+  color: light-dark(#1f292c, #e0e5e6);
 }
 
 .account-portal__brand-mark {
@@ -602,7 +602,7 @@
 }
 
 .account-portal__brand-copy small {
-  color: #87908d;
+  color: light-dark(#87908d, #a8aeac);
 }
 
 .account-portal__entry {
@@ -650,7 +650,7 @@
 .account-form input {
   min-height: 54px;
   border-radius: 12px;
-  background: #fff;
+  background: light-dark(#fff, #212121);
   box-shadow: 0 8px 24px rgb(31 45 48 / 5%);
 }
 
@@ -792,12 +792,11 @@
   }
 }
 
-/* Account entry is the public site's quiet paper afterimage: graphite, warm
-   fibre and one restrained Paper Texture field across sign-in and sign-up. */
+/* 登录与注册共用工作台的流动背景；不叠加纸纹或规则线。 */
 .account-portal {
   position: relative;
   isolation: isolate;
-  background: #f6f7f3;
+  background: light-dark(#f6f7f3, #1b1b1a);
 }
 
 .account-paper-field {
@@ -806,30 +805,13 @@
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 68% 42%, rgb(116 118 111 / 8%), transparent 42%),
-    #f6f7f3;
+    radial-gradient(circle at 68% 42%, light-dark(rgb(116 118 111 / 8%), rgb(147 149 142 / 0.08)), transparent 42%),
+    light-dark(#f6f7f3, #1b1b1a);
   pointer-events: none;
 }
 
-.account-paper-field::after {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgb(255 255 255 / 34%), transparent 32% 72%, rgb(255 255 255 / 18%)),
-    repeating-linear-gradient(0deg, rgb(21 21 21 / 1.2%) 0 1px, transparent 1px 4px);
-  content: '';
-  opacity: 0.38;
-}
-
-.account-paper-field__paper {
-  opacity: 0.68;
-  filter: saturate(0.72) contrast(0.94);
-}
-
 .account-paper-field__flow {
-  opacity: 0.52;
-  filter: saturate(0.5) contrast(0.96);
-  mix-blend-mode: multiply;
+  opacity: 0.8;
 }
 
 .account-portal .account-portal__story,
@@ -845,7 +827,7 @@
 }
 
 .account-portal .account-portal__brand-copy small {
-  color: #777972;
+  color: light-dark(#777972, #acada8);
 }
 
 .account-portal .account-portal__entry-inner {
@@ -858,49 +840,49 @@
   left: 50%;
   width: 38px;
   height: 1px;
-  background: #745a35;
+  background: light-dark(#745a35, #ac9677);
   content: '';
   opacity: 0.72;
   transform: translateX(-50%);
 }
 
 .account-portal .account-form input {
-  border-color: rgb(21 21 21 / 14%);
-  color: #151515;
-  background: rgb(250 250 246 / 82%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 72%), 0 10px 30px rgb(21 21 21 / 4%);
-  caret-color: #65451d;
+  border-color: light-dark(rgb(21 21 21 / 14%), rgb(158 158 158 / 0.14));
+  color: light-dark(#151515, #e3e3e3);
+  background: light-dark(rgb(250 250 246 / 82%), rgb(28 28 26 / 0.82));
+  box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 72%), transparent), 0 10px 30px rgb(21 21 21 / 4%);
+  caret-color: light-dark(#65451d, #dac9b4);
 }
 
 .account-portal .account-form input:focus-visible {
-  border-color: #745a35;
-  background: rgb(255 255 252 / 94%);
+  border-color: light-dark(#745a35, #b6a287);
+  background: light-dark(rgb(255 255 252 / 94%), rgb(34 34 32 / 0.94));
   box-shadow: 0 0 0 4px rgb(116 90 53 / 10%), 0 18px 46px rgb(21 21 21 / 7%);
 }
 
 .account-portal .account-form input:-webkit-autofill,
 .account-portal .account-form input:-webkit-autofill:hover,
 .account-portal .account-form input:-webkit-autofill:focus {
-  border-color: rgb(21 21 21 / 14%);
-  -webkit-text-fill-color: #151515;
-  box-shadow: inset 0 0 0 1000px #f7f6ef, 0 10px 30px rgb(21 21 21 / 4%);
-  caret-color: #65451d;
+  border-color: light-dark(rgb(21 21 21 / 14%), rgb(158 158 158 / 0.14));
+  -webkit-text-fill-color: light-dark(#151515, #e3e3e3);
+  box-shadow: inset 0 0 0 1000px light-dark(#f7f6ef, transparent), 0 10px 30px rgb(21 21 21 / 4%);
+  caret-color: light-dark(#65451d, #dac9b4);
 }
 
 .account-portal .account-primary {
-  border-color: #151515;
-  color: #f7f7f3;
-  background: #151515;
+  border-color: light-dark(#151515, #9e9e9e);
+  color: light-dark(#f7f7f3, #1b1b1a);
+  background: light-dark(#151515, #e3e3e3);
   box-shadow: 0 16px 36px rgb(21 21 21 / 14%);
 }
 
 .account-portal .account-primary:hover:not(:disabled) {
-  background: #2b2c28;
+  background: light-dark(#2b2c28, #c8cac4);
   box-shadow: 0 20px 44px rgb(21 21 21 / 19%);
 }
 
 .account-portal .account-switch a {
-  color: #65451d;
+  color: light-dark(#65451d, #dac9b4);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,20 @@
+:root {
+  --qx-graph-filter: none;
+}
+
+/* Cytoscape 的位图画布独立于 CSS；只转换节点图层，页面内容和 Shader 使用各自配色。 */
+.knowledge-graph__canvas canvas,
+.obsidian-knowledge-graph__canvas canvas {
+  filter: var(--qx-graph-filter);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --qx-graph-filter: invert(.88) hue-rotate(180deg) saturate(.65); }
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --qx-graph-filter: none;
+  }
+}

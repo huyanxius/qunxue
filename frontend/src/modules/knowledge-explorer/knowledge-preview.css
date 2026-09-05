@@ -15,14 +15,14 @@
   align-items: center;
   margin: 0 0 clamp(76px, 10vw, 132px) calc(50% - 50vw);
   overflow: visible;
-  color: #2d4f65;
-  background: #e4edf2;
+  color: light-dark(#2d4f65, #b9cad5);
+  background: light-dark(#e4edf2, #181c1e);
   isolation: isolate;
 }
 
 .knowledge-ticker--loading {
   justify-content: center;
-  color: #72838d;
+  color: light-dark(#72838d, #a7acaf);
   font-size: 0.72rem;
   letter-spacing: 0.12em;
 }
@@ -57,7 +57,7 @@
   align-items: center;
   padding: 10px 7px;
   border-radius: 10px;
-  color: #315f80;
+  color: light-dark(#315f80, #92afc3);
   font-size: clamp(1rem, 1.5vw, 1.35rem);
   font-weight: 610;
   letter-spacing: -0.025em;
@@ -72,8 +72,8 @@
 
 .knowledge-ticker__term:hover,
 .knowledge-ticker__term:focus-visible {
-  color: #173f5c;
-  background: rgb(250 252 253 / 64%);
+  color: light-dark(#173f5c, #b4cada);
+  background: light-dark(rgb(250 252 253 / 64%), rgb(32 33 34 / 0.64));
   transform: translateY(-2px);
 }
 
@@ -82,14 +82,14 @@
 }
 
 .knowledge-ticker__term--1 {
-  color: #647985;
+  color: light-dark(#647985, #a3adb3);
   font-family: var(--serif);
   font-size: clamp(1.25rem, 2vw, 1.85rem);
   font-weight: 600;
 }
 
 .knowledge-ticker__term--2 {
-  color: #264d68;
+  color: light-dark(#264d68, #b6cad8);
   font-size: clamp(0.78rem, 1.1vw, 1rem);
   font-weight: 760;
   letter-spacing: 0.035em;
@@ -97,7 +97,7 @@
 }
 
 .knowledge-ticker__term--3 {
-  color: #708893;
+  color: light-dark(#708893, #a3aeb2);
   font-family: var(--serif);
   font-size: clamp(1.05rem, 1.7vw, 1.55rem);
   font-style: italic;
@@ -107,7 +107,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #7fa7bf;
+  background: light-dark(#7fa7bf, #364954);
 }
 
 .knowledge-ticker__card {
@@ -118,15 +118,15 @@
   width: min(360px, calc(100vw - 32px));
   padding: 22px 22px 20px;
   border-radius: 18px;
-  color: #273943;
-  background: #f9fbfc;
+  color: light-dark(#273943, #bdcad1);
+  background: light-dark(#f9fbfc, #202122);
   box-shadow: 0 26px 68px rgb(30 55 70 / 18%);
   animation: knowledge-card-arrive 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .knowledge-ticker__card-kicker {
   display: block;
-  color: #55778c;
+  color: light-dark(#55778c, #9daeb8);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.08em;
@@ -143,13 +143,13 @@
 
 .knowledge-ticker__card-path {
   margin: 9px 0 0;
-  color: #81909a;
+  color: light-dark(#81909a, #7e868b);
   font-size: 0.67rem;
 }
 
 .knowledge-ticker__card-copy {
   margin: 18px 0 0;
-  color: #5f707a;
+  color: light-dark(#5f707a, #a4adb2);
   font-size: 0.78rem;
   line-height: 1.75;
 }
@@ -160,7 +160,7 @@
   gap: 8px;
   align-items: center;
   margin-top: 14px;
-  color: #285f87;
+  color: light-dark(#285f87, #8eafc7);
   font-size: 0.72rem;
   font-weight: 680;
   text-decoration: none;
@@ -203,7 +203,7 @@
   z-index: 3;
   top: clamp(44px, 8vh, 82px);
   right: max(var(--public-gutter, 24px), calc((100vw - var(--public-width, 1320px)) / 2));
-  color: #567387;
+  color: light-dark(#567387, #9fadb7);
   text-align: right;
 }
 
@@ -215,7 +215,7 @@
 
 .knowledge-journey__meta p {
   margin: 8px 0 0;
-  color: #87969f;
+  color: light-dark(#87969f, #7e868b);
   font-size: 0.67rem;
 }
 
@@ -241,7 +241,7 @@
   display: block;
   padding: 0;
   border-radius: 24px;
-  color: #273943;
+  color: light-dark(#273943, #bdcad1);
   background: transparent;
   opacity: var(--path-opacity);
   text-decoration: none;
@@ -269,7 +269,7 @@
   flex-direction: column;
   padding: clamp(22px, 2.4vw, 30px);
   border-radius: inherit;
-  background: #fbfcfd;
+  background: light-dark(#fbfcfd, #202122);
   box-shadow: 0 24px 64px rgb(35 58 72 / 10%);
   opacity: 1;
   transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
@@ -282,7 +282,7 @@
 }
 
 .knowledge-journey__card.is-active .knowledge-journey__card-surface {
-  background: #fff;
+  background: light-dark(#fff, #212121);
   box-shadow: 0 42px 100px rgb(35 58 72 / 22%);
   transform:
     translate3d(0, -34px, 0)
@@ -304,14 +304,14 @@
 }
 
 .knowledge-journey__card-head b {
-  color: #376d91;
+  color: light-dark(#376d91, #92b0c3);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
 }
 
 .knowledge-journey__card-head em {
-  color: #9ba8af;
+  color: light-dark(#9ba8af, #7e868b);
   font-family: var(--serif);
   font-size: 0.82rem;
   font-style: normal;
@@ -334,7 +334,7 @@
   display: -webkit-box;
   overflow: hidden;
   margin: 14px 0 0;
-  color: #677780;
+  color: light-dark(#677780, #a7acaf);
   font-size: 0.73rem;
   line-height: 1.72;
   -webkit-box-orient: vertical;
@@ -345,7 +345,7 @@
   gap: 14px;
   margin-top: auto;
   padding-top: 16px;
-  color: #82919a;
+  color: light-dark(#82919a, #7e868b);
   font-size: 0.63rem;
 }
 
@@ -357,7 +357,7 @@
 
 .knowledge-journey__card-foot i {
   flex: 0 0 auto;
-  color: #316a92;
+  color: light-dark(#316a92, #90b0c6);
   font-size: 0.82rem;
   font-style: normal;
   transition: transform 180ms ease;

@@ -4,7 +4,7 @@
   min-height: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle, rgb(17 17 17 / 5%) 1px, transparent 1px),
+    radial-gradient(circle, light-dark(rgb(17 17 17 / 5%), rgb(227 227 227 / 0.05)) 1px, transparent 1px),
     transparent;
   background-size: 24px 24px, auto;
 }
@@ -30,7 +30,7 @@
   right: 0;
   padding: 8px 0;
   border: 0;
-  color: #70808a;
+  color: light-dark(#70808a, #a7acaf);
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
@@ -71,7 +71,7 @@
   border: 1px solid var(--app-border, var(--rule));
   border-radius: 7px;
   color: var(--ink-soft);
-  background: rgb(255 255 255 / 90%);
+  background: light-dark(rgb(255 255 255 / 90%), rgb(33 33 33 / 0.9));
   box-shadow: 0 6px 20px rgb(17 17 17 / 5%);
   font-size: 0.66rem;
   backdrop-filter: blur(12px);
@@ -105,7 +105,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #3e7cb1;
+  background: light-dark(#3e7cb1, #6f94b4);
   box-shadow: 0 0 0 0 rgb(62 124 177 / 0%);
   animation: graph-tour-signal 4.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
@@ -123,10 +123,10 @@
   max-width: 360px;
   margin: 0;
   padding: 9px 12px;
-  border: 1px solid rgb(199 211 220 / 72%);
+  border: 1px solid light-dark(rgb(199 211 220 / 72%), rgb(54 65 73 / 0.72));
   border-radius: 8px;
   color: var(--ink-soft);
-  background: rgb(252 253 254 / 88%);
+  background: light-dark(rgb(252 253 254 / 88%), rgb(32 33 34 / 0.88));
   font-size: 0.72rem;
   line-height: 1.5;
   backdrop-filter: blur(10px);
@@ -140,7 +140,7 @@
   width: min(360px, calc(100% - 48px));
   display: grid;
   gap: 7px;
-  color: color-mix(in srgb, var(--app-ink, #111) 76%, transparent);
+  color: color-mix(in srgb, var(--app-ink, light-dark(#111, #e3e3e3)) 76%, transparent);
   font-family: var(--serif);
   text-align: center;
   pointer-events: none;
@@ -155,7 +155,7 @@
 }
 
 .obsidian-knowledge-graph__start span {
-  color: color-mix(in srgb, var(--app-muted, #6f6f6f) 84%, transparent);
+  color: color-mix(in srgb, var(--app-muted, light-dark(#6f6f6f, #ababab)) 84%, transparent);
   font-size: 13px;
   line-height: 1.62;
 }
@@ -166,9 +166,9 @@
   width: 12px;
   height: 12px;
   margin: -6px 0 0 -6px;
-  border: 1px solid rgb(17 17 17 / 76%);
+  border: 1px solid light-dark(rgb(17 17 17 / 76%), rgb(158 158 158 / 0.76));
   border-radius: 50%;
-  background: rgb(17 17 17 / 32%);
+  background: light-dark(rgb(17 17 17 / 32%), rgb(227 227 227 / 0.32));
   box-shadow: 0 0 0 6px rgb(17 17 17 / 7%);
   pointer-events: none;
   animation: graph-node-activation 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -191,7 +191,7 @@
   border: 1px solid var(--rule);
   border-radius: 7px;
   color: var(--ink);
-  background: rgb(252 253 254 / 92%);
+  background: light-dark(rgb(252 253 254 / 92%), rgb(32 33 34 / 0.92));
   box-shadow: 0 8px 24px rgb(20 40 55 / 7%);
   font-size: 0.72rem;
 }
@@ -203,8 +203,8 @@
   padding: 11px 14px 12px;
   border: 0;
   border-radius: 14px;
-  color: #263b49;
-  background: rgb(252 253 254 / 90%);
+  color: light-dark(#263b49, #bbc9d2);
+  background: light-dark(rgb(252 253 254 / 90%), rgb(32 33 34 / 0.9));
   box-shadow: 0 16px 44px rgb(24 55 75 / 10%);
   font-family: var(--font-serif);
   font-size: 0.82rem;
@@ -213,7 +213,7 @@
 }
 
 .obsidian-knowledge-graph--preview .obsidian-knowledge-graph__hover span {
-  color: #70808a;
+  color: light-dark(#70808a, #a7acaf);
   font-family: var(--font-sans);
   font-size: 0.58rem;
   font-weight: 700;

@@ -1,7 +1,7 @@
 .app-frame:has(.research-tools-page__shader) .app-frame__backdrop {
   background:
-    radial-gradient(ellipse at 8% 18%, rgb(185 195 108 / 24%), transparent 58%),
-    #f7f7f3;
+    radial-gradient(ellipse at 8% 18%, light-dark(rgb(185 195 108 / 24%), rgb(83 88 50 / 0.24)), transparent 58%),
+    light-dark(#f7f7f3, #1b1b1a);
 }
 
 .research-tools-page {
@@ -9,7 +9,7 @@
   overflow: hidden;
   min-height: 100dvh;
   color: var(--app-ink);
-  background: #f7f7f3;
+  background: light-dark(#f7f7f3, #1b1b1a);
 }
 
 .research-tools-page__shader {
@@ -17,7 +17,7 @@
   z-index: 0;
   inset: 0;
   overflow: hidden;
-  background: #f7f7f3;
+  background: light-dark(#f7f7f3, #1b1b1a);
   pointer-events: none;
 }
 
@@ -30,7 +30,7 @@
 .research-tools-page__shader::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent, rgb(247 247 243 / 28%) 52%, rgb(247 247 243 / 64%) 84%);
+  background: linear-gradient(180deg, transparent, light-dark(rgb(247 247 243 / 28%), rgb(27 27 26 / 0.28)) 52%, light-dark(rgb(247 247 243 / 64%), rgb(27 27 26 / 0.64)) 84%);
   content: '';
 }
 
@@ -77,12 +77,12 @@
 .research-tools-page__card .workbench-destination__copy h2 {
   max-width: calc(100% - 42px);
   margin: 0;
-  color: #111512;
+  color: light-dark(#111512, #e2e4e2);
   font-size: clamp(23px, 2.3vw, 34px);
   font-weight: 490;
   line-height: 1;
   letter-spacing: -.055em;
-  text-shadow: 0 1px 24px rgb(244 245 237 / 52%);
+  text-shadow: 0 1px 24px light-dark(rgb(244 245 237 / 52%), transparent);
 }
 
 .research-tools-page__card.is-disabled {

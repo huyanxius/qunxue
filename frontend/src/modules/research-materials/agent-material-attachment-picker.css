@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(32 29 25 / 28%);
+  background: light-dark(rgb(32 29 25 / 28%), rgb(229 227 225 / 0.28));
   backdrop-filter: blur(3px);
 }
 
@@ -13,9 +13,9 @@
   width: min(520px, 100%);
   max-height: min(620px, calc(100dvh - 40px));
   overflow: hidden;
-  border: 1px solid #d8d2c8;
+  border: 1px solid light-dark(#d8d2c8, #474239);
   border-radius: 18px;
-  background: #fff;
+  background: light-dark(#fff, #212121);
   box-shadow: 0 24px 70px rgb(42 37 30 / 22%);
 }
 
@@ -28,23 +28,23 @@
   padding: 16px 18px;
 }
 
-.agent-material-picker > header { border-bottom: 1px solid #eee9e2; }
-.agent-material-picker > footer { border-top: 1px solid #eee9e2; }
+.agent-material-picker > header { border-bottom: 1px solid light-dark(#eee9e2, #484138); }
+.agent-material-picker > footer { border-top: 1px solid light-dark(#eee9e2, #484138); }
 .agent-material-picker > header > div { display: grid; gap: 4px; }
 .agent-material-picker > header small,
-.agent-material-picker > footer span { color: #777066; font-size: 12px; }
+.agent-material-picker > footer span { color: light-dark(#777066, #afaca7); font-size: 12px; }
 .agent-material-picker button { font: inherit; cursor: pointer; }
-.agent-material-picker > header button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #5d574f; }
-.agent-material-picker > footer button { padding: 8px 18px; border: 0; border-radius: 999px; color: #fff; background: #25221e; }
+.agent-material-picker > header button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: light-dark(#5d574f, #afaba7); }
+.agent-material-picker > footer button { padding: 8px 18px; border: 0; border-radius: 999px; color: light-dark(#fff, #212121); background: light-dark(#25221e, #e4e3e2); }
 .agent-material-picker__list { display: grid; gap: 8px; max-height: 430px; overflow: auto; padding: 12px; }
-.agent-material-picker__item { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid #e5e0d8; border-radius: 12px; cursor: pointer; }
-.agent-material-picker__item:has(input:checked) { border-color: #806740; background: #faf6ee; }
+.agent-material-picker__item { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid light-dark(#e5e0d8, #484237); border-radius: 12px; cursor: pointer; }
+.agent-material-picker__item:has(input:checked) { border-color: light-dark(#806740, #b3a389); background: light-dark(#faf6ee, #1e1c18); }
 .agent-material-picker__item.is-disabled { cursor: not-allowed; opacity: .62; }
-.agent-material-picker__file { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #755d39; background: #f3ede2; }
+.agent-material-picker__file { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: light-dark(#755d39, #beaf98); background: light-dark(#f3ede2, #1e1c18); }
 .agent-material-picker__copy { min-width: 0; display: grid; gap: 3px; }
 .agent-material-picker__copy b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.agent-material-picker__copy small { color: #777066; font-size: 11px; }
-.agent-material-picker__empty { margin: 24px; color: #777066; text-align: center; }
+.agent-material-picker__copy small { color: light-dark(#777066, #afaca7); font-size: 11px; }
+.agent-material-picker__empty { margin: 24px; color: light-dark(#777066, #afaca7); text-align: center; }
 
 .agent-material-picker__inline { width: 100%; margin-bottom: 12px; }
 .agent-material-picker__inline .agent-material-picker { width: 100%; max-height: min(390px, 48dvh); box-shadow: none; border: 0; border-radius: 0; background: transparent; display: flex; flex-direction: column; }
@@ -52,12 +52,12 @@
 .agent-material-picker__inline .agent-material-picker > header,
 .agent-material-picker__inline .agent-material-picker > footer { padding: 10px 6px; flex-shrink: 0; border: 0; }
 .agent-material-picker__inline .agent-material-picker__item { padding: 8px 10px; border: 0; border-radius: 8px; }
-.agent-material-picker__inline .agent-material-picker__item:hover { background: #f6f4f7; }
-.agent-material-picker__inline .agent-material-picker__item:has(input:checked) { background: #f3edf5; }
-.agent-material-picker__inline .agent-material-picker__file { color: #76517d; background: #f3eff4; }
-.agent-material-picker__inline .agent-material-picker > footer button { background: #76517d; }
-.agent-material-picker__search { box-sizing: border-box; margin: 10px 14px 2px; width: calc(100% - 28px); min-height: 34px; padding: 7px 10px; border: 1px solid #dedade; border-radius: 8px; background: white; color: #343034; font: inherit; font-size: 13px; }
+.agent-material-picker__inline .agent-material-picker__item:hover { background: light-dark(#f6f4f7, #1b1a1c); }
+.agent-material-picker__inline .agent-material-picker__item:has(input:checked) { background: light-dark(#f3edf5, #1b1a1c); }
+.agent-material-picker__inline .agent-material-picker__file { color: light-dark(#76517d, #b39fb7); background: light-dark(#f3eff4, #1c1a1c); }
+.agent-material-picker__inline .agent-material-picker > footer button { background: light-dark(#76517d, #9c82a1); }
+.agent-material-picker__search { box-sizing: border-box; margin: 10px 14px 2px; width: calc(100% - 28px); min-height: 34px; padding: 7px 10px; border: 1px solid light-dark(#dedade, #433d43); border-radius: 8px; background: light-dark(white, #212121); color: light-dark(#343034, #c9c5c9); font: inherit; font-size: 13px; }
 
 .research-agent-composer > .agent-material-picker__inline { grid-column: 1 / -1; }
 
-.agent-material-picker__inline .agent-material-picker__search { margin: 4px 6px 8px; width: calc(100% - 12px); border: 0; background: #f5f3f6; }
+.agent-material-picker__inline .agent-material-picker__search { margin: 4px 6px 8px; width: calc(100% - 12px); border: 0; background: light-dark(#f5f3f6, #1b1a1b); }
