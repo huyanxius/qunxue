@@ -1,4 +1,4 @@
-import { type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -115,16 +115,19 @@ export function KnowledgeLibraryView({
   onLoadMore,
   onRetry,
 }: KnowledgeLibraryViewProps) {
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false)
   const showEntries = Boolean(state.query || state.categoryId)
   const hasFilters = Boolean(state.query || state.dimensionId || state.categoryId)
   const activeDimension = selectedDimension ?? directory[0]
 
   function updateState(nextState: KnowledgeUrlState) {
+    setMobileCatalogOpen(false)
     onStateChange({ ...nextState, loadedPages: undefined })
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setMobileCatalogOpen(false)
     onSearch()
   }
 
@@ -135,10 +138,11 @@ export function KnowledgeLibraryView({
       data-dimension-tone={activeDimension ? dimensionTone(activeDimension.nodeId) : undefined}
     >
       <KnowledgeLibraryShader />
-      <aside className="knowledge-library__sidebar">
+      <aside className="knowledge-library__sidebar" data-mobile-open={mobileCatalogOpen}>
         <header className="knowledge-library__identity">
           <BooksIcon size={18} weight="regular" aria-hidden="true" />
           <h1>知识库</h1>
+          <button className="mobile-only" type="button" aria-expanded={mobileCatalogOpen} onClick={() => setMobileCatalogOpen((open) => !open)}>{mobileCatalogOpen ? '收起目录' : '浏览目录'}</button>
           {releaseState === 'ready' ? <small>{catalogTotal}</small> : null}
         </header>
 
