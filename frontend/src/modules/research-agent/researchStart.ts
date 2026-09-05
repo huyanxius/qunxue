@@ -12,5 +12,7 @@ export type ResearchStartJourney = {
   status: 'collecting' | 'proposal_pending' | 'task_bound'
   taskId: string | null
   proposal: ResearchStartProposal | null
+  knowledgeReleaseId?: string | null
+  phenomenonConfirmed?: boolean
   resumePath: string | null
 }
