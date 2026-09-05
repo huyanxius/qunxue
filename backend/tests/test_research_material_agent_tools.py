@@ -1037,3 +1037,75 @@ def test_deterministic_trace_keeps_public_and_personal_tool_outputs_distinct():
         public.citation_id,
         personal.citation_id,
     }
+
+
+def test_attached_file_opens_without_a_search_result():
+    materials = _Materials()
+    registry = _registry(materials, _Retriever())
+    registry.bind_research_material_scope((AgentMaterialAttachment(
+        material_id=MATERIAL_ID, parse_id=PARSE_ID,
+    ),))
+    result = registry.read_research_material_context(str(MATERIAL_ID))
+    assert result["text"] == materials.block.text
+    assert result["segment_id"] == materials.block.segment_id
+    assert result["next_segment_id"] is None
+    assert registry.evidence[result["citation_id"]].material_id == str(MATERIAL_ID)
+    assert registry.material_prompt_context == {
+        "attachments": [{"material_id": str(MATERIAL_ID), "parse_id": str(PARSE_ID)}]
+    }
+
+
+def test_direct_file_read_can_continue_through_all_blocks():
+    materials = _Materials()
+    blocks = tuple(MaterialBlock.create(
+        parse_id=PARSE_ID, material_id=MATERIAL_ID, ordinal=index,
+        kind="paragraph", text=f"原文第{index}段", locator=MaterialLocator(paragraph=index + 1),
+    ) for index in range(6))
+    materials.parsed = replace(materials.parsed, blocks=blocks)
+    registry = _registry(materials, _Retriever())
+    first = registry.read_research_material_context(str(MATERIAL_ID), before=0)
+    assert len(first["context"]) == 3
+    second = registry.read_research_material_context(
+        str(MATERIAL_ID), first["next_segment_id"], before=0,
+    )
+    assert [item["text"] for item in first["context"] + second["context"]] == [
+        block.text for block in blocks
+    ]
+    assert second["next_segment_id"] is None
+
+
+def test_model_receives_attachment_ids_and_reads_without_segment_id():
+    materials = _Materials()
+    registry = _registry(materials, _Retriever())
+    registry.bind_research_material_scope((AgentMaterialAttachment(
+        material_id=MATERIAL_ID, parse_id=PARSE_ID,
+    ),))
+    called = False
+
+    async def model_stream(messages, info):
+        nonlocal called
+        assert str(MATERIAL_ID) in str(messages)
+        if not called:
+            definition = next(tool for tool in info.function_tools
+                              if tool.name == "read_research_material_context")
+            assert "segment_id" not in definition.parameters_json_schema.get("required", [])
+            called = True
+            yield {0: DeltaToolCall(
+                name="read_research_material_context",
+                json_args=f'{{"material_id":"{MATERIAL_ID}"}}',
+                tool_call_id="open-attachment",
+            )}
+        else:
+            yield materials.block.text
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://models.example.test/v1", api_key="test-key",
+        model="test-model", timeout_seconds=30,
+    )
+    with runner._agent.override(model=FunctionModel(stream_function=model_stream)):
+        result = runner.run_stream(
+            prompt="请打开已附加文件，读出原文。", conversation=(), tools=registry,
+            on_delta=lambda _: None,
+        )
+    assert result.answer == materials.block.text
+    assert any(item.material_id == str(MATERIAL_ID) for item in result.citations)
