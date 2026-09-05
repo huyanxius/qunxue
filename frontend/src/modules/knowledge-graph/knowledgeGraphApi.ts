@@ -81,7 +81,14 @@ export async function readKnowledgeGraphFocusEntry(input: {
   })
   if (!data) throw new Error('未找到当前发布中的知识条目')
   requireRelease(data.knowledge_release_id, input.releaseId)
-  return focusEntry(data)
+  return {
+    ...focusEntry(data),
+    content: data.content,
+    sources: data.sources?.map((source) => ({
+      sourceId: source.source_id, title: source.title, locator: source.locator ?? undefined,
+      url: source.url ?? undefined, status: source.verification_status,
+    })),
+  }
 }
 
 export async function readKnowledgeGraphEntry(input: {
