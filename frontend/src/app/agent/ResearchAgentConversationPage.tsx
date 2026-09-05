@@ -2766,6 +2766,9 @@ export function ResearchAgentConversationPage({
           role={embedded ? 'complementary' : undefined}
           data-runtime-mode={runtimeMode ?? 'unknown'}
         >
+          {!embedded && showConversationManagement ? (
+            <button type="button" className="mobile-only mobile-agent-history" aria-label={text('打开研究记录', 'Open research history')} onClick={() => setHistoryOpen(true)}><ListIcon size={18} />{text('研究记录', 'History')}</button>
+          ) : null}
           {!embedded && landingBackdropPhase !== 'hidden' ? (
             <div className={`research-agent-conversation__landing-backdrop is-${landingBackdropPhase}`}>
               <ResearchAgentShader />
@@ -3118,7 +3121,7 @@ export function ResearchAgentConversationPage({
             </form>
           </footer>
 
-          {embedded && showConversationManagement && historyOpen ? (
+          {showConversationManagement && historyOpen ? (
             <ConversationHistory
               conversations={conversations}
               activeConversationId={activeConversation?.conversation_id ?? null}
