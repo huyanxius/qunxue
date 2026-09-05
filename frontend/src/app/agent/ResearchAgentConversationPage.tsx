@@ -95,6 +95,8 @@ import {
   type ResearchMaterial,
   type ResearchMaterialLocator,
 } from '../../modules/research-materials'
+import { ProjectCreatePopover } from './ProjectCreatePopover'
+import { ProjectScopeMenu } from './ProjectScopeMenu'
 import { ProjectConversationList } from './ProjectConversationList'
 import { listResearchProjects, type ResearchProject } from '../../modules/research-projects'
 import { createMaterialFirstResearchProject } from '../../modules/socio-match-workspace'
@@ -1061,6 +1063,9 @@ function hasResearchMaterialActivity(steps: ResearchToolStep[]) {
 }
 
 function AgentConversationHistoryRail({
+  projects,
+  setProjects,
+  projectListError = null,
   selectedTaskId = null,
   activeConversationId,
   conversations,
@@ -1070,6 +1075,10 @@ function AgentConversationHistoryRail({
   onOpen,
   onRename,
 }: {
+  projects: ResearchProject[]
+  setProjects: (projects: ResearchProject[]) => void
+  projectListError?: string | null
+
   selectedTaskId?: string | null
   activeConversationId: string | null
   conversations: AgentConversationSummary[]
@@ -1081,30 +1090,18 @@ function AgentConversationHistoryRail({
 }) {
   const { text } = useAppLocale()
   const safeConversations = Array.isArray(conversations) ? conversations : []
-  const [projects, setProjects] = useState<ResearchProject[]>([])
   const [projectError, setProjectError] = useState<string | null>(null)
-  const [creatingProject, setCreatingProject] = useState(false)
+  const [projectCreateAnchor, setProjectCreateAnchor] = useState<HTMLElement | null>(null)
   const [projectTitle, setProjectTitle] = useState('')
   const [savingProject, setSavingProject] = useState(false)
-  const projectScopeKey = safeConversations.map((item) => item.task_id ?? '').join(',')
-  useEffect(() => {
-    const controller = new AbortController()
-    void listResearchProjects(controller.signal).then((items) => {
-      if (!controller.signal.aborted) { setProjects(items); setProjectError(null) }
-    }).catch(() => {
-      if (!controller.signal.aborted) setProjectError(text('项目列表暂时无法加载', 'Projects are unavailable'))
-    })
-    return () => controller.abort()
-  }, [projectScopeKey, text])
   async function createProject(event: FormEvent) {
     event.preventDefault()
     if (!projectTitle.trim() || savingProject) return
     setSavingProject(true)
     try {
       const project = await createMaterialFirstResearchProject(crypto.randomUUID(), projectTitle.trim())
-      const items = await listResearchProjects()
-      setProjects(items)
-      setCreatingProject(false)
+      setProjects([{ task_id: project.taskId, project_title: projectTitle.trim(), status: project.status }, ...projects])
+      setProjectCreateAnchor(null)
       setProjectTitle('')
       onNewConversation(project.taskId)
     } catch (cause) {
@@ -1195,26 +1192,15 @@ function AgentConversationHistoryRail({
       <section ref={railRef} className="agent-conversation-history" aria-label={text('Agent 对话记录', 'Agent conversation history')}>
       <div className="agent-conversation-history__heading">
         <h2>{text('项目', 'Projects')}</h2>
-        <button type="button" className="agent-conversation-history__new" aria-label={text('新建项目', 'New project')} onClick={() => setCreatingProject((current) => !current)}><FolderOpenIcon size={16} /></button>
-        <button
-          className="agent-conversation-history__new"
-          type="button"
-          aria-label={text('开始新对话', 'Start a new conversation')}
-          title={text('开始新对话', 'Start a new conversation')}
-          onClick={() => onNewConversation()}
-        >
-          <PlusIcon size={15} aria-hidden="true" />
-        </button>
+        <button type="button" className="agent-conversation-history__new" aria-label={text('新建项目', 'New project')} title={text('新建项目', 'New project')} aria-expanded={Boolean(projectCreateAnchor)} onClick={(event) => { setProjectError(null); setActionView(null); setProjectCreateAnchor(projectCreateAnchor ? null : event.currentTarget) }}><PlusIcon size={16} /></button>
       </div>
-      {creatingProject ? <form className="agent-project-create" onSubmit={(event) => { void createProject(event) }}>
-        <input autoFocus aria-label={text('项目名称', 'Project name')} value={projectTitle} maxLength={300} onChange={(event) => setProjectTitle(event.target.value)} />
-        <button type="submit" disabled={savingProject || !projectTitle.trim()}>{text('创建', 'Create')}</button>
-      </form> : null}
-      {projectError ? <p role="alert">{projectError}</p> : null}
+      {projectCreateAnchor ? <ProjectCreatePopover anchor={projectCreateAnchor} title={projectTitle} saving={savingProject} error={projectError}
+        onTitleChange={setProjectTitle} onCancel={() => setProjectCreateAnchor(null)} onSubmit={(event) => { void createProject(event) }} /> : null}
+      {projectListError ? <p role="alert">{projectListError}</p> : null}
       {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : (
         <ProjectConversationList projects={projects} conversations={safeConversations}
           activeTaskId={safeConversations.find((item) => item.conversation_id === activeConversationId)?.task_id ?? selectedTaskId}
-          onStart={onNewConversation} renderConversation={(conversation) => {
+          onStart={onNewConversation} onStartIndependent={() => onNewConversation()} renderConversation={(conversation) => {
             const conversationId = conversation.conversation_id
             return (
               <div className="agent-conversation-history__item" key={conversationId}>
@@ -1304,6 +1290,8 @@ function AgentConversationHistoryRail({
 }
 
 function ConversationHistory({
+  projects,
+  setProjects,
   onNewConversation,
   onRename,
   onDelete,
@@ -1314,6 +1302,9 @@ function ConversationHistory({
   onOpen,
   onClose,
 }: {
+  projects: ResearchProject[]
+  setProjects: (projects: ResearchProject[]) => void
+
   onNewConversation: (taskId?: string) => void
   onRename: (conversation: AgentConversationSummary, title: string) => Promise<void>
   onDelete: (conversation: AgentConversationSummary) => Promise<void>
@@ -1352,7 +1343,7 @@ function ConversationHistory({
         <input aria-label={text('搜索研究记录', 'Search research history')} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text('搜索问题', 'Search questions')} />
       </label>
       <div className="new-research__history-list">
-        <AgentConversationHistoryRail conversations={filtered} activeConversationId={activeConversationId}
+        <AgentConversationHistoryRail projects={projects} setProjects={setProjects} conversations={filtered} activeConversationId={activeConversationId}
           selectedTaskId={selectedTaskId} loading={loading} onOpen={onOpen}
           onNewConversation={onNewConversation} onRename={onRename} onDelete={onDelete} />
       </div>
@@ -1676,8 +1667,8 @@ export function ResearchAgentConversationPage({
   embedded = false,
   conversationId: boundConversationId = null,
   knowledgeReleaseId: boundKnowledgeReleaseId = null,
-  workspace = 'agent',
-  taskId = null,
+  workspace: boundWorkspace = 'agent',
+  taskId: boundTaskId = null,
   documentId = null,
   sectionId = null,
   documentVersion = null,
@@ -1705,6 +1696,24 @@ export function ResearchAgentConversationPage({
   const [draft, setDraft] = useState(() => readStoredDraft(userId) || restoredPendingTurn.current?.question || '')
   const [conversations, setConversations] = useState<AgentConversationSummary[]>([])
   const [activeConversation, setActiveConversation] = useState<AgentConversation | null>(null)
+  const taskId = embedded ? boundTaskId : (
+    activeConversation?.conversation_id === requestedConversationId && activeConversation.task_id !== undefined
+      ? activeConversation.task_id : searchParams.get('task_id')
+  )
+  const workspace = embedded ? boundWorkspace : taskId ? 'research' : 'agent'
+  const [projects, setProjects] = useState<ResearchProject[]>([])
+  const [projectListError, setProjectListError] = useState<string | null>(null)
+  const projectScopeKey = conversations.map((item) => item.task_id ?? '').join(',')
+  useEffect(() => {
+    const controller = new AbortController()
+    void listResearchProjects(controller.signal).then((items) => {
+      if (!controller.signal.aborted) { setProjects(items); setProjectListError(null) }
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted && (cause as { name?: string })?.name !== 'AbortError') setProjectListError(text('项目列表暂时无法加载', 'Projects are unavailable'))
+    })
+    return () => controller.abort()
+  }, [projectScopeKey, text])
+
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(restoredInterruptedTurn.current)
   const [toolStepsByTurnId, setToolStepsByTurnId] = useState<Record<string, ResearchToolStep[]>>({})
   const [knowledgeReleaseByConversationId, setKnowledgeReleaseByConversationId] = useState<Record<string, string>>(() => {
@@ -2158,6 +2167,7 @@ export function ResearchAgentConversationPage({
     uploadTaskId.current = null
     materialContextKey.current = null
     cancelActiveStream()
+    resetDeepResearchMock()
     conversationLoadAbortController.current?.abort()
     conversationLoadGeneration.current += 1
     loadedConversationId.current = null
@@ -2178,7 +2188,7 @@ export function ResearchAgentConversationPage({
   }
 
   function openConversation(summary: AgentConversationSummary) {
-    if (location.pathname !== '/research/new') {
+    if (location.pathname !== '/research/new' && embedded) {
       const next = new URLSearchParams({ conversation_id: summary.conversation_id })
       if (summary.task_id) next.set('task_id', summary.task_id)
       navigate(`/research/new?${next}`)
@@ -2240,6 +2250,13 @@ export function ResearchAgentConversationPage({
       else next.delete('task_id')
       return next
     }, { replace: true })
+    globalThis.requestAnimationFrame?.(() => composerInputRef.current?.focus())
+  }
+
+  function switchComposerProject(projectId: string) {
+    const pendingDraft = !activeConversation?.turn_count ? draft : ''
+    newConversation(projectId || undefined)
+    if (pendingDraft) updateDraft(pendingDraft)
   }
 
   async function submitQuestion(rawQuestion: string, retryIdempotencyKey?: string, deepAction?: { action: 'clarify' | 'confirm' | 'skip'; selection?: string }) {
@@ -3142,6 +3159,7 @@ export function ResearchAgentConversationPage({
                     <GlobeHemisphereWestIcon size={16} />
                     <span>{webSearchEnabled ? text('联网已开启', 'Web on') : text('联网搜索', 'Web search')}</span>
                   </button>
+                  <ProjectScopeMenu projects={projects} taskId={taskId} disabled={isBusy || materialUploading} onChange={switchComposerProject} />
                 </div>
                 <div className="research-agent-composer__mode-entry" ref={modeMenuRef}>
                   {deepResearchIntroVisible ? (
@@ -3248,6 +3266,8 @@ export function ResearchAgentConversationPage({
 
           {showConversationManagement && historyOpen ? (
             <ConversationHistory
+              projects={projects}
+              setProjects={setProjects}
               selectedTaskId={taskId}
               onNewConversation={newConversation}
               onRename={renameSavedConversation}
@@ -3312,6 +3332,7 @@ export function ResearchAgentConversationPage({
         {conversationSurface}
         {showConversationManagement && historyRailTarget ? createPortal(
           <AgentConversationHistoryRail
+            projects={projects} setProjects={setProjects} projectListError={projectListError}
             selectedTaskId={taskId}
             activeConversationId={activeConversation?.conversation_id ?? null}
             conversations={conversations}
@@ -3331,6 +3352,7 @@ export function ResearchAgentConversationPage({
     <PageShell
       railContent={(
         <AgentConversationHistoryRail
+          projects={projects} setProjects={setProjects} projectListError={projectListError}
           selectedTaskId={taskId}
           activeConversationId={activeConversation?.conversation_id ?? null}
           conversations={conversations}
