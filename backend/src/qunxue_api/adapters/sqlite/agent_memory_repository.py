@@ -9,13 +9,11 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from qunxue_api.modules.agent_memory import (
-    PINNED_SCOPE_BUDGET,
+    MAX_MEMORIES,
     Memory,
     MemoryConflict,
     MemoryNotFound,
     MemoryScope,
-    context_cost,
-    memory_line,
     validate_content,
 )
 
@@ -126,7 +124,7 @@ class SqliteMemoryRepository:
                 MemoryRow.deleted.is_(False),
             )
             .order_by(MemoryRow.updated_at.desc(), MemoryRow.memory_id)
-            .limit(100)
+            .limit(MAX_MEMORIES)
         )
         return tuple(memory_from_row(row) for row in rows)
 
@@ -206,16 +204,8 @@ class SqliteMemoryRepository:
             source_quote=source_quote,
         )
         entries = tuple(m for m in self.list(user_id, task_id) if m.memory_id != memory.memory_id)
-        if len(entries) >= 100:
+        if len(entries) >= MAX_MEMORIES:
             raise ValueError("记忆条目已达上限，请先整理已有条目")
-        if (
-            origin != "learned"
-            and sum(
-                context_cost(memory_line(m)) for m in (*entries, memory) if m.origin != "learned"
-            )
-            > PINNED_SCOPE_BUDGET
-        ):
-            raise ValueError("常驻记忆已达长度上限，请缩短或合并已有条目")
         self.lock_scope(scope, manual=True)
         self.store(memory)
         self.session.add(

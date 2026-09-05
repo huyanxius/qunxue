@@ -1,6 +1,14 @@
+import json
 from uuid import UUID
 
-from .domain import DETAIL_BUDGET, Memory, context_cost, render_context, validate_content
+from .domain import (
+    SEARCH_BUDGET,
+    SEARCH_SINGLE_BUDGET,
+    Memory,
+    context_cost,
+    render_context,
+    validate_content,
+)
 from .ports import MemoryRepository
 
 
@@ -28,8 +36,7 @@ class MemoryService:
             if any(word in (m.key + " " + m.content).casefold() for word in words)
         ]
         result: list[dict] = []
-        used = 0
-        for item in matches[:5]:
+        for item in matches:
             value = {
                 "memory_id": str(item.memory_id),
                 "key": item.key,
@@ -38,10 +45,17 @@ class MemoryService:
                 "scope": "project" if item.task_id else "user",
                 "origin": item.origin,
             }
-            cost = context_cost(str(value))
-            if used + cost <= DETAIL_BUDGET:
+            cost = context_cost(
+                json.dumps({"items": [*result, value]}, ensure_ascii=False, separators=(",", ":"))
+            )
+            if cost <= SEARCH_BUDGET:
                 result.append(value)
-                used += cost
+                if len(result) == 5:
+                    break
+            elif not result and cost <= SEARCH_SINGLE_BUDGET:
+                # Never make a valid note unreadable because JSON escaping expands
+                # it. A larger single result cannot also grow into a multi-note load.
+                return [value]
         return result
 
     def save(self, **kwargs) -> Memory:
