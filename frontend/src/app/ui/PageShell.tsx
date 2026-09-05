@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import {
   BellIcon,
   BooksIcon,
@@ -60,6 +60,7 @@ function PrimaryNavigation({
   mobile = false,
   moreExpanded = false,
   onMore,
+  conversationHref,
 }: {
   className: string
   label: string
@@ -67,6 +68,7 @@ function PrimaryNavigation({
   mobile?: boolean
   moreExpanded?: boolean
   onMore?: () => void
+  conversationHref?: string
 }) {
   const { text } = useAppLocale()
   const navigationItems = [
@@ -90,7 +92,7 @@ function PrimaryNavigation({
   return (
     <nav className={className} aria-label={label}>
       {visibleItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => (
-        <NavLink key={href} to={href} end={end}>
+        <NavLink key={href} to={href === '/agent' && conversationHref ? conversationHref : href} end={end}>
           <span className="navigation-icon" aria-hidden="true">
             <NavigationIcon size={18} weight="regular" />
           </span>
@@ -138,6 +140,21 @@ export function PageShell({
   const account = useAccount()
   const { text } = useAppLocale()
   const navigate = useNavigate()
+  const location = useLocation()
+  const conversationParams = new URLSearchParams(location.search)
+  const conversationId = conversationParams.get('conversation_id')
+  const isConversationPage = location.pathname === '/agent' || location.pathname === '/research/new' || /^\/research\/[^/]+\/workspace/.test(location.pathname)
+  const viewParams = new URLSearchParams()
+  for (const key of ['conversation_id', 'task_id', 'knowledge_release_id']) {
+    const value = conversationParams.get(key)
+    if (value) viewParams.set(key, value)
+  }
+  const projectId = location.pathname.match(/^\/research\/([^/]+)\/workspace/)?.[1]
+  if (projectId && !viewParams.has('task_id')) viewParams.set('task_id', decodeURIComponent(projectId))
+  const conversationHref = conversationId && isConversationPage ? `/agent?${viewParams}` : undefined
+  const viewDestination = conversationId && isConversationPage
+    ? `${location.pathname === '/agent' ? '/research/new' : '/agent'}?${viewParams}` : null
+  const viewLabel = location.pathname === '/agent' ? text('研究画布', 'Research canvas') : text('对话视图', 'Conversation view')
   const [logoutFailed, setLogoutFailed] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
@@ -183,6 +200,7 @@ export function PageShell({
               <strong>群学致知</strong>
             </Link>
             <nav className="account-navigation" aria-label={text('账户导航', 'Account navigation')}>
+              {viewDestination ? <Link to={viewDestination}>{viewLabel}</Link> : null}
               {account.sessionState.status === 'authenticated' ? (
                 <>
                   <NavLink to="/settings">{text('账户', 'Account')}</NavLink>
@@ -215,7 +233,13 @@ export function PageShell({
               </button>
             </div>
             <div className="desktop-rail__body">
-              <PrimaryNavigation className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
+              <PrimaryNavigation conversationHref={conversationHref} className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
+              {viewDestination ? <nav className="desktop-navigation" aria-label={text('对话视图', 'Conversation views')}>
+                <Link to={viewDestination}>
+                  <span className="navigation-icon" aria-hidden="true"><ChatCircleDotsIcon size={18} /></span>
+                  <span className="navigation-label">{viewLabel}</span>
+                </Link>
+              </nav> : null}
               {railContent || railContentRef ? (
                 <div ref={railContentRef} className="desktop-rail__secondary">{railContent}</div>
               ) : null}
@@ -303,6 +327,7 @@ export function PageShell({
       {immersive ? null : (
         <>
           <PrimaryNavigation
+            conversationHref={conversationHref}
             className="mobile-navigation"
             label={text('移动主导航', 'Mobile navigation')}
             compact

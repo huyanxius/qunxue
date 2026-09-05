@@ -1,6 +1,8 @@
 import { apiClient } from '../../api/client'
 import type {
   AgentResearchJourneyResponse,
+  AgentRunStopResponse,
+  AgentTurnRequest as AgentTurnRequestDto,
 } from '../../api/generated'
 import type {
   AgentCitation,
@@ -8,6 +10,8 @@ import type {
   AgentConversationSummary,
   AgentEvent,
   AgentResearchMapPatch,
+  AgentTurnRequest,
+  AgentRunStopResult,
 } from './model'
 import type { ResearchStartJourney } from './researchStart'
 
@@ -298,7 +302,7 @@ export async function confirmResearchStartProposal(
 }
 
 async function streamAgentTurnOnce(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null; material_ids?: string[]; deep_research_run_id?: string | null; deep_research_action?: 'clarify' | 'confirm' | 'skip' | null; deep_research_selection?: string | null },
+  payload: AgentTurnRequest & { idempotencyKey: string },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -325,7 +329,7 @@ async function streamAgentTurnOnce(
       deep_research_run_id: payload.deep_research_run_id ?? null,
       deep_research_action: payload.deep_research_action ?? null,
       deep_research_selection: payload.deep_research_selection ?? null,
-    }),
+    } satisfies AgentTurnRequestDto),
     signal,
   })
   if (!response.ok) {
@@ -363,11 +367,11 @@ async function streamAgentTurnOnce(
 }
 
 export async function streamAgentTurn(
-  payload: { conversation_id: string | null; message: string; idempotencyKey: string; mode?: 'standard' | 'deep_research'; workspace?: 'agent' | 'research'; web_search?: boolean; task_id?: string | null; document_id?: string | null; section_id?: string | null; document_version?: number | null; theory_plan_id?: string | null; material_ids?: string[]; deep_research_run_id?: string | null; deep_research_action?: 'clarify' | 'confirm' | 'skip' | null; deep_research_selection?: string | null },
+  payload: AgentTurnRequest & { idempotencyKey: string },
   onEvent: (event: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  while (true) {
+  for (let attempt = 0; ; attempt += 1) {
     try {
       await streamAgentTurnOnce(payload, onEvent, signal)
       return
@@ -375,28 +379,41 @@ export async function streamAgentTurn(
       if (signal?.aborted || (cause as { name?: string } | null)?.name === 'AbortError') throw cause
       const recoverable = cause instanceof TypeError
         || (cause instanceof Error && cause.message.includes('完成前中断'))
-      if (!recoverable) throw cause
+      if (!recoverable || attempt >= 3) throw cause
       await new Promise<void>((resolve, reject) => {
-        const timeout = globalThis.setTimeout(resolve, 250)
-        signal?.addEventListener('abort', () => {
+        const abort = () => {
           globalThis.clearTimeout(timeout)
           reject(new DOMException('Aborted', 'AbortError'))
-        }, { once: true })
+        }
+        const timeout = globalThis.setTimeout(() => {
+          signal?.removeEventListener('abort', abort)
+          resolve()
+        }, 250 * 2 ** attempt)
+        signal?.addEventListener('abort', abort, { once: true })
       })
     }
   }
 }
 
-export async function stopAgentRun(runId: string): Promise<void> {
-  const response = await fetch(apiClient.buildUrl({
-    url: '/api/agent/runs/{run_id}/stop',
-    path: { run_id: runId },
-  }), {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Idempotency-Key': globalThis.crypto?.randomUUID?.() ?? `stop-agent-run:${runId}`,
-    },
-  })
-  if (!response.ok) throw new Error('无法停止当前回答')
+export async function stopAgentRun(runId: string, options: { keepalive?: boolean } = {}): Promise<AgentRunStopResult> {
+  const key = globalThis.crypto?.randomUUID?.() ?? `stop-agent-run:${runId}`
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(apiClient.buildUrl({
+      url: '/api/agent/runs/{run_id}/stop',
+      path: { run_id: runId },
+    }), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Idempotency-Key': key },
+      ...(options.keepalive ? { keepalive: true } : {}),
+    })
+    if (!response.ok) throw new Error('无法暂停当前回答，请重试暂停。')
+    // Older releases returned 204; retain compatibility during a rolling deployment.
+    const result: AgentRunStopResult = response.status === 204
+      ? { run_id: runId, status: 'interrupted', cancel_requested: true }
+      : await response.json() as AgentRunStopResponse
+    if (result.status !== 'running' || options.keepalive) return result
+    if (attempt >= 39) throw new Error('暂停仍未确认，请重试暂停。')
+    await new Promise<void>((resolve) => globalThis.setTimeout(resolve, 250))
+  }
 }
