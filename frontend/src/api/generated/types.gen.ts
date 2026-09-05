@@ -4324,7 +4324,7 @@ export type ModelMetadata = {
 /**
  * ModelProcessingScope
  */
-export type ModelProcessingScope = 'not_assessed' | 'manual_only' | 'local_only' | 'external_allowed';
+export type ModelProcessingScope = 'manual_only' | 'local_only' | 'external_allowed';
 
 /**
  * NextResearchStepContract
