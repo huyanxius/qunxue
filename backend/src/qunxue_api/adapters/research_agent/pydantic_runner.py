@@ -2140,7 +2140,17 @@ class PydanticAIKnowledgeRunner:
                         await async_sleep(0.05)
                     return await task
 
-                result = asyncio.run(run_cancellable())
+                # Planning's run_sync may already have opened pooled model
+                # connections. Their futures belong to that thread's event loop.
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                if loop.is_closed():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(run_cancellable())
             visible_stream.finish()
             return _text_result(
                 str(result.output),
