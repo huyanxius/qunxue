@@ -1,0 +1,15 @@
+{
+  "comment": "Editor-only. Not part of `tsc -b`; Playwright transpiles these files itself.",
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "strict": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["."]
+}

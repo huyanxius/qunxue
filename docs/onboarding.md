@@ -91,6 +91,14 @@ git status --short
 
 `make check` 会重新生成契约，执行后端 lint 与测试、前端模块边界检查、lint、类型检查、测试和生产构建，并检查生成文件是否漂移。
 
+关键链路的浏览器验证单独一条命令：
+
+```bash
+make e2e
+```
+
+它用 Playwright 自动启动前后端（后端跑确定性 Mock、关闭邮箱验证码、每次新建一次性 SQLite），覆盖“创建研究任务 → 进入 `/research/<task-id>` 阶段路由 → 刷新恢复同一任务与输入”。`make e2e` 不含在 `make check` 内；首次运行前先装一次浏览器：`cd frontend && npx playwright install chromium`。细节见 [`../frontend/e2e/README.md`](../frontend/e2e/README.md)。
+
 ## 5. 先理解当前边界
 
 当前真实运行的是：

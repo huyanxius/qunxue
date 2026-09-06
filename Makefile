@@ -1,6 +1,6 @@
 UV_CACHE_DIR ?= .cache/uv
 
-.PHONY: bootstrap bootstrap-backend bootstrap-frontend contract check check-backend check-contract check-frontend dev-api dev-web
+.PHONY: bootstrap bootstrap-backend bootstrap-frontend contract check check-backend check-contract check-frontend dev-api dev-web e2e
 
 bootstrap: bootstrap-backend bootstrap-frontend
 
@@ -35,3 +35,6 @@ dev-api:
 
 dev-web:
 	cd frontend && npm run dev
+
+e2e:
+	cd frontend && npm run test:e2e
