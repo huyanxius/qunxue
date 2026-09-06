@@ -1,4 +1,5 @@
-// FeralUI Sky fragment shader, unchanged. https://feralui.dev/gradients
+// FeralUI Sky fragment shader. https://feralui.dev/gradients
+// 与原文唯一的差异：竖直取景由写死的 0.09 改成 u_yshift。传 0.09 即与原文逐像素一致。
 export const stormLightFragment = `precision highp float;
 uniform vec2 u_res;
 uniform float u_t;
@@ -69,7 +70,8 @@ float cnoise(vec3 P){
   vec2 ny = mix(nz.xy, nz.zw, fx.y);
   return 2.2*mix(ny.x, ny.y, fx.x);
 }
-uniform vec2 u_dirv; // (cos, sin) of the direction quarter-turn
+uniform vec2 u_dirv;    // (cos, sin) of the direction quarter-turn
+uniform float u_yshift; // 竖直取景。越小画面越上抬，u_low 那条越被推出下沿
 void main(){
   vec2 st = gl_FragCoord.xy/u_res - 0.5;
   st.x *= u_res.x/u_res.y;
@@ -83,7 +85,7 @@ void main(){
   float noiseA = cnoise(vec3(uv*18.0 + vec2(344.91282, 0.0), time*0.3))
                + cnoise(vec3(uv*39.6 + vec2(723.937, 0.0), time*0.4))*0.5;
   uv += noiseA*0.02;
-  uv.y -= 0.09;
+  uv.y -= u_yshift;
   float xf = (sin(time) + 1.0)*0.5;
   vec2 texUv = uv*GRAIN_SCALE;
   float d0 = mix(texture2D(u_noise, texUv).r - 0.5, texture2D(u_noise, vec2(texUv.x, 1.0-texUv.y)).g - 0.5, xf)*GRAIN_STRENGTH;
