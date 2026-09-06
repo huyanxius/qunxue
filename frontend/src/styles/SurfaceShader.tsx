@@ -2,8 +2,25 @@ import { useEffect, useRef } from 'react'
 import { useColorScheme } from './useColorScheme'
 import { stormLightFragment } from './storm-light.glsl'
 
-/** Sky 使用原站的着色器、随机灰度噪声、参数映射和时间步长。 */
-export function SurfaceShader({ className }: { className: string }) {
+export type SkyPalette = readonly [high: string, main: string, mid: string, low: string]
+
+const DARK_PALETTE: SkyPalette = ['#87909f', '#515b6d', '#343f52', '#202a3b']
+const LIGHT_PALETTE: SkyPalette = ['#E8EAEE', '#CDD3D9', '#B7BDC9', '#8C94A4']
+/** 原站写死的竖直取景。调小画面上抬，把 u_low 那条推出视野下沿；深色一律用这个值。 */
+const BASE_YSHIFT = 0.09
+
+/**
+ * Sky 使用原站的着色器、随机灰度噪声、参数映射和时间步长。
+ *
+ * 叠色是线性加深（base + blend - 1），所以最暗处的下限是 main + low - 白：
+ * 抬 main 比抬 low 更能提亮，但 mid 必须跟 main 拉开落差，挤到一起云就塌成雾。
+ * 浅色两个参数只影响调用方自己那一处，深色永远是 DARK_PALETTE + BASE_YSHIFT。
+ */
+export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYshift = BASE_YSHIFT }: {
+  className: string
+  lightPalette?: SkyPalette
+  lightYshift?: number
+}) {
   const dark = useColorScheme()
   const ref = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
@@ -46,7 +63,7 @@ export function SurfaceShader({ className }: { className: string }) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     const uniform = (name: string) => gl.getUniformLocation(program, name)
     gl.uniform1i(uniform('u_noise'), 0)
-    const palette = dark ? ['#87909f', '#515b6d', '#343f52', '#202a3b'] : ['#E8EAEE', '#CDD3D9', '#B7BDC9', '#8C94A4']
+    const palette = dark ? DARK_PALETTE : lightPalette
     ;['u_high', 'u_main', 'u_mid', 'u_low'].forEach((name, index) => {
       const color = parseInt(palette[index].slice(1), 16)
       gl.uniform3f(uniform(name), (color >> 16 & 255) / 255, (color >> 8 & 255) / 255, (color & 255) / 255)
@@ -55,6 +72,7 @@ export function SurfaceShader({ className }: { className: string }) {
     gl.uniform1f(uniform('u_warp'), .10 * .47)
     gl.uniform1f(uniform('u_wind'), 1 * .36)
     gl.uniform2f(uniform('u_dirv'), 1, 0)
+    gl.uniform1f(uniform('u_yshift'), dark ? BASE_YSHIFT : lightYshift)
     const resolution = uniform('u_res'), clock = uniform('u_t')
     let time = 20.75, last = 0, request = 0
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -83,7 +101,7 @@ export function SurfaceShader({ className }: { className: string }) {
       gl.deleteTexture(texture); gl.deleteBuffer(buffer)
       compiled.forEach(shader => gl.deleteShader(shader)); gl.deleteProgram(program)
     }
-  }, [dark])
+  }, [dark, lightPalette, lightYshift])
   return <canvas ref={ref} className={className} data-renderer="feralui-sky" data-color-scheme={dark ? 'dark' : 'light'} aria-hidden="true"
     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 1 }} />
 }
