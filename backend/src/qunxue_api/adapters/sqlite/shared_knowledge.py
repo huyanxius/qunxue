@@ -71,6 +71,7 @@ class SharedDocumentRow(Base):
     knowledge_status: Mapped[str] = mapped_column(String(16), default="queued")
     knowledge: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     knowledge_error: Mapped[str | None] = mapped_column(Text)
+    knowledge_checkpoints: Mapped[dict] = mapped_column(JSON, default=dict)
     index_status: Mapped[str] = mapped_column(String(16), default="queued")
     index_error: Mapped[str | None] = mapped_column(Text)
     job_token: Mapped[str | None] = mapped_column(String(36))
