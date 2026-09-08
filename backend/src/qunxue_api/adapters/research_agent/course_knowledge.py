@@ -99,9 +99,10 @@ class CourseWorkCancelled(RuntimeError):
 class CourseKnowledgeGenerator:
     VERSION = 2
 
-    def __init__(self, endpoints, *, route_executor=None):
+    def __init__(self, endpoints, *, route_executor=None, max_concurrency=3):
         endpoints = tuple(endpoints) if isinstance(endpoints, (list, tuple)) else (endpoints,)
         self.router = route_executor or ModelRouteExecutor(endpoints=endpoints)
+        self.max_concurrency = max(1, min(3, max_concurrency))
 
     def __call__(self, document, *, checkpoints=None, on_checkpoint=None):
         return asyncio.run(
@@ -180,8 +181,9 @@ class CourseKnowledgeGenerator:
         }
         # Revisiting cached prefixes must not erase later completed batches on a restart.
         saved = {key: value for key, value in previous.items() if key in batch_keys}
-        results = []
-        for number, batch in enumerate(batches, 1):
+        results = [None] * len(batches)
+
+        async def process(number, batch):
             key = sha256(json.dumps(batch, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
             batch_document = replace(document, segments=tuple(batch))
             value = previous.get(key)
@@ -236,11 +238,24 @@ class CourseKnowledgeGenerator:
                         len(saved),
                     ) from None
             saved[key] = value
-            results.append(value)
+            results[number - 1] = value
             if on_checkpoint:
                 on_checkpoint(
                     {"version": self.VERSION, "total": len(batches), "batches": dict(saved)}
                 )
+
+        for start in range(0, len(batches), self.max_concurrency):
+            tasks = [
+                asyncio.create_task(process(i + 1, batches[i]))
+                for i in range(start, min(start + self.max_concurrency, len(batches)))
+            ]
+            try:
+                await asyncio.gather(*tasks)
+            except BaseException:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
         topics, relations = {}, {}
         for result in results:
             for topic in result["topics"]:
