@@ -83,6 +83,10 @@ export type AgentCitationResponse = {
      */
     kind: string;
     /**
+     * Knowledge Base Id
+     */
+    knowledge_base_id?: string | null;
+    /**
      * Knowledge Id
      */
     knowledge_id?: string | null;
@@ -144,6 +148,10 @@ export type AgentConversationResponse = {
      * Created At
      */
     created_at: string;
+    /**
+     * Reference Knowledge Base Id
+     */
+    reference_knowledge_base_id?: string | null;
     research_map: AgentResearchMapResponse;
     /**
      * Task Id
@@ -179,6 +187,10 @@ export type AgentConversationSummaryResponse = {
      * Conversation Id
      */
     conversation_id: string;
+    /**
+     * Reference Knowledge Base Id
+     */
+    reference_knowledge_base_id?: string | null;
     /**
      * Task Id
      */
@@ -526,6 +538,10 @@ export type AgentTurnRequest = {
      * Mode
      */
     mode?: 'standard' | 'deep_research';
+    /**
+     * Reference Knowledge Base Id
+     */
+    reference_knowledge_base_id?: string | null;
     /**
      * Section Id
      */
@@ -1422,6 +1438,16 @@ export type BodyUploadResearchMaterial = {
 };
 
 /**
+ * Body_upload_shared_document
+ */
+export type BodyUploadSharedDocument = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * BuiltInCaseContentStatus
  */
 export type BuiltInCaseContentStatus = 'reviewed' | 'demonstration';
@@ -1977,6 +2003,78 @@ export type ConfirmedTheoryPlanResponse = {
 export type ConsentScope = 'public_use' | 'project_only' | 'team_only' | 'manual_review_only' | 'withdrawn';
 
 /**
+ * CourseKnowledgeResponse
+ */
+export type CourseKnowledgeResponse = {
+    /**
+     * Relations
+     */
+    relations?: Array<CourseRelationResponse>;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Topics
+     */
+    topics: Array<CourseTopicResponse>;
+};
+
+/**
+ * CourseProfileResponse
+ */
+export type CourseProfileResponse = {
+    /**
+     * Guide Dismissed
+     */
+    guide_dismissed?: boolean;
+    /**
+     * Role
+     */
+    role?: 'teacher' | 'student' | null;
+};
+
+/**
+ * CourseRelationResponse
+ */
+export type CourseRelationResponse = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Segment Ids
+     */
+    segment_ids: Array<string>;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Target
+     */
+    target: string;
+};
+
+/**
+ * CourseTopicResponse
+ */
+export type CourseTopicResponse = {
+    /**
+     * Segment Ids
+     */
+    segment_ids: Array<string>;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * CreateAnalysisAnnotationRequest
  */
 export type CreateAnalysisAnnotationRequest = {
@@ -2370,6 +2468,20 @@ export type CreateResearchTaskRequest = {
      * Seed Theory Id
      */
     seed_theory_id?: string | null;
+};
+
+/**
+ * CreateSharedKnowledgeRequest
+ */
+export type CreateSharedKnowledgeRequest = {
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Name
+     */
+    name: string;
 };
 
 /**
@@ -3289,6 +3401,16 @@ export type InferenceLinkContract = {
      * Unresolved
      */
     unresolved: boolean;
+};
+
+/**
+ * JoinSharedKnowledgeRequest
+ */
+export type JoinSharedKnowledgeRequest = {
+    /**
+     * Share Token
+     */
+    share_token: string;
 };
 
 /**
@@ -7231,6 +7353,177 @@ export type SetQualitativeMethodRequest = {
 };
 
 /**
+ * SharedDocumentResponse
+ */
+export type SharedDocumentResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Index Error
+     */
+    index_error?: string | null;
+    /**
+     * Index Status
+     */
+    index_status?: 'queued' | 'running' | 'ready' | 'failed';
+    knowledge?: CourseKnowledgeResponse | null;
+    /**
+     * Knowledge Error
+     */
+    knowledge_error?: string | null;
+    /**
+     * Knowledge Status
+     */
+    knowledge_status?: 'queued' | 'running' | 'ready' | 'failed';
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Status
+     */
+    status: 'processing' | 'ready' | 'failed';
+    /**
+     * Warnings
+     */
+    warnings?: Array<string>;
+};
+
+/**
+ * SharedDocumentSourceResponse
+ */
+export type SharedDocumentSourceResponse = {
+    document: SharedDocumentResponse;
+    /**
+     * Knowledge Base Id
+     */
+    knowledge_base_id: string;
+    /**
+     * Knowledge Base Name
+     */
+    knowledge_base_name: string;
+    /**
+     * Segments
+     */
+    segments: Array<SharedSourceSegmentResponse>;
+};
+
+/**
+ * SharedKnowledgeJoinResponse
+ */
+export type SharedKnowledgeJoinResponse = {
+    /**
+     * Added
+     */
+    added: boolean;
+    /**
+     * Knowledge Base Id
+     */
+    knowledge_base_id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * SharedKnowledgeListResponse
+ */
+export type SharedKnowledgeListResponse = {
+    /**
+     * Items
+     */
+    items: Array<SharedKnowledgeResponse>;
+};
+
+/**
+ * SharedKnowledgeResponse
+ */
+export type SharedKnowledgeResponse = {
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Documents
+     */
+    documents?: Array<SharedDocumentResponse>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Ready Document Count
+     */
+    ready_document_count?: number;
+    /**
+     * Share Token
+     */
+    share_token?: string | null;
+    /**
+     * Sharing Enabled
+     */
+    sharing_enabled?: boolean;
+    /**
+     * Viewer Access
+     */
+    viewer_access: 'owner' | 'reader' | 'unavailable';
+};
+
+/**
+ * SharedSourceSegmentResponse
+ */
+export type SharedSourceSegmentResponse = {
+    /**
+     * Kind
+     */
+    kind: string;
+    locator: ResearchMaterialLocatorResponse;
+    /**
+     * Ordinal
+     */
+    ordinal: number;
+    /**
+     * Parse Id
+     */
+    parse_id: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * SourceRecordResponse
  */
 export type SourceRecordResponse = {
@@ -8083,6 +8376,20 @@ export type TransitionCodebookEntryRequest = {
 };
 
 /**
+ * UpdateCourseProfileRequest
+ */
+export type UpdateCourseProfileRequest = {
+    /**
+     * Guide Dismissed
+     */
+    guide_dismissed?: boolean;
+    /**
+     * Role
+     */
+    role: 'teacher' | 'student';
+};
+
+/**
  * UpdateFrameworkRequest
  */
 export type UpdateFrameworkRequest = {
@@ -8219,6 +8526,24 @@ export type UpdateResearchTaskRequest = {
      * Project Title
      */
     project_title?: string | null;
+};
+
+/**
+ * UpdateSharedKnowledgeRequest
+ */
+export type UpdateSharedKnowledgeRequest = {
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Sharing Enabled
+     */
+    sharing_enabled?: boolean | null;
 };
 
 export type ListAgentConversationsData = {
@@ -8723,6 +9048,86 @@ export type StreamAgentTurnResponses = {
 };
 
 export type StreamAgentTurnResponse = StreamAgentTurnResponses[keyof StreamAgentTurnResponses];
+
+export type GetCourseProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/course-profile';
+};
+
+export type GetCourseProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetCourseProfileError = GetCourseProfileErrors[keyof GetCourseProfileErrors];
+
+export type GetCourseProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: CourseProfileResponse;
+};
+
+export type GetCourseProfileResponse = GetCourseProfileResponses[keyof GetCourseProfileResponses];
+
+export type UpdateCourseProfileData = {
+    body: UpdateCourseProfileRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/course-profile';
+};
+
+export type UpdateCourseProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateCourseProfileError = UpdateCourseProfileErrors[keyof UpdateCourseProfileErrors];
+
+export type UpdateCourseProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: CourseProfileResponse;
+};
+
+export type UpdateCourseProfileResponse = UpdateCourseProfileResponses[keyof UpdateCourseProfileResponses];
 
 export type ConfirmTheoryPlanData = {
     body: ConfirmTheoryPlanRequest;
@@ -14280,6 +14685,518 @@ export type SendRegistrationCodeResponses = {
 };
 
 export type SendRegistrationCodeResponse = SendRegistrationCodeResponses[keyof SendRegistrationCodeResponses];
+
+export type JoinSharedKnowledgeBaseData = {
+    body: JoinSharedKnowledgeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/shared-knowledge-base-subscriptions';
+};
+
+export type JoinSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type JoinSharedKnowledgeBaseError = JoinSharedKnowledgeBaseErrors[keyof JoinSharedKnowledgeBaseErrors];
+
+export type JoinSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedKnowledgeJoinResponse;
+};
+
+export type JoinSharedKnowledgeBaseResponse = JoinSharedKnowledgeBaseResponses[keyof JoinSharedKnowledgeBaseResponses];
+
+export type LeaveSharedKnowledgeBaseData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-base-subscriptions/{kb_id}';
+};
+
+export type LeaveSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type LeaveSharedKnowledgeBaseError = LeaveSharedKnowledgeBaseErrors[keyof LeaveSharedKnowledgeBaseErrors];
+
+export type LeaveSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type LeaveSharedKnowledgeBaseResponse = LeaveSharedKnowledgeBaseResponses[keyof LeaveSharedKnowledgeBaseResponses];
+
+export type ListSharedKnowledgeBasesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/shared-knowledge-bases';
+};
+
+export type ListSharedKnowledgeBasesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListSharedKnowledgeBasesError = ListSharedKnowledgeBasesErrors[keyof ListSharedKnowledgeBasesErrors];
+
+export type ListSharedKnowledgeBasesResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedKnowledgeListResponse;
+};
+
+export type ListSharedKnowledgeBasesResponse = ListSharedKnowledgeBasesResponses[keyof ListSharedKnowledgeBasesResponses];
+
+export type CreateSharedKnowledgeBaseData = {
+    body: CreateSharedKnowledgeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/shared-knowledge-bases';
+};
+
+export type CreateSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type CreateSharedKnowledgeBaseError = CreateSharedKnowledgeBaseErrors[keyof CreateSharedKnowledgeBaseErrors];
+
+export type CreateSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    201: SharedKnowledgeResponse;
+};
+
+export type CreateSharedKnowledgeBaseResponse = CreateSharedKnowledgeBaseResponses[keyof CreateSharedKnowledgeBaseResponses];
+
+export type DeleteSharedKnowledgeBaseData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}';
+};
+
+export type DeleteSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type DeleteSharedKnowledgeBaseError = DeleteSharedKnowledgeBaseErrors[keyof DeleteSharedKnowledgeBaseErrors];
+
+export type DeleteSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteSharedKnowledgeBaseResponse = DeleteSharedKnowledgeBaseResponses[keyof DeleteSharedKnowledgeBaseResponses];
+
+export type GetSharedKnowledgeBaseData = {
+    body?: never;
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}';
+};
+
+export type GetSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetSharedKnowledgeBaseError = GetSharedKnowledgeBaseErrors[keyof GetSharedKnowledgeBaseErrors];
+
+export type GetSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedKnowledgeResponse;
+};
+
+export type GetSharedKnowledgeBaseResponse = GetSharedKnowledgeBaseResponses[keyof GetSharedKnowledgeBaseResponses];
+
+export type UpdateSharedKnowledgeBaseData = {
+    body: UpdateSharedKnowledgeRequest;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}';
+};
+
+export type UpdateSharedKnowledgeBaseErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateSharedKnowledgeBaseError = UpdateSharedKnowledgeBaseErrors[keyof UpdateSharedKnowledgeBaseErrors];
+
+export type UpdateSharedKnowledgeBaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedKnowledgeResponse;
+};
+
+export type UpdateSharedKnowledgeBaseResponse = UpdateSharedKnowledgeBaseResponses[keyof UpdateSharedKnowledgeBaseResponses];
+
+export type UploadSharedDocumentData = {
+    body: BodyUploadSharedDocument;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/documents';
+};
+
+export type UploadSharedDocumentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type UploadSharedDocumentError = UploadSharedDocumentErrors[keyof UploadSharedDocumentErrors];
+
+export type UploadSharedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    201: SharedDocumentResponse;
+};
+
+export type UploadSharedDocumentResponse = UploadSharedDocumentResponses[keyof UploadSharedDocumentResponses];
+
+export type DetachSharedDocumentData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/documents/{document_id}';
+};
+
+export type DetachSharedDocumentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type DetachSharedDocumentError = DetachSharedDocumentErrors[keyof DetachSharedDocumentErrors];
+
+export type DetachSharedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DetachSharedDocumentResponse = DetachSharedDocumentResponses[keyof DetachSharedDocumentResponses];
+
+export type OrganizeSharedDocumentData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/documents/{document_id}/organize';
+};
+
+export type OrganizeSharedDocumentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type OrganizeSharedDocumentError = OrganizeSharedDocumentErrors[keyof OrganizeSharedDocumentErrors];
+
+export type OrganizeSharedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    202: SharedDocumentResponse;
+};
+
+export type OrganizeSharedDocumentResponse = OrganizeSharedDocumentResponses[keyof OrganizeSharedDocumentResponses];
+
+export type GetSharedDocumentSourceData = {
+    body?: never;
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: {
+        /**
+         * Segment Id
+         */
+        segment_id?: string | null;
+    };
+    url: '/api/shared-knowledge-bases/{kb_id}/documents/{document_id}/source';
+};
+
+export type GetSharedDocumentSourceErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetSharedDocumentSourceError = GetSharedDocumentSourceErrors[keyof GetSharedDocumentSourceErrors];
+
+export type GetSharedDocumentSourceResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedDocumentSourceResponse;
+};
+
+export type GetSharedDocumentSourceResponse = GetSharedDocumentSourceResponses[keyof GetSharedDocumentSourceResponses];
 
 export type GetConfirmedTheoryPlanData = {
     body?: never;

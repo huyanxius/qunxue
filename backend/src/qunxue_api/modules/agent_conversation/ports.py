@@ -38,6 +38,7 @@ class AgentEvidence:
     segment_id: str | None = None
     locator: dict[str, object] | None = None
     deleted: bool = False
+    knowledge_base_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

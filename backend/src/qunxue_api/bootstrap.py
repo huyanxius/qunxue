@@ -40,9 +40,14 @@ from qunxue_api.adapters.research_agent import (
     ResearchDocumentToolRegistry,
     SiliconFlowRerankerProvider,
 )
+from qunxue_api.adapters.research_agent.course_organization import (
+    CourseKnowledgeGenerator,
+    CourseOrganizationWorker,
+)
 from qunxue_api.adapters.research_agent.memory_extractor import PydanticMemoryExtractor
 from qunxue_api.adapters.research_agent.memory_overview import PydanticMemoryOverview
 from qunxue_api.adapters.research_agent.memory_tools import AgentMemoryTools
+from qunxue_api.adapters.research_agent.shared_knowledge import SharedKnowledgeReferences
 from qunxue_api.adapters.research_exchange import map_published_qunxue_project
 from qunxue_api.adapters.research_materials import parse_material
 from qunxue_api.adapters.research_materials.doi import CrossrefDoiMetadataResolver
@@ -93,6 +98,7 @@ from qunxue_api.adapters.sqlite.research_start_proposal import (
 from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
+from qunxue_api.adapters.sqlite.shared_knowledge import SqliteSharedKnowledgeRepository
 from qunxue_api.adapters.sqlite.theory_matching import (
     SqliteMatchingRequestRepository,
     SqliteMatchRunRepository,
@@ -129,6 +135,7 @@ from qunxue_api.api.routes.research_materials import router as research_material
 from qunxue_api.api.routes.research_method import router as research_method_router
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
+from qunxue_api.api.routes.shared_knowledge import router as shared_knowledge_router
 from qunxue_api.api.routes.transcription import router as transcription_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
@@ -150,6 +157,7 @@ from qunxue_api.application import (
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.application.memory_learning import MemoryLearningWorker
 from qunxue_api.application.memory_overview import MemoryOverview
+from qunxue_api.application.shared_knowledge import SharedKnowledgeApplication
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import CreditService
@@ -182,6 +190,11 @@ from qunxue_api.modules.research_materials import (
     MaterialParseError,
 )
 from qunxue_api.modules.research_method import MethodPlanService
+from qunxue_api.modules.shared_knowledge import (
+    SharedKnowledgeForbidden,
+    SharedKnowledgeUnavailable,
+    SharedKnowledgeValidationError,
+)
 from qunxue_api.modules.theory_matching import TheoryMatchingService
 from qunxue_api.modules.transcription import (
     ProcessingLocation,
@@ -246,6 +259,23 @@ def create_app(
     async def lifespan(app: FastAPI):
         probe_task = None
         memory_task = None
+        course_task = None
+        if resolved_settings.runtime_mode != "mock":
+
+            async def organize_courses():
+                while True:
+                    try:
+                        worked = await asyncio.to_thread(
+                            app.state.course_organization_worker.run_once
+                        )
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        logger.warning("Course processing will retry later.")
+                        worked = False
+                    await asyncio.sleep(0.1 if worked else 3)
+
+            course_task = asyncio.create_task(organize_courses(), name="qunxue-course-processing")
         if resolved_settings.memory_learning_enabled and app.state.model_endpoints:
 
             async def learn_memories():
@@ -268,6 +298,10 @@ def create_app(
         try:
             yield
         finally:
+            if course_task is not None:
+                course_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await course_task
             if memory_task is not None:
                 memory_task.cancel()
                 with suppress(asyncio.CancelledError):
@@ -532,6 +566,15 @@ def create_app(
             )
 
     app.state.professional_materials_application_scope = professional_materials_application_scope
+
+    @contextmanager
+    def shared_knowledge_scope():
+        with resolved_database.session() as session:
+            yield SharedKnowledgeApplication(
+                SqliteSharedKnowledgeRepository(session), parser=parse_material
+            )
+
+    app.state.shared_knowledge_scope = shared_knowledge_scope
     transcription_provider = _build_transcription_provider(resolved_settings)
 
     @contextmanager
@@ -867,6 +910,12 @@ def create_app(
                 )
             try:
                 yield DisciplinaryAgentApplication(
+                    shared_references=SharedKnowledgeReferences(
+                        SharedKnowledgeApplication(
+                            SqliteSharedKnowledgeRepository(session), parser=parse_material
+                        ),
+                        app.state.knowledge_retriever,
+                    ),
                     memory_tools_factory=lambda **scope: AgentMemoryTools(
                         memory_service_scope, **scope
                     ),
@@ -965,6 +1014,23 @@ def create_app(
         daily_calls=resolved_settings.memory_learning_daily_calls,
         daily_tokens=resolved_settings.memory_learning_daily_tokens,
     )
+    course_embedder = None
+    if resolved_settings.embedding_model and resolved_settings.embedding_api_key:
+        course_embedder = OpenAICompatibleEmbeddingProvider(
+            base_url=resolved_settings.embedding_base_url,
+            api_key=resolved_settings.embedding_api_key.get_secret_value(),
+            model=resolved_settings.embedding_model,
+            timeout_seconds=resolved_settings.embedding_timeout_seconds,
+        )
+    app.state.course_organization_worker = CourseOrganizationWorker(
+        resolved_database,
+        generate=CourseKnowledgeGenerator(app.state.model_endpoints[0])
+        if app.state.model_endpoints
+        else None,
+        embedder=course_embedder,
+        embedding_model=resolved_settings.embedding_model,
+    )
+    app.include_router(shared_knowledge_router)
     app.include_router(memories_router)
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
@@ -1039,6 +1105,30 @@ def create_app(
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=body.model_dump(mode="json"),
+        )
+
+    @app.exception_handler(SharedKnowledgeValidationError)
+    async def handle_shared_validation(_request: Request, error):
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.VALIDATION_ERROR, message=str(error), trace_id=str(uuid4())
+            )
+        )
+        return JSONResponse(status_code=422, content=body.model_dump(mode="json"))
+
+    @app.exception_handler(SharedKnowledgeUnavailable)
+    @app.exception_handler(SharedKnowledgeForbidden)
+    async def handle_shared_knowledge_error(_request: Request, error):
+        forbidden = isinstance(error, SharedKnowledgeForbidden)
+        body = ErrorResponse(
+            error=ErrorDetail(
+                code=ErrorCode.FORBIDDEN if forbidden else ErrorCode.NOT_FOUND,
+                message=str(error),
+                trace_id=str(uuid4()),
+            )
+        )
+        return JSONResponse(
+            status_code=403 if forbidden else 404, content=body.model_dump(mode="json")
         )
 
     @app.exception_handler(ConversationNotFound)

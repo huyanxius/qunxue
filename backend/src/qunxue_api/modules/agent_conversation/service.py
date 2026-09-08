@@ -352,13 +352,15 @@ class ConversationService:
         return cls(_MemoryRepository())
 
     def create_conversation(
-        self, *, user_id: UUID, title: str, conversation_id: UUID | None = None
+        self, *, user_id: UUID, title: str, conversation_id: UUID | None = None,
+        reference_knowledge_base_id: UUID | None = None
     ) -> Conversation:
         now = datetime.now(UTC)
         conversation = Conversation(
             conversation_id=conversation_id or uuid4(),
             user_id=user_id,
             title=title.strip()[:120] or "新对话",
+            reference_knowledge_base_id=reference_knowledge_base_id,
             created_at=now,
             updated_at=now,
         )

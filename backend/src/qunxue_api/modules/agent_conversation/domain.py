@@ -35,6 +35,7 @@ class AgentCitation:
     segment_id: str | None = None
     locator: dict[str, object] | None = None
     deleted: bool = False
+    knowledge_base_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +105,7 @@ class Conversation:
     turns: tuple[AgentTurn, ...] = ()
     research_map: dict[str, object] = field(default_factory=empty_research_map)
     task_id: UUID | None = None
+    reference_knowledge_base_id: UUID | None = None
     canvas_edit_version: int = 0
     unfinished_runs: tuple["AgentRun", ...] = ()
 

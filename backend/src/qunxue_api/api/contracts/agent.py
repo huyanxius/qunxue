@@ -30,6 +30,7 @@ class AgentCitationResponse(BaseModel):
     segment_id: str | None = None
     locator: dict[str, object] | None = None
     deleted: bool = False
+    knowledge_base_id: str | None = None
 
 
 class AgentMessageResponse(BaseModel):
@@ -93,6 +94,7 @@ class AgentTurnResponse(BaseModel):
 
 
 class AgentConversationSummaryResponse(BaseModel):
+    reference_knowledge_base_id: UUID | None = None
     task_id: UUID | None = None
     conversation_id: UUID
     title: str
@@ -120,6 +122,7 @@ class AgentConversationUpdateRequest(BaseModel):
 
 
 class AgentTurnRequest(BaseModel):
+    reference_knowledge_base_id: UUID | None = None
     conversation_id: UUID | None = None
     message: str = Field(min_length=1, max_length=12000)
     workspace: Literal["agent", "research"] = "agent"
