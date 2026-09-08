@@ -5,3 +5,5 @@ export { KnowledgeGraphPreview } from './KnowledgeGraphPreview'
 export type { FullscreenKnowledgeGraphState } from './FullscreenKnowledgeGraphPage'
 export type { KnowledgeGraphProjection } from './types'
 export type { KnowledgeGraphFocusEntry } from './types'
+
+export { ObsidianKnowledgeGraph } from './ObsidianKnowledgeGraph'

@@ -1,4 +1,5 @@
 export type AgentCitation = {
+  knowledge_base_id?: string | null
   citation_id: string
   label: string
   kind: string
@@ -78,6 +79,7 @@ export type AgentTurn = {
 }
 
 export type AgentConversationSummary = {
+  reference_knowledge_base_id?: string | null
   task_id?: string | null
   conversation_id: string
   title: string
@@ -87,6 +89,7 @@ export type AgentConversationSummary = {
 
 // 恢复时使用接受问题时的完整上下文，避免入口或编辑位置变化改变原轮次。
 export type AgentTurnRequest = {
+  reference_knowledge_base_id?: string | null
   conversation_id?: string | null
   message: string
   mode?: 'standard' | 'deep_research'

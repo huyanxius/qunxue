@@ -327,6 +327,7 @@ async function streamAgentTurnOnce(
       document_version: payload.document_version ?? null,
       theory_plan_id: payload.theory_plan_id ?? null,
       material_ids: payload.material_ids ?? [],
+      reference_knowledge_base_id: payload.reference_knowledge_base_id ?? null,
       deep_research_run_id: payload.deep_research_run_id ?? null,
       deep_research_action: payload.deep_research_action ?? null,
       deep_research_selection: payload.deep_research_selection ?? null,

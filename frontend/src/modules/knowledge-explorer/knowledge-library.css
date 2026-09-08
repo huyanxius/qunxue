@@ -867,3 +867,6 @@
     padding: 32px 0 56px;
   }
 }
+
+.knowledge-library__course-link { border: 0; padding: 0; background: transparent; text-align: left; cursor: pointer; margin: 0 14px 12px; color: var(--app-muted); font-size: 12px; text-decoration: none; }
+.knowledge-library__course-link:hover { color: var(--app-ink); }

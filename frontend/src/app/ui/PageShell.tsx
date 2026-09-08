@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import {
   BellIcon,
   BooksIcon,
+  GraduationCapIcon,
   ChatCircleDotsIcon,
   DotsThreeIcon,
   FileTextIcon,
@@ -74,6 +75,7 @@ function PrimaryNavigation({
     { href: '/research/new', label: text('新建研究', 'New research'), mobileLabel: text('新建', 'New'), icon: PlusIcon },
     { href: '/research/tools', label: text('研究工具', 'Research tools'), mobileLabel: text('工具', 'Tools'), icon: ToolboxIcon, end: true },
     { href: '/research/materials', label: text('我的研究', 'My research'), mobileLabel: text('研究', 'Research'), icon: FileTextIcon, end: true },
+    { href: '/courses', label: text('课程', 'Courses'), mobileLabel: text('课程', 'Courses'), icon: GraduationCapIcon },
     { href: '/knowledge', label: text('知识库', 'Knowledge base'), mobileLabel: text('知识', 'Library'), icon: BooksIcon, end: true },
     { href: '/knowledge/graph', label: text('知识图谱', 'Knowledge graph'), mobileLabel: text('图谱', 'Graph'), icon: TreeStructureIcon },
   ]
@@ -352,6 +354,7 @@ export function PageShell({
                     <ToolboxIcon size={20} aria-hidden="true" />
                     <span>{text('研究工具', 'Research tools')}</span>
                   </NavLink>
+                  <NavLink to="/courses" onClick={() => setMobileMoreOpen(false)}><GraduationCapIcon size={20} aria-hidden="true" /><span>{text('课程', 'Courses')}</span></NavLink>
                   <NavLink to="/knowledge/graph" onClick={() => setMobileMoreOpen(false)}>
                     <TreeStructureIcon size={20} aria-hidden="true" />
                     <span>{text('知识图谱', 'Knowledge graph')}</span>

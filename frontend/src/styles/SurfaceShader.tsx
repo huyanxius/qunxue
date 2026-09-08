@@ -14,12 +14,14 @@ const BASE_YSHIFT = 0.09
  *
  * 叠色是线性加深（base + blend - 1），所以最暗处的下限是 main + low - 白：
  * 抬 main 比抬 low 更能提亮，但 mid 必须跟 main 拉开落差，挤到一起云就塌成雾。
- * 浅色两个参数只影响调用方自己那一处，深色永远是 DARK_PALETTE + BASE_YSHIFT。
+ * 调用方可单独调整色板和速度；不传参数的页面保留原来的外观与运动。
  */
-export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYshift = BASE_YSHIFT }: {
+export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYshift = BASE_YSHIFT, darkPalette = DARK_PALETTE, motionScale = 1 }: {
   className: string
   lightPalette?: SkyPalette
   lightYshift?: number
+  darkPalette?: SkyPalette
+  motionScale?: number
 }) {
   const dark = useColorScheme()
   const ref = useRef<HTMLCanvasElement>(null)
@@ -63,7 +65,7 @@ export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYs
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     const uniform = (name: string) => gl.getUniformLocation(program, name)
     gl.uniform1i(uniform('u_noise'), 0)
-    const palette = dark ? DARK_PALETTE : lightPalette
+    const palette = dark ? darkPalette : lightPalette
     ;['u_high', 'u_main', 'u_mid', 'u_low'].forEach((name, index) => {
       const color = parseInt(palette[index].slice(1), 16)
       gl.uniform3f(uniform(name), (color >> 16 & 255) / 255, (color >> 8 & 255) / 255, (color & 255) / 255)
@@ -77,7 +79,7 @@ export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYs
     let time = 20.75, last = 0, request = 0
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const draw = (now: number) => {
-      if (last && !motion.matches) time += .58 * 1.2 * Math.min(.05, (now - last) / 1000)
+      if (last && !motion.matches) time += .58 * 1.2 * motionScale * Math.min(.05, (now - last) / 1000)
       last = now
       gl.viewport(0, 0, canvas.width, canvas.height)
       gl.uniform2f(resolution, canvas.width, canvas.height); gl.uniform1f(clock, time)
@@ -101,7 +103,7 @@ export function SurfaceShader({ className, lightPalette = LIGHT_PALETTE, lightYs
       gl.deleteTexture(texture); gl.deleteBuffer(buffer)
       compiled.forEach(shader => gl.deleteShader(shader)); gl.deleteProgram(program)
     }
-  }, [dark, lightPalette, lightYshift])
+  }, [dark, lightPalette, lightYshift, darkPalette, motionScale])
   return <canvas ref={ref} className={className} data-renderer="feralui-sky" data-color-scheme={dark ? 'dark' : 'light'} aria-hidden="true"
     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 1 }} />
 }

@@ -1,3 +1,6 @@
+import { CourseKnowledgePage } from './courses/CourseKnowledgePage'
+import { CourseInvitationRoute } from './courses/CourseInvitationRoute'
+import { CoursesPage } from './courses/CoursesPage'
 import {
   BrowserRouter,
   Navigate,
@@ -76,6 +79,8 @@ function KnowledgeExplorerRoute() {
     }))
   }, [setSearchParams])
 
+  if (searchParams.get('scope') === 'courses') return <CourseKnowledgePage />
+
   return (
     <PageShell workspace defaultRailCollapsed>
       <PageContent>
@@ -93,6 +98,7 @@ function KnowledgeExplorerRoute() {
             setGraphOpen(true)
           }}
           onOpenGraph={() => setGraphOpen(true)}
+          onOpenCourseLibrary={() => navigate("/knowledge?scope=courses")}
         />
         {state.releaseId ? (
           <>
@@ -419,6 +425,8 @@ export function AppRoutes({
       <Route path="/research/new" element={protectedRoute(<NewResearchRoute userId={authenticatedUserId} />)} />
       <Route path="/research/existing" element={protectedRoute(<ExistingResearchEntryPage />)} />
       <Route path="/research/tools" element={protectedRoute(<ResearchToolsPage />)} />
+      <Route path="/courses/join" element={<CourseInvitationRoute>{protectedRoute(<CoursesPage />)}</CourseInvitationRoute>} />
+      <Route path="/courses/*" element={protectedRoute(<CoursesPage />)} />
       <Route path="/research/materials" element={protectedRoute(<ResearchMaterialsRoute userId={authenticatedUserId} />)} />
       <Route
         path="/research/:task_id"

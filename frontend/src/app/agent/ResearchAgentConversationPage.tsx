@@ -1,3 +1,4 @@
+import { CourseReferenceSelector } from '../courses/CourseReferenceSelector'
 import { composeResearchDiscussion, latestResearchAsk, resolveResearchCitation, type ResearchDiscussion } from '../../modules/research-workspace'
 import {
   ArrowClockwiseIcon,
@@ -1491,7 +1492,7 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
       <span className="new-research__sources-label">{text('依据', 'Evidence')}</span>
       {citations.map((citation, index) => (
         <button type="button" key={citation.citation_id} data-dimension={citationDimension(citation) ?? undefined} onClick={() => onSelect(citation)} aria-label={text(`查看证据：${citation.label}`, `View evidence: ${citation.label}`)}>
-          <b>{index + 1}</b><span>{citation.label}<small>{citationKindLabel(citation.kind, locale)}</small></span>
+          <b>{index + 1}</b><span>{citation.label}<small>{citation.source_kind === 'shared_material' ? text('课程资料', 'Course material') : citationKindLabel(citation.kind, locale)}</small></span>
         </button>
       ))}
     </div>
@@ -1501,18 +1502,20 @@ function SourcePills({ citations, onSelect }: { citations: AgentCitation[]; onSe
 function EvidenceOriginSummary({ citations }: { citations: AgentCitation[] }) {
   const { text } = useAppLocale()
   const materialCount = citations.filter((citation) => (
-    citation.kind === 'material' || citation.kind === 'research_material'
+    (citation.kind === 'material' || citation.kind === 'research_material') && citation.source_kind !== 'shared_material'
   )).length
+  const sharedCount = citations.filter((citation) => citation.source_kind === 'shared_material').length
   const knowledgeCount = citations.filter((citation) => (
     Boolean(citation.knowledge_id)
       && citation.kind !== 'material'
       && citation.kind !== 'research_material'
   )).length
   const webCount = citations.filter((citation) => citation.source_kind === 'web').length
-  if (!materialCount && !knowledgeCount && !webCount) return null
+  if (!materialCount && !sharedCount && !knowledgeCount && !webCount) return null
   // 下面紧跟着的就是逐条依据，这里只需要一句话交代来源构成，不必再占一张卡片。
   const parts = [
     knowledgeCount ? `${text('群学知识库', 'Qunxue knowledge')} ${knowledgeCount}` : null,
+    sharedCount ? `${text('课程资料', 'Course materials')} ${sharedCount}` : null,
     materialCount ? `${text('你的研究材料', 'Your materials')} ${materialCount}` : null,
     webCount ? `${text('公开网页', 'Public web')} ${webCount}` : null,
   ].filter(Boolean)
@@ -1663,6 +1666,8 @@ function AssistantTurn({
 type ResearchAgentConversationPageProps = {
   userId: string | null
   embedded?: boolean
+  referenceKnowledgeBaseId?: string | null
+  onOpenCourseCitation?: (citation: AgentCitation) => void
   conversationId?: string | null
   knowledgeReleaseId?: string | null
   workspace?: 'agent' | 'research'
@@ -1692,6 +1697,8 @@ type ResearchAgentConversationPageProps = {
 export function ResearchAgentConversationPage({
   userId,
   embedded = false,
+  referenceKnowledgeBaseId: boundReferenceKnowledgeBaseId = null,
+  onOpenCourseCitation,
   conversationId: boundConversationId = null,
   knowledgeReleaseId: boundKnowledgeReleaseId = null,
   workspace: boundWorkspace = 'agent',
@@ -1723,7 +1730,8 @@ export function ResearchAgentConversationPage({
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedConversationId = embedded ? boundConversationId : searchParams.get('conversation_id')
   const requestedKnowledgeReleaseId = embedded ? boundKnowledgeReleaseId : searchParams.get('knowledge_release_id')
-  const requestedScope = conversationStorageScope(userId, requestedConversationId, embedded ? boundTaskId : searchParams.get('task_id'), embedded ? boundWorkspace : 'agent')
+  const storageWorkspace = embedded && boundReferenceKnowledgeBaseId ? `course:${boundReferenceKnowledgeBaseId}` : embedded ? boundWorkspace : 'agent'
+  const requestedScope = conversationStorageScope(userId, requestedConversationId, embedded ? boundTaskId : searchParams.get('task_id'), storageWorkspace)
   const storageScope = useRef(requestedScope)
   const restoredPendingTurn = useRef<PendingTurnAttempt | null>(readPendingTurnAttempt(storageScope.current))
   const restoredInterruptedTurn = useRef<StreamingTurn | null>(readInterruptedTurn(storageScope.current))
@@ -2461,7 +2469,7 @@ export function ResearchAgentConversationPage({
       return
     }
     prepareConversationSwitch()
-    storageScope.current = conversationStorageScope(userId, null, projectId || null, embedded ? boundWorkspace : 'agent')
+    storageScope.current = conversationStorageScope(userId, null, projectId || null, storageWorkspace)
     updateDraft('')
     setError(null)
     setStatus('idle')
@@ -2480,7 +2488,7 @@ export function ResearchAgentConversationPage({
   function switchComposerProject(projectId: string) {
     const pendingDraft = !activeConversation?.turn_count ? draft : ''
     newConversation(projectId || undefined)
-    storageScope.current = conversationStorageScope(userId, null, projectId || null, embedded ? boundWorkspace : 'agent')
+    storageScope.current = conversationStorageScope(userId, null, projectId || null, storageWorkspace)
     if (pendingDraft) updateDraft(pendingDraft)
   }
 
@@ -2590,6 +2598,7 @@ export function ResearchAgentConversationPage({
           document_version: workspace === 'research' ? documentVersion : null,
           theory_plan_id: workspace === 'research' ? theoryPlanId : null,
           material_ids: attempt.materialIds,
+          reference_knowledge_base_id: activeConversation ? activeConversation.reference_knowledge_base_id ?? null : embedded ? boundReferenceKnowledgeBaseId : searchParams.get('reference_knowledge_base_id'),
           deep_research_run_id: deepAction ? (activeTurnAttempt.current?.runId ?? null) : null,
           deep_research_action: deepAction?.action ?? null,
           deep_research_selection: deepAction?.selection ?? null,
@@ -2616,7 +2625,7 @@ export function ResearchAgentConversationPage({
             }
             startedAttempt.request = { ...request, conversation_id: event.conversation_id }
             activeTurnAttempt.current = startedAttempt
-            const nextScope = conversationStorageScope(userId, event.conversation_id, taskId, workspace)
+            const nextScope = conversationStorageScope(userId, event.conversation_id, taskId, embedded && boundReferenceKnowledgeBaseId ? storageWorkspace : workspace)
             if (storageScope.current !== nextScope) {
               persistPendingTurnAttempt(storageScope.current, null)
               persistInterruptedTurn(storageScope.current, null)
@@ -3096,6 +3105,7 @@ export function ResearchAgentConversationPage({
   }
 
   function openCitation(citation: AgentCitation, knowledgeReleaseId: string | null) {
+    if (citation.source_kind === 'shared_material' && !citation.deleted && onOpenCourseCitation) { onOpenCourseCitation(citation); return }
     const conversationReleaseId = activeConversation?.conversation_id
       ? knowledgeReleaseByConversationId[activeConversation.conversation_id] ?? null
       : null
@@ -3178,10 +3188,13 @@ export function ResearchAgentConversationPage({
       <p>{selectedCitation.deleted
         ? text('这份研究材料已删除，原文不再可访问。', 'This research material was deleted and its source text is no longer available.')
         : selectedCitation.excerpt || text('本轮 Agent 没有返回可展开的证据摘录。', 'The Agent returned no expandable evidence excerpt for this turn.')}</p>
+      {selectedCitation.source_kind === 'shared_material' && selectedCitation.knowledge_base_id && selectedCitation.material_id ? <Link
+        className="qx-button"
+        to={`/courses?view=student&kb_id=${encodeURIComponent(selectedCitation.knowledge_base_id)}&document_id=${encodeURIComponent(selectedCitation.material_id)}&segment_id=${encodeURIComponent(selectedCitation.segment_id ?? '')}`}>打开课程原文</Link> : null}
       {selectedMaterialCitation.locator
         ? <p className="new-research__basis-locator">{formatMaterialLocator(selectedMaterialCitation.locator)}</p>
         : null}
-      {(typeof selectedCitation.locator?.task_id === 'string' || taskId || uploadTaskId.current) && selectedMaterialCitation.materialId && !selectedCitation.deleted
+      {selectedCitation.source_kind !== 'shared_material' && (typeof selectedCitation.locator?.task_id === 'string' || taskId || uploadTaskId.current) && selectedMaterialCitation.materialId && !selectedCitation.deleted
         ? <div className="research-agent-basis-actions">
             <button
               type="button"
@@ -3410,6 +3423,10 @@ export function ResearchAgentConversationPage({
                 }}
               />
             ) : null}
+            {!embedded ? <CourseReferenceSelector
+              value={activeConversation ? activeConversation.reference_knowledge_base_id ?? '' : searchParams.get('reference_knowledge_base_id') ?? ''}
+              hasConversation={Boolean(activeConversation)} disabled={status === 'thinking' || status === 'answering'}
+              onChange={(value) => { newConversation(); setSearchParams(value ? { reference_knowledge_base_id: value } : {}) }} /> : null}
             <form onSubmit={handleSubmit} className="new-research__composer-form">
               <div className={`new-research__composer research-agent-composer${composerPrefix ? ' has-prefix' : ''}${attachedMaterials.length || materialUploading ? ' has-attachments' : ''}${composerMode === 'deep-research' ? ' is-deep-research' : ''}${composerMode === 'deep-research' && isEmpty ? ' is-awaiting-first-message' : ''}`}>
                 {materialPickerOpen ? (
