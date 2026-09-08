@@ -1024,7 +1024,9 @@ def create_app(
         )
     app.state.course_organization_worker = CourseOrganizationWorker(
         resolved_database,
-        generate=CourseKnowledgeGenerator(app.state.model_endpoints[0])
+        generate=CourseKnowledgeGenerator(
+            app.state.model_endpoints, route_executor=app.state.model_router
+        )
         if app.state.model_endpoints
         else None,
         embedder=course_embedder,
