@@ -54,7 +54,7 @@ def generator(invoke, count=2):
         async def _generate_at_endpoint(self, endpoint, batch):
             return await invoke(endpoint, batch)
 
-    return Controlled(endpoints, route_executor=router), recorder
+    return Controlled(endpoints, route_executor=router, max_concurrency=1), recorder
 
 
 @pytest.mark.parametrize("invalid_source", [False, True])
@@ -239,3 +239,30 @@ def test_extraction_uses_short_source_aliases_and_restores_original_ids(monkeypa
     assert captured["batch"] == [{"segment_id": "0", "text": "课程原文"}]
     assert result["topics"][0]["segment_ids"] == [source_id]
     assert captured["model_settings"]["openai_reasoning_effort"] == "low"
+
+
+def test_bounded_parallel_batches_save_out_of_order_and_merge_in_source_order():
+    import asyncio
+
+    active = 0
+    peak = 0
+    snapshots = []
+
+    async def invoke(endpoint, batch):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        i = int(batch[0]["segment_id"][1:])
+        await asyncio.sleep(0.01 * (4 - i))
+        active -= 1
+        return knowledge(batch)
+
+    gen, _ = generator(invoke, 1)
+    gen.max_concurrency = 3
+    result = gen(
+        document([letter * 4000 for letter in "甲乙丙丁"]),
+        on_checkpoint=lambda value: snapshots.append(len(value["batches"])),
+    )
+    assert peak == 3
+    assert snapshots == sorted(snapshots)
+    assert result["topics"][0]["segment_ids"] == ["s0", "s1", "s2", "s3"]
