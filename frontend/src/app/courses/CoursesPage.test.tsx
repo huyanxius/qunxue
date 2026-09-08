@@ -106,7 +106,7 @@ it('introduces courses before role choice and gives the selected role a first ac
     return json({ items: [] })
   })
   render(<MemoryRouter initialEntries={['/courses']}><CoursesPage /></MemoryRouter>)
-  expect(await screen.findByRole('heading', { name: '课件、知识点和学习对话，在同一门课程里' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: '课程' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /我是教师/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: '开始使用课程' }))
   fireEvent.click(await screen.findByRole('button', { name: /我是教师/ }))
