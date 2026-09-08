@@ -203,3 +203,39 @@ def test_restart_does_not_erase_later_completed_checkpoints():
     snapshots = []
     gen(doc, checkpoints=saved, on_checkpoint=lambda value: snapshots.append(len(value["batches"])))
     assert snapshots == [3, 3, 3]
+
+
+def test_extraction_uses_short_source_aliases_and_restores_original_ids(monkeypatch):
+    import asyncio
+    import json
+    from types import SimpleNamespace
+
+    from qunxue_api.adapters.research_agent import course_knowledge as module
+
+    captured = {}
+
+    class Agent:
+        def __init__(self, *args, **kwargs):
+            captured.update(kwargs)
+
+        async def run(self, prompt, **kwargs):
+            captured["batch"] = json.loads(prompt)
+            return SimpleNamespace(
+                output=module.BatchKnowledge.model_validate(
+                    {
+                        "summary": "摘要",
+                        "topics": [{"title": "知识", "summary": "依据", "segment_ids": ["0"]}],
+                    }
+                )
+            )
+
+    monkeypatch.setattr(module, "Agent", Agent)
+    endpoint = ModelEndpoint("primary", "https://provider.invalid", "gpt-5.6-sol", "test-key", 30)
+    gen = module.CourseKnowledgeGenerator((endpoint,))
+    source_id = str(uuid4())
+    result = asyncio.run(
+        gen._generate_at_endpoint(endpoint, [{"segment_id": source_id, "text": "课程原文"}])
+    )
+    assert captured["batch"] == [{"segment_id": "0", "text": "课程原文"}]
+    assert result["topics"][0]["segment_ids"] == [source_id]
+    assert captured["model_settings"]["openai_reasoning_effort"] == "low"
