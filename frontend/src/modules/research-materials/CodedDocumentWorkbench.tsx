@@ -1,10 +1,10 @@
+import { DocumentWorkspace, DocumentWorkspaceToolbar, DocumentOutline, DocumentSearch, DocumentSourceView, DocumentSourceSegment } from './DocumentWorkspace'
 import {
   ArrowLeftIcon,
   ArrowSquareOutIcon,
   CaretDownIcon,
   CaretRightIcon,
   CheckIcon,
-  CircleNotchIcon,
   CopyIcon,
   DownloadSimpleIcon,
   DotsThreeIcon,
@@ -632,8 +632,8 @@ export function CodedDocumentWorkbench({
   }
 
   return (
-    <section className={`qx-reader${narrow ? ' is-narrow' : ''}${workspaceChrome ? ' is-workspace-chrome' : ''}`} data-zoom={zoom} aria-label="材料阅读台" ref={frameRef}>
-      <header className={`qx-reader__bar${workspaceChrome ? ' is-workspace-chrome' : ''}`}>
+    <DocumentWorkspace narrow={narrow} workspace={workspaceChrome} zoom={zoom} frameRef={frameRef}>
+      <DocumentWorkspaceToolbar workspace={workspaceChrome}>
         {!workspaceChrome ? (
           <>
             <button type="button" className="qx-reader__back" onClick={onBack} title="返回材料库">
@@ -672,7 +672,7 @@ export function CodedDocumentWorkbench({
           <span className="qx-reader__tool-rule" aria-hidden="true" />
           <button type="button" className="qx-icon-button" aria-label="材料档案" title="材料档案" onClick={onOpenArchive}><IdentificationCardIcon size={17} aria-hidden="true" /></button>
         </div>
-      </header>
+      </DocumentWorkspaceToolbar>
 
       <div className="qx-reader__coding-toolbar" aria-label="编码工具">
         <button type="button" className="qx-reader__document-path" onClick={onBack} title="切换材料"><span className="qx-reader__path-dot" aria-hidden="true" />{material.filename}<CaretDownIcon size={13} aria-hidden="true" /></button>
@@ -692,12 +692,7 @@ export function CodedDocumentWorkbench({
         <span className="qx-reader__coding-hint"><InfoIcon size={14} aria-hidden="true" />拖选正文可建立片段标记</span>
       </div>
 
-      {searchOpen ? (
-        <div className="qx-reader__search" id="research-materials-reader-search">
-          <label className="qx-reader__search-field"><MagnifyingGlassIcon size={15} aria-hidden="true" /><span className="sr-only">在材料中查找</span><input type="search" role="searchbox" aria-label="在材料中查找" value={query} placeholder="查找原文、页码或定位" autoFocus onChange={(event) => onQueryChange(event.target.value)} />{query ? <button type="button" aria-label="清除材料查找" onClick={() => onQueryChange('')}><XIcon size={13} aria-hidden="true" /></button> : null}</label>
-          <span className="qx-reader__search-count">{query.trim() ? `${matchCount} 处命中` : `${totalSegmentCount} 段原文`}</span>
-        </div>
-      ) : null}
+      {searchOpen ? <DocumentSearch query={query} count={matchCount} total={totalSegmentCount} onChange={onQueryChange} /> : null}
 
       {codeFilterOpen ? (
         <div className="qx-reader__code-filter" role="group" aria-label="编码筛选">
@@ -716,11 +711,7 @@ export function CodedDocumentWorkbench({
             <button type="button" role="tab" aria-selected={sidebarTab === 'codes'} onClick={() => setSidebarTab('codes')}><TagIcon size={14} aria-hidden="true" />代码<span>{codes.length}</span></button>
           </div>
           {sidebarTab === 'chapters' ? (
-            <nav className="qx-reader__chapter-tree" aria-label="章节导航">
-              {headings.length ? headings.map(({ segment, label }) => (
-                <button type="button" key={segment.segmentId} className={segment.segmentId === selectedSegmentId ? 'is-current' : undefined} title={label} tabIndex={outlineOpen ? undefined : -1} onClick={() => { onSelectSegment(segment); if (narrow) onToggleOutline() }}><span className="qx-tree-caret"><CaretRightIcon size={12} aria-hidden="true" /></span>{label}</button>
-              )) : <small>解析出章节后会显示在这里。</small>}
-            </nav>
+            <DocumentOutline headings={headings} selectedId={selectedSegmentId} open={outlineOpen} onSelect={(segment) => { onSelectSegment(segment); if (narrow) onToggleOutline() }} />
           ) : (
             <div className="qx-reader__code-tree" role="tree" aria-label="代码系统">
               <div className="qx-reader__code-tree-head"><span>代码系统</span><button type="button" onClick={() => setActiveCodeIds([])} disabled={!activeCodeIds.length}>清除激活</button></div>
@@ -743,20 +734,13 @@ export function CodedDocumentWorkbench({
 
         {narrow && outlineOpen ? <button type="button" className="qx-reader__outline-scrim" aria-label="收起侧栏" onClick={onToggleOutline} /> : null}
 
-        <main className="qx-reader__scroll" ref={scrollRef} role="region" aria-label="文档阅读器">
-          {detailLoading ? <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在读取原文结构</p> : null}
-          {note ? <p className={`qx-message${note.tone === 'error' ? ' is-error' : ''}`} role={note.tone === 'error' ? 'alert' : undefined}>{note.tone === 'error' ? <WarningCircleIcon size={15} aria-hidden="true" /> : null}{note.text}</p> : null}
-          {localError ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{localError}<button type="button" aria-label="关闭错误提示" onClick={() => setLocalError(null)}><XIcon size={13} aria-hidden="true" /></button></p> : null}
-          <div className="qx-reader__ruler"><span>编码条</span><span>行</span><span>原文</span></div>
-          <article className="qx-reader__doc">
+        <DocumentSourceView scrollRef={scrollRef} loading={detailLoading} note={note} error={localError ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{localError}<button type="button" aria-label="关闭错误提示" onClick={() => setLocalError(null)}><XIcon size={13} aria-hidden="true" /></button></p> : null} empty={!segments.length} query={query} page={page} pageCount={pageCount} onPageChange={onPageChange}>
             {segments.map((segment, index) => {
               const selected = segment.segmentId === selectedSegmentId
-              const heading = segment.kind === 'heading'
               const codedAnnotations = segmentAnnotations(segment)
               const line = lineLabel(segment, index)
               return (
-                <div className={`qx-segment${selected ? ' is-selected' : ''}${heading ? ' is-heading' : ''}${codedAnnotations.length && viewMode === 'coding' ? ' is-coded' : ''}`} key={segment.segmentId} data-segment-id={segment.segmentId} aria-current={selected ? 'location' : undefined} ref={(element) => registerSegment(segment.segmentId, element)} onClick={() => locateFromPointer(segment)} onContextMenu={(event) => openContextMenu(event, segment.segmentId)}>
-                  <aside className="qx-segment__rail" aria-label={codedAnnotations.length ? '此段编码条' : undefined}>
+                <DocumentSourceSegment key={segment.segmentId} segment={segment} selected={selected} line={line} coded={Boolean(codedAnnotations.length && viewMode === 'coding')} register={registerSegment} onSelect={() => onSelectSegment(segment)} onPointer={() => locateFromPointer(segment)} onContextMenu={(event) => openContextMenu(event, segment.segmentId)} onTextSelection={(event) => captureFromParagraph(segment, event)} railLabel={codedAnnotations.length ? '此段编码条' : undefined} rail={<>
                     {viewMode === 'coding' ? codedAnnotations.flatMap((annotation) => {
                       const linked = codeLabelsFor(annotation)
                       const displayCodes = linked.length ? linked : [{ code_id: `annotation:${annotation.annotation_id}`, label: '待命名标记', status: 'candidate' as const, annotation_ids: [] } as AnalysisCode]
@@ -767,19 +751,10 @@ export function CodedDocumentWorkbench({
                       })
                     }) : null}
                     {codedAnnotations.some((annotation) => memos.some((memo) => memo.annotation_ids.includes(annotation.annotation_id))) ? <button type="button" className="qx-segment__memo-marker" aria-label="查看此段备忘" title="此段有备忘" onClick={(event) => { event.stopPropagation(); selectAnnotation(codedAnnotations[0], segment); setInspectorMode('evidence') }}><NoteIcon size={14} aria-hidden="true" /></button> : null}
-                  </aside>
-                  <button type="button" className="qx-segment__line" aria-label={`定位到${formatMaterialLocator(segment.locator)}`} title={formatMaterialLocator(segment.locator)} onClick={(event) => { event.stopPropagation(); onSelectSegment(segment) }}>{line}</button>
-                  <div className="qx-segment__text">
-                    {heading ? <h3 onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment, codedAnnotations)}</h3> : <p onMouseUp={(event) => captureFromParagraph(segment, event)}>{renderCodedText(segment, codedAnnotations)}</p>}
-                    <span className="qx-segment__source-label">{formatMaterialLocator(segment.locator)}</span>
-                  </div>
-                </div>
+                </>}>{renderCodedText(segment, codedAnnotations)}</DocumentSourceSegment>
               )
             })}
-            {!segments.length && !detailLoading ? <p className="qx-reader__no-results">{query.trim() ? '没有匹配的原文。换个词试试。' : '暂时没有可展示的片段。'}</p> : null}
-          </article>
-          {pageCount > 1 ? <footer className="qx-reader__pagination" aria-label="文档分页"><button type="button" aria-label="上一页" disabled={page === 0} onClick={() => onPageChange(Math.max(0, page - 1))}>上一页</button><span>第 {page + 1} / {pageCount} 页</span><button type="button" aria-label="下一页" disabled={page >= pageCount - 1} onClick={() => onPageChange(Math.min(pageCount - 1, page + 1))}>下一页</button></footer> : null}
-        </main>
+        </DocumentSourceView>
 
         <aside className={`qx-reader__inspector${agentPanel ? ' is-integrated' : ''}`} aria-label={agentPanel ? '编码协作侧栏' : inspectorMode === 'retrieved' ? '检索编码片段' : '编码证据检查器'}>
           {agentPanel || analysisPanel ? <div className="qx-reader__panel-tabs" role="tablist" aria-label="编码协作工具">
@@ -867,6 +842,6 @@ export function CodedDocumentWorkbench({
       {memoComposerOpen ? <div className="qx-reader__composer" role="dialog" aria-label="写分析备忘"><header><strong>{selectedAnnotation ? '为片段写分析备忘' : '写分析备忘'}</strong><button type="button" className="qx-icon-button" aria-label="关闭写备忘" onClick={() => setMemoComposerOpen(false)}><XIcon size={16} aria-hidden="true" /></button></header>{selectedAnnotation ? <blockquote>{selectedAnnotation.quote || '整段标记'}</blockquote> : null}<form onSubmit={(event) => void submitMemo(event)}><label>标题<input value={newMemoTitle} onChange={(event) => setNewMemoTitle(event.target.value)} autoFocus placeholder="例如：竞争解释" /></label><label>类型<select value={newMemoKind} onChange={(event) => setNewMemoKind(event.target.value as AnalysisMemo['memo_kind'])}>{Object.entries(memoKindLabel).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><label>内容<textarea value={newMemoContent} onChange={(event) => setNewMemoContent(event.target.value)} placeholder="记录你的分析、反思或方法判断" rows={6} /></label><footer><button type="button" onClick={() => setMemoComposerOpen(false)}>取消</button><button type="submit" className="is-primary" disabled={!newMemoTitle.trim() || !newMemoContent.trim() || Boolean(busyAction)}>{busyAction === 'create-memo' ? '保存中…' : '保存备忘'}</button></footer></form></div> : null}
 
       {contextMenu ? <div className="qx-reader__context-menu qx-reader__menu" role="menu" style={{ left: contextMenu.x, top: contextMenu.y }}><button type="button" role="menuitem" onClick={() => { const annotation = contextMenu.annotationId ? annotations.find((item) => item.annotation_id === contextMenu.annotationId) : null; const segment = segments.find((item) => item.segmentId === contextMenu.segmentId); if (annotation) selectAnnotation(annotation, segment); setContextMenu(null) }}><InfoIcon size={15} aria-hidden="true" />查看证据</button><button type="button" role="menuitem" disabled={!contextMenu.annotationId || !onCreateCode} onClick={() => { const annotation = annotations.find((item) => item.annotation_id === contextMenu.annotationId); if (annotation) { selectAnnotation(annotation, segments.find((item) => item.segmentId === annotation.segment_id)); setCodeComposerOpen(true) } setContextMenu(null) }}><PlusIcon size={15} aria-hidden="true" />建立编码</button><button type="button" role="menuitem" onClick={() => void copyLocator(contextMenu.annotationId ? annotations.find((item) => item.annotation_id === contextMenu.annotationId) ?? null : null, segments.find((item) => item.segmentId === contextMenu.segmentId) ?? null)}><CopyIcon size={15} aria-hidden="true" />复制定位</button></div> : null}
-    </section>
+    </DocumentWorkspace>
   )
 }

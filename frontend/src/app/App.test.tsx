@@ -365,6 +365,7 @@ describe('App routes', () => {
       '新建研究',
       '研究工具',
       '我的研究',
+      '课程',
       '知识库',
       '知识图谱',
     ])
@@ -1509,4 +1510,24 @@ describe('App routes', () => {
     })
     expect(fetch).toHaveBeenCalledTimes(2)
   })
+})
+
+it('opens course knowledge in the library and links each topic to its original segment', async () => {
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+    const url = requestUrl(input)
+    if (url.pathname === '/api/shared-knowledge-bases/kb-course') return json({
+      id: 'kb-course', name: '访谈方法', viewer_access: 'reader', sharing_enabled: true,
+      documents: [{ id: 'doc-course', filename: '访谈.pptx', status: 'ready', size_bytes: 100,
+        media_type: 'text/plain', parse_id: 'parse-course', created_at: '2026-09-08',
+        knowledge_status: 'ready', index_status: 'ready', knowledge: {
+          summary: '访谈方法课程', topics: [{ title: '追问', summary: '追问具体经历。', segment_ids: ['segment-course'] }], relations: [],
+        } }],
+    })
+    if (url.pathname === '/api/shared-knowledge-bases') return json({ items: [{ id: 'kb-course', name: '访谈方法', viewer_access: 'reader', documents: [] }] })
+    return knowledgeResponse(input)
+  })
+  renderRoute('/knowledge?scope=courses&kb_id=kb-course', { status: 'authenticated' })
+  fireEvent.click(await screen.findByRole('button', { name: '查看知识点 追问' }))
+  expect(await screen.findByText('追问具体经历。')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /阅读原文.*访谈.pptx/ })).toHaveAttribute('href', '/courses?kb_id=kb-course&document_id=doc-course&segment_id=segment-course')
 })

@@ -80,6 +80,7 @@ class MaterialKind(StrEnum):
 class MaterialFormat(StrEnum):
     PDF = "pdf"
     DOCX = "docx"
+    PPTX = "pptx"
     TXT = "txt"
     MARKDOWN = "markdown"
     MP3 = "mp3"
@@ -94,6 +95,9 @@ class MaterialFormat(StrEnum):
 
         return {
             MaterialFormat.PDF: "application/pdf",
+            MaterialFormat.PPTX: (
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            ),
             MaterialFormat.DOCX: (
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             ),
@@ -121,6 +125,7 @@ class MaterialFormat(StrEnum):
         normalized = (media_type or "").split(";", 1)[0].strip().lower()
         mapping = {
             "application/pdf": cls.PDF,
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": cls.PPTX,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document": cls.DOCX,
             "text/plain": cls.TXT,
             "text/markdown": cls.MARKDOWN,
@@ -146,6 +151,7 @@ class MaterialFormat(StrEnum):
         mapping = {
             "pdf": cls.PDF,
             "docx": cls.DOCX,
+            "pptx": cls.PPTX,
             "txt": cls.TXT,
             "md": cls.MARKDOWN,
             "markdown": cls.MARKDOWN,

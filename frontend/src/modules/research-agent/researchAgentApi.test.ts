@@ -428,3 +428,10 @@ it('ends repeated connection failures so the user can recover explicitly', async
   await result
   vi.useRealTimers()
 })
+
+it('sends the selected course through the actual streaming request', async () => {
+  const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('event: turn_failed\ndata: {"code":"agent_unavailable","message":"暂不可用"}\n\n', { headers: { 'Content-Type': 'text/event-stream' } }))
+  vi.stubGlobal('fetch', fetch)
+  await streamAgentTurn({ message: '按课件回答', reference_knowledge_base_id: 'course-1', idempotencyKey: 'course-turn' }, () => undefined)
+  expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toMatchObject({ reference_knowledge_base_id: 'course-1' })
+})

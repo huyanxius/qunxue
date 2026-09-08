@@ -41,6 +41,7 @@ interface KnowledgeLibraryViewProps {
   onOpenEntry: (knowledgeId: string) => void
   onLocateEntry?: (entry: KnowledgeEntrySummary) => void
   onOpenGraph?: () => void
+  onOpenCourseLibrary?: () => void
   onLoadMore: () => void
   onRetry: () => void
 }
@@ -112,6 +113,7 @@ export function KnowledgeLibraryView({
   onOpenEntry,
   onLocateEntry,
   onOpenGraph,
+  onOpenCourseLibrary,
   onLoadMore,
   onRetry,
 }: KnowledgeLibraryViewProps) {
@@ -145,6 +147,8 @@ export function KnowledgeLibraryView({
           <button className="mobile-only" type="button" aria-expanded={mobileCatalogOpen} onClick={() => setMobileCatalogOpen((open) => !open)}>{mobileCatalogOpen ? '收起目录' : '浏览目录'}</button>
           {releaseState === 'ready' ? <small>{catalogTotal}</small> : null}
         </header>
+
+        {onOpenCourseLibrary ? <button type="button" className="knowledge-library__course-link" onClick={onOpenCourseLibrary}>课程知识库</button> : null}
 
         <form className="knowledge-library__search" aria-label="搜索知识库" onSubmit={submitSearch}>
           <MagnifyingGlassIcon size={15} weight="regular" aria-hidden="true" />

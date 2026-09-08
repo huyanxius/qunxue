@@ -70,6 +70,10 @@ def parse_material(
             material_id=resolved_material_id,
             parse_id=resolved_parse_id,
         )
+    elif material_format is MaterialFormat.PPTX:
+        blocks, full_text, structure = _parse_pptx(
+            content, material_id=resolved_material_id, parse_id=resolved_parse_id
+        )
     elif material_format is MaterialFormat.PDF:
         blocks, full_text, structure = _parse_pdf(
             content,
@@ -491,3 +495,103 @@ def _docx_heading_styles(styles: ElementTree.Element | None, namespace: str) -> 
         }
     )
     return result
+
+
+def _parse_pptx(content: bytes, *, material_id: UUID, parse_id: UUID):
+    """Only visible slide text and tables are shared; notes and hidden slides are excluded."""
+    import posixpath
+
+    p = "{http://schemas.openxmlformats.org/presentationml/2006/main}"
+    a = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+    r = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+    blocks, skipped = [], []
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            total_bytes = 0
+
+            def read_xml(name):
+                nonlocal total_bytes
+                info = archive.getinfo(name)
+                total_bytes += info.file_size
+                if info.file_size > _MAX_ZIP_MEMBER_BYTES or total_bytes > 64 * 1024 * 1024:
+                    raise MaterialParseError("document_too_large", "课件解压后的内容过大。")
+                raw = archive.read(name)
+                if b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper():
+                    raise MaterialParseError("invalid_pptx", "课件包含不支持的 XML 声明。")
+                return ElementTree.fromstring(raw)
+
+            presentation = read_xml("ppt/presentation.xml")
+            relationships = read_xml("ppt/_rels/presentation.xml.rels")
+            targets = {item.get("Id"): item.get("Target", "") for item in relationships
+                       if item.get("TargetMode") != "External"}
+            for page, slide_ref in enumerate(presentation.findall(f"{p}sldIdLst/{p}sldId"), 1):
+                target = targets.get(slide_ref.get(f"{r}id"), "")
+                name = posixpath.normpath(
+                    target.lstrip("/") if target.startswith("/") else "ppt/" + target
+                )
+                if not name.startswith("ppt/slides/") or not name.endswith(".xml"):
+                    raise MaterialParseError("invalid_pptx", "课件幻灯片引用无效。")
+                slide = read_xml(name)
+                if slide.get("show") in {"0", "false"}:
+                    continue
+                # Remove hidden containers before extracting descendants, including grouped tables.
+                def remove_hidden(parent):
+                    for child in list(parent):
+                        hidden = any(
+                            props.get("hidden") in {"1", "true"}
+                            for wrapper in child
+                            if wrapper.tag in {
+                                f"{p}nvSpPr", f"{p}nvGrpSpPr", f"{p}nvGraphicFramePr"
+                            }
+                            for props in wrapper.findall(f"{p}cNvPr")
+                        )
+                        if hidden:
+                            parent.remove(child)
+                        else:
+                            remove_hidden(child)
+
+                remove_hidden(slide)
+                title, lines = "", []
+                for shape in slide.findall(f".//{p}sp"):
+                    props = shape.find(f"{p}nvSpPr/{p}cNvPr")
+                    if props is not None and props.get("hidden") in {"1", "true"}:
+                        continue
+                    paragraphs = ["".join(node.text or "" for node in para.iter(f"{a}t"))
+                                  for para in shape.findall(f"{p}txBody/{a}p")]
+                    text = "\n".join(value for value in paragraphs if value.strip())
+                    placeholder = shape.find(f"{p}nvSpPr/{p}nvPr/{p}ph")
+                    if placeholder is not None and placeholder.get("type") in {"title", "ctrTitle"}:
+                        title = text
+                    if text:
+                        lines.append(text)
+                for table in slide.findall(f".//{a}tbl"):
+                    for row in table.findall(f"{a}tr"):
+                        cells = [" ".join(node.text or "" for node in cell.iter(f"{a}t"))
+                                 for cell in row.findall(f"{a}tc")]
+                        lines.append(" | ".join(cells))
+                text = "\n\n".join(lines).strip()
+                if not text:
+                    skipped.append(page)
+                    continue
+                # Short slides stay intact; long pages split without losing slide identity.
+                for start in range(0, len(text), 4000):
+                    blocks.append(
+                        _block(
+                            material_id=material_id,
+                            parse_id=parse_id,
+                            ordinal=len(blocks),
+                            kind="paragraph",
+                            text=text[start : start + 4000],
+                            locator=MaterialLocator(
+                                page=page,
+                                section_path=(title or f"第 {page} 张幻灯片",),
+                                char_start=start,
+                                char_end=min(start + 4000, len(text)),
+                            ),
+                        )
+                    )
+    except (BadZipFile, KeyError, ElementTree.ParseError, RuntimeError) as error:
+        raise MaterialParseError("invalid_pptx", "课件损坏或已加密，无法提取文字。") from error
+    return tuple(blocks), "\n\n".join(block.text for block in blocks), {
+        "format": "pptx", "unreadable_slides": skipped,
+    }

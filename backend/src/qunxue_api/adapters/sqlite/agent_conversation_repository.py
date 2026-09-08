@@ -79,6 +79,9 @@ class SqliteConversationRepository:
                 conversation_id=str(conversation.conversation_id),
                 user_id=str(conversation.user_id),
                 title=conversation.title,
+                reference_knowledge_base_id=str(conversation.reference_knowledge_base_id)
+                if conversation.reference_knowledge_base_id
+                else None,
                 version=1,
                 created_at=conversation.created_at,
                 updated_at=conversation.updated_at,
@@ -187,6 +190,9 @@ class SqliteConversationRepository:
             conversation_id=UUID(row.conversation_id),
             user_id=UUID(row.user_id),
             title=row.title,
+            reference_knowledge_base_id=UUID(row.reference_knowledge_base_id)
+            if row.reference_knowledge_base_id
+            else None,
             task_id=UUID(row.current_research_task_id) if row.current_research_task_id else None,
             created_at=_utc(row.created_at),
             updated_at=_utc(row.updated_at),
@@ -202,11 +208,15 @@ class SqliteConversationRepository:
             ),
             canvas_edit_version=row.canvas_edit_version,
             unfinished_runs=tuple(
-                self._safe_unfinished_run(run) for run in self._session.scalars(
-                    select(AgentRunRow).where(
+                self._safe_unfinished_run(run)
+                for run in self._session.scalars(
+                    select(AgentRunRow)
+                    .where(
                         AgentRunRow.conversation_id == str(conversation_id),
                         AgentRunRow.status != "completed",
-                    ).order_by(AgentRunRow.started_at).execution_options(populate_existing=True)
+                    )
+                    .order_by(AgentRunRow.started_at)
+                    .execution_options(populate_existing=True)
                 )
             ),
         )
@@ -368,11 +378,27 @@ class SqliteConversationRepository:
         turn: AgentTurn,
         attachments=(),
     ) -> None:
+        from qunxue_api.adapters.sqlite.shared_knowledge import SqliteSharedKnowledgeRepository
+        from qunxue_api.modules.shared_knowledge import SharedKnowledgeService
+
+        shared = SharedKnowledgeService(SqliteSharedKnowledgeRepository(self._session))
+        for citation in turn.assistant_message.citations:
+            if citation.source_kind != "shared_material":
+                continue
+            if (
+                not citation.knowledge_base_id
+                or str(conversation.reference_knowledge_base_id) != citation.knowledge_base_id
+            ):
+                raise ResearchMaterialCitationUnavailable("课程引用不属于当前会话。")
+            doc = shared.source(conversation.user_id, UUID(citation.knowledge_base_id),
+                                UUID(citation.material_id), citation.segment_id)
+            if str(doc.parse_id) != citation.parse_id:
+                raise ResearchMaterialCitationUnavailable("课程引用版本不可用。")
         selected = {str(item["material_id"]): str(item["parse_id"]) for item in attachments}
         material_citations = tuple(
             citation
             for citation in turn.assistant_message.citations
-            if citation.material_id is not None
+            if citation.material_id is not None and citation.source_kind != "shared_material"
         )
         if not material_citations:
             return
@@ -747,6 +773,7 @@ def _citation_dict(item: AgentCitation) -> dict[str, object]:
         "segment_id": item.segment_id,
         "locator": item.locator,
         "deleted": item.deleted,
+        **({"knowledge_base_id": item.knowledge_base_id} if item.knowledge_base_id else {}),
     }
 
 
@@ -792,6 +819,7 @@ def _citation(item: dict[str, object]) -> AgentCitation:
         segment_id=str(item["segment_id"]) if item.get("segment_id") else None,
         locator=(dict(item["locator"]) if isinstance(item.get("locator"), dict) else None),
         deleted=bool(item.get("deleted", False)),
+        knowledge_base_id=str(item["knowledge_base_id"]) if item.get("knowledge_base_id") else None,
     )
 
 
@@ -810,6 +838,8 @@ def _restore_citation(
     attachments: dict[str, str] | None = None,
 ) -> AgentCitation:
     citation = _citation(item)
+    if citation.source_kind == "shared_material":
+        return citation
     if not citation.material_id:
         return citation
     material = session.scalar(

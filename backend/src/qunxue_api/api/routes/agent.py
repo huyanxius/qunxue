@@ -447,6 +447,7 @@ def stream_agent_turn(
                                 document_version=payload.document_version,
                                 theory_plan_id=payload.theory_plan_id,
                                 material_ids=payload.material_ids,
+                                reference_knowledge_base_id=payload.reference_knowledge_base_id,
                                 mode=payload.mode,
                                 deep_research_run_id=payload.deep_research_run_id,
                                 deep_research_action=payload.deep_research_action,
@@ -693,6 +694,7 @@ def _summary(item) -> AgentConversationSummaryResponse:
     return AgentConversationSummaryResponse(
         conversation_id=item.conversation_id,
         task_id=item.task_id,
+        reference_knowledge_base_id=item.reference_knowledge_base_id,
         title=item.title,
         updated_at=item.updated_at,
         turn_count=len(item.turns),
@@ -712,6 +714,7 @@ def _conversation(
     return AgentConversationResponse(
         conversation_id=item.conversation_id,
         task_id=item.task_id,
+        reference_knowledge_base_id=item.reference_knowledge_base_id,
         title=item.title,
         created_at=item.created_at,
         updated_at=item.updated_at,
@@ -770,6 +773,7 @@ def _message(item) -> AgentMessageResponse:
                 segment_id=citation.segment_id,
                 locator=citation.locator,
                 deleted=citation.deleted,
+                knowledge_base_id=citation.knowledge_base_id,
             )
             for citation in item.citations
         ],
@@ -790,6 +794,7 @@ def _citation(item) -> dict[str, object]:
         "segment_id": item.segment_id,
         "locator": item.locator,
         "deleted": item.deleted,
+        **({"knowledge_base_id": item.knowledge_base_id} if item.knowledge_base_id else {}),
     }
 
 

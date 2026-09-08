@@ -60,3 +60,10 @@ describe('PageShell global chrome', () => {
     expect(screen.getByText(/自动让 Agent 规划任务/)).toBeInTheDocument()
   })
 })
+
+it('exposes courses in desktop navigation and mobile more menu', () => {
+  render(<MemoryRouter><PageShell><h1>课程测试</h1></PageShell></MemoryRouter>)
+  expect(within(screen.getByRole('navigation', { name: '桌面主导航' })).getByRole('link', { name: '课程' })).toHaveAttribute('href', '/courses')
+  fireEvent.click(screen.getByRole('button', { name: '更多' }))
+  expect(within(screen.getByRole('navigation', { name: '更多功能' })).getByRole('link', { name: '课程' })).toHaveAttribute('href', '/courses')
+})

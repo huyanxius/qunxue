@@ -1035,7 +1035,7 @@
 .qx-reader__pagination { max-width: 760px; margin: 23px auto 0; padding-top: 12px; font-size: 11px; }
 .qx-reader__pagination button { height: 30px; border-radius: 4px; font-size: 11px; }
 
-.qx-reader__inspector { min-width: 0; min-height: 0; overflow: hidden auto; border-left: 1px solid var(--qx-reader-line); background: light-dark(#f5f6f4, #1b1b1a); }
+.qx-reader__inspector { position: relative; inset: auto; width: auto; padding: 0; box-shadow: none; min-width: 0; min-height: 0; overflow: hidden auto; border-left: 1px solid var(--qx-reader-line); background: light-dark(#f5f6f4, #1b1b1a); }
 .qx-reader__body:not(.has-inspector) .qx-reader__inspector { visibility: visible; }
 .qx-inspector__head { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; padding: 15px 14px 13px; border-bottom: 1px solid var(--qx-reader-line); background: light-dark(#f1f3f0, #1a1b1a); }
 .qx-inspector__head > div { display: grid; gap: 3px; min-width: 0; }

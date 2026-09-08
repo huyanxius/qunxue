@@ -22,6 +22,7 @@ export interface KnowledgeExplorerPageProps {
   onOpenEntry: (knowledgeId: string) => void
   onLocateEntry?: (entry: KnowledgeEntrySummary) => void
   onOpenGraph?: () => void
+  onOpenCourseLibrary?: () => void
 }
 
 function errorMessage(error: unknown) {
@@ -35,6 +36,7 @@ export function KnowledgeExplorerPage({
   onOpenEntry,
   onLocateEntry,
   onOpenGraph,
+  onOpenCourseLibrary,
 }: KnowledgeExplorerPageProps) {
   const [queryInput, setQueryInput] = useState(state.query ?? '')
   const [loadedReleaseId, setLoadedReleaseId] = useState<string>()
@@ -234,6 +236,7 @@ export function KnowledgeExplorerPage({
       onOpenEntry={onOpenEntry}
       onLocateEntry={onLocateEntry}
       onOpenGraph={onOpenGraph}
+      onOpenCourseLibrary={onOpenCourseLibrary}
       onLoadMore={() => void loadMore()}
       onRetry={() => setRetryKey((value) => value + 1)}
     />

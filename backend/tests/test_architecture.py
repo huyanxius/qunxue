@@ -15,6 +15,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "account_management": {"identity"},
     "agent_conversation": set(),
     "agent_memory": set(),
+    "shared_knowledge": set(),
     "billing": set(),
     "identity": set(),
     "knowledge_catalog": set(),
@@ -89,6 +90,7 @@ ALLOWED_MODULE_INTERNAL_DEPENDENCIES = {
 MODULE_INTERNAL_ROLE_ALIASES = {
     "qualitative_workspace": "domain",
     "research_map": "domain",
+    "canvas_editing": "domain",
 }
 FORBIDDEN_INTERNAL_PREFIXES = (
     "qunxue_api.adapters",

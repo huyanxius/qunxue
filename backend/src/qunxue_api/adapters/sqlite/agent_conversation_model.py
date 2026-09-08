@@ -29,6 +29,7 @@ class AgentConversationRow(Base):
     current_research_task_id: Mapped[str | None] = mapped_column(
         ForeignKey("research_tasks.task_id", ondelete="SET NULL"), nullable=True
     )
+    reference_knowledge_base_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     canvas_edits: Mapped[dict] = mapped_column(
         JSON, nullable=False, default=dict, server_default="{}"
     )

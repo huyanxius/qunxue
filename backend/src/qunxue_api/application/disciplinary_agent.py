@@ -54,6 +54,7 @@ class DisciplinaryAgentApplication:
         ensure_research_draft: Callable[..., UUID] | None = None,
         bind_research_draft: Callable[..., UUID] | None = None,
         memory_tools_factory: Callable[..., object] | None = None,
+        shared_references=None,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
@@ -63,6 +64,7 @@ class DisciplinaryAgentApplication:
         self._ensure_research_draft = ensure_research_draft
         self._bind_research_draft = bind_research_draft
         self._memory_tools_factory = memory_tools_factory
+        self._shared_references = shared_references
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
@@ -208,6 +210,7 @@ class DisciplinaryAgentApplication:
         document_version: int | None = None,
         theory_plan_id: UUID | None = None,
         material_ids: tuple[UUID, ...] = (),
+        reference_knowledge_base_id: UUID | None = None,
         mode: Literal["standard", "deep_research"] = "standard",
         deep_research_run_id: UUID | None = None,
         deep_research_action: Literal["clarify", "confirm", "skip"] | None = None,
@@ -366,6 +369,17 @@ class DisciplinaryAgentApplication:
                     conversation_id=conversation.conversation_id,
                     requested_task_id=task_id,
                 )
+        if conversation is not None:
+            if (
+                reference_knowledge_base_id is not None
+                and reference_knowledge_base_id != conversation.reference_knowledge_base_id
+            ):
+                raise ConversationTaskBindingConflict("切换课程资料需要新建对话。")
+            reference_knowledge_base_id = conversation.reference_knowledge_base_id
+        if reference_knowledge_base_id is not None:
+            if self._shared_references is None:
+                raise ValueError("课程资料暂不可用。")
+            self._shared_references.application.require_read(user_id, reference_knowledge_base_id)
         if self._credits is not None:
             self._credits.ensure_can_start(user_id=user_id)
             self._conversations.commit()
@@ -378,6 +392,7 @@ class DisciplinaryAgentApplication:
                 conversation = self._conversations.create_conversation(
                     user_id=user_id,
                     title=prompt,
+                    reference_knowledge_base_id=reference_knowledge_base_id,
                 )
             if workspace == "research" or material_ids:
                 if conversation_was_created and task_id is not None and self._bind_research_draft:
@@ -441,6 +456,9 @@ class DisciplinaryAgentApplication:
                 if existing_run is not None
                 else prompt
             ),
+            "reference_knowledge_base_id": str(reference_knowledge_base_id)
+            if reference_knowledge_base_id
+            else None,
             "workspace": workspace,
             "web_search": web_search,
             "mode": mode,
@@ -611,7 +629,15 @@ class DisciplinaryAgentApplication:
                 raise AgentInterrupted("Agent run was interrupted by the client")
 
             conversation_history = current.turns[-8:]
-            if self._memory_tools_factory is not None:
+            if reference_knowledge_base_id is not None:
+                self._shared_references.prepare(
+                    user_id=user_id, kb_id=reference_knowledge_base_id, query=prompt, tools=tools
+                )
+                conversation_history = self._shared_references.filter_history(
+                    user_id=user_id, kb_id=reference_knowledge_base_id, turns=conversation_history
+                )
+            # Shared evidence can be revoked and must not become unscoped personal memory.
+            if self._memory_tools_factory is not None and reference_knowledge_base_id is None:
                 tools.memory = self._memory_tools_factory(
                     user_id=user_id,
                     task_id=task_id,
@@ -911,6 +937,7 @@ def _agent_citation(item) -> AgentCitation:
         segment_id=item.segment_id,
         locator=dict(item.locator) if item.locator is not None else None,
         deleted=item.deleted,
+        knowledge_base_id=item.knowledge_base_id,
     )
 
 
@@ -990,6 +1017,7 @@ def _evidence_from_citation(item):
         segment_id=item.segment_id,
         locator=dict(item.locator) if item.locator is not None else None,
         deleted=item.deleted,
+        knowledge_base_id=item.knowledge_base_id,
     )
 
 
