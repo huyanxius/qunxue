@@ -1,23 +1,20 @@
 import { CourseIconButton } from './CourseIconButton'
 import { XIcon, ArrowRightIcon, BooksIcon, ChatCircleTextIcon, TreeStructureIcon } from '@phosphor-icons/react'
+import { ResearchLibraryBot } from '../research/ResearchLibraryBot'
 
 export function CourseWelcome({ onStart }: { onStart: () => void }) {
   return <section className="course-welcome">
     <header className="course-welcome__hero">
-      <p className="course-welcome__eyebrow">课程</p>
-      <h1>课件、知识点和学习对话，在同一门课程里</h1>
-      <p className="course-welcome__description">老师把课件整理成可以共享的课程知识库。学生加入后，既能阅读原文，也能带着课程资料向 Agent 提问。</p>
+      <ResearchLibraryBot graduationCap />
+      <h1>课程</h1>
+      <p className="course-welcome__description">阅读课堂资料，梳理知识脉络，带着依据提问。</p>
     </header>
-    <div className="course-welcome__roles">
-      <section><h2>教师：把资料组织成一门课</h2><p>创建课堂，上传课件和补充阅读。系统整理知识点与课程导图，再由你决定何时分享给学生。</p></section>
-      <section><h2>学生：沿着知识点读懂原文</h2><p>通过老师的链接加入课堂。在资料与导图之间切换，需要讨论时，自行选择是否让 Agent 参考这门课。</p></section>
-    </div>
-    <div className="course-welcome__start"><button type="button" className="research-hub__new" onClick={onStart}>开始使用课程<ArrowRightIcon size={17} /></button><span>下一步选择身份，之后会为你记住。</span></div>
-    <ol className="course-welcome__flow">
-      <li><BooksIcon size={23} weight="light" /><div><h3>资料放在一起</h3><p>课件与文档集中阅读，切换文件不必离开课程。</p></div></li>
-      <li><TreeStructureIcon size={23} weight="light" /><div><h3>知识点连回原文</h3><p>从课程导图查看关联，再打开对应的课件段落。</p></div></li>
-      <li><ChatCircleTextIcon size={23} weight="light" /><div><h3>带着依据继续问</h3><p>选用课程资料提问，回答中的引用可以回到原文。</p></div></li>
-    </ol>
+    <ul className="course-welcome__flow" aria-label="课程功能">
+      <li><BooksIcon size={26} weight="light" aria-hidden="true" /><h2>课程资料</h2><p>课件与补充阅读，集中查阅</p></li>
+      <li><TreeStructureIcon size={26} weight="light" aria-hidden="true" /><h2>知识导图</h2><p>梳理知识关联，回到原文</p></li>
+      <li><ChatCircleTextIcon size={26} weight="light" aria-hidden="true" /><h2>学习对话</h2><p>结合课程提问，核对引用</p></li>
+    </ul>
+    <div className="course-welcome__start"><button type="button" className="research-hub__new" onClick={onStart}>开始使用课程<ArrowRightIcon size={17} aria-hidden="true" /></button><p>教师创建与分享<span aria-hidden="true"> · </span>学生加入与学习</p></div>
   </section>
 }
 
