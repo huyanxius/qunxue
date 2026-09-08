@@ -36,3 +36,7 @@ export type { ResearchMaterialsPanelProps } from './ResearchMaterialsPanel'
 export type { ResearchAnalysisPanelProps } from './ResearchAnalysisPanel'
 
 export { prepareAgentMaterialContext, listAgentMaterials, getAgentAttachmentMaterial } from './researchMaterialsLibrary'
+
+export { MaterialReaderView } from './MaterialReaderView'
+
+export { DocumentWorkspace, DocumentWorkspaceToolbar, DocumentOutline, DocumentSearch, DocumentSourceView, DocumentSourceSegment } from './DocumentWorkspace'
