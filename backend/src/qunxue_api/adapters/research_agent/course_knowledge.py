@@ -127,8 +127,15 @@ class CourseKnowledgeGenerator:
         return batches
 
     async def _generate_at_endpoint(self, endpoint, batch):
-        timeout = min(60, max(5, endpoint.timeout_seconds))
+        timeout = endpoint.timeout_seconds
         settings = {"max_tokens": 3000, "timeout": timeout}
+        if endpoint.model.lower().startswith("gpt-5"):
+            settings["openai_reasoning_effort"] = "low"
+        # Compact IDs reduce copying/token cost; only original IDs leave this adapter.
+        sources = {str(i): item["segment_id"] for i, item in enumerate(batch)}
+        prompt_batch = [
+            {"segment_id": str(i), "text": item["text"]} for i, item in enumerate(batch)
+        ]
         if _is_deepseek_flash(base_url=endpoint.base_url, model=endpoint.model):
             settings["extra_body"] = {"thinking": {"type": "disabled"}}
         if endpoint.extra_headers:
@@ -148,10 +155,17 @@ class CourseKnowledgeGenerator:
                 "source 和 target 必须等于本批知识点 title。不补充原文以外的信息。",
             )
             result = await agent.run(
-                json.dumps(batch, ensure_ascii=False),
+                json.dumps(prompt_batch, ensure_ascii=False),
                 usage_limits=UsageLimits(request_limit=1, tool_calls_limit=0),
             )
-            return result.output.model_dump()
+            value = result.output.model_dump()
+            for item in (*value["topics"], *value["relations"]):
+                if not set(item["segment_ids"]) <= sources.keys():
+                    raise ValueError("unknown source alias")
+                item["segment_ids"] = list(
+                    dict.fromkeys(sources[key] for key in item["segment_ids"])
+                )
+            return value
 
     async def generate(self, document, *, checkpoints=None, on_checkpoint=None):
         batches = self.batches(document)
@@ -187,7 +201,7 @@ class CourseKnowledgeGenerator:
 
                 async def invoke(endpoint, batch=batch, batch_document=batch_document):
                     try:
-                        async with asyncio.timeout(min(60, max(5, endpoint.timeout_seconds))):
+                        async with asyncio.timeout(endpoint.timeout_seconds):
                             output = await self._generate_at_endpoint(endpoint, batch)
                         output = BatchKnowledge.model_validate(output).model_dump()
                         return ModelAttemptResult(value=validate_knowledge(output, batch_document))
