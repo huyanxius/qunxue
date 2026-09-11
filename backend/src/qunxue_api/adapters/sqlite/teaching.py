@@ -86,11 +86,14 @@ class SqliteTeachingRepository:
 
     def save_settings(self, value, version):
         if version == 0:
-            self.session.add(
-                CourseTeachingSettingsRow(
-                    course_id=value["course_id"], version=value["version"], payload=value
-                )
-            )
+            count = self.session.execute(
+                insert(CourseTeachingSettingsRow)
+                .values(course_id=value["course_id"], version=value["version"], payload=value)
+                .on_conflict_do_nothing(index_elements=["course_id"])
+            ).rowcount
+            if count != 1:
+                self.session.rollback()
+                raise TeachingError("课程设置已更新，请刷新。", 409)
         else:
             count = self.session.execute(
                 update(CourseTeachingSettingsRow)
