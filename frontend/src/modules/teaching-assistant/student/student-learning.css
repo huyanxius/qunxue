@@ -1,0 +1,13 @@
+.student-learning { display: grid; gap: 20px; min-width: 0; }
+.student-learning .courses-page__form { margin: 0; }
+.student-learning fieldset { min-width: 0; padding: 12px; border: 1px solid var(--app-border); border-radius: var(--qx-radius-control); }
+.student-learning .student-materials__item { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; }
+.student-learning .student-materials__item input { width: auto; margin-top: 4px; }
+.student-learning__records { padding-left: 20px; }
+.student-learning__records li { margin-block: 8px; }
+.student-learning__result { min-width: 0; overflow-wrap: anywhere; }
+.student-learning__result p, .student-learning__result blockquote { white-space: pre-wrap; }
+.student-learning__result table { width: 100%; border-collapse: collapse; }
+.student-learning__result td, .student-learning__result th { padding: 8px; border-bottom: 1px solid var(--app-border); text-align: left; }
+.student-learning .qx-reader { min-height: 260px; max-height: 65vh; }
+.student-learning .qx-reader__scroll { max-height: 52vh; }
