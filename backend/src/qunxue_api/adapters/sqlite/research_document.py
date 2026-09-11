@@ -33,7 +33,7 @@ class SqliteResearchDocumentRepository:
                 insert(ResearchDocumentIdentityRow)
                 .values(
                     task_id=str(snapshot.task_id),
-                    theory_plan_id=str(snapshot.theory_plan_id) if snapshot.theory_plan_id else None,
+                    theory_plan_id=str(snapshot.theory_plan_id),
                     document_id=str(snapshot.document_id),
                 )
                 .on_conflict_do_nothing(
