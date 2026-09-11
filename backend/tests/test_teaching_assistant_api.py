@@ -619,3 +619,138 @@ def test_teacher_can_set_review_rubric_without_expanding_student_material_scope(
         ).status_code
         == 403
     )
+
+
+def _published_summary_activity(client, kb, text, rationale):
+    rubric = [
+        {"id": "evidence", "title": "材料与论证", "max_score": 40},
+        {"id": "argument", "title": "论点", "max_score": 30},
+        {"id": "structure", "title": "结构", "max_score": 30},
+    ]
+    activity = create_activity(
+        client,
+        kb,
+        kind="assignment_review",
+        shared_with_teacher=True,
+        input={"requirements": "分析课堂沉默", "submission_text": text, "rubric": rubric},
+    ).json()
+    cite = {
+        "material_id": None,
+        "document_id": None,
+        "segment_id": "submission-text",
+        "title": "正文",
+        "quote": text,
+    }
+    with client.app.state.teaching_scope() as app:
+        saved = app.repository.get(activity["id"])
+        saved.update(
+            state="published",
+            version=saved["version"] + 1,
+            result={
+                "stage": "complete",
+                "teacher_scores": [
+                    {
+                        "dimension_id": "evidence",
+                        "score": 20,
+                        "rationale": rationale,
+                        "citations": [cite],
+                    },
+                    {
+                        "dimension_id": "argument",
+                        "score": None,
+                        "rationale": "需要进一步判断",
+                        "citations": [cite],
+                    },
+                    {
+                        "dimension_id": "structure",
+                        "score": 30,
+                        "rationale": "结构完整，表达清晰",
+                        "citations": [cite],
+                    },
+                ],
+                "suggested_scores": [
+                    {
+                        "dimension_id": "structure",
+                        "score": 10,
+                        "rationale": "模型未确认意见",
+                        "citations": [cite],
+                    },
+                ],
+                "teacher_feedback": rationale,
+            },
+        )
+        app.repository.save(saved, activity["version"])
+    return activity
+
+
+def test_summary_groups_confirmed_shortfalls_by_dimension_not_wording(client):
+    _authenticate(client)
+    kb = create_library(client)
+    first = _published_summary_activity(client, kb, "害怕出错所以沉默", "缺少互动过程的证据")
+    second = _published_summary_activity(
+        client, kb, "群体规范维持沉默", "需要用课堂记录说明规范如何生效"
+    )
+    response = client.get(f"/api/shared-knowledge-bases/{kb['id']}/learning-summary")
+    assert response.status_code == 200
+    summary = response.json()
+    assert summary["sample_count"] == 2
+    assert len(summary["issues"]) == 1
+    issue = summary["issues"][0]
+    assert set(issue["activity_ids"]) == {first["id"], second["id"]}
+    assert set(issue["evidence"]) == {"害怕出错所以沉默", "群体规范维持沉默"}
+    assert "材料与论证" in issue["description"]
+    assert "缺少互动过程的证据" in issue["description"]
+    assert "需要用课堂记录说明规范如何生效" in issue["description"]
+    assert "结构完整" not in issue["description"]
+    assert "进一步判断" not in issue["description"]
+    assert "模型未确认意见" not in issue["description"]
+
+
+def test_summary_excludes_deleted_material_and_departed_student_without_failing(client):
+    from test_research_material_api import _task, _upload
+
+    _authenticate(client)
+    kb = create_library(client)
+    valid = _published_summary_activity(client, kb, "仍可查看的回答", "需要补充例证")
+    task = _task(client)
+    material = _upload(client, task).json()
+    rubric = [{"id": str(i), "title": str(i), "max_score": 10} for i in range(3)]
+    create_activity(
+        client,
+        kb,
+        kind="assignment_review",
+        shared_with_teacher=True,
+        input={"requirements": "说明", "material_ids": [material["material_id"]], "rubric": rubric},
+    )
+    deleted = mutation(
+        client, "delete", f"/api/research-tasks/{task}/materials/{material['material_id']}"
+    )
+    assert deleted.status_code == 204
+    teacher = dict(client.cookies)
+    mutation(
+        client, "patch", f"/api/shared-knowledge-bases/{kb['id']}", json={"sharing_enabled": True}
+    )
+    client.cookies.clear()
+    _authenticate(client)
+    mutation(
+        client,
+        "post",
+        "/api/shared-knowledge-base-subscriptions",
+        json={"share_token": kb["share_token"]},
+    )
+    _published_summary_activity(client, kb, "退出课程的回答", "退出后不应计入")
+    assert (
+        mutation(
+            client, "delete", f"/api/shared-knowledge-base-subscriptions/{kb['id']}"
+        ).status_code
+        == 204
+    )
+    client.cookies.clear()
+    client.cookies.update(teacher)
+    response = client.get(f"/api/shared-knowledge-bases/{kb['id']}/learning-summary")
+    assert response.status_code == 200
+    summary = response.json()
+    assert summary["sample_count"] == 1
+    assert len(summary["issues"]) == 1
+    assert summary["issues"][0]["activity_ids"] == [valid["id"]]
+    assert summary["issues"][0]["evidence"] == ["仍可查看的回答"]
