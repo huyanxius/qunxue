@@ -264,7 +264,21 @@ class TeachingAssistantApplication:
             require(owner, "只有记录本人可以调整分享。", 403)
             activity["shared_with_teacher"] = payload["shared_with_teacher"]
         if "input" in payload:
-            require(owner, "只有记录本人可以修改输入。", 403)
+            require(
+                owner or teacher and activity["kind"] == "assignment_review",
+                "只有记录本人或负责批改的课程教师可以修改输入。",
+                403,
+            )
+            if not owner:
+                require(
+                    all(
+                        payload["input"].get(field) == value
+                        for field, value in activity["input"].items()
+                        if field not in {"requirements", "rubric"}
+                    ),
+                    "教师只能修改作业要求与评价标准，不能改动学生提交范围。",
+                    403,
+                )
             require(
                 activity["state"] in {"draft", "failed"}
                 or activity["kind"] == "learning_check"
