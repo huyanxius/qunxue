@@ -99,6 +99,8 @@ from qunxue_api.adapters.sqlite.research_task_repository import (
     SqliteResearchTaskRepository,
 )
 from qunxue_api.adapters.sqlite.shared_knowledge import SqliteSharedKnowledgeRepository
+from qunxue_api.adapters.sqlite.teaching import SqliteTeachingRepository
+from qunxue_api.adapters.sqlite.teaching_documents import TeachingDocuments
 from qunxue_api.adapters.sqlite.theory_matching import (
     SqliteMatchingRequestRepository,
     SqliteMatchRunRepository,
@@ -113,6 +115,7 @@ from qunxue_api.adapters.transcription import (
     parse_imported_transcript,
 )
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
+from qunxue_api.api.contracts.teaching import TeachingResult
 from qunxue_api.api.routes.agent import router as agent_router
 from qunxue_api.api.routes.frameworks import router as frameworks_router
 from qunxue_api.api.routes.health import router as health_router
@@ -136,6 +139,7 @@ from qunxue_api.api.routes.research_method import router as research_method_rout
 from qunxue_api.api.routes.research_tasks import router as research_tasks_router
 from qunxue_api.api.routes.session import router as session_router
 from qunxue_api.api.routes.shared_knowledge import router as shared_knowledge_router
+from qunxue_api.api.routes.teaching import router as teaching_router
 from qunxue_api.api.routes.transcription import router as transcription_router
 from qunxue_api.application import (
     DisciplinaryAgentApplication,
@@ -158,6 +162,8 @@ from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
 from qunxue_api.application.memory_learning import MemoryLearningWorker
 from qunxue_api.application.memory_overview import MemoryOverview
 from qunxue_api.application.shared_knowledge import SharedKnowledgeApplication
+from qunxue_api.application.teaching_assistant import TeachingAssistantApplication
+from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import CreditService
@@ -195,6 +201,7 @@ from qunxue_api.modules.shared_knowledge import (
     SharedKnowledgeUnavailable,
     SharedKnowledgeValidationError,
 )
+from qunxue_api.modules.teaching_assistant import TeachingError, require
 from qunxue_api.modules.theory_matching import TheoryMatchingService
 from qunxue_api.modules.transcription import (
     ProcessingLocation,
@@ -575,6 +582,68 @@ def create_app(
             )
 
     app.state.shared_knowledge_scope = shared_knowledge_scope
+
+    @contextmanager
+    def teaching_scope():
+        with resolved_database.session() as session:
+            materials = SqliteResearchMaterialRepository(session)
+
+            def read_sources(owner, ids, parse_ids):
+                items = []
+                for material_id in ids:
+                    material = materials.get_owned(UUID(material_id), user_id=owner)
+                    require(material is not None, "提交材料不存在或已删除。", 404)
+                    require(material.current_parse_id is not None, "所选材料尚未解析完成。", 409)
+                    require(
+                        materials.is_external_model_processable(
+                            material.material_id, user_id=owner, task_id=material.task_id
+                        ),
+                        "此资料未授权用于模型分析。",
+                        403,
+                    )
+                    parse_id = (
+                        UUID(parse_ids[material_id])
+                        if material_id in parse_ids
+                        else material.current_parse_id
+                    )
+                    parsed = materials.get_parse(
+                        material.material_id,
+                        parse_id,
+                        user_id=owner,
+                        task_id=material.task_id,
+                    )
+                    require(parsed is not None, "材料解析版本不可用。", 409)
+                    items.append(
+                        {
+                            "material_id": str(material.material_id),
+                            "document_id": None,
+                            "title": material.original_filename,
+                            "parse_id": str(parse_id),
+                            "segments": [
+                                {"segment_id": b.segment_id, "text": b.text} for b in parsed.blocks
+                            ],
+                        }
+                    )
+                return items
+
+            yield TeachingAssistantApplication(
+                SqliteTeachingRepository(session),
+                SharedKnowledgeApplication(
+                    SqliteSharedKnowledgeRepository(session), parser=parse_material
+                ),
+                read_sources,
+                TeachingDocuments(session),
+            )
+
+    app.state.teaching_scope = teaching_scope
+
+    @app.exception_handler(TeachingError)
+    async def teaching_error_handler(request, error):
+        return JSONResponse(
+            status_code=error.status,
+            content={"error": {"code": "VALIDATION_ERROR", "message": str(error)}},
+        )
+
     transcription_provider = _build_transcription_provider(resolved_settings)
 
     @contextmanager
@@ -974,6 +1043,11 @@ def create_app(
                 raise
 
     app.state.disciplinary_agent_scope = disciplinary_agent_scope
+    app.state.execute_teaching = TeachingExecution(
+        teaching_scope,
+        disciplinary_agent_scope,
+        lambda value: TeachingResult.model_validate(value).model_dump(mode="json"),
+    )
 
     @contextmanager
     def memory_service_scope():
@@ -1033,6 +1107,7 @@ def create_app(
         embedding_model=resolved_settings.embedding_model,
     )
     app.include_router(shared_knowledge_router)
+    app.include_router(teaching_router)
     app.include_router(memories_router)
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
