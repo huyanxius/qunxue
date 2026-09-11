@@ -20,7 +20,7 @@ const defaultRubric: RubricDimension[] = [
 const stateNames = { draft: '草稿', running: '执行中', ready: '待复核', reviewed: '已复核', published: '已发布', failed: '执行失败' }
 const message = (error: unknown) => error instanceof Error ? error.message : '操作失败，请重试。'
 
-export function TeacherTeachingPanel({ course }: { course: SharedCourse }) {
+export function TeacherTeachingPanel({ course, onDirtyChange }: { course: SharedCourse; onDirtyChange?: (dirty: boolean) => void }) {
   const [settings, setSettings] = useState<TeachingSettings | null>(null)
   const [items, setItems] = useState<TeachingActivity[]>([])
   const [summary, setSummary] = useState<LearningSummary | null>(null)
@@ -40,6 +40,7 @@ export function TeacherTeachingPanel({ course }: { course: SharedCourse }) {
   const [notice, setNotice] = useState('')
   const [tab, setTab] = useState<'source' | 'feedback'>('feedback')
   const [dirty, setDirty] = useState(false)
+  useEffect(() => { onDirtyChange?.(dirty); return () => onDirtyChange?.(false) }, [dirty, onDirtyChange])
   const [showSettings, setShowSettings] = useState(false)
   const requestKey = useRef(crypto.randomUUID())
   const generation = useRef(0)
@@ -156,11 +157,11 @@ export function TeacherTeachingPanel({ course }: { course: SharedCourse }) {
     </div>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {showSettings && settings && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void action(async () => {
-      setSettings(await updateTeachingSettings(course.id, { version: settings.version, objectives: settings.objectives, rubric: settings.rubric })); setNotice('课程要求已保存。')
+      setSettings(await updateTeachingSettings(course.id, { version: settings.version, objectives: settings.objectives, rubric: settings.rubric.length ? settings.rubric : defaultRubric })); setDirty(false); setNotice('课程要求已保存。')
     }) }}>
       <h3>课程教学要求</h3>
-      <label>默认教学目标<textarea value={settings.objectives} onChange={(e) => setSettings({ ...settings, objectives: e.target.value })} /></label>
-      <RubricFields rubric={settings.rubric.length ? settings.rubric : defaultRubric} onChange={(next) => setSettings({ ...settings, rubric: next })} />
+      <label>默认教学目标<textarea value={settings.objectives} onChange={(e) => { setSettings({ ...settings, objectives: e.target.value }); setDirty(true) }} /></label>
+      <RubricFields rubric={settings.rubric.length ? settings.rubric : defaultRubric} onChange={(next) => { setSettings({ ...settings, rubric: next }); setDirty(true) }} />
       <button className="qx-button" disabled={busy}>保存课程要求</button>
     </form>}
     {form && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void saveDraft(true) }}>

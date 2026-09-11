@@ -9,11 +9,11 @@ type Activity = Awaited<ReturnType<typeof getTeachingActivity>>
 type Input = Activity['input']
 const stateLabels: Record<Activity['state'], string> = { draft: '已保存', running: '生成中', ready: '可继续', reviewed: '已复核', published: '已发布', failed: '生成失败' }
 
-export function StudentLearningPanel({ course }: { course: SharedCourse }) {
-  return course.access === 'reader' ? <StudentWorkspace key={course.id} course={course} /> : <p className="courses-page__hint">请在已加入且仍可访问的课程中使用学生学习功能。</p>
+export function StudentLearningPanel({ course, onDirtyChange }: { course: SharedCourse; onDirtyChange?: (dirty: boolean) => void }) {
+  return course.access === 'reader' ? <StudentWorkspace key={course.id} course={course} onDirtyChange={onDirtyChange} /> : <p className="courses-page__hint">请在已加入且仍可访问的课程中使用学生学习功能。</p>
 }
 
-function StudentWorkspace({ course }: { course: SharedCourse }) {
+function StudentWorkspace({ course, onDirtyChange }: { course: SharedCourse; onDirtyChange?: (dirty: boolean) => void }) {
   const [records, setRecords] = useState<Activity[]>([])
   const [selected, setSelected] = useState<Activity | null>(null)
   const [kind, setKind] = useState<'learning_check' | 'assignment_review'>('learning_check')
@@ -25,6 +25,7 @@ function StudentWorkspace({ course }: { course: SharedCourse }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [dirty, setDirty] = useState(false)
+  useEffect(() => { onDirtyChange?.(dirty); return () => onDirtyChange?.(false) }, [dirty, onDirtyChange])
   const [reload, setReload] = useState(0)
   const lock = useRef(false)
   const mounted = useRef(true)
