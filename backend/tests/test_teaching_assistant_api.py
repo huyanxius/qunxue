@@ -754,3 +754,32 @@ def test_summary_excludes_deleted_material_and_departed_student_without_failing(
     assert len(summary["issues"]) == 1
     assert summary["issues"][0]["activity_ids"] == [valid["id"]]
     assert summary["issues"][0]["evidence"] == ["仍可查看的回答"]
+
+
+def test_unconfigured_course_accepts_submission_for_teacher_rubric_review(client):
+    _authenticate(client)
+    kb = create_library(client)
+    mutation(
+        client, "patch", f"/api/shared-knowledge-bases/{kb['id']}", json={"sharing_enabled": True}
+    )
+    client.cookies.clear()
+    _authenticate(client)
+    mutation(
+        client,
+        "post",
+        "/api/shared-knowledge-base-subscriptions",
+        json={"share_token": kb["share_token"]},
+    )
+    response = create_activity(
+        client,
+        kb,
+        kind="assignment_review",
+        shared_with_teacher=True,
+        input={
+            "title": "第一次作业",
+            "requirements": "区分相关与因果",
+            "submission_text": "仅有共变关系不足以证明因果。",
+        },
+    )
+    assert response.status_code == 201
+    assert len(response.json()["input"]["rubric"]) == 3
