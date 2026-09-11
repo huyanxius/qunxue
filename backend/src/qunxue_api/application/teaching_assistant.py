@@ -6,7 +6,9 @@ from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from uuid import NAMESPACE_URL, UUID, uuid5
 
+from qunxue_api.modules.shared_knowledge import SharedKnowledgeUnavailable
 from qunxue_api.modules.teaching_assistant import (
+    TeachingError,
     can_read,
     next_stage,
     projection,
@@ -435,24 +437,55 @@ class TeachingAssistantApplication:
             if a["kind"] == "assignment_review" and a["shared_with_teacher"]
         ]
         issues = {}
+        comments = {}
+        available = []
         for activity in activities:
-            self.source(user_id, activity["id"])
+            scores = (activity["result"] or {}).get("teacher_scores", [])
+            try:
+                sources = self.source(user_id, activity["id"])
+                validate_citations(
+                    [cite for score in scores for cite in score.get("citations", [])], sources
+                )
+            except SharedKnowledgeUnavailable:
+                continue
+            except TeachingError as error:
+                if error.status not in {403, 404, 409, 422}:
+                    raise
+                continue
+            available.append(activity)
             if activity["state"] != "published":
                 continue
-            for score in (activity["result"] or {}).get("teacher_scores", []):
-                if not score.get("citations"):
+            rubric = {dimension["id"]: dimension for dimension in activity["input"]["rubric"]}
+            for score in scores:
+                dimension = rubric.get(score["dimension_id"])
+                value = score.get("score")
+                if (
+                    dimension is None
+                    or value is None
+                    or not 0 <= value < dimension["max_score"]
+                    or not score.get("citations")
+                ):
                     continue
-                text = score["rationale"]
+                key = dimension["id"]
                 issue = issues.setdefault(
-                    text, {"description": text, "activity_ids": [], "evidence": []}
+                    key, {"description": dimension["title"], "activity_ids": [], "evidence": []}
                 )
+                details = comments.setdefault(key, [])
+                rationale = score["rationale"].strip()
+                if rationale and rationale not in details:
+                    details.append(rationale)
                 if activity["id"] not in issue["activity_ids"]:
                     issue["activity_ids"].append(activity["id"])
                 issue["evidence"] = list(
-                    dict.fromkeys([*issue["evidence"], *(c["quote"] for c in score["citations"])])
+                    dict.fromkeys(
+                        [*issue["evidence"], *(cite["quote"] for cite in score["citations"])]
+                    )
                 )
+        for key, issue in issues.items():
+            if comments[key]:
+                issue["description"] += "：" + "；".join(comments[key])
         return {
-            "sample_count": len(activities),
+            "sample_count": len(available),
             "issues": list(issues.values()),
-            "updated_at": max((a["updated_at"] for a in activities), default=None),
+            "updated_at": max((a["updated_at"] for a in available), default=None),
         }
