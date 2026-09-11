@@ -106,7 +106,7 @@ export function TeacherTeachingPanel({ course }: { course: SharedCourse }) {
     if (!leave()) return
     await action(async () => {
       const next = await getTeachingActivity(activity.id)
-      setActive(next); setForm(false); setDirty(false)
+      setActive(next); setForm(false); setDirty(false); setInput(next.input)
       setSource(await getTeachingSource(activity.id)); setSelectedSource(null)
     })
   }
@@ -192,7 +192,15 @@ export function TeacherTeachingPanel({ course }: { course: SharedCourse }) {
       {active.source_activity_id && <p>修订自记录 <button className="courses-page__text-button" onClick={() => void action(async () => { const old = await getTeachingActivity(active.source_activity_id!); setActive(old); setSource(await getTeachingSource(old.id)) })}>查看上一版</button></p>}
       {active.state === 'running' && <p role="status">助手正在执行，刷新后可继续查看。{active.agent_run_id && <button type="button" className="courses-page__text-button" onClick={() => void action(async () => { await stopAgentRun(active.agent_run_id!); setNotice('已请求停止，等待执行器保存终态。') })}>停止生成</button>}</p>}
       {active.state === 'failed' && <p role="alert">{active.error_message}</p>}
-      {['draft', 'failed'].includes(active.state) && active.kind !== 'learning_check' && <div className="courses-page__actions"><button className="research-hub__new" disabled={busy} onClick={() => void runActive()}>{active.state === 'failed' ? '重试生成' : '开始生成'}</button><button className="qx-button" onClick={() => newForm(active.kind as 'lesson_plan' | 'assignment_review', active)}>修改输入并创建修订</button></div>}
+      {review && ['draft', 'failed'].includes(active.state) && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void action(async () => {
+        const next = await updateTeachingActivity(active.id, { version: active.version, input: { ...active.input, requirements: input.requirements ?? active.input.requirements, rubric: input.rubric ?? active.input.rubric } })
+        setActive(next); setInput(next.input); setDirty(false); setNotice('本次评价标准已保存。'); await reload()
+      }) }}>
+        <label>本次作业要求<textarea value={input.requirements ?? active.input.requirements ?? ''} onChange={(e) => change('requirements', e.target.value)} /></label>
+        <RubricFields rubric={input.rubric ?? active.input.rubric ?? defaultRubric} onChange={(next) => change('rubric', next)} />
+        <button className="qx-button" disabled={busy || !dirty}>保存本次评价标准</button>
+      </form>}
+      {['draft', 'failed'].includes(active.state) && active.kind !== 'learning_check' && <div className="courses-page__actions"><button className="research-hub__new" disabled={busy || dirty} onClick={() => void runActive()}>{active.state === 'failed' ? '重试生成' : '开始生成'}</button>{!review && <button className="qx-button" onClick={() => newForm(active.kind as 'lesson_plan' | 'assignment_review', active)}>修改输入并创建修订</button>}</div>}
       {active.kind === 'lesson_plan' && active.result?.markdown && active.state !== 'running' && <LessonEditor activity={active} busy={busy} onDirty={setDirty}
         onSave={async (markdown) => { const next = await updateTeachingActivity(active.id, { version: active.version, document_markdown: markdown }); setActive(next); setDirty(false); await reload() }}
         onRevise={async (markdown, instruction, selected) => { const next = await updateTeachingActivity(active.id, { version: active.version, document_markdown: markdown, revision_instruction: instruction, selected_text: selected }); setActive(await runTeachingActivity(next.id, { version: next.version })); setDirty(false) }} />}
