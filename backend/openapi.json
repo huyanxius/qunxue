@@ -11304,9 +11304,16 @@
             "type": "string"
           },
           "theory_plan_id": {
-            "format": "uuid",
-            "title": "Theory Plan Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theory Plan Id"
           },
           "title": {
             "title": "Title",
@@ -14441,6 +14448,15 @@
             "default": 0,
             "title": "Settings Version",
             "type": "integer"
+          },
+          "source_activity_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Source Activity Ids",
+            "type": "array"
           },
           "student_background": {
             "default": "",

@@ -6279,7 +6279,7 @@ export type ResearchDocumentResponse = {
     /**
      * Theory Plan Id
      */
-    theory_plan_id: string;
+    theory_plan_id: string | null;
     /**
      * Title
      */
@@ -7942,6 +7942,10 @@ export type TeachingInput = {
      * Settings Version
      */
     settings_version?: number;
+    /**
+     * Source Activity Ids
+     */
+    source_activity_ids?: Array<string>;
     /**
      * Student Background
      */
