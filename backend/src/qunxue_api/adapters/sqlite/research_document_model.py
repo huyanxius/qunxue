@@ -27,9 +27,9 @@ class ResearchDocumentVersionRow(Base):
     task_id: Mapped[str] = mapped_column(
         ForeignKey("research_tasks.task_id", ondelete="CASCADE"), nullable=False
     )
-    theory_plan_id: Mapped[str] = mapped_column(
+    theory_plan_id: Mapped[str | None] = mapped_column(
         ForeignKey("confirmed_theory_plans.theory_plan_id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
     knowledge_release_id: Mapped[str] = mapped_column(String(128), nullable=False)
     revision_id: Mapped[str] = mapped_column(String(36), nullable=False)
