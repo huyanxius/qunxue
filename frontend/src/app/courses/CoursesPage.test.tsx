@@ -149,3 +149,42 @@ it('finishes the remaining uploads and reports a failed file without losing the 
   await waitFor(() => expect(uploads).toBe(2))
   expect(await screen.findByRole('status')).toHaveTextContent('1 份资料上传或解析失败')
 })
+
+it('uses course ownership for the teaching entry even when the saved display role is student', async () => {
+  vi.stubGlobal('fetch', async (input: Request) => input.url.endsWith('/course-profile')
+    ? json({ role: 'student', guide_dismissed: true })
+    : json(input.url.endsWith('/kb-1') ? course : { items: [course] }))
+  render(<MemoryRouter initialEntries={['/courses?kb_id=kb-1']}><CoursesPage /></MemoryRouter>)
+  expect(await screen.findByRole('button', { name: '备课与作业' })).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.queryByRole('button', { name: '学习与作业' })).not.toBeInTheDocument()
+})
+
+it('does not offer teacher tools to a course reader with a teacher display role', async () => {
+  const joined = { ...course, viewer_access: 'reader', sharing_enabled: true }
+  vi.stubGlobal('fetch', async (input: Request) => input.url.endsWith('/course-profile')
+    ? json({ role: 'teacher', guide_dismissed: true })
+    : json(input.url.endsWith('/kb-1') ? joined : { items: [joined] }))
+  render(<MemoryRouter initialEntries={['/courses?kb_id=kb-1']}><CoursesPage /></MemoryRouter>)
+  expect(await screen.findByRole('button', { name: '学习与作业' })).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.queryByRole('button', { name: '备课与作业' })).not.toBeInTheDocument()
+})
+
+it('keeps an unsaved lesson form when leaving the classroom tools is cancelled', async () => {
+  vi.stubGlobal('fetch', async (input: Request) => {
+    if (input.url.endsWith('/course-profile')) return json({ role: 'teacher', guide_dismissed: true })
+    if (input.url.endsWith('/teaching-settings')) return json({ course_id: 'kb-1', objectives: '', rubric: [], version: 0 })
+    if (input.url.endsWith('/learning-summary')) return json({ sample_count: 0, issues: [], updated_at: null })
+    if (input.url.endsWith('/kb-1')) return json(course)
+    if (input.url.endsWith('/shared-knowledge-bases')) return json({ items: [course] })
+    return json({ items: [] })
+  })
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  try {
+    render(<MemoryRouter initialEntries={['/courses?kb_id=kb-1&teaching=1']}><CoursesPage /></MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: '新建备课' }, { timeout: 15000 }))
+    fireEvent.change(screen.getByRole('textbox', { name: /^主题$/ }), { target: { value: '未保存的相关与因果教案' } })
+    fireEvent.click(screen.getByRole('button', { name: /^课程资料$/ }))
+    expect(screen.getByRole('textbox', { name: /^主题$/ })).toHaveValue('未保存的相关与因果教案')
+    expect(screen.getByRole('button', { name: '备课与作业' })).toHaveAttribute('aria-pressed', 'true')
+  } finally { confirm.mockRestore() }
+})
