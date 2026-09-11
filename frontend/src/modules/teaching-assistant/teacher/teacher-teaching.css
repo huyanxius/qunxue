@@ -1,0 +1,25 @@
+.teacher-teaching { display: grid; gap: 24px; color: var(--app-ink); }
+.teacher-teaching h3 { font-family: var(--serif); font-weight: 500; }
+.teacher-teaching p { line-height: 1.8; }
+.teacher-teaching fieldset { border: 1px solid var(--app-border); border-radius: var(--qx-radius-control); padding: 16px; display: grid; gap: 12px; }
+.teacher-teaching label { display: grid; gap: 8px; font-size: 13px; }
+.teacher-teaching input:not([type=checkbox]), .teacher-teaching textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--app-border); border-radius: var(--qx-radius-control); background: var(--app-canvas); color: var(--app-ink); font: inherit; }
+.teacher-teaching textarea { min-height: 90px; resize: vertical; }
+.teacher-teaching .teaching-check { display: flex; align-items: center; gap: 8px; }
+.teacher-teaching .teaching-check input { width: auto; }
+.teaching-rubric { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; gap: 12px; }
+.teaching-manuscript .tiptap { min-height: 300px; padding: 28px; border: 1px solid var(--app-border); background: var(--app-canvas); border-radius: var(--qx-radius-surface); font: 16px/1.9 var(--serif); outline: none; }
+.teaching-manuscript .tiptap:focus { border-color: var(--app-ink-soft); }
+.teaching-review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.teaching-review__source { min-width: 0; max-height: 80vh; overflow: auto; }
+.teaching-review__feedback { display: grid; align-content: start; gap: 20px; min-width: 0; }
+.teaching-review__feedback article { padding-bottom: 20px; border-bottom: 1px solid var(--app-border); display: grid; gap: 10px; }
+.teaching-review__feedback .courses-page__text-button { white-space: normal; text-align: left; }
+.teacher-teaching .courses-page__actions { flex-wrap: wrap; }
+.teacher-teaching__history { display: grid; justify-items: start; gap: 8px; }
+.teaching-mobile-tabs { display: none; }
+@media (max-width: 760px) {
+  .teaching-review { grid-template-columns: minmax(0, 1fr); }
+  .teaching-mobile-tabs { display: flex; gap: 16px; }
+  .teaching-review[data-tab=source] .teaching-review__feedback, .teaching-review[data-tab=feedback] .teaching-review__source { display: none; }
+}
