@@ -660,6 +660,7 @@ class PydanticAIKnowledgeRunner:
         extra_headers: Mapping[str, str] | None = None,
         reasoning_effort: ReasoningEffort | None = None,
         route_executor: ModelRouteExecutor | None = None,
+        direct_task: bool = False,
     ) -> None:
         self._model = model
         self.runtime_identity = AgentRuntimeIdentity(
@@ -740,6 +741,18 @@ class PydanticAIKnowledgeRunner:
             settings=primary_model_settings,
             route_executor=route_executor,
             fallback_models=fallback_models,
+        )
+        # Classroom inputs already contain the authorized source snapshot. A tool-free
+        # completion prevents research planning from changing that scope or output format.
+        self._task_agent = (
+            Agent(
+                model_instance,
+                output_type=str,
+                instructions="完成调用方给定的课堂任务，只使用输入中已授权的材料与回答，严格返回要求的JSON对象。",
+                model_settings={"max_tokens": 6000},
+            )
+            if direct_task
+            else None
         )
         self._agent = Agent(
             model_instance,
@@ -920,6 +933,9 @@ class PydanticAIKnowledgeRunner:
         is_cancelled: Callable[[], bool] | None = None,
     ) -> None:
         """Ask the model for the research UX envelope before retrieval starts."""
+
+        if self._task_agent is not None:
+            return
 
         route_token = _agent_route_correlation.set(
             _agent_route_context_from_tools(tools)
@@ -2175,6 +2191,13 @@ class PydanticAIKnowledgeRunner:
             _agent_route_context_from_tools(tools)
         )
         try:
+            if self._task_agent is not None:
+                result = self._task_agent.run_sync(
+                    prompt, usage_limits=UsageLimits(request_limit=2)
+                )
+                return _text_result(
+                    result.output, tools=tools, model=self._model, usage=_result_usage(result)
+                )
             retrieved_evidence = self._preload_bound_research_evidence(
                 prompt=prompt,
                 conversation=conversation,

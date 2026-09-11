@@ -16,7 +16,10 @@ class TeachingExecution:
                 activity, _ = app.read_raw(user_id, activity_id)
                 sources = app.sources_for(activity, user_id)
             instructions = {
-                "diagnostic": "提出2—3个诊断问题（id和prompt），作答前禁止判断掌握情况。",
+                "diagnostic": (
+                    "提出2—3个诊断问题（id和prompt）。本阶段只返回stage与diagnostic_questions两个字段。"
+                    "学生尚未作答，禁止输出difficulties、feedback、recommendations、practice与next_steps。"
+                ),
                 "practice": (
                     "根据学生诊断回答说明困难，每个evidence必须是该回答的原文子串。推荐3—5项已有资料"
                     "（不足则按实际数量说明），每项给reason和source。给一个不同于诊断题的新情境练习"

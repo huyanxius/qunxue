@@ -867,7 +867,9 @@ def create_app(
     )
 
     @contextmanager
-    def disciplinary_agent_scope() -> Iterator[DisciplinaryAgentApplication]:
+    def disciplinary_agent_scope(
+        *, teaching: bool = False
+    ) -> Iterator[DisciplinaryAgentApplication]:
         with resolved_database.session() as session:
             conversation_repository = SqliteConversationRepository(session)
             conversations = ConversationService(conversation_repository)
@@ -976,6 +978,7 @@ def create_app(
                     extra_headers=primary_endpoint.extra_headers,
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
+                    direct_task=teaching,
                 )
             try:
                 yield DisciplinaryAgentApplication(
@@ -1045,7 +1048,7 @@ def create_app(
     app.state.disciplinary_agent_scope = disciplinary_agent_scope
     app.state.execute_teaching = TeachingExecution(
         teaching_scope,
-        disciplinary_agent_scope,
+        lambda: disciplinary_agent_scope(teaching=True),
         lambda value: TeachingResult.model_validate(value).model_dump(mode="json"),
     )
 
