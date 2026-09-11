@@ -78,7 +78,11 @@ class SqliteTeachingRepository:
             else {
                 "course_id": str(course_id),
                 "objectives": "",
-                "rubric": [],
+                "rubric": [
+                    {"id": "argument", "title": "论点与概念", "max_score": 30},
+                    {"id": "evidence", "title": "材料与论证", "max_score": 40},
+                    {"id": "structure", "title": "结构与表达", "max_score": 30},
+                ],
                 "version": 0,
                 "receipts": {},
             }
