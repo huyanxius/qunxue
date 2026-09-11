@@ -2485,6 +2485,25 @@ export type CreateSharedKnowledgeRequest = {
 };
 
 /**
+ * CreateTeachingActivity
+ */
+export type CreateTeachingActivity = {
+    input: TeachingInput;
+    /**
+     * Kind
+     */
+    kind: 'lesson_plan' | 'assignment_review' | 'learning_check';
+    /**
+     * Shared With Teacher
+     */
+    shared_with_teacher?: boolean;
+    /**
+     * Source Activity Id
+     */
+    source_activity_id?: string | null;
+};
+
+/**
  * CreateTheoryDecisionsRequest
  */
 export type CreateTheoryDecisionsRequest = {
@@ -3324,6 +3343,16 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
+
+/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -3718,6 +3747,42 @@ export type KnowledgeUseEligibilityResponse = {
      * Training Candidate Eligible
      */
     training_candidate_eligible: boolean;
+};
+
+/**
+ * LearningIssue
+ */
+export type LearningIssue = {
+    /**
+     * Activity Ids
+     */
+    activity_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Evidence
+     */
+    evidence: Array<string>;
+};
+
+/**
+ * LearningSummary
+ */
+export type LearningSummary = {
+    /**
+     * Issues
+     */
+    issues: Array<LearningIssue>;
+    /**
+     * Sample Count
+     */
+    sample_count: number;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
 };
 
 /**
@@ -7177,6 +7242,24 @@ export type RevokeCodingPlanRequest = {
 };
 
 /**
+ * RubricDimension
+ */
+export type RubricDimension = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Max Score
+     */
+    max_score: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * SaveAnalysisCaseProfileRequest
  */
 export type SaveAnalysisCaseProfileRequest = {
@@ -7677,6 +7760,390 @@ export type SubmitAuditResolutionsRequest = {
      * Resolutions
      */
     resolutions: Array<AuditResolutionInput>;
+};
+
+/**
+ * TeachingActivity
+ */
+export type TeachingActivity = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id?: string | null;
+    /**
+     * Conversation Id
+     */
+    conversation_id?: string | null;
+    /**
+     * Course Id
+     */
+    course_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Document Id
+     */
+    document_id?: string | null;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    input: TeachingInput;
+    /**
+     * Kind
+     */
+    kind: 'lesson_plan' | 'assignment_review' | 'learning_check';
+    /**
+     * Owner User Id
+     */
+    owner_user_id: string;
+    result?: TeachingResult | null;
+    /**
+     * Shared With Teacher
+     */
+    shared_with_teacher: boolean;
+    /**
+     * Source Activity Id
+     */
+    source_activity_id?: string | null;
+    /**
+     * State
+     */
+    state: 'draft' | 'running' | 'ready' | 'reviewed' | 'published' | 'failed';
+    /**
+     * Task Id
+     */
+    task_id?: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TeachingActivityList
+ */
+export type TeachingActivityList = {
+    /**
+     * Items
+     */
+    items: Array<TeachingActivity>;
+};
+
+/**
+ * TeachingAnswer
+ */
+export type TeachingAnswer = {
+    /**
+     * Answer
+     */
+    answer: string;
+    /**
+     * Question Id
+     */
+    question_id: string;
+};
+
+/**
+ * TeachingCitation
+ */
+export type TeachingCitation = {
+    /**
+     * Document Id
+     */
+    document_id?: string | null;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TeachingDifficulty
+ */
+export type TeachingDifficulty = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Evidence
+     */
+    evidence: string;
+};
+
+/**
+ * TeachingInput
+ */
+export type TeachingInput = {
+    /**
+     * Course Document Ids
+     */
+    course_document_ids?: Array<string>;
+    /**
+     * Diagnostic Answers
+     */
+    diagnostic_answers?: Array<TeachingAnswer>;
+    /**
+     * Difficulties
+     */
+    difficulties?: string;
+    /**
+     * Duration Minutes
+     */
+    duration_minutes?: number;
+    /**
+     * Improvement Context
+     */
+    improvement_context?: string;
+    /**
+     * Material Ids
+     */
+    material_ids?: Array<string>;
+    /**
+     * Objectives
+     */
+    objectives?: string;
+    /**
+     * Practice Answer
+     */
+    practice_answer?: string;
+    /**
+     * Requirements
+     */
+    requirements?: string;
+    /**
+     * Rubric
+     */
+    rubric?: Array<RubricDimension>;
+    /**
+     * Settings Version
+     */
+    settings_version?: number;
+    /**
+     * Student Background
+     */
+    student_background?: string;
+    /**
+     * Submission Text
+     */
+    submission_text?: string;
+    /**
+     * Title
+     */
+    title?: string;
+};
+
+/**
+ * TeachingPractice
+ */
+export type TeachingPractice = {
+    /**
+     * Prompt
+     */
+    prompt: string;
+};
+
+/**
+ * TeachingQuestion
+ */
+export type TeachingQuestion = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Prompt
+     */
+    prompt: string;
+};
+
+/**
+ * TeachingRecommendation
+ */
+export type TeachingRecommendation = {
+    /**
+     * Reason
+     */
+    reason: string;
+    source: TeachingCitation;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TeachingResult
+ */
+export type TeachingResult = {
+    /**
+     * Citations
+     */
+    citations?: Array<TeachingCitation>;
+    /**
+     * Diagnostic Questions
+     */
+    diagnostic_questions?: Array<TeachingQuestion>;
+    /**
+     * Difficulties
+     */
+    difficulties?: Array<TeachingDifficulty>;
+    /**
+     * Feedback
+     */
+    feedback?: string;
+    /**
+     * Markdown
+     */
+    markdown?: string;
+    /**
+     * Next Steps
+     */
+    next_steps?: Array<string>;
+    practice?: TeachingPractice | null;
+    /**
+     * Recommendations
+     */
+    recommendations?: Array<TeachingRecommendation>;
+    /**
+     * Stage
+     */
+    stage?: 'diagnostic' | 'practice' | 'feedback' | 'complete';
+    /**
+     * Suggested Scores
+     */
+    suggested_scores?: Array<TeachingScore>;
+    /**
+     * Teacher Feedback
+     */
+    teacher_feedback?: string;
+    /**
+     * Teacher Scores
+     */
+    teacher_scores?: Array<TeachingScore>;
+};
+
+/**
+ * TeachingScore
+ */
+export type TeachingScore = {
+    /**
+     * Citations
+     */
+    citations?: Array<TeachingCitation>;
+    /**
+     * Dimension Id
+     */
+    dimension_id: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Score
+     */
+    score?: number | null;
+};
+
+/**
+ * TeachingSegment
+ */
+export type TeachingSegment = {
+    /**
+     * Segment Id
+     */
+    segment_id: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TeachingSettings
+ */
+export type TeachingSettings = {
+    /**
+     * Course Id
+     */
+    course_id: string;
+    /**
+     * Objectives
+     */
+    objectives: string;
+    /**
+     * Rubric
+     */
+    rubric: Array<RubricDimension>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TeachingSource
+ */
+export type TeachingSource = {
+    /**
+     * Items
+     */
+    items: Array<TeachingSourceItem>;
+};
+
+/**
+ * TeachingSourceItem
+ */
+export type TeachingSourceItem = {
+    /**
+     * Document Id
+     */
+    document_id?: string | null;
+    /**
+     * Material Id
+     */
+    material_id?: string | null;
+    /**
+     * Segments
+     */
+    segments: Array<TeachingSegment>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TeachingVersion
+ */
+export type TeachingVersion = {
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -8544,6 +9011,91 @@ export type UpdateSharedKnowledgeRequest = {
      * Sharing Enabled
      */
     sharing_enabled?: boolean | null;
+};
+
+/**
+ * UpdateTeachingActivity
+ */
+export type UpdateTeachingActivity = {
+    /**
+     * Document Markdown
+     */
+    document_markdown?: string | null;
+    input?: TeachingInput | null;
+    /**
+     * Reviewed
+     */
+    reviewed?: boolean | null;
+    /**
+     * Revision Instruction
+     */
+    revision_instruction?: string | null;
+    /**
+     * Selected Text
+     */
+    selected_text?: string | null;
+    /**
+     * Shared With Teacher
+     */
+    shared_with_teacher?: boolean | null;
+    /**
+     * Teacher Feedback
+     */
+    teacher_feedback?: string | null;
+    /**
+     * Teacher Scores
+     */
+    teacher_scores?: Array<TeachingScore> | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * UpdateTeachingSettings
+ */
+export type UpdateTeachingSettings = {
+    /**
+     * Objectives
+     */
+    objectives: string;
+    /**
+     * Rubric
+     */
+    rubric: Array<RubricDimension>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
 };
 
 export type ListAgentConversationsData = {
@@ -15197,6 +15749,336 @@ export type GetSharedDocumentSourceResponses = {
 };
 
 export type GetSharedDocumentSourceResponse = GetSharedDocumentSourceResponses[keyof GetSharedDocumentSourceResponses];
+
+export type GetLearningSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/learning-summary';
+};
+
+export type GetLearningSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetLearningSummaryError = GetLearningSummaryErrors[keyof GetLearningSummaryErrors];
+
+export type GetLearningSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: LearningSummary;
+};
+
+export type GetLearningSummaryResponse = GetLearningSummaryResponses[keyof GetLearningSummaryResponses];
+
+export type ListTeachingActivitiesData = {
+    body?: never;
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/teaching-activities';
+};
+
+export type ListTeachingActivitiesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListTeachingActivitiesError = ListTeachingActivitiesErrors[keyof ListTeachingActivitiesErrors];
+
+export type ListTeachingActivitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingActivityList;
+};
+
+export type ListTeachingActivitiesResponse = ListTeachingActivitiesResponses[keyof ListTeachingActivitiesResponses];
+
+export type CreateTeachingActivityData = {
+    body: CreateTeachingActivity;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/teaching-activities';
+};
+
+export type CreateTeachingActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTeachingActivityError = CreateTeachingActivityErrors[keyof CreateTeachingActivityErrors];
+
+export type CreateTeachingActivityResponses = {
+    /**
+     * Successful Response
+     */
+    201: TeachingActivity;
+};
+
+export type CreateTeachingActivityResponse = CreateTeachingActivityResponses[keyof CreateTeachingActivityResponses];
+
+export type GetTeachingSettingsData = {
+    body?: never;
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/teaching-settings';
+};
+
+export type GetTeachingSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTeachingSettingsError = GetTeachingSettingsErrors[keyof GetTeachingSettingsErrors];
+
+export type GetTeachingSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingSettings;
+};
+
+export type GetTeachingSettingsResponse = GetTeachingSettingsResponses[keyof GetTeachingSettingsResponses];
+
+export type UpdateTeachingSettingsData = {
+    body: UpdateTeachingSettings;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Kb Id
+         */
+        kb_id: string;
+    };
+    query?: never;
+    url: '/api/shared-knowledge-bases/{kb_id}/teaching-settings';
+};
+
+export type UpdateTeachingSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTeachingSettingsError = UpdateTeachingSettingsErrors[keyof UpdateTeachingSettingsErrors];
+
+export type UpdateTeachingSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingSettings;
+};
+
+export type UpdateTeachingSettingsResponse = UpdateTeachingSettingsResponses[keyof UpdateTeachingSettingsResponses];
+
+export type GetTeachingActivityData = {
+    body?: never;
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/api/teaching-activities/{activity_id}';
+};
+
+export type GetTeachingActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTeachingActivityError = GetTeachingActivityErrors[keyof GetTeachingActivityErrors];
+
+export type GetTeachingActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingActivity;
+};
+
+export type GetTeachingActivityResponse = GetTeachingActivityResponses[keyof GetTeachingActivityResponses];
+
+export type UpdateTeachingActivityData = {
+    body: UpdateTeachingActivity;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/api/teaching-activities/{activity_id}';
+};
+
+export type UpdateTeachingActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTeachingActivityError = UpdateTeachingActivityErrors[keyof UpdateTeachingActivityErrors];
+
+export type UpdateTeachingActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingActivity;
+};
+
+export type UpdateTeachingActivityResponse = UpdateTeachingActivityResponses[keyof UpdateTeachingActivityResponses];
+
+export type PublishTeachingActivityData = {
+    body: TeachingVersion;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/api/teaching-activities/{activity_id}/publish';
+};
+
+export type PublishTeachingActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PublishTeachingActivityError = PublishTeachingActivityErrors[keyof PublishTeachingActivityErrors];
+
+export type PublishTeachingActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingActivity;
+};
+
+export type PublishTeachingActivityResponse = PublishTeachingActivityResponses[keyof PublishTeachingActivityResponses];
+
+export type RunTeachingActivityData = {
+    body: TeachingVersion;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/api/teaching-activities/{activity_id}/run';
+};
+
+export type RunTeachingActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunTeachingActivityError = RunTeachingActivityErrors[keyof RunTeachingActivityErrors];
+
+export type RunTeachingActivityResponses = {
+    /**
+     * Successful Response
+     */
+    202: TeachingActivity;
+};
+
+export type RunTeachingActivityResponse = RunTeachingActivityResponses[keyof RunTeachingActivityResponses];
+
+export type GetTeachingSourceData = {
+    body?: never;
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/api/teaching-activities/{activity_id}/source';
+};
+
+export type GetTeachingSourceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTeachingSourceError = GetTeachingSourceErrors[keyof GetTeachingSourceErrors];
+
+export type GetTeachingSourceResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeachingSource;
+};
+
+export type GetTeachingSourceResponse = GetTeachingSourceResponses[keyof GetTeachingSourceResponses];
 
 export type GetConfirmedTheoryPlanData = {
     body?: never;
