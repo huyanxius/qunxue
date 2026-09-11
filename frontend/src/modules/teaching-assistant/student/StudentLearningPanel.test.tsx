@@ -1,0 +1,123 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import * as api from '../teachingApi'
+import { listAgentMaterials } from '../../research-materials'
+import type { SharedCourse } from '../../shared-knowledge'
+import { StudentLearningPanel } from './StudentLearningPanel'
+vi.mock('../teachingApi')
+vi.mock('../../research-materials', async (original) => ({ ...await original<typeof import('../../research-materials')>(), listAgentMaterials: vi.fn().mockResolvedValue([]) }))
+const course: SharedCourse = { id: 'course1', name: '社会学', access: 'reader', description: '', sharingEnabled: true, shareToken: null, readyDocumentCount: 0, documents: [] }
+type Activity = Awaited<ReturnType<typeof api.getTeachingActivity>>
+function activity(patch: Partial<Activity> = {}): Activity {
+  return { id: 'a1', course_id: 'course1', owner_user_id: 'student1', kind: 'learning_check', state: 'draft', version: 1, input: { objectives: '理解社会互动', difficulties: '区分概念', material_ids: [], course_document_ids: [] }, result: null, shared_with_teacher: false, source_activity_id: null, agent_run_id: null, conversation_id: null, task_id: null, document_id: null, error_message: null, created_at: '', updated_at: '', ...patch }
+}
+const diagnostic = { stage: 'diagnostic' as const, markdown: '', diagnostic_questions: [{ id: 'q1', prompt: '怎样理解互动？' }, { id: 'q2', prompt: '举出一个情境。' }], difficulties: [], recommendations: [], practice: null, feedback: '', next_steps: [], suggested_scores: [], teacher_scores: [], teacher_feedback: '', citations: [] }
+beforeEach(() => { vi.mocked(api.listTeachingActivities).mockResolvedValue([]); vi.mocked(listAgentMaterials).mockResolvedValue([]) })
+afterEach(() => { cleanup(); vi.resetAllMocks() })
+it('creates a private learning record before starting its real run', async () => {
+  vi.mocked(api.createTeachingActivity).mockResolvedValue(activity())
+  vi.mocked(api.runTeachingActivity).mockResolvedValue(activity({ state: 'running', version: 2 }))
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.change(await screen.findByLabelText('学习目标'), { target: { value: '理解社会互动' } })
+  fireEvent.change(screen.getByLabelText('当前困难'), { target: { value: '区分概念' } })
+  fireEvent.click(screen.getByRole('button', { name: '生成诊断题' }))
+  await waitFor(() => expect(api.runTeachingActivity).toHaveBeenCalledWith('a1', { version: 1 }, expect.any(String)))
+  expect(api.createTeachingActivity).toHaveBeenCalledWith('course1', expect.objectContaining({ kind: 'learning_check', shared_with_teacher: false }), expect.any(String))
+  expect(await screen.findByText(/正在生成/)).toBeVisible()
+})
+it('restores diagnostic questions and blocks progression until every answer exists', async () => {
+  const saved = activity({ state: 'ready', version: 3, result: diagnostic })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  vi.mocked(api.updateTeachingActivity).mockResolvedValue({ ...saved, version: 4 }); vi.mocked(api.runTeachingActivity).mockResolvedValue({ ...saved, state: 'running', version: 5 })
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /理解社会互动/ }))
+  const submit = await screen.findByRole('button', { name: '提交回答并继续' })
+  expect(submit).toBeDisabled()
+  fireEvent.change(screen.getByLabelText('怎样理解互动？'), { target: { value: '彼此行动影响' } })
+  expect(submit).toBeDisabled()
+  fireEvent.change(screen.getByLabelText('举出一个情境。'), { target: { value: '课堂讨论' } })
+  fireEvent.click(submit)
+  await waitFor(() => expect(api.updateTeachingActivity).toHaveBeenCalledWith('a1', expect.objectContaining({ version: 3, input: expect.objectContaining({ diagnostic_answers: [{ question_id: 'q1', answer: '彼此行动影响' }, { question_id: 'q2', answer: '课堂讨论' }] }) }), expect.any(String)))
+})
+it('requires explicit assignment sharing and preserves the published version when creating a revision', async () => {
+  const saved = activity({ kind: 'assignment_review', state: 'published', input: { title: '课堂作业', requirements: '解释案例' }, result: { ...diagnostic, stage: 'complete', teacher_feedback: '补充情境依据' } })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  vi.mocked(api.createTeachingActivity).mockResolvedValue({ ...saved, id: 'a2', state: 'draft', source_activity_id: 'a1', result: null })
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /课堂作业/ }))
+  expect(await screen.findByText('补充情境依据')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '提交修改稿' }))
+  const submit = screen.getByRole('button', { name: '提交给课程教师' }); expect(submit).toBeDisabled()
+  fireEvent.change(screen.getByLabelText('作业内容'), { target: { value: '补充的案例论述' } })
+  fireEvent.click(screen.getByLabelText(/同意将本次作业/))
+  fireEvent.click(submit)
+  await waitFor(() => expect(api.createTeachingActivity).toHaveBeenCalledWith('course1', expect.objectContaining({ source_activity_id: 'a1', shared_with_teacher: true, kind: 'assignment_review' }), expect.any(String)))
+  expect(api.runTeachingActivity).not.toHaveBeenCalled()
+})
+it('hides unpublished feedback and exposes sharing only as an explicit record action', async () => {
+  const saved = activity({ kind: 'assignment_review', state: 'ready', input: { title: '待复核作业' }, result: { ...diagnostic, teacher_feedback: '内部草稿' } })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /待复核作业/ }))
+  expect(await screen.findByText(/等待教师复核并发布/)).toBeVisible()
+  expect(screen.queryByText('内部草稿')).not.toBeInTheDocument()
+})
+it('shares only the selected private learning record using its saved version', async () => {
+  const saved = activity({ state: 'ready', result: diagnostic })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  vi.mocked(api.updateTeachingActivity).mockResolvedValue({ ...saved, version: 2, shared_with_teacher: true })
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /理解社会互动/ }))
+  fireEvent.click(await screen.findByLabelText(/仅分享本次学习记录/))
+  await waitFor(() => expect(api.updateTeachingActivity).toHaveBeenCalledWith('a1', { version: 1, shared_with_teacher: true }, expect.any(String)))
+  expect(await screen.findByLabelText(/仅分享本次学习记录/)).toBeChecked()
+})
+it('restores the practice stage with earlier answers and submits the new answer', async () => {
+  const saved = activity({ state: 'ready', version: 7, input: { objectives: '练习互动分析', diagnostic_answers: [{ question_id: 'q1', answer: '原先的回答' }], practice_answer: '尚未提交的练习回答' }, result: { ...diagnostic, stage: 'practice', difficulties: [{ description: '忽略了回应', evidence: '原回答只描述一方行动' }], practice: { prompt: '分析小组讨论中的相互回应。' } } })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  vi.mocked(api.updateTeachingActivity).mockResolvedValue({ ...saved, version: 8 }); vi.mocked(api.runTeachingActivity).mockResolvedValue({ ...saved, state: 'running', version: 9 })
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /练习互动分析/ }))
+  expect(await screen.findByText('原先的回答')).toBeVisible()
+  expect(screen.getByLabelText('练习回答')).toHaveValue('尚未提交的练习回答')
+  fireEvent.change(screen.getByLabelText('练习回答'), { target: { value: '双方根据回应调整观点' } })
+  fireEvent.click(screen.getByRole('button', { name: '提交练习并查看反馈' }))
+  await waitFor(() => expect(api.updateTeachingActivity).toHaveBeenCalledWith('a1', expect.objectContaining({ version: 7, input: expect.objectContaining({ practice_answer: '双方根据回应调整观点' }) }), expect.any(String)))
+})
+it('opens a validated recommendation through the activity source endpoint', async () => {
+  const saved = activity({ state: 'ready', result: { ...diagnostic, stage: 'practice', recommendations: [{ title: '互动教材', reason: '检查回应如何改变行动', source: { title: '互动教材', material_id: null, document_id: 'doc1', segment_id: 'seg1', quote: '双方调整行动' } }] } })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved]); vi.mocked(api.getTeachingActivity).mockResolvedValue(saved)
+  vi.mocked(api.getTeachingSource).mockResolvedValue({ items: [{ title: '互动教材', material_id: null, document_id: 'doc1', segments: [{ segment_id: 'seg1', text: '双方调整行动' }] }] })
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /理解社会互动/ }))
+  fireEvent.click(await screen.findByRole('button', { name: '查看原文：互动教材' }))
+  expect(await screen.findByRole('region', { name: '文档阅读器' })).toHaveTextContent('双方调整行动')
+  expect(api.getTeachingSource).toHaveBeenCalledWith('a1')
+})
+it('reuses the create request key after a lost response instead of duplicating the submission', async () => {
+  vi.mocked(api.createTeachingActivity).mockRejectedValueOnce(new Error('网络断开')).mockResolvedValueOnce(activity())
+  vi.mocked(api.runTeachingActivity).mockResolvedValue(activity({ state: 'running' }))
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.change(await screen.findByLabelText('学习目标'), { target: { value: '理解社会互动' } })
+  fireEvent.click(screen.getByRole('button', { name: '生成诊断题' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('网络断开')
+  fireEvent.click(screen.getByRole('button', { name: '生成诊断题' }))
+  await waitFor(() => expect(api.createTeachingActivity).toHaveBeenCalledTimes(2))
+  const [first, second] = vi.mocked(api.createTeachingActivity).mock.calls
+  expect(first[2]).toBe(second[2])
+})
+it('recovers a running record into the saved terminal stage without another run', async () => {
+  const saved = activity({ state: 'running', version: 2 })
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([saved])
+  vi.mocked(api.getTeachingActivity).mockResolvedValueOnce(saved).mockResolvedValue(activity({ state: 'ready', version: 3, result: diagnostic }))
+  render(<StudentLearningPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: /理解社会互动/ }))
+  expect(await screen.findByText(/正在生成/)).toBeVisible()
+  expect(await screen.findByLabelText('怎样理解互动？', {}, { timeout: 6000 })).toBeVisible()
+  expect(api.runTeachingActivity).not.toHaveBeenCalled()
+})
+it('does not request records for an unavailable course', () => {
+  render(<StudentLearningPanel course={{ ...course, access: 'unavailable' }} />)
+  expect(screen.getByText(/仍可访问的课程/)).toBeVisible()
+  expect(api.listTeachingActivities).not.toHaveBeenCalled()
+})

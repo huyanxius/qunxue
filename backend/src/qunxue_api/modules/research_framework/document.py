@@ -179,7 +179,7 @@ class ResearchDocumentSection:
 class ResearchDocumentSnapshot:
     document_id: UUID
     task_id: UUID
-    theory_plan_id: UUID
+    theory_plan_id: UUID | None
     knowledge_release_id: str
     revision_id: UUID
     version: int

@@ -18,6 +18,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'research-exchange': Object.freeze([]),
     'research-materials': Object.freeze([]),
     'shared-knowledge': Object.freeze([]),
+    'teaching-assistant': Object.freeze(['shared-knowledge', 'research-materials', 'research-agent', 'research-document']),
     'research-method': Object.freeze([]),
     'research-memory': Object.freeze([]),
     'research-projects': Object.freeze([]),
@@ -41,6 +42,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-materials/researchBatchCodingApi.ts',
     'modules/research-materials/researchMaterialsApi.ts',
     'modules/shared-knowledge/sharedKnowledgeApi.ts',
+    'modules/teaching-assistant/teachingApi.ts',
     'modules/research-materials/transcriptionApi.ts',
     'modules/research-method/researchMethodApi.ts',
     'modules/research-memory/memoryApi.ts',
@@ -60,12 +62,15 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-materials/researchBatchCodingApi.ts',
     'modules/research-materials/researchMaterialsApi.ts',
     'modules/shared-knowledge/sharedKnowledgeApi.ts',
+    'modules/teaching-assistant/teachingApi.ts',
     'modules/research-materials/transcriptionApi.ts',
     'modules/research-method/researchMethodApi.ts',
     'modules/research-memory/memoryApi.ts',
     'modules/research-projects/projectApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
+  // Classroom entry points share the generated DTO facade with both role panels.
+  publicModuleAdapters: Object.freeze(['modules/teaching-assistant/teachingApi.ts']),
   appApiAdapters: Object.freeze([
     'api/m5ResearchDelivery.ts',
     'api/researchWorkspace.ts',
@@ -302,11 +307,12 @@ function exportKind(checker, symbol) {
 }
 
 function addExportLeaks(
-  checker, sourceFile, forbidden, describe, relative, violations,
+  checker, sourceFile, forbidden, describe, relative, violations, allowTypes = false,
 ) {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile)
   const exported = moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : []
   for (const symbol of exported) {
+    if (allowTypes && exportKind(checker, symbol) === 'type') continue
     const blocked = [...symbolOrigins(checker, symbol)].find(forbidden)
     if (blocked) {
       violations.add(
@@ -335,6 +341,7 @@ export async function findBoundaryViolations({
   )
   const generatedAdapters = exactPaths(sourceRoot, policy.generatedApiAdapters)
   const moduleApiAdapters = exactPaths(sourceRoot, policy.moduleApiAdapters)
+  const publicModuleAdapters = exactPaths(sourceRoot, policy.publicModuleAdapters ?? [])
   const moduleAdapters = exactPaths(sourceRoot, [
     ...policy.moduleApiAdapters,
     ...policy.generatedApiAdapters.filter((entry) =>
@@ -414,7 +421,7 @@ export async function findBoundaryViolations({
       const targetApi = isWithin(apiRoot, target)
       const targetGenerated = isWithin(generatedRoot, target)
 
-      report(isPublicIndex && moduleAdapters.has(path.resolve(target)),
+      report(isPublicIndex && moduleAdapters.has(path.resolve(target)) && !publicModuleAdapters.has(path.resolve(target)),
         `${relative} imports module adapter from its public index`)
       report(sourceModule && targetApp, `${relative} imports app code`)
       report(
@@ -466,6 +473,7 @@ export async function findBoundaryViolations({
           }`,
         relative,
         violations,
+        publicModuleAdapters.has(sourcePath),
       )
     }
     if (appAdapters.has(sourcePath)) {
@@ -482,7 +490,7 @@ export async function findBoundaryViolations({
       addExportLeaks(
         checker,
         sourceFile,
-        (origin) => moduleAdapters.has(origin),
+        (origin) => moduleAdapters.has(origin) && !publicModuleAdapters.has(origin),
         () => 'exports module adapter',
         relative,
         violations,

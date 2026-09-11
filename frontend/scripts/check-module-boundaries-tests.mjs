@@ -247,3 +247,12 @@ test('keeps the research materials adapter behind the generated API boundary', a
     `research materials must use the generated SDK and a declared module boundary:\n${researchMaterialViolations.join('\n')}`,
   )
 })
+
+test('allows explicit classroom DTO facades while rejecting raw generated functions', async () => {
+  const violations = await check({
+    'api/generated/index.ts': 'export interface Dto { id: string }; export const raw = () => null',
+    'modules/alpha/index.ts': "export { load } from './researchTaskApi.js'; export type { Dto } from './researchTaskApi.js'",
+    'modules/alpha/researchTaskApi.ts': "import { raw } from '../../api/generated/index.js'; export type { Dto } from '../../api/generated/index.js'; export { raw }; export const load = () => raw()",
+  }, { alpha: [] }, { ...adapters, publicModuleAdapters: ['modules/alpha/researchTaskApi.ts'] })
+  assert.deepEqual(violations, ['modules/alpha/researchTaskApi.ts re-exports raw generated API value raw'])
+})

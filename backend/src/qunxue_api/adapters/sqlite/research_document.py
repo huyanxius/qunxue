@@ -28,7 +28,7 @@ class SqliteResearchDocumentRepository:
         self._session = session
 
     def add(self, snapshot: ResearchDocumentSnapshot) -> ResearchDocumentSnapshot:
-        if snapshot.version == 1:
+        if snapshot.version == 1 and snapshot.theory_plan_id is not None:
             self._session.execute(
                 insert(ResearchDocumentIdentityRow)
                 .values(
@@ -61,7 +61,7 @@ class SqliteResearchDocumentRepository:
                 document_id=str(snapshot.document_id),
                 version=snapshot.version,
                 task_id=str(snapshot.task_id),
-                theory_plan_id=str(snapshot.theory_plan_id),
+                theory_plan_id=str(snapshot.theory_plan_id) if snapshot.theory_plan_id else None,
                 knowledge_release_id=snapshot.knowledge_release_id,
                 revision_id=str(snapshot.revision_id),
                 title=snapshot.title,
@@ -202,7 +202,7 @@ def _snapshot(row: ResearchDocumentVersionRow | None) -> ResearchDocumentSnapsho
     return ResearchDocumentSnapshot(
         document_id=UUID(row.document_id),
         task_id=UUID(row.task_id),
-        theory_plan_id=UUID(row.theory_plan_id),
+        theory_plan_id=UUID(row.theory_plan_id) if row.theory_plan_id else None,
         knowledge_release_id=row.knowledge_release_id,
         revision_id=UUID(row.revision_id),
         version=row.version,

@@ -5,7 +5,7 @@ import { CourseIconButton } from './CourseIconButton'
 import { CourseWelcome, CourseGuide } from './CourseWelcome'
 import { CourseShader } from './CourseShader'
 import { ArrowClockwiseIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ChalkboardTeacherIcon, StudentIcon, SpinnerGapIcon, CheckIcon, PencilSimpleIcon, QuestionIcon, SignOutIcon, ToggleLeftIcon, ToggleRightIcon, TreeStructureIcon, UserSwitchIcon, XIcon, FileTextIcon, GraduationCapIcon, LinkIcon, PlusIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ResearchHubToolbar } from '../research/ResearchHubToolbar'
@@ -15,6 +15,9 @@ import { COURSE_DOCUMENT_ACCEPT, readCourseProfile, saveCourseRole, retryCourseD
 import '../research/research-materials-page.css'
 import './courses.css'
 import { COURSE_INVITATION_KEY } from './CourseInvitationRoute'
+
+const TeacherTeachingPanel = lazy(() => import('../../modules/teaching-assistant').then((module) => ({ default: module.TeacherTeachingPanel })))
+const StudentLearningPanel = lazy(() => import('../../modules/teaching-assistant').then((module) => ({ default: module.StudentLearningPanel })))
 
 export function CoursesPage() {
   const account = useAccount()
@@ -35,6 +38,16 @@ export function CoursesPage() {
     return () => { active = false }
   }, [reload])
   const id = params.get('kb_id')
+  const teachingOpen = params.get('teaching') === '1'
+  const [teachingDirty, setTeachingDirty] = useState(false)
+  useEffect(() => {
+    if (!teachingDirty) return
+    const confirmLink = (event: MouseEvent) => {
+      if ((event.target as Element)?.closest('a[href]') && !window.confirm('当前教学修改尚未保存，确定离开？')) { event.preventDefault(); event.stopPropagation() }
+    }
+    document.addEventListener('click', confirmLink, true)
+    return () => document.removeEventListener('click', confirmLink, true)
+  }, [teachingDirty])
   const documentId = params.get('document_id')
   const segmentId = params.get('segment_id')
   const [courses, setCourses] = useState<SharedCourse[]>([])
@@ -92,6 +105,7 @@ export function CoursesPage() {
   }, [detail])
 
   function navigate(viewName: string, courseId?: string, docId?: string) {
+    if (teachingDirty && !window.confirm('当前教学修改尚未保存，确定离开？')) return
     setEditing(false); setNotice(null); setError(null)
     const next = new URLSearchParams({ view: viewName })
     if (courseId) next.set('kb_id', courseId)
@@ -184,6 +198,13 @@ export function CoursesPage() {
       </section> : detail ? <>
         <CourseIconButton label="返回课程" className="courses-page__back" onClick={() => navigate(view)}><ArrowLeftIcon size={19} /></CourseIconButton>
         <header className="courses-page__detail"><div><h2>{detail.name}</h2><p>{detail.description || '课程参考资料'}</p></div><Link className="research-hub__new" to={`/agent?reference_knowledge_base_id=${encodeURIComponent(detail.id)}`}>{owned ? '使用资料提问' : '开始学习'}<ArrowUpRightIcon size={16} /></Link></header>
+        <nav className="courses-page__actions" aria-label="课程功能">
+          <button type="button" className="qx-button" aria-pressed={!teachingOpen} onClick={() => { if (!teachingDirty || window.confirm('当前教学修改尚未保存，确定离开？')) setParams((current) => { const next = new URLSearchParams(current); next.delete('teaching'); return next }) }}>课程资料</button>
+          <button type="button" className="qx-button" aria-pressed={teachingOpen} onClick={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })}>{owned ? '备课与作业' : '学习与作业'}</button>
+        </nav>
+        {teachingOpen ? <Suspense fallback={<p role="status">正在打开课程工具…</p>}>
+          {owned ? <TeacherTeachingPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} /> : <StudentLearningPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} />}
+        </Suspense> : <>
         <div className="courses-page__actions"><Link className="qx-button" to={`/knowledge?scope=courses&kb_id=${encodeURIComponent(detail.id)}`}><TreeStructureIcon size={17} />浏览课程知识库</Link></div>
         {owned ? <div className="courses-page__sharing">
           <div><strong>{detail.sharingEnabled ? '已开启分享' : '仅你可使用'}</strong><p>{detail.sharingEnabled ? '学生通过链接加入，课程资料会同步更新。' : '开启后，学生可通过链接添加课程资料。'}</p></div>
@@ -212,6 +233,7 @@ export function CoursesPage() {
         }} />
         <div className="material-files courses-page__files"><div className="material-files__table-scroll"><table aria-label="课程资料列表"><thead><tr><th>文件名称</th><th>大小</th><th>状态</th>{owned ? <th>操作</th> : null}</tr></thead><tbody>{detail.documents?.map((doc) => <tr key={doc.id}><td><button type="button" className="material-files__filename courses-page__file" disabled={doc.status !== 'ready'} onClick={() => navigate(view, detail.id, doc.id)}><FileTextIcon size={22} /><strong>{doc.filename}</strong></button>{doc.warnings?.map((warning) => <small key={warning} className="courses-page__hint">{warning}</small>)}{doc.errorMessage ? <small className="courses-page__failure">{doc.errorMessage}</small> : null}</td><td>{formatMaterialSize(doc.sizeBytes)}</td><td><span>{doc.status === 'ready' ? '可阅读' : doc.status === 'failed' ? '解析失败' : '解析中'}</span>{doc.status === 'ready' ? <><small className="courses-page__hint">{({queued: '等待知识整理', running: '知识整理中', ready: '知识已整理', failed: '知识整理失败'})[doc.knowledgeStatus]}</small><small className="courses-page__hint">{({queued: '等待语义索引', running: '建立语义索引中', ready: '语义索引就绪', failed: '语义索引失败'})[doc.indexStatus]}</small>{doc.knowledgeError || doc.indexError ? <small className="courses-page__failure">{doc.knowledgeError || doc.indexError}</small> : null}</> : null}</td>{owned ? <td>{doc.status === 'ready' && (doc.knowledgeStatus === 'failed' || doc.indexStatus === 'failed') ? <button type="button" className="course-icon-button" title="重试处理" aria-label={`重试处理 ${doc.filename}`} disabled={busy} onClick={() => void action(async () => { await retryCourseDocument(detail.id, doc.id); setDetail(await getCourse(detail.id)) })}><ArrowClockwiseIcon size={18} /></button> : null}<button type="button" className="course-icon-button course-icon-button--danger" title="移出课程" aria-label={`移出 ${doc.filename}`} disabled={busy} onClick={() => void action(async () => { await detachCourseDocument(detail.id, doc.id); setDetail(await getCourse(detail.id)); setNotice('已从课程移出，原文件仍保留。') })}><TrashIcon size={16} /></button></td> : null}</tr>)}</tbody></table></div>{!detail.documents?.length ? <div className="material-files__empty"><FileTextIcon size={28} /><p>{owned ? '上传课件或文档，开始整理课程资料。' : '老师还没有添加可用资料。'}</p></div> : null}</div>
         {owned ? <p className="courses-page__hint">支持 PDF、DOCX、PPTX、Markdown、TXT，单份不超过 25 MB。PPTX 只读取可提取的正文，教师备注与隐藏页不会共享。</p> : null}
+        </>}
       </> : <>
         <ResearchHubToolbar query={query} onQueryChange={setQuery} searchLabel="搜索课程" placeholder="搜索课程名称">
           <button type="button" className="research-hub__new" onClick={() => { if (view === 'teacher') { setName(''); setDescription(''); setEditing(!editing) } else setJoinOpen(!joinOpen) }}><PlusIcon size={17} />{view === 'teacher' ? '创建课程' : '添加课程'}</button>
