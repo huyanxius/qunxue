@@ -10,4 +10,3 @@ export async function downloadTeachingDocument(title: string, markdown: string) 
   link.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
-
