@@ -1,11 +1,19 @@
 import { apiClient } from '../../api/client'
 import * as api from '../../api/generated'
 
-export type {
-  TeachingActivity, TeachingInput, TeachingResult, TeachingSource, TeachingSettings,
-  TeachingScore, TeachingCitation, RubricDimension, TeachingAnswer, TeachingQuestion,
-  LearningSummary, CreateTeachingActivity, UpdateTeachingActivity,
-} from '../../api/generated'
+export type TeachingActivity = api.TeachingActivity
+export type TeachingInput = api.TeachingInput
+export type TeachingResult = api.TeachingResult
+export type TeachingSource = api.TeachingSource
+export type TeachingSettings = api.TeachingSettings
+export type TeachingScore = api.TeachingScore
+export type TeachingCitation = api.TeachingCitation
+export type RubricDimension = api.RubricDimension
+export type TeachingAnswer = api.TeachingAnswer
+export type TeachingQuestion = api.TeachingQuestion
+export type LearningSummary = api.LearningSummary
+export type CreateTeachingActivity = api.CreateTeachingActivity
+export type UpdateTeachingActivity = api.UpdateTeachingActivity
 
 function unwrap<T>(result: { data?: T; error?: unknown }): T {
   if (result.error || result.data === undefined) {
