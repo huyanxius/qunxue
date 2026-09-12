@@ -153,7 +153,42 @@ def test_non_demo_planning_preserves_intent_and_server_policy(runner):
             return "conversation"
 
     runner.fallback = Planner()
-    assert runner.prepare_research(
-        prompt="你好", conversation=(), tools=Tools(), on_event=lambda _: None,
-        mode="deep_research", research_required=False, skip_clarification=True,
-    ) == "conversation"
+    assert (
+        runner.prepare_research(
+            prompt="你好",
+            conversation=(),
+            tools=Tools(),
+            on_event=lambda _: None,
+            mode="deep_research",
+            research_required=False,
+            skip_clarification=True,
+        )
+        == "conversation"
+    )
+
+
+def test_case_delegates_canvas_to_existing_agent(runner):
+    class CanvasTools(Tools):
+        def enable_research_map(self):
+            self.research_map_enabled = True
+
+    class CanvasAgent(Fallback):
+        def run_stream(self, **kwargs):
+            assert kwargs["tools"].research_map_enabled
+            assert "空间分析正文" in kwargs["prompt"]
+            kwargs["on_tool_event"](SimpleNamespace(tool="update_research_map"))
+            kwargs["on_delta"]("this canvas summary must not replace the authored answer")
+            return self.run()
+
+    runner.fallback = CanvasAgent()
+    events, chunks = [], []
+    result = runner.run_stream(
+        prompt="食堂",
+        conversation=(),
+        tools=CanvasTools(),
+        on_delta=chunks.append,
+        on_tool_event=events.append,
+    )
+    assert any(e.tool == "update_research_map" for e in events)
+    assert "".join(chunks) == result.answer
+    assert "canvas summary" not in result.answer

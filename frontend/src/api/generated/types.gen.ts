@@ -7242,6 +7242,70 @@ export type RevokeCodingPlanRequest = {
 };
 
 /**
+ * RoadshowCase
+ */
+export type RoadshowCase = {
+    /**
+     * Answer
+     */
+    answer: string;
+    /**
+     * Keywords
+     */
+    keywords: Array<string>;
+    /**
+     * Knowledge Queries
+     */
+    knowledge_queries?: Array<string>;
+    /**
+     * Options
+     */
+    options: Array<string>;
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Steps
+     */
+    steps: Array<string>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Web Queries
+     */
+    web_queries?: Array<string>;
+};
+
+/**
+ * RoadshowSettings
+ */
+export type RoadshowSettings = {
+    /**
+     * Active Case
+     */
+    active_case?: number;
+    /**
+     * Canvas Enabled
+     */
+    canvas_enabled?: boolean;
+    /**
+     * Cases
+     */
+    cases: Array<RoadshowCase>;
+    /**
+     * Chunk Delay
+     */
+    chunk_delay?: number;
+    /**
+     * Enabled
+     */
+    enabled?: boolean;
+};
+
+/**
  * RubricDimension
  */
 export type RubricDimension = {
@@ -15052,6 +15116,63 @@ export type GetResearchTraceResponses = {
 };
 
 export type GetResearchTraceResponse = GetResearchTraceResponses[keyof GetResearchTraceResponses];
+
+export type GetRoadshowSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/roadshow';
+};
+
+export type GetRoadshowSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoadshowSettings;
+};
+
+export type GetRoadshowSettingsResponse = GetRoadshowSettingsResponses[keyof GetRoadshowSettingsResponses];
+
+export type SaveRoadshowSettingsData = {
+    body: RoadshowSettings;
+    path?: never;
+    query?: never;
+    url: '/api/roadshow';
+};
+
+export type SaveRoadshowSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SaveRoadshowSettingsError = SaveRoadshowSettingsErrors[keyof SaveRoadshowSettingsErrors];
+
+export type SaveRoadshowSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoadshowSettings;
+};
+
+export type SaveRoadshowSettingsResponse = SaveRoadshowSettingsResponses[keyof SaveRoadshowSettingsResponses];
+
+export type ResetRoadshowSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/roadshow/reset';
+};
+
+export type ResetRoadshowSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoadshowSettings;
+};
+
+export type ResetRoadshowSettingsResponse = ResetRoadshowSettingsResponses[keyof ResetRoadshowSettingsResponses];
 
 export type GetCurrentSessionData = {
     body?: never;
