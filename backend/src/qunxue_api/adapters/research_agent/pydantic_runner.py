@@ -6,6 +6,7 @@ from asyncio import sleep as async_sleep
 from collections.abc import AsyncGenerator, AsyncIterable, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager, suppress
 from contextvars import ContextVar
+from dataclasses import replace
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
@@ -2320,8 +2321,9 @@ class PydanticAIKnowledgeRunner:
             "围绕每个子问题追查证据与反例。完成后给下一阶段留下证据清单、"
             "来源边界、冲突和仍未解决的缺口；此处不要写面向用户的最终报告。",
             message_history=message_history, deps=deps, usage_limits=usage_limits,
+            model_settings={"max_tokens": 12000},
         )
-        return await self._agent.run(
+        result = await self._agent.run(
             "当前阶段：复核证据并形成结论。对照下面的已确认任务与上一阶段证据，"
             "检查是否覆盖问题、有无只读摘要、过时数据、关键读取失败、缺乏反例或越界断言。"
             "存在可补的缺口就继续调用检索与原文工具，查到足够支持或确定无法取得后再收束；"
@@ -2329,8 +2331,27 @@ class PydanticAIKnowledgeRunner:
             "哪些只是推论、哪些仍未知。不得宣称失败的读取或未执行的步骤已完成。\n\n" + prompt,
             message_history=investigation.all_messages(), deps=deps,
             usage=investigation.usage, usage_limits=usage_limits,
+            model_settings={"max_tokens": 12000},
             event_stream_handler=event_stream_handler,
         )
+        answer = str(result.output)
+        # Some gateways impose a lower output cap. Continue the same report and
+        # shared budget instead of saving a truncated response as completed.
+        for _ in range(2):
+            if result.response.finish_reason != "length":
+                return replace(result, output=answer)
+            result = await self._agent.run(
+                "上一段因输出长度限制中断。请从中断位置接着完成同一份报告，"
+                "不要重写前文或重新研究，补齐尚未输出的结论、边界和来源后收束。",
+                message_history=result.all_messages(), deps=deps,
+                usage=result.usage, usage_limits=usage_limits,
+                model_settings={"max_tokens": 12000},
+                event_stream_handler=event_stream_handler,
+            )
+            answer += str(result.output)
+        if result.response.finish_reason == "length":
+            raise AgentInterrupted("研究报告仍受输出限制，请继续完成剩余结论。")
+        return replace(result, output=answer)
 
     def _usage_limits_for(self, tools: AgentToolContext) -> UsageLimits:
         return (
