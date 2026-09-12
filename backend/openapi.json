@@ -13193,6 +13193,122 @@
         "title": "RevokeCodingPlanRequest",
         "type": "object"
       },
+      "RoadshowCase": {
+        "properties": {
+          "answer": {
+            "maxLength": 200000,
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Keywords",
+            "type": "array"
+          },
+          "knowledge_queries": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Knowledge Queries",
+            "type": "array"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Options",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "web_queries": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Web Queries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "keywords",
+          "question",
+          "options",
+          "steps",
+          "answer"
+        ],
+        "title": "RoadshowCase",
+        "type": "object"
+      },
+      "RoadshowSettings": {
+        "properties": {
+          "active_case": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Active Case",
+            "type": "integer"
+          },
+          "canvas_enabled": {
+            "default": true,
+            "title": "Canvas Enabled",
+            "type": "boolean"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/RoadshowCase"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Cases",
+            "type": "array"
+          },
+          "chunk_delay": {
+            "default": 0.025,
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Chunk Delay",
+            "type": "number"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cases"
+        ],
+        "title": "RoadshowSettings",
+        "type": "object"
+      },
       "RubricDimension": {
         "additionalProperties": false,
         "properties": {
@@ -27458,6 +27574,87 @@
         "summary": "Get Research Trace",
         "tags": [
           "research-tasks"
+        ]
+      }
+    },
+    "/api/roadshow": {
+      "get": {
+        "operationId": "get_roadshow_settings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadshowSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Settings",
+        "tags": [
+          "roadshow"
+        ]
+      },
+      "put": {
+        "operationId": "save_roadshow_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoadshowSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadshowSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Settings",
+        "tags": [
+          "roadshow"
+        ]
+      }
+    },
+    "/api/roadshow/reset": {
+      "post": {
+        "operationId": "reset_roadshow_settings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadshowSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reset Settings",
+        "tags": [
+          "roadshow"
         ]
       }
     },

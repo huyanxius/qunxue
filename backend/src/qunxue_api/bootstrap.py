@@ -1134,6 +1134,9 @@ def create_app(
     app.include_router(knowledge_router)
     app.include_router(matching_router)
     app.include_router(frameworks_router)
+    from qunxue_api.api.routes.roadshow import router as roadshow_router
+
+    app.include_router(roadshow_router)
     app.include_router(agent_router)
 
     @app.exception_handler(ResearchTaskNotFound)

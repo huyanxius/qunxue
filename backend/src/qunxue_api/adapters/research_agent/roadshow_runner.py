@@ -27,6 +27,8 @@ class RoadshowRunner:
         return cls(fallback, json.loads(path.read_text())) if path.is_file() else fallback
 
     def _case(self, prompt, tools):
+        if not self.config.get("enabled", True):
+            return None
         context = tools.agent_route_context() if tools is not None else {}
         if str(context.get("user_id")) != self.config["user_id"]:
             return None
@@ -43,8 +45,17 @@ class RoadshowRunner:
         return self._case(prompt, tools) is not None
 
     def prepare_research(
-        self, *, prompt, conversation, tools=None, on_event, is_cancelled=None, on_title=None,
-        mode="standard", research_required=False, skip_clarification=False,
+        self,
+        *,
+        prompt,
+        conversation,
+        tools=None,
+        on_event,
+        is_cancelled=None,
+        on_title=None,
+        mode="standard",
+        research_required=False,
+        skip_clarification=False,
     ):
         case = self._case(prompt, tools)
         if case is None:
@@ -55,7 +66,8 @@ class RoadshowRunner:
                 conversation=conversation,
                 tools=tools,
                 on_event=on_event,
-                mode=mode, research_required=research_required,
+                mode=mode,
+                research_required=research_required,
                 skip_clarification=skip_clarification,
                 is_cancelled=is_cancelled,
                 on_title=on_title,
@@ -159,7 +171,9 @@ class RoadshowRunner:
                         "finished",
                         call_id,
                         input=payload,
-                        output={"result_count": len(items), "items": items},
+                        output=result
+                        if name == "update_research_map"
+                        else {"result_count": len(items), "items": items},
                         detail=f"已获取 {len(items)} 条资料",
                     )
                 )
@@ -178,6 +192,25 @@ class RoadshowRunner:
                     if url and url not in read_urls:
                         read_urls.add(url)
                         invoke("read_web_page", {"url": url})
+        if self.config.get("canvas_enabled", True) and hasattr(tools, "enable_research_map"):
+            tools.enable_research_map()
+            # The existing Agent owns node kinds, evidence and relationship decisions.
+            # The authored answer is context, never a prescribed canvas topology.
+            self.fallback.run_stream(
+                prompt=(
+                    "请根据下面这份研究回答，使用现有 update_research_map 工具组织研究画布。"
+                    "由你判断研究问题、理论、主张、证据、缺口与综合，以及它们之间的关系。"
+                    "不要按章节机械拆卡或强制顺序连线，不要伪造引用。"
+                    "沿用现有工具契约；已有检索材料足够时不要重复搜索。"
+                    "必须调用 update_research_map 保存结果，不需要重写报告正文。\n\n"
+                    + case["answer"]
+                ),
+                conversation=conversation,
+                tools=tools,
+                on_delta=lambda _: None,
+                on_tool_event=on_tool_event,
+                is_cancelled=is_cancelled,
+            )
         answer = case["answer"]
         for index in range(0, len(answer), 64):
             check_cancelled()
