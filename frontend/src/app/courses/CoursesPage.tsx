@@ -1,3 +1,4 @@
+import { CourseCatalog } from './CourseCatalog'
 import { copyCourseText } from './copyCourseText'
 import { useAccount } from '../../modules/account'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
@@ -16,6 +17,7 @@ import '../research/research-materials-page.css'
 import './courses.css'
 import { COURSE_INVITATION_KEY } from './CourseInvitationRoute'
 
+const CourseHome = lazy(() => import('./CourseHome').then((module) => ({ default: module.CourseHome })))
 const TeacherTeachingPanel = lazy(() => import('../../modules/teaching-assistant').then((module) => ({ default: module.TeacherTeachingPanel })))
 const StudentLearningPanel = lazy(() => import('../../modules/teaching-assistant').then((module) => ({ default: module.StudentLearningPanel })))
 
@@ -39,6 +41,7 @@ export function CoursesPage() {
   }, [reload])
   const id = params.get('kb_id')
   const teachingOpen = params.get('teaching') === '1'
+  const homeOpen = params.get('section') === 'overview' && !teachingOpen
   const [teachingDirty, setTeachingDirty] = useState(false)
   useEffect(() => {
     if (!teachingDirty) return
@@ -108,7 +111,7 @@ export function CoursesPage() {
     if (teachingDirty && !window.confirm('当前教学修改尚未保存，确定离开？')) return
     setEditing(false); setNotice(null); setError(null)
     const next = new URLSearchParams({ view: viewName })
-    if (courseId) next.set('kb_id', courseId)
+    if (courseId) { next.set('kb_id', courseId); next.set('section', 'overview') }
     if (docId) next.set('document_id', docId)
     if (courseId === id && params.get('conversation_id')) next.set('conversation_id', params.get('conversation_id')!)
     routerNavigate(`/courses?${next.toString()}`)
@@ -187,7 +190,7 @@ export function CoursesPage() {
         onUpload={() => { if (detail) uploadRef.current?.click(); else openFirstCourse() }} onShare={openFirstCourse}
         onJoin={() => setJoinOpen(true)} onRead={openFirstCourse}
         onDismiss={() => void action(async () => { await saveCourseRole(role, true); setGuideDismissed(true) })} /> : null}
-      {welcome ? <CourseWelcome onStart={() => setOnboardingStarted(true)} /> : role === undefined ? <p role="status">正在读取课程身份…</p> : !role || choosingRole ? <section className="courses-page__onboarding">
+      {welcome ? <><CourseWelcome onStart={() => setOnboardingStarted(true)} /><CourseCatalog courses={[]} role="student" query="" onOpen={() => setOnboardingStarted(true)} onRemove={() => undefined} /></> : role === undefined ? <p role="status">正在读取课程身份…</p> : !role || choosingRole ? <section className="courses-page__onboarding">
         <div className="courses-page__onboarding-nav"><CourseIconButton label={role ? "返回课程" : "返回介绍"} disabled={busy} onClick={() => { if (role) setChoosingRole(false); else setOnboardingStarted(false) }}><ArrowLeftIcon size={19} /></CourseIconButton><span>课程 <span aria-hidden="true">/</span> 选择身份</span></div>
         <h1>你将如何使用课程？</h1><p>选择你的角色，之后可随时更改。</p>
         <div className="courses-page__role-options">{(['teacher', 'student'] as const).map((choice) => <button key={choice} type="button" aria-label={choice === 'teacher' ? '我是教师' : '我是学生'} disabled={busy} aria-busy={busy} onClick={() => void action(async () => { setRole(await saveCourseRole(choice)); setGuideDismissed(false); setChoosingRole(false) })}>
@@ -197,12 +200,13 @@ export function CoursesPage() {
         </button>)}</div>
       </section> : detail ? <>
         <CourseIconButton label="返回课程" className="courses-page__back" onClick={() => navigate(view)}><ArrowLeftIcon size={19} /></CourseIconButton>
-        <header className="courses-page__detail"><div><h2>{detail.name}</h2><p>{detail.description || '课程参考资料'}</p></div><Link className="research-hub__new" to={`/agent?reference_knowledge_base_id=${encodeURIComponent(detail.id)}`}>{owned ? '使用资料提问' : '开始学习'}<ArrowUpRightIcon size={16} /></Link></header>
-        <nav className="courses-page__actions" aria-label="课程功能">
-          <button type="button" className="qx-button" aria-pressed={!teachingOpen} onClick={() => { if (!teachingDirty || window.confirm('当前教学修改尚未保存，确定离开？')) setParams((current) => { const next = new URLSearchParams(current); next.delete('teaching'); return next }) }}>课程资料</button>
+        <header className="courses-page__detail course-detail-header"><div><h2>{detail.name}</h2><p>{detail.description || '课程参考资料'}</p></div><Link className="research-hub__new" to={`/agent?reference_knowledge_base_id=${encodeURIComponent(detail.id)}`}>{owned ? '使用资料提问' : '开始学习'}<ArrowUpRightIcon size={16} /></Link></header>
+        <nav className="course-detail-nav" aria-label="课程功能">
+          <button type="button" aria-pressed={homeOpen} onClick={() => { if (!teachingDirty || window.confirm('当前教学修改尚未保存，确定离开？')) setParams((current) => { const next = new URLSearchParams(current); next.delete('teaching'); next.set('section', 'overview'); return next }) }}>课程概览</button>
+          <button type="button" className="qx-button" aria-pressed={!teachingOpen && !homeOpen} onClick={() => { if (!teachingDirty || window.confirm('当前教学修改尚未保存，确定离开？')) setParams((current) => { const next = new URLSearchParams(current); next.delete('teaching'); next.delete('section'); return next }) }}>课程资料</button>
           <button type="button" className="qx-button" aria-pressed={teachingOpen} onClick={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })}>{owned ? '备课与作业' : '学习与作业'}</button>
         </nav>
-        {teachingOpen ? <Suspense fallback={<p role="status">正在打开课程工具…</p>}>
+        {homeOpen ? <Suspense fallback={<p role="status">正在读取课程概览…</p>}><CourseHome key={detail.id} course={detail} onRead={(documentId) => navigate(view, detail.id, documentId)} onMaterials={() => setParams((current) => { const next = new URLSearchParams(current); next.delete('section'); next.delete('teaching'); return next })} onTeaching={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })} /></Suspense> : teachingOpen ? <Suspense fallback={<p role="status">正在打开课程工具…</p>}>
           {owned ? <TeacherTeachingPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} /> : <StudentLearningPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} />}
         </Suspense> : <>
         <div className="courses-page__actions"><Link className="qx-button" to={`/knowledge?scope=courses&kb_id=${encodeURIComponent(detail.id)}`}><TreeStructureIcon size={17} />浏览课程知识库</Link></div>
@@ -239,8 +243,8 @@ export function CoursesPage() {
           <button type="button" className="research-hub__new" onClick={() => { if (view === 'teacher') { setName(''); setDescription(''); setEditing(!editing) } else setJoinOpen(!joinOpen) }}><PlusIcon size={17} />{view === 'teacher' ? '创建课程' : '添加课程'}</button>
         </ResearchHubToolbar>
         {joinOpen && view === 'student' ? <form className="courses-page__form" onSubmit={(e) => void addSource(e)}><h2>添加老师分享的课程</h2>{!token ? <label>课程分享链接<input type="url" required value={shareLink} onChange={(e) => setShareLink(e.target.value)} placeholder="粘贴老师提供的链接" /></label> : <p>添加后，可阅读课程资料，并在 AI 对话中选用。</p>}<button type="submit" className="research-hub__new" disabled={busy}>添加到我的知识来源</button><button type="button" className="course-icon-button" aria-label="取消" title="取消" disabled={busy} onClick={() => { sessionStorage.removeItem(COURSE_INVITATION_KEY); setJoinOpen(false); routerNavigate('/courses?view=student', { replace: true }) }}><XIcon size={19} /></button></form> : null}
-        {!loading && !editing && !visible.length ? <div className="material-files__empty"><GraduationCapIcon size={36} weight="light" /><h2>{query ? '没有找到相关课程' : view === 'teacher' ? '让你的资料成为学习参考' : '从老师分享的资料开始'}</h2><p>{view === 'teacher' ? '创建课程资料库，上传课件，再分享给学生。' : '通过老师提供的链接添加课程，阅读资料或开始对话。'}</p></div> : null}
-        <div className="research-hub__projects">{visible.map((course) => <article className="research-project-card" key={course.id}><span className="courses-page__hint">{course.access === 'unavailable' ? '暂不可用' : `${course.readyDocumentCount} 份可用资料`}</span><h2>{course.name || '已添加的课程'}</h2><p>{course.description || (course.access === 'unavailable' ? '此课程已停止共享或被删除。' : '课程参考资料')}</p>{course.access === 'unavailable' ? <button type="button" className="courses-page__text-button" onClick={() => void action(async () => { await leaveCourse(course.id); setReload((n) => n + 1) })}>移除</button> : <button type="button" className="course-icon-button courses-page__card-link" title="打开课程" aria-label={`打开课程 ${course.name}`} onClick={() => navigate(view, course.id)}><ArrowUpRightIcon size={19} /></button>}</article>)}</div>
+        {!loading && <CourseCatalog courses={visible} role={view} query={query} onOpen={(courseId) => navigate(view, courseId)} onRemove={(courseId) => void action(async () => { await leaveCourse(courseId); setReload((n) => n + 1) })} />}
+
       </>}
       {editing ? <form className="courses-page__form" onSubmit={(e) => void save(e)}><h2>{detail ? '编辑课程' : '创建课程资料库'}</h2><label>课程名称<input value={name} required maxLength={100} onChange={(e) => setName(e.target.value)} autoFocus /></label><label>课程说明（选填）<textarea value={description} maxLength={1000} rows={3} onChange={(e) => setDescription(e.target.value)} /></label><div className="courses-page__actions"><button type="submit" className="research-hub__new" disabled={busy}>保存课程</button><CourseIconButton label="取消" disabled={busy} onClick={() => setEditing(false)}><XIcon size={19} /></CourseIconButton></div></form> : null}
       <dialog ref={deleteDialog} className="course-delete-dialog" aria-labelledby="course-delete-title" onCancel={(event) => { event.preventDefault(); if (!busy) setDeleting(false) }}>

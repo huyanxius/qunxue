@@ -1,18 +1,18 @@
 import { CourseIconButton } from './CourseIconButton'
 import { XIcon, ArrowRightIcon, BooksIcon, ChatCircleTextIcon, TreeStructureIcon } from '@phosphor-icons/react'
-import { ResearchLibraryBot } from '../research/ResearchLibraryBot'
+import welcomeArtwork from '../../assets/workbench/research-agent-hero.webp'
 
 export function CourseWelcome({ onStart }: { onStart: () => void }) {
   return <section className="course-welcome">
     <header className="course-welcome__hero">
-      <ResearchLibraryBot graduationCap />
+      <img className="course-welcome__artwork" src={welcomeArtwork} alt="" />
       <h1>课程</h1>
-      <p className="course-welcome__description">阅读课堂资料，梳理知识脉络，带着依据提问。</p>
+      <p className="course-welcome__description">从课程内容到教学反馈，连接教师与学生的每一步。</p>
     </header>
     <ul className="course-welcome__flow" aria-label="课程功能">
       <li><BooksIcon size={26} weight="light" aria-hidden="true" /><h2>课程资料</h2><p>课件与补充阅读，集中查阅</p></li>
-      <li><TreeStructureIcon size={26} weight="light" aria-hidden="true" /><h2>知识导图</h2><p>梳理知识关联，回到原文</p></li>
-      <li><ChatCircleTextIcon size={26} weight="light" aria-hidden="true" /><h2>学习对话</h2><p>结合课程提问，核对引用</p></li>
+      <li><TreeStructureIcon size={26} weight="light" aria-hidden="true" /><h2>教师工作区</h2><p>准备教案、批改作业、复核反馈</p></li>
+      <li><ChatCircleTextIcon size={26} weight="light" aria-hidden="true" /><h2>学生学习</h2><p>诊断、阅读、练习与作业反馈</p></li>
     </ul>
     <div className="course-welcome__start"><button type="button" className="research-hub__new" onClick={onStart}>开始使用课程<ArrowRightIcon size={17} aria-hidden="true" /></button><p>教师创建与分享<span aria-hidden="true"> · </span>学生加入与学习</p></div>
   </section>

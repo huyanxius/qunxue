@@ -1,9 +1,13 @@
+import lessonArtwork from '../../../assets/research-tools/qualitative-coding.webp'
+import assignmentArtwork from '../../../assets/research-tools/interview-notes.webp'
+import { BookOpenIcon, ClipboardTextIcon, ArrowUpRightIcon, ClockIcon, LockSimpleIcon, CheckCircleIcon, FilesIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import type { SharedCourse } from '../../shared-knowledge'
 import { createTeachingActivity, getTeachingActivity, listTeachingActivities, runTeachingActivity, updateTeachingActivity } from '../teachingApi'
 import { StudentMaterials } from './StudentMaterials'
 import { StudentActivityDetail } from './StudentActivityDetail'
 import './student-learning.css'
+import '../classroom-workspace.css'
 
 type Activity = Awaited<ReturnType<typeof getTeachingActivity>>
 type Input = Activity['input']
@@ -100,7 +104,19 @@ function StudentWorkspace({ course, onDirtyChange }: { course: SharedCourse; onD
   }
   const valid = kind === 'learning_check' ? Boolean(input.objectives?.trim()) : Boolean(input.title?.trim() && input.requirements?.trim() && (input.submission_text?.trim() || input.material_ids?.length) && share)
   return <section className="student-learning" aria-label="学生学习与作业">
-    <div className="courses-page__actions"><button type="button" className="qx-button" disabled={busy || uploading} onClick={() => fresh('learning_check')}>学习助手</button><button type="button" className="qx-button" disabled={busy || uploading} onClick={() => fresh('assignment_review')}>提交作业</button></div>
+    <header className="classroom-heading"><div><span className="classroom-eyebrow">我的学习工作区</span><h3>学习任务与作业反馈</h3><p>从一次诊断开始，回到课程原文，在新的情境中练习。</p></div><span className="classroom-privacy"><LockSimpleIcon size={16} />学习记录默认私有</span></header>
+    <div className="classroom-overview" aria-label="学习概览">
+      <div><BookOpenIcon size={20} /><span>学习记录<strong>{records.filter((r) => r.kind === 'learning_check').length}<small>次</small></strong></span></div>
+      <div><ClipboardTextIcon size={20} /><span>已提交作业<strong>{records.filter((r) => r.kind === 'assignment_review' && r.shared_with_teacher).length}<small>份</small></strong></span></div>
+      <div><CheckCircleIcon size={20} /><span>正式反馈<strong>{records.filter((r) => r.kind === 'assignment_review' && r.state === 'published').length}<small>份</small></strong></span></div>
+      <div><FilesIcon size={20} /><span>可用课程资料<strong>{course.documents.filter((d) => d.status === 'ready').length}<small>份</small></strong></span></div>
+    </div>
+    <div className="classroom-launchers">
+      <button type="button" aria-label="学习助手" disabled={busy || uploading} onClick={() => fresh('learning_check')}><img className="classroom-launcher-art" src={lessonArtwork} alt="" /><span className="classroom-launcher-icon"><BookOpenIcon size={24} /></span><span><strong>学习助手</strong><small>诊断问题 · 推荐阅读 · 情境练习</small></span><ArrowUpRightIcon size={20} /></button>
+      <button type="button" aria-label="提交作业" disabled={busy || uploading} onClick={() => fresh('assignment_review')}><img className="classroom-launcher-art" src={assignmentArtwork} alt="" /><span className="classroom-launcher-icon"><ClipboardTextIcon size={24} /></span><span><strong>提交作业</strong><small>保留原稿 · 教师反馈 · 修改记录</small></span><ArrowUpRightIcon size={20} /></button>
+    </div>
+    <div className="classroom-layout"><div className="classroom-main">
+    {(selected?.kind ?? kind) === 'learning_check' && <ol className="classroom-learning-stages" aria-label="学习阶段">{['明确目标', '诊断问答', '情境练习', '反馈与改进'].map((label, index) => { const stage = selected?.result?.stage; const current = stage === 'feedback' || stage === 'complete' ? 3 : stage === 'practice' ? 2 : stage === 'diagnostic' ? 1 : 0; return <li key={label} aria-current={index === current ? 'step' : undefined} data-complete={index < current}><span>{index < current ? <CheckCircleIcon size={17} /> : index + 1}</span>{label}</li> })}</ol>}
     {error ? <p role="alert" className="qx-message is-error">{error} <button type="button" className="qx-button" disabled={busy} onClick={() => void action(async () => { if (selected) accept(await getTeachingActivity(selected.id)); setReload((n) => n + 1) })}>刷新记录</button></p> : null}
     {loading ? <p role="status">正在读取学习记录…</p> : null}
     {selected ? <StudentActivityDetail key={selected.id} activity={selected} records={records} busy={busy} onDirty={setDirty}
@@ -117,6 +133,6 @@ function StudentWorkspace({ course, onDirtyChange }: { course: SharedCourse; onD
         {kind === 'assignment_review' ? <label className="student-materials__item"><input type="checkbox" checked={share} disabled={busy} onChange={(e) => setShare(e.target.checked)} />同意将本次作业及选中的材料提交给课程教师</label> : <p className="courses-page__hint">学习记录默认仅自己可见，完成后可单独分享给课程教师。</p>}
         <div className="courses-page__actions"><button className="research-hub__new" type="submit" disabled={busy || uploading || !valid}>{busy ? '正在保存…' : kind === 'learning_check' ? '生成诊断题' : '提交给课程教师'}</button>{kind === 'learning_check' ? <button type="button" className="qx-button" disabled={busy || uploading || !valid} onClick={() => void action(() => start(false))}>保存草稿</button> : null}</div>
       </form>}
-    <section aria-label="我的记录"><h3>我的记录</h3>{!loading && !records.length ? <p className="courses-page__hint">还没有学习或作业记录。</p> : null}<ul className="student-learning__records">{records.map((record) => <li key={record.id}><button type="button" className="courses-page__text-button" disabled={busy || uploading} aria-current={selected?.id === record.id ? 'true' : undefined} onClick={() => { if (leave()) void action(async () => { accept(await getTeachingActivity(record.id)); setDirty(false) }) }}>{record.input.title || record.input.objectives || '学习记录'} · {record.kind === 'assignment_review' ? '作业' : '学习'} · {stateLabels[record.state]}</button></li>)}</ul></section>
+    </div><aside className="classroom-rail"><section className="classroom-history" aria-label="我的记录"><div className="classroom-section-title"><span><ClockIcon size={18} />我的记录</span><small>{records.length} 条</small></div>{!loading && !records.length ? <p className="courses-page__hint">还没有学习或作业记录。</p> : null}<ul className="student-learning__records">{records.map((record) => <li key={record.id}><button type="button" className="courses-page__text-button" disabled={busy || uploading} aria-current={selected?.id === record.id ? 'true' : undefined} onClick={() => { if (leave()) void action(async () => { accept(await getTeachingActivity(record.id)); setDirty(false) }) }}><span className="classroom-record-title">{record.kind === 'assignment_review' ? <ClipboardTextIcon size={17} /> : <BookOpenIcon size={17} />}<strong>{record.input.title || record.input.objectives || '学习记录'}</strong></span><span className="classroom-record-meta"><span>{record.kind === 'assignment_review' ? '作业' : '学习'}</span><span className="classroom-state" data-state={record.state}>{stateLabels[record.state]}</span></span></button></li>)}</ul></section><section className="classroom-insights"><div className="classroom-section-title"><span><LockSimpleIcon size={18} />你的学习档案</span></div><h3>探索的过程，由你掌握</h3><p>学习记录仅自己可见。你可以选择某一次记录分享给教师，让反馈更有针对性。</p><div className="classroom-brief-footer"><span>作业原稿与修改稿分别保留</span></div></section></aside></div>
   </section>
 }
