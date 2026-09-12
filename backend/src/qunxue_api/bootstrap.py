@@ -980,6 +980,9 @@ def create_app(
                     route_executor=app.state.model_router,
                     direct_task=teaching,
                 )
+            from qunxue_api.adapters.research_agent.roadshow_runner import RoadshowRunner
+
+            runner = RoadshowRunner.wrap(runner)
             try:
                 yield DisciplinaryAgentApplication(
                     shared_references=SharedKnowledgeReferences(

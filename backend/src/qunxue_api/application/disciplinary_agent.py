@@ -671,7 +671,10 @@ class DisciplinaryAgentApplication:
             # Every Agent turn gets the same lightweight intent check. Deep mode
             # additionally pauses on a plan; ordinary mode only pauses when the
             # planner identifies a material clarification question.
-            if deep_research_action not in {"clarify", "confirm"} and not (
+            if (deep_research_action not in {"clarify", "confirm"} or (
+                deep_research_action == "clarify"
+                and getattr(self._runner, "handles", lambda **_: False)(prompt=prompt, tools=tools)
+            )) and not (
                 run.partial_answer or prior_summary
             ):
                 prepare_research = getattr(self._runner, "prepare_research", None)
