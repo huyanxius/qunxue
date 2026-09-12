@@ -186,8 +186,16 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
             if category is not None:
                 statement = statement.where(KnowledgeEntryRevisionRow.category == category)
             if category_id is not None:
+                # 分类计数包含后代条目；匹配目录节点而非字符串前缀，避免邻近分类串入。
+                directory_nodes = func.json_each(
+                    KnowledgeEntryRevisionRow.directory_path
+                ).table_valued("value")
                 statement = statement.where(
-                    KnowledgeEntryRevisionRow.category_id == category_id
+                    select(1)
+                    .select_from(directory_nodes)
+                    .where(func.json_extract(directory_nodes.c.value, "$.node_id") == category_id)
+                    .correlate(KnowledgeEntryRevisionRow)
+                    .exists()
                 )
             if dimension_id is not None:
                 statement = statement.where(

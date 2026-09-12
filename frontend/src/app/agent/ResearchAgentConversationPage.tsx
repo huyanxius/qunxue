@@ -3064,10 +3064,10 @@ export function ResearchAgentConversationPage({
   const selectedCitationReleaseId = selectedCitationContext?.knowledgeReleaseId ?? null
   const selectedMaterialCitation = materialCitationFields(selectedCitation)
   const selectedActivity = allToolSteps.find((activity) => activity.id === selectedActivityId)
-  // 这轮一旦产生来源或工具活动，右侧研究面板自己展开；独立 Agent 页才这样，
-  // 研究工作区里内嵌的窄栏仍然只按用户点击开合。
+  // 只有能并排显示的桌面宽度才自动展开；窄屏浮层须由用户打开，以免打断阅读。
   useEffect(() => {
     if (embedded || researchPanelDismissed.current) return
+    if (window.matchMedia?.('(max-width: 1180px)').matches) return
     if (!citationsForRail.length && !activities.length) return
     setContextOpen(true)
   }, [activities.length, citationsForRail.length, embedded])

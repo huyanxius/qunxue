@@ -60,31 +60,29 @@ function CategoryTree({
         const selected = category.nodeId === selectedCategoryId
         return (
           <li key={category.nodeId}>
-            <button
-              className="knowledge-tree__category"
-              type="button"
-              data-active={selected || undefined}
-              data-dimension-tone={tone}
-              data-node-kind={presentation.kind}
-              data-stage={presentation.stage}
-              style={{ '--tree-depth': depth } as CSSProperties}
-              aria-label={`${expandable ? (expanded ? '收起' : '进入') : '浏览'} ${category.title}`}
-              onClick={() => {
-                if (expandable) onToggle(category.nodeId)
-                else onSelectCategory(dimensionId, category.nodeId)
-              }}
-            >
-              <span className="knowledge-tree__disclosure" aria-hidden="true">
-                {expandable
-                  ? expanded
-                    ? <CaretDownIcon size={13} weight="bold" />
-                    : <CaretRightIcon size={13} weight="bold" />
-                  : <span />}
-              </span>
-              <span className="knowledge-tree__node-badge" aria-hidden="true">{presentation.badge ?? '·'}</span>
-              <span className="knowledge-tree__label">{presentation.label}</span>
-              <small>{category.entryCount}</small>
-            </button>
+            <div className="knowledge-tree__category-row" style={{ '--tree-depth': depth } as CSSProperties}>
+              {expandable ? (
+                <button className="knowledge-tree__category-toggle" type="button"
+                  aria-label={`${expanded ? '收起' : '展开'} ${category.title}`}
+                  aria-expanded={expanded} onClick={() => onToggle(category.nodeId)}>
+                  {expanded ? <CaretDownIcon size={13} weight="bold" /> : <CaretRightIcon size={13} weight="bold" />}
+                </button>
+              ) : <span className="knowledge-tree__category-spacer" />}
+              <button
+                className="knowledge-tree__category"
+                type="button"
+                data-active={selected || undefined}
+                data-dimension-tone={tone}
+                data-node-kind={presentation.kind}
+                data-stage={presentation.stage}
+                aria-label={`浏览 ${category.title}`}
+                onClick={() => onSelectCategory(dimensionId, category.nodeId)}
+              >
+                <span className="knowledge-tree__node-badge" aria-hidden="true">{presentation.badge ?? '·'}</span>
+                <span className="knowledge-tree__label">{presentation.label}</span>
+                <small>{category.entryCount}</small>
+              </button>
+            </div>
             {expandable && expanded ? (
               <CategoryTree
                 categories={category.children}
