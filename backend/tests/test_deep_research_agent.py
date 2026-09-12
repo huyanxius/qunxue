@@ -245,6 +245,7 @@ def test_confirmed_deep_research_persists_a_completion_record_for_the_card() -> 
             self.segment_id = None
             self.locator = None
             self.deleted = False
+            self.knowledge_base_id = None
 
     cited = (Citation("entry"), Citation("theory"), Citation("source", source_kind="web"))
 
@@ -361,7 +362,10 @@ def test_skipping_clarification_still_requires_plan_confirmation() -> None:
 
         def prepare_research(self, *, prompt, conversation, on_event):
             if "跳过了本次澄清" in prompt:
-                on_event(AgentResearchEvent(kind="ask", payload={"question": "再次询问"}))
+                on_event(AgentResearchEvent(
+                    kind="plan",
+                    payload={"title": "青年孤独", "steps": ["按默认范围核对证据"]},
+                ))
             else:
                 on_event(AgentResearchEvent(kind="ask", payload={"question": "研究什么"}))
 
@@ -410,6 +414,7 @@ def test_deep_research_does_not_ask_for_clarification_on_greeting() -> None:
         def prepare_research(self, *, prompt, conversation, on_event):
             del conversation, on_event
             assert prompt == "你好"
+            return "conversation"
 
         def run(self, *, prompt, conversation, tools):
             return AgentRunResult(

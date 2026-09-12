@@ -1,11 +1,11 @@
 from types import SimpleNamespace
-from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
+from pydantic_ai.messages import ModelResponse, ToolCallPart
+from pydantic_ai.models.function import FunctionModel
 
 from qunxue_api.adapters.research_agent.pydantic_runner import (
-    DeepResearchDecision,
     PydanticAIKnowledgeRunner,
 )
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
@@ -32,7 +32,10 @@ def test_new_conversation_persists_title_for_answers_and_pending_research(kind):
             if on_title:
                 on_title("  “青年孤独的社会成因”  ")
             if kind:
-                on_event(AgentResearchEvent(kind=kind, payload={"title": "青年孤独"}))
+                on_event(AgentResearchEvent(
+                    kind=kind,
+                    payload={"title": "青年孤独", "steps": ["核对青年孤独的研究证据"]},
+                ))
 
         def run(self, **kwargs):
             return AgentRunResult(
@@ -66,30 +69,39 @@ def test_new_conversation_persists_title_for_answers_and_pending_research(kind):
     ("conversation", False), ("research", False), ("research", True),
 ])
 def test_planner_emits_title_for_all_decisions(request_type, clarify):
-    runner = object.__new__(PydanticAIKnowledgeRunner)
-    runner._planner_agent = SimpleNamespace(run_sync=Mock(return_value=SimpleNamespace(
-        output=DeepResearchDecision(
-            request_type=request_type, needs_clarification=clarify,
-            title="青年孤独的社会成因", question="研究哪个地区？",
-        ),
-    )))
-    titles = []
-    runner.prepare_research(
-        prompt="我想研究一下年轻人的孤独", conversation=(), tools=Tools(),
-        on_event=lambda event: None, on_title=titles.append,
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://example.test/v1", api_key="test", model="test", timeout_seconds=10,
     )
+    def model(messages, info):
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, {
+            "request_type": request_type, "needs_clarification": clarify,
+            "title": "青年孤独的社会成因", "question": "研究哪个地区？",
+            "options": ["本校", "本市", "全国"], "steps": ["核对青年孤独的研究证据"],
+        })])
+    titles = []
+    with runner._planner_agent.override(model=FunctionModel(model)):
+        runner.prepare_research(
+            prompt="我想研究一下年轻人的孤独", conversation=(), tools=Tools(),
+            on_event=lambda event: None, on_title=titles.append,
+        )
     assert titles == ["青年孤独的社会成因"]
-    assert runner._planner_agent.run_sync.call_count == 1
 
 
 def test_planner_failure_keeps_existing_title():
-    runner = object.__new__(PydanticAIKnowledgeRunner)
-    runner._planner_agent = SimpleNamespace(run_sync=Mock(side_effect=RuntimeError("offline")))
-    titles = []
-    runner.prepare_research(
-        prompt="你好", conversation=(), tools=Tools(),
-        on_event=lambda event: None, on_title=titles.append,
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://example.test/v1", api_key="test", model="test", timeout_seconds=10,
     )
+    def unavailable(messages, info):
+        raise RuntimeError("offline")
+    titles = []
+    with (
+        runner._planner_agent.override(model=FunctionModel(unavailable)),
+        pytest.raises(RuntimeError),
+    ):
+        runner.prepare_research(
+            prompt="你好", conversation=(), tools=Tools(),
+            on_event=lambda event: None, on_title=titles.append,
+        )
     assert titles == []
 
 
