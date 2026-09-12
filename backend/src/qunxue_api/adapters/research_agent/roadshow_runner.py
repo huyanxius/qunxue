@@ -43,23 +43,28 @@ class RoadshowRunner:
         return self._case(prompt, tools) is not None
 
     def prepare_research(
-        self, *, prompt, conversation, tools=None, on_event, is_cancelled=None, on_title=None
+        self, *, prompt, conversation, tools=None, on_event, is_cancelled=None, on_title=None,
+        mode="standard", research_required=False, skip_clarification=False,
     ):
         case = self._case(prompt, tools)
         if case is None:
-            from inspect import signature
+            from inspect import Parameter, signature
 
             kwargs = dict(
                 prompt=prompt,
                 conversation=conversation,
                 tools=tools,
                 on_event=on_event,
+                mode=mode, research_required=research_required,
+                skip_clarification=skip_clarification,
                 is_cancelled=is_cancelled,
                 on_title=on_title,
             )
             parameters = signature(self.fallback.prepare_research).parameters
-            self.fallback.prepare_research(**{k: v for k, v in kwargs.items() if k in parameters})
-            return
+            accepts_kwargs = any(p.kind is Parameter.VAR_KEYWORD for p in parameters.values())
+            return self.fallback.prepare_research(
+                **{k: v for k, v in kwargs.items() if k in parameters or accepts_kwargs}
+            )
         if on_title:
             on_title(case["title"])
         selected = prompt.rsplit("用户选择的研究重点：", 1)[-1].strip()
@@ -78,6 +83,8 @@ class RoadshowRunner:
                     },
                 )
             )
+
+        return "research"
 
     def run(self, *, prompt, conversation, tools):
         return self.run_stream(
