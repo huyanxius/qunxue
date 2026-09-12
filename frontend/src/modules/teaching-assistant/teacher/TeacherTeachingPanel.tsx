@@ -1,5 +1,5 @@
-import lessonArtwork from '../../../assets/research-tools/qualitative-coding.webp'
-import assignmentArtwork from '../../../assets/research-tools/interview-notes.webp'
+import lessonArtwork from '../../../assets/classroom/humanist-seminar.webp'
+import assignmentArtwork from '../../../assets/classroom/civic-observation.webp'
 import { ArrowUpRightIcon, BookOpenIcon, FilesIcon, SlidersHorizontalIcon, ClipboardTextIcon, ChartBarIcon, ClockIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'

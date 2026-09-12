@@ -1,6 +1,6 @@
 import { CourseIconButton } from './CourseIconButton'
 import { XIcon, ArrowRightIcon, BooksIcon, ChatCircleTextIcon, TreeStructureIcon } from '@phosphor-icons/react'
-import welcomeArtwork from '../../assets/workbench/research-agent-hero.webp'
+import welcomeArtwork from '../../assets/classroom/humanist-seminar.webp'
 
 export function CourseWelcome({ onStart }: { onStart: () => void }) {
   return <section className="course-welcome">
