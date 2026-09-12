@@ -142,3 +142,18 @@ def test_clarification_then_plan_then_report(runner):
     result = app.run_turn(**args, deep_research_run_id=first.run_id, deep_research_action="confirm")
     assert "空间分析正文" in result.result.answer
     assert result.turn is not None
+
+
+def test_non_demo_planning_preserves_intent_and_server_policy(runner):
+    class Planner(Fallback):
+        def prepare_research(self, *, mode, research_required, skip_clarification, **kwargs):
+            assert mode == "deep_research"
+            assert research_required is False
+            assert skip_clarification is True
+            return "conversation"
+
+    runner.fallback = Planner()
+    assert runner.prepare_research(
+        prompt="你好", conversation=(), tools=Tools(), on_event=lambda _: None,
+        mode="deep_research", research_required=False, skip_clarification=True,
+    ) == "conversation"
