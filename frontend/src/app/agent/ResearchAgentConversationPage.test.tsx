@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -2091,4 +2091,20 @@ it('keeps one embedded research panel toggle closed until clicked', async () => 
   expect(toggle).toHaveAttribute('aria-expanded', 'true')
   fireEvent.click(toggle)
   expect(screen.queryByRole('complementary', { name: '研究面板' })).not.toBeInTheDocument()
+})
+
+
+it('keeps mobile citations closed until requested and returns to the composer', async () => {
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+  const conversation = conversationFixture({ citations: [{ citation_id: 'mobile-source', knowledge_id: 'D1:C001', kind: 'knowledge', label: '社区研究文献', excerpt: '研究依据' }] })
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => urlFor(input).pathname === `/api/agent/conversations/${conversation.conversation_id}` ? json(conversation) : json({ items: [] })))
+  renderPage('mobile-user', `/agent?conversation_id=${conversation.conversation_id}`)
+  await screen.findByText(conversation.turns[0].assistant.content)
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)) })
+  expect(screen.queryByRole('complementary', { name: '研究面板' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: '研究面板' }))
+  const panel = await screen.findByRole('complementary', { name: '研究面板' })
+  fireEvent.click(within(panel).getByRole('button', { name: '返回对话' }))
+  await waitFor(() => expect(screen.queryByRole('complementary', { name: '研究面板' })).not.toBeInTheDocument())
+  expect(screen.getByRole('textbox', { name: '问社会学 Agent' })).toBeVisible()
 })
