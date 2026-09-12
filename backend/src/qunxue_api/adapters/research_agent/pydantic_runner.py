@@ -67,7 +67,7 @@ from qunxue_api.modules.agent_conversation import (
 class DeepResearchDecision(BaseModel):
     """Structured planning output; it keeps research UX out of free-form text."""
 
-    request_type: Literal["research", "conversation"] = "conversation"
+    request_type: Literal["research", "conversation"]
     needs_clarification: bool = False
     question: str = ""
     options: list[str] = Field(default_factory=list)
@@ -122,41 +122,6 @@ def visible_text(answer: str) -> str:
     return "".join(chunks)
 
 
-_GENERIC_RESEARCH_LENSES = (
-    "概念与理论",
-    "理论背景",
-    "现实案例",
-    "最新资料",
-    "观点之间的争议",
-    "不同观点",
-    "研究方法",
-    "数据",
-)
-
-
-def _clarification_is_material(decision: DeepResearchDecision, prompt: str) -> bool:
-    """Reject low-value lens pickers when the user already supplied a topic."""
-
-    if not _has_research_subject(prompt):
-        return True
-    question = decision.question.strip()
-    generic_question = bool(
-        re.search(
-            r"重点研究哪一部分|重点了解哪一部分|从哪个角度|选择研究切口|侧重研究哪|重点关注哪一方面",
-            question,
-        )
-    )
-    options = [item.strip() for item in decision.options if item.strip()]
-    if len(options) < 3:
-        return False
-    generic_options = sum(
-        any(lens in option for lens in _GENERIC_RESEARCH_LENSES) for option in options
-    )
-    # A topic with a generic “pick a lens” question can be handled by the
-    # planner's own defaults; turn it into a plan instead of blocking the user.
-    return not (generic_question and len(options) >= 3 and generic_options >= 2)
-
-
 class DeterministicKnowledgeRunner:
     """Explicit local runner for tests and the repository's mock runtime only."""
 
@@ -172,10 +137,10 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext | None = None,
         on_event: Callable[[AgentResearchEvent], None],
-    ) -> None:
+    ) -> Literal["research", "conversation"]:
         del conversation, tools
         if prompt.strip() in {"你好", "您好", "嗨", "hello", "hi", "谢谢", "感谢"}:
-            return
+            return "conversation"
         if not _has_research_subject(prompt):
             on_event(
                 AgentResearchEvent(
@@ -191,7 +156,7 @@ class DeterministicKnowledgeRunner:
                     },
                 )
             )
-            return
+            return "research"
         on_event(
             AgentResearchEvent(
                 kind="plan",
@@ -201,6 +166,7 @@ class DeterministicKnowledgeRunner:
                 },
             )
         )
+        return "research"
 
     def run(
         self,
@@ -799,7 +765,8 @@ class PydanticAIKnowledgeRunner:
                 "可以明确说明知识库未命中后使用通用学科知识；正式研究、论文、引用和来源结论不得绕过证据。"
                 "检索结果只限定知识库引用的依据，不限制你理解和回应用户的问题。"
                 "不得杜撰知识条目或来源。一次回答可以根据需要连续调用多个工具。"
-                "每轮最多调用 3 次 search_knowledge；不要重复相同检索，也不要猜测 knowledge_id；"
+                "普通模式每轮最多调用 3 次 search_knowledge；深入研究按证据缺口继续检索，"
+                "不要重复相同检索，也不要猜测 knowledge_id；"
                 "当本轮启用联网搜索时，采用知识库优先、主动联网补充的策略。"
                 "按已有知识库规则取得学科依据后，结合用户意图、对话历史和检索结果，"
                 "主动判断外部资料能否使回答更全面、具体或准确，不要因为知识库已有命中就直接停止。"
@@ -837,12 +804,12 @@ class PydanticAIKnowledgeRunner:
                 "methodology、sample_and_sources、analysis_steps、ethics、limitations、"
                 "evidence_gaps；不得缺失、重复或自造章节 key。"
                 "不得调用任何模型工具直接创建 ResearchTask。"
-                "研究工作区每轮最多调用 3 次 search_knowledge、3 次 search_research_materials、"
-                "5 次读取类工具；已有足够材料后停止检索。"
+                "普通研究工作区每轮最多调用 3 次 search_knowledge、3 次 search_research_materials、"
+                "5 次读取类工具；深入研究不受此普通模式限额约束，按已确认提案补齐依据。"
                 "研究地图只记录问题、理论、主张、证据、缺口和综合，以及 explains、supports、"
                 "challenges、derives、refines 关系；不要把工具调用、聊天记录写成节点。"
                 "待验证解释标记 developing，缺口标记 open；无真实依据不得标记 verified。"
-                "默认用清晰但克制的篇幅回答，除非用户明确要求长文。"
+                "普通模式默认用清晰但克制的篇幅回答；深入研究的篇幅取决于证据与提案覆盖范围。"
                 "明显偏离社会学学习与研究的问题，应简短说明能力边界并邀请用户转回学科问题。"
             ),
         )
@@ -860,28 +827,50 @@ class PydanticAIKnowledgeRunner:
                 + json.dumps(files, ensure_ascii=False)
             )
 
+        @self._agent.instructions
+        def deep_research_instructions(ctx: RunContext[KnowledgeToolRegistry]) -> str:
+            if not getattr(ctx.deps, "deep_research_enabled", False):
+                return ""
+            return (
+                "当前是用户已确认提案的深入研究，不是普通概念问答。以提案的问题、范围与步骤组织工作。"
+                "先核实问题隐含的事实前提，再分解子问题，主动使用可用知识库、网页、授权材料及原文工具。"
+                "按概念、机制、群体差异和竞争解释调整查询；首次命中不是完成，多轮查询应由上一轮缺口驱动。"
+                "网页搜索结果只是线索，采用的关键事实必须读取原文；检查年代、样本、测量方式和适用范围。"
+                "对关键知识条目读取完整内容与来源，不能把搜索片段当作完整理论。"
+                "读取失败后寻找替代正文、原始出处或其他独立来源；不要把反复失败的地址当成已验证证据。"
+                "积极寻找反例、相互矛盾的结果与替代解释，区分相关、因果和待验证假说。"
+                "最终结论逐项回应提案，给出具体来源、证据强弱、边界与仍未解决的问题；"
+                "证据不足就降低断言强度，不能用篇幅、工具次数或泛泛建议代替研究。"
+                "用户的私人材料、课程资料与公开资料保留各自授权范围；不要调用写入工具替用户确认研究决定。"
+            )
+
+        self._planning_policy: ContextVar[tuple[bool, bool]] = ContextVar(
+            f"planning_policy_{id(self)}", default=(False, False)
+        )
         self._planner_agent = Agent(
             model_instance,
             output_type=DeepResearchDecision,
             retries=1,
             instructions=(
-                "你是深入研究模式的研究规划器。先判断当前消息是 research 还是普通 conversation。"
-                "问候、致谢、闲聊、简单解释和不需要多轮证据检索的请求都标记为 conversation，"
-                "直接让主 Agent 回答，不要生成 ask 或 plan。只有用户明确要求研究、比较、综述、"
-                "调查，"
-                "或问题确实需要多轮知识库/网页检索时才标记为 research。"
-                "对 research 请求再根据用户问题和对话历史判断意图是否足够清楚。"
-                "要主动识别真正高影响的不确定性并在必要时询问，例如研究对象、时间范围、地区或比较对象；"
-                "这种询问应帮助确定证据范围或结论适用边界，而不是为了让用户替你选择研究视角。"
-                "只有缺少会实质改变研究结论的关键信息、且无法采用合理默认值时，"
-                "才 needs_clarification=true。"
-                "用户已经给出研究对象、现象或问题时，直接采用合理范围（并在计划中体现假设），不要要求用户"
-                "从概念、案例、争议、方法等大类中选择研究切口，也不要把一个清楚的问题拆成选择题。"
-                "如果确实需要澄清，问题必须针对缺失的边界（例如研究对象、时间范围、地区或比较对象），"
-                "拟定一句简洁的 question，并给出 3 到 5 个互斥选项；意图清楚时给出简洁 title 和"
-                "3 到 6 个研究步骤。不要把‘更多自定义’放进 options，由服务端固定追加。"
-                "如果当前消息只是切换到深入研究而没有明确研究问题，请先询问用户要继续哪个研究或提供新的问题，"
-                "不要把历史对话中的旧研究默认当成本轮主题。"
+                "你是群学的研究意图与提案规划器。结合用户选择的模式、本轮消息和对话上下文判断意图。"
+                "深入研究模式表达了用户的研究偏好："
+                "只要提出实质问题、社会现象或分析对象，默认 research，"
+                "即使只问‘为什么大学生越来越不愿意去食堂’，没有‘我要研究’字样也应进入研究。"
+                "只有明确的问候、致谢、闲聊、界面操作等非研究交流才是 conversation；"
+                "不能因为问题简短、宽泛或你觉得能直接解释就降级；含问候又含研究问题时按研究处理。"
+                "先积极判断哪些缺失信息会决定研究的证据范围、适用边界或产出目标。"
+                "例如未限定场域的现实现象，应考虑本地个案与总体趋势会不会需要不同资料；"
+                "若存在这种决定性分歧，needs_clarification=true，"
+                "调用现有 Ask 卡片，先问最关键的一项。"
+                "问题必须具体贴合本轮内容；给出 3 到 5 个具体、互斥、有意义的选项，"
+                "不能套概念/案例/方法分类。"
+                "不要问用户已回答的信息，不要为完成流程而凑问题；信息充分时直接生成待确认提案。"
+                "用户回答 Ask 后沿用回答，仍有决定性缺口才再问，否则生成提案，不能直接执行研究。"
+                "用户主动跳过澄清时，采用并写明合理假设，生成提案等待确认，不再重复提问。"
+                "提案需有具体 title 和 3 到 6 个可执行 steps：体现问题与边界、事实前提核查、"
+                "知识库与外部证据、比较或反例检验、缺口补查和结论；不要只有‘搜索、整理、总结’。"
+                "不要把‘更多自定义’放进 options，由服务端固定追加。只规划，不输出研究结论。"
+                "如果只有切换模式、没有明确问题，请询问本轮研究对象，不擅自沿用历史主题。"
                 "无论 research、conversation 或需要澄清，都必须填写 title，概括当前对话主题，"
                 "用于侧栏历史列表。沿用用户语言：中文通常 6 到 14 字，最多 18 字；"
                 "英文 3 到 7 个词，最多 48 字符。突出具体对象和核心问题，去掉‘我想’、"
@@ -890,6 +879,29 @@ class PydanticAIKnowledgeRunner:
                 "只有问候时用‘日常问候’，不要凭空编造研究主题。"
             ),
         )
+        @self._planner_agent.output_validator
+        def validate_planning(decision: DeepResearchDecision) -> DeepResearchDecision:
+            research_required, skip_clarification = self._planning_policy.get()
+            if research_required and decision.request_type != "research":
+                raise ModelRetry(
+                    "用户已进入研究流程，请沿用问题和补充信息生成 Ask 或提案，不能降为闲聊。"
+                )
+            if decision.request_type == "research":
+                if decision.needs_clarification:
+                    if skip_clarification:
+                        raise ModelRetry("用户已跳过澄清，请明确默认范围并生成待确认提案。")
+                    options = [
+                        v.strip() for v in decision.options
+                        if v.strip() != "更多自定义" and v.strip()
+                    ]
+                    if not decision.question.strip() or len(set(options)) < 3:
+                        raise ModelRetry(
+                            "Ask 需要一个贴合问题的关键澄清问题和至少三个不同的具体选项。"
+                        )
+                elif not decision.title.strip() or not any(v.strip() for v in decision.steps):
+                    raise ModelRetry("研究提案必须包含标题与针对本轮问题的可执行研究步骤。")
+            return decision
+
         @self._agent.instructions
         def memory_instructions(ctx: RunContext[KnowledgeToolRegistry]) -> str:
             memory = getattr(ctx.deps, "memory", None)
@@ -931,79 +943,49 @@ class PydanticAIKnowledgeRunner:
         on_event: Callable[[AgentResearchEvent], None],
         on_title: Callable[[str], None] | None = None,
         is_cancelled: Callable[[], bool] | None = None,
-    ) -> None:
-        """Ask the model for the research UX envelope before retrieval starts."""
-
+        mode: Literal["standard", "deep_research"] = "standard",
+        research_required: bool = False,
+        skip_clarification: bool = False,
+    ) -> Literal["research", "conversation"]:
+        """Return explicit intent; a provider failure is never a casual decision."""
         if self._task_agent is not None:
-            return
-
-        route_token = _agent_route_correlation.set(
-            _agent_route_context_from_tools(tools)
-        )
+            return "conversation"
+        route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
+        policy_token = self._planning_policy.set((research_required, skip_clarification))
         try:
-            try:
-                operation = self._planner_agent.run(
-                    _compose_agent_prompt(
-                        prompt=prompt,
-                        research_map=None,
-                        document_context=None,
-                    ),
-                    message_history=_agent_message_history(conversation),
-                    deps=tools,
-                    usage_limits=UsageLimits(request_limit=2, tool_calls_limit=0),
-                )
-                decision = _run_cancellable(operation, is_cancelled).output
-            except AgentInterrupted:
-                raise
-            except Exception:
-                # Planning must not make the regular Agent unavailable. The fallback keeps
-                # the contract valid and lets the main run apply the normal evidence policy.
-                decision = DeepResearchDecision(
-                    request_type=(
-                        "research" if _has_research_subject(prompt) else "conversation"
-                    ),
-                    title="",
-                    steps=["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                )
+            operation = self._planner_agent.run(
+                _compose_agent_prompt(
+                    prompt=prompt, research_map=None, document_context=None,
+                ) + "\n\n服务端规划状态：" + json.dumps({
+                    "mode": mode, "research_required": research_required,
+                    "skip_clarification": skip_clarification,
+                }, ensure_ascii=False),
+                message_history=_agent_message_history(conversation),
+                deps=tools,
+                usage_limits=UsageLimits(request_limit=3, tool_calls_limit=0),
+            )
+            decision = _run_cancellable(operation, is_cancelled).output
         finally:
+            self._planning_policy.reset(policy_token)
             _agent_route_correlation.reset(route_token)
         if on_title is not None and decision.title.strip():
             on_title(decision.title)
-        if decision.request_type != "research":
-            return
-        if decision.needs_clarification and _clarification_is_material(decision, prompt):
-            options = [
-                item.strip()
-                for item in decision.options
-                if item.strip() and item.strip() != "更多自定义"
-            ][:5]
-            if len(options) < 3:
-                options = [
-                    "概念与理论背景",
-                    "现实案例与最新资料",
-                    "不同观点之间的争议",
-                ]
-            on_event(
-                AgentResearchEvent(
-                    kind="ask",
-                    payload={
-                        "question": decision.question.strip() or "你希望我重点研究哪一部分？",
-                        "options": [*options, "更多自定义"],
-                    },
-                )
-            )
-            return
-        on_event(
-            AgentResearchEvent(
-                kind="plan",
-                payload={
-                    "title": decision.title.strip() or "深入研究",
-                    "steps": [item.strip() for item in decision.steps if item.strip()][:6]
-                    or ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                },
-            )
-        )
-
+        if decision.request_type == "conversation":
+            return "conversation"
+        if decision.needs_clarification:
+            options = list(dict.fromkeys(
+                v.strip() for v in decision.options
+                if v.strip() and v.strip() != "更多自定义"
+            ))[:5]
+            on_event(AgentResearchEvent(kind="ask", payload={
+                "question": decision.question.strip(), "options": [*options, "更多自定义"],
+            }))
+        else:
+            on_event(AgentResearchEvent(kind="plan", payload={
+                "title": decision.title.strip(),
+                "steps": [v.strip() for v in decision.steps if v.strip()][:6],
+            }))
+        return "research"
 
     def _register_tools(self) -> None:
         def prepare_memory_read(ctx: RunContext, definition: ToolDefinition):
@@ -1070,7 +1052,7 @@ class PydanticAIKnowledgeRunner:
             包括“什么是异化”这类简短概念问题。由模型根据语义和对话历史决定调用，
             并把问题提炼成真正的社会学概念或现象查询；不要检索工具规则、调用策略、
             能力边界、流程控制、问候或针对 Tool 行为的元反馈。空结果会返回模型，
-            可在每轮最多 3 次的范围内调整概念查询后继续判断。
+            普通模式最多 3 次；深入研究按未解决的子问题调整查询继续判断。
             """
             call_id = _tool_call_id(ctx, "search_knowledge")
             self._emit_tool_event(
@@ -2203,7 +2185,7 @@ class PydanticAIKnowledgeRunner:
                 conversation=conversation,
                 tools=tools,
             )
-            result = self._agent.run_sync(
+            operation = self._run_answer(
                 _compose_agent_prompt(
                     prompt=prompt,
                     research_map=getattr(tools, "research_map", None)
@@ -2218,6 +2200,7 @@ class PydanticAIKnowledgeRunner:
                 deps=tools,
                 usage_limits=self._usage_limits_for(tools),
             )
+            result = _run_cancellable(operation, None)
             return _text_result(
                 result.output,
                 tools=tools,
@@ -2290,7 +2273,7 @@ class PydanticAIKnowledgeRunner:
                 )
             else:
                 result = _run_cancellable(
-                    self._agent.run(
+                    self._run_answer(
                         _compose_agent_prompt(
                             prompt=prompt,
                             research_map=getattr(tools, "research_map", None)
@@ -2321,6 +2304,33 @@ class PydanticAIKnowledgeRunner:
             _agent_route_correlation.reset(route_token)
             self._active_tool_event.reset(token)
             self._active_cancelled.reset(cancel_token)
+
+    async def _run_answer(
+        self, prompt, *, message_history, deps, usage_limits, event_stream_handler=None,
+    ):
+        if not getattr(deps, "deep_research_enabled", False):
+            return await self._agent.run(
+                prompt, message_history=message_history, deps=deps,
+                usage_limits=usage_limits, event_stream_handler=event_stream_handler,
+            )
+        # Investigation stays internal; only the reviewed conclusion is streamed.
+        # Both phases share one budget, so review cannot reset the request limit.
+        investigation = await self._agent.run(
+            prompt + "\n\n当前阶段：证据调查。按已确认提案开展递进检索与原文阅读，"
+            "围绕每个子问题追查证据与反例。完成后给下一阶段留下证据清单、"
+            "来源边界、冲突和仍未解决的缺口；此处不要写面向用户的最终报告。",
+            message_history=message_history, deps=deps, usage_limits=usage_limits,
+        )
+        return await self._agent.run(
+            "当前阶段：复核证据并形成结论。对照下面的已确认任务与上一阶段证据，"
+            "检查是否覆盖问题、有无只读摘要、过时数据、关键读取失败、缺乏反例或越界断言。"
+            "存在可补的缺口就继续调用检索与原文工具，查到足够支持或确定无法取得后再收束；"
+            "不为凑次数重复搜索。最后输出完整、有来源的研究报告，明确哪些已证实、"
+            "哪些只是推论、哪些仍未知。不得宣称失败的读取或未执行的步骤已完成。\n\n" + prompt,
+            message_history=investigation.all_messages(), deps=deps,
+            usage=investigation.usage, usage_limits=usage_limits,
+            event_stream_handler=event_stream_handler,
+        )
 
     def _usage_limits_for(self, tools: AgentToolContext) -> UsageLimits:
         return (

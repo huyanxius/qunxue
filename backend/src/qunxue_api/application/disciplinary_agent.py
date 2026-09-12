@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 from collections.abc import Callable
@@ -237,6 +238,10 @@ class DisciplinaryAgentApplication:
             if pending_run is None or pending_run.idempotency_key != idempotency_key:
                 raise ValueError("deep research session is invalid")
             existing_run = pending_run
+        if deep_research_action is not None and existing_run is None:
+            raise ValueError("research action requires an existing pending session")
+        confirmed_plan: dict[str, object] | None = None
+        research_required = False
         conversation: Conversation | None = None
         if existing_run is not None:
             if conversation_id is not None and conversation_id != existing_run.conversation_id:
@@ -264,6 +269,8 @@ class DisciplinaryAgentApplication:
                 raise RunAlreadyActive(str(existing_run.conversation_id))
             if existing_run.request_snapshot:
                 snapshot = existing_run.request_snapshot
+                confirmed_plan = snapshot.get("_confirmed_research_plan")
+                research_required = snapshot.get("_research_intent") == "research"
                 if snapshot.get("_unavailable_materials"):
                     raise ResearchMaterialCitationUnavailable("interrupted run source was deleted")
                 prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
@@ -303,6 +310,16 @@ class DisciplinaryAgentApplication:
                         tool_summary=existing_run.tool_summary,
                         pending_research=pending,
                     )
+                if any(
+                    other.run_id != existing_run.run_id
+                    and other.updated_at > existing_run.updated_at
+                    for other in existing_conversation.unfinished_runs
+                ) or any(
+                    turn.user_message.created_at > existing_run.updated_at
+                    for turn in existing_conversation.turns
+                ):
+                    raise ValueError("已有更新的对话或提案，请确认最新研究提案。")
+                research_required = True
                 if deep_research_action == "clarify":
                     selection = (deep_research_selection or "").strip()
                     if not selection:
@@ -320,10 +337,15 @@ class DisciplinaryAgentApplication:
                     selection = str(pending.get("selected_intent") or "").strip()
                     if selection:
                         prompt = f"{prompt}\n\n用户确认的研究重点：{selection}"
+                    confirmed_plan = {
+                        "title": pending["title"],
+                        "steps": list(pending["steps"]),
+                    }
                     prompt = (
                         "执行已确认的深入研究。请主动完成多轮知识库检索、网页搜索并读取网页正文，"
                         "核对证据后直接输出详细研究结论；不要只输出研究起点、计划或‘研究完成’占位语。\n\n"
-                        f"{prompt}"
+                        f"{prompt}\n\n用户确认的研究提案：\n"
+                        + json.dumps(confirmed_plan, ensure_ascii=False)
                     )
             if existing_run.status == "completed" and existing_run.turn_id is not None:
                 replayed_turn = _find_turn(existing_conversation, existing_run.turn_id)
@@ -407,10 +429,6 @@ class DisciplinaryAgentApplication:
                         conversation_id=conversation.conversation_id,
                         project_title=prompt,
                     )
-        if mode == "deep_research":
-            enable_deep_research = getattr(tools, "enable_deep_research", None)
-            if callable(enable_deep_research):
-                enable_deep_research()
         # Deep research owns web evidence by product definition; the toggle is
         # only optional for ordinary Agent turns.
         if web_search or mode == "deep_research":
@@ -472,6 +490,8 @@ class DisciplinaryAgentApplication:
             "deep_research_action": deep_research_action,
             "deep_research_selection": deep_research_selection,
             "_execution_prompt": prompt,
+            "_confirmed_research_plan": confirmed_plan,
+            "_research_intent": "research" if research_required else None,
         }
         run = self._conversations.start_run(
             user_id=user_id,
@@ -645,7 +665,7 @@ class DisciplinaryAgentApplication:
                     prompt=prompt,
                     run_id=run.run_id,
                 )
-            deep_research_started = mode == "deep_research" and deep_research_action == "confirm"
+            deep_research_started = mode == "deep_research" and confirmed_plan is not None
 
             def save_initial_title(title: str) -> None:
                 nonlocal current
@@ -668,108 +688,106 @@ class DisciplinaryAgentApplication:
                 # The answer's model telemetry writes through another database session.
                 self._conversations.commit()
 
-            # Every Agent turn gets the same lightweight intent check. Deep mode
-            # additionally pauses on a plan; ordinary mode only pauses when the
-            # planner identifies a material clarification question.
-            if deep_research_action not in {"clarify", "confirm"} and not (
-                run.partial_answer or prior_summary
-            ):
+            # Only an explicit non-research decision permits conversation without a
+            # plan. Missing decisions never authorize research, including on retries.
+            needs_planning = not deep_research_started and (
+                mode == "deep_research"
+                or (deep_research_action not in {"clarify", "confirm"}
+                    and not (run.partial_answer or prior_summary))
+            )
+            if needs_planning:
                 prepare_research = getattr(self._runner, "prepare_research", None)
                 planning_events: list[AgentResearchEvent] = []
-                planning_failed = False
+                decision = None
                 if callable(prepare_research):
+                    prepare_kwargs = {
+                        "prompt": prompt, "conversation": conversation_history,
+                        "on_event": planning_events.append,
+                    }
+                    parameters = signature(prepare_research).parameters
+                    accepts_kwargs = any(
+                        parameter.kind is Parameter.VAR_KEYWORD
+                        for parameter in parameters.values()
+                    )
+                    for name, value in {
+                        "tools": tools, "mode": mode,
+                        "research_required": research_required,
+                        "skip_clarification": deep_research_action == "skip",
+                        "is_cancelled": cancelled,
+                    }.items():
+                        if name in parameters or accepts_kwargs:
+                            prepare_kwargs[name] = value
+                    if conversation_was_created and "on_title" in parameters:
+                        prepare_kwargs["on_title"] = save_initial_title
                     try:
-                        prepare_kwargs = {
-                            "prompt": prompt,
-                            "conversation": conversation_history,
-                            "on_event": planning_events.append,
-                        }
-                        parameters = signature(prepare_research).parameters
-                        if "tools" in parameters or any(
-                            parameter.kind is Parameter.VAR_KEYWORD
-                            for parameter in parameters.values()
-                        ):
-                            prepare_kwargs["tools"] = tools
-                        if "is_cancelled" in parameters:
-                            prepare_kwargs["is_cancelled"] = cancelled
-                        if conversation_was_created and "on_title" in parameters:
-                            prepare_kwargs["on_title"] = save_initial_title
-                        prepare_research(
-                            **prepare_kwargs,
-                        )
-                        if cancelled():
-                            raise AgentInterrupted("Agent run was interrupted during planning")
+                        decision = prepare_research(**prepare_kwargs)
                     except AgentInterrupted:
                         raise
-                    except Exception:
+                    except Exception as error:
+                        if mode == "deep_research":
+                            raise ValueError("研究规划暂未完成，请重试；尚未开始研究。") from error
                         planning_events.clear()
-                        planning_failed = True
-                    if planning_events or planning_failed:
-                        planning_event = (
-                            planning_events[-1]
-                            if planning_events
-                            else AgentResearchEvent(
-                                kind="plan",
-                                payload={
-                                    "title": "深入研究",
-                                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                                },
-                            )
+                    if cancelled():
+                        raise AgentInterrupted("Agent run was interrupted during planning")
+                if planning_events:
+                    planning_event = planning_events[-1]
+                    if planning_event.kind not in {"ask", "plan"}:
+                        raise ValueError("research planner returned an invalid stage")
+                    if planning_event.kind == "plan" and (
+                        not planning_event.payload.get("title")
+                        or not planning_event.payload.get("steps")
+                    ):
+                        raise ValueError("研究提案尚未完整，请重试；尚未开始研究。")
+                    if mode == "deep_research" or planning_event.kind == "ask":
+                        if on_research_event is not None:
+                            on_research_event(planning_event)
+                        state = (
+                            "awaiting_clarification" if planning_event.kind == "ask"
+                            else "awaiting_plan_confirmation"
                         )
-                        if deep_research_action == "skip" and planning_event.kind == "ask":
-                            planning_event = AgentResearchEvent(
-                                kind="plan",
-                                payload={
-                                    "title": prompt.strip()[:80] or "深入研究",
-                                    "steps": ["检索知识库", "补充网页资料", "整理证据并形成结论"],
-                                },
-                            )
-                        should_pause = mode == "deep_research" or planning_event.kind == "ask"
-                        if should_pause:
-                            if on_research_event is not None:
-                                on_research_event(planning_event)
-                            deep_research_started = mode == "deep_research"
-                            state = (
-                                "awaiting_clarification"
-                                if planning_event.kind == "ask"
-                                else "awaiting_plan_confirmation"
-                            )
-                            pending = {
-                                "kind": "deep_research_pending",
-                                "version": 1,
-                                "state": state,
-                                "prompt": prompt,
-                                **dict(planning_event.payload),
-                            }
-                            if deep_research_selection:
-                                pending["selected_intent"] = deep_research_selection
-                            self._conversations.finish_run(
-                                run_id=run.run_id,
-                                lease_token=run.lease_token,
-                                status=state,
-                                tool_summary=(pending,),
-                            )
-                            if self._credits is not None:
-                                self._credits.release(user_id=user_id, run_id=run.run_id)
-                            self._conversations.commit()
-                            return AgentTurnExecution(
-                                conversation=current,
-                                run_id=run.run_id,
-                                result=AgentRunResult(
-                                    answer="",
-                                    citations=(),
-                                    release_id=(
-                                        run.knowledge_release_id
-                                        or tools.release.knowledge_release_id
-                                    ),
-                                    provider=run.provider,
-                                    model=run.model,
+                        pending = {
+                            "kind": "deep_research_pending", "version": 1,
+                            "state": state, "prompt": prompt,
+                            **dict(planning_event.payload),
+                        }
+                        if deep_research_selection:
+                            pending["selected_intent"] = deep_research_selection
+                        request_snapshot["_research_intent"] = "research"
+                        self._conversations.checkpoint_run(
+                            user_id=user_id, run_id=run.run_id, lease_token=run.lease_token,
+                            request_snapshot=request_snapshot,
+                        )
+                        self._conversations.finish_run(
+                            run_id=run.run_id, lease_token=run.lease_token,
+                            status=state, tool_summary=(pending,),
+                        )
+                        if self._credits is not None:
+                            self._credits.release(user_id=user_id, run_id=run.run_id)
+                        self._conversations.commit()
+                        return AgentTurnExecution(
+                            conversation=current, run_id=run.run_id,
+                            result=AgentRunResult(
+                                answer="", citations=(),
+                                release_id=(
+                                    run.knowledge_release_id or tools.release.knowledge_release_id
                                 ),
-                                turn=None,
-                                replayed=False,
-                                tool_summary=(pending,),
-                                pending_research=pending,
-                            )
+                                provider=run.provider, model=run.model,
+                            ),
+                            turn=None, replayed=False, tool_summary=(pending,),
+                            pending_research=pending,
+                        )
+                elif mode == "deep_research":
+                    if decision != "conversation" or research_required:
+                        raise ValueError("研究意图或提案尚未确认，请重试；尚未开始研究。")
+                    prompt += (
+                        "\n\n本轮已判断为非研究交流。自然回应用户，并结合语境简短提醒"
+                        "可以使用普通模式继续聊天；不要宣称已替用户切换模式，"
+                        "不要启动检索或研究，不要使用固定套话。"
+                    )
+            if deep_research_started:
+                enable_deep_research = getattr(tools, "enable_deep_research", None)
+                if callable(enable_deep_research):
+                    enable_deep_research()
 
             def record_tool_event(event: AgentToolEvent) -> None:
                 with tool_events_lock:
@@ -782,8 +800,8 @@ class DisciplinaryAgentApplication:
                     on_tool_event(event)
 
             # 澄清、确认、执行各是一次独立调用，所以这里量到的就是真正跑研究那一段，不含
-            # 用户思考的时间。不限定在 confirm 之后，是为了让没经过暂停的深入研究也留痕。
-            research_started_at = time.monotonic() if mode == "deep_research" else None
+            # 用户思考的时间。仅已确认提案的执行阶段记为研究耗时。
+            research_started_at = time.monotonic() if deep_research_started else None
 
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
