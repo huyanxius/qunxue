@@ -1,7 +1,7 @@
-import surveyCover from '../../assets/research-tools/survey-analysis.webp'
-import theoryCover from '../../assets/research-tools/qualitative-coding.webp'
-import interviewCover from '../../assets/research-tools/interview-notes.webp'
-import libraryCover from '../../assets/workbench/knowledge-library-hero.webp'
+import surveyCover from '../../assets/classroom/civic-observation.webp'
+import theoryCover from '../../assets/classroom/humanist-seminar.webp'
+import interviewCover from '../../assets/classroom/humanist-seminar.webp'
+import libraryCover from '../../assets/classroom/humanist-seminar.webp'
 export const courseArtwork: Record<string, string> = { 'social-research': surveyCover, 'sociological-thinking': theoryCover, 'qualitative-reading': interviewCover, library: libraryCover }
 import { createCourse, uploadCourseDocument } from '../../modules/shared-knowledge'
 

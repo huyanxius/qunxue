@@ -1,5 +1,5 @@
-import lessonArtwork from '../../../assets/research-tools/qualitative-coding.webp'
-import assignmentArtwork from '../../../assets/research-tools/interview-notes.webp'
+import lessonArtwork from '../../../assets/classroom/humanist-seminar.webp'
+import assignmentArtwork from '../../../assets/classroom/civic-observation.webp'
 import { BookOpenIcon, ClipboardTextIcon, ArrowUpRightIcon, ClockIcon, LockSimpleIcon, CheckCircleIcon, FilesIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import type { SharedCourse } from '../../shared-knowledge'
