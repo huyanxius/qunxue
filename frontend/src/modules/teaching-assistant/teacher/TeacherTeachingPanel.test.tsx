@@ -37,3 +37,19 @@ test('does not expose teacher controls to course readers', () => {
   expect(screen.queryByRole('button', { name: '新建备课' })).not.toBeInTheDocument()
   expect(api.getTeachingSettings).not.toHaveBeenCalled()
 })
+
+test('course records are organized into lesson and assignment workspaces', async () => {
+  const record = { course_id: 'course', owner_user_id: 'teacher', version: 1, shared_with_teacher: false, created_at: '2026-09-12T00:00:00Z', updated_at: '2026-09-12T00:00:00Z', state: 'draft' as const }
+  vi.mocked(api.listTeachingActivities).mockResolvedValue([
+    { ...record, id: 'lesson', kind: 'lesson_plan', input: { title: '社会观察教案' } },
+    { ...record, id: 'assignment', kind: 'assignment_review', input: { title: '调查设计作业' } },
+  ])
+  render(<TeacherTeachingPanel course={course} />)
+  fireEvent.click(await screen.findByRole('button', { name: '教案文稿' }))
+  const table = await screen.findByRole('table', { name: '教学记录列表' })
+  expect(table).toHaveTextContent('社会观察教案')
+  expect(table).not.toHaveTextContent('调查设计作业')
+  fireEvent.click(screen.getByRole('button', { name: '作业管理' }))
+  expect(screen.getByRole('table', { name: '教学记录列表' })).toHaveTextContent('调查设计作业')
+  expect(screen.getByRole('table', { name: '教学记录列表' })).not.toHaveTextContent('社会观察教案')
+})

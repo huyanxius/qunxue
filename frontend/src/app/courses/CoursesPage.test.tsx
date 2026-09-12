@@ -27,13 +27,14 @@ it('teacher can create a course and reach its document management', async () => 
   vi.stubGlobal('fetch', async (input: Request) => {
     if (input.url.endsWith('/course-profile')) return json({ role: 'teacher' })
     if (input.method === 'POST') { saved = true; return json(course) }
+    if (input.url.endsWith('/kb-1')) return json(course)
     return json({ items: saved ? [course] : [] })
   })
   render(<MemoryRouter initialEntries={['/courses?view=teacher']}><CoursesPage /></MemoryRouter>)
   fireEvent.click(await screen.findByRole('button', { name: '创建课程' }))
   fireEvent.change(screen.getByLabelText('课程名称'), { target: { value: '社会调查方法' } })
   fireEvent.click(screen.getByRole('button', { name: '保存课程' }))
-  expect(await screen.findByRole('heading', { name: '社会调查方法' })).toBeInTheDocument()
+  await waitFor(() => expect(screen.getByRole('heading', { name: '社会调查方法', level: 2 })).toBeInTheDocument())
   expect(screen.getByRole('button', { name: '上传资料' })).toBeInTheDocument()
 })
 

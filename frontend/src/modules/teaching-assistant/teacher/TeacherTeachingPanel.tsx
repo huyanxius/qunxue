@@ -1,3 +1,6 @@
+import lessonArtwork from '../../../assets/research-tools/qualitative-coding.webp'
+import assignmentArtwork from '../../../assets/research-tools/interview-notes.webp'
+import { ArrowUpRightIcon, BookOpenIcon, FilesIcon, SlidersHorizontalIcon, ClipboardTextIcon, ChartBarIcon, ClockIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -11,6 +14,7 @@ import { LessonEditor } from './LessonEditor'
 import { downloadTeachingDocument } from './teachingExport'
 import { TeacherSources } from './TeacherSources'
 import './teacher-teaching.css'
+import '../classroom-workspace.css'
 
 const defaultRubric: RubricDimension[] = [
   { id: 'argument', title: '论点与概念', max_score: 30 },
@@ -42,6 +46,8 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   const [dirty, setDirty] = useState(false)
   useEffect(() => { onDirtyChange?.(dirty); return () => onDirtyChange?.(false) }, [dirty, onDirtyChange])
   const [showSettings, setShowSettings] = useState(false)
+  const [workspaceView, setWorkspaceView] = useState<'overview' | 'lessons' | 'assignments' | 'shared'>('overview')
+  const [recordQuery, setRecordQuery] = useState('')
   const requestKey = useRef(crypto.randomUUID())
   const generation = useRef(0)
   const canManage = course.access === 'owner'
@@ -89,6 +95,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   function leave() { return !dirty || window.confirm('当前修改尚未保存，确定离开？') }
   function newForm(nextKind: 'lesson_plan' | 'assignment_review', activity?: TeachingActivity, improvement = '', improvementIds: string[] = []) {
     if (!leave()) return
+    setWorkspaceView(nextKind === 'lesson_plan' ? 'lessons' : 'assignments'); setShowSettings(false);
     setKind(nextKind); setForm(true); setActive(null); setDirty(false); setSource(null); setError(''); setNotice('')
     setSourceId(activity?.id ?? null)
     requestKey.current = crypto.randomUUID()
@@ -107,7 +114,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
     if (!leave()) return
     await action(async () => {
       const next = await getTeachingActivity(activity.id)
-      setActive(next); setForm(false); setDirty(false); setInput(next.input)
+      setShowSettings(false); setActive(next); setForm(false); setDirty(false); setInput(next.input)
       setSource(await getTeachingSource(activity.id)); setSelectedSource(null)
     })
   }
@@ -149,12 +156,23 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   }
   const review = active?.kind === 'assignment_review'
   const rubric = input.rubric ?? defaultRubric
+  const libraryItems = items.filter((item) => (workspaceView === 'lessons' ? item.kind === 'lesson_plan' : workspaceView === 'assignments' ? item.kind === 'assignment_review' : item.kind === 'learning_check') && (!recordQuery || (item.input.title || item.input.objectives || '').includes(recordQuery)))
   return <section className="teacher-teaching" aria-label="教师教学工作区">
-    <div className="courses-page__actions">
-      <button type="button" className="research-hub__new" onClick={() => newForm('lesson_plan')}>新建备课</button>
-      <button type="button" className="qx-button" onClick={() => newForm('assignment_review')}>批改作业</button>
-      <button type="button" className="courses-page__text-button" onClick={() => setShowSettings(!showSettings)}>课程教学要求</button>
+    <header className="classroom-heading"><div><span className="classroom-eyebrow">教学工作区</span><h3>备课、批改与教学反馈</h3><p>从课程资料出发，把备课、作业反馈与下一次教学连在一起。</p></div><button type="button" className="qx-button" onClick={() => { if (leave()) { setShowSettings(!showSettings); setActive(null); setForm(false); setDirty(false) } }}><SlidersHorizontalIcon size={17} />课程教学要求</button></header>
+    <div className="classroom-overview" aria-label="教学概览">
+      <div><BookOpenIcon size={20} /><span>备课文稿<strong>{items.filter((item) => item.kind === 'lesson_plan').length}<small>份</small></strong></span></div>
+      <div><ClipboardTextIcon size={20} /><span>待处理作业<strong>{items.filter((item) => item.kind === 'assignment_review' && item.state !== 'published').length}<small>份</small></strong></span></div>
+      <div><CheckCircleIcon size={20} /><span>已发布反馈<strong>{items.filter((item) => item.kind === 'assignment_review' && item.state === 'published').length}<small>份</small></strong></span></div>
+      <div><FilesIcon size={20} /><span>可用课程资料<strong>{course.documents.filter((doc) => doc.status === 'ready').length}<small>份</small></strong></span></div>
     </div>
+    <div className="classroom-launchers">
+      <button type="button" aria-label="新建备课" onClick={() => newForm('lesson_plan')}><img className="classroom-launcher-art" src={lessonArtwork} alt="" /><span className="classroom-launcher-icon"><BookOpenIcon size={24} /></span><span><strong>设计下一次课堂</strong><small>教学目标 · 课程讲义 · 可编辑教案</small></span><ArrowUpRightIcon size={20} /></button>
+      <button type="button" aria-label="批改作业" onClick={() => newForm('assignment_review')}><img className="classroom-launcher-art" src={assignmentArtwork} alt="" /><span className="classroom-launcher-icon"><ClipboardTextIcon size={24} /></span><span><strong>开始一份作业批改</strong><small>原文依据 · 分项评价 · 教师复核</small></span><ArrowUpRightIcon size={20} /></button>
+    </div>
+    <nav className="classroom-workspace-tabs" aria-label="教师工作区导航">{([['overview', '教学总览'], ['lessons', '教案文稿'], ['assignments', '作业管理'], ['shared', '学生分享']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={workspaceView === value} onClick={() => { if (leave()) { setWorkspaceView(value); setActive(null); setForm(false); setShowSettings(false); setDirty(false); setRecordQuery('') } }}>{label}</button>)}</nav>
+    <div className="classroom-layout"><div className="classroom-main">
+    {workspaceView !== 'overview' && !form && !active && !showSettings && <section className="classroom-library"><header><div><span className="classroom-eyebrow">{workspaceView === 'lessons' ? '课程教案库' : workspaceView === 'assignments' ? '作业处理队列' : '学生主动分享'}</span><h3>{workspaceView === 'lessons' ? '教案文稿' : workspaceView === 'assignments' ? '作业管理' : '学习记录'}</h3></div><label>搜索教学记录<input type="search" value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="搜索主题或学习目标" /></label></header><div className="classroom-table-scroll"><table aria-label="教学记录列表"><thead><tr><th>名称</th><th>状态</th><th>更新日期</th><th>操作</th></tr></thead><tbody>{libraryItems.map((item) => <tr key={item.id}><td><strong>{item.input.title || item.input.objectives || '未命名记录'}</strong><small>{item.kind === 'lesson_plan' ? `${item.input.duration_minutes ?? '—'} 分钟 · 文稿版本 ${item.version}` : item.kind === 'assignment_review' ? item.shared_with_teacher ? '学生提交' : '教师上传' : '学生授权查看'}</small></td><td><span className="classroom-state" data-state={item.state}>{stateNames[item.state]}</span></td><td><time>{new Date(item.updated_at).toLocaleDateString()}</time></td><td><button className="courses-page__text-button" onClick={() => void open(item)}>{item.kind === 'lesson_plan' ? '打开文稿' : item.kind === 'assignment_review' ? '查看作业' : '查看记录'}<ArrowUpRightIcon size={14} /></button></td></tr>)}</tbody></table></div>{!libraryItems.length && <p className="classroom-library-empty">{recordQuery ? '没有找到匹配记录。' : workspaceView === 'lessons' ? '还没有教案。选择上方“设计下一次课堂”，开始准备课程内容。' : workspaceView === 'assignments' ? '还没有作业。可上传一份作业，或等待学生在课程中提交。' : '学生主动分享学习记录后，会出现在这里。'}</p>}</section>}
+
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {showSettings && settings && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void action(async () => {
       setSettings(await updateTeachingSettings(course.id, { version: settings.version, objectives: settings.objectives, rubric: settings.rubric.length ? settings.rubric : defaultRubric })); setDirty(false); setNotice('课程要求已保存。')
@@ -164,6 +182,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
       <RubricFields rubric={settings.rubric.length ? settings.rubric : defaultRubric} onChange={(next) => { setSettings({ ...settings, rubric: next }); setDirty(true) }} />
       <button className="qx-button" disabled={busy}>保存课程要求</button>
     </form>}
+    {workspaceView === 'overview' && !form && !active && !showSettings && <section className="classroom-brief"><div className="classroom-section-title"><span><BookOpenIcon size={18} />课堂准备</span><small>从目标到课堂成果</small></div><h4>{settings?.objectives ? '本课程的教学目标' : '为下一次教学做好准备'}</h4><p>{settings?.objectives || '确定教学目标，选择本次讲义，生成可继续编辑和导出的课堂教案。'}</p><ol className="classroom-process"><li><span>1</span><div><strong>明确目标</strong><small>设定课时与学生基础</small></div></li><li><span>2</span><div><strong>结合资料</strong><small>选择讲义与课堂案例</small></div></li><li><span>3</span><div><strong>形成教案</strong><small>编辑、修订与 Word 导出</small></div></li></ol><div className="classroom-brief-footer"><span><FilesIcon size={16} />{course.documents.length} 份课程资料</span><span>教学要求 · 版本 {settings?.version ?? 0}</span></div></section>}
     {form && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void saveDraft(true) }}>
       <h3>{sourceId ? '创建修订' : kind === 'lesson_plan' ? '备课' : '作业批改'}</h3>
       <label>主题<input value={input.title ?? ''} onChange={(e) => change('title', e.target.value)} /></label>
@@ -188,7 +207,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
       </fieldset>
       <div className="courses-page__actions"><button type="button" className="qx-button" disabled={busy || uploading} onClick={() => void saveDraft(false)}>保存草稿</button><button className="research-hub__new" disabled={busy || uploading}>保存并生成</button></div>
     </form>}
-    {active && <section aria-label="当前教学活动">
+    {active && <section className="classroom-activity" aria-label="当前教学活动">
       <h3>{active.input.title || (review ? '作业批改' : active.kind === 'learning_check' ? '学生分享的学习记录' : '课堂教案')} · {stateNames[active.state]}</h3>
       {active.source_activity_id && <p>修订自记录 <button className="courses-page__text-button" onClick={() => void action(async () => { const old = await getTeachingActivity(active.source_activity_id!); setActive(old); setSource(await getTeachingSource(old.id)) })}>查看上一版</button></p>}
       {active.state === 'running' && <p role="status">助手正在执行，刷新后可继续查看。{active.agent_run_id && <button type="button" className="courses-page__text-button" onClick={() => void action(async () => { await stopAgentRun(active.agent_run_id!); setNotice('已请求停止，等待执行器保存终态。') })}>停止生成</button>}</p>}
@@ -232,16 +251,16 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
       </>}
       {active.kind === 'learning_check' && active.result && <article><p>学生仅分享本次学习记录。</p><p>目标：{active.input.objectives}</p>{active.input.diagnostic_answers?.map((answer) => <p key={answer.question_id}>{answer.answer}</p>)}<ReactMarkdown remarkPlugins={[remarkGfm]}>{active.result.feedback || active.result.markdown}</ReactMarkdown>{active.result.difficulties?.map((d, i) => <p key={i}>{d.description} · 依据：{d.evidence}</p>)}</article>}
     </section>}
-    <section aria-label="共性困难"><h3>已提交作业中的问题</h3><p>当前样本 {summary?.sample_count ?? 0} 份，仅代表已授权提交的作业，问题依据来自已发布反馈。</p>
+    </div><aside className="classroom-rail"><section className="classroom-insights" aria-label="共性困难"><div className="classroom-section-title"><span><ChartBarIcon size={18} />教学观察</span><small>来自正式反馈</small></div><h3>已提交作业中的问题</h3><p>当前样本 {summary?.sample_count ?? 0} 份，仅代表已授权提交的作业，问题依据来自已发布反馈。</p>
       {!summary?.issues.length && <p className="courses-page__hint">暂时没有可汇总的原文依据。</p>}
       {summary?.issues.map((issue, i) => <article key={i}><p>{issue.description}</p><p>{issue.evidence.join('；')}</p>
         {issue.activity_ids.map((id) => <button key={id} className="courses-page__text-button" onClick={() => void action(async () => { const activity = await getTeachingActivity(id); setActive(activity); setSource(await getTeachingSource(id)); setForm(false) })}>打开依据作业</button>)}
         <button className="qx-button" onClick={() => newForm('lesson_plan', undefined, `${issue.description}\n依据：${issue.evidence.join('；')}\n活动：${issue.activity_ids.join(',')}`, issue.activity_ids)}>据此备课</button>
       </article>)}
     </section>
-    <section aria-label="教学活动历史"><h3>教学记录</h3>{!items.length && <p className="courses-page__hint">还没有教学记录，从备课或一份作业开始。</p>}
-      <div className="teacher-teaching__history">{items.map((item) => <button key={item.id} type="button" className="courses-page__text-button" onClick={() => void open(item)}>{item.input.title || (item.kind === 'lesson_plan' ? '课堂教案' : item.kind === 'assignment_review' ? '作业批改' : '学习记录')} · {stateNames[item.state]} · {new Date(item.updated_at).toLocaleDateString()}</button>)}</div>
-    </section>
+    <section className="classroom-history" aria-label="教学活动历史"><div className="classroom-section-title"><span><ClockIcon size={18} />教学记录</span><small>{items.length} 条</small></div>{!items.length && <p className="courses-page__hint">还没有教学记录，从备课或一份作业开始。</p>}
+      <div className="teacher-teaching__history">{items.map((item) => <button key={item.id} type="button" className="courses-page__text-button" onClick={() => void open(item)} aria-current={active?.id === item.id ? 'true' : undefined}><span className="classroom-record-title">{item.kind === 'lesson_plan' ? <BookOpenIcon size={17} /> : <ClipboardTextIcon size={17} />}<strong>{item.input.title || (item.kind === 'lesson_plan' ? '课堂教案' : item.kind === 'assignment_review' ? '作业批改' : '学习记录')}</strong></span><span className="classroom-record-meta"><span className="classroom-state" data-state={item.state}>{stateNames[item.state]}</span><time>{new Date(item.updated_at).toLocaleDateString()}</time></span></button>)}</div>
+    </section></aside></div>
   </section>
 }
 
