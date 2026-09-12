@@ -18,6 +18,9 @@ import {
 } from '@phosphor-icons/react'
 
 import { useAccount } from '../../modules/account'
+import { RoadshowPanel } from './RoadshowPanel'
+import { useRoadshowSettings } from './roadshowState'
+import { SettingsModal } from './SettingsModal'
 import { useAppLocale } from '../i18n/AppLocaleProvider'
 import { AppFrameShader } from './AppFrameShader'
 import { NetworkStatusNotice } from './NetworkStatusNotice'
@@ -137,6 +140,8 @@ export function PageShell({
   railContentRef?: Ref<HTMLDivElement>
 }>) {
   const account = useAccount()
+  const roadshow = useRoadshowSettings()
+  const [developerOpen, setDeveloperOpen] = useState(false)
   const { text } = useAppLocale()
   const navigate = useNavigate()
   const location = useLocation()
@@ -258,15 +263,16 @@ export function PageShell({
                   <button
                     className="desktop-rail__notifications"
                     type="button"
-                    aria-label={text('通知', 'Notifications')}
-                    aria-expanded={notificationsOpen}
-                    aria-controls="desktop-notifications"
-                    title={text('通知', 'Notifications')}
-                    onClick={() => setNotificationsOpen((open) => !open)}
+                    aria-label={roadshow.data ? '开发者选项' : text('通知', 'Notifications')}
+                    aria-expanded={roadshow.data ? developerOpen : notificationsOpen}
+                    aria-controls={roadshow.data ? undefined : "desktop-notifications"}
+                    title={roadshow.data ? '开发者选项' : text('通知', 'Notifications')}
+                    onClick={() => roadshow.data ? setDeveloperOpen(true) : setNotificationsOpen((open) => !open)}
                   >
                     <BellIcon size={19} weight="regular" aria-hidden="true" />
                     <span className="desktop-rail__notification-dot" aria-hidden="true" />
                   </button>
+                  {developerOpen && roadshow.data ? <SettingsModal label="开发者选项" onClose={() => setDeveloperOpen(false)}><RoadshowPanel initial={roadshow.data} onClose={() => setDeveloperOpen(false)} /></SettingsModal> : null}
                   {notificationsOpen ? (
                     <div className="desktop-rail__notification-panel" id="desktop-notifications" aria-label={text('通知栏', 'Notifications panel')}>
                       <h2>{text('通知', 'Notifications')}</h2>

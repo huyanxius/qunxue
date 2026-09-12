@@ -30,6 +30,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'api/m5ResearchDelivery.ts',
     'api/researchWorkspace.ts',
     'api/system.ts',
+    'api/roadshow.ts',
     'modules/account/accountApi.ts',
     'modules/knowledge-graph/knowledgeGraphAdapter.ts',
     'modules/knowledge-graph/knowledgeGraphApi.ts',
@@ -75,6 +76,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'api/m5ResearchDelivery.ts',
     'api/researchWorkspace.ts',
     'api/system.ts',
+    'api/roadshow.ts',
   ]),
   httpRuntimeAdapters: Object.freeze(['api/client.ts', 'modules/research-agent/researchAgentApi.ts']),
 })
