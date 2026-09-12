@@ -98,3 +98,59 @@ def test_reviewed_relations_can_be_filtered_to_incident_knowledge(
         "relation:one"
     ]
     assert response.json()["total_count"] == 1
+
+
+def test_parent_category_browse_includes_descendants_and_paginates(client: TestClient) -> None:
+    release_id = client.get("/api/knowledge/releases/current").json()["knowledge_release_id"]
+    catalog = client.app.state.knowledge_catalog
+    all_entries = catalog.browse(
+        release_id=release_id,
+        query=None,
+        category=None,
+        category_id=None,
+        dimension_id=None,
+        cursor=None,
+        limit=10000,
+    ).entries
+    parent_id = next(
+        node.node_id
+        for entry in all_entries
+        for node in entry.directory_path
+        if node.node_type == "category" and node.node_id != entry.category_id
+    )
+    expected = sorted(
+        entry.knowledge_id
+        for entry in all_entries
+        if any(node.node_id == parent_id for node in entry.directory_path)
+    )
+    assert expected
+    found = []
+    cursor = None
+    while True:
+        page = catalog.browse(
+            release_id=release_id,
+            query=None,
+            category=None,
+            category_id=parent_id,
+            dimension_id=None,
+            cursor=cursor,
+            limit=2,
+        )
+        assert page.total_count == len(expected)
+        found.extend(entry.knowledge_id for entry in page.entries)
+        cursor = page.next_cursor
+        if cursor is None:
+            break
+    assert found == expected
+    assert (
+        catalog.browse(
+            release_id=release_id,
+            query=None,
+            category=None,
+            category_id=parent_id + "-missing",
+            dimension_id=None,
+            cursor=None,
+            limit=2,
+        ).total_count
+        == 0
+    )
