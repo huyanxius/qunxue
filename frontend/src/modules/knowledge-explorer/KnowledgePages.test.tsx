@@ -161,7 +161,7 @@ describe('knowledge pages', () => {
     expect(await screen.findByRole('heading', { name: '本体论' })).toBeVisible()
     expect(screen.getByRole('navigation', { name: '知识目录' })).toBeVisible()
     expect(screen.getByRole('button', { name: '收起 本体论' })).toBeVisible()
-    expect(screen.getByRole('button', { name: '进入 I. 古典社会学奠基' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '展开 I. 古典社会学奠基' })).toBeVisible()
     expect(screen.queryByRole('button', { name: /打开 概念/ })).not.toBeInTheDocument()
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(fetch.mock.calls.map(([input]) => urlFor(input).pathname)).toEqual([
@@ -182,7 +182,7 @@ describe('knowledge pages', () => {
       />,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: '浏览 I. 古典社会学奠基' }))
+    fireEvent.click(within(await screen.findByRole('region', { name: '目录' })).getByRole('button', { name: '浏览 I. 古典社会学奠基' }))
 
     expect(onStateChange).toHaveBeenCalledWith(expect.objectContaining({
       dimensionId: 'D1',
@@ -259,7 +259,7 @@ describe('knowledge pages', () => {
     )
   })
 
-  it('drills through parent categories before applying an exact leaf filter', async () => {
+  it('browses a parent directly and expands children separately', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => knowledgeFetch(input)))
     const onStateChange = vi.fn()
 
@@ -272,7 +272,11 @@ describe('knowledge pages', () => {
       />,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: '进入 I. 古典社会学奠基' }))
+    const tree = await screen.findByRole('navigation', { name: '知识目录' })
+    fireEvent.click(within(tree).getByRole('button', { name: '浏览 I. 古典社会学奠基' }))
+    expect(onStateChange).toHaveBeenCalledWith(expect.objectContaining({ dimensionId: 'D1', categoryId: 'D1:I. 古典社会学奠基' }))
+    onStateChange.mockClear()
+    fireEvent.click(within(tree).getByRole('button', { name: '展开 I. 古典社会学奠基' }))
     expect(onStateChange).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: '浏览 1. 古典社会学奠基' }))
