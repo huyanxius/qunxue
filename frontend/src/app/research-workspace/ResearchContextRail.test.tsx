@@ -158,3 +158,10 @@ describe('ResearchContextRail', () => {
     )
   })
 })
+
+it.each(['sources', 'basis'] as const)('can close the sections rail from %s', (activeTab) => {
+  const onClose = vi.fn()
+  render(<ResearchContextRail variant="sections" activeTab={activeTab} citations={[citation]} onClose={onClose} />)
+  fireEvent.click(screen.getByRole('button', { name: '返回对话' }))
+  expect(onClose).toHaveBeenCalledOnce()
+})

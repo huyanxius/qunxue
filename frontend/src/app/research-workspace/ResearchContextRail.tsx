@@ -210,6 +210,7 @@ function SectionsRail({
   selectedCitationId,
   elapsedSeconds,
   onBack,
+  onClose,
   onActivitySelect,
   onCitationSelect,
 }: {
@@ -220,6 +221,7 @@ function SectionsRail({
   selectedCitationId?: string | null
   elapsedSeconds?: number | null
   onBack?: () => void
+  onClose?: () => void
   onActivitySelect?: (activity: ResearchActivity) => void
   onCitationSelect?: (citation: ResearchCitation) => void
 }) {
@@ -235,14 +237,16 @@ function SectionsRail({
   const showBasis = tab === 'basis'
   return (
     <aside className="research-context-rail research-context-rail--sections" aria-label={text('研究面板', 'Research panel')}>
-      {/* 总览不需要标题栏：栏是什么、怎么收起，右上角那个开关已经说清楚了。 */}
-      {showBasis ? (
-        <header className="research-context-rail__header">
+      <header className="research-context-rail__header">
+        {showBasis ? (
           <button className="research-context-rail__back" type="button" onClick={onBack}>
             <ArrowLeftIcon size={15} aria-hidden="true" /><strong>{text('依据', 'Basis')}</strong>
           </button>
-        </header>
-      ) : null}
+        ) : <strong>{text('研究面板', 'Research panel')}</strong>}
+        <button className="research-context-rail__close" type="button" aria-label={text('返回对话', 'Back to conversation')} onClick={onClose}>
+          <XIcon size={18} aria-hidden="true" />
+        </button>
+      </header>
       <div className="research-context-rail__body">
         {showBasis ? (
           <section className="research-context-rail__panel" role="region" aria-label={text('依据', 'Basis')} tabIndex={0}>
@@ -314,6 +318,7 @@ export function ResearchContextRail({
         selectedCitationId={selectedCitationId}
         elapsedSeconds={elapsedSeconds}
         onBack={onBack}
+        onClose={onClose}
         onActivitySelect={onActivitySelect}
         onCitationSelect={onCitationSelect}
       />

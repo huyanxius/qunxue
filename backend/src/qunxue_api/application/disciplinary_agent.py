@@ -692,7 +692,10 @@ class DisciplinaryAgentApplication:
             # plan. Missing decisions never authorize research, including on retries.
             needs_planning = not deep_research_started and (
                 mode == "deep_research"
-                or (deep_research_action not in {"clarify", "confirm"}
+                or ((deep_research_action not in {"clarify", "confirm"}
+                     or (deep_research_action == "clarify"
+                         and getattr(self._runner, "handles", lambda **_: False)(
+                             prompt=prompt, tools=tools)))
                     and not (run.partial_answer or prior_summary))
             )
             if needs_planning:
