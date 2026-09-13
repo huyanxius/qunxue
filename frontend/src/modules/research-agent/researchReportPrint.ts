@@ -56,6 +56,14 @@ const PRINT_CSS = `
     text-align: center;
     text-indent: 0;
   }
+  .ai-notice {
+    margin: 24pt 0 0;
+    padding-top: 8pt;
+    border-top: 0.5pt solid #d8d3c8;
+    font-size: 8.5pt;
+    color: #6b665c;
+    text-indent: 0;
+  }
   h2 {
     margin: 18pt 0 10pt;
     font-family: "Times New Roman", "Heiti SC", "黑体", "Noto Sans CJK SC", sans-serif;
@@ -163,6 +171,7 @@ export function buildResearchReportHtml(report: ResearchReport) {
   </div>
   <main>${sections}</main>
   ${referencesHtml(report)}
+  <p class="ai-notice">${escapeHtml(report.notice)}</p>
 </body></html>`
 }
 
