@@ -3360,6 +3360,7 @@ export function ResearchAgentConversationPage({
                 ) : null}
                 {hasDeepResearchMockConversation && deepResearchMockStage !== 'researching' ? (
                   <DeepResearchMockFlow
+                    key={JSON.stringify([activeRunId.current, deepResearchMockQuestion, deepResearchMockOptions])}
                     stage={deepResearchMockStage}
                     question={deepResearchMockQuestion}
                     stepIndex={deepResearchMockStep}
@@ -3407,6 +3408,7 @@ export function ResearchAgentConversationPage({
             {discussion ? <div className="research-discussion-focus" role="status"><span>正在讨论：{discussion.title}</span><button type="button" disabled={isBusy} onClick={() => { void submitQuestion('请围绕这项内容继续推进。先说明已有依据和待解决的问题，需要我判断时提出一个具体问题。') }}>继续研究</button><button type="button" aria-label="结束当前讨论" onClick={onClearDiscussion}><XIcon size={14} /></button></div> : null}
             {composerMode === 'deep-research' && deepResearchMockStage === 'clarifying' && !streamingTurn ? (
               <DeepResearchMockFlow
+                key={JSON.stringify([activeRunId.current, deepResearchMockQuestion, deepResearchMockOptions])}
                 stage={deepResearchMockStage}
                 question={deepResearchMockQuestion}
                 stepIndex={deepResearchMockStep}
