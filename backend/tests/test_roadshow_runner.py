@@ -98,7 +98,7 @@ def test_account_and_topic_scope_and_stream(runner):
         on_tool_event=events.append,
     )
     assert "".join(chunks) == result.answer
-    assert "空间分析正文" in result.answer
+    assert result.answer == "normal answer"
     assert [x[0] for x in tools.calls] == ["knowledge", "web", "read"]
     assert [e.phase for e in events] == ["started", "finished"] * 3
 
@@ -140,7 +140,7 @@ def test_clarification_then_plan_then_report(runner):
     assert "空间治理" in str(plan.pending_research)
     assert tools.calls == []
     result = app.run_turn(**args, deep_research_run_id=first.run_id, deep_research_action="confirm")
-    assert "空间分析正文" in result.result.answer
+    assert result.result.answer == "normal answer"
     assert result.turn is not None
 
 
@@ -177,7 +177,7 @@ def test_case_delegates_canvas_to_existing_agent(runner):
             assert kwargs["tools"].research_map_enabled
             assert "空间分析正文" in kwargs["prompt"]
             kwargs["on_tool_event"](SimpleNamespace(tool="update_research_map"))
-            kwargs["on_delta"]("this canvas summary must not replace the authored answer")
+            kwargs["on_delta"]("normal answer")
             return self.run()
 
     runner.fallback = CanvasAgent()
@@ -191,4 +191,31 @@ def test_case_delegates_canvas_to_existing_agent(runner):
     )
     assert any(e.tool == "update_research_map" for e in events)
     assert "".join(chunks) == result.answer
-    assert "canvas summary" not in result.answer
+    assert result.answer == "normal answer"
+
+
+def test_report_preserves_real_answer_citations_and_callbacks(runner):
+    evidence = SimpleNamespace(citation_id="retrieval:real", label="真实检索来源")
+    expected = AgentRunResult("依据真实来源生成的回答", (evidence,), "release", "real", "model")
+    def checkpoint():
+        pass
+
+    def can_cancel():
+        return True
+
+    class AnswerAgent(Fallback):
+        def run_stream(self, **kwargs):
+            assert kwargs["on_checkpoint"] is checkpoint
+            assert kwargs["can_cancel"] is can_cancel
+            assert "Evidence" in kwargs["prompt"]
+            kwargs["on_delta"](expected.answer)
+            return expected
+
+    runner.fallback = AnswerAgent()
+    chunks = []
+    result = runner.run_stream(
+        prompt="食堂", conversation=(), tools=Tools(), on_delta=chunks.append,
+        on_checkpoint=checkpoint, can_cancel=can_cancel,
+    )
+    assert result is expected
+    assert "".join(chunks) == expected.answer
