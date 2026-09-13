@@ -2108,3 +2108,47 @@ it('keeps mobile citations closed until requested and returns to the composer', 
   await waitFor(() => expect(screen.queryByRole('complementary', { name: '研究面板' })).not.toBeInTheDocument())
   expect(screen.getByRole('textbox', { name: '问社会学 Agent' })).toBeVisible()
 })
+
+it.each(['choice', 'custom', 'skip'])('accepts consecutive deep research questions after %s', async (answerKind) => {
+  const requests: Record<string, unknown>[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (urlFor(input).pathname !== '/api/agent/turns') return json({ items: [] })
+    requests.push(JSON.parse(String(init?.body)))
+    const round = requests.length
+    const question = round === 1 ? '研究哪个角度？' : '限定哪个人群？'
+    const options = round === 1 ? ['社会关系', '劳动制度'] : ['城市青年', '职场人群']
+    return new Response(eventStream([
+      ['turn_started', { conversation_id: 'conversation-sequential', run_id: 'run-sequential', replayed: false, runtime_mode: 'base' }],
+      ['research_ask', { question, options }],
+      ['research_waiting', { run_id: 'run-sequential', state: 'awaiting_clarification', question, options, prompt: '研究虚无感' }],
+    ]), { headers: { 'Content-Type': 'text/event-stream' } })
+  }))
+  renderPage('user-sequential')
+  fireEvent.click(await screen.findByRole('button', { name: '选择 Agent 模式' }))
+  fireEvent.click(screen.getByRole('menuitemradio', { name: /深入研究/ }))
+  const textbox = screen.getByRole('textbox', { name: '问社会学 Agent' })
+  fireEvent.change(textbox, { target: { value: '研究虚无感' } })
+  fireEvent.submit(textbox.closest('form')!)
+  const first = await screen.findByRole('region', { name: '确认研究意图' })
+  await act(async () => {})
+  if (answerKind === 'custom') {
+    fireEvent.click(within(first).getByRole('radio', { name: /更多自定义/ }))
+    fireEvent.change(within(first).getByRole('textbox'), { target: { value: '消费文化' } })
+    fireEvent.click(within(first).getByRole('button', { name: '继续' }))
+  } else if (answerKind === 'skip') {
+    fireEvent.click(within(first).getByRole('button', { name: '跳过' }))
+  } else {
+    fireEvent.click(within(first).getByRole('radio', { name: /社会关系/ }))
+  }
+  await screen.findByRole('heading', { name: '限定哪个人群？' })
+  await act(async () => {})
+  const second = screen.getByRole('region', { name: '确认研究意图' })
+  expect(within(second).queryByRole('textbox')).not.toBeInTheDocument()
+  const choice = within(second).getByRole('radio', { name: /城市青年/ })
+  expect(choice).toBeEnabled()
+  expect(within(second).getByRole('button', { name: '跳过' })).toBeEnabled()
+  fireEvent.click(choice)
+  expect(choice).toBeDisabled()
+  await waitFor(() => expect(requests).toHaveLength(3))
+  expect(requests[2]).toMatchObject({ deep_research_run_id: 'run-sequential', deep_research_action: 'clarify', deep_research_selection: '城市青年' })
+})
