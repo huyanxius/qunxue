@@ -98,7 +98,7 @@ def test_account_and_topic_scope_and_stream(runner):
         on_tool_event=events.append,
     )
     assert "".join(chunks) == result.answer
-    assert result.answer == "normal answer"
+    assert result.answer == runner.config["cases"][0]["answer"]
     assert [x[0] for x in tools.calls] == ["knowledge", "web", "read"]
     assert [e.phase for e in events] == ["started", "finished"] * 3
 
@@ -140,7 +140,7 @@ def test_clarification_then_plan_then_report(runner):
     assert "空间治理" in str(plan.pending_research)
     assert tools.calls == []
     result = app.run_turn(**args, deep_research_run_id=first.run_id, deep_research_action="confirm")
-    assert result.result.answer == "normal answer"
+    assert result.result.answer == runner.config["cases"][0]["answer"]
     assert result.turn is not None
 
 
@@ -191,31 +191,30 @@ def test_case_delegates_canvas_to_existing_agent(runner):
     )
     assert any(e.tool == "update_research_map" for e in events)
     assert "".join(chunks) == result.answer
-    assert result.answer == "normal answer"
+    assert result.answer == runner.config["cases"][0]["answer"]
 
 
-def test_report_preserves_real_answer_citations_and_callbacks(runner):
+def test_report_is_fixed_and_only_audited_retrieved_citations_are_returned(runner):
     evidence = SimpleNamespace(citation_id="retrieval:real", label="真实检索来源")
-    expected = AgentRunResult("依据真实来源生成的回答", (evidence,), "release", "real", "model")
-    def checkpoint():
-        pass
+    tools = Tools()
+    tools.evidence[evidence.citation_id] = evidence
 
-    def can_cancel():
-        return True
-
-    class AnswerAgent(Fallback):
+    class CitationAgent(Fallback):
         def run_stream(self, **kwargs):
-            assert kwargs["on_checkpoint"] is checkpoint
-            assert kwargs["can_cancel"] is can_cancel
             assert "Evidence" in kwargs["prompt"]
-            kwargs["on_delta"](expected.answer)
-            return expected
+            kwargs["on_delta"]("不要泄露的核对过程")
+            return AgentRunResult(
+                '{"citations":[{"citation_id":"retrieval:real","quote":"空间分析正文"},'
+                '{"citation_id":"invented","quote":"空间分析正文"},'
+                '{"citation_id":"retrieval:real","quote":"正文没有的说法"}]}',
+                (), "release", "real", "model",
+            )
 
-    runner.fallback = AnswerAgent()
+    runner.fallback = CitationAgent()
     chunks = []
     result = runner.run_stream(
-        prompt="食堂", conversation=(), tools=Tools(), on_delta=chunks.append,
-        on_checkpoint=checkpoint, can_cancel=can_cancel,
+        prompt="食堂", conversation=(), tools=tools, on_delta=chunks.append,
     )
-    assert result is expected
-    assert "".join(chunks) == expected.answer
+    assert result.answer == runner.config["cases"][0]["answer"]
+    assert "".join(chunks) == result.answer
+    assert result.citations == (evidence,)
