@@ -111,6 +111,7 @@ import { ResearchAgentShader } from './ResearchAgentShader'
 import { ResearchPromptCarousel } from './ResearchPromptCarousel'
 import deepResearchGuidance from '../../assets/agent/new-research-guidance.webp'
 import { useAppLocale, type AppLocale } from '../i18n/AppLocaleProvider'
+import { AiGeneratedNotice } from '../ui/AiGeneratedNotice'
 import './research-agent-page.css'
 import './research-agent-conversation.css'
 import './new-research-workspace.css'
@@ -1657,6 +1658,7 @@ function AssistantTurn({
           ? <KnowledgeHandoffCards citation={knowledgeHandoffCitation} conversationId={conversationId} knowledgeReleaseId={knowledgeReleaseId} />
           : null}
         {showResearchHandoff && researchHandoff ? <ResearchStartHandoffCard handoff={researchHandoff} onContinueResearch={onContinueResearch} busy={researchEntryBusy} /> : null}
+        {!streaming && answer ? <AiGeneratedNotice /> : null}
         {!streaming && answer && onRegenerate ? <AssistantActions content={answer} onRegenerate={onRegenerate} /> : null}
       </div>
     </article>
