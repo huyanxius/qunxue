@@ -22,9 +22,16 @@ export type ResearchReport = {
   title: string
   subtitle: string
   meta: string[]
+  notice: string
   sections: ResearchReportSection[]
   references: ResearchReference[]
 }
+
+/**
+ * 导出件离开系统后就没有界面上的标识了，所以正文末尾固定压一句声明。Word 与打印页
+ * 共用这一句，改文案只改这里。
+ */
+export const AI_CONTENT_NOTICE = '本文由群学致知研究 Agent 生成，属 AI 生成内容，请核对引用来源后使用。'
 
 const CITATION_MARKER = /\[(?:citation_id:)?(?:knowledge|source):[A-Za-z0-9_.:-]+\]/g
 
@@ -145,6 +152,7 @@ export function buildResearchReport({
     title: (conversation.title || fallbackTitle || sections[0]?.question || '研究报告').trim(),
     subtitle: '研究报告',
     meta,
+    notice: AI_CONTENT_NOTICE,
     sections,
     references,
   }

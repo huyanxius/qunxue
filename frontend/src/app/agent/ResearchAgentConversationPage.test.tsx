@@ -844,6 +844,19 @@ describe('ResearchAgentConversationPage', () => {
     )
   })
 
+  it('marks a finished answer as AI-generated', async () => {
+    const conversation = conversationFixture({ id: 'conversation-ai-notice' })
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = urlFor(input)
+      if (url.pathname === `/api/agent/conversations/${conversation.conversation_id}`) return json(conversation)
+      return json({ items: [] })
+    }))
+
+    renderPage('user-agent', `/agent?conversation_id=${conversation.conversation_id}`)
+
+    expect(await screen.findByText('AI 生成内容，请核对来源后使用')).toBeVisible()
+  })
+
   it('makes mixed evidence visible when an answer cites both public knowledge and personal material', async () => {
     const citations = [
       { citation_id: 'citation-knowledge-mixed', label: '社区互助研究', kind: 'knowledge', knowledge_id: 'D1:C001', excerpt: '公共知识条目。' },

@@ -138,6 +138,11 @@ describe('research report content', () => {
     expect(report.sections[0].answer).toContain('结构位置的产物')
   })
 
+  it('报告自带一句 AI 生成声明', () => {
+    const report = buildResearchReport({ conversation })
+    expect(report.notice).toContain('AI 生成')
+  })
+
   it('文件名去掉路径字符并挂上品牌前缀', () => {
     const report = buildResearchReport({ conversation: { ...conversation, title: '研究/报告: 初稿' } })
     expect(researchReportFilename(report, 'docx')).toBe('群学致知-研究 报告 初稿.docx')
@@ -164,6 +169,8 @@ describe('research report docx', () => {
     expect(document).toContain('w:line="360"')
     expect(document).toContain('<w:tbl>')
 
+    expect(document).toContain(report.notice)
+
     const names = await zipEntryNames(blob)
     // 信头的标志同时嵌 SVG 与位图兜底，旧版 Word 才不会开出一个空框。
     expect(names.some((name) => name.endsWith('.svg'))).toBe(true)
@@ -182,6 +189,11 @@ describe('research report print page', () => {
     expect(html).toContain('研究用时 4 分 27 秒')
     expect(html).toContain('<table>')
     expect(html).toContain('https://www.oecd.org/en/publications/2024/11/how-s-life')
+  })
+
+  it('打印页页脚带 AI 生成声明', () => {
+    const report = buildResearchReport({ conversation })
+    expect(buildResearchReportHtml(report)).toContain(report.notice)
   })
 
   it('回答里的标签当字面量渲染，不进 DOM 当 HTML 执行', () => {

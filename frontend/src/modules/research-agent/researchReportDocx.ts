@@ -318,6 +318,13 @@ export async function createResearchReportDocx(report: ResearchReport) {
     children.push(...referenceParagraphs(report))
   }
 
+  children.push(bodyParagraph([new TextRun({
+    text: report.notice,
+    size: BODY_SIZE - 4,
+    font: bodyFonts,
+    color: '6B665C',
+  })], { spacing: { line: LINE, lineRule: 'auto', before: 480, after: 0 }, indent: { firstLine: 0 } }))
+
   const document = new Document({
     creator: '群学致知',
     title: report.title,

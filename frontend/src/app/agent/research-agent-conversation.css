@@ -672,6 +672,15 @@
   color: color-mix(in srgb, var(--app-muted) 72%, transparent);
 }
 
+.research-agent-conversation .qx-ai-notice {
+  margin-top: 14px;
+  color: color-mix(in srgb, var(--app-muted) 62%, transparent);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  line-height: 1.5;
+  letter-spacing: .01em;
+}
+
 .research-agent-conversation .new-research__thinking {
   width: fit-content;
   color: transparent;
