@@ -5,13 +5,19 @@ from fastapi import APIRouter, HTTPException, Query, Request
 
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.frontier import (
+    FrontierCalendarResponse,
+    FrontierKnowledgeLinksResponse,
     FrontierOverviewResponse,
+    FrontierPeriodReportResponse,
+    FrontierReadingPriorityPageResponse,
+    FrontierReadingPriorityResponse,
     FrontierRecordPageResponse,
     FrontierRecordResponse,
     FrontierSourcePageResponse,
     FrontierStatusResponse,
     FrontierTopicPageResponse,
 )
+from qunxue_api.api.presenters.frontier import public_record
 from qunxue_api.modules.frontier_knowledge import frontier_today
 
 router = APIRouter(
@@ -41,7 +47,7 @@ def search_frontier_records(
     offset: int = Query(default=0, ge=0),
     as_of: date | None = None,
 ):
-    return request.app.state.frontier_service.search(
+    result = request.app.state.frontier_service.search(
         q=q,
         stream=stream,
         source_id=source_id,
@@ -52,6 +58,7 @@ def search_frontier_records(
         offset=offset,
         as_of=as_of,
     )
+    return {**result, "items": [public_record(record) for record in result["items"]]}
 
 
 @router.get(
@@ -60,11 +67,11 @@ def search_frontier_records(
     response_model=FrontierRecordResponse,
     responses={404: {"model": ErrorResponse}},
 )
-def get_frontier_record(request: Request, record_id: str):
-    record = request.app.state.frontier_store.get_record(record_id)
-    if not record or not record["eligibility"]["browse"]:
-        raise HTTPException(404, detail="Frontier record not found")
-    return record
+def get_frontier_record(request: Request, record_id: str, as_of: date | None = None):
+    try:
+        return public_record(request.app.state.frontier_service.record(record_id, as_of=as_of))
+    except LookupError as error:
+        raise HTTPException(404, detail="Frontier record not found") from error
 
 
 @router.get(
@@ -135,3 +142,91 @@ def get_frontier_status(request: Request):
             "自动采集与WeRSS尚未启用；抽取、核验、embedding需要独立新配置且默认禁网",
         ],
     }
+
+
+@router.get(
+    "/calendar", operation_id="get_frontier_calendar", response_model=FrontierCalendarResponse
+)
+def get_frontier_calendar(
+    request: Request, year: int = Query(ge=1, le=9999), as_of: date | None = None
+):
+    return request.app.state.frontier_service.calendar(year=year, as_of=as_of)
+
+
+@router.get(
+    "/records/{record_id}/knowledge-links",
+    operation_id="get_frontier_knowledge_links",
+    response_model=FrontierKnowledgeLinksResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def get_frontier_knowledge_links(request: Request, record_id: str, as_of: date | None = None):
+    try:
+        return request.app.state.frontier_knowledge_links.for_record(record_id, as_of=as_of)
+    except LookupError as error:
+        raise HTTPException(404, detail="Frontier record or knowledge release not found") from error
+
+
+@router.get(
+    "/period-report",
+    operation_id="get_frontier_period_report",
+    response_model=FrontierPeriodReportResponse,
+)
+def get_frontier_period_report(
+    request: Request,
+    previous_start: date,
+    previous_end: date,
+    current_start: date,
+    current_end: date,
+    topic_key: str = Query(min_length=1, max_length=100),
+    as_of: date | None = None,
+):
+    try:
+        return request.app.state.frontier_service.period_report(
+            previous_start=previous_start,
+            previous_end=previous_end,
+            current_start=current_start,
+            current_end=current_end,
+            topic_key=topic_key,
+            as_of=as_of,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.get(
+    "/records/{record_id}/reading-priority",
+    operation_id="get_frontier_reading_priority",
+    response_model=FrontierReadingPriorityResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def get_frontier_reading_priority(request: Request, record_id: str, as_of: date | None = None):
+    try:
+        return request.app.state.frontier_reading_priority.for_record(record_id, as_of=as_of)
+    except LookupError as error:
+        raise HTTPException(404, detail="Frontier record not found") from error
+
+
+@router.get(
+    "/reading-priorities",
+    operation_id="list_frontier_reading_priorities",
+    response_model=FrontierReadingPriorityPageResponse,
+)
+def list_frontier_reading_priorities(
+    request: Request,
+    q: str = Query(default="", max_length=200),
+    readiness: Literal["passage_supported", "abstract_supported", "metadata_only"] | None = None,
+    assessment_status: Literal["unassessed", "partial", "assessed"] | None = None,
+    min_academic_value: float | None = Query(default=None, ge=0, le=100),
+    as_of: date | None = None,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=24, ge=1, le=200),
+):
+    return request.app.state.frontier_reading_priority.search(
+        q=q,
+        readiness=readiness,
+        assessment_status=assessment_status,
+        min_academic_value=min_academic_value,
+        as_of=as_of,
+        offset=offset,
+        limit=limit,
+    )

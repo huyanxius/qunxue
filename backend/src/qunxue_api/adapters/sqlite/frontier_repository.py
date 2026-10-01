@@ -163,11 +163,34 @@ class SqliteFrontierStore:
                         (FrontierItemRow.body_hash, body_hash, "body_hash"),
                     ):
                         if value:
-                            duplicate = session.scalar(
+                            candidates = session.scalars(
                                 select(FrontierItemRow)
                                 .where(field == value)
                                 .order_by(FrontierItemRow.item_id)
                             )
+                            for candidate in candidates:
+                                if candidate_level == "title_author":
+                                    # Recurring editorial titles need the same publication issue.
+                                    prior = session.scalar(
+                                        select(FrontierRecordRow).where(
+                                            FrontierRecordRow.item_id == candidate.item_id,
+                                            FrontierRecordRow.is_current.is_(True),
+                                        )
+                                    )
+                                    previous = prior.structured_json if prior else {}
+                                    if record["material_type"] == "official_practice":
+                                        continue
+                                    if any(
+                                        previous.get(key) != record.get(key)
+                                        for key in ("publication_year", "publication_issue")
+                                    ):
+                                        continue
+                                    if not record.get("publication_issue") and previous.get(
+                                        "published_at"
+                                    ) != record.get("published_at"):
+                                        continue
+                                duplicate = candidate
+                                break
                             if duplicate:
                                 level = candidate_level
                                 break
@@ -291,7 +314,14 @@ class SqliteFrontierStore:
                                 else "manual_structured_seed"
                             )
                         ),
-                        "eligibility": eligibility(record["verification_status"]),
+                        "eligibility": {
+                            **eligibility(record["verification_status"]),
+                            **(
+                                {"rag": False}
+                                if record.get("source_scope") == "newspaper_metadata_only"
+                                else {}
+                            ),
+                        },
                         "dedupe_level": item.dedupe_level,
                         "reprint_of": item.original_item_id,
                         "snapshot_scope": snapshot["scope"],
@@ -465,6 +495,32 @@ class SqliteFrontierStore:
                 )
             )
 
+    def queue_manual_review(self, object_id: str, idempotency_key: str, payload: dict) -> str:
+        """Preserve incomplete evidence for human review without scheduling a worker."""
+        with self.database.session() as session:
+            session.execute(
+                insert(FrontierJobRow)
+                .values(
+                    job_id=f"job-{uuid4().hex}",
+                    stage="MANUAL_REVIEW",
+                    object_id=object_id,
+                    payload=payload,
+                    idempotency_key=idempotency_key,
+                    status="blocked",
+                    attempt=0,
+                    next_run_at=0,
+                    lease_until=None,
+                    lease_token=None,
+                    error="manual_review_required",
+                )
+                .on_conflict_do_nothing(index_elements=["idempotency_key"])
+            )
+            return session.scalar(
+                select(FrontierJobRow.job_id).where(
+                    FrontierJobRow.idempotency_key == idempotency_key
+                )
+            )
+
     def claim_job(self, *, now: float, lease_seconds: int = 120) -> FrontierJob | None:
         with self.database.session() as session:
             session.execute(text("BEGIN IMMEDIATE"))
@@ -541,7 +597,7 @@ class SqliteFrontierStore:
         with self.database.session() as session:
             result = session.execute(
                 update(FrontierJobRow)
-                .where(FrontierJobRow.status == "blocked")
+                .where(FrontierJobRow.status == "blocked", FrontierJobRow.stage != "MANUAL_REVIEW")
                 .values(status="pending", attempt=0, next_run_at=0, error=None)
             )
             return result.rowcount
@@ -922,7 +978,10 @@ class SqliteFrontierStore:
                 raise ValueError("issue coverage source is not registered")
             month = item.get("publication_month")
             if month is None:
-                if item.get("coverage_complete") is True:
+                if (
+                    item.get("coverage_complete") is True
+                    and item.get("coverage_scope") != "fixed_issue_sample"
+                ):
                     raise ValueError(
                         "complete issue coverage requires a verified publication month"
                     )
@@ -935,6 +994,25 @@ class SqliteFrontierStore:
                     ) from None
                 if month != parsed_month:
                     raise ValueError("issue publication month must use YYYY-MM")
+            if item.get("coverage_scope") == "fixed_issue_sample":
+                if (
+                    item.get("period_precision") != "year"
+                    or not isinstance(item.get("period"), str)
+                    or not re.fullmatch(r"\d{4}", item["period"])
+                    or not item.get("issue_ids")
+                    or not item.get("comparison_issue_keys")
+                    or not item.get("evidence_refs")
+                ):
+                    raise ValueError("fixed issue sample requires a year, issue keys and evidence")
+                excluded = item.get("excluded_nonresearch_count", 0)
+                if (
+                    type(excluded) is not int
+                    or excluded < 0
+                    or item.get("candidate_count", -1) - excluded != item.get("included_count")
+                    or item.get("readable_count", -1) - excluded != item.get("included_count")
+                    or item.get("analyzed_count") != item.get("included_count")
+                ):
+                    raise ValueError("fixed issue sample counts must reconcile")
             issue_id = item.get("issue_id")
             if not issue_id and item.get("publication_year") and item.get("publication_issue"):
                 issue_id = (
@@ -971,6 +1049,22 @@ class SqliteFrontierStore:
                 "coverage_complete": item.get("coverage_complete") is True,
                 "issue_url": url,
             }
+            for field in (
+                "period",
+                "period_precision",
+                "coverage_scope",
+                "issue_ids",
+                "comparison_issue_keys",
+                "analyzed_count",
+                "excluded_nonresearch_count",
+                "evidence_refs",
+                "research_record_ids",
+                "excluded_record_ids",
+                "missing_abstract_count",
+                "historical_complete",
+            ):
+                if field in item:
+                    value[field] = deepcopy(item[field])
             current = {
                 entry["issue_id"]: entry for entry in source.config.get("issue_coverage", [])
             }

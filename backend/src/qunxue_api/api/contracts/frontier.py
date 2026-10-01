@@ -337,3 +337,173 @@ class FrontierOverviewResponse(BaseModel):
     overview: FrontierCorpusOverviewResponse | None
     statistics: FrontierCorpusStatisticsResponse
     status: Literal["ready", "not_configured", "stale"]
+
+
+class FrontierCalendarDayResponse(BaseModel):
+    date: str
+    count: int
+    record_ids: list[str]
+
+
+class FrontierCalendarMonthResponse(BaseModel):
+    month: str
+    count: int
+    record_ids: list[str]
+
+
+class FrontierCalendarIssueResponse(BaseModel):
+    source_id: str
+    issue_id: str
+    publication_year: int
+    count: int
+    record_ids: list[str]
+
+
+class FrontierCalendarResponse(BaseModel):
+    year: int
+    as_of: str
+    timezone: Literal["Asia/Shanghai"]
+    days: list[FrontierCalendarDayResponse]
+    month_precision: list[FrontierCalendarMonthResponse]
+    issue_precision: list[FrontierCalendarIssueResponse]
+    undated_record_ids: list[str]
+    conflicting_record_ids: list[str]
+    future_record_ids: list[str]
+
+
+class FrontierKnowledgeLinkResponse(BaseModel):
+    knowledge_id: str
+    title: str
+    content_version: int
+    matched_topics: list[str]
+
+
+class FrontierKnowledgeLinksResponse(BaseModel):
+    record_id: str
+    record_version: int
+    record_content_hash: str
+    knowledge_release_id: str | None
+    knowledge_release_hash: str | None
+    knowledge_release_level: Literal["preview", "final", "working"] | None
+    status: Literal["ready", "no_release", "no_topics", "no_matches", "low_evidence"]
+    limitations: list[str]
+    matches: list[FrontierKnowledgeLinkResponse]
+    match_basis: Literal["topic_lexical_retrieval"]
+    relationship: Literal["reading_lead"]
+
+
+class FrontierClassificationCountsResponse(BaseModel):
+    denominator: int
+    classified: int
+    uncategorized: int
+    title_available: int
+    publisher_keywords_available: int
+
+
+class FrontierClassificationCoverageResponse(BaseModel):
+    previous: FrontierClassificationCountsResponse
+    current: FrontierClassificationCountsResponse
+
+
+class FrontierPeriodReportResponse(BaseModel):
+    measurement_method: str
+    measurement_version: str
+    classification_coverage: FrontierClassificationCoverageResponse
+    coverage_scope: str
+    previous_window: FrontierTimeWindowResponse
+    current_window: FrontierTimeWindowResponse
+    comparison_issue_keys: list[str]
+    share_basis: str
+    coverage_evidence_refs: list[str]
+    previous_denominator: int
+    current_denominator: int
+    cohort_previous_count: int
+    cohort_current_count: int
+    as_of: str
+    timezone: str
+    date_basis: str
+    semantic_status: str
+    method_version: str
+    comparability: str
+    direction: str | None
+    previous_share: float | None
+    current_share: float | None
+    delta_pp: float | None
+    previous_count: int
+    current_count: int
+    cohort_source_ids: list[str]
+    evidence_record_ids: list[str]
+    hotspot_allowed: bool
+    decline_allowed: bool
+    emerging_allowed: bool
+    persistent_allowed: bool
+
+
+class FrontierRatingEvidenceResponse(BaseModel):
+    record_id: str
+    version: int
+    snapshot_hash: str
+    locator: str
+    reviewed_by: str
+
+
+class FrontierCriterionRatingResponse(BaseModel):
+    weight: int
+    score: int | None
+    rationale: str | None
+    evidence: list[FrontierRatingEvidenceResponse]
+    missing_reason: str | None
+
+
+class FrontierScoreBoundsResponse(BaseModel):
+    lower: float
+    upper: float
+
+
+class FrontierValueAssessmentResponse(BaseModel):
+    rule_version: str
+    track: Literal["empirical", "theoretical", "policy_practice"] | None
+    status: Literal["unassessed", "partial", "assessed"]
+    ratings: dict[str, int | None]
+    criteria: dict[str, FrontierCriterionRatingResponse]
+    academic_value: float | None
+    score_bounds: FrontierScoreBoundsResponse
+    missing_reasons: dict[str, str]
+    evidence_readiness: str
+    priority: Literal["priority_review", "candidate", "not_yet_for_update"] | None
+    authorizes_publication: Literal[False]
+
+
+class FrontierReadingBasisResponse(BaseModel):
+    basis_type: Literal["located_source_excerpt", "assistant_abstract_reading"]
+    source_content_hash: str
+    block_id: str
+    locator: str
+    url: str
+    snippet: str
+    fields: list[str]
+
+
+class FrontierReadingPriorityResponse(BaseModel):
+    record_id: str
+    title: str
+    version: int
+    content_hash: str
+    reading_rule_version: str
+    reading_priority: Literal["passage_supported", "abstract_supported", "metadata_only"]
+    evidence_readiness: str
+    supported_fields: list[str]
+    missing_fields: dict[str, str]
+    basis: list[FrontierReadingBasisResponse]
+    assessment: FrontierValueAssessmentResponse
+    limitations: list[str]
+
+
+class FrontierReadingPriorityPageResponse(BaseModel):
+    items: list[FrontierReadingPriorityResponse]
+    total: int
+    offset: int
+    limit: int
+    next_offset: int | None
+    as_of: str
+    sort_basis: str

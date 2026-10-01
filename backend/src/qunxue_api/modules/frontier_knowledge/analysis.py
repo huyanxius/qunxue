@@ -11,6 +11,8 @@ from collections.abc import Sequence
 from datetime import date, timedelta
 from unicodedata import normalize
 
+from .periods import record_publication_interval
+
 _METHOD = "curated_topic_dictionary_v1"
 # Membership is an editorial choice based only on explicit topic tags. A study
 # may belong to several topics; totals across topics must not be added together.
@@ -182,6 +184,23 @@ def _source_id(record: dict) -> str | None:
 def _studies(records: Sequence[dict], as_of: date) -> list[dict]:
     grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for record in records:
+        span = record_publication_interval(record)
+        if span is not None and span.start > as_of:
+            continue
+        if (
+            span is not None
+            and span.end > as_of
+            and record.get("published_at_precision") != "issue"
+        ):
+            continue
+        if type(record.get("publication_year")) is int and record["publication_year"] > as_of.year:
+            continue
+        if (
+            record.get("discovered_at")
+            and record.get("published_at") is None
+            and record["discovered_at"][:10] > as_of.isoformat()
+        ):
+            continue
         record_id = _text(record.get("id"))
         if record_id is None:
             raise ValueError("Every frontier record must have a non-empty string id")
@@ -273,8 +292,8 @@ def aggregate_topics(
     an infinite growth rate. Historical semantic novelty is always unassessed.
 
     ``total`` counts unique canonical studies per topic and stream, including
-    undated and future-dated entries retained for inspection. ``dated`` excludes
-    future dates. ``total == dated + undated + future_dated``. Evidence and
+    undated entries. Future records are removed before membership and synthesis.
+    ``total == dated + undated + future_dated``. Evidence and
     record_ids retain the underlying records after counting deduplication.
     Unrecognized labels are not assigned to an invented topic.
     """
@@ -425,3 +444,10 @@ def aggregate_topics(
                 }
             )
     return results
+
+
+def record_topic_keys(record: dict) -> frozenset[str]:
+    """Stable period measurement; editable browse tags are a separate taxonomy."""
+    from .measurement import measured_topic_keys
+
+    return measured_topic_keys(record)

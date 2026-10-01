@@ -27,7 +27,7 @@ SOURCE_DEFINITIONS = (
         "journal_directory",
         "https://shxyj.ajcass.com",
         12,
-        ["sociology.nju.edu.cn", "public.nju.edu.cn"],
+        ["sociology.nju.edu.cn", "public.nju.edu.cn", "shxyj.ajcass.com", "m.ncpssd.org"],
         "期刊目录/原文授权待核实；当前仅人工公开成果线索",
     ),
     (
@@ -36,7 +36,7 @@ SOURCE_DEFINITIONS = (
         "journal_directory",
         "https://shfzyj.ajcass.com",
         24,
-        ["sociology.shu.edu.cn"],
+        ["sociology.shu.edu.cn", "shfzyj.ajcass.com", "m.ncpssd.org"],
         "期刊目录/原文授权待核实；当前仅人工公开成果线索",
     ),
     (
@@ -45,7 +45,7 @@ SOURCE_DEFINITIONS = (
         "journal_directory",
         "https://qnyj.ajcass.com",
         12,
-        ["cohd.cau.edu.cn", "www.sps.sdu.edu.cn"],
+        ["cohd.cau.edu.cn", "www.sps.sdu.edu.cn", "qnyj.ajcass.com", "m.ncpssd.org"],
         "期刊目录/原文授权待核实；当前仅人工公开成果线索",
     ),
     (
