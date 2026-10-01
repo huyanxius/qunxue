@@ -1,0 +1,3786 @@
+[
+  {
+    "id": "ncpssd-SHFZYJ2025003004",
+    "external_id": "SHFZYJ2025003004",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "家国对接：结构化理论视角下工农家庭的教育流动与发展",
+    "authors": [
+      "李晓菁"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "家国对接",
+      "结构化理论",
+      "工农家庭",
+      "教育流动"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "家国对接",
+      "结构化理论",
+      "工农家庭",
+      "教育流动"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003004",
+    "private_source_record_sha256": "7da05343251d99073080b38ab154ac4982e96abe2bce400eb03bf5c570b9da65"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003005",
+    "external_id": "SHFZYJ2025003005",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "“空白”与关系：基于人心的中国社会机制",
+    "authors": [
+      "西邑隆大"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "人心",
+      "“空白”",
+      "关系",
+      "仁"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "人心",
+      "“空白”",
+      "关系",
+      "仁"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003005",
+    "private_source_record_sha256": "22f1263b12c7995556b9cef7e7476e4b5e7e8df35d476a7672207ce8b212a3de"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003006",
+    "external_id": "SHFZYJ2025003006",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "中国人工作价值观的时期—世代变迁——对工作中心性和物质主义的双向考察",
+    "authors": [
+      "陈雨蒙",
+      "李骏"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "工作价值观",
+      "工作中心性",
+      "物质主义",
+      "时期",
+      "世代"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "工作价值观",
+      "工作中心性",
+      "物质主义",
+      "时期",
+      "世代"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003006",
+    "private_source_record_sha256": "6e3ac8a07a84b908ce41390c306f0b60896e349518c06daa79731c055363bb49"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003007",
+    "external_id": "SHFZYJ2025003007",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "不稳定的健康代价：非稳定就业、工作日程安排与心理健康",
+    "authors": [
+      "张帆",
+      "郭小弦"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "非稳定就业",
+      "劳动力市场分割",
+      "工作日程安排",
+      "心理健康"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "非稳定就业",
+      "劳动力市场分割",
+      "工作日程安排",
+      "心理健康"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003007",
+    "private_source_record_sha256": "29536c93e3aa69b2edcf7b998e1baf50cb25280143cbe739b80e510829a74e1a"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003008",
+    "external_id": "SHFZYJ2025003008",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "职业流动如何影响社会信任？——基于特大城市居民生活状况调查的实证分析",
+    "authors": [
+      "吴依萍",
+      "张海东"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "职业流动",
+      "社会信任",
+      "不公正待遇",
+      "特大城市研究"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "职业流动",
+      "社会信任",
+      "不公正待遇",
+      "特大城市研究"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "research-shfzyj-2025-3-mobility-trust",
+    "private_source_record_sha256": "577f98cfbd5f78b3f87b9de99d3f0285be8e905cbc956c28c59c176344f507bf"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003009",
+    "external_id": "SHFZYJ2025003009",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "制度普惠与民营企业家的营商环境感知",
+    "authors": [
+      "孙明"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003009&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003009",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "制度普惠",
+      "民营企业家",
+      "营商环境"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "制度普惠",
+      "民营企业家",
+      "营商环境"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003009",
+    "private_source_record_sha256": "11158e61bd2236cea4a667487ddecdad2373ff2804eae973ceab3fbd205e53df"
+  },
+  {
+    "id": "ncpssd-SHFZYJ2025003010",
+    "external_id": "SHFZYJ2025003010",
+    "source_id": "social-development",
+    "source_name": "社会发展研究",
+    "title": "数字时代的医患关系：理论视角、关键议题与未来展望",
+    "authors": [
+      "张晶",
+      "周颖"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHFZYJ2025003010&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-08-16",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:45.365597+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for SHFZYJ2025003010",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "数字健康",
+      "医患关系",
+      "信任",
+      "社会物质性"
+    ],
+    "source_publisher": "社会发展研究",
+    "issue_id": "social-development:2025:3",
+    "published_at_display": "2025-08-16",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数字健康",
+      "医患关系",
+      "信任",
+      "社会物质性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "social-development",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-SHFZYJ2025003010",
+    "private_source_record_sha256": "8d4ebf0f0b955948c3a84d7b231c112479b0c2111ffed67c42fe3dc591043ff4"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004001",
+    "external_id": "QNYJ2026004001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "45岁青年：科技奖励政策中的青年定义嬗变",
+    "authors": [
+      "马志谦"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青年科技奖励",
+      "人才断层",
+      "45岁青年",
+      "青年科技人才"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青年科技奖励",
+      "人才断层",
+      "45岁青年",
+      "青年科技人才"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004001",
+    "private_source_record_sha256": "7bd2dfd57b6b1d1c983efc66ccbfddf933e33772f88e503f886b0391420d96ce"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004002",
+    "external_id": "QNYJ2026004002",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "薪酬安全感：外卖骑手劳动同意的实现机制",
+    "authors": [
+      "王春璇",
+      "王星"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004002&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004002",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "即时支付",
+      "平台计件薪酬制",
+      "薪酬安全感",
+      "劳动同意",
+      "风险置换"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "即时支付",
+      "平台计件薪酬制",
+      "薪酬安全感",
+      "劳动同意",
+      "风险置换"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004002",
+    "private_source_record_sha256": "4b0c986641ada10e50f17f953b15500ff2b010eeaa8fb0683ee7a87e6bd02050"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004003",
+    "external_id": "QNYJ2026004003",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "拟熟人关系的建构与展演——带货主播的情感劳动与关系劳动",
+    "authors": [
+      "胡天琪",
+      "梁萌"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004003&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004003",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "带货主播",
+      "情感劳动",
+      "关系劳动",
+      "拟熟人关系",
+      "剧场"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "带货主播",
+      "情感劳动",
+      "关系劳动",
+      "拟熟人关系",
+      "剧场"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004003",
+    "private_source_record_sha256": "08142c267de1eb9600125e710741e3fd18f95c85660b3648df1ed995b9c1981a"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004004",
+    "external_id": "QNYJ2026004004",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "“香火”情感化：并家实践中独生女父母血脉延续观念的转型",
+    "authors": [
+      "周凌宇",
+      "武哲珊"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "两家并一家",
+      "血脉延续观念",
+      "情感化"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "两家并一家",
+      "血脉延续观念",
+      "情感化"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004004",
+    "private_source_record_sha256": "0995d2e793390a16a8035e723f3a4061cb1326a5a7f01fb26dbab85f6ca0b919"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004005",
+    "external_id": "QNYJ2026004005",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "双轨并行：人口流入型农村婚姻市场的分化机制",
+    "authors": [
+      "施磊磊"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "农村婚姻市场分化",
+      "双轨并行",
+      "伦理逻辑",
+      "市场逻辑",
+      "介绍型婚姻"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "农村婚姻市场分化",
+      "双轨并行",
+      "伦理逻辑",
+      "市场逻辑",
+      "介绍型婚姻"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004005",
+    "private_source_record_sha256": "5d3f9dbc88e1d968c421b5c92501bca95854ac00221578ca20b2468734bf3b7f"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004006",
+    "external_id": "QNYJ2026004006",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "非稳定就业群体的社会公平感——影响机制与数字化工作的作用",
+    "authors": [
+      "刘威",
+      "张丹"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "非稳定就业",
+      "社会公平感",
+      "数字化工作",
+      "相对剥夺"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "非稳定就业",
+      "社会公平感",
+      "数字化工作",
+      "相对剥夺"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004006",
+    "private_source_record_sha256": "942f76d65d3863e3203aabacffb12f6d10103792ead2bddc50a41aed64d89e0e"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004007",
+    "external_id": "QNYJ2026004007",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "夹心层的生育困境：家庭禀赋与生育决策的U型关系",
+    "authors": [
+      "陈启航",
+      "杨雪燕",
+      "李婉鑫",
+      "李蕊"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "家庭禀赋",
+      "生育决策",
+      "教育投入",
+      "U型关系",
+      "生育不平等"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "家庭禀赋",
+      "生育决策",
+      "教育投入",
+      "U型关系",
+      "生育不平等"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004007",
+    "private_source_record_sha256": "48cadf060899416dc56154f191e2e8d9c1d57348804f8000fab0bf6650878ef9"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004008",
+    "external_id": "QNYJ2026004008",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "在不确定性中寻找确定性：青年睡眠管理的数智实践",
+    "authors": [
+      "涂炯",
+      "沈梓桐"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "数智技术",
+      "睡眠管理",
+      "青年",
+      "确定性",
+      "不确定性"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数智技术",
+      "睡眠管理",
+      "青年",
+      "确定性",
+      "不确定性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004008",
+    "private_source_record_sha256": "deb2232badca00bd142480fb6d318bea557f8fe88f62ad37c9d87f6bb1154b5d"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004009",
+    "external_id": "QNYJ2026004009",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "学生相对社会经济地位与家境掩饰",
+    "authors": [
+      "肖志文",
+      "李适源",
+      "柳皑然"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004009&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004009",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "社会经济地位",
+      "污名风险",
+      "地位掩饰"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社会经济地位",
+      "污名风险",
+      "地位掩饰"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026004009",
+    "private_source_record_sha256": "8bd14c1ac190da8fb048f94f402e2de760fa0578577595955dfd974354097a9b"
+  },
+  {
+    "id": "ncpssd-QNYJ2026004010",
+    "external_id": "QNYJ2026004010",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "情感抑或理性：非正规就业对青年婚姻动机的影响及其机制",
+    "authors": [
+      "周思思"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026004010&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第4期",
+    "discovered_at": "2026-10-01T18:00:37.945193+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026004010",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "非正规就业",
+      "婚姻动机",
+      "经济收入",
+      "社会保障",
+      "性别平等意识"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:4",
+    "published_at_display": "2026-07-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "非正规就业",
+      "婚姻动机",
+      "经济收入",
+      "社会保障",
+      "性别平等意识"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "youth-2026-zhou-informal-employment-marriage",
+    "private_source_record_sha256": "0ac8c37fde4e9f1f09031d4ac220149bea14bf14350b7a126b63f8485fef5553"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003001",
+    "external_id": "QNYJ2026003001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "面向实践的青年研究——知识类型、学科发展与自主知识体系构建",
+    "authors": [
+      "郑浩",
+      "范策"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "知识类型",
+      "学科",
+      "自主知识体系"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "知识类型",
+      "学科",
+      "自主知识体系"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003001",
+    "private_source_record_sha256": "cc8eae82d505036dd2fcfae75b8946c62be108bbf20a841c63a1a8e1348b3266"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003002",
+    "external_id": "QNYJ2026003002",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "在公共阅读空间中：青年的“稳定想象”与城市认同建构",
+    "authors": [
+      "林一民"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003002&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003002",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "流动",
+      "稳定想象",
+      "城市认同",
+      "公共阅读空间",
+      "地方"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "流动",
+      "稳定想象",
+      "城市认同",
+      "公共阅读空间",
+      "地方"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003002",
+    "private_source_record_sha256": "1b93ae819233cbf11e588e12bdd41d32b2c671232ccf980104a9609d2fa53e1e"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003003",
+    "external_id": "QNYJ2026003003",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "信息透明化何以提升居民厨余垃圾分类意愿？——兼论青年与非青年的差异",
+    "authors": [
+      "吴佳峻",
+      "游晓庆",
+      "刘迟"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003003&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003003",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "信息透明化",
+      "垃圾分类意愿",
+      "厨余垃圾",
+      "黑水虻生物转化技术"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "信息透明化",
+      "垃圾分类意愿",
+      "厨余垃圾",
+      "黑水虻生物转化技术"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003003",
+    "private_source_record_sha256": "4d02af4dc743b05be6318570bcf7f265e8de14ee448f7b6f8ae6a53da6838ab1"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003004",
+    "external_id": "QNYJ2026003004",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "情感劳动的制度性约束——12345热线青年话务员的劳动研究",
+    "authors": [
+      "邵力",
+      "董之晓"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "12345",
+      "热线",
+      "青年话务员",
+      "情感劳动",
+      "制度性约束"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "12345",
+      "热线",
+      "青年话务员",
+      "情感劳动",
+      "制度性约束"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003004",
+    "private_source_record_sha256": "8749a77002c3fbe2ba36b95779a0b12212d5326291ce07b7b9333c95e7355bc1"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003005",
+    "external_id": "QNYJ2026003005",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "数智社会的公共关联构建模式——基于青年程序员志愿服务实践的思考",
+    "authors": [
+      "罗婧",
+      "许宇童"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "程序员",
+      "志愿服务",
+      "数智社会",
+      "公共性",
+      "社会治理现代化"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "程序员",
+      "志愿服务",
+      "数智社会",
+      "公共性",
+      "社会治理现代化"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003005",
+    "private_source_record_sha256": "ceab654f2c4f664833a69ac0ec3bfa28ae84f5ba7cde0e06f6aee74ce1438071"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003006",
+    "external_id": "QNYJ2026003006",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "数字原住民的“作茧自缚”——信息茧房的世代差异与网络依赖机制",
+    "authors": [
+      "尉建文",
+      "李海珠",
+      "韩杨",
+      "赵延东"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "信息茧房",
+      "数字原住民",
+      "网络依赖性"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "信息茧房",
+      "数字原住民",
+      "网络依赖性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003006",
+    "private_source_record_sha256": "de17a8ac40eb59d59405954cfffe35ee3446f5ffc1b7d79c6ce374add20beaad"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003007",
+    "external_id": "QNYJ2026003007",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "代行亲职：县域高中师生关系的类亲属性探析",
+    "authors": [
+      "郑雅君"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "师生关系",
+      "县域",
+      "家校社共育"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "师生关系",
+      "县域",
+      "家校社共育"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003007",
+    "private_source_record_sha256": "59f53832f2d2af1919eeeaebae8029bf1ee32aa64576f6a6534cfa0b97937731"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003008",
+    "external_id": "QNYJ2026003008",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "促进还是抑制：住房产权对青年生育的影响",
+    "authors": [
+      "马静",
+      "魏万青"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "住房产权",
+      "生育意愿",
+      "生育行为"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "住房产权",
+      "生育意愿",
+      "生育行为"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003008",
+    "private_source_record_sha256": "94df9c5d0b90636de7fc19f36dbd8aeba1bdc862c780e2bff223950ba7d12a42"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003009",
+    "external_id": "QNYJ2026003009",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "身份协商与认同分化——中国高校华裔留学生的日常实践",
+    "authors": [
+      "田园",
+      "严飞"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003009&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003009",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "华裔留学生",
+      "情境化",
+      "身份认同",
+      "协同整合"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "华裔留学生",
+      "情境化",
+      "身份认同",
+      "协同整合"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003009",
+    "private_source_record_sha256": "656dfdf107226f4ab3fbbd97bf100d7af11463b01e74000a3a3d45a7a7b67ee3"
+  },
+  {
+    "id": "ncpssd-QNYJ2026003010",
+    "external_id": "QNYJ2026003010",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "定制监督与付费自律——基于青年“线上付费监督”现象的分析",
+    "authors": [
+      "薛媛媛"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2026003010&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2026年第3期",
+    "discovered_at": "2026-10-01T18:00:40.263567+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2026003010",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "监督",
+      "自律",
+      "商品化",
+      "情感消费"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2026:3",
+    "published_at_display": "2026-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "监督",
+      "自律",
+      "商品化",
+      "情感消费"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2026003010",
+    "private_source_record_sha256": "b7bee67ac0534c31ed1f00e99795529d5565998147629da90fcfbeaf9ec2d407"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002001",
+    "external_id": "QNYJ2025002001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "谁想成为一流科技领军人才？——青年科研人员的职业抱负及其影响因",
+    "authors": [
+      "赵延东",
+      "陈彦冰",
+      "卢阳旭"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "科研人员",
+      "职业抱负",
+      "青年",
+      "科学家精神"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "科研人员",
+      "职业抱负",
+      "青年",
+      "科学家精神"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002001",
+    "private_source_record_sha256": "211b6cd27c8aedeb7f9ebbc1d32630d1272e6dabae6a666d833dae49bdeba003"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002002",
+    "external_id": "QNYJ2025002002",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "睦邻之道：来华青年外商的资本转换与社会融入",
+    "authors": [
+      "高孟然"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002002&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002002",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "来华青年外商",
+      "义乌",
+      "资本转换",
+      "社会融入"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "来华青年外商",
+      "义乌",
+      "资本转换",
+      "社会融入"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002002",
+    "private_source_record_sha256": "0682dbdf3d92c71a83115b1019f0493478e78f79842b90de3bc4cdd340362ec8"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002003",
+    "external_id": "QNYJ2025002003",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "县域亲代抚育的恢复——中西部地区新生代农民工家庭抚育方式的转变机制",
+    "authors": [
+      "欧阳杜菲",
+      "刘能"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002003&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002003",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "县域城镇化",
+      "农民工回流",
+      "亲代抚育",
+      "隔代抚育",
+      "抚育观念"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "县域城镇化",
+      "农民工回流",
+      "亲代抚育",
+      "隔代抚育",
+      "抚育观念"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002003",
+    "private_source_record_sha256": "3e49df94fdb2db047764ec2caba7cdf2ae6df7d25362a79f244528e340d1a152"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002004",
+    "external_id": "QNYJ2025002004",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "流动儿童的家庭教养方式与学校适应",
+    "authors": [
+      "於阅",
+      "李骏"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "流动儿童",
+      "家庭教养方式",
+      "学校适应"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "流动儿童",
+      "家庭教养方式",
+      "学校适应"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002004",
+    "private_source_record_sha256": "0a30591fd2d9f20b88854fc59f52c66507af3b277daa1d1a4297546be3466541"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002005",
+    "external_id": "QNYJ2025002005",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "双重累积与双重转折：城市白领青年离婚的现实诱因及发生机制",
+    "authors": [
+      "杨发祥",
+      "张肖蒙"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "城市白领青年",
+      "双重累积",
+      "双重转折",
+      "婚姻价值",
+      "离婚叙事"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "城市白领青年",
+      "双重累积",
+      "双重转折",
+      "婚姻价值",
+      "离婚叙事"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002005",
+    "private_source_record_sha256": "14ad92f4852fc365ad5c7f2efa16335defc09d7c62cc42d9e7ba919889883e69"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002006",
+    "external_id": "QNYJ2025002006",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "城市白领青年的人宠家庭实践及其逻辑",
+    "authors": [
+      "李升",
+      "邵雨齐"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青年家庭",
+      "宠物养育",
+      "家庭实践",
+      "家庭情感"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青年家庭",
+      "宠物养育",
+      "家庭实践",
+      "家庭情感"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002006",
+    "private_source_record_sha256": "c21a890d15da29d10e72c5f9291dfd69a1a1841979e8f751d5bd6547f6a41b34"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002007",
+    "external_id": "QNYJ2025002007",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "住房与教育对青年初婚缔结的影响研究",
+    "authors": [
+      "于皓",
+      "方长春"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "初婚缔结",
+      "社会经济地位",
+      "住房",
+      "教育"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "初婚缔结",
+      "社会经济地位",
+      "住房",
+      "教育"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002007",
+    "private_source_record_sha256": "96951d87e76ceeb3529850a1e98386267493ec4b6df857694a09c4b739d1f35c"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002008",
+    "external_id": "QNYJ2025002008",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "工具性与价值性：教育对分配公平观的影响",
+    "authors": [
+      "严米平"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "分配公平观",
+      "绩效主义",
+      "平均主义",
+      "个体",
+      "主义观念"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "分配公平观",
+      "绩效主义",
+      "平均主义",
+      "个体",
+      "主义观念"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002008",
+    "private_source_record_sha256": "4a313d424ce075100830d2914aa3084484ffa0471a29e35702d4efde60cd79d6"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002009",
+    "external_id": "QNYJ2025002009",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "城市家庭代际关系的新实践——基于“全职儿女”现象的实证研究",
+    "authors": [
+      "潘泽泉",
+      "欧阳静雅"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002009&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002009",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "拟职业型代际关系",
+      "全职儿女",
+      "关系运作城市家庭代际关系"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "拟职业型代际关系",
+      "全职儿女",
+      "关系运作城市家庭代际关系"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002009",
+    "private_source_record_sha256": "8429fa06eeca5dd901aa37465fc05a7802e2c068dc8adc1b6e7ee9bdde7bf033"
+  },
+  {
+    "id": "ncpssd-QNYJ2025002010",
+    "external_id": "QNYJ2025002010",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "榜样与竞争：班级同辈群体如何影响青少年的体育活动参与",
+    "authors": [
+      "宋庆宇",
+      "张帆"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025002010&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第2期",
+    "discovered_at": "2026-10-01T18:00:32.982573+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=2&num2=2&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025002010",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "体育活动参与",
+      "同辈群体",
+      "榜样效应",
+      "竞争效应"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:2",
+    "published_at_display": "2025-03-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "体育活动参与",
+      "同辈群体",
+      "榜样效应",
+      "竞争效应"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025002010",
+    "private_source_record_sha256": "5515c87bfe4b070cafb4b578214aef88a43dd46bf23663e716e812102fe43662"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005001",
+    "external_id": "QNYJ2025005001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "青年如何使用数字技术走向村治中心？",
+    "authors": [
+      "刘金龙"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "数字治理",
+      "平台管理员",
+      "社会网络分析"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数字治理",
+      "平台管理员",
+      "社会网络分析"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005001",
+    "private_source_record_sha256": "ba9907cf6371202a5fbba44c6c790d070fdeaf5b42e3fda4ced39ecdc31cdf92"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005002",
+    "external_id": "QNYJ2025005002",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "文化资本如何生效——学业成就分化的内在机制与学校教育倾向差异",
+    "authors": [
+      "葛霆",
+      "吴晨硕"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005002&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005002",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "文化资本",
+      "学业成就分化",
+      "教育制度改革素质教育"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "文化资本",
+      "学业成就分化",
+      "教育制度改革素质教育"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005002",
+    "private_source_record_sha256": "674fc196614008abf2019c7e22c50fe079491c3f84b16301fa71034887e39a5b"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005003",
+    "external_id": "QNYJ2025005003",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "学会做家长：幼升小课外补习班如何塑造中产家庭的文化资本",
+    "authors": [
+      "孙婷",
+      "许佳君"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005003&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005003",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "家庭教育培训",
+      "文化资本",
+      "中产阶层"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "家庭教育培训",
+      "文化资本",
+      "中产阶层"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005003",
+    "private_source_record_sha256": "dc8618f5aa4f7441662126ed75e8074eed6bbf50a20c4e3355aa1f6297ef274d"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005004",
+    "external_id": "QNYJ2025005004",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "再见爱人：关联生活视角下青年女性的离婚抉择",
+    "authors": [
+      "杜世超",
+      "沈奕斐"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青年女性",
+      "离婚",
+      "关联生活",
+      "婚姻稳定性"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青年女性",
+      "离婚",
+      "关联生活",
+      "婚姻稳定性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005004",
+    "private_source_record_sha256": "0fa1fef0fce5db47160ed436b65fd3549768a5cba166f1bf5f4515d12b579fd9"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005005",
+    "external_id": "QNYJ2025005005",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "弱化的纽带：诉讼离婚决策的性别差异及子女效应",
+    "authors": [
+      "杨博文",
+      "刘林平"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "离婚决策",
+      "诉讼离婚",
+      "性别差异",
+      "子女效应世代变迁"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "离婚决策",
+      "诉讼离婚",
+      "性别差异",
+      "子女效应世代变迁"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005005",
+    "private_source_record_sha256": "91375e21dd68bbc36143c2d3b626e9ef9b09d9fb6cdf27f30fd7388e31236373"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005006",
+    "external_id": "QNYJ2025005006",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "现代性的止痛片——塔罗亚文化的社会学阐释",
+    "authors": [
+      "廉思",
+      "吕芃馨"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "现代性",
+      "玄学亚文化",
+      "塔罗",
+      "意义生产"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "现代性",
+      "玄学亚文化",
+      "塔罗",
+      "意义生产"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005006",
+    "private_source_record_sha256": "1eed5b399f40c1d13dcd72504bd0e482a7e0cb7c5262639b1abe645475363688"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005007",
+    "external_id": "QNYJ2025005007",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "职业认同还是资产认同？——特大城市青年群体地位认同的倾向与形成机制",
+    "authors": [
+      "杨城晨",
+      "张海东"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "流动经历",
+      "社会预期",
+      "地位认同"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "流动经历",
+      "社会预期",
+      "地位认同"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005007",
+    "private_source_record_sha256": "d224815b318c450fcbf97fc067b3105d14b4235a6b1ae3985c7440010b91d3c7"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005008",
+    "external_id": "QNYJ2025005008",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "数字时代的脱嵌与重联——个体化视角下青年的自我表达与关系重构",
+    "authors": [
+      "张瑞辰",
+      "卢昆仑"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "个体化",
+      "脱嵌",
+      "关系重构",
+      "本真自我"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "个体化",
+      "脱嵌",
+      "关系重构",
+      "本真自我"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005008",
+    "private_source_record_sha256": "40d44527c7add32bb5ee0a211fab173da9c8070b50f3ea4d91cb7babf8be7b67"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005009",
+    "external_id": "QNYJ2025005009",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "夹缝中的母职实践：“学术妈妈”的焦虑体验及缓解策略",
+    "authors": [
+      "李胜蓝"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005009&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005009",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "学术妈妈",
+      "焦虑",
+      "责任意识",
+      "母职"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "学术妈妈",
+      "焦虑",
+      "责任意识",
+      "母职"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005009",
+    "private_source_record_sha256": "02bd7007d3409cdf15593e9b67f4d579274163f614d7fb842689b50ed9999ef7"
+  },
+  {
+    "id": "ncpssd-QNYJ2025005010",
+    "external_id": "QNYJ2025005010",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "议题、图景与反思：中国教育社会学研究综述（2009—2024）",
+    "authors": [
+      "周龙宇"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025005010&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "published_at": "2025-09-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第5期",
+    "discovered_at": "2026-10-01T18:00:24.976467+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=5&num2=5&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025005010",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "教育社会学",
+      "中国教育转型",
+      "知识分离"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:5",
+    "published_at_display": "2025-09-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "教育社会学",
+      "中国教育转型",
+      "知识分离"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025005010",
+    "private_source_record_sha256": "ed3eee5b455be5e358eb9f841287744e4dee9d1ae24b939b7ea7b1c7fd1b311e"
+  },
+  {
+    "id": "ncpssd-QNYJ2025003001",
+    "external_id": "QNYJ2025003001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "价值耦合：分配原则建构青年国家认同的机制",
+    "authors": [
+      "黄种滨"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2025003001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "published_at": "2025-05-30",
+    "published_at_precision": "day",
+    "source_published_at": "2025年第3期",
+    "discovered_at": "2026-10-01T18:00:30.464960+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=3&num2=3&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2025003001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "社会福利",
+      "分配原则",
+      "公平感知",
+      "国家认同",
+      "调查实验"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2025:3",
+    "published_at_display": "2025-05-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社会福利",
+      "分配原则",
+      "公平感知",
+      "国家认同",
+      "调查实验"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2025003001",
+    "private_source_record_sha256": "88e0517e5703d1791d06095fbc33f2b62573b5ad7771705ef19e77015cb17ea1"
+  }
+]

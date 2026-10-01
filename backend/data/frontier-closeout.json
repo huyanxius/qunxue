@@ -1,0 +1,1500 @@
+{
+  "$format": "qunxue-json-shards-v1",
+  "kind": "records",
+  "count": 3607,
+  "canonical_sha256": "7d6a534a6f3187935084217994e09f0eb6ab6df14c155a3cef4f058f8bf8ee7e",
+  "parts": [
+    {
+      "path": "frontier-closeout.parts/001.json",
+      "sha256": "a06471c5a5784ab262321187226158c62438ce56f0ef5a3c5925316a20789202",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/002.json",
+      "sha256": "220a15beaef385cd9fec6676dbedcdcdc997cfc7bd7f3413e3289a750ea54880",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/003.json",
+      "sha256": "07de03d9d66f08df5ccbf578f2c1acc5f0716ded0161e3383b0e13980a716d70",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/004.json",
+      "sha256": "6e04d4c057f6944d07cbea5ff215c4fc9f572bd599bc339e002607a64d581dce",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/005.json",
+      "sha256": "f63aae0d546998be9af764d6acb627c06e42a908938b73f61e78c6e75dbdf85a",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/006.json",
+      "sha256": "97866cd96bcb878f09a31b14bb4697ba4807bb3ff5e25a73071c83f8f4482f0d",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/007.json",
+      "sha256": "6834ffd26841bc53e2cdc1a4f88762a9ca9235fc2273f332486ea0063f04f45b",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/008.json",
+      "sha256": "76963ac7dc68dc374fa33fae7da1fa6f1c649f4ecd07d834f8e5627b6cf21efd",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/009.json",
+      "sha256": "6d2c3b513d2072c9cf7744d03df340a026df002883141f3d578c19e5d16e2f8a",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/010.json",
+      "sha256": "f5fdd83be6c89145af633d06a683903aa8c0cec6be3629fb3efe483c09f001dc",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/011.json",
+      "sha256": "caf2ed345ac56a84dbc937a7a7afe930912fcd5bfe3b6894c6e77b687220a447",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/012.json",
+      "sha256": "34f194c0e96cbb79aefc30793cc96bce399a86fce6cdf39142ad75e126a5e889",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/013.json",
+      "sha256": "927f81a777e3e58b7e382aeae7db95ddea2320b3183e154000f44cabb74b459d",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/014.json",
+      "sha256": "41e706e62a92b8a348346dcd223d835071ef3ff489c901de3e4e1cfff3e6fa03",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/015.json",
+      "sha256": "77c75f5ca3ae25aeee8b7ea2dbfedad98d9dcf18f8dd0c71bbbef1b11d71e646",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/016.json",
+      "sha256": "28b0cbc55d13f8fc706a1e25e68220bbb5194533a7cbf5f3bbd4f9e29f588470",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/017.json",
+      "sha256": "432502f32f8d15d1e32279e5ce591dbffc36b89541557783d36d41348192c48c",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/018.json",
+      "sha256": "8e232fce8abe9a99ec513ceda3dd25f04ab0921f8c804e26ce20e3d278ac4b6d",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/019.json",
+      "sha256": "cf5390416a65d753549575c4daf9f98a468f675f254fb3d72b9c0f3e306cfacd",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/020.json",
+      "sha256": "73dd82864730e75c29dc77079cea93e44f40139bec891d1e39cb3ffdf87d76d5",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/021.json",
+      "sha256": "b2940afb458b6a08605d7efae72563e4a6b5f7ada0afefdfcfed7f8bd1cbf96e",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/022.json",
+      "sha256": "824540539f5b105333f3d2097bd69ad1d6ba3669951d2a0ad7e9c55d3821c9dd",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/023.json",
+      "sha256": "e8b9311d36bb811419b60d8a8b315b2a5448d16e4db38f034eb63e5f8baf34f7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/024.json",
+      "sha256": "3d521731b058033aa1e952241bea6e6033678b8ae560f3c2f1eba416e09ab990",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/025.json",
+      "sha256": "b8e37991bbfbf898698392fec46ad46e93516d52313cea8fd27e681566fb6a2a",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/026.json",
+      "sha256": "7f7c33fa4fed1c6253f5b4d1ec21ce496651971183ac116d5a315a1f9752b44f",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/027.json",
+      "sha256": "051a8c2c2da04aa6d57f6c4a3233275103ac0136b26bf6cc6cc3dc6e44694e49",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/028.json",
+      "sha256": "e80d87d49be911ca903aa501da9fb546c1c7740de3fbe5ac2976aa6adf81a614",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/029.json",
+      "sha256": "24767f9c7d9b388b004dfae1724a0c9077b968c968313da469cd791424785514",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/030.json",
+      "sha256": "6031ae67fb57cc10e85e85d0f528f53ef8eb0f6879c9946e6f3501072edd5aa3",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/031.json",
+      "sha256": "2927a8b480ef1e6761df1dbf427e7f83ef6452457192d00f78e9326b83773f80",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/032.json",
+      "sha256": "28b6e07d334c60e53f8e5ee277f53d051121afa7d4348f11d32113437244afdf",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/033.json",
+      "sha256": "6da46aeb11a1bcd18ef3093c3572438099435928feed75d95e7e13f64d1db66e",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/034.json",
+      "sha256": "5dc4010e6dbd66e03db1ba7e20796195df5556f7d04ebe790e1b71b217b4dacc",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/035.json",
+      "sha256": "843a27b1818a8cb877f533045992a76c9ff274fa3bbf2ceba221212e897c12d3",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/036.json",
+      "sha256": "94af5e145d02fa4fae2ac2cafeb2575f6ead64f48ddb775d3aae91a20bda19a7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/037.json",
+      "sha256": "d46b67dc8ee8e023411fbabea2eb864b7fff5f39d35eac02c2ca457ced29c58c",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/038.json",
+      "sha256": "35e9a1a69f6ba4df04cc7dc731d0284b7daaf9c6e918b5a5d23f9ade564f6643",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/039.json",
+      "sha256": "b0c97aec9f61e351d266c2a1456c7705d1192753c122e00a8cfa717f63ef3aee",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/040.json",
+      "sha256": "edb8f3089fa788b16564a139f45f5ecacacd702e5ae2fbf137bfa40ee9cf1db6",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/041.json",
+      "sha256": "f2f5c9fffc6040583869ab56b1b6bb091a85b2d8af5aee1c6d08c2c51d9dff21",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/042.json",
+      "sha256": "cd5e2b024695ca920172d147f778ce3e7650125821bef6ea645ae9ba204679c3",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/043.json",
+      "sha256": "e3ff2929cee17161145fdeed2b8154ef521549486aeacff28aef0bd94fbdf337",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/044.json",
+      "sha256": "b0e814d8d0f992ab435cd6cf45d9bc97544f794a313ce55b20b6e04ce36f9802",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/045.json",
+      "sha256": "4ea7aa7401f2f265b50940dae3f213cb57b9e463c2ca8c7a6ac949f8f9954322",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/046.json",
+      "sha256": "46bba15822354f7da84e02c27fb5f1e0267992fff35117cd5d5727f20c91ace4",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/047.json",
+      "sha256": "27ece67010125f29ec37c89880a1d2fe7e006baee09077e74aa8215588ddf17a",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/048.json",
+      "sha256": "ab0f45f58bd650a55e9a7dda145a8b04a02a123933c6f04056605e3a79312b8c",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/049.json",
+      "sha256": "42280cb86b6fe7c1ea8a8b4fde0217d491370ba6f0de79116d509784e03d4d37",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/050.json",
+      "sha256": "409229f841502af2810071f3868a3117a3e6e94ea5aa6b1dcf4af4fca568598d",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/051.json",
+      "sha256": "184778026c89c127912bfcece13f71b1e7910098f5b52b8738830f0109a26b27",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/052.json",
+      "sha256": "0943f58c4f7b14e5126a2728750ab5e1776a95579f467161b15ed02e1b6308a8",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/053.json",
+      "sha256": "4a6e0d96e1cac59991ded966c5223ee2f67efba67538dde7140f470ac9ec21b0",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/054.json",
+      "sha256": "c9c352593e25a345f249a328ef4045efb331e8c2f30d54f0d987730283581090",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/055.json",
+      "sha256": "57dc87f60ec68df86527e984f0efcf079ef5938cc2815dc46f657b3fb3635ffb",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/056.json",
+      "sha256": "7366cd881a63c76b0f6825b6ced0ca555c5a3a41149b0289a3a5c0fda60b8491",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/057.json",
+      "sha256": "8d33a492e45d4bdf9a27dd45b3bc687339e80aa0e83c3865bee2dc0c1cb1d155",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/058.json",
+      "sha256": "50169e1c082141ddb81d7e1c14f1afb5131c812fabb80df3244f9e65843fa8af",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/059.json",
+      "sha256": "73111d0641c7bb2c841ba9aaddf94e57859468466d76f516d22ef80e5cbb4cad",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/060.json",
+      "sha256": "5d6116f7b91c080bd9f4bf59f516fa4b0cdd6a5813c65603b70957391ad1f9e7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/061.json",
+      "sha256": "f80cb8d970f55ebe3c481921c27b83676a484584fb3adcb7431e84fc1de86093",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/062.json",
+      "sha256": "5a403a28d751e18f11ebc1160b60009b80e4fa3b63a99f1f342a8bb3822717bf",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/063.json",
+      "sha256": "30082922aed74e65d2db026b5c7da778e650f5100f772d9e10a6f7474907200f",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/064.json",
+      "sha256": "cacc1561eab6507a659d3b3b509b4dbbfafbd3f99a357e3f4a7a1bc67439b520",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/065.json",
+      "sha256": "abc1bbbf794f6a490290e464af31a558e208d771f40ab84d7339e0980e9de0fc",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/066.json",
+      "sha256": "a01eff9aa94dad014ccf7eee4906d4669baa07adb9ae51295ef7a347904328bb",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/067.json",
+      "sha256": "0b351138d1c0d66b6039efc99127ed8fc738dd88595e921883deadea5a595e50",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/068.json",
+      "sha256": "e263548096583c4ee0d569c2bca320f21cda8c3a391b0851aee108b4bb418434",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/069.json",
+      "sha256": "c8520ed864636ca9be70a638ec014016bbba5ec28e85285812d071e9eef790d7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/070.json",
+      "sha256": "5bbab0c8508a1af2a93a7bb64b1d9e269d70540aa74f461c28cd7e87f1b41d26",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/071.json",
+      "sha256": "d0f00ad4d3b7d4ace5a46042ac0ed51580bad9c669229f033e08609b98979be7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/072.json",
+      "sha256": "cf84497550214fa169f416ce7f4bdb5b45934d2e10fd20d307933d23d04817d6",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/073.json",
+      "sha256": "fb6a1349473002b1a5187fecd61c4d92df98959ead74e0689837e6c807e1b4f7",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/074.json",
+      "sha256": "39fd637493c84a6958a2eb25453958f9394fcf33fd6e9006b0968e736c5a83ed",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/075.json",
+      "sha256": "051d8f14a0d164aa85289ff953dd2de97295130edffe396e39af83482ef38b69",
+      "count": 48
+    },
+    {
+      "path": "frontier-closeout.parts/076.json",
+      "sha256": "9712d04f7fcd6ccfbaf8de6abda0df65aaca02b2d14ea90cd1143d761a1793f8",
+      "count": 7
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-10-01T20:00:00+00:00",
+    "sampling_strategy": "explicit_offline_indexed_issue_and_newspaper_metadata_import",
+    "issue_coverage": [
+      {
+        "issue_id": "fixed:sociological-studies:2025:1,2,3,4,5,6",
+        "source_id": "sociological-studies",
+        "publication_year": 2025,
+        "period": "2025",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "sociological-studies:2025:1",
+          "sociological-studies:2025:2",
+          "sociological-studies:2025:3",
+          "sociological-studies:2025:4",
+          "sociological-studies:2025:5",
+          "sociological-studies:2025:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 66,
+        "readable_count": 66,
+        "included_count": 59,
+        "analyzed_count": 59,
+        "excluded_nonresearch_count": 7,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:ee3a04d35e7cf63248447ae747cb104818604f16f301e30fbea8c2486eefa619:records:2025:issues:1,2,3,4,5,6",
+          "manifest:exclusions:sociological-studies:2025"
+        ],
+        "issue_url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "research_record_ids": [
+          "ncpssd-SHXYJ2025003003",
+          "shxyj-117812",
+          "shxyj-117813",
+          "shxyj-117814",
+          "shxyj-117815",
+          "shxyj-117816",
+          "shxyj-117817",
+          "shxyj-117818",
+          "shxyj-117819",
+          "shxyj-117820",
+          "shxyj-117821",
+          "shxyj-118226",
+          "shxyj-118227",
+          "shxyj-118228",
+          "shxyj-118229",
+          "shxyj-118230",
+          "shxyj-118231",
+          "shxyj-118232",
+          "shxyj-118233",
+          "shxyj-118234",
+          "shxyj-118688",
+          "shxyj-118689",
+          "shxyj-118691",
+          "shxyj-118692",
+          "shxyj-118693",
+          "shxyj-118694",
+          "shxyj-118695",
+          "shxyj-118696",
+          "shxyj-118697",
+          "shxyj-119330",
+          "shxyj-119331",
+          "shxyj-119332",
+          "shxyj-119333",
+          "shxyj-119334",
+          "shxyj-119335",
+          "shxyj-119336",
+          "shxyj-119337",
+          "shxyj-119338",
+          "shxyj-119339",
+          "shxyj-120725",
+          "shxyj-120726",
+          "shxyj-120727",
+          "shxyj-120728",
+          "shxyj-120729",
+          "shxyj-120730",
+          "shxyj-120731",
+          "shxyj-120732",
+          "shxyj-120733",
+          "shxyj-120734",
+          "shxyj-121285",
+          "shxyj-121286",
+          "shxyj-121287",
+          "shxyj-121288",
+          "shxyj-121289",
+          "shxyj-121290",
+          "shxyj-121291",
+          "shxyj-121292",
+          "shxyj-121293",
+          "shxyj-121294"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHXYJ2025006011",
+          "shxyj-117811",
+          "shxyj-118225",
+          "shxyj-118235",
+          "shxyj-119340",
+          "shxyj-120735",
+          "shxyj-121295"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:sociological-studies:2026:1,2,3,4,5",
+        "source_id": "sociological-studies",
+        "publication_year": 2026,
+        "period": "2026",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "sociological-studies:2026:1",
+          "sociological-studies:2026:2",
+          "sociological-studies:2026:3",
+          "sociological-studies:2026:4",
+          "sociological-studies:2026:5"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 55,
+        "readable_count": 55,
+        "included_count": 50,
+        "analyzed_count": 50,
+        "excluded_nonresearch_count": 5,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:ee3a04d35e7cf63248447ae747cb104818604f16f301e30fbea8c2486eefa619:records:2026:issues:1,2,3,4,5",
+          "manifest:exclusions:sociological-studies:2026"
+        ],
+        "issue_url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "research_record_ids": [
+          "shxyj-121904",
+          "shxyj-121905",
+          "shxyj-121906",
+          "shxyj-121907",
+          "shxyj-121908",
+          "shxyj-121909",
+          "shxyj-121910",
+          "shxyj-121911",
+          "shxyj-121912",
+          "shxyj-121913",
+          "shxyj-122484",
+          "shxyj-122485",
+          "shxyj-122486",
+          "shxyj-122487",
+          "shxyj-122488",
+          "shxyj-122489",
+          "shxyj-122490",
+          "shxyj-122491",
+          "shxyj-122492",
+          "shxyj-122493",
+          "shxyj-122854",
+          "shxyj-122855",
+          "shxyj-122856",
+          "shxyj-122857",
+          "shxyj-122858",
+          "shxyj-122859",
+          "shxyj-122860",
+          "shxyj-122861",
+          "shxyj-122862",
+          "shxyj-122863",
+          "shxyj-123238",
+          "shxyj-123239",
+          "shxyj-123240",
+          "shxyj-123241",
+          "shxyj-123242",
+          "shxyj-123243",
+          "shxyj-123244",
+          "shxyj-123245",
+          "shxyj-123246",
+          "shxyj-123247",
+          "shxyj-123567",
+          "shxyj-123568",
+          "shxyj-123569",
+          "shxyj-123570",
+          "shxyj-123571",
+          "shxyj-123572",
+          "shxyj-123573",
+          "shxyj-123574",
+          "shxyj-123575",
+          "shxyj-123576"
+        ],
+        "excluded_record_ids": [
+          "shxyj-121903",
+          "shxyj-122483",
+          "shxyj-122853",
+          "shxyj-123237",
+          "shxyj-123577"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:sociological-studies:2023:1,2,3,4,5,6",
+        "source_id": "sociological-studies",
+        "publication_year": 2023,
+        "period": "2023",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "sociological-studies:2023:1",
+          "sociological-studies:2023:2",
+          "sociological-studies:2023:3",
+          "sociological-studies:2023:4",
+          "sociological-studies:2023:5",
+          "sociological-studies:2023:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 61,
+        "readable_count": 61,
+        "included_count": 60,
+        "analyzed_count": 60,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:24fa840cc045f6b4d291ea2c99b2c4e4b74fc46205bf334dfab41ded9ef202d8:records:2023:issues:1,2,3,4,5,6",
+          "manifest:exclusions:sociological-studies:2023"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80772X&langType=1&nav=1&num=1&years=2023",
+        "research_record_ids": [
+          "ncpssd-SHXYJ2023001001",
+          "ncpssd-SHXYJ2023001002",
+          "ncpssd-SHXYJ2023001003",
+          "ncpssd-SHXYJ2023001004",
+          "ncpssd-SHXYJ2023001005",
+          "ncpssd-SHXYJ2023001006",
+          "ncpssd-SHXYJ2023001007",
+          "ncpssd-SHXYJ2023001008",
+          "ncpssd-SHXYJ2023001009",
+          "ncpssd-SHXYJ2023001010",
+          "ncpssd-SHXYJ2023002001",
+          "ncpssd-SHXYJ2023002002",
+          "ncpssd-SHXYJ2023002003",
+          "ncpssd-SHXYJ2023002004",
+          "ncpssd-SHXYJ2023002005",
+          "ncpssd-SHXYJ2023002006",
+          "ncpssd-SHXYJ2023002007",
+          "ncpssd-SHXYJ2023002008",
+          "ncpssd-SHXYJ2023002009",
+          "ncpssd-SHXYJ2023002010",
+          "ncpssd-SHXYJ2023003001",
+          "ncpssd-SHXYJ2023003002",
+          "ncpssd-SHXYJ2023003003",
+          "ncpssd-SHXYJ2023003004",
+          "ncpssd-SHXYJ2023003005",
+          "ncpssd-SHXYJ2023003006",
+          "ncpssd-SHXYJ2023003007",
+          "ncpssd-SHXYJ2023003008",
+          "ncpssd-SHXYJ2023003009",
+          "ncpssd-SHXYJ2023003010",
+          "ncpssd-SHXYJ2023004001",
+          "ncpssd-SHXYJ2023004002",
+          "ncpssd-SHXYJ2023004003",
+          "ncpssd-SHXYJ2023004004",
+          "ncpssd-SHXYJ2023004005",
+          "ncpssd-SHXYJ2023004006",
+          "ncpssd-SHXYJ2023004007",
+          "ncpssd-SHXYJ2023004008",
+          "ncpssd-SHXYJ2023004009",
+          "ncpssd-SHXYJ2023004010",
+          "ncpssd-SHXYJ2023005001",
+          "ncpssd-SHXYJ2023005002",
+          "ncpssd-SHXYJ2023005003",
+          "ncpssd-SHXYJ2023005004",
+          "ncpssd-SHXYJ2023005005",
+          "ncpssd-SHXYJ2023005006",
+          "ncpssd-SHXYJ2023005007",
+          "ncpssd-SHXYJ2023005008",
+          "ncpssd-SHXYJ2023005009",
+          "ncpssd-SHXYJ2023005010",
+          "ncpssd-SHXYJ2023006001",
+          "ncpssd-SHXYJ2023006002",
+          "ncpssd-SHXYJ2023006003",
+          "ncpssd-SHXYJ2023006004",
+          "ncpssd-SHXYJ2023006005",
+          "ncpssd-SHXYJ2023006006",
+          "ncpssd-SHXYJ2023006007",
+          "ncpssd-SHXYJ2023006008",
+          "ncpssd-SHXYJ2023006009",
+          "ncpssd-SHXYJ2023006010"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHXYJ2023006011"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:sociological-studies:2024:1,2,3,4,5,6",
+        "source_id": "sociological-studies",
+        "publication_year": 2024,
+        "period": "2024",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "sociological-studies:2024:1",
+          "sociological-studies:2024:2",
+          "sociological-studies:2024:3",
+          "sociological-studies:2024:4",
+          "sociological-studies:2024:5",
+          "sociological-studies:2024:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 61,
+        "readable_count": 61,
+        "included_count": 60,
+        "analyzed_count": 60,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:24fa840cc045f6b4d291ea2c99b2c4e4b74fc46205bf334dfab41ded9ef202d8:records:2024:issues:1,2,3,4,5,6",
+          "manifest:exclusions:sociological-studies:2024"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80772X&langType=1&nav=1&num=1&years=2024",
+        "research_record_ids": [
+          "ncpssd-SHXYJ2024001001",
+          "ncpssd-SHXYJ2024001002",
+          "ncpssd-SHXYJ2024001003",
+          "ncpssd-SHXYJ2024001004",
+          "ncpssd-SHXYJ2024001005",
+          "ncpssd-SHXYJ2024001006",
+          "ncpssd-SHXYJ2024001007",
+          "ncpssd-SHXYJ2024001008",
+          "ncpssd-SHXYJ2024001009",
+          "ncpssd-SHXYJ2024001010",
+          "ncpssd-SHXYJ2024002001",
+          "ncpssd-SHXYJ2024002002",
+          "ncpssd-SHXYJ2024002003",
+          "ncpssd-SHXYJ2024002004",
+          "ncpssd-SHXYJ2024002005",
+          "ncpssd-SHXYJ2024002006",
+          "ncpssd-SHXYJ2024002007",
+          "ncpssd-SHXYJ2024002008",
+          "ncpssd-SHXYJ2024002009",
+          "ncpssd-SHXYJ2024002010",
+          "ncpssd-SHXYJ2024003001",
+          "ncpssd-SHXYJ2024003002",
+          "ncpssd-SHXYJ2024003003",
+          "ncpssd-SHXYJ2024003004",
+          "ncpssd-SHXYJ2024003005",
+          "ncpssd-SHXYJ2024003006",
+          "ncpssd-SHXYJ2024003007",
+          "ncpssd-SHXYJ2024003008",
+          "ncpssd-SHXYJ2024003009",
+          "ncpssd-SHXYJ2024003010",
+          "ncpssd-SHXYJ2024004001",
+          "ncpssd-SHXYJ2024004002",
+          "ncpssd-SHXYJ2024004003",
+          "ncpssd-SHXYJ2024004004",
+          "ncpssd-SHXYJ2024004005",
+          "ncpssd-SHXYJ2024004006",
+          "ncpssd-SHXYJ2024004007",
+          "ncpssd-SHXYJ2024004008",
+          "ncpssd-SHXYJ2024004009",
+          "ncpssd-SHXYJ2024004010",
+          "ncpssd-SHXYJ2024005001",
+          "ncpssd-SHXYJ2024005002",
+          "ncpssd-SHXYJ2024005003",
+          "ncpssd-SHXYJ2024005004",
+          "ncpssd-SHXYJ2024005005",
+          "ncpssd-SHXYJ2024005006",
+          "ncpssd-SHXYJ2024005007",
+          "ncpssd-SHXYJ2024005008",
+          "ncpssd-SHXYJ2024005009",
+          "ncpssd-SHXYJ2024005010",
+          "ncpssd-SHXYJ2024006001",
+          "ncpssd-SHXYJ2024006002",
+          "ncpssd-SHXYJ2024006003",
+          "ncpssd-SHXYJ2024006004",
+          "ncpssd-SHXYJ2024006005",
+          "ncpssd-SHXYJ2024006006",
+          "ncpssd-SHXYJ2024006007",
+          "ncpssd-SHXYJ2024006008",
+          "ncpssd-SHXYJ2024006009",
+          "ncpssd-SHXYJ2024006010"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHXYJ2024006011"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:social-development:2025:1,2,3,4",
+        "source_id": "social-development",
+        "publication_year": 2025,
+        "period": "2025",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "social-development:2025:1",
+          "social-development:2025:2",
+          "social-development:2025:3",
+          "social-development:2025:4"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 46,
+        "readable_count": 46,
+        "included_count": 45,
+        "analyzed_count": 45,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:d9636c62f7391347dc8e42446d4e3097e26a88b55ce7d21ee4fe2c3c44b3026e:records:2025:issues:1,2,3,4",
+          "manifest:exclusions:social-development:2025"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2025&num=3&num2=3&langType=1",
+        "research_record_ids": [
+          "ncpssd-SHFZYJ2025001001",
+          "ncpssd-SHFZYJ2025001002",
+          "ncpssd-SHFZYJ2025001003",
+          "ncpssd-SHFZYJ2025001004",
+          "ncpssd-SHFZYJ2025001005",
+          "ncpssd-SHFZYJ2025001006",
+          "ncpssd-SHFZYJ2025001007",
+          "ncpssd-SHFZYJ2025001008",
+          "ncpssd-SHFZYJ2025001009",
+          "ncpssd-SHFZYJ2025001010",
+          "ncpssd-SHFZYJ2025001011",
+          "ncpssd-SHFZYJ2025001012",
+          "ncpssd-SHFZYJ2025002001",
+          "ncpssd-SHFZYJ2025002002",
+          "ncpssd-SHFZYJ2025002003",
+          "ncpssd-SHFZYJ2025002004",
+          "ncpssd-SHFZYJ2025002005",
+          "ncpssd-SHFZYJ2025002006",
+          "ncpssd-SHFZYJ2025002007",
+          "ncpssd-SHFZYJ2025002008",
+          "ncpssd-SHFZYJ2025002009",
+          "ncpssd-SHFZYJ2025002010",
+          "ncpssd-SHFZYJ2025002011",
+          "ncpssd-SHFZYJ2025002012",
+          "ncpssd-SHFZYJ2025002013",
+          "ncpssd-SHFZYJ2025003001",
+          "ncpssd-SHFZYJ2025003002",
+          "ncpssd-SHFZYJ2025003003",
+          "ncpssd-SHFZYJ2025003004",
+          "ncpssd-SHFZYJ2025003005",
+          "ncpssd-SHFZYJ2025003006",
+          "ncpssd-SHFZYJ2025003007",
+          "ncpssd-SHFZYJ2025003008",
+          "ncpssd-SHFZYJ2025003009",
+          "ncpssd-SHFZYJ2025003010",
+          "ncpssd-SHFZYJ2025004001",
+          "ncpssd-SHFZYJ2025004002",
+          "ncpssd-SHFZYJ2025004003",
+          "ncpssd-SHFZYJ2025004004",
+          "ncpssd-SHFZYJ2025004005",
+          "ncpssd-SHFZYJ2025004006",
+          "ncpssd-SHFZYJ2025004007",
+          "ncpssd-SHFZYJ2025004008",
+          "ncpssd-SHFZYJ2025004009",
+          "ncpssd-SHFZYJ2025004010"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHFZYJ2025004011"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:social-development:2026:1,2,3",
+        "source_id": "social-development",
+        "publication_year": 2026,
+        "period": "2026",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "social-development:2026:1",
+          "social-development:2026:2",
+          "social-development:2026:3"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 30,
+        "readable_count": 30,
+        "included_count": 30,
+        "analyzed_count": 30,
+        "excluded_nonresearch_count": 0,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:d9636c62f7391347dc8e42446d4e3097e26a88b55ce7d21ee4fe2c3c44b3026e:records:2026:issues:1,2,3",
+          "manifest:exclusions:social-development:2026"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2026&num=1&num2=1&langType=1",
+        "research_record_ids": [
+          "ncpssd-SHFZYJ2026001001",
+          "ncpssd-SHFZYJ2026001002",
+          "ncpssd-SHFZYJ2026001003",
+          "ncpssd-SHFZYJ2026001004",
+          "ncpssd-SHFZYJ2026001005",
+          "ncpssd-SHFZYJ2026001006",
+          "ncpssd-SHFZYJ2026001007",
+          "ncpssd-SHFZYJ2026001008",
+          "ncpssd-SHFZYJ2026001009",
+          "ncpssd-SHFZYJ2026001010",
+          "ncpssd-SHFZYJ2026002001",
+          "ncpssd-SHFZYJ2026002002",
+          "ncpssd-SHFZYJ2026002003",
+          "ncpssd-SHFZYJ2026002004",
+          "ncpssd-SHFZYJ2026002005",
+          "ncpssd-SHFZYJ2026002006",
+          "ncpssd-SHFZYJ2026002007",
+          "ncpssd-SHFZYJ2026002008",
+          "ncpssd-SHFZYJ2026002009",
+          "ncpssd-SHFZYJ2026002010",
+          "ncpssd-SHFZYJ2026003001",
+          "ncpssd-SHFZYJ2026003002",
+          "ncpssd-SHFZYJ2026003003",
+          "ncpssd-SHFZYJ2026003004",
+          "ncpssd-SHFZYJ2026003005",
+          "ncpssd-SHFZYJ2026003006",
+          "ncpssd-SHFZYJ2026003007",
+          "ncpssd-SHFZYJ2026003008",
+          "ncpssd-SHFZYJ2026003009",
+          "ncpssd-SHFZYJ2026003010"
+        ],
+        "excluded_record_ids": [],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:youth-studies:2025:1,2,3,4,5,6",
+        "source_id": "youth-studies",
+        "publication_year": 2025,
+        "period": "2025",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "youth-studies:2025:1",
+          "youth-studies:2025:2",
+          "youth-studies:2025:3",
+          "youth-studies:2025:4",
+          "youth-studies:2025:5",
+          "youth-studies:2025:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 61,
+        "readable_count": 61,
+        "included_count": 60,
+        "analyzed_count": 60,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:d9636c62f7391347dc8e42446d4e3097e26a88b55ce7d21ee4fe2c3c44b3026e:records:2025:issues:1,2,3,4,5,6",
+          "manifest:exclusions:youth-studies:2025"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2025&num=6&num2=6&langType=1",
+        "research_record_ids": [
+          "ncpssd-QNYJ2025001001",
+          "ncpssd-QNYJ2025001002",
+          "ncpssd-QNYJ2025001003",
+          "ncpssd-QNYJ2025001004",
+          "ncpssd-QNYJ2025001005",
+          "ncpssd-QNYJ2025001006",
+          "ncpssd-QNYJ2025001007",
+          "ncpssd-QNYJ2025001008",
+          "ncpssd-QNYJ2025001009",
+          "ncpssd-QNYJ2025001010",
+          "ncpssd-QNYJ2025002001",
+          "ncpssd-QNYJ2025002002",
+          "ncpssd-QNYJ2025002003",
+          "ncpssd-QNYJ2025002004",
+          "ncpssd-QNYJ2025002005",
+          "ncpssd-QNYJ2025002006",
+          "ncpssd-QNYJ2025002007",
+          "ncpssd-QNYJ2025002008",
+          "ncpssd-QNYJ2025002009",
+          "ncpssd-QNYJ2025002010",
+          "ncpssd-QNYJ2025003001",
+          "ncpssd-QNYJ2025003002",
+          "ncpssd-QNYJ2025003003",
+          "ncpssd-QNYJ2025003004",
+          "ncpssd-QNYJ2025003005",
+          "ncpssd-QNYJ2025003006",
+          "ncpssd-QNYJ2025003007",
+          "ncpssd-QNYJ2025003008",
+          "ncpssd-QNYJ2025003009",
+          "ncpssd-QNYJ2025003010",
+          "ncpssd-QNYJ2025004001",
+          "ncpssd-QNYJ2025004002",
+          "ncpssd-QNYJ2025004003",
+          "ncpssd-QNYJ2025004004",
+          "ncpssd-QNYJ2025004005",
+          "ncpssd-QNYJ2025004006",
+          "ncpssd-QNYJ2025004007",
+          "ncpssd-QNYJ2025004008",
+          "ncpssd-QNYJ2025004009",
+          "ncpssd-QNYJ2025004010",
+          "ncpssd-QNYJ2025005001",
+          "ncpssd-QNYJ2025005002",
+          "ncpssd-QNYJ2025005003",
+          "ncpssd-QNYJ2025005004",
+          "ncpssd-QNYJ2025005005",
+          "ncpssd-QNYJ2025005006",
+          "ncpssd-QNYJ2025005007",
+          "ncpssd-QNYJ2025005008",
+          "ncpssd-QNYJ2025005009",
+          "ncpssd-QNYJ2025005010",
+          "ncpssd-QNYJ2025006001",
+          "ncpssd-QNYJ2025006002",
+          "ncpssd-QNYJ2025006003",
+          "ncpssd-QNYJ2025006004",
+          "ncpssd-QNYJ2025006005",
+          "ncpssd-QNYJ2025006006",
+          "ncpssd-QNYJ2025006007",
+          "ncpssd-QNYJ2025006008",
+          "ncpssd-QNYJ2025006009",
+          "ncpssd-QNYJ2025006010"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-QNYJ2025006011"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:youth-studies:2026:1,2,3,4",
+        "source_id": "youth-studies",
+        "publication_year": 2026,
+        "period": "2026",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "youth-studies:2026:1",
+          "youth-studies:2026:2",
+          "youth-studies:2026:3",
+          "youth-studies:2026:4"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 40,
+        "readable_count": 40,
+        "included_count": 40,
+        "analyzed_count": 40,
+        "excluded_nonresearch_count": 0,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:d9636c62f7391347dc8e42446d4e3097e26a88b55ce7d21ee4fe2c3c44b3026e:records:2026:issues:1,2,3,4",
+          "manifest:exclusions:youth-studies:2026"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2026&num=4&num2=4&langType=1",
+        "research_record_ids": [
+          "ncpssd-QNYJ2026001001",
+          "ncpssd-QNYJ2026001002",
+          "ncpssd-QNYJ2026001003",
+          "ncpssd-QNYJ2026001004",
+          "ncpssd-QNYJ2026001005",
+          "ncpssd-QNYJ2026001006",
+          "ncpssd-QNYJ2026001007",
+          "ncpssd-QNYJ2026001008",
+          "ncpssd-QNYJ2026001009",
+          "ncpssd-QNYJ2026001010",
+          "ncpssd-QNYJ2026002001",
+          "ncpssd-QNYJ2026002002",
+          "ncpssd-QNYJ2026002003",
+          "ncpssd-QNYJ2026002004",
+          "ncpssd-QNYJ2026002005",
+          "ncpssd-QNYJ2026002006",
+          "ncpssd-QNYJ2026002007",
+          "ncpssd-QNYJ2026002008",
+          "ncpssd-QNYJ2026002009",
+          "ncpssd-QNYJ2026002010",
+          "ncpssd-QNYJ2026003001",
+          "ncpssd-QNYJ2026003002",
+          "ncpssd-QNYJ2026003003",
+          "ncpssd-QNYJ2026003004",
+          "ncpssd-QNYJ2026003005",
+          "ncpssd-QNYJ2026003006",
+          "ncpssd-QNYJ2026003007",
+          "ncpssd-QNYJ2026003008",
+          "ncpssd-QNYJ2026003009",
+          "ncpssd-QNYJ2026003010",
+          "ncpssd-QNYJ2026004001",
+          "ncpssd-QNYJ2026004002",
+          "ncpssd-QNYJ2026004003",
+          "ncpssd-QNYJ2026004004",
+          "ncpssd-QNYJ2026004005",
+          "ncpssd-QNYJ2026004006",
+          "ncpssd-QNYJ2026004007",
+          "ncpssd-QNYJ2026004008",
+          "ncpssd-QNYJ2026004009",
+          "ncpssd-QNYJ2026004010"
+        ],
+        "excluded_record_ids": [],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:social-development:2023:1,2,3,4",
+        "source_id": "social-development",
+        "publication_year": 2023,
+        "period": "2023",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "social-development:2023:1",
+          "social-development:2023:2",
+          "social-development:2023:3",
+          "social-development:2023:4"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 51,
+        "readable_count": 51,
+        "included_count": 50,
+        "analyzed_count": 50,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:7f777864ecd286c9f9d25e6e27f4edf36d0918db3dd31ab10db3679f4b38e579:records:2023:issues:1,2,3,4",
+          "manifest:exclusions:social-development:2023"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2023&num=4&num2=4&langType=1",
+        "research_record_ids": [
+          "ncpssd-SHFZYJ2023001001",
+          "ncpssd-SHFZYJ2023001002",
+          "ncpssd-SHFZYJ2023001003",
+          "ncpssd-SHFZYJ2023001004",
+          "ncpssd-SHFZYJ2023001005",
+          "ncpssd-SHFZYJ2023001006",
+          "ncpssd-SHFZYJ2023001007",
+          "ncpssd-SHFZYJ2023001008",
+          "ncpssd-SHFZYJ2023001009",
+          "ncpssd-SHFZYJ2023001010",
+          "ncpssd-SHFZYJ2023001011",
+          "ncpssd-SHFZYJ2023001012",
+          "ncpssd-SHFZYJ2023001013",
+          "ncpssd-SHFZYJ2023002001",
+          "ncpssd-SHFZYJ2023002002",
+          "ncpssd-SHFZYJ2023002003",
+          "ncpssd-SHFZYJ2023002004",
+          "ncpssd-SHFZYJ2023002005",
+          "ncpssd-SHFZYJ2023002006",
+          "ncpssd-SHFZYJ2023002007",
+          "ncpssd-SHFZYJ2023002008",
+          "ncpssd-SHFZYJ2023002009",
+          "ncpssd-SHFZYJ2023002010",
+          "ncpssd-SHFZYJ2023002011",
+          "ncpssd-SHFZYJ2023002012",
+          "ncpssd-SHFZYJ2023003001",
+          "ncpssd-SHFZYJ2023003002",
+          "ncpssd-SHFZYJ2023003003",
+          "ncpssd-SHFZYJ2023003004",
+          "ncpssd-SHFZYJ2023003005",
+          "ncpssd-SHFZYJ2023003006",
+          "ncpssd-SHFZYJ2023003007",
+          "ncpssd-SHFZYJ2023003008",
+          "ncpssd-SHFZYJ2023003009",
+          "ncpssd-SHFZYJ2023003010",
+          "ncpssd-SHFZYJ2023003011",
+          "ncpssd-SHFZYJ2023003012",
+          "ncpssd-SHFZYJ2023004001",
+          "ncpssd-SHFZYJ2023004002",
+          "ncpssd-SHFZYJ2023004003",
+          "ncpssd-SHFZYJ2023004004",
+          "ncpssd-SHFZYJ2023004005",
+          "ncpssd-SHFZYJ2023004006",
+          "ncpssd-SHFZYJ2023004007",
+          "ncpssd-SHFZYJ2023004008",
+          "ncpssd-SHFZYJ2023004009",
+          "ncpssd-SHFZYJ2023004010",
+          "ncpssd-SHFZYJ2023004011",
+          "ncpssd-SHFZYJ2023004012",
+          "ncpssd-SHFZYJ2023004013"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHFZYJ2023004014"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:social-development:2024:1,2,3,4",
+        "source_id": "social-development",
+        "publication_year": 2024,
+        "period": "2024",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "social-development:2024:1",
+          "social-development:2024:2",
+          "social-development:2024:3",
+          "social-development:2024:4"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 56,
+        "readable_count": 56,
+        "included_count": 55,
+        "analyzed_count": 55,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:7f777864ecd286c9f9d25e6e27f4edf36d0918db3dd31ab10db3679f4b38e579:records:2024:issues:1,2,3,4",
+          "manifest:exclusions:social-development:2024"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=72041X&years=2024&num=3&num2=3&langType=1",
+        "research_record_ids": [
+          "ncpssd-SHFZYJ2024001001",
+          "ncpssd-SHFZYJ2024001002",
+          "ncpssd-SHFZYJ2024001003",
+          "ncpssd-SHFZYJ2024001004",
+          "ncpssd-SHFZYJ2024001005",
+          "ncpssd-SHFZYJ2024001006",
+          "ncpssd-SHFZYJ2024001007",
+          "ncpssd-SHFZYJ2024001008",
+          "ncpssd-SHFZYJ2024001009",
+          "ncpssd-SHFZYJ2024001010",
+          "ncpssd-SHFZYJ2024001011",
+          "ncpssd-SHFZYJ2024001012",
+          "ncpssd-SHFZYJ2024002001",
+          "ncpssd-SHFZYJ2024002002",
+          "ncpssd-SHFZYJ2024002003",
+          "ncpssd-SHFZYJ2024002004",
+          "ncpssd-SHFZYJ2024002005",
+          "ncpssd-SHFZYJ2024002006",
+          "ncpssd-SHFZYJ2024002007",
+          "ncpssd-SHFZYJ2024002008",
+          "ncpssd-SHFZYJ2024002009",
+          "ncpssd-SHFZYJ2024002010",
+          "ncpssd-SHFZYJ2024002011",
+          "ncpssd-SHFZYJ2024002012",
+          "ncpssd-SHFZYJ2024003001",
+          "ncpssd-SHFZYJ2024003002",
+          "ncpssd-SHFZYJ2024003003",
+          "ncpssd-SHFZYJ2024003004",
+          "ncpssd-SHFZYJ2024003005",
+          "ncpssd-SHFZYJ2024003006",
+          "ncpssd-SHFZYJ2024003007",
+          "ncpssd-SHFZYJ2024003008",
+          "ncpssd-SHFZYJ2024003009",
+          "ncpssd-SHFZYJ2024003010",
+          "ncpssd-SHFZYJ2024003011",
+          "ncpssd-SHFZYJ2024003012",
+          "ncpssd-SHFZYJ2024004001",
+          "ncpssd-SHFZYJ2024004002",
+          "ncpssd-SHFZYJ2024004003",
+          "ncpssd-SHFZYJ2024004004",
+          "ncpssd-SHFZYJ2024004005",
+          "ncpssd-SHFZYJ2024004006",
+          "ncpssd-SHFZYJ2024004007",
+          "ncpssd-SHFZYJ2024004008",
+          "ncpssd-SHFZYJ2024004009",
+          "ncpssd-SHFZYJ2024004010",
+          "ncpssd-SHFZYJ2024004011",
+          "ncpssd-SHFZYJ2024004012",
+          "ncpssd-SHFZYJ2024004013",
+          "ncpssd-SHFZYJ2024004014",
+          "ncpssd-SHFZYJ2024004015",
+          "ncpssd-SHFZYJ2024004016",
+          "ncpssd-SHFZYJ2024004017",
+          "ncpssd-SHFZYJ2024004018",
+          "ncpssd-SHFZYJ2024004019"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-SHFZYJ2024004020"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:youth-studies:2023:1,2,3,4,5,6",
+        "source_id": "youth-studies",
+        "publication_year": 2023,
+        "period": "2023",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "youth-studies:2023:1",
+          "youth-studies:2023:2",
+          "youth-studies:2023:3",
+          "youth-studies:2023:4",
+          "youth-studies:2023:5",
+          "youth-studies:2023:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 46,
+        "readable_count": 46,
+        "included_count": 45,
+        "analyzed_count": 45,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:7f777864ecd286c9f9d25e6e27f4edf36d0918db3dd31ab10db3679f4b38e579:records:2023:issues:1,2,3,4,5,6",
+          "manifest:exclusions:youth-studies:2023"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=6&num2=6&langType=1",
+        "research_record_ids": [
+          "ncpssd-QNYJ2023001001",
+          "ncpssd-QNYJ2023001002",
+          "ncpssd-QNYJ2023001003",
+          "ncpssd-QNYJ2023001004",
+          "ncpssd-QNYJ2023001005",
+          "ncpssd-QNYJ2023001006",
+          "ncpssd-QNYJ2023001007",
+          "ncpssd-QNYJ2023001008",
+          "ncpssd-QNYJ2023002001",
+          "ncpssd-QNYJ2023002002",
+          "ncpssd-QNYJ2023002003",
+          "ncpssd-QNYJ2023002004",
+          "ncpssd-QNYJ2023002005",
+          "ncpssd-QNYJ2023002006",
+          "ncpssd-QNYJ2023002007",
+          "ncpssd-QNYJ2023002008",
+          "ncpssd-QNYJ2023003001",
+          "ncpssd-QNYJ2023003002",
+          "ncpssd-QNYJ2023003003",
+          "ncpssd-QNYJ2023003004",
+          "ncpssd-QNYJ2023003005",
+          "ncpssd-QNYJ2023003006",
+          "ncpssd-QNYJ2023003007",
+          "ncpssd-QNYJ2023003008",
+          "ncpssd-QNYJ2023004001",
+          "ncpssd-QNYJ2023004002",
+          "ncpssd-QNYJ2023004003",
+          "ncpssd-QNYJ2023004004",
+          "ncpssd-QNYJ2023004005",
+          "ncpssd-QNYJ2023004006",
+          "ncpssd-QNYJ2023004007",
+          "ncpssd-QNYJ2023005001",
+          "ncpssd-QNYJ2023005002",
+          "ncpssd-QNYJ2023005003",
+          "ncpssd-QNYJ2023005004",
+          "ncpssd-QNYJ2023005005",
+          "ncpssd-QNYJ2023005006",
+          "ncpssd-QNYJ2023005007",
+          "ncpssd-QNYJ2023006001",
+          "ncpssd-QNYJ2023006002",
+          "ncpssd-QNYJ2023006003",
+          "ncpssd-QNYJ2023006004",
+          "ncpssd-QNYJ2023006005",
+          "ncpssd-QNYJ2023006006",
+          "ncpssd-QNYJ2023006007"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-QNYJ2023006008"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      },
+      {
+        "issue_id": "fixed:youth-studies:2024:1,2,3,4,5,6",
+        "source_id": "youth-studies",
+        "publication_year": 2024,
+        "period": "2024",
+        "period_precision": "year",
+        "publication_month": null,
+        "coverage_scope": "fixed_issue_sample",
+        "issue_ids": [
+          "youth-studies:2024:1",
+          "youth-studies:2024:2",
+          "youth-studies:2024:3",
+          "youth-studies:2024:4",
+          "youth-studies:2024:5",
+          "youth-studies:2024:6"
+        ],
+        "comparison_issue_keys": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "coverage_complete": true,
+        "candidate_count": 43,
+        "readable_count": 43,
+        "included_count": 42,
+        "analyzed_count": 42,
+        "excluded_nonresearch_count": 1,
+        "missing_abstract_count": 0,
+        "historical_complete": false,
+        "evidence_refs": [
+          "sha256:7f777864ecd286c9f9d25e6e27f4edf36d0918db3dd31ab10db3679f4b38e579:records:2024:issues:1,2,3,4,5,6",
+          "manifest:exclusions:youth-studies:2024"
+        ],
+        "issue_url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2024&num=3&num2=3&langType=1",
+        "research_record_ids": [
+          "ncpssd-QNYJ2024001001",
+          "ncpssd-QNYJ2024001002",
+          "ncpssd-QNYJ2024001003",
+          "ncpssd-QNYJ2024001004",
+          "ncpssd-QNYJ2024001005",
+          "ncpssd-QNYJ2024001006",
+          "ncpssd-QNYJ2024001007",
+          "ncpssd-QNYJ2024002001",
+          "ncpssd-QNYJ2024002002",
+          "ncpssd-QNYJ2024002003",
+          "ncpssd-QNYJ2024002004",
+          "ncpssd-QNYJ2024002005",
+          "ncpssd-QNYJ2024002006",
+          "ncpssd-QNYJ2024002007",
+          "ncpssd-QNYJ2024003001",
+          "ncpssd-QNYJ2024003002",
+          "ncpssd-QNYJ2024003003",
+          "ncpssd-QNYJ2024003004",
+          "ncpssd-QNYJ2024003005",
+          "ncpssd-QNYJ2024003006",
+          "ncpssd-QNYJ2024003007",
+          "ncpssd-QNYJ2024004001",
+          "ncpssd-QNYJ2024004002",
+          "ncpssd-QNYJ2024004003",
+          "ncpssd-QNYJ2024004004",
+          "ncpssd-QNYJ2024004005",
+          "ncpssd-QNYJ2024004006",
+          "ncpssd-QNYJ2024004007",
+          "ncpssd-QNYJ2024005001",
+          "ncpssd-QNYJ2024005002",
+          "ncpssd-QNYJ2024005003",
+          "ncpssd-QNYJ2024005004",
+          "ncpssd-QNYJ2024005005",
+          "ncpssd-QNYJ2024005006",
+          "ncpssd-QNYJ2024005007",
+          "ncpssd-QNYJ2024006001",
+          "ncpssd-QNYJ2024006002",
+          "ncpssd-QNYJ2024006003",
+          "ncpssd-QNYJ2024006004",
+          "ncpssd-QNYJ2024006005",
+          "ncpssd-QNYJ2024006006",
+          "ncpssd-QNYJ2024006007"
+        ],
+        "excluded_record_ids": [
+          "ncpssd-QNYJ2024006008"
+        ],
+        "scope_note": "All observed rows of the explicitly listed index issue directories only; full journal/global completeness remains unknown."
+      }
+    ]
+  }
+}

@@ -1,0 +1,2540 @@
+[
+  {
+    "id": "ncpssd-QNYJ2023001001",
+    "external_id": "QNYJ2023001001",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "“普职分流”背景下青年的职业地位获得",
+    "authors": [
+      "李颖晖"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001001&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001001",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "普职分流",
+      "中等职业教育",
+      "职业地位获得",
+      "社会流动"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "普职分流",
+      "中等职业教育",
+      "职业地位获得",
+      "社会流动"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001001",
+    "private_source_record_sha256": "5c009efefc2c18d38b0096320cb9bce09b2b69d266fe99c8bc5857f4f1199827"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001002",
+    "external_id": "QNYJ2023001002",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "职业回报与社会工作者的留职意愿",
+    "authors": [
+      "刘莉",
+      "何雪松"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001002&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001002",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "职业回报",
+      "外在回报",
+      "内在回报",
+      "社会工作者",
+      "留职意愿"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "职业回报",
+      "外在回报",
+      "内在回报",
+      "社会工作者",
+      "留职意愿"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001002",
+    "private_source_record_sha256": "4043ebee30c858718647ccc2d68b914dbb3154f8e457ed4e5898c2bfffa172fc"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001003",
+    "external_id": "QNYJ2023001003",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "职业康复与青年精神障碍者再社会化",
+    "authors": [
+      "曹迪",
+      "吴莹"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001003&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001003",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青年精神障碍者",
+      "职业康复",
+      "再社会化"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青年精神障碍者",
+      "职业康复",
+      "再社会化"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001003",
+    "private_source_record_sha256": "04eaf705f76786e442eaf69bee14b4352b511b72c19f38386b1ac3c37bf63cb0"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001004",
+    "external_id": "QNYJ2023001004",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "罕见病儿童家庭福利资源供给体系的优化",
+    "authors": [
+      "纪文晓",
+      "王宁"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001004&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001004",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "罕见病儿童家庭",
+      "福利资源",
+      "供给体系",
+      "国家亲权"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "罕见病儿童家庭",
+      "福利资源",
+      "供给体系",
+      "国家亲权"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001004",
+    "private_source_record_sha256": "1631e596cc97bff279dc9e0bee25f64d1b7218a57e1970016c7837e9245a2255"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001005",
+    "external_id": "QNYJ2023001005",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "青年农民返乡村居的生计体系及其社会基础——基于对华北一个村庄的案例研究",
+    "authors": [
+      "熊春文",
+      "陈家碧"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001005&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001005",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青年农民",
+      "返乡村居",
+      "生计体系",
+      "行动伦理"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青年农民",
+      "返乡村居",
+      "生计体系",
+      "行动伦理"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001005",
+    "private_source_record_sha256": "5c36b354f04cf89cbe724d2366c1d88fec2bce335c9e97a5cfb9dbdc97b65fe1"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001006",
+    "external_id": "QNYJ2023001006",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "技术平台游戏化运营如何驱动公益发展——基于虚拟捐赠的分析视角",
+    "authors": [
+      "陈晓蓉",
+      "杨铃",
+      "张汝立",
+      "张昆贤"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001006&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001006",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "技术平台",
+      "游戏化运营",
+      "虚拟捐赠",
+      "公益实践"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "技术平台",
+      "游戏化运营",
+      "虚拟捐赠",
+      "公益实践"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001006",
+    "private_source_record_sha256": "f3dcff58b269cef9da0355baf728eaf6e67d5814fdc72ad8931537d9f902466b"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001007",
+    "external_id": "QNYJ2023001007",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "虚拟空间中的共同体——对“JK制服圈”的虚拟民族志研究",
+    "authors": [
+      "李钧鹏",
+      "茹文俊"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001007&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001007",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "虚拟空间",
+      "共同体",
+      "虚拟民族志",
+      "符号互动链",
+      "JK制服圈"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "虚拟空间",
+      "共同体",
+      "虚拟民族志",
+      "符号互动链",
+      "JK制服圈"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001007",
+    "private_source_record_sha256": "3467a6feab89eb7f885ea9c5b1ad7378ddb6040286d0b1b391f7cb418ae0a6e1"
+  },
+  {
+    "id": "ncpssd-QNYJ2023001008",
+    "external_id": "QNYJ2023001008",
+    "source_id": "youth-studies",
+    "source_name": "青年研究",
+    "title": "青少年网络越轨行为与不良同伴的关系——基于社交网络分析的方法",
+    "authors": [
+      "许博洋",
+      "夏一巍",
+      "周由",
+      "张彦"
+    ],
+    "url": "https://m.ncpssd.org/Literature/articleinfo?id=QNYJ2023001008&type=journalArticle&nav=1&langType=1",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "published_at": "2023-01-30",
+    "published_at_precision": "day",
+    "source_published_at": "2023年第1期",
+    "discovered_at": "2026-10-01T19:28:26.545132+00:00",
+    "findings": [],
+    "summary": "",
+    "full_text_verified": false,
+    "material_type": "research_abstract",
+    "verification_status": "lead_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://m.ncpssd.org/journal/details?gch=80985X&years=2023&num=1&num2=1&langType=1",
+        "locator": "catalog heading and AddHandleCount HTML attribute for QNYJ2023001008",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/articleinfoHandler/getjournalarticletable",
+        "locator": "public UI metadata JSON data object",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "publication_year",
+          "publication_issue",
+          "publishdate",
+          "pages"
+        ]
+      }
+    ],
+    "keywords": [
+      "青少年",
+      "网络越轨行为",
+      "不良同伴",
+      "社交网络分析"
+    ],
+    "source_publisher": "青年研究",
+    "issue_id": "youth-studies:2023:1",
+    "published_at_display": "2023-01-30",
+    "stream": "research",
+    "summary_method": null,
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "青少年",
+      "网络越轨行为",
+      "不良同伴",
+      "社交网络分析"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "human_full_text_reviewed": false,
+    "origin_source_id": "youth-studies",
+    "source_aliases": [],
+    "canonical_study_id": "ncpssd-QNYJ2023001008",
+    "private_source_record_sha256": "91ab0ec3d964d1f20b819f80ae2337861fd354cb89b2d3d37960b2d1518a2a0d"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393602.html",
+    "published_at": "2025-01-01",
+    "title": "全面推进信访工作法治化（工作实践）",
+    "authors": [
+      "国家信访局"
+    ],
+    "id": "news-metadata-5f15b5678ccde09b3e78feb9",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393602.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-01",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-01T09:45:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393602.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-5f15b5678ccde09b3e78feb9",
+    "private_source_record_sha256": "e14db8f4198af1742537ada3d29dc0378217cb3f894bd8cd97a2ac138851c299"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393612.html",
+    "published_at": "2025-01-01",
+    "title": "以党建引领接诉即办提升基层治理效能（会客厅）",
+    "authors": null,
+    "id": "news-metadata-595121f213c081b8c92a2923",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393612.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-01",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-01T09:55:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0101/c459911-40393612.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-595121f213c081b8c92a2923",
+    "private_source_record_sha256": "ccfd17c19e2d86c7c678d0ec283c68e9dcbf623ce4c5a0392a533f3e35e4e1f7"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394887.html",
+    "published_at": "2025-01-03",
+    "title": "推动新兴领域党建工作高质量发展：新方向、新任务、新实践（理论视界）",
+    "authors": [
+      "陈荣卓"
+    ],
+    "id": "news-metadata-7468968fdb397bd052a6146c",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394887.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-03T10:34:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394887.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-7468968fdb397bd052a6146c",
+    "private_source_record_sha256": "5cce234747ca003a206f0004ca4a8b659b9f096a9287150a514bd85e20625b64"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394888.html",
+    "published_at": "2025-01-03",
+    "title": "探索新兴领域党建工作有效路径（工作实践）",
+    "authors": null,
+    "id": "news-metadata-070449610c22114bbf69f570",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394888.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-03T10:37:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0103/c459929-40394888.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-070449610c22114bbf69f570",
+    "private_source_record_sha256": "de4cfd3088a629fcc82a23be8697a1e1476917f226d66c40475c3590637e9172"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400837.html",
+    "published_at": "2025-01-13",
+    "title": "党的领导确保人民城市建设见实见效（理论视界）",
+    "authors": [
+      "薛泽林"
+    ],
+    "id": "news-metadata-3af8c559ac1e7d07fd53584d",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400837.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-13",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-13T10:34:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400837.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-3af8c559ac1e7d07fd53584d",
+    "private_source_record_sha256": "3e03840bf1c63bdd87aee6dd2111894826045ea42a452ac8e67413738a67dd9f"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400842.html",
+    "published_at": "2025-01-13",
+    "title": "以新担当新作为开创广西社会工作新局面（学思践悟）",
+    "authors": [
+      "唐轶昂"
+    ],
+    "id": "news-metadata-69fb464de0bf829f8a9d202d",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400842.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-13",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-13T10:40:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400842.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-69fb464de0bf829f8a9d202d",
+    "private_source_record_sha256": "c7d52850f7bd487c924ea00cd338754a8b0ecc08d3b90a5fcd431f772590f386"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400851.html",
+    "published_at": "2025-01-13",
+    "title": "多维发力为基层减负（工作实践）",
+    "authors": [
+      "申瑞华"
+    ],
+    "id": "news-metadata-eacaae068b750dde5f485350",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400851.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-13",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-13T10:43:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0113/c459970-40400851.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-eacaae068b750dde5f485350",
+    "private_source_record_sha256": "958637e6eb0369fbcea2e3ec073c449a47194d1a9059e58c4d4c33d7abe7e691"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408414.html",
+    "published_at": "2025-01-24",
+    "title": "抓好流动党员教育管理助推新兴领域党建工作提质增效（理论视界）",
+    "authors": [
+      "杨典"
+    ],
+    "id": "news-metadata-3a9630e8cc4d801c0d90e06f",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408414.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-24",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-24T09:17:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408414.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-3a9630e8cc4d801c0d90e06f",
+    "private_source_record_sha256": "047abeec032b57bed385e7619697b0e7ba077f83806df1db8aff57898dce57fb"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408430.html",
+    "published_at": "2025-01-24",
+    "title": "补足精神之钙 推动方城社会工作高质量发展（学思践悟）",
+    "authors": [
+      "段文汉"
+    ],
+    "id": "news-metadata-ec05f9d866d96e868fff8d21",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408430.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-24",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-24T09:23:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408430.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-ec05f9d866d96e868fff8d21",
+    "private_source_record_sha256": "c88a0c8d9ae470a3a8379dee20cdccd25e21d4d5459e3255b2a73f3656daf1b3"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408446.html",
+    "published_at": "2025-01-24",
+    "title": "广纳群言开言路 深汇众智启智谋（工作实践）",
+    "authors": [
+      "冯皓"
+    ],
+    "id": "news-metadata-6e9816941234f94f526da9fb",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408446.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-24",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-24T09:25:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408446.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-6e9816941234f94f526da9fb",
+    "private_source_record_sha256": "eb57276f46d8e10393fbee57e1306fb4d8e73691304d15b3bbb3185f7ac61719"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408451.html",
+    "published_at": "2025-01-24",
+    "title": "以党建引领打造“枫桥式”综治中心（工作手记）",
+    "authors": [
+      "杨佳雄"
+    ],
+    "id": "news-metadata-c7e8ed35b15707c49b792e1c",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408451.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-01-24",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-01-24T09:27:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0124/c459996-40408451.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-c7e8ed35b15707c49b792e1c",
+    "private_source_record_sha256": "d537d4511377b905df874129b0ab99ab918cd9a02ca92a3ea504fe1929aa92c4"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414840.html",
+    "published_at": "2025-02-08",
+    "title": "全力解好“社会工作”这道题（学思践悟）",
+    "authors": [
+      "朱马涛"
+    ],
+    "id": "news-metadata-6da433e3faeb941d7b4a9661",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414840.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-08",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-08T09:42:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414840.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-6da433e3faeb941d7b4a9661",
+    "private_source_record_sha256": "a44eb5c8b1545b190cb2bc25cc55e76ba0c9e0d061e6eb8c775641da1795277f"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414844.html",
+    "published_at": "2025-02-08",
+    "title": "“四个聚焦”办好民生实事（工作实践）",
+    "authors": null,
+    "id": "news-metadata-28e10258a99a59a721762a11",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414844.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-08",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-08T09:45:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414844.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-28e10258a99a59a721762a11",
+    "private_source_record_sha256": "36e5300eb747503b6c93921a6900ed0576c21d6230eccd6ef723ef59fa31f0a5"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414846.html",
+    "published_at": "2025-02-08",
+    "title": "项目化带动让志愿服务精准高效（工作实践）",
+    "authors": [
+      "宋振江",
+      "高殿龙"
+    ],
+    "id": "news-metadata-3b7335875fdd9234742ceb4a",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414846.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-08",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-08T09:48:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414846.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-3b7335875fdd9234742ceb4a",
+    "private_source_record_sha256": "40fce7368c8c23a16fdaa1e7233753a0fb95d853962b2b016cf617eaf4d2c982"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414849.html",
+    "published_at": "2025-02-08",
+    "title": "党建赋能行业协会商会高质量发展（工作实践）",
+    "authors": [
+      "张强"
+    ],
+    "id": "news-metadata-f67b962640c8514aeb772b31",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414849.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-08",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-08T09:51:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0208/c460018-40414849.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-f67b962640c8514aeb772b31",
+    "private_source_record_sha256": "b42a2894d98e5997a07e5b362f54fec02f4b05321b033c44ee0d1acb4efd7493"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419983.html",
+    "published_at": "2025-02-17",
+    "title": "加强党建引领基层治理的几点思考（工作手记）",
+    "authors": [
+      "孙小虎"
+    ],
+    "id": "news-metadata-272098d5d7d10f3f097fc65a",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419983.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-17",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-17T10:00:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419983.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-272098d5d7d10f3f097fc65a",
+    "private_source_record_sha256": "f1e022ff0feebf22d64b70ea05e392b0110be9afa316db1d6e35696ca5b8885d"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419984.html",
+    "published_at": "2025-02-17",
+    "title": "抓好新兴领域党建 汇聚社会工作合力（学思践悟）",
+    "authors": [
+      "谢清"
+    ],
+    "id": "news-metadata-bfe8d56a33aa9efd2825ec2e",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419984.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-17",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-17T10:03:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419984.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-bfe8d56a33aa9efd2825ec2e",
+    "private_source_record_sha256": "5b4cf7e1f7ce2283dee167113e4e6b2d60c43410d4f6876da0aab8c75279a6c4"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419988.html",
+    "published_at": "2025-02-17",
+    "title": "秉持担当、锐意创新展现新作为（学思践悟）",
+    "authors": null,
+    "id": "news-metadata-3f892dbac8a01376c1ac00c7",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419988.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-17",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-17T10:07:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419988.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-3f892dbac8a01376c1ac00c7",
+    "private_source_record_sha256": "f2ddb993483085da8894c1addabc9df66b3296982bd3e7d7800fd1c94bfd5c8b"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419990.html",
+    "published_at": "2025-02-17",
+    "title": "新就业群体“友好四行”工作法之探（工作实践）",
+    "authors": [
+      "郝显军"
+    ],
+    "id": "news-metadata-bcfe040f6d8103abd9bf29bd",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419990.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-17",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-17T10:10:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419990.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-bcfe040f6d8103abd9bf29bd",
+    "private_source_record_sha256": "a9bc831b300b9feba366df82b289b9c0d5004d9425630da39b954fb50b71e009"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419992.html",
+    "published_at": "2025-02-17",
+    "title": "整治形式主义，为基层减负（工作实践）",
+    "authors": [
+      "曹德强"
+    ],
+    "id": "news-metadata-cdd851716b530a39dfd4c533",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419992.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-17",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-17T10:13:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0217/c460049-40419992.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-cdd851716b530a39dfd4c533",
+    "private_source_record_sha256": "629dac35716530e8085be1667282ef4a23745b69d97be1b63a47d0b5aae28d5a"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420821.html",
+    "published_at": "2025-02-18",
+    "title": "以“南开之治”壮大参与基层治理的社会力量（学思践悟）",
+    "authors": [
+      "李东垣"
+    ],
+    "id": "news-metadata-a42833b5dfc8765949665a4b",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420821.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-18",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-18T10:17:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420821.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-a42833b5dfc8765949665a4b",
+    "private_source_record_sha256": "f3b5455318db119ff8b06f2d6a93bc8e917ccd5cb02cc4fd4de90add28231b5b"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420825.html",
+    "published_at": "2025-02-18",
+    "title": "建强“四支队伍”，为社会工作高质量发展蓄势赋能（工作实践）",
+    "authors": [
+      "刘艳芳"
+    ],
+    "id": "news-metadata-79eceb30e2476946c67df35e",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420825.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-18",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-18T10:24:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420825.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-79eceb30e2476946c67df35e",
+    "private_source_record_sha256": "37df08e44b61765e0392a168310b6131576da8e1ac0703c2e174eef127d6eec0"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420826.html",
+    "published_at": "2025-02-18",
+    "title": "基层善治擦亮幸福安康底色（工作实践）",
+    "authors": [
+      "黄海清"
+    ],
+    "id": "news-metadata-4f0998144e57102b5225c253",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420826.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-18",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-18T10:29:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420826.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-4f0998144e57102b5225c253",
+    "private_source_record_sha256": "53a857a1d5d037a1a65b539dd910252b86752da493722ce38fecd9e498e85000"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420827.html",
+    "published_at": "2025-02-18",
+    "title": "健全体制机制，提升新兴领域党建工作质效（工作实践）",
+    "authors": null,
+    "id": "news-metadata-967a35c8c56a7a1b041f9ce3",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420827.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-18",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-18T10:32:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420827.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-967a35c8c56a7a1b041f9ce3",
+    "private_source_record_sha256": "aa418fd448c7e4cf949510493aa3922b8547eb9832478e3c0ddad8915190916c"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420831.html",
+    "published_at": "2025-02-18",
+    "title": "以“邻”破题，构筑睦邻新场景（工作手记）",
+    "authors": [
+      "李霄"
+    ],
+    "id": "news-metadata-358a8a21c3c5201b5417e84c",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420831.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-18",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-18T10:34:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0218/c460057-40420831.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-358a8a21c3c5201b5417e84c",
+    "private_source_record_sha256": "d86093c6ab7dd304b20401245214f4b7429b147c319fd63c2bc4b95a94251615"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425756.html",
+    "published_at": "2025-02-25",
+    "title": "浅谈如何加强和创新基层治理（理论视界）",
+    "authors": [
+      "文宏"
+    ],
+    "id": "news-metadata-1848bf66070aa044dee5c2de",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425756.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-25",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-25T10:17:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425756.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-1848bf66070aa044dee5c2de",
+    "private_source_record_sha256": "81f390b0b2ee1ef4671076d4ddbb3f345ffdfd9f80653be74cfe534b3124579a"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425757.html",
+    "published_at": "2025-02-25",
+    "title": "强化党建引领 推动注册会计师行业高质量发展（工作实践）",
+    "authors": null,
+    "id": "news-metadata-012bf2971e14288bcbbbc467",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425757.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-25",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-25T10:20:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425757.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-012bf2971e14288bcbbbc467",
+    "private_source_record_sha256": "856846081553e2ab9f2778f984ec632913a8ae458d40425e201f5c3c61e51f66"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425760.html",
+    "published_at": "2025-02-25",
+    "title": "宁波打造志愿服务示范之城（工作实践）",
+    "authors": null,
+    "id": "news-metadata-d38b52a01d66073d4d2ddd3d",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425760.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-25",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-25T10:22:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425760.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-d38b52a01d66073d4d2ddd3d",
+    "private_source_record_sha256": "f8f31a137a6b868ed75425f9adb4c0f609f8bf2735d74dc52cc5ad177b8cfd36"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425761.html",
+    "published_at": "2025-02-25",
+    "title": "“三个聚焦”破解治理难题（工作实践）",
+    "authors": [
+      "刘德胜"
+    ],
+    "id": "news-metadata-85ba64cd36bedb8ca78e5793",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425761.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-25",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-25T10:24:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0225/c460098-40425761.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-85ba64cd36bedb8ca78e5793",
+    "private_source_record_sha256": "8d8d7143fc7d6cd6d52a1f35a08197aed326dfdfd9ca8b4b34d7493642113d8b"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426667.html",
+    "published_at": "2025-02-26",
+    "title": "持续整治形式主义为基层减负（会客厅）",
+    "authors": null,
+    "id": "news-metadata-5ca8e125ba46ecc232648340",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426667.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-26",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-26T11:43:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426667.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-5ca8e125ba46ecc232648340",
+    "private_source_record_sha256": "8c6792640e2f5f5d088ce20ca1bef00e6080468b0ae25cd62f95c88c247ac9fe"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426668.html",
+    "published_at": "2025-02-26",
+    "title": "“四项行动”谱写镇江社会工作新篇章（学思践悟）",
+    "authors": [
+      "顾明华"
+    ],
+    "id": "news-metadata-ad3425fc0e8d8ac47b4267bd",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426668.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-26",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-26T11:46:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426668.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-ad3425fc0e8d8ac47b4267bd",
+    "private_source_record_sha256": "fb44fdd1af2fc63e77646100fac6f81f45efe205a594059d30f5c116b513f020"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426669.html",
+    "published_at": "2025-02-26",
+    "title": "“三抓三提”夯实党建根基（工作实践）",
+    "authors": [
+      "陈蓥君",
+      "陈婷婷"
+    ],
+    "id": "news-metadata-c290ce090a2dfb61801d037a",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426669.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-26",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-26T11:48:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0226/c460101-40426669.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-c290ce090a2dfb61801d037a",
+    "private_source_record_sha256": "aed3077db0073c03af5818f90bf71c74b77f06b4a9f378757e2f4bf787b6b55f"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428187.html",
+    "published_at": "2025-02-28",
+    "title": "“民情日记”彰显以人民为中心的价值理（理论视界）",
+    "authors": [
+      "向春玲"
+    ],
+    "id": "news-metadata-2948a97966cd09c046762912",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428187.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-28",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-28T09:49:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428187.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-2948a97966cd09c046762912",
+    "private_source_record_sha256": "f69e632d812b0c3ff47b3d163e006e0792e01eb90b0cae71429a3eaf8587531e"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428189.html",
+    "published_at": "2025-02-28",
+    "title": "坚持“两个毫不动摇” 推动民营企业做优做强（学思践悟）",
+    "authors": null,
+    "id": "news-metadata-c361a6f288bc12421737949a",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428189.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-28",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-28T09:51:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428189.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-c361a6f288bc12421737949a",
+    "private_source_record_sha256": "45af85726fefc0aabfb84b229b90bf92f230aaf49a6edf793feb0ce1c884fb8b"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428193.html",
+    "published_at": "2025-02-28",
+    "title": "紧扣三个关键 凝聚发展合力（工作实践）",
+    "authors": null,
+    "id": "news-metadata-46681f1290a675e860a79476",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428193.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-02-28",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-02-28T09:53:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0228/c460128-40428193.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-46681f1290a675e860a79476",
+    "private_source_record_sha256": "9355897dea45f45eb89653a04607ce7ce4770aa2b71c4195f1c765d98a3947e8"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429662.html",
+    "published_at": "2025-03-03",
+    "title": "从北京接诉即办改革看党组织如何发挥统筹协调作用（理论视界）",
+    "authors": [
+      "黄江松"
+    ],
+    "id": "news-metadata-aeb5210cca71d77d49477326",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429662.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-03-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-03-03T10:32:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429662.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-aeb5210cca71d77d49477326",
+    "private_source_record_sha256": "667ef2fbeaa32fb1d43ea04d13fa4e6d29de41756b1fc299e2e5481dc20ff0e1"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429664.html",
+    "published_at": "2025-03-03",
+    "title": "加强新就业群体党建工作的四点思考（工作手记）",
+    "authors": null,
+    "id": "news-metadata-9da5cdc3b219c53a8d99ecf0",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429664.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-03-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-03-03T10:34:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429664.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-9da5cdc3b219c53a8d99ecf0",
+    "private_source_record_sha256": "6e370cae461392f3471193b3d64413a1a9cd076f5f8675dc37102eb021e8861e"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429666.html",
+    "published_at": "2025-03-03",
+    "title": "整合社会力量推动新时代社会工作高质量发展（学思践悟）",
+    "authors": [
+      "丁远"
+    ],
+    "id": "news-metadata-aacb07b9005fac9cc6dd21c6",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429666.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-03-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-03-03T10:43:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429666.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-aacb07b9005fac9cc6dd21c6",
+    "private_source_record_sha256": "5c6d74644f6e005d919b34434560768e4998b03cfde2c061fea4f75ebb15d5ad"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429668.html",
+    "published_at": "2025-03-03",
+    "title": "“专业社工+志愿服务”擦亮服务暖心底色（工作实践）",
+    "authors": [
+      "何南石",
+      "汤高峰"
+    ],
+    "id": "news-metadata-bcaa94106640bc3f36af2c0d",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429668.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-03-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-03-03T10:46:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429668.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-bcaa94106640bc3f36af2c0d",
+    "private_source_record_sha256": "af6ee2260463be149be122d864c4ad07c34abd0098eea581332dd895d891a001"
+  },
+  {
+    "source_id": "social-work-news",
+    "source_name": "中国社会工作报",
+    "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429669.html",
+    "published_at": "2025-03-03",
+    "title": "“333”工作法走好党建助企之路（工作实践）",
+    "authors": [
+      "邢建军"
+    ],
+    "id": "news-metadata-250d59a63cbb41d94227ad17",
+    "external_id": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429669.html",
+    "source_publisher": "中国社会工作报",
+    "material_type": "official_practice",
+    "stream": "practice",
+    "published_at_precision": "day",
+    "published_at_display": "2025-03-03",
+    "publication_year": 2025,
+    "publication_issue": null,
+    "source_published_at": "2025-03-03T10:50:00+08:00",
+    "summary": "",
+    "summary_method": null,
+    "topics": [],
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "verification_status": "practice_signal",
+    "verification_note": "已核官方文章元数据；新闻或实践线索，不是同行评审研究，也未审读全文。",
+    "editorial_caveat": "仅事实元数据与来源链接，未授权转载正文。",
+    "analysis_scope": "metadata",
+    "source_scope": "newspaper_metadata_only",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://www.zyshgzb.gov.cn/n1/2025/0303/c460156-40429669.html",
+        "locator": "official reader article title/byline/publication metadata",
+        "supports": [
+          "metadata"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T18:20:48.699978+00:00",
+    "origin_source_id": "social-work-news",
+    "canonical_study_id": "news-metadata-250d59a63cbb41d94227ad17",
+    "private_source_record_sha256": "0583e46ff7545ff9d4e8c515d7add852b3a78d275250b4dce02d2282559f825c"
+  }
+]

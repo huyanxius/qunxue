@@ -1,0 +1,4546 @@
+[
+  {
+    "id": "algorithm-society-21507",
+    "external_id": "society:21507",
+    "title": "“超常性”的悖论：韦伯对西方文明内部卡里斯玛的研究",
+    "authors": [
+      "潘梓旸"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第4期",
+    "publication_year": 2025,
+    "publication_issue": 4,
+    "issue_id": "society:2025:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I4/213",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章从宗教伦理追踪卡里斯玛的内在张力，讨论其非凡性与他人承认如何转换，进而解释现代政治中以共同性和动员效果为基础的力量。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "政治权威",
+      "社会理论"
+    ],
+    "research_question": "卡里斯玛为何从独特非凡性转向政治动员效果？",
+    "methods": "韦伯宗教文明比较研究的理论阐释",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章从宗教伦理追踪卡里斯玛的内在张力，讨论其非凡性与他人承认如何转换，进而解释现代政治中以共同性和动员效果为基础的力量。"
+    ],
+    "limitations": null,
+    "why_read": "为理解魅力型权威提供超出个人人格特质的解释。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21507; metadata #art21507",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章从宗教伦理追踪卡里斯玛的内在张力，讨论其非凡性与他人承认如何转换，进而解释现代政治中以共同性和动员效果为基础的力量。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "卡里斯玛为何从独特非凡性转向政治动员效果？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "韦伯宗教文明比较研究的理论阐释",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章从宗教伦理追踪卡里斯玛的内在张力，讨论其非凡性与他人承认如何转换，进而解释现代政治中以共同性和动员效果为基础的力量。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21507",
+    "private_source_record_sha256": "7ef1fa53d1745a611d8536c83d3eefcd9df9999c755b541dc95490ac2d80dfea"
+  },
+  {
+    "id": "algorithm-society-21637",
+    "external_id": "society:21637",
+    "title": "从“演绎学”到“辩证法”：马克思历史社会学的方法论基础及其演进",
+    "authors": [
+      "刘洋"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章依马克思对历史的四次理解梳理方法演变，认为其批判历史主义并运用政治经济学辩证法，逐步形成独特的历史社会学路径。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "历史社会学",
+      "研究方法"
+    ],
+    "research_question": "马克思历史社会学的方法论如何形成和演变？",
+    "methods": "马克思历史观与方法论的思想史梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章依马克思对历史的四次理解梳理方法演变，认为其批判历史主义并运用政治经济学辩证法，逐步形成独特的历史社会学路径。"
+    ],
+    "limitations": null,
+    "why_read": "为理论导向的历史研究提供方法来源。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21637; metadata #art21637",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章依马克思对历史的四次理解梳理方法演变，认为其批判历史主义并运用政治经济学辩证法，逐步形成独特的历史社会学路径。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "马克思历史社会学的方法论如何形成和演变？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "马克思历史观与方法论的思想史梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章依马克思对历史的四次理解梳理方法演变，认为其批判历史主义并运用政治经济学辩证法，逐步形成独特的历史社会学路径。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21637",
+    "private_source_record_sha256": "a591db077747c85978e854d634fd04b76d45715f8a94fe1cae5bb3d1e8177bc8"
+  },
+  {
+    "id": "algorithm-society-21638",
+    "external_id": "society:21638",
+    "title": "优绩职业主义：旅德华人音乐家技能嵌入性的文化逻辑",
+    "authors": [
+      "于佳煖"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/26",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "旅德华人音乐家较侧重技能而难以完全理解当地职业共同体社交逻辑，形成既不同于来源文化也不完全等同于德国模式的优绩职业观。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "移民",
+      "职业文化"
+    ],
+    "research_question": "跨文化职业适应如何产生新的技能与关系观？",
+    "methods": "旅德华人音乐家职业社会化研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "旅德华人音乐家较侧重技能而难以完全理解当地职业共同体社交逻辑，形成既不同于来源文化也不完全等同于德国模式的优绩职业观。"
+    ],
+    "limitations": null,
+    "why_read": "避免把移民适应仅视作在两套既有文化之间选择。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21638; metadata #art21638",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "旅德华人音乐家较侧重技能而难以完全理解当地职业共同体社交逻辑，形成既不同于来源文化也不完全等同于德国模式的优绩职业观。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "跨文化职业适应如何产生新的技能与关系观？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "旅德华人音乐家职业社会化研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "旅德华人音乐家较侧重技能而难以完全理解当地职业共同体社交逻辑，形成既不同于来源文化也不完全等同于德国模式的优绩职业观。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21638",
+    "private_source_record_sha256": "4483fd9d08cff2e1c3ede3b273a9f3dba7544cb80811fd0d4171f56a94e767a9"
+  },
+  {
+    "id": "algorithm-society-21639",
+    "external_id": "society:21639",
+    "title": "数字时代舆情何以重塑基层治理——一个三层分析框架",
+    "authors": [
+      "周逸然"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/57",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "教育系统案例框架指出，数字舆情使公众生产信息、上级直接获取信息，削弱基层的信息控制并强化问责，但能力和风险承担之间仍可能失衡。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "数字治理",
+      "公共舆论"
+    ],
+    "research_question": "数字舆情如何重塑基层治理的结构与风险？",
+    "methods": "中小学教育系统的三层机制分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "教育系统案例框架指出，数字舆情使公众生产信息、上级直接获取信息，削弱基层的信息控制并强化问责，但能力和风险承担之间仍可能失衡。"
+    ],
+    "limitations": null,
+    "why_read": "区分公众可见与上级可见对基层组织的不同影响。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21639; metadata #art21639",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "教育系统案例框架指出，数字舆情使公众生产信息、上级直接获取信息，削弱基层的信息控制并强化问责，但能力和风险承担之间仍可能失衡。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "数字舆情如何重塑基层治理的结构与风险？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "中小学教育系统的三层机制分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "教育系统案例框架指出，数字舆情使公众生产信息、上级直接获取信息，削弱基层的信息控制并强化问责，但能力和风险承担之间仍可能失衡。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21639",
+    "private_source_record_sha256": "1692df6596b4c9a476d966324eeb4ae8e75c5b706d09ea18e0646cdccab2e14d"
+  },
+  {
+    "id": "algorithm-society-21640",
+    "external_id": "society:21640",
+    "title": "普遍的特殊主义与“关系”研究的本土化范式——以“态度”作为核心概念",
+    "authors": [
+      "何奇峰"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/89",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章把行动者态度置于关系研究核心，强调身份、亲疏、交往历史和当下心境的综合权衡，因而关系不宜仅按正式非正式或工具性划分。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "关系",
+      "本土理论"
+    ],
+    "research_question": "怎样从行动者视角理解中国关系的特殊性？",
+    "methods": "差序格局基础上的本土概念建构",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章把行动者态度置于关系研究核心，强调身份、亲疏、交往历史和当下心境的综合权衡，因而关系不宜仅按正式非正式或工具性划分。"
+    ],
+    "limitations": null,
+    "why_read": "为关系研究提供超出资源交换的分析维度。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21640; metadata #art21640",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章把行动者态度置于关系研究核心，强调身份、亲疏、交往历史和当下心境的综合权衡，因而关系不宜仅按正式非正式或工具性划分。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "怎样从行动者视角理解中国关系的特殊性？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "差序格局基础上的本土概念建构",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章把行动者态度置于关系研究核心，强调身份、亲疏、交往历史和当下心境的综合权衡，因而关系不宜仅按正式非正式或工具性划分。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21640",
+    "private_source_record_sha256": "a9bccc41d6196bf552816a0edd616733457b31fe70271640ef8afe6426a7583e"
+  },
+  {
+    "id": "algorithm-society-21641",
+    "external_id": "society:21641",
+    "title": "恩义之间: 行动伦理视角下的师徒关系研究",
+    "authors": [
+      "余朋翰"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/114",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "经典文献中的师徒关系兼具共同生活之恩与人格教育之义，规范弹性较大，需要行动者在具体互动中体认，而非只按雇佣关系理解。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "师徒关系",
+      "行动伦理"
+    ],
+    "research_question": "师徒关系的伦理基础与灵活性来自哪里？",
+    "methods": "儒家古典文献中的师徒伦理梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "经典文献中的师徒关系兼具共同生活之恩与人格教育之义，规范弹性较大，需要行动者在具体互动中体认，而非只按雇佣关系理解。"
+    ],
+    "limitations": null,
+    "why_read": "将职业传授关系扩展到伦理与人格养成层面。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21641; metadata #art21641",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "经典文献中的师徒关系兼具共同生活之恩与人格教育之义，规范弹性较大，需要行动者在具体互动中体认，而非只按雇佣关系理解。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "师徒关系的伦理基础与灵活性来自哪里？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "儒家古典文献中的师徒伦理梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "经典文献中的师徒关系兼具共同生活之恩与人格教育之义，规范弹性较大，需要行动者在具体互动中体认，而非只按雇佣关系理解。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21641",
+    "private_source_record_sha256": "e483267fcd4a3f4d7878d074346840b5b9716a778c486b71691782e8005d2796"
+  },
+  {
+    "id": "algorithm-society-21642",
+    "external_id": "society:21642",
+    "title": "马克斯·韦伯\"祛魅\"概念的两个来源: 一个思想谱系学的考察",
+    "authors": [
+      "郁喆隽"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/142",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章辨识韦伯祛魅概念的浪漫主义与反巫术两条来源，认为其同时回应现代意义匮乏及宗教历史问题，而非只有科学替代信仰的单一叙事。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "祛魅",
+      "思想史"
+    ],
+    "research_question": "韦伯祛魅概念继承并回应了哪些思想问题？",
+    "methods": "词源与思想谱系分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章辨识韦伯祛魅概念的浪漫主义与反巫术两条来源，认为其同时回应现代意义匮乏及宗教历史问题，而非只有科学替代信仰的单一叙事。"
+    ],
+    "limitations": null,
+    "why_read": "帮助避免对祛魅概念的简化使用。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21642; metadata #art21642",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章辨识韦伯祛魅概念的浪漫主义与反巫术两条来源，认为其同时回应现代意义匮乏及宗教历史问题，而非只有科学替代信仰的单一叙事。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "韦伯祛魅概念继承并回应了哪些思想问题？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "词源与思想谱系分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章辨识韦伯祛魅概念的浪漫主义与反巫术两条来源，认为其同时回应现代意义匮乏及宗教历史问题，而非只有科学替代信仰的单一叙事。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21642",
+    "private_source_record_sha256": "8044e34c8b562d2873f30223830d2102301f4c28ff00a9e16a5c4d93d1776661"
+  },
+  {
+    "id": "algorithm-society-21643",
+    "external_id": "society:21643",
+    "title": "社会系统理论的社会学启蒙方案：以卢曼1967年就职演讲为线索的考察",
+    "authors": [
+      "周忠贤"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/173",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "卢曼的1967年演讲把社会学启蒙指向系统理性和社会复杂性，以系统环境关系改造既有功能主义，并要求理论具备跨领域反思能力。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "系统理论",
+      "社会理论"
+    ],
+    "research_question": "系统理论提出怎样的社会学启蒙方案？",
+    "methods": "卢曼就职演讲及其理论发展的文本分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "卢曼的1967年演讲把社会学启蒙指向系统理性和社会复杂性，以系统环境关系改造既有功能主义，并要求理论具备跨领域反思能力。"
+    ],
+    "limitations": null,
+    "why_read": "为定位社会学在功能分化社会中的任务提供参照。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21643; metadata #art21643",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "卢曼的1967年演讲把社会学启蒙指向系统理性和社会复杂性，以系统环境关系改造既有功能主义，并要求理论具备跨领域反思能力。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "系统理论提出怎样的社会学启蒙方案？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "卢曼就职演讲及其理论发展的文本分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "卢曼的1967年演讲把社会学启蒙指向系统理性和社会复杂性，以系统环境关系改造既有功能主义，并要求理论具备跨领域反思能力。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21643",
+    "private_source_record_sha256": "3a0ff0ac7e563eee24b6840e483062a383aec020dced95d580395c53395d339f"
+  },
+  {
+    "id": "algorithm-society-21644",
+    "external_id": "society:21644",
+    "title": "知识错位：医疗跨层级整合中的组织—专业互动",
+    "authors": [
+      "连逸晗"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第5期",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "issue_id": "society:2025:5",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I5/205",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "县医院承接医联体技术的案例显示，机构整合重排医生、医院和技术的关系，知识转移低效可能反而推动病人上移和功能重叠，偏离分级诊疗目标。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "医疗整合",
+      "专业知识"
+    ],
+    "research_question": "医疗资源整合为何未必实现知识有效下沉？",
+    "methods": "县级医院承接医联体技术下沉的个案研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "县医院承接医联体技术的案例显示，机构整合重排医生、医院和技术的关系，知识转移低效可能反而推动病人上移和功能重叠，偏离分级诊疗目标。"
+    ],
+    "limitations": null,
+    "why_read": "把医联体评估从机构连接推进到知识实际运作。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21644; metadata #art21644",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "县医院承接医联体技术的案例显示，机构整合重排医生、医院和技术的关系，知识转移低效可能反而推动病人上移和功能重叠，偏离分级诊疗目标。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "医疗资源整合为何未必实现知识有效下沉？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "县级医院承接医联体技术下沉的个案研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "县医院承接医联体技术的案例显示，机构整合重排医生、医院和技术的关系，知识转移低效可能反而推动病人上移和功能重叠，偏离分级诊疗目标。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21644",
+    "private_source_record_sha256": "4e4f36327057ce652803b38a33e7ca5b28edec54d412290d30578e2ee66dff09"
+  },
+  {
+    "id": "algorithm-society-21907",
+    "external_id": "society:21907",
+    "title": "费孝通社会学理论创新及其现代化价值",
+    "authors": [
+      "宋林飞"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2025年第6期",
+    "publication_year": 2025,
+    "publication_issue": 6,
+    "issue_id": "society:2025:6",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I6/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章梳理费孝通从乡村到小城镇、沿海和边区的调查与概念创新，将其现代化贡献概括为工业、城镇、民生和文化自觉相联系的研究实践。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "学科史",
+      "现代化"
+    ],
+    "research_question": "费孝通的调查与理论创新如何关联现代化价值？",
+    "methods": "费孝通调查历程与概念贡献的理论梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章梳理费孝通从乡村到小城镇、沿海和边区的调查与概念创新，将其现代化贡献概括为工业、城镇、民生和文化自觉相联系的研究实践。"
+    ],
+    "limitations": null,
+    "why_read": "为理解调查导向、本土视角与社会改造的联系提供概览。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:13+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract21907; metadata #art21907",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章梳理费孝通从乡村到小城镇、沿海和边区的调查与概念创新，将其现代化贡献概括为工业、城镇、民生和文化自觉相联系的研究实践。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "费孝通的调查与理论创新如何关联现代化价值？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "费孝通调查历程与概念贡献的理论梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章梳理费孝通从乡村到小城镇、沿海和边区的调查与概念创新，将其现代化贡献概括为工业、城镇、民生和文化自觉相联系的研究实践。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-21907",
+    "private_source_record_sha256": "1ea00c5a2a2970b28c516981c6a9946f025eb310f194a5f99ba0b41062a9859b"
+  },
+  {
+    "id": "algorithm-society-22041",
+    "external_id": "society:22041",
+    "title": "项目治国：基于四重机制的总体性阐释",
+    "authors": [
+      "史普原"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第1期",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章用外部性、委托代理、合法性和嵌入性四种机制解释项目治理，强调成本收益外溢、权责信息关系和国家社会联结共同影响项目运行。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "项目治理",
+      "国家治理"
+    ],
+    "research_question": "项目制为何广泛持续运行，其内在张力在哪里？",
+    "methods": "四重机制的理论框架建构",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章用外部性、委托代理、合法性和嵌入性四种机制解释项目治理，强调成本收益外溢、权责信息关系和国家社会联结共同影响项目运行。"
+    ],
+    "limitations": null,
+    "why_read": "为跨案例比较项目治理提供多个相互联系的维度。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22041; metadata #art22041",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章用外部性、委托代理、合法性和嵌入性四种机制解释项目治理，强调成本收益外溢、权责信息关系和国家社会联结共同影响项目运行。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "项目制为何广泛持续运行，其内在张力在哪里？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "四重机制的理论框架建构",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章用外部性、委托代理、合法性和嵌入性四种机制解释项目治理，强调成本收益外溢、权责信息关系和国家社会联结共同影响项目运行。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22041",
+    "private_source_record_sha256": "6221db3c4251d445f7b04cbed3cfa2da065b7abd0dca31a46df14deef1e2a156"
+  },
+  {
+    "id": "algorithm-society-22042",
+    "external_id": "society:22042",
+    "title": "打破铁笼：以“关系”和“变通”为线索的美国新韦伯主义官僚制研究",
+    "authors": [
+      "刘畅"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第1期",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/31",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "新韦伯主义对关系和变通的积极解释，旨在以价值理性修复形式规则的不足；文章同时批评其官员主体假设可能忽略不同历史制度中的伦理差异。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "官僚制",
+      "社会理论"
+    ],
+    "research_question": "新韦伯主义如何重新理解官僚制中的关系与变通？",
+    "methods": "理论发展史与相关经验研究综述",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "新韦伯主义对关系和变通的积极解释，旨在以价值理性修复形式规则的不足；文章同时批评其官员主体假设可能忽略不同历史制度中的伦理差异。"
+    ],
+    "limitations": null,
+    "why_read": "适合检视官僚制改革理论的适用边界。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22042; metadata #art22042",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "新韦伯主义对关系和变通的积极解释，旨在以价值理性修复形式规则的不足；文章同时批评其官员主体假设可能忽略不同历史制度中的伦理差异。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "新韦伯主义如何重新理解官僚制中的关系与变通？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "理论发展史与相关经验研究综述",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "新韦伯主义对关系和变通的积极解释，旨在以价值理性修复形式规则的不足；文章同时批评其官员主体假设可能忽略不同历史制度中的伦理差异。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22042",
+    "private_source_record_sha256": "923f56e3d2e4cd86d2a9415cd1eaa303c17a71cb52ea1aad6db1eebc037b1782"
+  },
+  {
+    "id": "algorithm-society-22043",
+    "external_id": "society:22043",
+    "title": "社会控制中的个体自由：从社会理论视角解读杜威的课程改革",
+    "authors": [
+      "杨勇"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第1期",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/71",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "杜威课程改革并未将自由等同于摆脱社会控制，而强调个体在环境互动中形成主动行动能力；文章由此连接教育实践、文明传统与自由。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "教育",
+      "社会控制"
+    ],
+    "research_question": "教育中的社会控制如何与个体自由共存？",
+    "methods": "杜威实验学校课程与社会理论分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "杜威课程改革并未将自由等同于摆脱社会控制，而强调个体在环境互动中形成主动行动能力；文章由此连接教育实践、文明传统与自由。"
+    ],
+    "limitations": null,
+    "why_read": "帮助超越教育中控制与自由的简单二分。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22043; metadata #art22043",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "杜威课程改革并未将自由等同于摆脱社会控制，而强调个体在环境互动中形成主动行动能力；文章由此连接教育实践、文明传统与自由。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "教育中的社会控制如何与个体自由共存？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "杜威实验学校课程与社会理论分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "杜威课程改革并未将自由等同于摆脱社会控制，而强调个体在环境互动中形成主动行动能力；文章由此连接教育实践、文明传统与自由。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22043",
+    "private_source_record_sha256": "5d483c25c7322d1afddc325d55159ff14c7536353c52890cd789da4b71e7ba58"
+  },
+  {
+    "id": "algorithm-society-22044",
+    "external_id": "society:22044",
+    "title": "士绅群体与中国现代工业的创生：以清末萍乡煤矿的兴建为例",
+    "authors": [
+      "孟奇"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第1期",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/109",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "萍乡煤矿兴建案例显示，士绅内部层次和联结将官僚、企业与地方利益接续起来，中间人持续协调分配，使工业收购和机械化得以推进。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "工业化",
+      "地方社会"
+    ],
+    "research_question": "传统地方群体如何参与现代工业的生成？",
+    "methods": "清末萍乡煤矿兴建的历史个案研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "萍乡煤矿兴建案例显示，士绅内部层次和联结将官僚、企业与地方利益接续起来，中间人持续协调分配，使工业收购和机械化得以推进。"
+    ],
+    "limitations": null,
+    "why_read": "揭示企业进入地方社会所依赖的中介群体与利益重组。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22044; metadata #art22044",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "萍乡煤矿兴建案例显示，士绅内部层次和联结将官僚、企业与地方利益接续起来，中间人持续协调分配，使工业收购和机械化得以推进。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "传统地方群体如何参与现代工业的生成？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "清末萍乡煤矿兴建的历史个案研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "萍乡煤矿兴建案例显示，士绅内部层次和联结将官僚、企业与地方利益接续起来，中间人持续协调分配，使工业收购和机械化得以推进。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22044",
+    "private_source_record_sha256": "5f897bd6a48c0e71829948b4fd33bd19df4a1759cf9741bdcf9f9c8b0fa0db08"
+  },
+  {
+    "id": "algorithm-society-22045",
+    "external_id": "society:22045",
+    "title": "“情”与“礼”之间：从“父子离心”到“父子一体”——以李安的“父亲三部曲”为例",
+    "authors": [
+      "李朔严",
+      "刘一艺"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/138",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "对李安父亲题材电影的分析认为，父子冲突不仅源于时代差异，也源于礼仪规范限制情感表达；共同经历能够带来阶段性的关系修复。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "家庭",
+      "亲密关系"
+    ],
+    "research_question": "父子关系怎样在伦理约束与情感之间调整？",
+    "methods": "李安父亲三部曲的电影文本分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "对李安父亲题材电影的分析认为，父子冲突不仅源于时代差异，也源于礼仪规范限制情感表达；共同经历能够带来阶段性的关系修复。"
+    ],
+    "limitations": null,
+    "why_read": "为理解亲密关系提供不同于传统现代对立的视角。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22045; metadata #art22045",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "对李安父亲题材电影的分析认为，父子冲突不仅源于时代差异，也源于礼仪规范限制情感表达；共同经历能够带来阶段性的关系修复。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "父子关系怎样在伦理约束与情感之间调整？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "李安父亲三部曲的电影文本分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "对李安父亲题材电影的分析认为，父子冲突不仅源于时代差异，也源于礼仪规范限制情感表达；共同经历能够带来阶段性的关系修复。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22045",
+    "private_source_record_sha256": "fb428827c1b14cbb085936e79f43e5d364b2b6a51b30c1d029b7aa375fbdf6d0"
+  },
+  {
+    "id": "algorithm-society-22046",
+    "external_id": "society:22046",
+    "title": "成为“情境艺术家”：斜杠影像创作者的身份建构",
+    "authors": [
+      "张佳雪",
+      "袁同凯"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/171",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "乡村摄影项目中的斜杠创作者通过短期创作尝试艺术身份，但主业时间安排和资源依赖使这种认同常呈阶段性，难以完全转化为持续自主实践。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "职业身份",
+      "文化劳动"
+    ],
+    "research_question": "斜杠创作者如何在主业与艺术追求之间建构身份？",
+    "methods": "洋芋乡村摄影项目案例研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "乡村摄影项目中的斜杠创作者通过短期创作尝试艺术身份，但主业时间安排和资源依赖使这种认同常呈阶段性，难以完全转化为持续自主实践。"
+    ],
+    "limitations": null,
+    "why_read": "将多职业身份从谋生策略扩展到意义追求和制度约束。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22046; metadata #art22046",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "乡村摄影项目中的斜杠创作者通过短期创作尝试艺术身份，但主业时间安排和资源依赖使这种认同常呈阶段性，难以完全转化为持续自主实践。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "斜杠创作者如何在主业与艺术追求之间建构身份？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "洋芋乡村摄影项目案例研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "乡村摄影项目中的斜杠创作者通过短期创作尝试艺术身份，但主业时间安排和资源依赖使这种认同常呈阶段性，难以完全转化为持续自主实践。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22046",
+    "private_source_record_sha256": "fc745eaaa4309f56ae406ec6d6654de4083ff40593b5bd47fa2dd63f13b087b6"
+  },
+  {
+    "id": "algorithm-society-22047",
+    "external_id": "society:22047",
+    "title": "看中医”与健康的教育梯度——基于有序链式中介模型的实证分析",
+    "authors": [
+      "孙静含",
+      "李升",
+      "李科霖"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "issue_id": "society:2026:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/206",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "CGSS模型研究报告，中医就诊倾向在教育与自评健康的关系中具有中介作用；作者从健康自我判断和诊疗互动解释该关联，结论针对自评健康。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "健康不平等",
+      "医疗实践"
+    ],
+    "research_question": "就医选择是否参与教育与自评健康的关联？",
+    "methods": "CGSS数据的有序链式中介模型及稳健性检验",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "CGSS模型研究报告，中医就诊倾向在教育与自评健康的关系中具有中介作用；作者从健康自我判断和诊疗互动解释该关联，结论针对自评健康。"
+    ],
+    "limitations": null,
+    "why_read": "提醒健康不平等研究区分自评健康、诊疗选择与客观疗效。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22047; metadata #art22047",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "CGSS模型研究报告，中医就诊倾向在教育与自评健康的关系中具有中介作用；作者从健康自我判断和诊疗互动解释该关联，结论针对自评健康。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "就医选择是否参与教育与自评健康的关联？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "CGSS数据的有序链式中介模型及稳健性检验",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "CGSS模型研究报告，中医就诊倾向在教育与自评健康的关系中具有中介作用；作者从健康自我判断和诊疗互动解释该关联，结论针对自评健康。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22047",
+    "private_source_record_sha256": "0c224d44d59613d3d1bdd7ff749f8d7b169a2c3200f289cc5bc1a8edcfd633fd"
+  },
+  {
+    "id": "algorithm-society-22190",
+    "external_id": "society:22190",
+    "title": "士大夫的社会世界建构与演变——基于曾国藩日记/通信的案例研究",
+    "authors": [
+      "周雪光",
+      "张家硕"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "曾国藩日记与通信研究区分其精神活动与社会交往，发现社会世界呈差序特征且随时间改变，展示日常关系如何为行动提供意义基础。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社会网络",
+      "历史社会学"
+    ],
+    "research_question": "士大夫的社会世界如何构建并发生变化？",
+    "methods": "曾国藩日记和通信个案分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "曾国藩日记与通信研究区分其精神活动与社会交往，发现社会世界呈差序特征且随时间改变，展示日常关系如何为行动提供意义基础。"
+    ],
+    "limitations": null,
+    "why_read": "提供以日常文献研究关系结构及其演变的示例。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22190; metadata #art22190",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "曾国藩日记与通信研究区分其精神活动与社会交往，发现社会世界呈差序特征且随时间改变，展示日常关系如何为行动提供意义基础。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "士大夫的社会世界如何构建并发生变化？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "曾国藩日记和通信个案分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "曾国藩日记与通信研究区分其精神活动与社会交往，发现社会世界呈差序特征且随时间改变，展示日常关系如何为行动提供意义基础。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22190",
+    "private_source_record_sha256": "e637248eb3ba219c159cb502c7982b45aa27204fc87b02447faa22073d642f7b"
+  },
+  {
+    "id": "algorithm-society-22191",
+    "external_id": "society:22191",
+    "title": "从吴文藻在20世纪六七十年代的学术阅读看中国社会学重建的根基——基于吴文藻日记的考察",
+    "authors": [
+      "孙飞宇"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/30",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "吴文藻日记显示，学科停办时期的持续阅读、交流和学术共同体仍保存知识联系，为后来社会学恢复提供资源，并非从零起步。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "学科史",
+      "知识共同体"
+    ],
+    "research_question": "中国社会学重建有哪些此前延续的知识基础？",
+    "methods": "1956至1985年吴文藻日记的知识考古分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "吴文藻日记显示，学科停办时期的持续阅读、交流和学术共同体仍保存知识联系，为后来社会学恢复提供资源，并非从零起步。"
+    ],
+    "limitations": null,
+    "why_read": "揭示正式制度中断下非正式学术联系的延续价值。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22191; metadata #art22191",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "吴文藻日记显示，学科停办时期的持续阅读、交流和学术共同体仍保存知识联系，为后来社会学恢复提供资源，并非从零起步。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "中国社会学重建有哪些此前延续的知识基础？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "1956至1985年吴文藻日记的知识考古分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "吴文藻日记显示，学科停办时期的持续阅读、交流和学术共同体仍保存知识联系，为后来社会学恢复提供资源，并非从零起步。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22191",
+    "private_source_record_sha256": "a48e3cc1af2681af5f143dbe33bc4c739eb0f54d231a4d3bb3a545dc99d55029"
+  },
+  {
+    "id": "algorithm-society-22195",
+    "external_id": "society:22195",
+    "title": "边缘农户触发的电商村形成",
+    "authors": [
+      "乔天宇",
+      "邱泽奇"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/114",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "曹县电商村研究发现，最早试用和传播电商技能的多为村庄关系边缘者，其较开放的观念与对群体认知的带动推动了新产业形成。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "乡村电商",
+      "技术扩散",
+      "社会网络"
+    ],
+    "research_question": "边缘农户怎样启动乡村电商扩散？",
+    "methods": "社会网络分析、访谈与计算模拟",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "曹县电商村研究发现，最早试用和传播电商技能的多为村庄关系边缘者，其较开放的观念与对群体认知的带动推动了新产业形成。"
+    ],
+    "limitations": null,
+    "why_read": "修正创新必然从村庄核心精英扩散的预设。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22195; metadata #art22195",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "曹县电商村研究发现，最早试用和传播电商技能的多为村庄关系边缘者，其较开放的观念与对群体认知的带动推动了新产业形成。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "边缘农户怎样启动乡村电商扩散？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "社会网络分析、访谈与计算模拟",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "曹县电商村研究发现，最早试用和传播电商技能的多为村庄关系边缘者，其较开放的观念与对群体认知的带动推动了新产业形成。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [
+      {
+        "url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206/thumbnail/sh-46-2-114-1.jpg",
+        "caption": "原文图1：南庄村个案的关系网络、技能传播与电商户占比，2009—2019年",
+        "source_url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206.shtml",
+        "kind": "chart",
+        "alt": "两幅村庄网络图及2009至2019年电商户占比曲线，来源为原论文图1"
+      },
+      {
+        "url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206/thumbnail/sh-46-2-114-3.jpg",
+        "caption": "原文图3：核心、半边缘与边缘家户之间的电商技能传播，比较两个时期",
+        "source_url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206.shtml",
+        "kind": "figure",
+        "alt": "2009至2012年与2013至2019年三类家户之间技能传播的关系示意图"
+      }
+    ],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22195",
+    "private_source_record_sha256": "c288d897d65fec9dbb65e90e578ccce2ef9c281346ccf6316440b4d193395ddb"
+  },
+  {
+    "id": "algorithm-society-22196",
+    "external_id": "society:22196",
+    "title": "镜头下的工作：劳动可见性如何影响幼儿教师的专业自主性？",
+    "authors": [
+      "陈玉佩"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/147",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "托幼工作的影像可见性满足家长了解孩子的需要，也使教师面临外部评判与专业自主挑战；应对监视的额外实践可能挤占高质量照护的注意和情感投入。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "数字监控",
+      "照护劳动",
+      "教育"
+    ],
+    "research_question": "家园沟通的数字可见性如何影响幼师专业自主？",
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": [
+      "托幼工作的影像可见性满足家长了解孩子的需要，也使教师面临外部评判与专业自主挑战；应对监视的额外实践可能挤占高质量照护的注意和情感投入。"
+    ],
+    "limitations": null,
+    "why_read": "揭示透明化技术的信任收益与劳动代价之间的张力。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22196; metadata #art22196",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "托幼工作的影像可见性满足家长了解孩子的需要，也使教师面临外部评判与专业自主挑战；应对监视的额外实践可能挤占高质量照护的注意和情感投入。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "家园沟通的数字可见性如何影响幼师专业自主？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "托幼工作的影像可见性满足家长了解孩子的需要，也使教师面临外部评判与专业自主挑战；应对监视的额外实践可能挤占高质量照护的注意和情感投入。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22196",
+    "private_source_record_sha256": "b59299c6c967da88aecefb8019e0fe57e61e4bfec04eacba9ba0db697bdfc292"
+  },
+  {
+    "id": "algorithm-society-22197",
+    "external_id": "society:22197",
+    "title": "家庭变动中的反思性体认——以宁夏政策性搬迁安置区的移民为例",
+    "authors": [
+      "薛雯静",
+      "徐宗阳"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/182",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "宁夏搬迁家庭的不安不只是经济损失，也来自成员对责任错位和自我角色的反思；重新体会他人处境并调整行动是恢复心安的重要过程。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "搬迁",
+      "家庭伦理"
+    ],
+    "research_question": "政策搬迁中的家庭变化为何引发不安，又如何化解？",
+    "methods": "宁夏政策性搬迁安置区移民研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "宁夏搬迁家庭的不安不只是经济损失，也来自成员对责任错位和自我角色的反思；重新体会他人处境并调整行动是恢复心安的重要过程。"
+    ],
+    "limitations": null,
+    "why_read": "把搬迁影响从物质利益扩展到家庭关系与伦理体验。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22197; metadata #art22197",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "宁夏搬迁家庭的不安不只是经济损失，也来自成员对责任错位和自我角色的反思；重新体会他人处境并调整行动是恢复心安的重要过程。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "政策搬迁中的家庭变化为何引发不安，又如何化解？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "宁夏政策性搬迁安置区移民研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "宁夏搬迁家庭的不安不只是经济损失，也来自成员对责任错位和自我角色的反思；重新体会他人处境并调整行动是恢复心安的重要过程。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22197",
+    "private_source_record_sha256": "27404e26d33b0a76acbc77812da35b90971389906d5361798b41486435e8167d"
+  },
+  {
+    "id": "algorithm-society-22198",
+    "external_id": "society:22198",
+    "title": "何以共有：闽西客家宗族型村庄的房产观念与实践",
+    "authors": [
+      "刘超群"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "issue_id": "society:2026:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/208",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "闽西宗族村庄中，共有房屋与个体占有可以长期共存；房支结构、祖先象征和继承实践共同支撑共有，使占有未必导向完全私有化。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "产权",
+      "宗族",
+      "乡村"
+    ],
+    "research_question": "宗族房产共有何以成为稳定制度而非过渡形态？",
+    "methods": "闽西客家宗族型村庄案例比较",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "闽西宗族村庄中，共有房屋与个体占有可以长期共存；房支结构、祖先象征和继承实践共同支撑共有，使占有未必导向完全私有化。"
+    ],
+    "limitations": null,
+    "why_read": "为理解乡村产权提供超越私有化线性叙事的证据。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22198; metadata #art22198",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "闽西宗族村庄中，共有房屋与个体占有可以长期共存；房支结构、祖先象征和继承实践共同支撑共有，使占有未必导向完全私有化。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "宗族房产共有何以成为稳定制度而非过渡形态？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "闽西客家宗族型村庄案例比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "闽西宗族村庄中，共有房屋与个体占有可以长期共存；房支结构、祖先象征和继承实践共同支撑共有，使占有未必导向完全私有化。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22198",
+    "private_source_record_sha256": "72282eb3c4d4ee70b7560e63a4a21bcc17c7abc65cef295fcb8544a646a38e35"
+  },
+  {
+    "id": "algorithm-society-22356",
+    "external_id": "society:22356",
+    "title": "从知识权威到行动许可：以宠物医疗中的转译劳动为例",
+    "authors": [
+      "卢思苇"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/32",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "宠物医生拥有知识并不自动获得客户配合，还需把专业语言转成伦理意义，把情感要求转成责任边界，才能取得行动认可。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "专业职业",
+      "情感劳动"
+    ],
+    "research_question": "新兴专业如何把知识权威转换为实践许可？",
+    "methods": "宠物医疗临床实践的职业社会学分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "宠物医生拥有知识并不自动获得客户配合，还需把专业语言转成伦理意义，把情感要求转成责任边界，才能取得行动认可。"
+    ],
+    "limitations": null,
+    "why_read": "把专业权威研究扩展到情感、意义沟通和边界工作。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22356; metadata #art22356",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "宠物医生拥有知识并不自动获得客户配合，还需把专业语言转成伦理意义，把情感要求转成责任边界，才能取得行动认可。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "新兴专业如何把知识权威转换为实践许可？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "宠物医疗临床实践的职业社会学分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "宠物医生拥有知识并不自动获得客户配合，还需把专业语言转成伦理意义，把情感要求转成责任边界，才能取得行动认可。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22356",
+    "private_source_record_sha256": "16a14126076317d92aeb4677666a8c12104196457af4d9177560c1f46769ace0"
+  },
+  {
+    "id": "algorithm-society-22357",
+    "external_id": "society:22357",
+    "title": "动员与压抑：中国游戏产业劳动主体性的片段性调用机制",
+    "authors": [
+      "潘竹涛",
+      "吴桐雨"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/57",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "游戏企业招募热爱游戏的开发者，却选择性利用其主体性：高投入意愿被固化为过度劳动，创作热情和玩家身份反而受模块化生产压制。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "文化劳动",
+      "劳动控制"
+    ],
+    "research_question": "游戏产业如何选择性动员创造性劳动者的主体性？",
+    "methods": "中国游戏产业创造性劳动研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "游戏企业招募热爱游戏的开发者，却选择性利用其主体性：高投入意愿被固化为过度劳动，创作热情和玩家身份反而受模块化生产压制。"
+    ],
+    "limitations": null,
+    "why_read": "帮助分析热爱工作为何同时成为控制资源。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22357; metadata #art22357",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "游戏企业招募热爱游戏的开发者，却选择性利用其主体性：高投入意愿被固化为过度劳动，创作热情和玩家身份反而受模块化生产压制。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "游戏产业如何选择性动员创造性劳动者的主体性？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "中国游戏产业创造性劳动研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "游戏企业招募热爱游戏的开发者，却选择性利用其主体性：高投入意愿被固化为过度劳动，创作热情和玩家身份反而受模块化生产压制。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22357",
+    "private_source_record_sha256": "0c73a448a2ba8d0687d2946e5470a2a1d7665b61f00553ac643704b2c26e1d1d"
+  },
+  {
+    "id": "algorithm-society-22358",
+    "external_id": "society:22358",
+    "title": "社会学的时代精神求索：以青年马克思的希腊精神史研究为例",
+    "authors": [
+      "张巍卓"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/83",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章追踪青年马克思对希腊思想和黑格尔叙事的反思，将其唯物主义精神理解为正视自身处境并抵抗现实压迫的主体态度。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社会理论",
+      "思想史"
+    ],
+    "research_question": "青年马克思如何通过精神史研究形成社会批判立场？",
+    "methods": "青年马克思希腊精神史研究的文本阐释",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章追踪青年马克思对希腊思想和黑格尔叙事的反思，将其唯物主义精神理解为正视自身处境并抵抗现实压迫的主体态度。"
+    ],
+    "limitations": null,
+    "why_read": "为社会理论与时代精神的关系提供思想史讨论。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22358; metadata #art22358",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章追踪青年马克思对希腊思想和黑格尔叙事的反思，将其唯物主义精神理解为正视自身处境并抵抗现实压迫的主体态度。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "青年马克思如何通过精神史研究形成社会批判立场？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "青年马克思希腊精神史研究的文本阐释",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章追踪青年马克思对希腊思想和黑格尔叙事的反思，将其唯物主义精神理解为正视自身处境并抵抗现实压迫的主体态度。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22358",
+    "private_source_record_sha256": "e1a2de89e3ea991502de1903de27da219f186a21ae1183e1e05cb8096d1b7a4b"
+  },
+  {
+    "id": "algorithm-society-22359",
+    "external_id": "society:22359",
+    "title": "儒教重建与士人宗教团体——以清末温州下层士人的宗教实践为中心",
+    "authors": [
+      "张喆",
+      "侯俊丹"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/113",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "清末温州下层士人融合多种宗教与科学资源组织太阳教，以修身和共同体精神回应秩序危机；这种实践也显露后来激进组织的意志取向。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "宗教",
+      "社会组织",
+      "思想史"
+    ],
+    "research_question": "地方士人的宗教重建如何连接社会组织与现代转型？",
+    "methods": "清末温州太阳教宗教实践历史个案",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "清末温州下层士人融合多种宗教与科学资源组织太阳教，以修身和共同体精神回应秩序危机；这种实践也显露后来激进组织的意志取向。"
+    ],
+    "limitations": null,
+    "why_read": "展示宗教修养、知识混融与组织动员之间的联系。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22359; metadata #art22359",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "清末温州下层士人融合多种宗教与科学资源组织太阳教，以修身和共同体精神回应秩序危机；这种实践也显露后来激进组织的意志取向。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "地方士人的宗教重建如何连接社会组织与现代转型？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "清末温州太阳教宗教实践历史个案",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "清末温州下层士人融合多种宗教与科学资源组织太阳教，以修身和共同体精神回应秩序危机；这种实践也显露后来激进组织的意志取向。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22359",
+    "private_source_record_sha256": "7b0456b256a026757124cf717f222b35192a330aacf63cc3b265220d2208f81d"
+  },
+  {
+    "id": "algorithm-society-22360",
+    "external_id": "society:22360",
+    "title": "父职类型学：“以体育儿”的实践形式与动机结构",
+    "authors": [
+      "胡荣",
+      "艾裕宸"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/151",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "20组家庭访谈观察显示，父亲体育育儿的参与频率与动机并不一致；稳定陪伴也可能延续权威和分工，偶尔参与亦可能表达亲密补偿。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "父职",
+      "育儿",
+      "性别"
+    ],
+    "research_question": "父亲通过体育参与育儿有哪些形式与动机组合？",
+    "methods": "20组城市家庭深度访谈与观察",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "20组家庭访谈观察显示，父亲体育育儿的参与频率与动机并不一致；稳定陪伴也可能延续权威和分工，偶尔参与亦可能表达亲密补偿。"
+    ],
+    "limitations": null,
+    "why_read": "避免把父职变化简单衡量为参与时间的增加。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22360; metadata #art22360",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "20组家庭访谈观察显示，父亲体育育儿的参与频率与动机并不一致；稳定陪伴也可能延续权威和分工，偶尔参与亦可能表达亲密补偿。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "父亲通过体育参与育儿有哪些形式与动机组合？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "20组城市家庭深度访谈与观察",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "20组家庭访谈观察显示，父亲体育育儿的参与频率与动机并不一致；稳定陪伴也可能延续权威和分工，偶尔参与亦可能表达亲密补偿。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22360",
+    "private_source_record_sha256": "13e562fe99ae938b7b3e28c808bc5c59eb576576d4ca8f4633367021e6b4ef75"
+  },
+  {
+    "id": "algorithm-society-22361",
+    "external_id": "society:22361",
+    "title": "灾难如何收藏：记忆的物质性与文化创伤的图腾",
+    "authors": [
+      "李瑞彤"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/180",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "汶川地震私人博物馆研究表明，受灾实物保存了叙事难以替代的生活经验，同时把破坏的物质痕迹转化为具有道德情感的集体记忆。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "集体记忆",
+      "灾难",
+      "博物馆"
+    ],
+    "research_question": "灾难实物如何支持纪念与共同体记忆？",
+    "methods": "保存汶川地震记忆的私人博物馆田野研究",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "汶川地震私人博物馆研究表明，受灾实物保存了叙事难以替代的生活经验，同时把破坏的物质痕迹转化为具有道德情感的集体记忆。"
+    ],
+    "limitations": null,
+    "why_read": "为记忆研究补充物质经验而非仅话语建构的路径。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22361; metadata #art22361",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "汶川地震私人博物馆研究表明，受灾实物保存了叙事难以替代的生活经验，同时把破坏的物质痕迹转化为具有道德情感的集体记忆。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "灾难实物如何支持纪念与共同体记忆？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "保存汶川地震记忆的私人博物馆田野研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "汶川地震私人博物馆研究表明，受灾实物保存了叙事难以替代的生活经验，同时把破坏的物质痕迹转化为具有道德情感的集体记忆。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22361",
+    "private_source_record_sha256": "16acb0716fb8ff93a9bfc8f0daa3b0c0c3d4a4dfa8c68414412882065c686a14"
+  },
+  {
+    "id": "algorithm-society-22362",
+    "external_id": "society:22362",
+    "title": "社会保障政策的代际减贫效应——基于中国健康与营养调查的追踪研究",
+    "authors": [
+      "仲超",
+      "张浩淼"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "issue_id": "society:2026:3",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/209",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "CHNS追踪研究发现，医保与现金支持可通过家庭投入缓冲贫困代际传递，养老保险未呈同样作用；政策效果在父代文化资本较高家庭更明显。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社会保障",
+      "贫困",
+      "代际流动"
+    ],
+    "research_question": "不同社会保障政策是否影响贫困的代际传递？",
+    "methods": "中国健康与营养调查1989至2015年追踪分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "CHNS追踪研究发现，医保与现金支持可通过家庭投入缓冲贫困代际传递，养老保险未呈同样作用；政策效果在父代文化资本较高家庭更明显。"
+    ],
+    "limitations": null,
+    "why_read": "评估保障政策时兼顾子代收益和家庭资源差异。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22362; metadata #art22362",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "CHNS追踪研究发现，医保与现金支持可通过家庭投入缓冲贫困代际传递，养老保险未呈同样作用；政策效果在父代文化资本较高家庭更明显。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "不同社会保障政策是否影响贫困的代际传递？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "中国健康与营养调查1989至2015年追踪分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "CHNS追踪研究发现，医保与现金支持可通过家庭投入缓冲贫困代际传递，养老保险未呈同样作用；政策效果在父代文化资本较高家庭更明显。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": true,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22362",
+    "private_source_record_sha256": "73ccb3a7225dd7dbea7e4d9da25b648dd77b1437c9765132fe30bf288c67a67b"
+  },
+  {
+    "id": "algorithm-society-22478",
+    "external_id": "society:22478",
+    "title": "走出“初民社会”的两条路径：社区研究的文化论与马林诺夫斯基的文化接触学说",
+    "authors": [
+      "田耕"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章比较马林诺夫斯基与燕京社区研究超越原初社会的方法：前者侧重文化接触自身的生成，后者结合边疆和民族建设，走向不同的文化国族问题。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社区研究",
+      "文化接触"
+    ],
+    "research_question": "相似的学术转向为何产生不同的文化研究道路？",
+    "methods": "跨国思想史中的文化理论比较",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章比较马林诺夫斯基与燕京社区研究超越原初社会的方法：前者侧重文化接触自身的生成，后者结合边疆和民族建设，走向不同的文化国族问题。"
+    ],
+    "limitations": null,
+    "why_read": "为社区研究与民族建构的关系提供历史定位。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22478; metadata #art22478",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章比较马林诺夫斯基与燕京社区研究超越原初社会的方法：前者侧重文化接触自身的生成，后者结合边疆和民族建设，走向不同的文化国族问题。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "相似的学术转向为何产生不同的文化研究道路？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "跨国思想史中的文化理论比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章比较马林诺夫斯基与燕京社区研究超越原初社会的方法：前者侧重文化接触自身的生成，后者结合边疆和民族建设，走向不同的文化国族问题。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22478",
+    "private_source_record_sha256": "b578740d8e5338a2dda1888c046090182569ad3d38676243635d3e2032c670a8"
+  },
+  {
+    "id": "algorithm-society-22479",
+    "external_id": "society:22479",
+    "title": "诸文明的共同基础：莫斯的单数文明论",
+    "authors": [
+      "蒋卓峰"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/33",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "莫斯的单数文明不被解释为先验统一原则，而是不同文明在交往边界形成的共同基础；这种基础又支持各文明延续差异和继续交流。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "文明研究",
+      "社会理论"
+    ],
+    "research_question": "文明之间的共同基础如何与差异并存？",
+    "methods": "莫斯文明观的思想演进分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "莫斯的单数文明不被解释为先验统一原则，而是不同文明在交往边界形成的共同基础；这种基础又支持各文明延续差异和继续交流。"
+    ],
+    "limitations": null,
+    "why_read": "为超越文明整合与纯关系两种解释提供理论资源。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22479; metadata #art22479",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "莫斯的单数文明不被解释为先验统一原则，而是不同文明在交往边界形成的共同基础；这种基础又支持各文明延续差异和继续交流。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "文明之间的共同基础如何与差异并存？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "莫斯文明观的思想演进分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "莫斯的单数文明不被解释为先验统一原则，而是不同文明在交往边界形成的共同基础；这种基础又支持各文明延续差异和继续交流。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22479",
+    "private_source_record_sha256": "0f93bbdfe69e2e108976dd62191bccf579b45d89a9132bb44cbb068d497d210b"
+  },
+  {
+    "id": "algorithm-society-22480",
+    "external_id": "society:22480",
+    "title": "个体与集体之辩：莫斯论法国社会主义中的总体性",
+    "authors": [
+      "潘梓旸"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/64",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "莫斯以总体性回应个体和集体的对立，强调经济交换也是社会整体的一部分；理想的共同体应保留个体自由和边界，而非以集体规范抹去个体。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社会理论",
+      "个体与集体"
+    ],
+    "research_question": "怎样在社会整体中同时维护集体价值和个人自由？",
+    "methods": "莫斯对法国社会主义与俄国革命的理论分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "莫斯以总体性回应个体和集体的对立，强调经济交换也是社会整体的一部分；理想的共同体应保留个体自由和边界，而非以集体规范抹去个体。"
+    ],
+    "limitations": null,
+    "why_read": "为讨论总体性与个体自主的兼容提供参照。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22480; metadata #art22480",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "莫斯以总体性回应个体和集体的对立，强调经济交换也是社会整体的一部分；理想的共同体应保留个体自由和边界，而非以集体规范抹去个体。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "怎样在社会整体中同时维护集体价值和个人自由？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "莫斯对法国社会主义与俄国革命的理论分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "莫斯以总体性回应个体和集体的对立，强调经济交换也是社会整体的一部分；理想的共同体应保留个体自由和边界，而非以集体规范抹去个体。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22480",
+    "private_source_record_sha256": "2f47519c5952db73936075b83c8b14cb9e921c134ec16e39e281a93b70e7ce57"
+  },
+  {
+    "id": "algorithm-society-22482",
+    "external_id": "society:22482",
+    "title": "家国关系变迁中的就医秩序与行动伦理——一个华北村庄的历时性研究",
+    "authors": [
+      "桑坤",
+      "高远"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/136",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "华北村庄的历时比较发现，医疗资源下沉增强不必然带来有序就医；乡村医生难以同时嵌入科层和乡土关系，削弱了国家供给与地方信任的衔接。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "基层医疗",
+      "国家社会关系"
+    ],
+    "research_question": "资源投入增加后，农村就医秩序为何仍存在困难？",
+    "methods": "1949年以来政策文本与华北村庄田野材料比较",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "华北村庄的历时比较发现，医疗资源下沉增强不必然带来有序就医；乡村医生难以同时嵌入科层和乡土关系，削弱了国家供给与地方信任的衔接。"
+    ],
+    "limitations": null,
+    "why_read": "把基层医疗改革的重点从单纯供给扩展到可信的关系接点。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22482; metadata #art22482",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "华北村庄的历时比较发现，医疗资源下沉增强不必然带来有序就医；乡村医生难以同时嵌入科层和乡土关系，削弱了国家供给与地方信任的衔接。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "资源投入增加后，农村就医秩序为何仍存在困难？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "1949年以来政策文本与华北村庄田野材料比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "华北村庄的历时比较发现，医疗资源下沉增强不必然带来有序就医；乡村医生难以同时嵌入科层和乡土关系，削弱了国家供给与地方信任的衔接。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22482",
+    "private_source_record_sha256": "61d70a1c128407dbb65f87f825cb6297006399f4ae76b10a645e77a64e2405a2"
+  },
+  {
+    "id": "algorithm-society-22483",
+    "external_id": "society:22483",
+    "title": "从分娩记忆看中国女性产痛的代际变迁与社会意涵",
+    "authors": [
+      "方静文",
+      "张仁烨"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/176",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "24位女性分娩记忆显示，产痛体验的代际差异嵌入分娩场所、医学化和自我意识变化，不能归为忍痛能力下降；减痛也涉及家庭、社区与医疗协作。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "生育",
+      "身体经验",
+      "医疗实践"
+    ],
+    "research_question": "不同世代女性如何理解分娩疼痛？",
+    "methods": "24位产妇分娩记忆的历史分期比较",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "24位女性分娩记忆显示，产痛体验的代际差异嵌入分娩场所、医学化和自我意识变化，不能归为忍痛能力下降；减痛也涉及家庭、社区与医疗协作。"
+    ],
+    "limitations": null,
+    "why_read": "提示生育支持同时回应身体、心理和社会需求。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22483; metadata #art22483",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "24位女性分娩记忆显示，产痛体验的代际差异嵌入分娩场所、医学化和自我意识变化，不能归为忍痛能力下降；减痛也涉及家庭、社区与医疗协作。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "不同世代女性如何理解分娩疼痛？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "24位产妇分娩记忆的历史分期比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "24位女性分娩记忆显示，产痛体验的代际差异嵌入分娩场所、医学化和自我意识变化，不能归为忍痛能力下降；减痛也涉及家庭、社区与医疗协作。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22483",
+    "private_source_record_sha256": "b296f6134757841bf21b10b9531f31c7ad3c07cf53cd96a728bd9d3cb8b21664"
+  },
+  {
+    "id": "algorithm-society-22484",
+    "external_id": "society:22484",
+    "title": "“生命为了艺术，艺术为了生命”：齐美尔论艺术与生命的协调",
+    "authors": [
+      "曹金羽"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "issue_id": "society:2026:4",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/211",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章通过齐美尔对不同艺术家的解读，说明艺术自主并不等于脱离生活，而能在形式与生命的张力中回应个体意义和现代经验。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "艺术社会学",
+      "社会理论"
+    ],
+    "research_question": "齐美尔如何理解艺术自主与生命整体的协调？",
+    "methods": "齐美尔艺术家与作品论述的文本分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章通过齐美尔对不同艺术家的解读，说明艺术自主并不等于脱离生活，而能在形式与生命的张力中回应个体意义和现代经验。"
+    ],
+    "limitations": null,
+    "why_read": "为艺术社会学中的自主性与社会联系问题提供视角。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:49:23+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract22484; metadata #art22484",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章通过齐美尔对不同艺术家的解读，说明艺术自主并不等于脱离生活，而能在形式与生命的张力中回应个体意义和现代经验。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "齐美尔如何理解艺术自主与生命整体的协调？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "齐美尔艺术家与作品论述的文本分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章通过齐美尔对不同艺术家的解读，说明艺术自主并不等于脱离生活，而能在形式与生命的张力中回应个体意义和现代经验。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-22484",
+    "private_source_record_sha256": "df95310f1c49a599341c156e6bfea07bea2b51e922f60c96bec8cb18f93d450a"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "多重印记、制度积淀与组织演进——关于大学组织的一项扎根理论研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "组织印记",
+      "制度积淀",
+      "扩展的文化钻石模型",
+      "制度工具"
+    ],
+    "id": "shxyj-117819",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117819",
+    "authors": [
+      "韩亦",
+      "范文",
+      "郑恩营"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117819",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "组织印记",
+      "制度积淀",
+      "扩展的文化钻石模型",
+      "制度工具"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001008&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117819",
+    "private_source_record_sha256": "cdd48ff6bdb56b08fff95de6e199bf7d5061b62fd364b251c2a9d7235e307e5a"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "保障凝聚认同？——社会保障建构国家认同的异质性研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "社会保障",
+      "国家认同",
+      "社会交换"
+    ],
+    "id": "shxyj-117820",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117820",
+    "authors": [
+      "黄种滨"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117820",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社会保障",
+      "国家认同",
+      "社会交换"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117820",
+    "private_source_record_sha256": "2b47e6b41e5c31a3eade77a52f53caac86cb61cb5f16d78cff7fc5744e8ea84f"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "灵活用工与资本劳动力经营职能的发展——基于弹性积累体制的分析",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "弹性积累体制",
+      "灵活用工",
+      "劳动力经营职能",
+      "资本循环过程"
+    ],
+    "id": "shxyj-117821",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117821",
+    "authors": [
+      "汪建华"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117821",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "弹性积累体制",
+      "灵活用工",
+      "劳动力经营职能",
+      "资本循环过程"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001010&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117821",
+    "private_source_record_sha256": "18022657b72bd1fc037df910edb71493bb53c635009d9c74028e257dfdea10b9"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "谁是家里人？——对中国家庭成员界定的调查实验研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "中国家庭",
+      "家庭人数",
+      "主干家庭",
+      "问卷调查",
+      "调查实验"
+    ],
+    "id": "shxyj-117813",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117813",
+    "authors": [
+      "张春泥",
+      "孙妍"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117813",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "中国家庭",
+      "家庭人数",
+      "主干家庭",
+      "问卷调查",
+      "调查实验"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001002&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117813",
+    "private_source_record_sha256": "ddd50690dae51f825254c56e2235ffd6d8c7aa66dd516f550218ad7044d67c6f"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "城镇家庭住房保有中的责任伦理与经济实践",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "住房保有",
+      "家庭财富",
+      "家庭责任伦理",
+      "家计安排"
+    ],
+    "id": "shxyj-117814",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117814",
+    "authors": [
+      "许弘智"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117814",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "住房保有",
+      "家庭财富",
+      "家庭责任伦理",
+      "家计安排"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001003&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117814",
+    "private_source_record_sha256": "816384bf4e6a61ef5c59d792f9e5c1590d3144d96534d1a25a265c6d2af83373"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "权力、利益与价值：城市数字化风险防控的实现机制——基于11座特大城市的调查研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "风险防控",
+      "数字化转型“权力—利益—价值”",
+      "框架",
+      "组织间关系",
+      "城市治理"
+    ],
+    "id": "shxyj-117815",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117815",
+    "authors": [
+      "吴晓林",
+      "邢羿飞"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117815",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "风险防控",
+      "数字化转型“权力—利益—价值”",
+      "框架",
+      "组织间关系",
+      "城市治理"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001004&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117815",
+    "private_source_record_sha256": "24bb29a72db41c7b603f97d59c012f7727f3a7e25d3b80cef1194e527657cbab"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "示范的效应及其困境：挤压型情境与基层政策执行——石镇乡村振兴的案例研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "乡村振兴",
+      "示范效应",
+      "挤压型情境",
+      "政策执行"
+    ],
+    "id": "shxyj-117816",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117816",
+    "authors": [
+      "李棉管",
+      "苏芮",
+      "谭添熙"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117816",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "乡村振兴",
+      "示范效应",
+      "挤压型情境",
+      "政策执行"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001005&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117816",
+    "private_source_record_sha256": "864e439c84eaa0875c240bdd57ba1bdbf91090ce711ac9f5f240101f970ae9dc"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "仁之以为治——以《牧鉴》为个案的社会学研究",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "《牧鉴》",
+      "传统治理者",
+      "理学",
+      "“仁之以为治”"
+    ],
+    "id": "shxyj-117817",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117817",
+    "authors": [
+      "王绍琛"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117817",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "《牧鉴》",
+      "传统治理者",
+      "理学",
+      "“仁之以为治”"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001006&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117817",
+    "private_source_record_sha256": "dd9c77bb85106b3e12889aa9cd6cad01bbe2eedd0a06a5995af6544991380674"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "通往“未来”的社会学：认识延展与核心议题",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "未来",
+      "社会学",
+      "未来社会学",
+      "社会发展"
+    ],
+    "id": "shxyj-117818",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117818",
+    "authors": [
+      "吴越菲"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117818",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "未来",
+      "社会学",
+      "未来社会学",
+      "社会发展"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001007&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117818",
+    "private_source_record_sha256": "35f7ac36686e6e8b2a7cc3e5bed12de2d983b20c7a166c7c6203ec9a64da7da7"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "食物体制理论的演进及其中国意义——一个农业社会学的视角",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "published_at": "2025-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "食物体制",
+      "食物安全",
+      "全球化",
+      "农业社会学"
+    ],
+    "id": "shxyj-117812",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=117812",
+    "authors": [
+      "熊春文",
+      "柯雪龙",
+      "李梦琪"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:1",
+    "external_id": "shxyj-117812",
+    "published_at_display": "2025-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "食物体制",
+      "食物安全",
+      "全球化",
+      "农业社会学"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=1",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025001001&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-117812",
+    "private_source_record_sha256": "891af66d6d2f535488a46e961977c5a4a289734f98ab62093a947e71aa080526"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "内生性关联与乡村环境治理中农民主体性的建构——基于临江县“河道自管”的案例研究",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "环境治理",
+      "农民主体性",
+      "内生性关联",
+      "责任关联",
+      "利益联结",
+      "协同联动"
+    ],
+    "id": "shxyj-118232",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=118232",
+    "authors": [
+      "陈涛",
+      "郭雪萍"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:2",
+    "external_id": "shxyj-118232",
+    "published_at_display": "2025-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "环境治理",
+      "农民主体性",
+      "内生性关联",
+      "责任关联",
+      "利益联结",
+      "协同联动"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=2",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025002008&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-118232",
+    "private_source_record_sha256": "724d44d974f7b6e08630f91713d909a8bc93b5815aaa39c73ba214272101895c"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "隐私权的社会建构：网络相亲中的空间博弈与规范协商",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "published_at": "2025-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "隐私确权",
+      "隐私观",
+      "社群",
+      "空间"
+    ],
+    "id": "shxyj-118233",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=118233",
+    "authors": [
+      "刘子曦"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2025:2",
+    "external_id": "shxyj-118233",
+    "published_at_display": "2025-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "隐私确权",
+      "隐私观",
+      "社群",
+      "空间"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2025&Issue=2",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2025002009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-118233",
+    "private_source_record_sha256": "1b280667cc82b834f8a5ec05ee08152b88981088107939383b8815c477c30d20"
+  }
+]
