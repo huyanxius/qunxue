@@ -1,0 +1,41 @@
+{
+  "complete": true,
+  "abstracts_verified": 251,
+  "collisions": [
+    {
+      "compact_sha256": "277597515d466dcbcf692e503d46ac67c6f9ee05dd6f862d8242556c1971195a",
+      "records": [
+        {
+          "id": "research-shjs-2023-554",
+          "title": "中国社会工作的制度化演进历程",
+          "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/3",
+          "original_abstract_sha256": "ec9723a65daad75245b33cda7b3ed0f8e151458607f20e057ba500639da5a9c7"
+        },
+        {
+          "id": "research-shjs-2023-555",
+          "title": "“因病致贫”治理体系中的家本位：家庭韧性研究评述与展望",
+          "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/14",
+          "original_abstract_sha256": "07466a79b71a68084e8c4ea41c84e9d312142d3dbbc076d8688f280db21cc841"
+        }
+      ]
+    },
+    {
+      "compact_sha256": "16d0c28ad2521a920a89f6cb1e66eda6f284a4fe7c8199ba818e4d1d3a5bd3d9",
+      "records": [
+        {
+          "id": "research-shjs-2025-665",
+          "title": "从困境到希望：失学儿童个案管理的实践与探索",
+          "url": "https://shjs.ruc.edu.cn/CN/Y2025/V12/I5/135",
+          "original_abstract_sha256": "16d0c28ad2521a920a89f6cb1e66eda6f284a4fe7c8199ba818e4d1d3a5bd3d9"
+        },
+        {
+          "id": "research-shjs-2025-671",
+          "title": "听力障碍儿童家庭参与康复救助的“压力-拉力-推力”研究",
+          "url": "https://shjs.ruc.edu.cn/CN/Y2025/V12/I6/135",
+          "original_abstract_sha256": "16d0c28ad2521a920a89f6cb1e66eda6f284a4fe7c8199ba818e4d1d3a5bd3d9"
+        }
+      ]
+    }
+  ],
+  "remaining_valid_records": 247
+}

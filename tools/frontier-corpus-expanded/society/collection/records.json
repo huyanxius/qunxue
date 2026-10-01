@@ -1,0 +1,18 @@
+{
+  "$format": "qunxue-json-shards-v1",
+  "kind": "array",
+  "count": 231,
+  "canonical_sha256": "683cc8d48702dcce8299545187cf4c8be44956423cbc87a86ef14e8c544aed3d",
+  "parts": [
+    {
+      "path": "records.parts/001.json",
+      "sha256": "0264bdfeda32ba535f29e6e103baa730017437b8899e751eee0dbc49a3783ad0",
+      "count": 129
+    },
+    {
+      "path": "records.parts/002.json",
+      "sha256": "ff95d5b2df1301ec9d205cf106d09c372759b3e578dbb3fe91a3779e39901f9b",
+      "count": 102
+    }
+  ]
+}

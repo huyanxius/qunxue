@@ -1,0 +1,1161 @@
+[
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:1",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 7,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 7,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-17944",
+      "algorithm-society-17945",
+      "algorithm-society-17946",
+      "algorithm-society-17947",
+      "algorithm-society-17948",
+      "algorithm-society-17949",
+      "algorithm-society-17950"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:2",
+    "publication_month": null,
+    "candidate_count": 9,
+    "readable_count": 9,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 9,
+    "directory_rows": 9,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18081",
+      "algorithm-society-18082",
+      "algorithm-society-18083",
+      "algorithm-society-18084",
+      "algorithm-society-18085",
+      "algorithm-society-18086",
+      "algorithm-society-18087",
+      "algorithm-society-18088",
+      "algorithm-society-18089"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:3",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 7,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 7,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18210",
+      "algorithm-society-18211",
+      "algorithm-society-18212",
+      "algorithm-society-18213",
+      "algorithm-society-18214",
+      "algorithm-society-18215",
+      "algorithm-society-18216"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:4",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18342",
+      "algorithm-society-18343",
+      "algorithm-society-18344",
+      "algorithm-society-18345",
+      "algorithm-society-18346",
+      "algorithm-society-18347",
+      "algorithm-society-18348",
+      "algorithm-society-18349"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:5",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 5,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18491",
+      "algorithm-society-18492",
+      "algorithm-society-18493",
+      "algorithm-society-18494",
+      "algorithm-society-18495",
+      "algorithm-society-18496",
+      "algorithm-society-18497",
+      "algorithm-society-18498"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2021:6",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 7,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2021,
+    "publication_issue": 6,
+    "source_id": "society",
+    "retained_count": 7,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18554",
+      "algorithm-society-18555",
+      "algorithm-society-18556",
+      "algorithm-society-18557",
+      "algorithm-society-18558",
+      "algorithm-society-18559",
+      "algorithm-society-18560"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2021&juan=41",
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2021&juan=41"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2022:1",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18682",
+      "algorithm-society-18683",
+      "algorithm-society-18684",
+      "algorithm-society-18685",
+      "algorithm-society-18686",
+      "algorithm-society-18687",
+      "algorithm-society-18688",
+      "algorithm-society-18689"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2022:2",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-18831",
+      "algorithm-society-18832",
+      "algorithm-society-18833",
+      "algorithm-society-18834",
+      "algorithm-society-18835",
+      "algorithm-society-18836",
+      "algorithm-society-18837",
+      "algorithm-society-18838"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2022:3",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19038",
+      "algorithm-society-19039",
+      "algorithm-society-19040",
+      "algorithm-society-19041",
+      "algorithm-society-19042",
+      "algorithm-society-19043",
+      "algorithm-society-19044",
+      "algorithm-society-19045"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2022:4",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2022,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19217",
+      "algorithm-society-19218",
+      "algorithm-society-19219",
+      "algorithm-society-19220",
+      "algorithm-society-19221",
+      "algorithm-society-19222",
+      "algorithm-society-19223",
+      "algorithm-society-19224"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2022:5",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2022,
+    "publication_issue": 5,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19256",
+      "algorithm-society-19257",
+      "algorithm-society-19258",
+      "algorithm-society-19259",
+      "algorithm-society-19260",
+      "algorithm-society-19261",
+      "algorithm-society-19262",
+      "algorithm-society-19263"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2022&juan=42"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "source_id": "society",
+    "issue_id": "society:2022:6",
+    "publication_year": 2022,
+    "publication_issue": 6,
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 6,
+    "retained_count": 6,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2022&juan=42",
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 1,
+    "candidate_ids": [
+      "algorithm-society-19378",
+      "algorithm-society-19379",
+      "algorithm-society-19380",
+      "algorithm-society-19381",
+      "algorithm-society-19382",
+      "algorithm-society-19383",
+      "algorithm-society-19384"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2022&juan=42"
+    ],
+    "failures": [
+      {
+        "id": "algorithm-society-19378",
+        "title": "“中国式现代化与中国社会学自主知识体系的构建”笔谈",
+        "reason": "missing_or_insufficient_readable_abstract"
+      }
+    ],
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。"
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2023:1",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19517",
+      "algorithm-society-19518",
+      "algorithm-society-19519",
+      "algorithm-society-19520",
+      "algorithm-society-19521",
+      "algorithm-society-19522",
+      "algorithm-society-19523",
+      "algorithm-society-19524"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2023:2",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19619",
+      "algorithm-society-19620",
+      "algorithm-society-19621",
+      "algorithm-society-19622",
+      "algorithm-society-19623",
+      "algorithm-society-19624",
+      "algorithm-society-19625",
+      "algorithm-society-19626"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2023:3",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19725",
+      "algorithm-society-19726",
+      "algorithm-society-19727",
+      "algorithm-society-19728",
+      "algorithm-society-19729",
+      "algorithm-society-19730",
+      "algorithm-society-19731",
+      "algorithm-society-19732"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2023:4",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2023,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-19937",
+      "algorithm-society-19938",
+      "algorithm-society-19939",
+      "algorithm-society-19940",
+      "algorithm-society-19941",
+      "algorithm-society-19942",
+      "algorithm-society-19943",
+      "algorithm-society-19944"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2023:5",
+    "publication_month": null,
+    "candidate_count": 9,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+    "failures": [
+      {
+        "id": "algorithm-society-20055",
+        "title": "探寻组织研究的中国视角——第二十届“组织社会学实证研究工作坊”综述",
+        "reason": "missing_or_insufficient_readable_abstract"
+      }
+    ],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2023,
+    "publication_issue": 5,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 9,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 1,
+    "candidate_ids": [
+      "algorithm-society-20047",
+      "algorithm-society-20048",
+      "algorithm-society-20049",
+      "algorithm-society-20050",
+      "algorithm-society-20051",
+      "algorithm-society-20052",
+      "algorithm-society-20053",
+      "algorithm-society-20054",
+      "algorithm-society-20055"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2023&juan=43"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "source_id": "society",
+    "issue_id": "society:2023:6",
+    "publication_year": 2023,
+    "publication_issue": 6,
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "retained_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2023&juan=43",
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20147",
+      "algorithm-society-20148",
+      "algorithm-society-20149",
+      "algorithm-society-20150",
+      "algorithm-society-20151",
+      "algorithm-society-20152",
+      "algorithm-society-20153",
+      "algorithm-society-20154"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2023&juan=43"
+    ],
+    "failures": [],
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。"
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2024:1",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+    "failures": [],
+    "excluded_count": 1,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2024,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 9,
+    "excluded_nonresearch_count": 1,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20259",
+      "algorithm-society-20260",
+      "algorithm-society-20261",
+      "algorithm-society-20262",
+      "algorithm-society-20263",
+      "algorithm-society-20264",
+      "algorithm-society-20265",
+      "algorithm-society-20266"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2024:2",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2024,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20374",
+      "algorithm-society-20375",
+      "algorithm-society-20376",
+      "algorithm-society-20377",
+      "algorithm-society-20378",
+      "algorithm-society-20379",
+      "algorithm-society-20380",
+      "algorithm-society-20381"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2024:3",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2024,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20503",
+      "algorithm-society-20504",
+      "algorithm-society-20505",
+      "algorithm-society-20506",
+      "algorithm-society-20507",
+      "algorithm-society-20508",
+      "algorithm-society-20509",
+      "algorithm-society-20510"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2024:4",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2024,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20664",
+      "algorithm-society-20665",
+      "algorithm-society-20666",
+      "algorithm-society-20667",
+      "algorithm-society-20668",
+      "algorithm-society-20669",
+      "algorithm-society-20670",
+      "algorithm-society-20671"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2024:5",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 7,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2024,
+    "publication_issue": 5,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20815",
+      "algorithm-society-20816",
+      "algorithm-society-20817",
+      "algorithm-society-20818",
+      "algorithm-society-20819",
+      "algorithm-society-20820",
+      "algorithm-society-20821",
+      "algorithm-society-20822"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2024&juan=44",
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2024&juan=44"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "source_id": "society",
+    "issue_id": "society:2024:6",
+    "publication_year": 2024,
+    "publication_issue": 6,
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "retained_count": 8,
+    "included_count": 0,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2024&juan=44",
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-20942",
+      "algorithm-society-20943",
+      "algorithm-society-20944",
+      "algorithm-society-20945",
+      "algorithm-society-20946",
+      "algorithm-society-20947",
+      "algorithm-society-20948",
+      "algorithm-society-20949"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2024&juan=44"
+    ],
+    "failures": [],
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。"
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:1",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 6,
+    "included_count": 6,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [
+      {
+        "id": "algorithm-society-21131",
+        "title": "“人民性是中国式现代化发展实践的本质特征”笔谈",
+        "reason": "missing_or_insufficient_readable_abstract"
+      }
+    ],
+    "excluded_count": 1,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 6,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 1,
+    "missing_abstract_count": 1,
+    "candidate_ids": [
+      "algorithm-society-21131",
+      "algorithm-society-21132",
+      "algorithm-society-21133",
+      "algorithm-society-21134",
+      "algorithm-society-21135",
+      "algorithm-society-21136",
+      "algorithm-society-21137"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:2",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-21260",
+      "algorithm-society-21261",
+      "algorithm-society-21262",
+      "algorithm-society-21263",
+      "algorithm-society-21264",
+      "algorithm-society-21265",
+      "algorithm-society-21266",
+      "algorithm-society-21267"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:3",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 6,
+    "included_count": 6,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [
+      {
+        "id": "algorithm-society-21384",
+        "title": "“当代中国的数字社会及其治理”笔谈",
+        "reason": "missing_or_insufficient_readable_abstract"
+      }
+    ],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 6,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 1,
+    "candidate_ids": [
+      "algorithm-society-21384",
+      "algorithm-society-21385",
+      "algorithm-society-21386",
+      "algorithm-society-21387",
+      "algorithm-society-21388",
+      "algorithm-society-21389",
+      "algorithm-society-21390"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:4",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-21500",
+      "algorithm-society-21501",
+      "algorithm-society-21502",
+      "algorithm-society-21503",
+      "algorithm-society-21504",
+      "algorithm-society-21505",
+      "algorithm-society-21506",
+      "algorithm-society-21507"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:5",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 5,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-21637",
+      "algorithm-society-21638",
+      "algorithm-society-21639",
+      "algorithm-society-21640",
+      "algorithm-society-21641",
+      "algorithm-society-21642",
+      "algorithm-society-21643",
+      "algorithm-society-21644"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2025:6",
+    "publication_month": null,
+    "candidate_count": 9,
+    "readable_count": 9,
+    "included_count": 1,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2025,
+    "publication_issue": 6,
+    "source_id": "society",
+    "retained_count": 9,
+    "directory_rows": 10,
+    "excluded_nonresearch_count": 1,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-21907",
+      "algorithm-society-21908",
+      "algorithm-society-21909",
+      "algorithm-society-21910",
+      "algorithm-society-21911",
+      "algorithm-society-21912",
+      "algorithm-society-21913",
+      "algorithm-society-21914",
+      "algorithm-society-21915"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2025&juan=45",
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?pager=2&nian=2025&juan=45"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2026:1",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 7,
+    "included_count": 7,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "source_id": "society",
+    "retained_count": 7,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-22041",
+      "algorithm-society-22042",
+      "algorithm-society-22043",
+      "algorithm-society-22044",
+      "algorithm-society-22045",
+      "algorithm-society-22046",
+      "algorithm-society-22047"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2026:2",
+    "publication_month": null,
+    "candidate_count": 9,
+    "readable_count": 6,
+    "included_count": 6,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+    "failures": [
+      {
+        "id": "algorithm-society-22192",
+        "title": "社会学视域内的乡村社会问题",
+        "reason": "missing_or_insufficient_readable_abstract"
+      },
+      {
+        "id": "algorithm-society-22193",
+        "title": "乡村振兴中的“双生”融合",
+        "reason": "missing_or_insufficient_readable_abstract"
+      },
+      {
+        "id": "algorithm-society-22194",
+        "title": "从“小农困境”到政策回应：乡村产业发展的再思考",
+        "reason": "missing_or_insufficient_readable_abstract"
+      }
+    ],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "source_id": "society",
+    "retained_count": 6,
+    "directory_rows": 9,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 3,
+    "candidate_ids": [
+      "algorithm-society-22190",
+      "algorithm-society-22191",
+      "algorithm-society-22192",
+      "algorithm-society-22193",
+      "algorithm-society-22194",
+      "algorithm-society-22195",
+      "algorithm-society-22196",
+      "algorithm-society-22197",
+      "algorithm-society-22198"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2026:3",
+    "publication_month": null,
+    "candidate_count": 8,
+    "readable_count": 8,
+    "included_count": 8,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "source_id": "society",
+    "retained_count": 8,
+    "directory_rows": 8,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-22355",
+      "algorithm-society-22356",
+      "algorithm-society-22357",
+      "algorithm-society-22358",
+      "algorithm-society-22359",
+      "algorithm-society-22360",
+      "algorithm-society-22361",
+      "algorithm-society-22362"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+    ]
+  },
+  {
+    "source_name": "社会",
+    "issue_id": "society:2026:4",
+    "publication_month": null,
+    "candidate_count": 7,
+    "readable_count": 7,
+    "included_count": 7,
+    "coverage_complete": false,
+    "issue_url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46",
+    "failures": [],
+    "excluded_count": 0,
+    "coverage_note": "已合并官网年度目录首页与第2页的实际条目。年份与刊期明确；未单独核验每期原始目录完整性，保守不作可比份额分母。",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "source_id": "society",
+    "retained_count": 7,
+    "directory_rows": 7,
+    "excluded_nonresearch_count": 0,
+    "missing_abstract_count": 0,
+    "candidate_ids": [
+      "algorithm-society-22478",
+      "algorithm-society-22479",
+      "algorithm-society-22480",
+      "algorithm-society-22481",
+      "algorithm-society-22482",
+      "algorithm-society-22483",
+      "algorithm-society-22484"
+    ],
+    "source_page_urls": [
+      "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+    ]
+  }
+]

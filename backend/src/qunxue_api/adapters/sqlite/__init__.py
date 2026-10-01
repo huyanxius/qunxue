@@ -1,5 +1,7 @@
+
 """SQLite adapter registry used by migrations and the composition root."""
 
+from qunxue_api.adapters.sqlite import frontier_models as frontier_models
 from qunxue_api.adapters.sqlite.account_management_model import (
     AccountAuditEventRow,
     AccountMutationRequestRow,

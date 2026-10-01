@@ -1,0 +1,34 @@
+{
+  "verified_record_ids": [
+    "algorithm-society-22195"
+  ],
+  "verified_media_count": 2,
+  "image_host": "www.society.shu.edu.cn",
+  "source_page": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206.shtml",
+  "checks": [
+    {
+      "figure": 1,
+      "url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206/thumbnail/sh-46-2-114-1.jpg",
+      "sha256": "3d6035af5480a43dfda5494bcd802fae80f9d75100569ec2ba80ff4c9ecd06ff",
+      "bytes": 45214,
+      "fetched_at": "2026-10-01T10:08:08+00:00",
+      "source_url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206.shtml",
+      "visually_inspected": true,
+      "article_body_figure_confirmed": true,
+      "not_site_logo_banner_or_cover": true
+    },
+    {
+      "figure": 3,
+      "url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206/thumbnail/sh-46-2-114-3.jpg",
+      "sha256": "e4a6d85934934e7ea454838e38b4d254bc33ab70fd2918c05500a16f2ba66677",
+      "bytes": 16511,
+      "fetched_at": "2026-10-01T10:08:14+00:00",
+      "source_url": "https://www.society.shu.edu.cn/article/2026/1004-8804/20260206.shtml",
+      "visually_inspected": true,
+      "article_body_figure_confirmed": true,
+      "not_site_logo_banner_or_cover": true
+    }
+  ],
+  "distribution": "Store original publisher URL and attribution only; no image bytes in corpus",
+  "scope_note": "Figure data are from the cited village case and historical periods; not current national trends or this corpus topic counts."
+}

@@ -1,0 +1,18 @@
+{
+  "$format": "qunxue-json-shards-v1",
+  "kind": "array",
+  "count": 60,
+  "canonical_sha256": "ef6b38b5b7dff47701070867dca13d065f7ee55f569f73119f078bc50879d6c9",
+  "parts": [
+    {
+      "path": "practice-records.parts/001.json",
+      "sha256": "4232f41f650c456b34441039d62bbd2155534da5dcba3c292822d04e36d1ba0b",
+      "count": 55
+    },
+    {
+      "path": "practice-records.parts/002.json",
+      "sha256": "178a1bff23b6261b9da9da40c4ce67ad06d5da37577ac6b7b523c71bc545c6eb",
+      "count": 5
+    }
+  ]
+}

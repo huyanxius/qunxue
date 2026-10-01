@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "network_requests": 0,
+  "mock_cases": 24,
+  "challenge_payloads": 8,
+  "crawlers_tested": 3,
+  "first_challenge_requests_per_host": 1,
+  "subsequent_requests_after_stop": 0,
+  "normal_article_control": "passed",
+  "validation_scope": "HTTP 200 challenge detected before article parsing, no retries, host remains stopped"
+}

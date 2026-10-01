@@ -1044,6 +1044,17 @@ class PydanticAIKnowledgeRunner:
             return result
 
         @self._agent.tool
+        def search_frontier(ctx: RunContext[KnowledgeToolRegistry], query: str,
+                            since_days: int | None = None) -> dict:
+            """检索最新研究与实践前沿。最近/今年/趋势问题同时检索稳定知识与本工具。
+
+            leads 仅供文献发现，绝不能作为结论证据。evidence 保留材料资格和来源，
+            实践报道不能推断因果成效。缺论文精确日期时 since_days 会排除该条目，
+            可不传时间参数查找尚待核实的文献线索。返回 mode=lexical，不是向量检索。
+            """
+            return ctx.deps.search_frontier(query, since_days)
+
+        @self._agent.tool
         def search_knowledge(
             ctx: RunContext[KnowledgeToolRegistry], query: str
         ) -> list[dict[str, object]] | dict[str, object]:

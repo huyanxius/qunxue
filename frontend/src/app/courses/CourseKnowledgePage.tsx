@@ -100,7 +100,7 @@ export function CourseKnowledgePage() {
       <div className="course-knowledge__background" aria-hidden="true"><CourseShader /></div>
       <aside className="knowledge-library__sidebar course-knowledge__sidebar" data-mobile-open="true">
         <header className="knowledge-library__identity"><BooksIcon size={18} /><h1>课程知识库</h1></header>
-        <nav className="course-knowledge__scopes" aria-label="知识来源"><Link to="/knowledge">公共知识库</Link><Link to="/courses">管理我的课程</Link></nav>
+        <nav className="course-knowledge__scopes" aria-label="知识来源"><Link to="/courses">管理我的课程</Link></nav>
         <label className="course-knowledge__search">搜索课程知识<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="知识点、概念或方法" /></label>
         <nav className="course-knowledge__courses" aria-label="课程目录">{courses.filter((item) => item.access !== 'unavailable').map((item) => <button type="button" key={item.id} aria-current={item.id === id ? 'page' : undefined} onClick={() => { setParams({ scope: 'courses', kb_id: item.id }); setQuery('') }}>{item.name}</button>)}</nav>
       </aside>

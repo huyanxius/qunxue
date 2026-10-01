@@ -1,3 +1,4 @@
+import { FrontierPage, readFrontierState, writeFrontierState } from '../modules/frontier'
 import { CourseKnowledgePage } from './courses/CourseKnowledgePage'
 import { CourseInvitationRoute } from './courses/CourseInvitationRoute'
 import { CoursesPage } from './courses/CoursesPage'
@@ -80,6 +81,13 @@ function KnowledgeExplorerRoute() {
   }, [setSearchParams])
 
   if (searchParams.get('scope') === 'courses') return <CourseKnowledgePage />
+  if (searchParams.get('scope') === 'frontier') return (
+    <PageShell workspace defaultRailCollapsed><PageContent>
+      <FrontierPage state={readFrontierState(searchParams)}
+        onStateChange={(next) => setSearchParams(writeFrontierState(next))}
+        onOpenLibrary={() => navigate('/knowledge')} />
+    </PageContent></PageShell>
+  )
 
   return (
     <PageShell workspace defaultRailCollapsed>
@@ -98,7 +106,6 @@ function KnowledgeExplorerRoute() {
             setGraphOpen(true)
           }}
           onOpenGraph={() => setGraphOpen(true)}
-          onOpenCourseLibrary={() => navigate("/knowledge?scope=courses")}
         />
         {state.releaseId ? (
           <>

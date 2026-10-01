@@ -1,0 +1,65 @@
+[
+  {
+    "host": "cohd.cau.edu.cn",
+    "source_names": [
+      "青年研究"
+    ],
+    "record_count": 1
+  },
+  {
+    "host": "epc.swu.edu.cn",
+    "source_names": [
+      "中国青年研究"
+    ],
+    "record_count": 1
+  },
+  {
+    "host": "public.nju.edu.cn",
+    "source_names": [
+      "社会学研究"
+    ],
+    "record_count": 1
+  },
+  {
+    "host": "shjs.ruc.edu.cn",
+    "source_names": [
+      "社会建设"
+    ],
+    "record_count": 105
+  },
+  {
+    "host": "sociology.nju.edu.cn",
+    "source_names": [
+      "社会学研究"
+    ],
+    "record_count": 4
+  },
+  {
+    "host": "sociology.shu.edu.cn",
+    "source_names": [
+      "社会发展研究"
+    ],
+    "record_count": 1
+  },
+  {
+    "host": "www.society.shu.edu.cn",
+    "source_names": [
+      "社会"
+    ],
+    "record_count": 24
+  },
+  {
+    "host": "www.sps.sdu.edu.cn",
+    "source_names": [
+      "青年研究"
+    ],
+    "record_count": 1
+  },
+  {
+    "host": "www.zyshgzb.gov.cn",
+    "source_names": [
+      "中国社会工作报"
+    ],
+    "record_count": 63
+  }
+]

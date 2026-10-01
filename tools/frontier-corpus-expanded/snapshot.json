@@ -1,0 +1,66 @@
+{
+  "snapshot_date": "2026-10-01",
+  "generated_at": "2026-10-01T10:17:33+00:00",
+  "preferred_publication_window": {
+    "from": "2025-10-01",
+    "through": "2026-10-01"
+  },
+  "collection_complete": true,
+  "source_package": {
+    "name": "expanded-public-artifacts.zip",
+    "sha256": "cc98e3d379e88a002e81820cc2b85c33ca8b7157f0e46204e3eabb70888d3b8f"
+  },
+  "expected_output_sha256": {
+    "frontier-corpus.json": "52d8f50ead956762ee34cf21e8942732f8cbd5818b91cd8d1ac6487d2ccf3dfb",
+    "frontier-corpus-records.json": "5e96bf204e653b3f3e3ef2031274456e146748f5806a2a864a8b0286c0087fa2",
+    "research-index.json": "80b17dbd49a470daa7d2d7df072f31fc80c0c7b41e8f2c831e2bc1088acba6a1",
+    "issue-coverage.json": "2b24c8e1821c12ca12f57bce9476f766ab6e21240a602b2da0734a64a4e06db9",
+    "validation-report.json": "86aa0f51e989274d48516fec7a625a1150bd12ea9c07422b47f3de430ba12b35",
+    "id-aliases.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "topic-briefs.json": "033e08d8ee253e94a537a9dcebf50d53a32296387b0193d4239eb24ad586635a",
+    "evidence-matrix.json": "bda57847e9da7ba6089aedbe68505390b191025b71b79fb69822a3713f009468"
+  },
+  "input_sha256": {
+    "progress/initial-enriched-records.json": "a44fc89cc95299c7525e447d2775037dec057e9218ee87f2fd3ed85337ebab7d",
+    "progress/prior-verified-publication-dates.json": "728f6557575c501f2555067cb60dbe80985a35030efe09ffc4da9b7415d8347f",
+    "ruc/reviewed-records.json": "3dcae23c667da2c9a9ced01e99ce4739663bc199e18b9b9298eb2d22428967d2",
+    "ruc/collection/records.json": "ced58cdb7887962459f7c26699cc637f90bb344b9215f89f09c43bc69e5a4705",
+    "ruc/collection/issue-coverage.json": "c994a0def38eca990fd9e9373520cde16736708336ef9805d2bdb937121a63dd",
+    "society/enriched-records.json": "48477583740be0ec28743eee49ef1195be49b59faaf05cc5e7c32e72e10cbf96",
+    "society/collection/records.json": "b5c31a4464043a6008c32c7e64676525408a7a126844bf905d2ea2f85acc28a8",
+    "society/coverage-final.json": "a5ea64e5763d378507ffc463ff0799e04278e8f8e0b68de9175f5a5109df8a05",
+    "society-pagination/page2-candidates.json": "7433a0d890ecc42a2a62723548599a401080b987450f9c781066465e0501aa80",
+    "topic-briefs.json": "033e08d8ee253e94a537a9dcebf50d53a32296387b0193d4239eb24ad586635a",
+    "evidence-matrix.json": "bda57847e9da7ba6089aedbe68505390b191025b71b79fb69822a3713f009468",
+    "media-overrides.json": "539eaa54b69904f412e80f3cc5295fe3d710445758d2a862caee379393329004",
+    "SOURCE_AUDIT.md": "ef61bdc7522d22ee9a5068579ea18ad66ddb7bc819ebcacaa968ccc02cbb6167",
+    "ruc/fingerprint-audit/collision-report.json": "15a75c4ad8254713987d0b565a819b4e8dbe8c5322bfb8bc23cc8a920a34dff6",
+    "media-checks/validation.json": "02d5089a119e8a0608d3a55296eee9ffa786f33dd9958f901dc77b8f39124553",
+    "progress/prior-verified-publication-dates.parts/001.json": "b50411b534dec07c6e9f8abf6af7714ad10ff4f14ba340e14263282beb90ef6a",
+    "ruc/collection/records.parts/001.json": "b434ff8c36ae377741c64d7588ef50d6605cab9158c7eebc9e140a9bae69ce1f",
+    "ruc/collection/records.parts/002.json": "59ba3fd2168af55f6a61ea2b1c9584e414bf84023d4902408e32afca4bdd570d",
+    "ruc/collection/records.parts/003.json": "dc2f3b23870ed0b6b97dcd029590699eb42f409cc0ac4a468e58f54f2cb45c30",
+    "ruc/collection/records.parts/004.json": "4a6099ea86a2cf2c0802d57b2761f817f765e9862e1b4afdc77656fc208f9195",
+    "ruc/collection/records.parts/005.json": "f7b46240d0a37b46d235819bd0cc2c2efd9dfd7d3f5d4ef031fea528d154364c",
+    "ruc/reviewed-records.parts/001.json": "f821bb8abfd8dd157142b499130c4a8463ab0f353193610d1267d0fe5a5d1e60",
+    "ruc/reviewed-records.parts/002.json": "633ee6791d02acd7d8c0d30f438b786982a2f64a9fab792cbf2d7b6cd844313f",
+    "ruc/reviewed-records.parts/003.json": "c2045f5a656c31ae6b8ed2280d8a78a137b8d0a1fccc041a64486faae06694e6",
+    "ruc/reviewed-records.parts/004.json": "99dd24a62089cc545455c0a97b47a038f3f8b154fb9d5280f77bdb5853bd03f2",
+    "society/collection/records.parts/001.json": "0264bdfeda32ba535f29e6e103baa730017437b8899e751eee0dbc49a3783ad0",
+    "society/collection/records.parts/002.json": "ff95d5b2df1301ec9d205cf106d09c372759b3e578dbb3fe91a3779e39901f9b",
+    "society/enriched-records.parts/001.json": "30a5de55250ad774455cafcfcefe681f92726bb0b996b64adc69276d0b0dec01",
+    "society/enriched-records.parts/002.json": "9c8069c49e22af240849a153937695248311d4d7140e8f2d66932d178f83f7e2",
+    "society/enriched-records.parts/003.json": "fc232f362b84fb65e34bc30ec2ef8e41cbc6503b3538d285e14782be4eef9149"
+  },
+  "counts": {
+    "display_records": 276,
+    "research_display": 273,
+    "practice_display": 3,
+    "readable_research_index": 517,
+    "bulk_readable_journal_index": 508,
+    "awaiting_assistant_synthesis": 244,
+    "complete_display_issues": 15,
+    "briefs": 6,
+    "verified_media": 2
+  }
+}

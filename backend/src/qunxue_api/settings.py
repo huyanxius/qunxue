@@ -117,6 +117,58 @@ class Settings(BaseSettings):
     memory_learning_idle_seconds: int = Field(default=600, ge=60)
     memory_learning_daily_calls: int = Field(default=8, ge=0, le=32)
     memory_learning_daily_tokens: int = Field(default=64000, ge=0, le=256000)
+    # Frontier has no fallback to existing agent, embedding or billing credentials.
+    frontier_allow_model_network: bool = False
+    frontier_embedding_base_url: str | None = None
+    frontier_embedding_api_key: SecretStr | None = None
+    frontier_embedding_model: str | None = None
+    frontier_extractor_base_url: str | None = None
+    frontier_extractor_api_key: SecretStr | None = None
+    frontier_extractor_model: str | None = None
+    frontier_verifier_base_url: str | None = None
+    frontier_verifier_api_key: SecretStr | None = None
+    frontier_verifier_model: str | None = None
+
+    @property
+    def frontier_embedding_status(self) -> str:
+        configured = bool(
+            self.frontier_embedding_base_url
+            and self.frontier_embedding_model
+            and self.frontier_embedding_api_key
+            and self.frontier_embedding_api_key.get_secret_value().strip()
+        )
+        if not configured:
+            return "not_configured"
+        return "ready" if self.frontier_allow_model_network else "network_disabled"
+
+    @property
+    def frontier_extractor_status(self) -> str:
+        configured = bool(
+            self.frontier_extractor_base_url
+            and self.frontier_extractor_model
+            and self.frontier_extractor_api_key
+            and self.frontier_extractor_api_key.get_secret_value().strip()
+        )
+        return (
+            ("ready" if self.frontier_allow_model_network else "network_disabled")
+            if configured
+            else "not_configured"
+        )
+
+    @property
+    def frontier_verifier_status(self) -> str:
+        configured = bool(
+            self.frontier_verifier_base_url
+            and self.frontier_verifier_model
+            and self.frontier_verifier_api_key
+            and self.frontier_verifier_api_key.get_secret_value().strip()
+        )
+        return (
+            ("ready" if self.frontier_allow_model_network else "network_disabled")
+            if configured
+            else "not_configured"
+        )
+
     session_cookie_name: str = "qunxue_session"
     session_ttl_seconds: int = 60 * 60 * 24 * 7
     session_cookie_secure: bool = False
@@ -213,9 +265,7 @@ class Settings(BaseSettings):
         primary_base_url = self.model_base_url or (
             DEFAULT_MODEL_BASE_URL if self.has_model_api_key else None
         )
-        primary_model = self.model_name or (
-            DEFAULT_MODEL_NAME if self.has_model_api_key else None
-        )
+        primary_model = self.model_name or (DEFAULT_MODEL_NAME if self.has_model_api_key else None)
         if primary_base_url is None and primary_model is None and not self.model_fallbacks:
             return ()
         if primary_base_url is None or primary_model is None:

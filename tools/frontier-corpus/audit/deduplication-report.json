@@ -1,0 +1,6 @@
+{
+  "algorithm": "canonical URL and NFKC alphanumeric normalized title, curated records first, then readable-content hash check",
+  "duplicates": [],
+  "rejected": [],
+  "final_unique": 201
+}

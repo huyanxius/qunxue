@@ -49,7 +49,9 @@ class KnowledgeToolRegistry:
         *,
         retriever: KnowledgeRetriever | None = None,
         web_research: WebResearchClient | None = None,
+        frontier=None,
     ) -> None:
+        self._frontier = frontier
         self._catalog = catalog
         self._retriever = retriever
         self._web_research = web_research
@@ -81,6 +83,12 @@ class KnowledgeToolRegistry:
         self.web_read_enabled = web_research is not None
         self._web_queries: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
+
+    def search_frontier(self, query: str, since_days: int | None = None,
+                        material_types: list[str] | None = None) -> dict:
+        if self._frontier is None:
+            return {"evidence": [], "leads": [], "status": "not_configured"}
+        return self._frontier.search_frontier(query, since_days, material_types)
 
     def agent_route_context(self) -> Mapping[str, UUID | None]:
         """Expose only safe correlation identifiers for model-attempt routing."""

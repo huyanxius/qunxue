@@ -1,0 +1,79 @@
+{
+  "record_count": 201,
+  "input_counts": {
+    "manual_seed": 12,
+    "journals/records.json": 105,
+    "society/records.json": 24,
+    "practice/practice-records.json": 60
+  },
+  "duplicates_removed": 0,
+  "rejected_records": 0,
+  "source_counts": {
+    "中国社会工作报": 63,
+    "中国青年研究": 1,
+    "社会": 24,
+    "社会发展研究": 1,
+    "社会学研究": 5,
+    "社会建设": 105,
+    "青年研究": 2
+  },
+  "stream_counts": {
+    "practice": 63,
+    "research": 138
+  },
+  "verification_status_counts": {
+    "lead_only": 138,
+    "practice_signal": 63
+  },
+  "collection_method_counts": {
+    "algorithm_harvested": 189,
+    "manual_curated": 12
+  },
+  "publication_year_counts": {
+    "2024": 39,
+    "2025": 56,
+    "2026": 106
+  },
+  "date_precision_counts": {
+    "day": 185,
+    "issue": 16
+  },
+  "dated_in_preferred_window": 113,
+  "dated_outside_preferred_window": 72,
+  "unknown_exact_date_excluded_from_months": 16,
+  "monthly_counts_for_audit_not_growth": {
+    "research": {
+      "2024-03": 7,
+      "2024-05": 8,
+      "2024-07": 9,
+      "2024-09": 8,
+      "2024-11": 7,
+      "2025-01": 8,
+      "2025-03": 8,
+      "2025-05": 6,
+      "2025-07": 6,
+      "2025-09": 5,
+      "2025-11": 5,
+      "2026-01": 13,
+      "2026-03": 15,
+      "2026-05": 17
+    },
+    "practice": {
+      "2025-10": 5,
+      "2025-11": 5,
+      "2025-12": 5,
+      "2026-01": 5,
+      "2026-02": 5,
+      "2026-03": 5,
+      "2026-04": 5,
+      "2026-05": 5,
+      "2026-06": 5,
+      "2026-07": 7,
+      "2026-08": 5,
+      "2026-09": 6
+    }
+  },
+  "unique_canonical_urls": 201,
+  "unique_normalized_titles": 201,
+  "schema_errors": []
+}

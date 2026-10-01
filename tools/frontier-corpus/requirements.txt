@@ -1,0 +1,2 @@
+# Only live crawlers require this. Offline assembly uses only Python standard library.
+lxml==6.1.1

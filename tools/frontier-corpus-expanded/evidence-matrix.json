@@ -1,0 +1,238 @@
+{
+  "rows": [
+    {
+      "topic_key": "care-family",
+      "record_id": "algorithm-society-22481",
+      "title": "人机共存的生成机制：以安宁疗护社会工作实践为例",
+      "publication_year": 2026,
+      "publication_issue": 4,
+      "method": "三甲医院干预项目评估中嵌入质性研究",
+      "findings": [
+        "安宁疗护项目的质性评估发现，AI作用不是预先固定的技术功能，而是在照护互动、组织协作和伦理协商中形成，并持续调整情感劳动与责任边界。"
+      ],
+      "why_read": "为照护场景采用AI提供关系和伦理层面的实践线索。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/98",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "care-family",
+      "record_id": "research-shxyj-2026-3-care-presence",
+      "title": "制度与空间的互动：养老机构子代“在场”的形塑机制",
+      "publication_year": 2026,
+      "publication_issue": 3,
+      "method": "三家养老机构实地调查。",
+      "findings": [
+        "既有消费者权责安排可能在来访规定放松后继续影响子女到场。机构空间将规则作用具体化，同时通过道德约束与关系调节塑造情感性、规范性参与。"
+      ],
+      "why_read": "可把“子女来不来”拆解为制度、空间及家庭关系的互动，帮助设计机构养老中的参与机制研究。",
+      "url": "https://sociology.nju.edu.cn/b7/da/c17645a833498/page.htm",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "youth",
+      "record_id": "research-shjs-2026-699",
+      "title": "青年低生育意愿的形成机制与治理路径——基于债务压力与社会支持的视角",
+      "publication_year": 2026,
+      "publication_issue": 3,
+      "method": "基于压力过程和压力缓冲模型分析中国家庭追踪调查数据",
+      "findings": [
+        "2014—2022年，研究中的青年生育意愿走弱、债务压力上升。",
+        "债务与生育意愿的关系包含健康压力渠道；社保、政府补助及非正式支持具有缓冲作用。"
+      ],
+      "why_read": "把低生育讨论具体连接到青年债务、健康和福利支持机制。",
+      "url": "https://shjs.ruc.edu.cn/CN/Y2026/V13/I3/179",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "youth",
+      "record_id": "youth-2026-zhou-informal-employment-marriage",
+      "title": "情感抑或理性：非正规就业对青年婚姻动机的影响及其机制",
+      "publication_year": 2026,
+      "publication_issue": 4,
+      "method": "使用2021年中国综合社会调查数据分析就业形态、婚姻动机及群体差异。",
+      "findings": [
+        "非正规就业与更偏理性的婚姻动机相关，这种联系在城市、80后及本科以上青年中更明显。",
+        "作者将收入减少、保障弱化及性别平等观念变化列为解释路径。"
+      ],
+      "why_read": "将婚姻动机与劳动市场风险联系起来，可与债务和生育意愿研究对照家庭决策的经济条件。",
+      "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "work-trust",
+      "record_id": "research-shfzyj-2025-3-mobility-trust",
+      "title": "职业流动如何影响社会信任？——基于特大城市居民生活状况调查的实证分析",
+      "publication_year": 2025,
+      "publication_issue": 3,
+      "method": "基于特大城市居民生活状况调查，对职业流动的三个维度及不公正经历进行经验分析。",
+      "findings": [
+        "换职越频繁，社会信任越低的关联在体制外劳动者中更明显。",
+        "职业地位下降不必然对应低信任，体制内向下流动者未表现出相同负面联系；不公正经历发挥调节作用。"
+      ],
+      "why_read": "提醒劳动流动研究区分频率、方向与制度位置，避免把所有职业变动看作同一种风险。",
+      "url": "https://sociology.shu.edu.cn/info/1090/38358.htm",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "work-trust",
+      "record_id": "youth-2026-zhou-informal-employment-marriage",
+      "title": "情感抑或理性：非正规就业对青年婚姻动机的影响及其机制",
+      "publication_year": 2026,
+      "publication_issue": 4,
+      "method": "使用2021年中国综合社会调查数据分析就业形态、婚姻动机及群体差异。",
+      "findings": [
+        "非正规就业与更偏理性的婚姻动机相关，这种联系在城市、80后及本科以上青年中更明显。",
+        "作者将收入减少、保障弱化及性别平等观念变化列为解释路径。"
+      ],
+      "why_read": "将婚姻动机与劳动市场风险联系起来，可与债务和生育意愿研究对照家庭决策的经济条件。",
+      "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "work-trust",
+      "record_id": "research-shjs-2026-689",
+      "title": "“小哥服务小哥”：新就业形态劳动者群体参与基层治理的社会工作路径探索",
+      "publication_year": 2026,
+      "publication_issue": 2,
+      "method": "地方社会工作实践路径分析",
+      "findings": [
+        "同伴服务借助共同文化与日常关系，提高服务嵌入性和参与机会。",
+        "社工的支持包括能力培育、动员、资源链接及适时退出，使劳动者逐步承担主体角色。"
+      ],
+      "why_read": "展示平台劳动者从服务接受者走向同伴支持和治理参与的过程。",
+      "url": "https://shjs.ruc.edu.cn/CN/Y2026/V13/I2/161",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "organization",
+      "record_id": "algorithm-society-22355",
+      "title": "治理不可能三角",
+      "publication_year": 2026,
+      "publication_issue": 3,
+      "method": "中层理论发展、治理类型比较与可检验命题推导",
+      "findings": [
+        "治理不可能三角提出，层级委托代理中刚性目标、预算和规则无法同时满足，组织需作结构性取舍；不同治理形式可据此比较，但理论成立有条件。"
+      ],
+      "why_read": "可用于分析选择性执行和非正式制度的结构来源。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/1",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "organization",
+      "record_id": "research-shxyj-2026-4-organizational-outsourcing",
+      "title": "“组织内外包”：新药临床试验的组织管理模式研究",
+      "publication_year": 2026,
+      "publication_issue": 4,
+      "method": null,
+      "findings": [
+        "混合用工结构连接医院收益目标与层级管理；协调员的院内工作安排同时满足技术操作和程序规范要求。",
+        "外部雇员与医院成员的身份区别，为医院转移部分风险提供组织空间。"
+      ],
+      "why_read": "可用于研究外包劳动的组织边界：同一工作场所中的身份、控制和责任未必一致。",
+      "url": "https://sociology.nju.edu.cn/d6/05/c17645a841221/page.htm",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "digital-society",
+      "record_id": "algorithm-society-20503",
+      "title": "“数字泰勒主义”影响下的外卖平台“计件工资制”研究",
+      "publication_year": 2024,
+      "publication_issue": 3,
+      "method": "平台派单奖励惩罚规则与骑手劳动意识分析",
+      "findings": [
+        "外卖派单和奖惩规则使计件收入不再只是工作量累加，而包含高投入、高风险的策略博弈，并塑造骑手的个体经营和自主意识。"
+      ],
+      "why_read": "可区分平台控制与传统工厂计件制度的共同点和新变化。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2024/V44/I3/1",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "digital-society",
+      "record_id": "algorithm-society-21260",
+      "title": "智能制造甘愿：人工智能训练的劳动组织形式与控制策略",
+      "publication_year": 2025,
+      "publication_issue": 2,
+      "method": "三家不同类型人工智能公司的劳动社会学考察",
+      "findings": [
+        "三类AI公司研究发现，项目制通过内包、外包与众包组织训练劳动；数智化考核、技能价值重置和职业想象等控制方式使劳动者接受更不稳定的关系。"
+      ],
+      "why_read": "为理解智能生产背后的隐性劳动提供组织层证据。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I2/1",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "digital-society",
+      "record_id": "algorithm-society-21261",
+      "title": "算法重构：算法规则驱动下的劳资关系转变——以Y平台降薪事件为例",
+      "publication_year": 2025,
+      "publication_issue": 2,
+      "method": "Y平台降薪事件案例分析",
+      "findings": [
+        "平台降薪个案显示，算法并非只维持既定控制秩序，还能通过调整资源分配和预期产出来转换自身作用，从而主动重塑劳资关系。"
+      ],
+      "why_read": "将平台算法研究从静态控制扩展到关系变化过程。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2025/V45/I2/32",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "urban-rural",
+      "record_id": "algorithm-society-20378",
+      "title": "圈层中的“农民主体性”：基于S省芳林村“美丽乡村保护项目”的研究",
+      "publication_year": 2024,
+      "publication_issue": 2,
+      "method": "芳林村美丽乡村保护项目案例研究",
+      "findings": [
+        "乡村建设项目中的参与差异与村庄关系圈层相关；圈层影响农民对项目的定位、合作和责任感，能协调不同利益的关键人物有助于共同参与。"
+      ],
+      "why_read": "把抽象参与意愿连接到关系结构和具体组织者。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2024/V44/I2/125",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "urban-rural",
+      "record_id": "algorithm-society-20821",
+      "title": "参与式技术实践的悖论：基于一个乡村轻钢住宅建造项目的社会学分析",
+      "publication_year": 2024,
+      "publication_issue": 5,
+      "method": "乡村轻钢住宅建造项目案例研究",
+      "findings": [
+        "轻钢乡建项目虽降低了操作门槛，但标准化与专业化又限制地方改造，使村民更依赖技术提供者；技能参与未必带来社区赋权。"
+      ],
+      "why_read": "评估参与项目时把技术可塑性和依赖关系纳入分析。",
+      "url": "https://www.society.shu.edu.cn/CN/Y2024/V44/I5/184",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "urban-rural",
+      "record_id": "research-shjs-2025-656",
+      "title": "再造“乡情”：农村社区治理网络的重构逻辑",
+      "publication_year": 2025,
+      "publication_issue": 4,
+      "method": "广东龙村社区营造案例分析",
+      "findings": [
+        "治理网络重构经历中介进入、文化意义转译和秩序调整。",
+        "乡情的重新组织促进多方行动者联结，使内生与外部力量形成新的共治关系。"
+      ],
+      "why_read": "提供观察情感资源如何转化为组织和治理能力的案例。",
+      "url": "https://shjs.ruc.edu.cn/CN/Y2025/V12/I4/48",
+      "analysis_scope": "abstract"
+    },
+    {
+      "topic_key": "urban-rural",
+      "record_id": "research-shjs-2025-655",
+      "title": "乡村场景化：苏南“薄弱村”里的城乡融合",
+      "publication_year": 2025,
+      "publication_issue": 4,
+      "method": "苏南薄弱村转型实践分析",
+      "findings": [
+        "区域经济基础提供转型前提，乡土关系帮助外部资源持续进入。",
+        "城乡融合包含村庄的主动行动，不能仅理解为城市向乡村的单向扩展。"
+      ],
+      "why_read": "提醒比较乡村文旅和场景项目时关注既有经济社会条件。",
+      "url": "https://shjs.ruc.edu.cn/CN/Y2025/V12/I4/27",
+      "analysis_scope": "abstract"
+    }
+  ],
+  "graph_intent": "Paper-method-mechanism comparison; not comparable effect sizes",
+  "numeric_trend_claims": false
+}

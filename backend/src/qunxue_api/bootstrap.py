@@ -18,6 +18,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qunxue_api.account_extension import install_account_management
 from qunxue_api.adapters.email import ResendEmailProvider
+from qunxue_api.adapters.frontier_embedding import (
+    FrontierEmbeddingConfig,
+    FrontierEmbeddingProvider,
+    FrontierVectorIndex,
+)
 from qunxue_api.adapters.model import (
     BuiltInCaseCatalog,
     ModelEndpoint,
@@ -61,6 +66,7 @@ from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConve
 from qunxue_api.adapters.sqlite.agent_memory_repository import SqliteMemoryRepository
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
+from qunxue_api.adapters.sqlite.frontier_repository import SqliteFrontierStore
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.adapters.sqlite.material_vector_cache import SqliteMaterialVectorCache
@@ -118,6 +124,7 @@ from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorRespons
 from qunxue_api.api.contracts.teaching import TeachingResult
 from qunxue_api.api.routes.agent import router as agent_router
 from qunxue_api.api.routes.frameworks import router as frameworks_router
+from qunxue_api.api.routes.frontier import router as frontier_router
 from qunxue_api.api.routes.health import router as health_router
 from qunxue_api.api.routes.knowledge import router as knowledge_router
 from qunxue_api.api.routes.matching import router as matching_router
@@ -167,6 +174,7 @@ from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import CreditService
+from qunxue_api.modules.frontier_knowledge import FrontierService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
     EmailDeliveryUnavailable,
@@ -373,6 +381,16 @@ def create_app(
     app.state.matching_start_lock = Lock()
     app.state.research_start_lock = Lock()
     app.state.database = resolved_database
+    app.state.frontier_store = SqliteFrontierStore(resolved_database)
+    app.state.frontier_vector_index = _create_frontier_vector_index(
+        resolved_settings, app.state.frontier_store
+    )
+    # Public browse/search remains cost-free even after an administrator enables
+    # embeddings. Only the authenticated research Agent may embed a query.
+    app.state.frontier_service = FrontierService(app.state.frontier_store)
+    app.state.frontier_agent_service = FrontierService(
+        app.state.frontier_store, app.state.frontier_vector_index
+    )
     app.state.knowledge_catalog = SqliteKnowledgeCatalog(
         resolved_database,
         knowledge_root=KNOWLEDGE_ROOT,
@@ -1016,6 +1034,7 @@ def create_app(
                         )
                     ),
                     tools_factory=lambda: ResearchDocumentToolRegistry(
+                        frontier=app.state.frontier_agent_service,
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
                         web_research=OpenWebResearchClient(
@@ -1117,6 +1136,7 @@ def create_app(
     app.include_router(memories_router)
     app.state.identity_service_scope = identity_service_scope
     app.include_router(health_router)
+    app.include_router(frontier_router)
     app.include_router(session_router)
     app.include_router(research_tasks_router)
     app.include_router(research_documents_router)
@@ -1515,3 +1535,58 @@ def _model_headers_from_settings(settings: Settings) -> dict[str, str]:
             raise ValueError("SFT resource header duplicates a model extension header")
         headers[header_name] = settings.model_sft_resource_id.get_secret_value()
     return headers
+
+
+def create_frontier_worker(
+    settings: Settings, store: SqliteFrontierStore, corpus: dict | None = None
+):
+    """Explicit CLI-only worker composition; app startup never starts frontier jobs."""
+    from qunxue_api.adapters.frontier_models import (
+        FrontierExtractor,
+        FrontierModelConfig,
+        FrontierVerifier,
+    )
+    from qunxue_api.adapters.frontier_sources import (
+        SOURCE_DEFINITIONS,
+        DisabledSourceAdapter,
+        LocalCorpusSourceAdapter,
+    )
+    from qunxue_api.application.frontier_pipeline import FrontierWorker
+
+    def config(role: str):
+        key = getattr(settings, f"frontier_{role}_api_key")
+        return FrontierModelConfig(
+            base_url=getattr(settings, f"frontier_{role}_base_url"),
+            api_key=key.get_secret_value() if key else None,
+            model=getattr(settings, f"frontier_{role}_model"),
+            allow_network=settings.frontier_allow_model_network,
+        )
+
+    return FrontierWorker(
+        store=store,
+        extractor=FrontierExtractor(config("extractor")),
+        verifier=FrontierVerifier(config("verifier")),
+        sources={
+            row[0]: (
+                LocalCorpusSourceAdapter(row[0], row[1], corpus["records"])
+                if corpus is not None
+                else DisabledSourceAdapter(row[0], row[-1])
+            )
+            for row in SOURCE_DEFINITIONS
+        },
+        topic_service=FrontierService(store),
+        vector_index=_create_frontier_vector_index(settings, store),
+    )
+
+
+def _create_frontier_vector_index(settings: Settings, store: SqliteFrontierStore):
+    key = settings.frontier_embedding_api_key
+    provider = FrontierEmbeddingProvider(
+        FrontierEmbeddingConfig(
+            base_url=settings.frontier_embedding_base_url,
+            api_key=key.get_secret_value() if key else None,
+            model=settings.frontier_embedding_model,
+            allow_network=settings.frontier_allow_model_network,
+        )
+    )
+    return FrontierVectorIndex(store, provider)
