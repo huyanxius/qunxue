@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type {
@@ -177,12 +178,7 @@ export function KnowledgePreview({
 
   if (preview.isPending) {
     return (
-      <div className="knowledge-preview knowledge-preview--loading" role="status">
-        <span />
-        <span />
-        <span />
-        <p>正在读取知识内容</p>
-      </div>
+      <BrandLoading message="正在读取知识内容" />
     )
   }
 
@@ -207,12 +203,7 @@ export function KnowledgePreview({
 
   if (showcase.isPending) {
     return (
-      <div className="knowledge-preview knowledge-preview--loading" role="status">
-        <span />
-        <span />
-        <span />
-        <p>正在读取知识解释</p>
-      </div>
+      <BrandLoading message="正在读取知识解释" />
     )
   }
 
@@ -367,7 +358,7 @@ export function KnowledgeTicker({
   useEffect(() => () => cancelClose(), [])
 
   if (preview.isPending) {
-    return <div className="knowledge-ticker knowledge-ticker--loading" role="status">正在展开知识索引</div>
+    return <BrandLoading compact message="正在展开知识索引" />
   }
   if (preview.isError || preview.data.entries.length === 0) return null
 
@@ -380,7 +371,7 @@ export function KnowledgeTicker({
     : undefined
 
   function explanation() {
-    if (detail.isPending) return '正在从知识库读取解释…'
+    if (detail.isPending) return <BrandLoading compact message="正在从知识库读取解释…" />
     if (detail.isError || !detail.data) return '解释暂时未载入，可以进入知识库查看完整条目。'
     return knowledgeExcerpt(detail.data.content, detail.data.title)
   }

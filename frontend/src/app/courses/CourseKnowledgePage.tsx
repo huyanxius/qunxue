@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CourseShader } from './CourseShader'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
@@ -108,7 +109,7 @@ export function CourseKnowledgePage() {
         <header className="knowledge-library__topbar"><p><span>知识库</span><b>/</b>{course?.name ?? '课程'}</p><div className="knowledge-library__toolbar">{course ? <button type="button" aria-pressed={graphOpen} onClick={() => setGraphOpen(!graphOpen)}><TreeStructureIcon size={15} />{graphOpen ? '收起课程导图' : '展开课程导图'}</button> : null}</div></header>
         <div className="knowledge-library__content">
           {error ? <p className="qx-message is-error" role="alert">{error}<button type="button" className="courses-page__text-button" onClick={() => setRetry((n) => n + 1)}>重试</button><Link to="/courses">查看课程</Link></p> : null}
-          {loading ? <p role="status">正在读取课程知识…</p> : !course && !error ? <div className="material-files__empty"><h2>从一门课程开始</h2><p>选择课程，查看课件中的知识点和原文。</p><Link to="/courses">进入课程</Link></div> : null}
+          {loading ? <BrandLoading compact message="正在读取课程知识…" /> : !course && !error ? <div className="material-files__empty"><h2>从一门课程开始</h2><p>选择课程，查看课件中的知识点和原文。</p><Link to="/courses">进入课程</Link></div> : null}
           {course ? <>
             <header className="courses-page__detail"><div><h2>{course.name}</h2><p>{topics.size} 个知识点 · {course.documents.length} 份资料</p></div><Link className="qx-button" to={`/courses?kb_id=${encodeURIComponent(course.id)}`}>阅读课程资料</Link></header>
             {topics.size ? <>

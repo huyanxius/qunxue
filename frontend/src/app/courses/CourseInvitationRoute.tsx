@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useEffect, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -13,5 +14,5 @@ export function CourseInvitationRoute({ children }: { children: ReactNode }) {
     navigate('/courses/join', { replace: true })
   }, [location.hash, navigate])
   // Clear the fragment before authentication can encode it into a login query string.
-  return location.hash ? <p role="status">正在打开课程邀请…</p> : children
+  return location.hash ? <BrandLoading message="正在打开课程邀请…" /> : children
 }

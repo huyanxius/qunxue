@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeftIcon } from '@phosphor-icons/react'
 
@@ -91,7 +92,7 @@ export function KnowledgeEntryPage({
         ) : null}
         {resolvedReleaseId ? <span>固定发布 · {resolvedReleaseId.slice(0, 22)}</span> : null}
       </header>
-      {!detail && !error ? <div className="knowledge-ui__loading" role="status"><span />正在整理正文与来源</div> : null}
+      {!detail && !error ? <BrandLoading message="正在整理正文与来源" /> : null}
       {error ? <div className="knowledge-ui__state" role="alert"><strong>知识条目暂时无法读取</strong><p>{error}</p></div> : null}
       {detail ? (
         <>

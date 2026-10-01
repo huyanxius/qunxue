@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import type { ResearchDiscussion } from '../../modules/research-workspace'
 import {
   CaretRightIcon,
@@ -454,7 +455,7 @@ export function NewResearchWorkspacePage({ userId }: { userId: string | null }) 
       onRetry={() => { if (conversation?.conversation_id) void loadJourney(conversation.conversation_id) }}
       onContinue={() => setJourneyError(null)}
     />
-  ) : journeyLoading ? <p className="new-research__start-loading" role="status"><CircleNotchIcon size={14} />正在恢复研究建立状态…</p> : null
+  ) : journeyLoading ? <BrandLoading compact message="正在恢复研究建立状态…" /> : null
 
   return (
     <PageShell workspace wide railContentRef={setHistoryRailTarget}>

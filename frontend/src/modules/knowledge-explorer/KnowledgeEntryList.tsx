@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import type { CSSProperties } from 'react'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 
@@ -47,9 +48,7 @@ export function KnowledgeEntryList({
       </header>
 
       {state === 'loading' ? (
-        <div className="knowledge-explorer__result-skeleton" role="status" aria-label="正在读取条目">
-          {[0, 1, 2, 3].map((index) => <span key={index} />)}
-        </div>
+        <BrandLoading message="正在读取条目" />
       ) : null}
       {state === 'error' ? (
         <div className="knowledge-explorer__state" role="alert">
@@ -98,6 +97,7 @@ export function KnowledgeEntryList({
         </ol>
       ) : null}
 
+      {loadingMore ? <BrandLoading compact message="正在读取下一批" /> : null}
       {hasNextPage ? (
         <button className="knowledge-explorer__load-more" type="button" disabled={loadingMore} aria-label={`继续加载 ${remaining} 条未显示`} onClick={onLoadMore}>
           <span>{loadingMore ? '正在读取下一批' : '继续加载'}</span>

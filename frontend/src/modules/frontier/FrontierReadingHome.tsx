@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading';
 import type { FrontierDataset } from './dataset';
 import type { FrontierRecord } from './model';
 import type { FrontierPeriodData } from './frontierReadingTypes';
@@ -32,7 +33,7 @@ export function FrontierTrends({ data, report, topic, onTopicChange, comparisonY
       {onTopicChange && choices.length ? <label><span className="knowledge-ui__visually-hidden">趋势议题</span><select aria-label="趋势议题" value={choices.find(item => item.key === topic || item.title === topic)?.key || topic} onChange={event => onTopicChange(event.target.value)}>{choices.map(item => <option key={item.id} value={item.key}>{item.title}</option>)}</select></label> : <strong>{choices.find(item => item.key === topic)?.title || topic || '研究议题'}</strong>}
       {onComparisonYearChange ? <select aria-label="比较时期" value={comparisonYear ?? 'date'} onChange={event => onComparisonYearChange(event.target.value === 'date' ? null : Number(event.target.value))}>{[latestYear, latestYear - 1].map(year => <option key={year} value={year}>{year - 1} / {year} 完整年度</option>)}<option value="date">按阅读日期 · 最近完整月</option></select> : null}
     </div>
-    {loading ? <p role="status" className="frontier-reading-status">正在读取同期样本…</p> : error ? <p role="alert" className="frontier-reading-status">趋势暂时无法读取。{onRetry ? <button type="button" onClick={onRetry}>重试</button> : null}</p> : report ? <>
+    {loading ? <BrandLoading compact message="正在读取同期样本…" /> : error ? <p role="alert" className="frontier-reading-status">趋势暂时无法读取。{onRetry ? <button type="button" onClick={onRetry}>重试</button> : null}</p> : report ? <>
       <p className="frontier-trend-basis">{sources || '已核对来源'} · 所列期次样本份额{report.share_basis === 'fixed_issue_sample_common_sources' ? ' · 各刊词典命中比例的平均值 · 期刊等权' : ''}</p>
       <p className="frontier-trend-window">{report.previous_window.start}—{report.previous_window.end}<br />{report.current_window.start}—{report.current_window.end}</p>
       {complete ? <div className="frontier-share-comparison"><strong>{(report.previous_share! * 100).toFixed(1)}% → {(report.current_share! * 100).toFixed(1)}%</strong><span>{report.delta_pp! > 0 ? '+' : ''}{report.delta_pp!.toFixed(1)} 个百分点</span>

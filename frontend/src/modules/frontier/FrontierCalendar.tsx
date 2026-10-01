@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading';
 import { useEffect, useState } from 'react';
 import type { FrontierCalendarData } from './frontierReadingTypes';
 import type { FrontierDataset } from './dataset';
@@ -25,7 +26,7 @@ export function FrontierCalendar({ data, calendar, readingDate, onOpenRecord, lo
     <section aria-labelledby="frontier-calendar-title">
       <header className="frontier-reading-section"><h2 id="frontier-calendar-title">学术日历</h2><span>发表日期</span></header>
       <div className="frontier-calendar-month"><button type="button" aria-label="上个月" disabled={year !== heatYear || m === 1} onClick={() => moveMonth(-1)}>‹</button><strong>{year}年{m}月</strong><button type="button" aria-label="下个月" disabled={month >= readingDate.slice(0, 7)} onClick={() => moveMonth(1)}>›</button></div>
-      {loading ? <p role="status">正在读取日历…</p> : error ? <p role="alert">日历暂时无法读取。{onRetry ? <button type="button" onClick={onRetry}>重试</button> : null}</p> : !calendar ? <p className="frontier-reading-status">日历暂无数据。</p> : null}
+      {loading ? <BrandLoading compact message="正在读取日历…" /> : error ? <p role="alert">日历暂时无法读取。{onRetry ? <button type="button" onClick={onRetry}>重试</button> : null}</p> : !calendar ? <p className="frontier-reading-status">日历暂无数据。</p> : null}
       <div className="frontier-calendar-grid"><div className="frontier-calendar-week" aria-hidden="true">{'一二三四五六日'.split('').map(day => <span key={day}>{day}</span>)}</div><div className="frontier-calendar-days">{Array.from({ length: offset }, (_, i) => <span key={`blank-${i}`} />)}{Array.from({ length: daysInMonth }, (_, i) => dayButton(iso(i + 1)))}</div></div>
       {selected ? <section className="frontier-calendar-results" aria-label={`${selected} 发表记录`}><h3>{selected} 发表记录</h3>{evidence(counts.get(selected)?.record_ids ?? []).length ? evidence(counts.get(selected)?.record_ids ?? []) : <p>当天暂无可读资料。</p>}</section> : null}
     </section>

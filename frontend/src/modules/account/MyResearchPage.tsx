@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DotsThreeIcon, TrashIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
@@ -93,12 +94,7 @@ export function MyResearchPage() {
 
   if (research.isPending) {
     return (
-      <div className="research-library-state research-library-state--loading" role="status">
-        <span />
-        <span />
-        <span />
-        <p>{text('正在读取研究任务', 'Loading research tasks')}</p>
-      </div>
+      <BrandLoading message={text('正在读取研究任务', 'Loading research tasks')} />
     )
   }
 

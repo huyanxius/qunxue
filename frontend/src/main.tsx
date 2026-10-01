@@ -1,7 +1,7 @@
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { BrandLoading } from './app/ui/BrandLoading'
+import { BrandLoading } from './ui/BrandLoading'
 
 import { App } from './app/App'
 import { AppProviders } from './app/AppProviders'

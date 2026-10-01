@@ -16,8 +16,11 @@ export function BrandLoading({
     ? Math.min(100, Math.max(0, progress))
     : undefined
 
+  const Container = compact ? 'span' : 'section'
+  const Message = compact ? 'span' : 'p'
+
   return (
-    <section className={`brand-loading${compact ? ' brand-loading--compact' : ''}${fullscreen ? ' brand-loading--fullscreen' : ''}`}>
+    <Container className={`brand-loading${compact ? ' brand-loading--compact' : ''}${fullscreen ? ' brand-loading--fullscreen' : ''}`}>
       <span
         className={`brand-loading__mark${value === undefined ? ' brand-loading__mark--waiting' : ''}`}
         style={value === undefined ? undefined : { '--brand-loading-fill': `${100 - value}%` } as CSSProperties}
@@ -31,7 +34,7 @@ export function BrandLoading({
       >
         <span className="brand-loading__fill" />
       </span>
-      <p className="brand-loading__message" role="status" aria-live="polite" aria-atomic="true">{message}</p>
-    </section>
+      <Message className="brand-loading__message" role="status" aria-live="polite" aria-atomic="true">{message}</Message>
+    </Container>
   )
 }

@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
@@ -487,7 +488,9 @@ export function FullscreenKnowledgeGraphPage({
           : null}
 
         {error ? <p className="knowledge-graph-page__error" role="alert">{error}</p> : null}
-        {loadingCenter ? <p role="status">正在构造局部网络……</p> : null}
+        {!activeReleaseId && !error ? <BrandLoading compact message="正在读取知识发布…" /> : null}
+        {searching ? <BrandLoading compact message="正在搜索知识条目…" /> : null}
+        {loadingCenter ? <BrandLoading compact message="正在构造局部网络……" /> : null}
 
         {focus ? (
           <section className="knowledge-graph-page__focus" aria-label="当前中心">

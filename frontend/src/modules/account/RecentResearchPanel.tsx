@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useQuery } from '@tanstack/react-query'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 import { ArrowRightIcon, TrayIcon } from '@phosphor-icons/react'
@@ -71,12 +72,7 @@ export function RecentResearchPanel({
 
   if (research.isPending) {
     return (
-      <section className="recent-research recent-research--loading" role="status">
-        <span />
-        <span />
-        <span />
-        <p>{text('正在读取最近研究', 'Loading recent research')}</p>
-      </section>
+      <BrandLoading message={text('正在读取最近研究', 'Loading recent research')} />
     )
   }
 

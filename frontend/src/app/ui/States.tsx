@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BrandLoading } from './BrandLoading'
+import { BrandLoading } from '../../ui/BrandLoading'
 
 type ActionStateProps = {
   title?: string

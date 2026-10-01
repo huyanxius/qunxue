@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   SignOutIcon,
   GearSixIcon,
@@ -381,12 +382,7 @@ export function AccountSettingsPage({
 
   if (loadState.status === 'loading') {
     return (
-      <section className="qs-state qs-loading" role="status" aria-live="polite">
-        <span className="qs-loading-line" />
-        <span className="qs-loading-line" />
-        <span className="qs-loading-line" />
-        <p>{text('正在读取账户设置', 'Loading account settings')}</p>
-      </section>
+      <BrandLoading message={text('正在读取账户设置', 'Loading account settings')} />
     )
   }
 

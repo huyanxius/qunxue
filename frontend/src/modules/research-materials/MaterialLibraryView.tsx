@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   ArrowClockwiseIcon,
   CheckCircleIcon,
@@ -176,7 +177,8 @@ export function MaterialLibraryView({
 
       {error ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{error}</p> : null}
       {notice ? <p className="qx-message is-success" role="status"><CheckCircleIcon size={15} aria-hidden="true" />{notice}</p> : null}
-      {loading ? <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在加载材料</p> : null}
+      {loading ? <BrandLoading compact message="正在加载材料" /> : null}
+      {uploading ? <BrandLoading compact message="正在上传材料…" /> : null}
 
       {!empty && !loading ? (
         <div className="qx-library__search-area">
@@ -190,7 +192,7 @@ export function MaterialLibraryView({
               placeholder="检索全部材料中的原文"
               onChange={(event) => onSearchQueryChange(event.target.value)}
             />
-            {searchLoading ? <CircleNotchIcon className="is-spinning" size={15} aria-label="正在检索" /> : null}
+            {searchLoading ? <BrandLoading compact message="正在检索" /> : null}
           </label>
           {searchError ? <p className="qx-library__search-note is-error" role="alert">{searchError}</p> : null}
           {searchQuery.trim() && !searchLoading && !searchError ? (

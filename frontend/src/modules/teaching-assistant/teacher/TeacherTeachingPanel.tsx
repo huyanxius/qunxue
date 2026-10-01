@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../../ui/BrandLoading'
 import lessonArtwork from '../../../assets/classroom/humanist-seminar.webp'
 import assignmentArtwork from '../../../assets/classroom/civic-observation.webp'
 import { ArrowUpRightIcon, BookOpenIcon, FilesIcon, SlidersHorizontalIcon, ClipboardTextIcon, ChartBarIcon, ClockIcon, CheckCircleIcon } from '@phosphor-icons/react'
@@ -38,6 +39,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   const [selectedSource, setSelectedSource] = useState<string | null>(null)
   const [scores, setScores] = useState<TeachingScore[]>([])
   const [feedback, setFeedback] = useState('')
+  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -58,12 +60,13 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   useEffect(() => {
     if (!canManage) return
     const current = ++generation.current
-    setActive(null); setForm(false); setDirty(false)
+    setLoading(true); setError(''); setActive(null); setForm(false); setDirty(false)
     Promise.all([getTeachingSettings(course.id), listTeachingActivities(course.id), getLearningSummary(course.id), listAgentMaterials()])
       .then(([nextSettings, nextItems, nextSummary, nextMaterials]) => {
         if (generation.current !== current) return
         setSettings(nextSettings); setItems(nextItems); setSummary(nextSummary); setMaterials(nextMaterials)
       }).catch((reason) => { if (generation.current === current) setError(message(reason)) })
+      .finally(() => { if (generation.current === current) setLoading(false) })
     return () => { generation.current = current + 1 }
   }, [course.id, canManage])
   useEffect(() => {
@@ -159,6 +162,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
   const libraryItems = items.filter((item) => (workspaceView === 'lessons' ? item.kind === 'lesson_plan' : workspaceView === 'assignments' ? item.kind === 'assignment_review' : item.kind === 'learning_check') && (!recordQuery || (item.input.title || item.input.objectives || '').includes(recordQuery)))
   return <section className="teacher-teaching" aria-label="教师教学工作区">
     <header className="classroom-heading"><div><span className="classroom-eyebrow">教学工作区</span><h3>备课、批改与教学反馈</h3><p>从课程资料出发，把备课、作业反馈与下一次教学连在一起。</p></div><button type="button" className="qx-button" onClick={() => { if (leave()) { setShowSettings(!showSettings); setActive(null); setForm(false); setDirty(false) } }}><SlidersHorizontalIcon size={17} />课程教学要求</button></header>
+    {loading ? <BrandLoading compact message="正在读取教学工作区…" /> : busy ? <BrandLoading compact message="正在处理教学记录…" /> : null}
     <div className="classroom-overview" aria-label="教学概览">
       <div><BookOpenIcon size={20} /><span>备课文稿<strong>{items.filter((item) => item.kind === 'lesson_plan').length}<small>份</small></strong></span></div>
       <div><ClipboardTextIcon size={20} /><span>待处理作业<strong>{items.filter((item) => item.kind === 'assignment_review' && item.state !== 'published').length}<small>份</small></strong></span></div>
@@ -202,7 +206,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
       </fieldset>
       <fieldset><legend>本次个人材料</legend>
         <label>上传讲义或作业<input type="file" accept={RESEARCH_MATERIAL_ACCEPT} disabled={uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void upload(file); e.target.value = '' }} /></label>
-        {uploading && <p role="status">正在上传和解析资料…</p>}
+        {uploading && <BrandLoading compact message="正在上传和解析资料…" />}
         {materials.map((material) => <label key={material.materialId} className="teaching-check"><input type="checkbox" disabled={material.status !== 'ready'} checked={input.material_ids?.includes(material.materialId) ?? false} onChange={(e) => change('material_ids', e.target.checked ? [...(input.material_ids ?? []), material.materialId] : input.material_ids?.filter((id) => id !== material.materialId))} />{material.filename}{material.status !== 'ready' && '（尚不可用）'}</label>)}
       </fieldset>
       <div className="courses-page__actions"><button type="button" className="qx-button" disabled={busy || uploading} onClick={() => void saveDraft(false)}>保存草稿</button><button className="research-hub__new" disabled={busy || uploading}>保存并生成</button></div>
@@ -210,7 +214,7 @@ export function TeacherTeachingPanel({ course, onDirtyChange }: { course: Shared
     {active && <section className="classroom-activity" aria-label="当前教学活动">
       <h3>{active.input.title || (review ? '作业批改' : active.kind === 'learning_check' ? '学生分享的学习记录' : '课堂教案')} · {stateNames[active.state]}</h3>
       {active.source_activity_id && <p>修订自记录 <button className="courses-page__text-button" onClick={() => void action(async () => { const old = await getTeachingActivity(active.source_activity_id!); setActive(old); setSource(await getTeachingSource(old.id)) })}>查看上一版</button></p>}
-      {active.state === 'running' && <p role="status">助手正在执行，刷新后可继续查看。{active.agent_run_id && <button type="button" className="courses-page__text-button" onClick={() => void action(async () => { await stopAgentRun(active.agent_run_id!); setNotice('已请求停止，等待执行器保存终态。') })}>停止生成</button>}</p>}
+      {active.state === 'running' && <div><BrandLoading compact message="助手正在执行，刷新后可继续查看。" />{active.agent_run_id && <button type="button" className="courses-page__text-button" onClick={() => void action(async () => { await stopAgentRun(active.agent_run_id!); setNotice('已请求停止，等待执行器保存终态。') })}>停止生成</button>}</div>}
       {active.state === 'failed' && <p role="alert">{active.error_message}</p>}
       {review && ['draft', 'failed'].includes(active.state) && <form className="courses-page__form" onSubmit={(e) => { e.preventDefault(); void action(async () => {
         const next = await updateTeachingActivity(active.id, { version: active.version, input: { ...active.input, requirements: input.requirements ?? active.input.requirements, rubric: input.rubric ?? active.input.rubric } })

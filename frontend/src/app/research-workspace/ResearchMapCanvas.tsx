@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   ArrowUpRightIcon,
   CrosshairIcon,
@@ -315,7 +316,7 @@ export function ResearchMapCanvas({
         {!projection.nodes.length ? <MapIdleNote actions={idleActions} /> : null}
         {projection.nodes.length && !focusedDocumentContent ? (
           <>
-            {['thinking', 'retrieving', 'answering'].includes(projection.status) ? <div className="research-map__layout-status" role="status">{projection.status === 'retrieving' ? 'Agent 正在查找依据…' : 'Agent 正在推进研究…'}{selectedNode ? ` · ${selectedNode.title}` : ''}</div> : null}
+            {['thinking', 'retrieving', 'answering'].includes(projection.status) ? <div className="research-map__layout-status"><BrandLoading compact message={projection.status === 'retrieving' ? 'Agent 正在查找依据…' : 'Agent 正在推进研究…'} />{selectedNode ? <span> · {selectedNode.title}</span> : null}</div> : null}
 
             <div className="research-map__toolbar">
               <nav className="research-map__depth" aria-label="画布聚焦层级">

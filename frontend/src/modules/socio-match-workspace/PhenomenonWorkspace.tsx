@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 
@@ -122,7 +123,7 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
           {directStart.isError ? <p role="alert">暂时无法生成候选，输入内容仍未丢失。</p> : null}
           <section className="example-list" aria-label="内置案例">
             <h2>也可以从内置案例开始</h2>
-            {examples.isPending ? <p role="status">正在加载案例…</p> : null}
+            {examples.isPending ? <BrandLoading compact message="正在加载案例…" /> : null}
             {examples.data?.map((example) => (
               <button key={example.exampleId} type="button" onClick={() => fillExample(example)}>{example.title}</button>
             ))}
@@ -199,7 +200,7 @@ export function PhenomenonWorkspace({ taskId }: { readonly taskId: string }) {
     },
   })
 
-  if (restored.isPending) return <p role="status">正在恢复现象候选…</p>
+  if (restored.isPending) return <BrandLoading message="正在恢复现象候选…" />
   if (restored.isError || !restored.data || !selected) return <p role="alert">暂时无法恢复这条现象候选。</p>
 
   const seed = restored.data.seedTheory

@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import './m4-theory-judgment.css'
@@ -628,7 +629,7 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
   }
 
   if (operation === 'loading' || operation === 'starting') {
-    return <section className="m4-theory-judgment" aria-label="M4 理论判断"><div className="m4-state m4-state--loading" role="status"><span className="m4-state__spinner" aria-hidden="true" />{operation === 'starting' ? '正在从正式知识发布生成候选…' : '正在恢复理论判断与决定草稿…'}</div></section>
+    return <section className="m4-theory-judgment" aria-label="M4 理论判断"><BrandLoading message={operation === 'starting' ? '正在从正式知识发布生成候选…' : '正在恢复理论判断与决定草稿…'} /></section>
   }
 
   if (failure && !workspace) {
@@ -654,7 +655,7 @@ export function M4TheoryJudgment({ task, gateway, onConfirmed }: M4TheoryJudgmen
       {failure ? <div className="m4-inline-alert" role="alert"><strong>{failure.message}</strong>{saveState === 'error' ? <button type="button" onClick={() => { setSaveState('dirty'); setFailure(null) }}>重试保存</button> : null}</div> : null}
       {notice ? <p className="m4-inline-notice" aria-live="polite">{notice}</p> : null}
 
-      {matchRun.status === 'generating' ? <div className="m4-state" role="status"><span className="m4-state__spinner" aria-hidden="true" /><strong>候选仍在生成</strong><p>页面会自动恢复，中途离开不会丢失进度。</p><button type="button" onClick={() => void load()}>立即刷新</button></div> : null}
+      {matchRun.status === 'generating' ? <div className="m4-state" role="status"><BrandLoading compact message="候选仍在生成" /><p>页面会自动恢复，中途离开不会丢失进度。</p><button type="button" onClick={() => void load()}>立即刷新</button></div> : null}
 
       {matchRun.status === 'no_reliable_candidate' ? <div className="m4-state m4-state--empty" role="status"><strong>暂时没有足够可靠的候选理论</strong><p>你可以返回补充现象材料，或使用当前知识版本重新匹配。</p><button type="button" onClick={() => void restartMatching()}>重新检查候选</button></div> : null}
 

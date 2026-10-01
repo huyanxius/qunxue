@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CheckIcon, FileTextIcon, XIcon } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 
@@ -89,7 +90,7 @@ export function AgentMaterialAttachmentPicker({
                 {selected ? <CheckIcon size={16} weight="bold" /> : null}
               </label>
             )
-          }) : <p className="agent-material-picker__empty">{loading ? (locale === 'en-US' ? 'Loading files…' : '正在加载文件…') : query ? (locale === 'en-US' ? 'No matching files.' : '没有找到匹配的文件。') : (locale === 'en-US' ? 'No files yet. Upload one to get started.' : '还没有文件，可以直接上传。')}</p>}
+          }) : loading ? <BrandLoading compact message={locale === 'en-US' ? 'Loading files…' : '正在加载文件…'} /> : <p className="agent-material-picker__empty">{query ? (locale === 'en-US' ? 'No matching files.' : '没有找到匹配的文件。') : (locale === 'en-US' ? 'No files yet. Upload one to get started.' : '还没有文件，可以直接上传。')}</p>}
         </div>
         <footer>
           <span>{locale === 'en-US' ? `${selectedIds.size} selected` : `已选择 ${selectedIds.size} 份`}</span>

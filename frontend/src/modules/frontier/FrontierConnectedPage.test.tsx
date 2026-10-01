@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { readRecordInsights } from './readingInsightsApi';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { FrontierConnectedPage } from './FrontierConnectedPage';
 import { readFrontierState, writeFrontierState } from './model';
@@ -127,4 +127,47 @@ it('loads real insight components only for the selected article, retries failure
   expect(readRecordInsights).toHaveBeenLastCalledWith(id, '2026-10-01');
   fireEvent.click(screen.getByRole('button', { name: '返回资料列表' }));
   expect(scroll.scrollTop).toBe(540);
+});
+
+// A pending service must show the shared animated brand, not a text-only notice.
+function expectBrandWait(message: string) {
+  const status = screen.getByText(message);
+  expect(status.closest('.brand-loading')?.querySelector('.brand-loading__mark--waiting')).toBeInTheDocument();
+}
+it('shows the brand while the initial frontier dataset is pending, then removes it', async () => {
+  let resolve!: (value: typeof dataset) => void;
+  vi.mocked(readFrontierDataset).mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  render(<Harness />);
+  expectBrandWait('正在读取前沿资料…');
+  expect(screen.queryByRole('region', { name: '最新研究' })).not.toBeInTheDocument();
+  await act(async () => resolve(dataset));
+  await screen.findByRole('region', { name: '最新研究' });
+  expect(screen.queryByText('正在读取前沿资料…')).not.toBeInTheDocument();
+});
+it('shows independent calendar and period brand waits without hiding loaded records', async () => {
+  vi.mocked(readFrontierCalendar).mockImplementationOnce(() => new Promise(() => {}));
+  vi.mocked(readFrontierPeriod).mockImplementationOnce(() => new Promise(() => {}));
+  render(<Harness />);
+  await screen.findByRole('region', { name: '最新研究' });
+  expectBrandWait('正在读取日历…');
+  expectBrandWait('正在读取同期样本…');
+});
+it('shows the brand for historical date and comparison changes', async () => {
+  render(<Harness />);
+  await screen.findByText('20.0% → 40.0%');
+  vi.mocked(readFrontierPeriod).mockImplementationOnce(() => new Promise(() => {}));
+  fireEvent.change(screen.getByLabelText('比较时期'), { target: { value: '2024' } });
+  expectBrandWait('正在读取同期样本…');
+  vi.mocked(readFrontierDataset).mockImplementationOnce(() => new Promise(() => {}));
+  fireEvent.click(screen.getByRole('button', { name: '前一天' }));
+  expectBrandWait('正在读取这个日期的资料…');
+  expect(screen.queryByRole('region', { name: '最新研究' })).not.toBeInTheDocument();
+});
+it('shows a compact brand wait for article evidence while retaining the article', async () => {
+  vi.mocked(readRecordInsights).mockImplementationOnce(() => new Promise(() => {}));
+  render(<Harness />);
+  await screen.findByRole('region', { name: '最新研究' });
+  fireEvent.click(screen.getByRole('button', { name: `查看 ${dataset.records[0].title}` }));
+  expectBrandWait('正在读取阅读依据…');
+  expect(screen.getByRole('heading', { name: dataset.records[0].title })).toBeVisible();
 });

@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   ClockCounterClockwiseIcon,
   MagnifyingGlassIcon,
@@ -227,12 +228,7 @@ export function AdminUsersPage({
 
   if (directory.status === 'loading') {
     return (
-      <section className="account-management-state account-management-state--loading" role="status" aria-live="polite">
-        <span className="account-management-state__line" />
-        <span className="account-management-state__line" />
-        <span className="account-management-state__line" />
-        <p>正在读取用户目录</p>
-      </section>
+      <BrandLoading message="正在读取用户目录" />
     )
   }
 

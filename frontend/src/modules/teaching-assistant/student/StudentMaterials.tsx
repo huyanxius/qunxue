@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../../ui/BrandLoading'
 import { useEffect, useRef, useState } from 'react'
 import { addResearchLibraryMaterial, getAgentAttachmentMaterial, listAgentMaterials, prepareAgentMaterialContext, materialStatusLabel, RESEARCH_MATERIAL_ACCEPT, type ResearchMaterial } from '../../research-materials'
 
@@ -51,7 +52,7 @@ export function StudentMaterials({ selectedIds, onChange, disabled = false, onBu
       const files = Array.from(event.target.files ?? []); event.target.value = ''
       if (files.length) void upload(files)
     }} /></label>
-    {busy ? <p role="status">正在上传并解析个人材料…</p> : null}
+    {busy ? <BrandLoading compact message="正在上传并解析个人材料…" /> : null}
     {error ? <p className="qx-message is-error" role="alert">{error}</p> : null}
     {materials.map((material) => <label key={material.materialId} className="student-materials__item">
       <input type="checkbox" aria-label={material.filename} disabled={material.status !== 'ready'} checked={selectedIds.includes(material.materialId)} onChange={() => onChange(selectedIds.includes(material.materialId) ? selectedIds.filter((id) => id !== material.materialId) : [...selectedIds, material.materialId])} />
