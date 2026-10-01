@@ -9,10 +9,17 @@
       content="群学致知：面向社会学研究起步阶段的理论发现与研究设计辅助工具。"
     />
     <link rel="icon" type="image/svg+xml" href="/src/assets/qunxue-brand-mark.svg" />
+    <link rel="stylesheet" href="/src/styles/brand-loading.css" />
     <title>群学致知 | 社会学理论发现与研究设计</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <section id="brand-boot" class="brand-loading brand-loading--fullscreen">
+        <span class="brand-loading__mark brand-loading__mark--waiting" aria-hidden="true"><span class="brand-loading__fill"></span></span>
+        <p class="brand-loading__message" role="status" aria-live="polite" aria-atomic="true">正在准备页面</p>
+        <noscript>请启用 JavaScript 以使用群学致知。</noscript>
+      </section>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

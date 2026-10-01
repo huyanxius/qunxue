@@ -49,7 +49,8 @@ import { legacyResearchWorkspaceDestination } from './research-workspace/researc
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
-import { ErrorState, LoadingState } from './ui/States'
+import { BrandLoading } from './ui/BrandLoading'
+import { ErrorState } from './ui/States'
 import { RouteMotionSurface } from './route-motion'
 import { SettingsModal } from './ui/SettingsModal'
 
@@ -381,7 +382,7 @@ function ProtectedRoute({
   const location = useLocation()
 
   if (sessionState.status === 'loading') {
-    return <LoadingState message="正在确认登录状态" />
+    return <BrandLoading fullscreen message="正在确认登录状态" />
   }
   if (sessionState.status === 'authenticated') return children
   if (sessionState.status === 'error') {

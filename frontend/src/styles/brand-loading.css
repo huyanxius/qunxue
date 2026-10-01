@@ -1,0 +1,68 @@
+/* Loaded from index.html before JavaScript, shared by boot and React boundaries. */
+.brand-loading {
+  display: flex;
+  min-height: 16rem;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 3rem 1.5rem;
+  color: var(--qx-color-ink, light-dark(#111111, #e6e7e3));
+  font-family: var(--qx-font-ui, system-ui, sans-serif);
+}
+.brand-loading--fullscreen {
+  min-height: 100svh;
+  background: var(--qx-color-canvas, light-dark(#f5f5f5, #1c1e1d));
+}
+body:has(#brand-boot) { margin: 0; }
+.brand-loading__mark {
+  position: relative;
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  mask: url('../assets/qunxue-brand-mark.svg') center / contain no-repeat;
+}
+.brand-loading__fill {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  clip-path: inset(var(--brand-loading-fill, 100%) 0 0);
+  transition: clip-path .5s cubic-bezier(.22, 1, .36, 1);
+}
+.brand-loading__mark--waiting .brand-loading__fill {
+  animation: brand-loading-fill 3.6s cubic-bezier(.45, 0, .25, 1) infinite;
+}
+.brand-loading__message {
+  margin: 0;
+  color: var(--qx-color-muted, light-dark(#6c6c6c, #a4aaa2));
+  font-size: .8125rem;
+  line-height: 1.6;
+  letter-spacing: .04em;
+}
+.brand-loading--compact {
+  min-height: 0;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: .75rem;
+  padding: .75rem 0;
+}
+.brand-loading--compact .brand-loading__mark { width: 1.75rem; height: 1.75rem; }
+@keyframes brand-loading-fill {
+  0%, 8% { clip-path: inset(100% 0 0); opacity: 1; }
+  72%, 82% { clip-path: inset(0 0 0); opacity: 1; }
+  94%, 100% { clip-path: inset(0 0 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loading__fill { transition: none; }
+  .brand-loading__mark--waiting .brand-loading__fill {
+    animation: none;
+    clip-path: inset(0);
+    opacity: .65;
+  }
+}
+@media (forced-colors: active) {
+  .brand-loading__mark { forced-color-adjust: none; color: CanvasText; }
+}
