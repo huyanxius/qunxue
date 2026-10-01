@@ -1,0 +1,2078 @@
+[
+  {
+    "id": "algorithm-society-22361",
+    "external_id": "society:22361",
+    "title": "灾难如何收藏：记忆的物质性与文化创伤的图腾",
+    "authors": [
+      "李瑞彤"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "180–208",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22361.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及灾难记忆、物质性、集体意识、文化创伤。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "灾难记忆",
+      "物质性",
+      "集体意识",
+      "文化创伤"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:47:11+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "对灾难记忆的研究主要关注叙事的建构，使得灾难本身",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22361.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:47:11+00:00",
+      "http_status": 200,
+      "response_sha256": "e36e199100dcced1e5856af7aee11974dbd2f92543cd2e47f0d2f526c8cdcd30",
+      "response_bytes": 96978,
+      "abstract_sha256": "cf91324b45f2b326fcc83daa6ba0837ced123325462af7f89792a13b682b501d",
+      "abstract_char_count": 248,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22361.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/180"
+  },
+  {
+    "id": "algorithm-society-22360",
+    "external_id": "society:22360",
+    "title": "父职类型学：“以体育儿”的实践形式与动机结构",
+    "authors": [
+      "胡荣",
+      " 艾裕宸"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "151–179",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22360.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及父职、以体育儿、实践形式、动机结构。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "父职",
+      "以体育儿",
+      "实践形式",
+      "动机结构",
+      "类型学"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:47:22+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "基于对20组城市家庭的深度访谈与观察，本文把父亲",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22360.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:47:22+00:00",
+      "http_status": 200,
+      "response_sha256": "4b479e3cf7b062f5d55409475f1980dabbbcb2fef159bf7f99bd903e9ee1b7a6",
+      "response_bytes": 93387,
+      "abstract_sha256": "2c2ace49ccc086788dd0d0811a332b1dab7c0419ffcaf6b50d22df7642586d2e",
+      "abstract_char_count": 346,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22360.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/151"
+  },
+  {
+    "id": "algorithm-society-22358",
+    "external_id": "society:22358",
+    "title": "社会学的时代精神求索：以青年马克思的希腊精神史研究为例",
+    "authors": [
+      "张巍卓"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "83–112",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22358.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及时代精神、罗马性、原子论、自我意识。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "时代精神",
+      "罗马性",
+      "原子论",
+      "自我意识",
+      "唯物主义"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:47:43+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "青年马克思在颠倒黑格尔法哲学里的国家与市民社会之",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22358.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:47:43+00:00",
+      "http_status": 200,
+      "response_sha256": "50fefd825d5474d94e58806d9b1fb369db9e294b10e919e948fea3c835f22d0a",
+      "response_bytes": 65469,
+      "abstract_sha256": "1239f76dbfcd3e680fcb4c470b408e8af7130c5461610416f7f94c3c655b8d18",
+      "abstract_char_count": 437,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22358.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/83"
+  },
+  {
+    "id": "algorithm-society-22356",
+    "external_id": "society:22356",
+    "title": "从知识权威到行动许可：以宠物医疗中的转译劳动为例",
+    "authors": [
+      "卢思苇"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "32–56",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22356.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及转译劳动、行动许可、策略性真诚、宠物医疗。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "转译劳动",
+      "行动许可",
+      "策略性真诚",
+      "宠物医疗",
+      "职业权威"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:00+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "既有职业社会学常常预设专业知识的垄断能自动赋予职",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22356.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:00+00:00",
+      "http_status": 200,
+      "response_sha256": "25f448f12b2b9ba90bcf754167c05ae86a0798827add680effb20717f1138624",
+      "response_bytes": 84619,
+      "abstract_sha256": "f5d89fc4056df0158000482f144ce7df86da0b4843afebc2aa61143b1eb09f50",
+      "abstract_char_count": 311,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22356.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/32"
+  },
+  {
+    "id": "algorithm-society-22355",
+    "external_id": "society:22355",
+    "title": "治理不可能三角",
+    "authors": [
+      "周黎安"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "1–31",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22355.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及治理不可能三角、行政发包制、理性科层制、现代公司治理。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "治理不可能三角",
+      "行政发包制",
+      "理性科层制",
+      "现代公司治理",
+      "不确定性管理"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:09+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本研究在行政发包制研究的基础上，丰富和发展了“治",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22355.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:09+00:00",
+      "http_status": 200,
+      "response_sha256": "de47065c2d59419c1567b4b54446dd567306079262913287074bef9d72406379",
+      "response_bytes": 84366,
+      "abstract_sha256": "f7148b0581a94067050d8c19ccaae77c5afc23bd0968b62508bcc2219db82f04",
+      "abstract_char_count": 417,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22355.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/1"
+  },
+  {
+    "id": "algorithm-society-22198",
+    "external_id": "society:22198",
+    "title": "何以共有：闽西客家宗族型村庄的房产观念与实践",
+    "authors": [
+      "刘超群"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "208–242",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22198.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及房屋、共有、占有、宗族。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "房屋",
+      "共有",
+      "占有",
+      "宗族",
+      "土改"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:18+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文以闽西宗族型村庄为例，探讨房屋共有如何作为稳",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22198.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:18+00:00",
+      "http_status": 200,
+      "response_sha256": "a818e5512384218d9179d2a091276ac42df7e6d65023f1e62ef6cb014554826c",
+      "response_bytes": 96750,
+      "abstract_sha256": "44c365495232c238850f677015e29ae0b451432f002fb35bd83f0c462fc5788f",
+      "abstract_char_count": 309,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22198.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/208"
+  },
+  {
+    "id": "algorithm-society-22197",
+    "external_id": "society:22197",
+    "title": "家庭变动中的反思性体认——以宁夏政策性搬迁安置区的移民为例",
+    "authors": [
+      "薛雯静",
+      " 徐宗阳"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "182–207",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22197.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及反思性体认、政策性搬迁、不安感、扩充性自我。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "反思性体认",
+      "政策性搬迁",
+      "不安感",
+      "扩充性自我"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:29+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文以宁夏政策性搬迁移民为研究对象，分析其在搬迁",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22197.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:29+00:00",
+      "http_status": 200,
+      "response_sha256": "f1406e1b449ca8cd8a18ff910f91c228756f23e67e8b08f85ce373ea5f73f2b4",
+      "response_bytes": 72561,
+      "abstract_sha256": "91dcf0c48403c92bb0bb42cea021ad3802b499bbc426088772c504ea4f0a318e",
+      "abstract_char_count": 302,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22197.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/182"
+  },
+  {
+    "id": "algorithm-society-22196",
+    "external_id": "society:22196",
+    "title": "镜头下的工作：劳动可见性如何影响幼儿教师的专业自主性？",
+    "authors": [
+      "陈玉佩"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "147–181",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22196.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及幼儿教师、可见性、专业自主性、家园沟通。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "幼儿教师",
+      "可见性",
+      "专业自主性",
+      "家园沟通"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:37+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "在机构化抚育面临信任危机的背景下，数字媒介技术作",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22196.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:37+00:00",
+      "http_status": 200,
+      "response_sha256": "43758b9cb32d0d48cc1eb6551d995800c38a61cb8f3814fed143e6ff2d843bea",
+      "response_bytes": 100441,
+      "abstract_sha256": "3dc20182fcd3053a2b290dbfed7f0245373ff9702a7f78685ca8a15d636da3f9",
+      "abstract_char_count": 404,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22196.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/147"
+  },
+  {
+    "id": "algorithm-society-22195",
+    "external_id": "society:22195",
+    "title": "边缘农户触发的电商村形成",
+    "authors": [
+      "乔天宇",
+      " 邱泽奇"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "114–146",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22195.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及边缘农户、电商村形成、网络分析、计算模拟。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "边缘农户",
+      "电商村形成",
+      "网络分析",
+      "计算模拟"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:48:49+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "对于乡村电商技术变革来说，边缘力量不容忽视。本文",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22195.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:48:49+00:00",
+      "http_status": 200,
+      "response_sha256": "47761bd3494709de013fe2620c3c6fe6b6f687387eb5445eb9894e0219de6905",
+      "response_bytes": 121365,
+      "abstract_sha256": "05eb1f6468d56c7a3830a500f79c7173cb8107123af53bd148cdb4a27d09eace",
+      "abstract_char_count": 232,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22195.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/114"
+  },
+  {
+    "id": "algorithm-society-22190",
+    "external_id": "society:22190",
+    "title": "士大夫的社会世界建构与演变——基于曾国藩日记/通信的案例研究",
+    "authors": [
+      "周雪光",
+      " 张家硕"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "1–29",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22190.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及社会世界、差序格局、士大夫、曾国藩。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "社会世界",
+      "差序格局",
+      "士大夫",
+      "曾国藩",
+      "微观社会学"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:49:43+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "“现实为社会所建构”这一社会学基本命题指出，人们",
+        "locator": "原刊网页 #collapseOne 中文摘要 #C3 开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22190.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:49:43+00:00",
+      "http_status": 200,
+      "response_sha256": "735c6efea330a6dd749abf25eb072990beaa4eca0bfd2585415e1eb35d4e512e",
+      "response_bytes": 113817,
+      "abstract_sha256": "200e7dd8a96c3bf2ff5ca9053c450c92c743621d859d670053d5f91256b5ff8a",
+      "abstract_char_count": 251,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22190.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/1"
+  },
+  {
+    "id": "algorithm-society-22484",
+    "external_id": "society:22484",
+    "title": "“生命为了艺术，艺术为了生命”：齐美尔论艺术与生命的协调",
+    "authors": [
+      "曹金羽"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "211–242",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22484.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及为艺术而艺术、框架、形式、生命。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "为艺术而艺术",
+      "框架",
+      "形式",
+      "生命",
+      "英雄主义"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:51:25+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "齐美尔的艺术社会学以“生命为了艺术，艺术为了生命",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22484.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:51:25+00:00",
+      "http_status": 200,
+      "response_sha256": "2272869d47003501918c2efc0423dd7e3b7309389788cc4916efa5cb5eb5849b",
+      "response_bytes": 75396,
+      "abstract_sha256": "8cf315121e3172ad058ea288242f818cf4d9f27bbf3c2909338bb9d02321072c",
+      "abstract_char_count": 304,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22484.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/211"
+  },
+  {
+    "id": "algorithm-society-22483",
+    "external_id": "society:22483",
+    "title": "从分娩记忆看中国女性产痛的代际变迁与社会意涵",
+    "authors": [
+      "方静文",
+      " 张仁烨"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "176–210",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22483.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及产痛、分娩记忆、代际变迁、社会意涵。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "产痛",
+      "分娩记忆",
+      "代际变迁",
+      "社会意涵"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:51:33+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文聚焦女性产痛的代际差异，基于24位产妇的分娩",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22483.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:51:33+00:00",
+      "http_status": 200,
+      "response_sha256": "f29c0d142ac39ef9cfdb2f3dc75aad4a349b3ea1e090fcac80e2190a77403e7b",
+      "response_bytes": 62073,
+      "abstract_sha256": "a6437e485c7cd214eb253e89a365ad912c201b0ec45751db1237732a1f7ab494",
+      "abstract_char_count": 294,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22483.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/176"
+  },
+  {
+    "id": "algorithm-society-22482",
+    "external_id": "society:22482",
+    "title": "家国关系变迁中的就医秩序与行动伦理——一个华北村庄的历时性研究",
+    "authors": [
+      "桑坤",
+      " 高远"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "136–175",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22482.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及分级诊疗体系、就医秩序、国家与农民关系、乡村医生。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "分级诊疗体系",
+      "就医秩序",
+      "国家与农民关系",
+      "乡村医生",
+      "村集体"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:51:40+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "在进入21世纪后，伴随着国民健康需求的日益复杂化",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22482.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:51:40+00:00",
+      "http_status": 200,
+      "response_sha256": "16969348f8904c95a0b4fbab598c84ab928dbc90d10aa2ca31a103c3f8af3897",
+      "response_bytes": 60414,
+      "abstract_sha256": "dc2eb62ad35d38460e1ebd021447942d5c97e34b5aba2c89cfc8e092780e646b",
+      "abstract_char_count": 460,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22482.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/136"
+  },
+  {
+    "id": "algorithm-society-22481",
+    "external_id": "society:22481",
+    "title": "人机共存的生成机制：以安宁疗护社会工作实践为例",
+    "authors": [
+      "何龙韬",
+      " 张晶"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "98–135",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22481.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及人机共存、人工智能、安宁疗护、社会工作。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "人机共存",
+      "人工智能",
+      "安宁疗护",
+      "社会工作",
+      "数字化照护"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:51:51+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "在人机共存日益成为数字时代社会实践重要特征的背景",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22481.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:51:51+00:00",
+      "http_status": 200,
+      "response_sha256": "086a869f7d833dc5bcfb2d1fad0c64d634774ff944c9d7a687ad81f7329676e8",
+      "response_bytes": 71281,
+      "abstract_sha256": "53a1373dcf61ba927c246d2aece12ef3d082fbe1b54d6f6cb0bd208e1a7d9220",
+      "abstract_char_count": 302,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22481.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/98"
+  },
+  {
+    "id": "algorithm-society-22480",
+    "external_id": "society:22480",
+    "title": "个体与集体之辩：莫斯论法国社会主义中的总体性",
+    "authors": [
+      "潘梓旸"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "64–97",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22480.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及总体性、法国社会主义、合作社、俄国革命。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "总体性",
+      "法国社会主义",
+      "合作社",
+      "俄国革命"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:52:01+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "莫斯通过对俄国革命的社会学鉴析来展现个体与集体之",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22480.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:52:01+00:00",
+      "http_status": 200,
+      "response_sha256": "9195a5ec8b98bd42a87f72d2649054f7e0122e62f2b137a6cfcbfd57d23cfc6c",
+      "response_bytes": 55948,
+      "abstract_sha256": "f58bf4757802663a19e9aa546638cc57c829bd2abc42d3d74aaf69b59ef28166",
+      "abstract_char_count": 405,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22480.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/64"
+  },
+  {
+    "id": "algorithm-society-22479",
+    "external_id": "society:22479",
+    "title": "诸文明的共同基础：莫斯的单数文明论",
+    "authors": [
+      "蒋卓峰"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "33–63",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22479.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及马塞尔·莫斯、单数文明、超社会体系、共同基础。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "马塞尔·莫斯",
+      "单数文明",
+      "超社会体系",
+      "共同基础",
+      "融合的界限"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:52:08+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "莫斯与涂尔干的“超社会体系”奠定了社会科学对复数",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22479.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:52:08+00:00",
+      "http_status": 200,
+      "response_sha256": "c6d8f1bb9eac42c7e9139cd8c5a728fd5d90bd54ca57d20227a1385e184777c4",
+      "response_bytes": 62470,
+      "abstract_sha256": "0b09edb8e51b5f22b382dc3b2818b60a318fd14fc7a7d01ca42de33e141a063c",
+      "abstract_char_count": 317,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22479.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/33"
+  },
+  {
+    "id": "algorithm-society-22478",
+    "external_id": "society:22478",
+    "title": "走出“初民社会”的两条路径：社区研究的文化论与马林诺夫斯基的文化接触学说",
+    "authors": [
+      "田耕"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2026年第4期",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 4,
+    "publication_pages": "1–32",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-09-18",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22478.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及文化接触、国际主义、社区研究、文化边界。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "文化接触",
+      "国际主义",
+      "社区研究",
+      "文化边界"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "published_at": "原页未找到明确的中文出版日期；未用网页发布日期替代。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:52:17+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "如果说走出“初民社会”是两次世界大战之间的一种跨",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22478.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:52:17+00:00",
+      "http_status": 200,
+      "response_sha256": "b3fbea8a17b2e2bc90ab2cf67266413c7eb3cfe66beef2867f4835c100a81035",
+      "response_bytes": 69501,
+      "abstract_sha256": "487e045c4d381000587d0d91578cae28040a52efb378ab6ec265f831c8512eec",
+      "abstract_char_count": 380,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22478.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": false,
+    "temporal_eligible": false,
+    "date_basis": "issue_only",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I4/1"
+  },
+  {
+    "id": "algorithm-society-22362",
+    "external_id": "society:22362",
+    "title": "社会保障政策的代际减贫效应——基于中国健康与营养调查的追踪研究",
+    "authors": [
+      "仲超",
+      " 张浩淼"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "209–239",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22362.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及社会保障、贫困代际传递、减贫、国有企业改革。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "社会保障",
+      "贫困代际传递",
+      "减贫",
+      "国有企业改革",
+      "下岗职工"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:54:36+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "20世纪90年代中国国有企业改革造成大批职工下岗",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22362.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:54:36+00:00",
+      "http_status": 200,
+      "response_sha256": "0e911388ad00fc7b0cd62e4297af59af10f81ce72c3cb43a5f774aeb7a2fced6",
+      "response_bytes": 141963,
+      "abstract_sha256": "ab651ae35ed36a264c9e1c7aab5b7dbc7720efe104cf740cd737411a6402ff23",
+      "abstract_char_count": 382,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22362.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/209"
+  },
+  {
+    "id": "algorithm-society-22359",
+    "external_id": "society:22359",
+    "title": "儒教重建与士人宗教团体——以清末温州下层士人的宗教实践为中心",
+    "authors": [
+      "张喆",
+      " 侯俊丹"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "113–150",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22359.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及士人宗教团体、颜李学、太阳教、阴阳电。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "士人宗教团体",
+      "颜李学",
+      "太阳教",
+      "阴阳电",
+      "道德物理法则"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:54:46+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "19世纪下半叶，面对宗教内乱与基督教冲击的双重危",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22359.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:54:46+00:00",
+      "http_status": 200,
+      "response_sha256": "4dbba7801b5d56962e48927b0ccdb362b97bde3da13188bcf41d595ea38c3bb1",
+      "response_bytes": 93604,
+      "abstract_sha256": "7a065fc302398fbd8c2997a7e6410efc5865906845dc830d1fc094c87b27aa8f",
+      "abstract_char_count": 399,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22359.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/113"
+  },
+  {
+    "id": "algorithm-society-22357",
+    "external_id": "society:22357",
+    "title": "动员与压抑：中国游戏产业劳动主体性的片段性调用机制",
+    "authors": [
+      "潘竹涛",
+      " 吴桐雨"
+    ],
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-05-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 3,
+    "publication_pages": "57–82",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-07-24",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22357.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及创造性劳动、劳动主体性、劳动过程、游戏产业。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "创造性劳动",
+      "劳动主体性",
+      "劳动过程",
+      "游戏产业",
+      "模块化生产"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:54:53+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文聚焦中国游戏产业的创造性劳动，探讨游戏开发者",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22357.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:54:53+00:00",
+      "http_status": 200,
+      "response_sha256": "b3f719dbf90773ee2c04c104e44ccb4e115af25d73963c246c83b018ed5e667e",
+      "response_bytes": 104967,
+      "abstract_sha256": "70d849797bfd5b64f91527fd21b252022a04f76199c95b90d3593b99d49cd0ba",
+      "abstract_char_count": 276,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22357.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I3/57"
+  },
+  {
+    "id": "algorithm-society-22191",
+    "external_id": "society:22191",
+    "title": "从吴文藻在20世纪六七十年代的学术阅读看中国社会学重建的根基——基于吴文藻日记的考察",
+    "authors": [
+      "孙飞宇"
+    ],
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-03-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 2,
+    "publication_pages": "30–76",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-05-19",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22191.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及吴文藻、日记、学术阅读、学术共同体。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "吴文藻",
+      "日记",
+      "学术阅读",
+      "学术共同体",
+      "社会学重建"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:55:25+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文基于吴文藻先生从1956年到1985年间的日",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22191.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:55:25+00:00",
+      "http_status": 200,
+      "response_sha256": "3ef3a72324c3dc09f9f55e51392ca14be744865d4d8071abf77ebd3fc8ea06f3",
+      "response_bytes": 75088,
+      "abstract_sha256": "5230d56a8bd1ae168650013c56d2680e77a61986918d219fbe0857783d0bfd1c",
+      "abstract_char_count": 347,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22191.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I2/30"
+  },
+  {
+    "id": "algorithm-society-22047",
+    "external_id": "society:22047",
+    "title": "看中医”与健康的教育梯度——基于有序链式中介模型的实证分析",
+    "authors": [
+      "孙静含",
+      " 李升",
+      " 李科霖"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 1,
+    "publication_pages": "206–239",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22047.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及健康的教育梯度、自评健康、“看中医”、有序链式中介模型。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "健康的教育梯度",
+      "自评健康",
+      "“看中医”",
+      "有序链式中介模型"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:55:33+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "对中国人而言，看中医还是看西医是人们在治疗疾病或",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22047.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:55:33+00:00",
+      "http_status": 200,
+      "response_sha256": "7c7786d6d472e304dd25487078c33cec049e269c983d0a0aa065f59353995ff1",
+      "response_bytes": 152219,
+      "abstract_sha256": "f5e9e6f4ba922e025d536a70ddad2a246f35725e42874f5d87565351237c10c5",
+      "abstract_char_count": 398,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22047.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/206"
+  },
+  {
+    "id": "algorithm-society-22046",
+    "external_id": "society:22046",
+    "title": "成为“情境艺术家”：斜杠影像创作者的身份建构",
+    "authors": [
+      "张佳雪",
+      " 袁同凯"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 1,
+    "publication_pages": "171–205",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22046.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及斜杠、情境性身份、影像创作者、身份建构。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "斜杠",
+      "情境性身份",
+      "影像创作者",
+      "身份建构"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:55:44+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "通过对洋芋乡村摄影项目的案例研究，本文力图呈现斜",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22046.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:55:44+00:00",
+      "http_status": 200,
+      "response_sha256": "aeee42d21be6607e4bcc3fdb282a034b779daf0b51a050e9d40b2c02a83872d5",
+      "response_bytes": 116457,
+      "abstract_sha256": "6f97970cc074ce3f7544ea86d845fd2a93a3bff46b6a6f9af1a3cd2a45b3dea1",
+      "abstract_char_count": 298,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22046.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/171"
+  },
+  {
+    "id": "algorithm-society-22045",
+    "external_id": "society:22045",
+    "title": "“情”与“礼”之间：从“父子离心”到“父子一体”——以李安的“父亲三部曲”为例",
+    "authors": [
+      "李朔严",
+      " 刘一艺"
+    ],
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2026-01-20",
+    "publication_year": 2026,
+    "publication_volume": "46",
+    "publication_issue": 1,
+    "publication_pages": "138–170",
+    "doi": null,
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": "2026-03-17",
+    "source_date_label": "原站发布日期（与出版日期分开）",
+    "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22045.shtml",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "议题涉及李安、父子关系、礼与情、代际互动。已读取原刊中文摘要，具体研究结论尚未人工复核。",
+    "summary_method": "deterministic_official_keyword_template; evidence is a 24-character excerpt",
+    "topics": [
+      "李安",
+      "父子关系",
+      "礼与情",
+      "代际互动",
+      "父亲三部曲"
+    ],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": null,
+    "limitations": null,
+    "missing_reasons": {
+      "research_question": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "methods": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "data": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "sample": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "findings": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。",
+      "limitations": "算法仅抽取书目、日期、关键词与摘要线索，未人工核验全文中的该字段。"
+    },
+    "verification_status": "lead_only",
+    "verification_note": "算法实际读取原期刊网页中文摘要并校验元数据和日期，未人工复核论文全文。",
+    "evidence_scope": "original_journal_abstract_only",
+    "discovered_at": "2026-10-01T05:55:51+00:00",
+    "collection_method": "algorithm_harvested",
+    "evidence": [
+      {
+        "snippet": "本文以李安的电影“父亲三部曲”为研究对象，探讨当",
+        "locator": "原刊网页 #collapseOne 中文摘要首段（#C3或strong摘要同段）开头；标题/作者见citation元数据",
+        "url": "https://www.society.shu.edu.cn/CN/abstract/abstract22045.shtml",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "source_snapshot": {
+      "kind": "minimal_evidence_noarchive",
+      "captured_at": "2026-10-01T05:55:51+00:00",
+      "http_status": 200,
+      "response_sha256": "abe7e6dc81204dcc95ca19260c4568dadff4dceb80c5902e6d62a3cac17f3e62",
+      "response_bytes": 79640,
+      "abstract_sha256": "728c42997f9231b86ee3701473d246ab5c7f75b0cdcf47ee812a3ac01d39a8dc",
+      "abstract_char_count": 259,
+      "page_robots": "noarchive,",
+      "raw_html_persisted": false,
+      "local_evidence_file": "society/evidence/society-22045.json",
+      "date_locator": "#divPanel 中文出版日期/发布日期；不采用meta citation_date冒充出版日"
+    },
+    "source_relationships": [
+      {
+        "relation": "discovered_via_official_annual_contents",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2026&juan=46"
+      }
+    ],
+    "editorial_caveat": "本批采集覆盖可访问期刊页面，不代表社会学全部发表量；关键词频率仅用于本语料内描述。",
+    "within_preferred_window": true,
+    "temporal_eligible": true,
+    "date_basis": "explicit_chinese_publication_label",
+    "requested_url": "https://www.society.shu.edu.cn/CN/Y2026/V46/I1/138"
+  }
+]

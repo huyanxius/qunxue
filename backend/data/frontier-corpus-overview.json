@@ -1,0 +1,1844 @@
+{
+  "headline": "关系如何组织机会：273篇研究中的共同问题与分歧",
+  "summary": "从家庭照护到平台劳动，从基层协作到历史制度，这批研究反复把个人境遇连接到资源、责任与解释权的分配。综合阅读后，一条贯穿性的研究线索是：同一项安排怎样创造机会，又把成本交给谁？数字工具可能扩大表达，也可能加强劳动控制；家庭支持能够帮助就业，同时需要辨认照护负担；组织整合能够引入资源，也可能让实际需求退出决策。思想与历史研究则进一步追问，个人自由、公共责任和共同体应如何理解。由此形成的研究议程，是把关系中的收益、负担与自主空间一并纳入解释。",
+  "sections": [
+    {
+      "id": "shared_focus",
+      "title": "共同关切：机会如何被组织，成本如何被分担",
+      "statements": [
+        {
+          "text": "家庭、照护与青年研究共同把“个人选择”放回资源和责任安排中。债务研究报告健康压力与生育意愿之间的中介关系，非正规就业又与更偏理性的婚姻动机相连；家庭决策同时涉及经济处境、支持资源与价值观。支持与负担在家庭成员之间分配不均：教育责任可能集中到母亲，离异女性维持母职需要收入与娘家支持，祖辈则通过照料帮助年轻父母就业。把这些研究连起来，关键问题就从“家庭有没有支持”推进到“谁提供支持、谁获得机会、谁因此放弃了什么”。社会政策研究提出的能力建设与基本保障配合，正可在这个责任分配层面接受检验。",
+          "evidence_record_ids": [
+            "research-shjs-2026-699",
+            "youth-2026-zhou-informal-employment-marriage",
+            "research-shjs-2022-4",
+            "youth-2026-huang-wu-motherhood",
+            "research-shjs-2026-681",
+            "research-shxyj-2026-5-social-investment"
+          ]
+        },
+        {
+          "text": "数字技术与组织治理研究把同一个问题带到工作现场：谁能够规定任务、解释绩效并转移风险？外卖计件规则把收入与高投入、高风险的策略选择捆绑，AI训练企业以项目制和职业想象组织不稳定劳动，平台还会通过改写算法规则改变劳资关系。医院的“组织内外包”则把外部雇员嵌入内部流程，同时保留转移风险的身份边界。与此相对，数字叙事实践可以扩大服务对象表达，安宁疗护中的AI也在协作与伦理协商中获得具体角色。跨场景的共同判断是：技术的作用要放在劳动控制、专业自主和责任归属中考察，参与更便利与权力更平等并不是同一个结果。",
+          "evidence_record_ids": [
+            "algorithm-society-20503",
+            "algorithm-society-21260",
+            "algorithm-society-21261",
+            "research-shxyj-2026-4-organizational-outsourcing",
+            "research-shjs-2025-636",
+            "algorithm-society-22481",
+            "algorithm-society-22196"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "change",
+      "title": "问题深化：把需要、行动与长期后果拆开研究",
+      "statements": [
+        {
+          "text": "把《社会建设》2022—2026年均已完整纳入的第1—2期放在一起，共有78篇可比材料，可以沿照护问题读出一条连续细化的提问线索：2022年的夹心世代讨论关注工作与跨代照护的角色竞争；2023年家庭养老床位研究转向需求与医疗资源衔接；2024年“四代同堂”研究进一步区分实际照料与照料需求，发现后者的心理负担不能由前者代替；2026年研究同时考察祖辈照料对年轻父母就业的关联，以及医养机构隐性成本和老人需求被排除的问题。这组同刊同期对读呈现的是分析问题的深化。放到更广的语料中，农村儿童收入风险轨迹与女性初育后就业序列也表明，一次贫困状态或某一时点就业，难以替代反复冲击与长期生活路径。",
+          "evidence_record_ids": [
+            "research-shjs-2022-12",
+            "research-shjs-2023-552",
+            "research-shjs-2024-596",
+            "research-shjs-2026-681",
+            "research-shjs-2026-687",
+            "research-shjs-2026-690",
+            "research-shjs-2026-697",
+            "algorithm-society-20053"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "methods",
+      "title": "证据结构：群体比较、现场过程与历史解释相互补充",
+      "statements": [
+        {
+          "text": "这批研究的方法说明中，7篇明确使用CFPS、10篇使用CGSS；21篇明确采用访谈、观察或田野材料，41篇明确涉及案例或个案分析。这些标签可以重叠。调查分析擅长揭示群体与时期差异，例如收入风险的持续轨迹、户籍群体的再分配态度以及教育回报变化；机构和社区现场研究则追问，相同制度为何在实际互动中产生不同结果。关系本身也成为可分析的单位：3篇采用网络分析或网络模型，分别研究社区决策分工、宋代精英婚姻与电商技能扩散，其中社区和电商研究还结合访谈。对研究者而言，最有价值的组合是先用群体比较定位差异，再以过程证据解释差异怎样生成，并继续检验机制在其他场景是否成立。",
+          "evidence_record_ids": [
+            "research-shjs-2026-699",
+            "research-shjs-2026-691",
+            "research-shjs-2026-697",
+            "research-shjs-2024-604",
+            "algorithm-society-19626",
+            "algorithm-society-19731",
+            "algorithm-society-21137",
+            "youth-2026-zhou-informal-employment-marriage",
+            "research-shjs-2024-598",
+            "research-shjs-2023-553",
+            "algorithm-society-19732",
+            "algorithm-society-20265",
+            "algorithm-society-20266",
+            "algorithm-society-20510",
+            "algorithm-society-20671",
+            "algorithm-society-20817",
+            "algorithm-society-22047",
+            "research-shxyj-2026-3-care-presence",
+            "youth-2026-zhao-chen-left-behind",
+            "youth-2026-huang-wu-motherhood",
+            "research-shjs-2026-687",
+            "research-shjs-2026-700",
+            "research-shjs-2026-695",
+            "research-shjs-2025-643",
+            "research-shjs-2024-597",
+            "research-shjs-2022-22",
+            "research-shjs-2022-17",
+            "algorithm-society-19522",
+            "algorithm-society-19730",
+            "algorithm-society-20051",
+            "algorithm-society-20259",
+            "algorithm-society-20507",
+            "algorithm-society-21132",
+            "algorithm-society-21505",
+            "algorithm-society-22195",
+            "algorithm-society-22360",
+            "algorithm-society-22361",
+            "algorithm-society-22482",
+            "research-shjs-2026-676",
+            "research-shjs-2026-686",
+            "research-shjs-2025-638",
+            "research-shjs-2025-642",
+            "research-shjs-2025-644",
+            "research-shjs-2025-645",
+            "research-shjs-2025-651",
+            "research-shjs-2025-659",
+            "research-shjs-2025-654",
+            "research-shjs-2025-656",
+            "research-shjs-2025-657",
+            "research-shjs-2024-592",
+            "research-shjs-2024-588",
+            "research-shjs-2024-590",
+            "research-shjs-2024-607",
+            "research-shjs-2024-602",
+            "research-shjs-2023-54",
+            "algorithm-society-19728",
+            "algorithm-society-19729",
+            "algorithm-society-20052",
+            "algorithm-society-20260",
+            "algorithm-society-20264",
+            "algorithm-society-20377",
+            "algorithm-society-20378",
+            "algorithm-society-20666",
+            "algorithm-society-20667",
+            "algorithm-society-20815",
+            "algorithm-society-20816",
+            "algorithm-society-20821",
+            "algorithm-society-21133",
+            "algorithm-society-21261",
+            "algorithm-society-21506",
+            "algorithm-society-21644",
+            "algorithm-society-22044",
+            "algorithm-society-22046",
+            "algorithm-society-22190",
+            "algorithm-society-22198",
+            "algorithm-society-22359",
+            "algorithm-society-21503"
+          ]
+        },
+        {
+          "text": "思想文本、历史制度与学科史研究提供另一类不可替代的解释：它们追问“自由”“共同体”“公共性”或“关系”本身怎样被界定。韦伯城市研究从市民参与理解正当性，顾炎武研究讨论统一框架如何容纳差异治理，莫斯研究把个人自由与边界带回社会整体；这些是概念论证，不能按调查相关性阅读。历史材料又能揭示制度生成的过程：民国公产研究展示自治财产如何转向政府管理，清末煤矿个案呈现士绅中介怎样连接工业与地方利益。吴文藻日记和中国社会学重建研究则说明，知识还依靠持续阅读、学术交往与历史制度条件得到保存和重组。把这一部分纳入综述，才能看到本批文献既研究社会机制，也反思描述这些机制所使用的概念。",
+          "evidence_record_ids": [
+            "algorithm-society-19624",
+            "algorithm-society-20048",
+            "algorithm-society-22480",
+            "algorithm-society-19622",
+            "algorithm-society-22044",
+            "algorithm-society-22191",
+            "research-shxyj-2025-6-sociology-reconstruction",
+            "algorithm-society-21640"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "differences",
+      "title": "边界条件：有支持、有参与，仍要问受益的是谁",
+      "statements": [
+        {
+          "text": "跨篇对照最值得保留的是条件差异，而不是把结论抹平。隔代照料与年轻父母就业较高相关，并不意味着照护者承担的需要没有代价；“四代同堂”研究恰好把实际照料与需求压力分开。教育对弱势出身者的精神健康回报呈补偿作用，而社会保障的代际减贫作用在较高文化资本家庭更明显，说明不同资源进入家庭后的转化条件并不相同。参与也有类似分化：乡建项目中，能协调关系圈层的人有助于组织合作；电商村中，较早试用并传播技能的却是关系边缘者；轻钢住宅项目即使降低操作门槛，仍可能因标准化而增加村民对技术提供者的依赖。合作动员、创新启动和自主控制，是三个需要分别测量的结果。",
+          "evidence_record_ids": [
+            "research-shjs-2026-681",
+            "research-shjs-2024-596",
+            "algorithm-society-20266",
+            "algorithm-society-22362",
+            "algorithm-society-20378",
+            "algorithm-society-22195",
+            "algorithm-society-20821"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "research_opportunities",
+      "title": "下一步：追踪收益与负担怎样在关系中转移",
+      "statements": [
+        {
+          "text": "由这些共同机制和条件差异，可以形成三项具体研究设计。第一，在家庭与养老机构之间做多点、连续追踪，同时记录老人的需要、子代就业、照护者健康和机构执行成本，识别“增加服务”究竟缓解还是转移了负担。第二，比较社区和乡建项目的参与规则，把到场次数进一步拆为议题提出权、决策影响、技术改造空间和退出能力，再检验关系中心者与边缘者分别在哪个阶段发挥作用。第三，以算法调整或数字考核实施前后为事件窗口，追踪收入与工时、专业判断空间及情感劳动变化，区分便利、可见性和控制的后果。三类设计都应保留实施过程与行动者解释，再用跨场景比较检验机制边界；这些是本次跨篇对读提出的研究机会。",
+          "evidence_record_ids": [
+            "research-shxyj-2026-3-care-presence",
+            "research-shjs-2026-687",
+            "research-shjs-2026-700",
+            "research-shjs-2024-596",
+            "research-shjs-2025-643",
+            "algorithm-society-20378",
+            "algorithm-society-22195",
+            "algorithm-society-20821",
+            "algorithm-society-21261",
+            "algorithm-society-22196",
+            "algorithm-society-22481"
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": {
+    "stream": "research",
+    "coverage_record_ids": [
+      "algorithm-society-22481",
+      "algorithm-society-22355",
+      "research-shxyj-2026-3-care-presence",
+      "research-shjs-2026-699",
+      "research-shjs-2026-689",
+      "research-shjs-2025-664",
+      "research-shjs-2026-694",
+      "research-shxyj-2026-4-organizational-outsourcing",
+      "research-shxyj-2026-5-social-investment",
+      "youth-2026-zhou-informal-employment-marriage",
+      "research-shfzyj-2025-3-mobility-trust",
+      "research-shxyj-2025-6-identity-objects",
+      "research-shxyj-2025-6-sociology-reconstruction",
+      "youth-2026-zhao-chen-left-behind",
+      "youth-2026-huang-wu-motherhood",
+      "research-shjs-2026-677",
+      "research-shjs-2026-678",
+      "research-shjs-2026-679",
+      "research-shjs-2026-680",
+      "research-shjs-2026-681",
+      "research-shjs-2026-682",
+      "research-shjs-2026-674",
+      "research-shjs-2026-673",
+      "research-shjs-2026-675",
+      "research-shjs-2026-676",
+      "research-shjs-2026-687",
+      "research-shjs-2026-688",
+      "research-shjs-2026-690",
+      "research-shjs-2026-691",
+      "research-shjs-2026-684",
+      "research-shjs-2026-683",
+      "research-shjs-2026-685",
+      "research-shjs-2026-686",
+      "research-shjs-2026-697",
+      "research-shjs-2026-698",
+      "research-shjs-2026-700",
+      "research-shjs-2026-693",
+      "research-shjs-2026-692",
+      "research-shjs-2026-695",
+      "research-shjs-2026-696",
+      "research-shjs-2025-638",
+      "research-shjs-2025-639",
+      "research-shjs-2025-633",
+      "research-shjs-2025-632",
+      "research-shjs-2025-634",
+      "research-shjs-2025-635",
+      "research-shjs-2025-636",
+      "research-shjs-2025-637",
+      "research-shjs-2025-646",
+      "research-shjs-2025-647",
+      "research-shjs-2025-641",
+      "research-shjs-2025-640",
+      "research-shjs-2025-642",
+      "research-shjs-2025-643",
+      "research-shjs-2025-644",
+      "research-shjs-2025-645",
+      "research-shjs-2025-652",
+      "research-shjs-2025-653",
+      "research-shjs-2025-649",
+      "research-shjs-2025-648",
+      "research-shjs-2025-650",
+      "research-shjs-2025-651",
+      "research-shjs-2025-658",
+      "research-shjs-2025-659",
+      "research-shjs-2025-655",
+      "research-shjs-2025-654",
+      "research-shjs-2025-656",
+      "research-shjs-2025-657",
+      "research-shjs-2024-591",
+      "research-shjs-2024-592",
+      "research-shjs-2024-587",
+      "research-shjs-2024-586",
+      "research-shjs-2024-588",
+      "research-shjs-2024-589",
+      "research-shjs-2024-590",
+      "research-shjs-2024-598",
+      "research-shjs-2024-599",
+      "research-shjs-2024-594",
+      "research-shjs-2024-593",
+      "research-shjs-2024-595",
+      "research-shjs-2024-596",
+      "research-shjs-2024-597",
+      "research-shjs-2024-605",
+      "research-shjs-2024-606",
+      "research-shjs-2024-607",
+      "research-shjs-2024-601",
+      "research-shjs-2024-600",
+      "research-shjs-2024-602",
+      "research-shjs-2024-603",
+      "research-shjs-2024-604",
+      "research-shjs-2023-50",
+      "research-shjs-2023-51",
+      "research-shjs-2023-49",
+      "research-shjs-2023-52",
+      "research-shjs-2023-53",
+      "research-shjs-2023-54",
+      "research-shjs-2023-55",
+      "research-shjs-2023-547",
+      "research-shjs-2023-548",
+      "research-shjs-2023-546",
+      "research-shjs-2023-549",
+      "research-shjs-2023-550",
+      "research-shjs-2023-551",
+      "research-shjs-2023-552",
+      "research-shjs-2023-553",
+      "research-shjs-2023-556",
+      "research-shjs-2023-557",
+      "research-shjs-2023-558",
+      "research-shjs-2023-559",
+      "research-shjs-2023-560",
+      "research-shjs-2022-3",
+      "research-shjs-2022-4",
+      "research-shjs-2022-2",
+      "research-shjs-2022-5",
+      "research-shjs-2022-6",
+      "research-shjs-2022-7",
+      "research-shjs-2022-8",
+      "research-shjs-2022-9",
+      "research-shjs-2022-11",
+      "research-shjs-2022-10",
+      "research-shjs-2022-12",
+      "research-shjs-2022-13",
+      "research-shjs-2022-14",
+      "research-shjs-2022-15",
+      "research-shjs-2022-18",
+      "research-shjs-2022-19",
+      "research-shjs-2022-20",
+      "research-shjs-2022-21",
+      "research-shjs-2022-22",
+      "research-shjs-2022-17",
+      "research-shjs-2022-23",
+      "algorithm-society-19517",
+      "algorithm-society-19518",
+      "algorithm-society-19519",
+      "algorithm-society-19520",
+      "algorithm-society-19521",
+      "algorithm-society-19522",
+      "algorithm-society-19523",
+      "algorithm-society-19524",
+      "algorithm-society-19619",
+      "algorithm-society-19620",
+      "algorithm-society-19621",
+      "algorithm-society-19622",
+      "algorithm-society-19623",
+      "algorithm-society-19624",
+      "algorithm-society-19625",
+      "algorithm-society-19626",
+      "algorithm-society-19725",
+      "algorithm-society-19726",
+      "algorithm-society-19727",
+      "algorithm-society-19728",
+      "algorithm-society-19729",
+      "algorithm-society-19730",
+      "algorithm-society-19731",
+      "algorithm-society-19732",
+      "algorithm-society-19937",
+      "algorithm-society-19938",
+      "algorithm-society-19939",
+      "algorithm-society-19940",
+      "algorithm-society-19941",
+      "algorithm-society-19942",
+      "algorithm-society-19943",
+      "algorithm-society-19944",
+      "algorithm-society-20047",
+      "algorithm-society-20048",
+      "algorithm-society-20049",
+      "algorithm-society-20050",
+      "algorithm-society-20051",
+      "algorithm-society-20052",
+      "algorithm-society-20053",
+      "algorithm-society-20054",
+      "algorithm-society-20259",
+      "algorithm-society-20260",
+      "algorithm-society-20261",
+      "algorithm-society-20262",
+      "algorithm-society-20263",
+      "algorithm-society-20264",
+      "algorithm-society-20265",
+      "algorithm-society-20266",
+      "algorithm-society-20374",
+      "algorithm-society-20375",
+      "algorithm-society-20376",
+      "algorithm-society-20377",
+      "algorithm-society-20378",
+      "algorithm-society-20379",
+      "algorithm-society-20380",
+      "algorithm-society-20381",
+      "algorithm-society-20503",
+      "algorithm-society-20504",
+      "algorithm-society-20505",
+      "algorithm-society-20506",
+      "algorithm-society-20507",
+      "algorithm-society-20508",
+      "algorithm-society-20509",
+      "algorithm-society-20510",
+      "algorithm-society-20664",
+      "algorithm-society-20665",
+      "algorithm-society-20666",
+      "algorithm-society-20667",
+      "algorithm-society-20668",
+      "algorithm-society-20669",
+      "algorithm-society-20670",
+      "algorithm-society-20671",
+      "algorithm-society-20815",
+      "algorithm-society-20816",
+      "algorithm-society-20817",
+      "algorithm-society-20818",
+      "algorithm-society-20819",
+      "algorithm-society-20820",
+      "algorithm-society-20821",
+      "algorithm-society-21132",
+      "algorithm-society-21133",
+      "algorithm-society-21134",
+      "algorithm-society-21135",
+      "algorithm-society-21136",
+      "algorithm-society-21137",
+      "algorithm-society-21260",
+      "algorithm-society-21261",
+      "algorithm-society-21262",
+      "algorithm-society-21263",
+      "algorithm-society-21264",
+      "algorithm-society-21265",
+      "algorithm-society-21266",
+      "algorithm-society-21267",
+      "algorithm-society-21385",
+      "algorithm-society-21386",
+      "algorithm-society-21387",
+      "algorithm-society-21388",
+      "algorithm-society-21389",
+      "algorithm-society-21390",
+      "algorithm-society-21500",
+      "algorithm-society-21501",
+      "algorithm-society-21502",
+      "algorithm-society-21503",
+      "algorithm-society-21504",
+      "algorithm-society-21505",
+      "algorithm-society-21506",
+      "algorithm-society-21507",
+      "algorithm-society-21637",
+      "algorithm-society-21638",
+      "algorithm-society-21639",
+      "algorithm-society-21640",
+      "algorithm-society-21641",
+      "algorithm-society-21642",
+      "algorithm-society-21643",
+      "algorithm-society-21644",
+      "algorithm-society-21907",
+      "algorithm-society-22041",
+      "algorithm-society-22042",
+      "algorithm-society-22043",
+      "algorithm-society-22044",
+      "algorithm-society-22045",
+      "algorithm-society-22046",
+      "algorithm-society-22047",
+      "algorithm-society-22190",
+      "algorithm-society-22191",
+      "algorithm-society-22195",
+      "algorithm-society-22196",
+      "algorithm-society-22197",
+      "algorithm-society-22198",
+      "algorithm-society-22356",
+      "algorithm-society-22357",
+      "algorithm-society-22358",
+      "algorithm-society-22359",
+      "algorithm-society-22360",
+      "algorithm-society-22361",
+      "algorithm-society-22362",
+      "algorithm-society-22478",
+      "algorithm-society-22479",
+      "algorithm-society-22480",
+      "algorithm-society-22482",
+      "algorithm-society-22483",
+      "algorithm-society-22484"
+    ],
+    "systematic_review_method": "针对冻结语料中的全部273篇研究，按记录顺序分六批逐条阅读已有的来源支持释义：summary、research_question、methods、findings；比较问题、机制、分析单位、方法与条件差异后撰写七项综合论点。方法和资料计数按明示字段与公开规则复算，时间对读限于同刊完整期次。此次阅读对象为公开摘要的既有助手释义，不是新一轮论文全文审阅；3条实践记录和244条待释义索引均未进入研究推断。"
+  },
+  "reviewed_record_ids": [
+    "algorithm-society-22481",
+    "algorithm-society-22355",
+    "research-shxyj-2026-3-care-presence",
+    "research-shjs-2026-699",
+    "research-shjs-2026-689",
+    "research-shjs-2025-664",
+    "research-shjs-2026-694",
+    "research-shxyj-2026-4-organizational-outsourcing",
+    "research-shxyj-2026-5-social-investment",
+    "youth-2026-zhou-informal-employment-marriage",
+    "research-shfzyj-2025-3-mobility-trust",
+    "research-shxyj-2025-6-identity-objects",
+    "research-shxyj-2025-6-sociology-reconstruction",
+    "youth-2026-zhao-chen-left-behind",
+    "youth-2026-huang-wu-motherhood",
+    "research-shjs-2026-677",
+    "research-shjs-2026-678",
+    "research-shjs-2026-679",
+    "research-shjs-2026-680",
+    "research-shjs-2026-681",
+    "research-shjs-2026-682",
+    "research-shjs-2026-674",
+    "research-shjs-2026-673",
+    "research-shjs-2026-675",
+    "research-shjs-2026-676",
+    "research-shjs-2026-687",
+    "research-shjs-2026-688",
+    "research-shjs-2026-690",
+    "research-shjs-2026-691",
+    "research-shjs-2026-684",
+    "research-shjs-2026-683",
+    "research-shjs-2026-685",
+    "research-shjs-2026-686",
+    "research-shjs-2026-697",
+    "research-shjs-2026-698",
+    "research-shjs-2026-700",
+    "research-shjs-2026-693",
+    "research-shjs-2026-692",
+    "research-shjs-2026-695",
+    "research-shjs-2026-696",
+    "research-shjs-2025-638",
+    "research-shjs-2025-639",
+    "research-shjs-2025-633",
+    "research-shjs-2025-632",
+    "research-shjs-2025-634",
+    "research-shjs-2025-635",
+    "research-shjs-2025-636",
+    "research-shjs-2025-637",
+    "research-shjs-2025-646",
+    "research-shjs-2025-647",
+    "research-shjs-2025-641",
+    "research-shjs-2025-640",
+    "research-shjs-2025-642",
+    "research-shjs-2025-643",
+    "research-shjs-2025-644",
+    "research-shjs-2025-645",
+    "research-shjs-2025-652",
+    "research-shjs-2025-653",
+    "research-shjs-2025-649",
+    "research-shjs-2025-648",
+    "research-shjs-2025-650",
+    "research-shjs-2025-651",
+    "research-shjs-2025-658",
+    "research-shjs-2025-659",
+    "research-shjs-2025-655",
+    "research-shjs-2025-654",
+    "research-shjs-2025-656",
+    "research-shjs-2025-657",
+    "research-shjs-2024-591",
+    "research-shjs-2024-592",
+    "research-shjs-2024-587",
+    "research-shjs-2024-586",
+    "research-shjs-2024-588",
+    "research-shjs-2024-589",
+    "research-shjs-2024-590",
+    "research-shjs-2024-598",
+    "research-shjs-2024-599",
+    "research-shjs-2024-594",
+    "research-shjs-2024-593",
+    "research-shjs-2024-595",
+    "research-shjs-2024-596",
+    "research-shjs-2024-597",
+    "research-shjs-2024-605",
+    "research-shjs-2024-606",
+    "research-shjs-2024-607",
+    "research-shjs-2024-601",
+    "research-shjs-2024-600",
+    "research-shjs-2024-602",
+    "research-shjs-2024-603",
+    "research-shjs-2024-604",
+    "research-shjs-2023-50",
+    "research-shjs-2023-51",
+    "research-shjs-2023-49",
+    "research-shjs-2023-52",
+    "research-shjs-2023-53",
+    "research-shjs-2023-54",
+    "research-shjs-2023-55",
+    "research-shjs-2023-547",
+    "research-shjs-2023-548",
+    "research-shjs-2023-546",
+    "research-shjs-2023-549",
+    "research-shjs-2023-550",
+    "research-shjs-2023-551",
+    "research-shjs-2023-552",
+    "research-shjs-2023-553",
+    "research-shjs-2023-556",
+    "research-shjs-2023-557",
+    "research-shjs-2023-558",
+    "research-shjs-2023-559",
+    "research-shjs-2023-560",
+    "research-shjs-2022-3",
+    "research-shjs-2022-4",
+    "research-shjs-2022-2",
+    "research-shjs-2022-5",
+    "research-shjs-2022-6",
+    "research-shjs-2022-7",
+    "research-shjs-2022-8",
+    "research-shjs-2022-9",
+    "research-shjs-2022-11",
+    "research-shjs-2022-10",
+    "research-shjs-2022-12",
+    "research-shjs-2022-13",
+    "research-shjs-2022-14",
+    "research-shjs-2022-15",
+    "research-shjs-2022-18",
+    "research-shjs-2022-19",
+    "research-shjs-2022-20",
+    "research-shjs-2022-21",
+    "research-shjs-2022-22",
+    "research-shjs-2022-17",
+    "research-shjs-2022-23",
+    "algorithm-society-19517",
+    "algorithm-society-19518",
+    "algorithm-society-19519",
+    "algorithm-society-19520",
+    "algorithm-society-19521",
+    "algorithm-society-19522",
+    "algorithm-society-19523",
+    "algorithm-society-19524",
+    "algorithm-society-19619",
+    "algorithm-society-19620",
+    "algorithm-society-19621",
+    "algorithm-society-19622",
+    "algorithm-society-19623",
+    "algorithm-society-19624",
+    "algorithm-society-19625",
+    "algorithm-society-19626",
+    "algorithm-society-19725",
+    "algorithm-society-19726",
+    "algorithm-society-19727",
+    "algorithm-society-19728",
+    "algorithm-society-19729",
+    "algorithm-society-19730",
+    "algorithm-society-19731",
+    "algorithm-society-19732",
+    "algorithm-society-19937",
+    "algorithm-society-19938",
+    "algorithm-society-19939",
+    "algorithm-society-19940",
+    "algorithm-society-19941",
+    "algorithm-society-19942",
+    "algorithm-society-19943",
+    "algorithm-society-19944",
+    "algorithm-society-20047",
+    "algorithm-society-20048",
+    "algorithm-society-20049",
+    "algorithm-society-20050",
+    "algorithm-society-20051",
+    "algorithm-society-20052",
+    "algorithm-society-20053",
+    "algorithm-society-20054",
+    "algorithm-society-20259",
+    "algorithm-society-20260",
+    "algorithm-society-20261",
+    "algorithm-society-20262",
+    "algorithm-society-20263",
+    "algorithm-society-20264",
+    "algorithm-society-20265",
+    "algorithm-society-20266",
+    "algorithm-society-20374",
+    "algorithm-society-20375",
+    "algorithm-society-20376",
+    "algorithm-society-20377",
+    "algorithm-society-20378",
+    "algorithm-society-20379",
+    "algorithm-society-20380",
+    "algorithm-society-20381",
+    "algorithm-society-20503",
+    "algorithm-society-20504",
+    "algorithm-society-20505",
+    "algorithm-society-20506",
+    "algorithm-society-20507",
+    "algorithm-society-20508",
+    "algorithm-society-20509",
+    "algorithm-society-20510",
+    "algorithm-society-20664",
+    "algorithm-society-20665",
+    "algorithm-society-20666",
+    "algorithm-society-20667",
+    "algorithm-society-20668",
+    "algorithm-society-20669",
+    "algorithm-society-20670",
+    "algorithm-society-20671",
+    "algorithm-society-20815",
+    "algorithm-society-20816",
+    "algorithm-society-20817",
+    "algorithm-society-20818",
+    "algorithm-society-20819",
+    "algorithm-society-20820",
+    "algorithm-society-20821",
+    "algorithm-society-21132",
+    "algorithm-society-21133",
+    "algorithm-society-21134",
+    "algorithm-society-21135",
+    "algorithm-society-21136",
+    "algorithm-society-21137",
+    "algorithm-society-21260",
+    "algorithm-society-21261",
+    "algorithm-society-21262",
+    "algorithm-society-21263",
+    "algorithm-society-21264",
+    "algorithm-society-21265",
+    "algorithm-society-21266",
+    "algorithm-society-21267",
+    "algorithm-society-21385",
+    "algorithm-society-21386",
+    "algorithm-society-21387",
+    "algorithm-society-21388",
+    "algorithm-society-21389",
+    "algorithm-society-21390",
+    "algorithm-society-21500",
+    "algorithm-society-21501",
+    "algorithm-society-21502",
+    "algorithm-society-21503",
+    "algorithm-society-21504",
+    "algorithm-society-21505",
+    "algorithm-society-21506",
+    "algorithm-society-21507",
+    "algorithm-society-21637",
+    "algorithm-society-21638",
+    "algorithm-society-21639",
+    "algorithm-society-21640",
+    "algorithm-society-21641",
+    "algorithm-society-21642",
+    "algorithm-society-21643",
+    "algorithm-society-21644",
+    "algorithm-society-21907",
+    "algorithm-society-22041",
+    "algorithm-society-22042",
+    "algorithm-society-22043",
+    "algorithm-society-22044",
+    "algorithm-society-22045",
+    "algorithm-society-22046",
+    "algorithm-society-22047",
+    "algorithm-society-22190",
+    "algorithm-society-22191",
+    "algorithm-society-22195",
+    "algorithm-society-22196",
+    "algorithm-society-22197",
+    "algorithm-society-22198",
+    "algorithm-society-22356",
+    "algorithm-society-22357",
+    "algorithm-society-22358",
+    "algorithm-society-22359",
+    "algorithm-society-22360",
+    "algorithm-society-22361",
+    "algorithm-society-22362",
+    "algorithm-society-22478",
+    "algorithm-society-22479",
+    "algorithm-society-22480",
+    "algorithm-society-22482",
+    "algorithm-society-22483",
+    "algorithm-society-22484"
+  ],
+  "review_index": [
+    {
+      "record_id": "algorithm-society-22481",
+      "summary_sha256": "f3c880ae59770b891badf133f119d1fc5892e4524c071f30615b3370409ac2f3"
+    },
+    {
+      "record_id": "algorithm-society-22355",
+      "summary_sha256": "79d3dfe4b6969b6968c2fbc8e31004d314e98eaa7f2e3cff1aba88eca54022ea"
+    },
+    {
+      "record_id": "research-shxyj-2026-3-care-presence",
+      "summary_sha256": "b468a57079e45ab4ec942be1d3c60a595941b7978799022c5e821b6013818391"
+    },
+    {
+      "record_id": "research-shjs-2026-699",
+      "summary_sha256": "2c6f90b7aa5115a370b1eb81f3fd847e2a0d799c6a526592ab1777db7b6647c9"
+    },
+    {
+      "record_id": "research-shjs-2026-689",
+      "summary_sha256": "a1d984ce97e1968b1b5afc6fa1f956a1655c2afdc3a549fe9c54df61f3edd485"
+    },
+    {
+      "record_id": "research-shjs-2025-664",
+      "summary_sha256": "dea115b39112cae7f441b3e70b3dd6655648fd1bc05cb4b43fe2748c1256810e"
+    },
+    {
+      "record_id": "research-shjs-2026-694",
+      "summary_sha256": "355a748265e37d554d1bfbfd1f94d0e0a30d57357fbb36f5eaaab59b1bb6f20d"
+    },
+    {
+      "record_id": "research-shxyj-2026-4-organizational-outsourcing",
+      "summary_sha256": "13631cbe4967a536d5a7306900d3ac086a879bd20eb7833df898b3a5e961d098"
+    },
+    {
+      "record_id": "research-shxyj-2026-5-social-investment",
+      "summary_sha256": "938e54c952ac02120c951171ebba680c7944c0ac29914ddd2010acc031fabb77"
+    },
+    {
+      "record_id": "youth-2026-zhou-informal-employment-marriage",
+      "summary_sha256": "1f98a217dc1e09eb97bdee91bd0419bc366756d556396709d8ca470a46096d79"
+    },
+    {
+      "record_id": "research-shfzyj-2025-3-mobility-trust",
+      "summary_sha256": "335285caeb34da0331825d25bf4306b7ae3387b842e959bb11685a2f8a9aca80"
+    },
+    {
+      "record_id": "research-shxyj-2025-6-identity-objects",
+      "summary_sha256": "50fcf330a77731ef9f3728f53dea88302b6f0ae24edfff07c0a2f50f782d20d1"
+    },
+    {
+      "record_id": "research-shxyj-2025-6-sociology-reconstruction",
+      "summary_sha256": "9712fbb908b97737192a772ac9229722f3f7d8a14797146057772b6fb518451e"
+    },
+    {
+      "record_id": "youth-2026-zhao-chen-left-behind",
+      "summary_sha256": "1a59ff3a4520c0c7efa20f2f160a58bf300fa9c75806f7b4491c505a490f24a2"
+    },
+    {
+      "record_id": "youth-2026-huang-wu-motherhood",
+      "summary_sha256": "29e38bdcad458ac13e26b1b939d6398cd52f711ccbb831e6b3dbbde977138ff0"
+    },
+    {
+      "record_id": "research-shjs-2026-677",
+      "summary_sha256": "bfaf2535b208141240964b128eff5e0bb7b74e3b3f306c586b87051dfbf662fd"
+    },
+    {
+      "record_id": "research-shjs-2026-678",
+      "summary_sha256": "4047c2f18a184537d5c1b906b71a01bd1fbbbd11464a3ff4961e6b992960787c"
+    },
+    {
+      "record_id": "research-shjs-2026-679",
+      "summary_sha256": "032f7bdcf39960d66d59a8b47549d7bfb903ca5e77ab6d2e8ea6d203ecfe3dba"
+    },
+    {
+      "record_id": "research-shjs-2026-680",
+      "summary_sha256": "0565042f2c9fb14fb9863eb00aaa68fe7cf47131fbedab4e52f9d7d90796431c"
+    },
+    {
+      "record_id": "research-shjs-2026-681",
+      "summary_sha256": "8dca6908eee3dd6462ebfcc7c6544a580b2c117fb1afab3ddc97b403c6eec46b"
+    },
+    {
+      "record_id": "research-shjs-2026-682",
+      "summary_sha256": "81c56fd829a3aea71e7796a85e8812059c5d791a6c71cadef97bd6533ca4a443"
+    },
+    {
+      "record_id": "research-shjs-2026-674",
+      "summary_sha256": "b80ff49e4c4380c42905b8436b65b890ba1091223c388f32ecc5109e71f56ed0"
+    },
+    {
+      "record_id": "research-shjs-2026-673",
+      "summary_sha256": "b61e6b33a88fcfab6feaabdbff44fed64bda6bbd9783784875dba34218c4acbf"
+    },
+    {
+      "record_id": "research-shjs-2026-675",
+      "summary_sha256": "a70146829b52063b4405e78e7e39b2b74d1b63298cffcd827e048f2a768f30d1"
+    },
+    {
+      "record_id": "research-shjs-2026-676",
+      "summary_sha256": "59cd643e1840ca46a704a59e215ad97111414aebb07dd4d839c28029336c7a19"
+    },
+    {
+      "record_id": "research-shjs-2026-687",
+      "summary_sha256": "59916742455473bcf3299483a1887088668ea0874fd6383473c9e1c0fd272ff1"
+    },
+    {
+      "record_id": "research-shjs-2026-688",
+      "summary_sha256": "2329509d6e12f732cabec21a8622d7024fe3d93247f76babe07708e3b7d25e71"
+    },
+    {
+      "record_id": "research-shjs-2026-690",
+      "summary_sha256": "b5cb95555620b3285dcd9ee8e6c383b2d3c43cfacc5448f6e1487107e3cfdd64"
+    },
+    {
+      "record_id": "research-shjs-2026-691",
+      "summary_sha256": "18a5aaccc868b4c15ca09af8c4b4048f118453ef8512d9d76cf7f03ad6984cc8"
+    },
+    {
+      "record_id": "research-shjs-2026-684",
+      "summary_sha256": "308ad0df4db91d4f2973a7455e7b0aa0871c6eb31308d23c91364fc0a989670d"
+    },
+    {
+      "record_id": "research-shjs-2026-683",
+      "summary_sha256": "81189aba1daa581f064754bfa7ab29c3260054b7528dcc420c10a99bca1e764c"
+    },
+    {
+      "record_id": "research-shjs-2026-685",
+      "summary_sha256": "29d3272f0bb7bec388aeb595da6336690ccd2f08424aa9d0c09182fe706897fc"
+    },
+    {
+      "record_id": "research-shjs-2026-686",
+      "summary_sha256": "fcb1ea1096d202f68aa188972b2ca6a1152ad4c55e44539d5978b8783a0331b2"
+    },
+    {
+      "record_id": "research-shjs-2026-697",
+      "summary_sha256": "154e86f9089caca9eb7de8bd176e253dc8c91bb67c70aee1108bd103ce419af6"
+    },
+    {
+      "record_id": "research-shjs-2026-698",
+      "summary_sha256": "00ac7d5b58b6d8461e449c91b27b445e496ac795d58d0ca3ac6e3972322b79f8"
+    },
+    {
+      "record_id": "research-shjs-2026-700",
+      "summary_sha256": "04ada032f3916ca378bf79fdc8234f64d77d347a3025da8da2134db54a07d51a"
+    },
+    {
+      "record_id": "research-shjs-2026-693",
+      "summary_sha256": "ef61aae9c01907f7a925defb0fc2c745379b33a37f8fb2103145da3463e20a52"
+    },
+    {
+      "record_id": "research-shjs-2026-692",
+      "summary_sha256": "d6c3256adda2ff2a0d3e07eff8039b346a28f1231010230eac3f19a573805295"
+    },
+    {
+      "record_id": "research-shjs-2026-695",
+      "summary_sha256": "e88e405ee0fa3cebc66863eb62fcaf327663b8b10bacbfd61d2aa54fe5767c11"
+    },
+    {
+      "record_id": "research-shjs-2026-696",
+      "summary_sha256": "6090d1cd2373ebd084821ffe0f525d3bd983f6ca3fafe86f05b1c05f220b692d"
+    },
+    {
+      "record_id": "research-shjs-2025-638",
+      "summary_sha256": "b5f0752a3daf02a0bb1b2bb984c1441c27e3792fab0ce909d22ecf92695ed160"
+    },
+    {
+      "record_id": "research-shjs-2025-639",
+      "summary_sha256": "844efa032c02700f406ae15fbf13b873e32ebbf9f6b0f3440267ff4dd4626778"
+    },
+    {
+      "record_id": "research-shjs-2025-633",
+      "summary_sha256": "a7030e8c622fadc7e73661ad16ada529a7ab4be841eaedf84bfbcbb4aadb17c5"
+    },
+    {
+      "record_id": "research-shjs-2025-632",
+      "summary_sha256": "ac2d326bda0e1fc4b0c05fd2d99aeefce6f6dc6deb39b550ea9d0f9868075fe5"
+    },
+    {
+      "record_id": "research-shjs-2025-634",
+      "summary_sha256": "92cf116a907f67dd8728b7f458a545f68a03dc667f0999226cc56948b5eb584f"
+    },
+    {
+      "record_id": "research-shjs-2025-635",
+      "summary_sha256": "632760bb05e53d0ebb46e1def2e7288e97743ab7d27724117225e60b9ca0a44c"
+    },
+    {
+      "record_id": "research-shjs-2025-636",
+      "summary_sha256": "98d3dfcefc6b115a5cac2adfb0c2dfc5cfb6705f72e47c6dcb65e4cab15da9be"
+    },
+    {
+      "record_id": "research-shjs-2025-637",
+      "summary_sha256": "b8759ebd9f13361230cc09e15a5550ffbddaf63b21066e7098d9f6eafdc0751c"
+    },
+    {
+      "record_id": "research-shjs-2025-646",
+      "summary_sha256": "eb30985dbfc96f392c8f61da47dec205a1b8a519149fc314db8f18538a79e0df"
+    },
+    {
+      "record_id": "research-shjs-2025-647",
+      "summary_sha256": "ee7cd35b9de964eb171803940f5b299ef2578c628ec4111970859b18509ce5eb"
+    },
+    {
+      "record_id": "research-shjs-2025-641",
+      "summary_sha256": "2ff9c60d8f21a0d4aba93b042a6a41529c0c9988f6a77d29e4f85b451f4e0b1e"
+    },
+    {
+      "record_id": "research-shjs-2025-640",
+      "summary_sha256": "77e7aeb1398b784f6308c33bc2af7f1831eb408775b107ed702792ca2cfe04d0"
+    },
+    {
+      "record_id": "research-shjs-2025-642",
+      "summary_sha256": "0aef35f820b4672a3b24346a747e890976441f533d92626e70e4f7eb924a7963"
+    },
+    {
+      "record_id": "research-shjs-2025-643",
+      "summary_sha256": "2b248c80c43cf49751bd077696a340b7987f2a8f4db12150dbec32c6b438c19c"
+    },
+    {
+      "record_id": "research-shjs-2025-644",
+      "summary_sha256": "2f43753e17e5ba420ab94f932111469496d4d182f694185314c410cabba9ca7f"
+    },
+    {
+      "record_id": "research-shjs-2025-645",
+      "summary_sha256": "e5707c2120ae6500e703e5eb8ac8cdb0d84b191e2786e8c2df945adba8aac1fa"
+    },
+    {
+      "record_id": "research-shjs-2025-652",
+      "summary_sha256": "26e15faabcd933726e424b84797c3b06b3ece458f40c0a78da9d0d5936be5b35"
+    },
+    {
+      "record_id": "research-shjs-2025-653",
+      "summary_sha256": "3875d4595f33f14ee3f5b831690fc80af7d4a174e1e7c79a513331d2812a1fa4"
+    },
+    {
+      "record_id": "research-shjs-2025-649",
+      "summary_sha256": "2f27bc1462f48a88941c3ae981c0d40291ca56ea19734ebe7403a65c414c6988"
+    },
+    {
+      "record_id": "research-shjs-2025-648",
+      "summary_sha256": "c38575b8da7e41f15c357a0d6cdefc5bf89f1616f68e99c460ac6e8cea8c92cf"
+    },
+    {
+      "record_id": "research-shjs-2025-650",
+      "summary_sha256": "6c8a3606d596a004a920d7fc2aabce5357f3dcac0cdae33120cd93ff3b4154ff"
+    },
+    {
+      "record_id": "research-shjs-2025-651",
+      "summary_sha256": "eb38d8d2a44ca6cd57e1a0373a70409989ccdca66537b6b05e7bcbb8d059694b"
+    },
+    {
+      "record_id": "research-shjs-2025-658",
+      "summary_sha256": "7534646a8ebd8baff55df351da287d4c4fc7c3a0b2fb4c176306d1999aa079be"
+    },
+    {
+      "record_id": "research-shjs-2025-659",
+      "summary_sha256": "da566cc48e09e478975e8e1b33113cc3fb3f8c554bb2ffeef39a4865292690d3"
+    },
+    {
+      "record_id": "research-shjs-2025-655",
+      "summary_sha256": "39d32269faaf297473c57b621a8f407caec66923ae1238ad8fccafd33d38daf6"
+    },
+    {
+      "record_id": "research-shjs-2025-654",
+      "summary_sha256": "6a9e2984c583109ec6b18781d586a2dbadc9c89b3d1a5981fb179c237c0d2100"
+    },
+    {
+      "record_id": "research-shjs-2025-656",
+      "summary_sha256": "c4f8ddd558a5bd80341d18e231d17076eaefa07521288c2944d26a9144db42c5"
+    },
+    {
+      "record_id": "research-shjs-2025-657",
+      "summary_sha256": "045ac58ce648409c9e868710f0954cc2cbd1c33cb9439a32795e85814ecd8b2a"
+    },
+    {
+      "record_id": "research-shjs-2024-591",
+      "summary_sha256": "4cca40bdeea3d6cd5d7170efbc2174092fdbe14817e5fcb9cc339bfbe18e51b9"
+    },
+    {
+      "record_id": "research-shjs-2024-592",
+      "summary_sha256": "716021bbf4f78a95beb669d38fd900803b025c26a15d59efa1af99be02cd8e1b"
+    },
+    {
+      "record_id": "research-shjs-2024-587",
+      "summary_sha256": "8adf425a168108cf38c42624f99986aec2a2692a4df0b05d926fd489407f206a"
+    },
+    {
+      "record_id": "research-shjs-2024-586",
+      "summary_sha256": "bf6e8d3a330d80af51212ee84111a1a00529e3408d0bfdeeecf69afddf549c77"
+    },
+    {
+      "record_id": "research-shjs-2024-588",
+      "summary_sha256": "7d8afd8c4670e9e4daf2c67aa2fd5791d3a755f555ba84682c84c3a7a03b28d4"
+    },
+    {
+      "record_id": "research-shjs-2024-589",
+      "summary_sha256": "d1a33da43c95700abe61eff308b0f25875eb70c04548de4b64ab81063963649b"
+    },
+    {
+      "record_id": "research-shjs-2024-590",
+      "summary_sha256": "2bf7b51a8a5adcc7dd595997b3ec4e4848fd4becb17e00916783915d209db094"
+    },
+    {
+      "record_id": "research-shjs-2024-598",
+      "summary_sha256": "fb4640099c5f0915560eb1669985360c679b1458b4045b8e2eeea1cb1cdf3808"
+    },
+    {
+      "record_id": "research-shjs-2024-599",
+      "summary_sha256": "6969c530844abf4249aa16306352d0958970b2504ef3ba0c6f593648b80a4d6c"
+    },
+    {
+      "record_id": "research-shjs-2024-594",
+      "summary_sha256": "406414541e1919b7e4d0639c335644b52c397fa5e67b83ac660a27f0bfcf03b4"
+    },
+    {
+      "record_id": "research-shjs-2024-593",
+      "summary_sha256": "45c8139badc3dbb62174272dd5fa224fbb90feb211bbffc6784a23c212c4088d"
+    },
+    {
+      "record_id": "research-shjs-2024-595",
+      "summary_sha256": "065bdfdba9a86e9aa2fcdfbb147484f03c30dad7ef2258fe120639ad084fed91"
+    },
+    {
+      "record_id": "research-shjs-2024-596",
+      "summary_sha256": "120f527aba9d6766a4731a477807699491fa20394398c41798c407025129db3e"
+    },
+    {
+      "record_id": "research-shjs-2024-597",
+      "summary_sha256": "825f4348cbdcf9151e1e7af2fac496e98f0e12493c1db532223025391e023a1c"
+    },
+    {
+      "record_id": "research-shjs-2024-605",
+      "summary_sha256": "9fbefbbce0fd1d4e277f4470a50555e102019f18665ef58745a8c490f33fb7fc"
+    },
+    {
+      "record_id": "research-shjs-2024-606",
+      "summary_sha256": "62d71690bbe454a6f4eab4969ea32eb2978b85c367b2a12cd413618429069bbd"
+    },
+    {
+      "record_id": "research-shjs-2024-607",
+      "summary_sha256": "09c5a90a57f66dd5f22feefc41b32f604bad478fa39a8f0fd1351be129c0b453"
+    },
+    {
+      "record_id": "research-shjs-2024-601",
+      "summary_sha256": "1e14aa2197c8e417db2c9288a827b1434a6019751fefd57465b1e9f9f3cbadba"
+    },
+    {
+      "record_id": "research-shjs-2024-600",
+      "summary_sha256": "438f0d6e93ef3db3b2e4fa5a8cfc56ecb733a62fc365e1066a01ea61f12bfc83"
+    },
+    {
+      "record_id": "research-shjs-2024-602",
+      "summary_sha256": "bdb34089af4d28f129cb5b99a92ed354166a1897ff717c133ab7eab6f658f71d"
+    },
+    {
+      "record_id": "research-shjs-2024-603",
+      "summary_sha256": "99f52a99061b25868c11c82c133640a2e662cb6adaca289cf72bd64399b347d1"
+    },
+    {
+      "record_id": "research-shjs-2024-604",
+      "summary_sha256": "56e290622fe0bb7da653bdebc492190a1b0f55a2b15036df9a7f11aea67fdef4"
+    },
+    {
+      "record_id": "research-shjs-2023-50",
+      "summary_sha256": "fc12d55f2e8f770cf8937a8a59b68183d6afbbb139936a540f1b2efaccc25304"
+    },
+    {
+      "record_id": "research-shjs-2023-51",
+      "summary_sha256": "cac3c03b4059110a7c4b6929d3d3a2c892a7287972296ef8a5b04c365990b9cf"
+    },
+    {
+      "record_id": "research-shjs-2023-49",
+      "summary_sha256": "a4314d582f8d44f2515eb6ab0b5378066642d12eafdcc022fddea74f8af556ed"
+    },
+    {
+      "record_id": "research-shjs-2023-52",
+      "summary_sha256": "976c471000d872588bcae6cc60bf69941b1f5350ec2ecf3f154b6454867a3dce"
+    },
+    {
+      "record_id": "research-shjs-2023-53",
+      "summary_sha256": "0eb4ccf70f3d291aa9c90cd55a6f97ab1bcecfc6aba01894e4277980cf8b06ba"
+    },
+    {
+      "record_id": "research-shjs-2023-54",
+      "summary_sha256": "518bb95e6056232006272a38cebcefcd8323d2e261d3ba2811559e9724a0c4d6"
+    },
+    {
+      "record_id": "research-shjs-2023-55",
+      "summary_sha256": "007373393d3d0fd529c0bcc8a3f3483dc05209b4b3e3c6c756242aada087637b"
+    },
+    {
+      "record_id": "research-shjs-2023-547",
+      "summary_sha256": "cc0c1bfc16d487eb30a60f9dd85135292cbe7d19cab49d2e3a9229a0fc1dbb07"
+    },
+    {
+      "record_id": "research-shjs-2023-548",
+      "summary_sha256": "e60ec667a1d372ee63bad1fb52eb216673396ac72cc0c47fcbf99e155cf0665d"
+    },
+    {
+      "record_id": "research-shjs-2023-546",
+      "summary_sha256": "96b602371019bf4056e5fa1d66fb8b035609725e40b82849e37ecc66a0fdd451"
+    },
+    {
+      "record_id": "research-shjs-2023-549",
+      "summary_sha256": "46f9390f6377448db1af19a59b899cf31ad6290e49cc29df8a119cc9af40802f"
+    },
+    {
+      "record_id": "research-shjs-2023-550",
+      "summary_sha256": "01e6b7d2603ba9aeb9358bb70e7403d4a2c32a0893df6deec5e0a72036374b7b"
+    },
+    {
+      "record_id": "research-shjs-2023-551",
+      "summary_sha256": "cba7b8a961d3b45d1495f545c23d67300649225f6703d1a88565485db716be53"
+    },
+    {
+      "record_id": "research-shjs-2023-552",
+      "summary_sha256": "54f536fab7daed89bae8c9197e7e300be15d11ace9870ef2c2cb60178bc77968"
+    },
+    {
+      "record_id": "research-shjs-2023-553",
+      "summary_sha256": "791c75c8d0122864e8d208869a089e626343187481a6c088f588e671bea2e294"
+    },
+    {
+      "record_id": "research-shjs-2023-556",
+      "summary_sha256": "c3f228defdb9f299b5be2fa7f6618f35271d1859438973df933212272f2a6e7a"
+    },
+    {
+      "record_id": "research-shjs-2023-557",
+      "summary_sha256": "cf34eab32d232e28d836a3416ff472edc7c269b93abe1e33add5235a255bc389"
+    },
+    {
+      "record_id": "research-shjs-2023-558",
+      "summary_sha256": "faf82629a1652b487c97da8d3fa8683a72371c3fe9a750827714943c6e04d916"
+    },
+    {
+      "record_id": "research-shjs-2023-559",
+      "summary_sha256": "f76b6ad0a6f05f7c1a45860ab1952ba09e22f712410d67d90b5f2da7864b48c8"
+    },
+    {
+      "record_id": "research-shjs-2023-560",
+      "summary_sha256": "ce6fa98dad85310a368853575ea0857c4073022b376b8817124fea414a974b2a"
+    },
+    {
+      "record_id": "research-shjs-2022-3",
+      "summary_sha256": "66075a4ca9a763812800aad64799da00323d5fa755a912690c85d417ed054196"
+    },
+    {
+      "record_id": "research-shjs-2022-4",
+      "summary_sha256": "cdf149451cf0cfc6b27bba66f3f2cd37a678d4140bb32301c4481188385808bf"
+    },
+    {
+      "record_id": "research-shjs-2022-2",
+      "summary_sha256": "6b7fe5d1f704061de8e99a814ab0baa841b79cacd21b1a23041e8c58be135c5f"
+    },
+    {
+      "record_id": "research-shjs-2022-5",
+      "summary_sha256": "79b7101cbf93ca801703a89ccddb579121567695488404f49fa20523933d35e8"
+    },
+    {
+      "record_id": "research-shjs-2022-6",
+      "summary_sha256": "098041f40c69d5f066d69e631f8c80732b590908346d27ebd75183183c73a219"
+    },
+    {
+      "record_id": "research-shjs-2022-7",
+      "summary_sha256": "864cc9482a9956497fa558117b4a9c318f669e18b5c97d8ab486f190e968598f"
+    },
+    {
+      "record_id": "research-shjs-2022-8",
+      "summary_sha256": "c54d51767b0168cb96a5ac22e137f19c917cb783b6f6f5cef8ea14259c261d99"
+    },
+    {
+      "record_id": "research-shjs-2022-9",
+      "summary_sha256": "f466dcce5b75744e0bd56a133723316b8bc4d4229318528be8c65f6c29c2cd09"
+    },
+    {
+      "record_id": "research-shjs-2022-11",
+      "summary_sha256": "a4e137ac321e1f6506c2dca11d26b94194a88f61ee40b0ba6f66554c469bcc88"
+    },
+    {
+      "record_id": "research-shjs-2022-10",
+      "summary_sha256": "16acfa53e972359e78e498923930a085f11d4d812a3e759a01c2bfe6fd735fe0"
+    },
+    {
+      "record_id": "research-shjs-2022-12",
+      "summary_sha256": "fbe3050c52fdc53c8946c1cdf06fbd0bc1a174bdcfc8e4bb7b7349748455a160"
+    },
+    {
+      "record_id": "research-shjs-2022-13",
+      "summary_sha256": "28b40ee20ca9032a8dce1a761b2f5f5f382c37884d9d7918f8400d21d7714a8c"
+    },
+    {
+      "record_id": "research-shjs-2022-14",
+      "summary_sha256": "7dbe0230007c806daa4a5fe8628964f041b6a47d143e571dd306c107bfe03204"
+    },
+    {
+      "record_id": "research-shjs-2022-15",
+      "summary_sha256": "09d58a22a4ebb6909b290ab146207fb69e4204aef418d8928ed4fe098565f878"
+    },
+    {
+      "record_id": "research-shjs-2022-18",
+      "summary_sha256": "cefce0835e6ed51c8d2bd5275449b26873a49272cbe2d740931160b56fabadbf"
+    },
+    {
+      "record_id": "research-shjs-2022-19",
+      "summary_sha256": "ed145e86041f137b6d3644b884a633a2d2af61a29d523982c5016d1bd8032c16"
+    },
+    {
+      "record_id": "research-shjs-2022-20",
+      "summary_sha256": "173c45a839c13e0663caa999600cdb322bd10449d47d03ee16f478bd1d43116a"
+    },
+    {
+      "record_id": "research-shjs-2022-21",
+      "summary_sha256": "311a8a0680a776472e07ebfaafafff0ae1717cb07b4735ee4d2d8bbad85e9a35"
+    },
+    {
+      "record_id": "research-shjs-2022-22",
+      "summary_sha256": "e86e2cf2e133a7363333c1ea9109fdcc16e74a92966ac77f286f81c1cd8de338"
+    },
+    {
+      "record_id": "research-shjs-2022-17",
+      "summary_sha256": "f1885f3379c3937758521e74a023a1ff8c572c24f048a51bbdea7a83a3ff01d0"
+    },
+    {
+      "record_id": "research-shjs-2022-23",
+      "summary_sha256": "09fdcd032a29d4cc8b4b5f5554035713d175b677fe4e4e47f7dc4a679ddddccb"
+    },
+    {
+      "record_id": "algorithm-society-19517",
+      "summary_sha256": "23eb5cc009b19817438a851ad5dfdb4a4cbf02e7c726ef74a9456d969fdf48fd"
+    },
+    {
+      "record_id": "algorithm-society-19518",
+      "summary_sha256": "a10f0bd27bcb6906295c38e4713ecbdfd6fe2f8c28fea8e104a2cfa4518ccb92"
+    },
+    {
+      "record_id": "algorithm-society-19519",
+      "summary_sha256": "491edcbc1eddec554d2f053b12de55eecaa51f3b4dcaaa47f6bc771ac1424961"
+    },
+    {
+      "record_id": "algorithm-society-19520",
+      "summary_sha256": "b151ebcd84077d7b88c4615b42907b25dc1af3ca15f4cc1b02cc3a5ec11dc178"
+    },
+    {
+      "record_id": "algorithm-society-19521",
+      "summary_sha256": "f3c7dff459e6f89fb9d5ee7b5110767bf574e0b9ffb34eeeb0340b0b171704f2"
+    },
+    {
+      "record_id": "algorithm-society-19522",
+      "summary_sha256": "155e4fd24ad77777a786456e1d66dd485b0dbf3b9031bf5d0ddd3cc67573be51"
+    },
+    {
+      "record_id": "algorithm-society-19523",
+      "summary_sha256": "bdfbb90075cc6fbef35853555935c05c1b146af66855509e27e3c26dc5440068"
+    },
+    {
+      "record_id": "algorithm-society-19524",
+      "summary_sha256": "90e623042d8d4c9024b4fde78ba6f9430481e11a9eb2d03a62603296e98f6350"
+    },
+    {
+      "record_id": "algorithm-society-19619",
+      "summary_sha256": "a678702cebd903afe63e0a08b708dc4916b222bd70e6977af8b32bba896210d5"
+    },
+    {
+      "record_id": "algorithm-society-19620",
+      "summary_sha256": "4012697551be37aee853a2cbc735971bed9bb5b0fb52a3abc4574dc491b401c2"
+    },
+    {
+      "record_id": "algorithm-society-19621",
+      "summary_sha256": "b20e88f6f9b80941edeeb77ede4531ceb8faf23cec8fc83deef4ad61a6406eb0"
+    },
+    {
+      "record_id": "algorithm-society-19622",
+      "summary_sha256": "8f1b83d180fa0bbd0a002c63c2143b92272a1ea3e1185f8a08aedf55558f46b0"
+    },
+    {
+      "record_id": "algorithm-society-19623",
+      "summary_sha256": "296b8c0ac018673247165c0e2428b401a6cb73e685c4be03af2d9d6ed6624475"
+    },
+    {
+      "record_id": "algorithm-society-19624",
+      "summary_sha256": "8c5bde7c194b911e2370665f6832dcf0760008a2afb2ef5d47e46795fb573223"
+    },
+    {
+      "record_id": "algorithm-society-19625",
+      "summary_sha256": "46f0cc2ee03b6e88a47fa6ec41cfa87441acc04277e399f7beb4cd81c19a6138"
+    },
+    {
+      "record_id": "algorithm-society-19626",
+      "summary_sha256": "ede01b39d7d76ed64c54d295bad132f23164053b5e2710a1d5da3475687bc951"
+    },
+    {
+      "record_id": "algorithm-society-19725",
+      "summary_sha256": "9c98d98d3fc49a6eacf26d5019d3660dfa8381086b64da1c22ee839e86881df0"
+    },
+    {
+      "record_id": "algorithm-society-19726",
+      "summary_sha256": "8a6d48abe6f98e34eb86d4c1526da5f01767cddb3d8aeb74307ce7d21f40debe"
+    },
+    {
+      "record_id": "algorithm-society-19727",
+      "summary_sha256": "fdd8a6571d3e90005f025ebde011c9415bc1fb88a8cf88afaef9d66b5c00787e"
+    },
+    {
+      "record_id": "algorithm-society-19728",
+      "summary_sha256": "22c12f84c0e4f669cf03835c93889b73b85c38b0e069726a23f022fce4ba0167"
+    },
+    {
+      "record_id": "algorithm-society-19729",
+      "summary_sha256": "7e6de4c8d7e281478beaa2e968d314df3a9d06299c1c0323ef33f7f1516e00fb"
+    },
+    {
+      "record_id": "algorithm-society-19730",
+      "summary_sha256": "7e2c03b87b8d88ab5947f4d084981e7fd893f3212fb39457ea8bf4762f072ce6"
+    },
+    {
+      "record_id": "algorithm-society-19731",
+      "summary_sha256": "2a2772103a6fa11080bb33ef858e713461110bb3129980310a256ee19e35a9a0"
+    },
+    {
+      "record_id": "algorithm-society-19732",
+      "summary_sha256": "aa0a9c5ba6f54c299880f820ffb0970e07f4a235f6328d795bda73d1a12a3dbe"
+    },
+    {
+      "record_id": "algorithm-society-19937",
+      "summary_sha256": "759342a08f62e9d1e15935fb40e2b9be615b9e85f77797ef83e5f13719396d65"
+    },
+    {
+      "record_id": "algorithm-society-19938",
+      "summary_sha256": "e594b4ac6b4d14aad68ddf568675fa997ac497abace3fb37642825e876878373"
+    },
+    {
+      "record_id": "algorithm-society-19939",
+      "summary_sha256": "2d3eaf835d39a301387c6b64da586e6c08ba7e7da25a21b8e1d0adf45da6f08f"
+    },
+    {
+      "record_id": "algorithm-society-19940",
+      "summary_sha256": "6327488922d6d2a22b106a4332210d238eb65d4681655e8f18c698856eb81d63"
+    },
+    {
+      "record_id": "algorithm-society-19941",
+      "summary_sha256": "b764f282a5de4eb5639be2df7d339e36cc8b73677d0cc21386b1e83e1c63c571"
+    },
+    {
+      "record_id": "algorithm-society-19942",
+      "summary_sha256": "3ee8fe8c99678bd469c607e7c1f39a305233ae09b0b1bc62edb339622ec8dc74"
+    },
+    {
+      "record_id": "algorithm-society-19943",
+      "summary_sha256": "4517cf3a89efc60da959b5e80e552b567570e6730f65f4528c6696b892407bbc"
+    },
+    {
+      "record_id": "algorithm-society-19944",
+      "summary_sha256": "c9d057c8e19dd0a56e7bcbd8bcc235631fb0c032701500e264ddb442efeed8f0"
+    },
+    {
+      "record_id": "algorithm-society-20047",
+      "summary_sha256": "911b6d23e34876b6db34121cdc5d663d510adc225d6e77a543d4350dd44ffd86"
+    },
+    {
+      "record_id": "algorithm-society-20048",
+      "summary_sha256": "a9a6b7cd94a7e004b15bbc2a0ddfa051f5ba850c92f08765ceb244d92513f5d9"
+    },
+    {
+      "record_id": "algorithm-society-20049",
+      "summary_sha256": "1b0d3632fd11e639394939d100b4859593b6e23b173083fd4d9b0f0aadc9226b"
+    },
+    {
+      "record_id": "algorithm-society-20050",
+      "summary_sha256": "c303ed450ef6b178f5934db3abff5fb17e2b902a27bc49b3989acace364a6c9c"
+    },
+    {
+      "record_id": "algorithm-society-20051",
+      "summary_sha256": "38255f07ea2b283e057b0bb5920e69e84e800eded80fa7d895d3eb92720879a6"
+    },
+    {
+      "record_id": "algorithm-society-20052",
+      "summary_sha256": "98d357f0b89aae76ba794f9920a2a43a067beedf98ee73edf0be16639fd3a6d4"
+    },
+    {
+      "record_id": "algorithm-society-20053",
+      "summary_sha256": "d2da6e06f14c8a4837e9404ebc3ff82fb5f072c7380ecab9c12b1c782c24b87d"
+    },
+    {
+      "record_id": "algorithm-society-20054",
+      "summary_sha256": "fc5894586f0ed306e7289cc952488bc9d66b630d598bf1cbeaaba1f492e02e94"
+    },
+    {
+      "record_id": "algorithm-society-20259",
+      "summary_sha256": "58baf8828d3441389b99517f9f723b252d56707ad2af0a747836c49e437d9032"
+    },
+    {
+      "record_id": "algorithm-society-20260",
+      "summary_sha256": "5bb963e96fdd92bbb6ee31d1b39a979943d9ce45214ef8eba1bbd11ef5e4c402"
+    },
+    {
+      "record_id": "algorithm-society-20261",
+      "summary_sha256": "d0b653d3142d98f0a37b9a86307a84746d6fb2f99c4e43f4aab221992e169051"
+    },
+    {
+      "record_id": "algorithm-society-20262",
+      "summary_sha256": "60eedb749548815688414efa9fc3b90d6f425a783222d782f274597e180c1e7c"
+    },
+    {
+      "record_id": "algorithm-society-20263",
+      "summary_sha256": "2a9005a06eb50bf8f6a3fa0401847f8042700e727f34077c6c00a5354ceee98c"
+    },
+    {
+      "record_id": "algorithm-society-20264",
+      "summary_sha256": "4951578e588e5037c0b122a34a42828fb2824d6e0e190eb589a0e44ea24ff738"
+    },
+    {
+      "record_id": "algorithm-society-20265",
+      "summary_sha256": "91960be06b75109b6a220a94402d4b34f0baa4e60132e7479e39ebdcc0e6b88d"
+    },
+    {
+      "record_id": "algorithm-society-20266",
+      "summary_sha256": "3161f7e6bdc5fa53b61f6892c653279746316f68cad1b7bc5f3dabfa6c3ddb0b"
+    },
+    {
+      "record_id": "algorithm-society-20374",
+      "summary_sha256": "dd422d68f73f5282d0e3763aa7fccc44b2f05476f0c9e0a9e1c84b5e3fcad837"
+    },
+    {
+      "record_id": "algorithm-society-20375",
+      "summary_sha256": "fd7e500cbf998270d6c5d61598688379761117a98727f5edb1ab2baf7f8265c6"
+    },
+    {
+      "record_id": "algorithm-society-20376",
+      "summary_sha256": "4ec1328fa8eb7b5c743c70fa599c5449f0f9bc2b1087a9a83a910ac8c457e8c5"
+    },
+    {
+      "record_id": "algorithm-society-20377",
+      "summary_sha256": "8f61a4d17bfc9f5ee267dbf4aa49b4058f36e61162e82553cbe11a8ce7949831"
+    },
+    {
+      "record_id": "algorithm-society-20378",
+      "summary_sha256": "750132d2b107c3a1957a1086cfc13e6c03e3ce8d23f930dc65b123b4b179e21a"
+    },
+    {
+      "record_id": "algorithm-society-20379",
+      "summary_sha256": "6f1b74d16caf02d07403238938e15dacd30f71f5ba496b1fc7c7c4c865229129"
+    },
+    {
+      "record_id": "algorithm-society-20380",
+      "summary_sha256": "b8bdae8660397eb2ab6f4d67ef5befe27a08c2dfa99ad414b6a11a650c3dca0d"
+    },
+    {
+      "record_id": "algorithm-society-20381",
+      "summary_sha256": "14eda738afcd79c222b24a4f1c892f69f00296d59380e89fdf43a64b2ad752a4"
+    },
+    {
+      "record_id": "algorithm-society-20503",
+      "summary_sha256": "e299604ff3975b3e86e000dfc4be90dcd0d45ed929c7045049040e6608c2f846"
+    },
+    {
+      "record_id": "algorithm-society-20504",
+      "summary_sha256": "926ad70fc686c2afd61f00e6a0d3010aa3fb41390763427c562e5c390fadc420"
+    },
+    {
+      "record_id": "algorithm-society-20505",
+      "summary_sha256": "3dab1a2fc1c9a436a293ff03c493b7b2b711e540433df820978aaa78d4e1bcbb"
+    },
+    {
+      "record_id": "algorithm-society-20506",
+      "summary_sha256": "faa96c7d49bcb45dcf38fafcdc8eefe7407e637b0168eba4bdea33447cc0d952"
+    },
+    {
+      "record_id": "algorithm-society-20507",
+      "summary_sha256": "72f3f5f96ec9ff936e0442827dcf0ecbb9bcdad67f3afca514cab6d2926e5eb4"
+    },
+    {
+      "record_id": "algorithm-society-20508",
+      "summary_sha256": "b25ce75fbb81fb85b894b5738f1b03a44f09c4d135475800c0a3bc49566523a7"
+    },
+    {
+      "record_id": "algorithm-society-20509",
+      "summary_sha256": "46738da716f1526ceae8c4c70bcb68bac64d4baa7c0c945ca628c5125322d19e"
+    },
+    {
+      "record_id": "algorithm-society-20510",
+      "summary_sha256": "afd6ff93e154622e34dd3617553cdb436cb16544c3837f0e2182aada6fe5d787"
+    },
+    {
+      "record_id": "algorithm-society-20664",
+      "summary_sha256": "a2643a587004e269592065e7921be11c818843944b877575348185cf5a40f656"
+    },
+    {
+      "record_id": "algorithm-society-20665",
+      "summary_sha256": "eaf3d1497e5d800794c7a46e514f92c293d55c5719354c236de1dd12d00b42a0"
+    },
+    {
+      "record_id": "algorithm-society-20666",
+      "summary_sha256": "4a4d13275de5b1932e223562d61e07d7fdbd5148333702d8a69a52c18f1639a6"
+    },
+    {
+      "record_id": "algorithm-society-20667",
+      "summary_sha256": "fcafb2fa906109e9059f6aae7c2889e640fbe39b9dece91d0e83d61637b57a73"
+    },
+    {
+      "record_id": "algorithm-society-20668",
+      "summary_sha256": "e477141ddaa815c9c4aedf407b5c4f28f81af51fdbcc5a40be33da1966e89d96"
+    },
+    {
+      "record_id": "algorithm-society-20669",
+      "summary_sha256": "010a5d41dc077c1c3d6687e301f38920665b934972c51dd551b5475ab27dd138"
+    },
+    {
+      "record_id": "algorithm-society-20670",
+      "summary_sha256": "144a1c9b944bf7b6f385ef305a4f7a80a738ef39ede20ea1ef6eff05160acc49"
+    },
+    {
+      "record_id": "algorithm-society-20671",
+      "summary_sha256": "ef11b3c87c6f37310d3ff17d8bbfc5712a9e22afc271e3c37d1514c984710814"
+    },
+    {
+      "record_id": "algorithm-society-20815",
+      "summary_sha256": "c5ccadce701f8ff97a0706120beefa332dc8415a2f60e5a0f46da525d9786c74"
+    },
+    {
+      "record_id": "algorithm-society-20816",
+      "summary_sha256": "83ac783b82b722864a99025789e16b1a87e8157e3d3529204f3dce3affbc1561"
+    },
+    {
+      "record_id": "algorithm-society-20817",
+      "summary_sha256": "f42a243927f4a8e84c7f9bdc20387090fcb93f9745b0c0a9e1a3e828b34774fd"
+    },
+    {
+      "record_id": "algorithm-society-20818",
+      "summary_sha256": "b077eba3d7de705104ec5c7c18f3d4a347f678843954e1db9c4e2cb76b2c37f0"
+    },
+    {
+      "record_id": "algorithm-society-20819",
+      "summary_sha256": "030a55fba9385c93c03fe54d90ae95fd860f056b68dd274963fcddaedf1e7126"
+    },
+    {
+      "record_id": "algorithm-society-20820",
+      "summary_sha256": "dd82568057b4119f622e35f2d5855cda08a6805345300798806dedec57fb232f"
+    },
+    {
+      "record_id": "algorithm-society-20821",
+      "summary_sha256": "3910beb95cddc62bfab6754190f1f755a1bce5d3f5cabe51a5d9f1ee510eca2f"
+    },
+    {
+      "record_id": "algorithm-society-21132",
+      "summary_sha256": "897120932aa4350a3d5350baa8d9d1ba85313bfea6218e1ddebf09c5fe61be8f"
+    },
+    {
+      "record_id": "algorithm-society-21133",
+      "summary_sha256": "cc578012c6bdbf5e6b9666621bb9b1dcde41b9689342bf1d8c9fba368c2879fc"
+    },
+    {
+      "record_id": "algorithm-society-21134",
+      "summary_sha256": "51e5d8bcaf0149b11a5136e611a00c43c2ce9dc7128c7a3944005036c3ca7b3b"
+    },
+    {
+      "record_id": "algorithm-society-21135",
+      "summary_sha256": "0f1816102a98bc0b3d73bbe05823515ba5f68fd856e8d18796f6ca5856de3aec"
+    },
+    {
+      "record_id": "algorithm-society-21136",
+      "summary_sha256": "c1cf2fb9ecae2aa8bb84f3e7b28bbb3a655d00a957c1c586b5ea61aefa7fae59"
+    },
+    {
+      "record_id": "algorithm-society-21137",
+      "summary_sha256": "0a18299880c7e8aa9e0cc13997e4c647fafc16edc0f1b8c42fef35e73c6f9a0d"
+    },
+    {
+      "record_id": "algorithm-society-21260",
+      "summary_sha256": "72cd8d595bc21377f46e29578348a6421b5bd8cf4fa72bea15c4eafc5dcb9b1c"
+    },
+    {
+      "record_id": "algorithm-society-21261",
+      "summary_sha256": "778c742e91e06106f38fc39efc972b711e086bec62fb8c731fb7f4e4bd3fde89"
+    },
+    {
+      "record_id": "algorithm-society-21262",
+      "summary_sha256": "886dae3a4c6a410cf7bf70d2d614c64ca67bc924a84adb8d6639b21c04bd473e"
+    },
+    {
+      "record_id": "algorithm-society-21263",
+      "summary_sha256": "e91d26c202a57ca48ca5af6d7b54e87946da5fdf4bb51a72335036acb2e6052b"
+    },
+    {
+      "record_id": "algorithm-society-21264",
+      "summary_sha256": "701163259a78502930628ec2a7b08fe11dddcdc6f8aca21bdbf8177dd9138fcc"
+    },
+    {
+      "record_id": "algorithm-society-21265",
+      "summary_sha256": "21b682624c8ef156a7282ab011cdec87e60380b14054986e89e216aa1d7987bb"
+    },
+    {
+      "record_id": "algorithm-society-21266",
+      "summary_sha256": "559cb79bf3a4d2b57561bc1ed3ee9ecbb7613614ec17b75ab79327ed974d9259"
+    },
+    {
+      "record_id": "algorithm-society-21267",
+      "summary_sha256": "653731576fab4c7042de4c9cb657e0afc0f202ab56826368a9c0d222b8788f3f"
+    },
+    {
+      "record_id": "algorithm-society-21385",
+      "summary_sha256": "f69415a29f37ded8a7d1ce43de4af5d330aea41ca7c7ad4517ad667584237640"
+    },
+    {
+      "record_id": "algorithm-society-21386",
+      "summary_sha256": "b365c3acad8900b8f3cc3eb891f992395f5a65e4bab135ef8e4f0a63c0912e27"
+    },
+    {
+      "record_id": "algorithm-society-21387",
+      "summary_sha256": "c0493328afb04eb12de3790662e31de86af3df644f7ab6b98003e4d5f2395c31"
+    },
+    {
+      "record_id": "algorithm-society-21388",
+      "summary_sha256": "916d8df3a9be4f9527b316a240d036163f2ca84354dda043cd2cde6974290bf2"
+    },
+    {
+      "record_id": "algorithm-society-21389",
+      "summary_sha256": "362e59eb8fefe7b3b4006f2e97b5a3984021dd2adc02b6746696c33f6805c8ed"
+    },
+    {
+      "record_id": "algorithm-society-21390",
+      "summary_sha256": "d304bc83867ae0a446ffe8295798befc48123141d118c68e530c420868961886"
+    },
+    {
+      "record_id": "algorithm-society-21500",
+      "summary_sha256": "bc5ccf0c7fe8f257eb08454b1de37c25826ff35b636e7baa62e13579227e5a68"
+    },
+    {
+      "record_id": "algorithm-society-21501",
+      "summary_sha256": "a45a8566fce40a4c94a158b37937f43e92c441cb8c438d49b107a67948901db6"
+    },
+    {
+      "record_id": "algorithm-society-21502",
+      "summary_sha256": "4b7602a9377acb733f0868c2cb62867505f7047bd414891683e3c2a082357556"
+    },
+    {
+      "record_id": "algorithm-society-21503",
+      "summary_sha256": "c13370d48f237421bfc1ab41945b7a1ff2f0fc252d719093b373dc0c3b5ca8d1"
+    },
+    {
+      "record_id": "algorithm-society-21504",
+      "summary_sha256": "7b067b9f56c839733017f75683624c07e9c3dafcbf842ec4dbff5499a12dd3a9"
+    },
+    {
+      "record_id": "algorithm-society-21505",
+      "summary_sha256": "51b0ef61886754df1d2d877e1ff314723ad391fc1bd747a370d69925736db306"
+    },
+    {
+      "record_id": "algorithm-society-21506",
+      "summary_sha256": "008e5abb6e887e8a126091e407e7d4cb1f6c7535ac9bf976cb75af5637438250"
+    },
+    {
+      "record_id": "algorithm-society-21507",
+      "summary_sha256": "a3b45a762fa38154c4794843a8b9ae3754bbb6c3b2b8b0f43782664695ffa09d"
+    },
+    {
+      "record_id": "algorithm-society-21637",
+      "summary_sha256": "85cb2ad5730ebc8d411325c0750f45d6afb0633a70bb2ae3b4e21e4547d8ecce"
+    },
+    {
+      "record_id": "algorithm-society-21638",
+      "summary_sha256": "a37804a7953d489e3058b2dac4cda7e9a6864b24061a96a75ec5fe9e0bc0d928"
+    },
+    {
+      "record_id": "algorithm-society-21639",
+      "summary_sha256": "5274c38907478181169806053f95011593facf1e9590f3f7a0f855d2bfc7658d"
+    },
+    {
+      "record_id": "algorithm-society-21640",
+      "summary_sha256": "1ef1f7adbedaa6cdbc3f1f8abb9c0154af3119f7f4cb5b6fde24ff9124563678"
+    },
+    {
+      "record_id": "algorithm-society-21641",
+      "summary_sha256": "cc207c930021695f084f6ae1f17659d46ecc533e96048584601a3018bbf144ec"
+    },
+    {
+      "record_id": "algorithm-society-21642",
+      "summary_sha256": "70fbc5d237c2aa00750d8eed7ddd90a4be4a3b4c5c3fdab8a77dd8910a73eb19"
+    },
+    {
+      "record_id": "algorithm-society-21643",
+      "summary_sha256": "1db96bdaa18cbe4c70c983d380e06190caa767575f7e29adb66cdd29d9b92c4a"
+    },
+    {
+      "record_id": "algorithm-society-21644",
+      "summary_sha256": "1a8248436599fb33f4f01206f4743be8259de2f20eb938c71a0bb625d14b594f"
+    },
+    {
+      "record_id": "algorithm-society-21907",
+      "summary_sha256": "f1c22542cbc860a24ddde5fa209b5c1792bf2c511e3c2cea19ea2c8b5686fca2"
+    },
+    {
+      "record_id": "algorithm-society-22041",
+      "summary_sha256": "bf0af966dfd03a50078e900a72c7f7994d198292c639390be8e894f337815fe5"
+    },
+    {
+      "record_id": "algorithm-society-22042",
+      "summary_sha256": "db32b7e7be042c5fd49fe70e0b2dfda901d453fefed5afe2499773c27fd4aa1e"
+    },
+    {
+      "record_id": "algorithm-society-22043",
+      "summary_sha256": "92c692076c1b3efa974ede5afea871fd10d8f33f6def52e7b52d36f7aef77018"
+    },
+    {
+      "record_id": "algorithm-society-22044",
+      "summary_sha256": "6444f7092b9e82f28a724949906115160ce5b65f6cdf823a863e2955ed322ea2"
+    },
+    {
+      "record_id": "algorithm-society-22045",
+      "summary_sha256": "1d3b0ae6f98edfb6fa2470c823aa9d99059f7ca5426761c6ee6ad57d56320b5e"
+    },
+    {
+      "record_id": "algorithm-society-22046",
+      "summary_sha256": "0d95aa7e377feb8fa2fd51ed551bbaf4c10ad1edb7c1d84506af58871dcfd737"
+    },
+    {
+      "record_id": "algorithm-society-22047",
+      "summary_sha256": "e49b430a27c5867314ba8b0154636294f0ded8339766bd4e06ba43813b7350aa"
+    },
+    {
+      "record_id": "algorithm-society-22190",
+      "summary_sha256": "0fe013ec6718f7974979f97c7812fbaa84114d4c1b6470f44bf43b90a02c9b6d"
+    },
+    {
+      "record_id": "algorithm-society-22191",
+      "summary_sha256": "869f3c5fc510e956b8567e6841d03ae8f4957fafc6edcf2a78ae9b3fec8c79c0"
+    },
+    {
+      "record_id": "algorithm-society-22195",
+      "summary_sha256": "8de7fb95db2e35cfcfbbf66e164efc52121d7d472d80055a8c6481cbfad41676"
+    },
+    {
+      "record_id": "algorithm-society-22196",
+      "summary_sha256": "f6dba9af743b33c3e3c2d462d9aa18b6986019497e91407065244e948391d764"
+    },
+    {
+      "record_id": "algorithm-society-22197",
+      "summary_sha256": "45f19f52dbd3395bc9c272cb75c38d96bdc6d4fbf479e86995e63c78b520619d"
+    },
+    {
+      "record_id": "algorithm-society-22198",
+      "summary_sha256": "9692d58f3ce3116600acf096d20aa513f2718734ecaf666ede23d58b3249578c"
+    },
+    {
+      "record_id": "algorithm-society-22356",
+      "summary_sha256": "cb4b2bb578ab1b8f26c65842416b2bad7e1d8bfa4afce079657929966c1731d9"
+    },
+    {
+      "record_id": "algorithm-society-22357",
+      "summary_sha256": "b9f40b243441495443bfa85284ed83059034439982425b1467f0ca99edec5466"
+    },
+    {
+      "record_id": "algorithm-society-22358",
+      "summary_sha256": "774204292f96cd60ad07dbb5a1526ae9d253ea033844d704f13e993a5a50668e"
+    },
+    {
+      "record_id": "algorithm-society-22359",
+      "summary_sha256": "25a4521a7a645d277c0d382dea0b4cbfadfad3429a334d5828664437af526a9a"
+    },
+    {
+      "record_id": "algorithm-society-22360",
+      "summary_sha256": "27389ba2889f2b77823a021632cfc4b2f6f6e7c94d58c35742619ca1d6128c02"
+    },
+    {
+      "record_id": "algorithm-society-22361",
+      "summary_sha256": "e744cd9962731d82db3a6c7a8983bcea35c6a2dffc53d95f92dadcdaa67cab32"
+    },
+    {
+      "record_id": "algorithm-society-22362",
+      "summary_sha256": "b59024a50cfcda1fc45f3a283997992b1e1b027f0a3211035af62e743f235935"
+    },
+    {
+      "record_id": "algorithm-society-22478",
+      "summary_sha256": "e34410ec0e70415bcf458b8352ae406481687245a699ac822b61e9c763503082"
+    },
+    {
+      "record_id": "algorithm-society-22479",
+      "summary_sha256": "9d6fe1006632cf4bd82416c831967f82c81730213dd10b5e9730c67c8accb894"
+    },
+    {
+      "record_id": "algorithm-society-22480",
+      "summary_sha256": "89bcfbfdc4594fb05e8ca4152478fc467e7df59fe4affdff0bbc69e609227d2a"
+    },
+    {
+      "record_id": "algorithm-society-22482",
+      "summary_sha256": "51ab0434c5d51cf19aa37bbea6f868e28b36284b79e6a4811578c0f82f519156"
+    },
+    {
+      "record_id": "algorithm-society-22483",
+      "summary_sha256": "e9ab4a95b8d7aaca4c539a319819913c6e35b6e4c37a71b0d7e6bb4b5c0b067b"
+    },
+    {
+      "record_id": "algorithm-society-22484",
+      "summary_sha256": "8b6fb49b76c25163f4fab1f74228e3a17e1d011073497e0bc9d26dfd979a8cc8"
+    }
+  ],
+  "generated_by": "assistant_evidence_synthesis"
+}

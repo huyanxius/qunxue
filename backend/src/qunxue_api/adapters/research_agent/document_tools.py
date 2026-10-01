@@ -227,6 +227,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         catalog,
         retriever=None,
         web_research=None,
+        frontier=None,
         documents: ResearchDocumentReader,
         proposals: ResearchDocumentProposalService,
         workflow: ResearchWorkflowCoordinator | None = None,
@@ -235,7 +236,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         material_vector_cache_factory=None,
         analysis: ResearchAnalysisAgentFacade | None = None,
     ) -> None:
-        super().__init__(catalog, retriever=retriever, web_research=web_research)
+        super().__init__(catalog, retriever=retriever, web_research=web_research, frontier=frontier)
         self._documents = documents
         self._proposals = proposals
         self._workflow = workflow

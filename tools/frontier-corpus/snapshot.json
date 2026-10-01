@@ -1,0 +1,29 @@
+{
+  "snapshot_as_of": "2026-10-01",
+  "preferred_window": {
+    "since": "2025-10-01",
+    "through": "2026-10-01"
+  },
+  "practice_issue_window": {
+    "since_inclusive": "2025-10-01",
+    "until_exclusive": "2026-10-01"
+  },
+  "expected_record_count": 201,
+  "expected_research_count": 138,
+  "expected_practice_count": 63,
+  "input_files_sha256": {
+    "data/journals/records.json": "af83b31f02c021cd583cb227024aa613b31d94da3495c132969113a6e8bb97a4",
+    "data/manual-seed-records.json": "c833188c399e361ab4a4f2831c984d89fd8d84949979cf8d19ce35d548a26df5",
+    "data/practice/practice-records.json": "936408d507e440e503a4079e41f49f234f95944836227c139271683f995e2726",
+    "data/practice/reviewed-exclusions.json": "1ba5d1e397c83f88a0b4f37954dd7fe43e8d1e6c01c27291b3fdae3bad440916",
+    "data/society/records.json": "d1b5dfcd0048cd3427de02c9102cf191d1d2b56fc3e35800e6345b68ddfaec26",
+    "data/journals/records.parts/001.json": "c52b7c4576ef8ab2a4f714a0982210310af3f0ee0a225e06ac3ea0f0866fc894",
+    "data/journals/records.parts/002.json": "8bf8c98b8f759e2a7a10a29ec155160aee5ea488b80a27409a62a00fe02e8126",
+    "data/practice/practice-records.parts/001.json": "4232f41f650c456b34441039d62bbd2155534da5dcba3c292822d04e36d1ba0b",
+    "data/practice/practice-records.parts/002.json": "178a1bff23b6261b9da9da40c4ce67ad06d5da37577ac6b7b523c71bc545c6eb"
+  },
+  "immutable_input_note": "Minimal metadata, short evidence, hashes and source URLs only. No original HTML or full abstracts. Collection timestamps remain historical.",
+  "offline_reproduction": "assemble_corpus.py reproduces the 201 record payload; generated_at changes. No live HTTP request.",
+  "live_refetch": "Fixed-date recipe only; current source changes can affect results. This is not a rolling updater.",
+  "canonical_record_payload_sha256": "4f07f5520c94b3bbb2ffa3e7e28761e21dd72d58164a9ad5f53f33a3c1b76cb7"
+}

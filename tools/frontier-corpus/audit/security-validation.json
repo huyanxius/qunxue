@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-01T06:23:03+00:00",
+  "method": "assistant_source_review_and_offline_mock_tests",
+  "human_reviewed": false,
+  "network_requests": 0,
+  "result": "passed",
+  "initial_url_cases_rejected_before_opener": [
+    "http",
+    "localhost",
+    "127.0.0.1",
+    "external_host",
+    "non_443_port",
+    "userinfo"
+  ],
+  "redirect_cases_rejected_before_second_request": [
+    "localhost",
+    "127.0.0.1",
+    "external_host",
+    "same_host_robots_disallowed_path"
+  ],
+  "robots_disallow_checked_before_http_for": [
+    "collect_society.py",
+    "harvest_ruc_journals.py",
+    "fetch_helper.py"
+  ],
+  "policy": "All automatic redirects rejected; explicit 3-host HTTPS allowlist; robots checked before content requests; per-host serial locking and crawl-delay respected",
+  "scope": "Portable scripts only. Historical nonportable originals were not changed; do not integrate their code.",
+  "http_200_access_challenge_policy": "At response boundary: stop host immediately, no retry, no subsequent URLs",
+  "challenge_mock_report": "challenge-validation.json",
+  "independent_offline_recheck": {
+    "challenge_cases_passed": 24,
+    "portability_checks_passed": 12,
+    "reviewer_method": "independent_assistant_rerun_and_source_review",
+    "network_requests": 0
+  }
+}

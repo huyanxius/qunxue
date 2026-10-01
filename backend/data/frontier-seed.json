@@ -1,0 +1,1225 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-01",
+  "generated_at_precision": "day",
+  "preferred_publication_window": {
+    "from": "2025-10-01",
+    "through": "2026-10-01"
+  },
+  "record_count": 12,
+  "content_policy": {
+    "research": "lead_only：原始官方摘要/成果说明可读，但本批不标论文全文已核验。",
+    "practice": "practice_signal：已读官方实践全文，只保留实施线索，不作因果成效证明。",
+    "dates": "期刊年期、论文精确出版日、网页发布日期、发现日分列；不得互相替代。",
+    "missing": "未知字段为null并附missing_reasons；不得自动补出样本、方法或效应。",
+    "excerpt": "每个来源仅存最小核验摘录和段落定位，不存全文。",
+    "execution": "公开网页研究和本地结构化处理；无embedding、无付费LLM、无上传或发布。"
+  },
+  "records": [
+    {
+      "id": "research-shxyj-2026-4-organizational-outsourcing",
+      "title": "“组织内外包”：新药临床试验的组织管理模式研究",
+      "authors": [
+        "贾焦钰",
+        "陈家建"
+      ],
+      "published_at": null,
+      "publication_year": 2026,
+      "publication_issue": 4,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第4期",
+      "source_name": "社会学研究",
+      "source_publisher": "南京大学社会学院",
+      "source_published_at": "2026-08-14",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://sociology.nju.edu.cn/d6/05/c17645a841221/page.htm",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "成果简介介绍医院将部分临床试验工作交给外部公司，同时让协调员进入院内工作安排的混合组织模式，关注商业、专业和行政要求。",
+      "topics": [
+        "组织社会学",
+        "医疗组织",
+        "制度逻辑",
+        "劳动过程"
+      ],
+      "research_question": "医院怎样组织外部企业参与新药临床试验？",
+      "methods": null,
+      "data": null,
+      "sample": null,
+      "findings": [
+        "简介将该模式解释为医院同时回应收益、专业操作和风险管理要求的安排。未核验其经验材料及适用边界。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "methods": "成果简介未给出足以核实该字段的信息。",
+        "data": "成果简介未给出足以核实该字段的信息。",
+        "sample": "成果简介未给出足以核实该字段的信息。",
+        "publication_pages": "已打开成果页未提供页码。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "商业、专业、行政三重制度逻辑",
+          "locator": "正文第2自然段；web打开文本L63",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings"
+          ],
+          "url": "https://sociology.nju.edu.cn/d6/05/c17645a841221/page.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "网页标题及正文第1自然段；web打开文本L55、L59、L61",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://sociology.nju.edu.cn/d6/05/c17645a841221/page.htm"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "南京大学社会学院",
+        "page_published_at": "2026-08-14",
+        "article_citation": "《社会学研究》2026年第4期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "期刊年份期次；官方介绍发布日期另存，不以发现时间替代出版时间。",
+      "source_file": "sociology.json",
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "research-shxyj-2026-3-care-presence",
+      "title": "制度与空间的互动：养老机构子代“在场”的形塑机制",
+      "authors": [
+        "卓唯佳"
+      ],
+      "published_at": null,
+      "publication_year": 2026,
+      "publication_issue": 3,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第3期",
+      "source_name": "社会学研究",
+      "source_publisher": "南京大学社会学院",
+      "source_published_at": "2026-05-22",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://sociology.nju.edu.cn/b7/da/c17645a833498/page.htm",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "成果简介从机构规则和空间安排的关联出发，讨论入住者子女的探访如何形成，以及机构照护与代际关系的联系。",
+      "topics": [
+        "老龄化",
+        "家庭社会学",
+        "养老服务",
+        "空间社会学"
+      ],
+      "research_question": "养老机构内的规则与空间如何影响子女探访？",
+      "methods": "实地调查",
+      "data": "三家养老机构的实地材料；采集时间未披露。",
+      "sample": {
+        "institutions": 3,
+        "respondents": null,
+        "sampling_strategy": null
+      },
+      "findings": [
+        "简介报告，权责条款、空间中的道德约束与关系调节共同参与塑造子女的到场方式；具体分析尚未全文复核。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "publication_pages": "已打开成果页未提供页码。",
+        "sample.respondents": "成果简介未列访谈或观察对象人数。",
+        "sample.sampling_strategy": "成果简介未列机构与参与者选择方式。",
+        "data.collection_period": "成果简介未列调查起止时间。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "基于对三家养老机构的实地调查",
+          "locator": "正文第2自然段开头；web打开文本L63",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings",
+            "methods",
+            "sample"
+          ],
+          "url": "https://sociology.nju.edu.cn/b7/da/c17645a833498/page.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "网页标题及正文第1自然段；web打开文本L55、L59、L61",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://sociology.nju.edu.cn/b7/da/c17645a833498/page.htm"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "南京大学社会学院",
+        "page_published_at": "2026-05-22",
+        "article_citation": "《社会学研究》2026年第3期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "期刊年份期次；官方介绍发布日期另存，不以发现时间替代出版时间。",
+      "source_file": "sociology.json",
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "research-shxyj-2026-5-social-investment",
+      "title": "把“生产性”带回来：“投资于人”导向与中国社会政策迭代",
+      "authors": [
+        "林闽钢",
+        "吴小芳"
+      ],
+      "published_at": null,
+      "publication_year": 2026,
+      "publication_issue": 5,
+      "publication_pages": "1–28",
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第5期",
+      "source_name": "社会学研究",
+      "source_publisher": "南京大学政府管理学院",
+      "source_published_at": "2026-09-30",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://public.nju.edu.cn/sy/jydt/20260930/i420110.html",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "成果介绍关注社会政策如何兼顾风险保障与人的发展，讨论教育、技能和照护等投入在政策调整中的位置。",
+      "topics": [
+        "社会政策",
+        "社会投资",
+        "社会保障",
+        "人力资本"
+      ],
+      "research_question": "投资于人的导向怎样进入中国社会政策调整？",
+      "methods": null,
+      "data": null,
+      "sample": null,
+      "findings": [
+        "简介提出在保障性政策基础上扩大生产性政策作用。这是文章的分析与政策主张，不能当作已检验的政策成效。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "methods": "成果简介未给出足以核实该字段的信息。",
+        "data": "成果简介未给出足以核实该字段的信息。",
+        "sample": "成果简介未给出足以核实该字段的信息。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "以生产性政策为拓展板块",
+          "locator": "正文第1自然段中段；web打开文本L9；书目信息L10",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings"
+          ],
+          "url": "https://public.nju.edu.cn/sy/jydt/20260930/i420110.html"
+        },
+        {
+          "snippet": null,
+          "locator": "网页L8–L10",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://public.nju.edu.cn/sy/jydt/20260930/i420110.html"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "南京大学政府管理学院",
+        "page_published_at": "2026-09-30",
+        "article_citation": "《社会学研究》2026年第5期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "期刊年份期次；官方介绍发布日期另存，不以发现时间替代出版时间。",
+      "source_file": "sociology.json",
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "research-shxyj-2025-6-identity-objects",
+      "title": "身份物：现代社会互动的进场与身份转译模式",
+      "authors": [
+        "黄心烨",
+        "郑作彧"
+      ],
+      "published_at": null,
+      "publication_year": 2025,
+      "publication_issue": 6,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2025年第6期",
+      "source_name": "社会学研究",
+      "source_publisher": "南京大学社会学院",
+      "source_published_at": "2025-11-20",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://sociology.nju.edu.cn/31/c2/c63950a799170/page.htm",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "成果简介提出从物质媒介理解社会互动的准入过程，讨论身份如何经由物被识别与转换，并提出分类思路。",
+      "topics": [
+        "社会理论",
+        "社会互动",
+        "物质性",
+        "身份认同"
+      ],
+      "research_question": "物质媒介如何参与互动中的身份识别？",
+      "methods": null,
+      "data": null,
+      "sample": null,
+      "findings": [
+        "简介将物的身份识别作用作为理论命题，并提示忽略具体个人的伦理问题；并非本次已验证的经验趋势。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "methods": "成果简介未给出足以核实该字段的信息。",
+        "data": "成果简介未给出足以核实该字段的信息。",
+        "sample": "成果简介未给出足以核实该字段的信息。",
+        "publication_pages": "已打开成果页未提供页码。",
+        "within_preferred_window": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "互动准入身份是由物所建立的",
+          "locator": "正文第2自然段；web打开文本L63",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings"
+          ],
+          "url": "https://sociology.nju.edu.cn/31/c2/c63950a799170/page.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "网页标题及正文第1自然段；web打开文本L55、L59、L61",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://sociology.nju.edu.cn/31/c2/c63950a799170/page.htm"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "南京大学社会学院",
+        "page_published_at": "2025-11-20",
+        "article_citation": "《社会学研究》2025年第6期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "期刊年份期次；官方介绍发布日期另存，不以发现时间替代出版时间。",
+      "source_file": "sociology.json",
+      "within_preferred_window": null,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "research-shxyj-2025-6-sociology-reconstruction",
+      "title": "中国社会学的重建逻辑——一种自主知识体系的实然建构与应然方向",
+      "authors": [
+        "周晓虹"
+      ],
+      "published_at": null,
+      "publication_year": 2025,
+      "publication_issue": 6,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2025年第6期",
+      "source_name": "社会学研究",
+      "source_publisher": "南京大学社会学院",
+      "source_published_at": "2025-11-20",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://sociology.nju.edu.cn/31/c1/c63950a799169/page.htm",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "成果简介讨论中国社会学重建中的国家、社会需求与外来知识因素，并提出将中国文化传统纳入知识体系建构。",
+      "topics": [
+        "中国社会学史",
+        "知识社会学",
+        "自主知识体系",
+        "社会理论"
+      ],
+      "research_question": "怎样解释中国社会学重建及其知识建构方向？",
+      "methods": null,
+      "data": null,
+      "sample": null,
+      "findings": [
+        "简介给出关于学科重建的解释框架，并主张重视文化传统；这里记录的是作者论点，未复核全文论证。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "methods": "成果简介未给出足以核实该字段的信息。",
+        "data": "成果简介未给出足以核实该字段的信息。",
+        "sample": "成果简介未给出足以核实该字段的信息。",
+        "publication_pages": "已打开成果页未提供页码。",
+        "within_preferred_window": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "不能缺少中国文化传统的向度",
+          "locator": "正文第2自然段中段；web打开文本L63",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings"
+          ],
+          "url": "https://sociology.nju.edu.cn/31/c1/c63950a799169/page.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "网页标题及正文第1自然段；web打开文本L55、L59、L61",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://sociology.nju.edu.cn/31/c1/c63950a799169/page.htm"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "南京大学社会学院",
+        "page_published_at": "2025-11-20",
+        "article_citation": "《社会学研究》2025年第6期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "期刊年份期次；官方介绍发布日期另存，不以发现时间替代出版时间。",
+      "source_file": "sociology.json",
+      "within_preferred_window": null,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "research-shfzyj-2025-3-mobility-trust",
+      "title": "职业流动如何影响社会信任？——基于特大城市居民生活状况调查的实证分析",
+      "authors": [
+        "吴依萍",
+        "张海东"
+      ],
+      "published_at": null,
+      "publication_year": 2025,
+      "publication_issue": 3,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2025年第3期",
+      "source_name": "社会发展研究",
+      "source_publisher": "上海大学社会学院",
+      "source_published_at": "2025-09-25",
+      "source_date_label": "官方成果介绍发布日期",
+      "url": "https://sociology.shu.edu.cn/info/1090/38358.htm",
+      "material_type": "research_abstract",
+      "source_scope": "official_research_notice",
+      "summary": "官方转载摘要从流动次数、途径与职业地位变化考察社会信任，并讨论不公正经历与就业部门差异。此为时间窗外的补充线索。",
+      "topics": [
+        "社会流动",
+        "社会信任",
+        "劳动市场",
+        "城市研究"
+      ],
+      "research_question": "职业经历变化与居民社会信任怎样关联？",
+      "methods": null,
+      "data": "特大城市居民生活状况调查；年份未在摘要中披露。",
+      "sample": null,
+      "findings": [
+        "摘要报告较频繁的职业流动与较低信任相伴，并指出不同就业部门的差异；未核验模型，不能据此认定因果关系。"
+      ],
+      "limitations": null,
+      "missing_reasons": {
+        "published_at": "官方成果介绍只提供论文年份与期次，未核实论文精确出版日；不得将网页发布日期当作论文出版日。",
+        "limitations": "未读取论文全文；成果简介未呈现作者的局限性讨论。",
+        "methods": "成果简介未给出足以核实该字段的信息。",
+        "sample": "成果简介未给出足以核实该字段的信息。",
+        "publication_pages": "已打开成果页未提供页码。",
+        "data.collection_period": "摘要未列调查年度与起止时间。"
+      },
+      "verification_status": "lead_only",
+      "verification_note": "已打开作者单位官方成果页并核验题名、作者和期次；内容仅据成果简介，未核验论文全文。",
+      "evidence_scope": "abstract_or_notice_only",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "evidence": [
+        {
+          "snippet": "不公正待遇经历的调节作用",
+          "locator": "正文作者/期刊/摘要段；web打开文本L96及L100",
+          "supports": [
+            "summary",
+            "research_question",
+            "findings"
+          ],
+          "url": "https://sociology.shu.edu.cn/info/1090/38358.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "网页标题及作者/期刊/摘要段L92、L96、L100",
+          "supports": [
+            "title",
+            "authors",
+            "publication_year",
+            "publication_issue",
+            "source_published_at"
+          ],
+          "url": "https://sociology.shu.edu.cn/info/1090/38358.htm"
+        }
+      ],
+      "source_snapshot": {
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "上海大学社会学院",
+        "page_published_at": "2025-09-25",
+        "article_citation": "《社会发展研究》2025年第3期",
+        "excerpt_pointer": "evidence[0]",
+        "note": "仅保存最小核验摘录，不是网页全文或论文全文快照。"
+      },
+      "editorial_caveat": "简介中的论点和研究发现仍待全文核查；不能作为已复核的因果证据或统计趋势。",
+      "recency_basis": "官方成果页于2025-09-25已介绍其在2025年第3期发表，早于2025-10-01；仅作历史补充，不作为近12个月新刊。",
+      "within_preferred_window": false,
+      "source_file": "sociology.json",
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "youth-2026-zhao-chen-left-behind",
+      "title": "“学不好”还是“不学好”：农村留守青少年“混”的多重表现与改善路径",
+      "authors": [
+        "赵阔",
+        "陈俊成"
+      ],
+      "publication_year": 2026,
+      "doi": null,
+      "published_at": null,
+      "source_published_at": null,
+      "source_date_precision": null,
+      "url": "https://epc.swu.edu.cn/info/1501/6655.htm",
+      "source_name": "中国青年研究",
+      "evidence_scope": "已读机构转载的元数据、摘要、研究方法及类型分析段落；未逐项比对原刊PDF。",
+      "topics": [
+        "青年成长",
+        "农村教育",
+        "留守青少年",
+        "污名化",
+        "同伴文化"
+      ],
+      "research_question": "留守青少年的“混”有哪些类型，学业困难与行为偏差如何关联，其环境成因是什么？",
+      "methods": [
+        "目的性与滚雪球抽样",
+        "半结构化深度访谈",
+        "参与式及线上观察",
+        "访谈材料编码"
+      ],
+      "data": "两村访谈及学校周边观察；另访谈教师、校长和家长，观察期为1个月。",
+      "sample": {
+        "n": 17,
+        "population": "西北T县两村留守青少年",
+        "age_range": "14–18岁",
+        "sampling": "目的性及滚雪球抽样",
+        "representativeness": "地方质性案例，不代表所有农村青年"
+      },
+      "findings": [
+        "转载摘要报告四类不同表现，并指出学业困难和行为偏差可分离、也可能相互转化。",
+        "转载文本将差异联系到养育支持、学校评价、同伴亚文化及网络环境。"
+      ],
+      "source_snapshot": {
+        "metadata": "题名、赵阔/陈俊成、《中国青年研究》2026年第5期",
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "西南大学西南民族教育与心理研究中心",
+        "page_published_at": null,
+        "excerpt_pointer": "evidence",
+        "note": "最小来源摘录；不是全文快照。"
+      },
+      "missing_reasons": {
+        "published_at": "机构转载仅标期次，未给原刊精确出版日。",
+        "source_published_at": "打开的网页未显示转载日期。",
+        "pages": "本来源未给原刊页码。",
+        "doi": "本来源未给DOI。",
+        "limitations": "本次读取的公开材料未提供足够信息。",
+        "source_date_precision": "本次读取材料未核实该字段；不作推断补全。",
+        "publication_pages": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "source_file": "youth.json",
+      "source_publisher": "西南大学西南民族教育与心理研究中心",
+      "material_type": "research_abstract",
+      "summary": "文章区分农村留守青少年被称为“混”的不同处境，强调学业受挫不等于行为越轨，并从家庭、学校、同伴与网络环境解释其差异。",
+      "verification_status": "lead_only",
+      "source_scope": "institutional_article_reprint",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "publication_issue": 5,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第5期（未核实精确出版日）",
+      "source_date_label": "机构网页发布日期；未显示时为null",
+      "within_preferred_window": true,
+      "evidence": [
+        {
+          "snippet": "采用目的性抽样与滚雪球抽样",
+          "locator": "三（二）研究对象与方法，第1段",
+          "supports": [
+            "source_excerpt"
+          ],
+          "url": "https://epc.swu.edu.cn/info/1501/6655.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "标题、作者、来源；网页抽取行22–28",
+          "supports": [
+            "title_authors_journal_issue"
+          ],
+          "url": "https://epc.swu.edu.cn/info/1501/6655.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "摘要；网页抽取行30",
+          "supports": [
+            "abstract_summary_findings"
+          ],
+          "url": "https://epc.swu.edu.cn/info/1501/6655.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "一、问题的提出，末段；网页抽取行35",
+          "supports": [
+            "research_question"
+          ],
+          "url": "https://epc.swu.edu.cn/info/1501/6655.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "三、理论视角与研究方法／（二）研究对象与方法，第1–2段；网页抽取行62–63",
+          "supports": [
+            "methods_data_sample"
+          ],
+          "url": "https://epc.swu.edu.cn/info/1501/6655.htm"
+        }
+      ],
+      "verification_note": "已打开机构原始网页并读取标明范围；未完成原刊全文逐项复核，保守标为lead_only。",
+      "editorial_caveat": "本条是研究线索；可用字段均限于实际读取范围，不能当作全文结果的独立验证。",
+      "evidence_caveats": [
+        "网页“来源”将刊名标点误写为《中国青年研究）》，此处规范为《中国青年研究》。",
+        "只存公开汇总；不保存未成年人个案化行为、姓名或家庭细节。",
+        "未核原刊，不作为已验证全文结论。"
+      ],
+      "limitations": null,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "youth-2026-huang-wu-motherhood",
+      "title": "农村离异单亲母亲的母职延续与伦理再造",
+      "authors": [
+        "黄明雪",
+        "吴惠芳"
+      ],
+      "publication_year": 2026,
+      "doi": "10.27017/j.cnki.qnyj.2026.01.003",
+      "published_at": null,
+      "source_published_at": "2026-04-21",
+      "source_date_precision": "day",
+      "url": "https://cohd.cau.edu.cn/art/2026/4/21/art_22928_1108760.html",
+      "source_name": "青年研究",
+      "evidence_scope": "已读作者学院书目信息及其所链期刊版式PDF的摘要、引言和方法页；未完成全文逐项复核。",
+      "topics": [
+        "家庭社会学",
+        "性别",
+        "母职",
+        "农村社会变迁"
+      ],
+      "research_question": "农村女性为何在婚姻解体后主动保留抚养责任，如何维系这一选择并形成新的母职伦理？",
+      "methods": [
+        "半结构式访谈",
+        "非参与式观察",
+        "法院卷宗及相关活动的背景观察"
+      ],
+      "data": "四川省匿名县的田野研究，时间为2024年1–8月及2025年6–7月。",
+      "sample": {
+        "n": 11,
+        "population": "曾经或正在离异单亲状态、具有农业户籍的女性",
+        "age_range": "受访时32–47岁",
+        "sampling": "县妇联及村级妇女主任协助接触；具体抽样名称未说明",
+        "representativeness": "地方质性个案，不能推断普遍比例"
+      },
+      "findings": [
+        "PDF摘要提出一种将母亲福祉与育儿相结合的母职伦理。",
+        "作者认为务工收入、娘家支持及再婚机会为延续抚养责任提供现实条件。"
+      ],
+      "source_snapshot": {
+        "metadata": "黄明雪、吴惠芳；《青年研究》2026年第1期；学院网页2026-04-21",
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "中国农业大学人文与发展学院",
+        "page_published_at": "2026-04-21",
+        "excerpt_pointer": "evidence",
+        "note": "最小来源摘录；不是全文快照。"
+      },
+      "missing_reasons": {
+        "published_at": "2026-04-21是学院发布日，不是期刊出版日。",
+        "limitations": "本次读取的公开材料未提供足够信息。"
+      },
+      "source_file": "youth.json",
+      "source_publisher": "中国农业大学人文与发展学院",
+      "material_type": "research_abstract",
+      "summary": "研究探讨农村女性离婚后争取并维持抚养权的逻辑，认为务工与亲属支持等条件帮助她们重构兼顾母亲和孩子福祉的母职实践。",
+      "verification_status": "lead_only",
+      "source_scope": "author_institution_repository",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "publication_issue": 1,
+      "publication_pages": "133–154,224",
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第1期（未核实精确出版日）",
+      "source_date_label": "机构网页发布日期；未显示时为null",
+      "within_preferred_window": true,
+      "evidence": [
+        {
+          "snippet": "半结构式访谈法和观察法",
+          "locator": "PDF第6页，原刊第138页，三、研究方法首段",
+          "supports": [
+            "source_excerpt"
+          ],
+          "url": "https://cohd.cau.edu.cn/art/2026/4/21/art_22928_1108760.html"
+        },
+        {
+          "snippet": null,
+          "locator": "学院网页标题、发布日期、作者刊名行；抽取行19–25",
+          "supports": [
+            "title_authors_journal_issue_source_date"
+          ],
+          "url": "https://cohd.cau.edu.cn/art/2026/4/21/art_22928_1108760.html"
+        },
+        {
+          "snippet": null,
+          "locator": "PDF第1页，原刊第133页：摘要、作者、DOI",
+          "supports": [
+            "doi_abstract_findings"
+          ],
+          "url": "https://cohd.cau.edu.cn/module/download/downfile.jsp?classid=0&filename=f67c7fbd7f94486889d2feeb13db3ebb.pdf"
+        },
+        {
+          "snippet": null,
+          "locator": "PDF第2页，原刊第134页：引言末段",
+          "supports": [
+            "research_question"
+          ],
+          "url": "https://cohd.cau.edu.cn/module/download/downfile.jsp?classid=0&filename=f67c7fbd7f94486889d2feeb13db3ebb.pdf"
+        },
+        {
+          "snippet": null,
+          "locator": "PDF第6–8页，原刊第138–140页：三、研究方法",
+          "supports": [
+            "methods_data_sample"
+          ],
+          "url": "https://cohd.cau.edu.cn/module/download/downfile.jsp?classid=0&filename=f67c7fbd7f94486889d2feeb13db3ebb.pdf"
+        },
+        {
+          "snippet": null,
+          "locator": "PDF第1页起于原刊133页；第22页结束于154页；第23页为英文摘要224页",
+          "supports": [
+            "pages"
+          ],
+          "url": "https://cohd.cau.edu.cn/module/download/downfile.jsp?classid=0&filename=f67c7fbd7f94486889d2feeb13db3ebb.pdf"
+        }
+      ],
+      "verification_note": "已打开机构原始网页并读取标明范围；未完成原刊全文逐项复核，保守标为lead_only。",
+      "editorial_caveat": "本条是研究线索；可用字段均限于实际读取范围，不能当作全文结果的独立验证。",
+      "evidence_caveats": [
+        "样本并非全部属于青年年龄段；本条归入家庭与性别社会学，勿概称青年样本。",
+        "网页日期与期刊日期分别保留。",
+        "PDF只做相关页读取，全文验证状态仍为lead_only。"
+      ],
+      "limitations": null,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "youth-2026-zhou-informal-employment-marriage",
+      "title": "情感抑或理性：非正规就业对青年婚姻动机的影响及其机制",
+      "authors": [
+        "周思思"
+      ],
+      "publication_year": 2026,
+      "doi": null,
+      "published_at": null,
+      "source_published_at": "2026-08-09",
+      "source_date_precision": "day",
+      "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm",
+      "source_name": "青年研究",
+      "evidence_scope": "已读作者学院发表通知及摘要式介绍；未取得论文全文或方法表。",
+      "topics": [
+        "青年就业",
+        "婚姻",
+        "非正规就业",
+        "社会保障",
+        "性别观念"
+      ],
+      "research_question": "非正规就业与青年婚姻动机有何联系，哪些机制可能解释这种联系？",
+      "methods": null,
+      "data": "2021年中国综合社会调查（CGSS）",
+      "sample": {
+        "n": null,
+        "population": "青年；页面未披露筛选规则",
+        "age_range": null,
+        "sampling": null,
+        "representativeness": null
+      },
+      "findings": [
+        "机构介绍报告非正规就业与理性婚姻动机呈显著相关，城市青年、80后及本科以上组更明显。",
+        "介绍将收入、保障和性别平等观念列作解释路径；本次未核模型或因果识别。"
+      ],
+      "source_snapshot": {
+        "metadata": "周思思；《青年研究》2026年第4期；学院网页2026-08-09",
+        "captured_at": "2026-10-01",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "山东大学哲学与社会发展学院",
+        "page_published_at": "2026-08-09",
+        "excerpt_pointer": "evidence",
+        "note": "最小来源摘录；不是全文快照。"
+      },
+      "missing_reasons": {
+        "published_at": "来源只给论文期次；2026-08-09是学院新闻日期。",
+        "pages": "学院正文未给；检索到的目录未成功打开，不并入已核元数据。",
+        "doi": "机构正文未披露。",
+        "methods": "介绍只点明数据集，未命名估计方法或模型。",
+        "sample.n": "未披露分析样本量。",
+        "sample.age_range": "未披露青年年龄边界。",
+        "sample.sampling": "未披露分析样本筛选。",
+        "sample.representativeness": "未核抽样、权重和缺失处理。",
+        "limitations": "本次读取的公开材料未提供足够信息。",
+        "publication_pages": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "source_file": "youth.json",
+      "source_publisher": "山东大学哲学与社会发展学院",
+      "material_type": "research_abstract",
+      "summary": "学院介绍称，论文利用2021年中国综合社会调查考察青年就业形态与婚姻动机的联系，报告非正规就业与较理性化的婚姻动机相关。",
+      "verification_status": "lead_only",
+      "source_scope": "author_institution_research_notice",
+      "discovered_at": "2026-10-01",
+      "discovered_at_precision": "day",
+      "publication_issue": 4,
+      "publication_pages": null,
+      "published_at_precision": "issue",
+      "published_at_display": "2026年第4期（未核实精确出版日）",
+      "source_date_label": "机构网页发布日期；未显示时为null",
+      "within_preferred_window": true,
+      "evidence": [
+        {
+          "snippet": "非正规就业与理性婚姻动机显著相关",
+          "locator": "正文图片后“文章认为”段",
+          "supports": [
+            "source_excerpt"
+          ],
+          "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "发表通知第1段；网页抽取行71",
+          "supports": [
+            "title_authors_journal_issue"
+          ],
+          "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "标题下发布日期；网页抽取行69",
+          "supports": [
+            "source_date"
+          ],
+          "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm"
+        },
+        {
+          "snippet": null,
+          "locator": "正文图片后“文章认为”段；网页抽取行77",
+          "supports": [
+            "research_question_data_findings"
+          ],
+          "url": "https://www.sps.sdu.edu.cn/info/1024/19016.htm"
+        }
+      ],
+      "verification_note": "已打开机构原始网页并读取标明范围；未完成原刊全文逐项复核，保守标为lead_only。",
+      "editorial_caveat": "本条是研究线索；可用字段均限于实际读取范围，不能当作全文结果的独立验证。",
+      "evidence_caveats": [
+        "学院通知作者信息记为周思思；记者署名不当作论文作者。",
+        "只表述相关性，不把介绍中的影响措辞升级为可识别因果效应。",
+        "需要原刊全文后才能评估模型、稳健性和适用范围。"
+      ],
+      "limitations": null,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "practice-2026-jiang-an-socialwork-volunteering",
+      "title": "深化“专业社工+志愿服务”，探索服务群众最优解（工作实践）",
+      "authors": null,
+      "corporate_contributor": "湖北省武汉市江岸区委社会工作部",
+      "published_at": "2026-07-16",
+      "source_display_datetime": "2026年07月16日09:47",
+      "source_name": "中国社会工作报",
+      "hosting_authority": "中共中央社会工作部",
+      "url": "https://www.zyshgzb.gov.cn/n1/2026/0716/c462441-40761886.html",
+      "material_type": "official_practice",
+      "verification_status": "practice_signal",
+      "discovered_at": "2026-10-01T04:35:55Z",
+      "verified_at": "2026-10-01T04:36:04Z",
+      "summary": "江岸区报告将专业社工与社区志愿者嵌入共同服务体系，实施公益集市、纠纷调解、音乐减压等项目，并以社区服务岗开展个案及小组服务。",
+      "topics": [
+        "社区治理",
+        "专业社工与志愿服务",
+        "资源联动"
+      ],
+      "research_question": null,
+      "practice_problem": "如何分工协同专业社工与社区志愿力量，回应居民差异化需求。此为编辑归纳，并非原文提出的研究问题。",
+      "methods": null,
+      "practice_methods": [
+        "需求分析与项目设计",
+        "跨组织资源链接",
+        "个案咨询和小组工作",
+        "志愿者培训及网格走访"
+      ],
+      "data": null,
+      "sample": null,
+      "reported_service_metrics": [
+        {
+          "metric": "百步亭社区注册志愿者",
+          "value_as_reported": "近5万名",
+          "interpretation": "组织规模，非研究样本或服务效果"
+        }
+      ],
+      "findings": [
+        "报道提供了专业人员策划指导、志愿者组织参与的地方实施案例；未提供可验证的因果效果。"
+      ],
+      "limitations": null,
+      "evidence_caveats": [
+        "地方部门供稿的经验报道，不是同行评审实证研究。",
+        "未披露结果测量、比较组、随访或独立评估；定性成效表述仅能视为报道方判断。"
+      ],
+      "evidence": [
+        {
+          "snippet": "提供个案咨询、小组工作",
+          "locator": "正文“深化服务融合”小节第2段（网页提取L75）",
+          "supports": [
+            "具体专业服务已经实施，而非仅有政策倡议"
+          ],
+          "url": "https://www.zyshgzb.gov.cn/n1/2026/0716/c462441-40761886.html"
+        }
+      ],
+      "verification": {
+        "search_query": "site.zyshgzb.gov.cn 2026 社会工作报 社工 个案",
+        "original_authoritative_page_opened": true,
+        "access": "完整公开HTML正文",
+        "metadata_locator": "标题及日期来源L53-L56；供稿单位L79"
+      },
+      "source_file": "practice.json",
+      "missing_reasons": {
+        "authors": "页面没有个人作者署名，只列供稿单位。",
+        "research_question": "未陈述学术研究问题。",
+        "methods": "未披露研究设计或评估方法；实施方法另列。",
+        "data": "未公开研究数据集、原始记录或指标定义。",
+        "sample": "未披露研究样本、抽样方式或纳入标准。",
+        "limitations": "原文没有作者自述的局限性；核验者边界提醒另列。",
+        "publication_issue": "本次读取材料未核实该字段；不作推断补全。",
+        "publication_pages": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "source_scope": "official_practice_full_page",
+      "evidence_scope": "official_practice_report",
+      "source_publisher": "中共中央社会工作部",
+      "source_published_at": "2026-07-16",
+      "source_date_label": "官方报道网页发布日期",
+      "published_at_precision": "day",
+      "published_at_display": "2026-07-16",
+      "publication_year": 2026,
+      "publication_issue": null,
+      "publication_pages": null,
+      "verification_note": "已打开官方实践报道全文；仅核验报道内容，不代表独立效果评估。",
+      "editorial_caveat": "实践报道中的实施方判断不等于经过研究设计验证的成效。",
+      "source_snapshot": {
+        "captured_at": "2026-10-01T04:36:04Z",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "中共中央社会工作部",
+        "page_published_at": "2026-07-16",
+        "excerpt_pointer": "evidence",
+        "note": "保留元数据和最小核验摘录，不复制全文。"
+      },
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "practice-2026-hetang-school-socialwork",
+      "title": "深耕校园社会工作 助力青少年健康成长（工作实践）",
+      "authors": null,
+      "corporate_contributor": "湖南省株洲市荷塘区委社会工作部",
+      "published_at": "2026-07-09",
+      "source_display_datetime": "2026年07月09日09:38",
+      "source_name": "中国社会工作报",
+      "hosting_authority": "中共中央社会工作部",
+      "url": "https://www.zyshgzb.gov.cn/n1/2026/0709/c462436-40756718.html",
+      "material_type": "official_practice",
+      "verification_status": "practice_signal",
+      "discovered_at": "2026-10-01T04:35:55Z",
+      "verified_at": "2026-10-01T04:36:04Z",
+      "summary": "荷塘区报告以购买服务支持驻校社工，结合风险筛查、分级跟进、个案辅导及家校协同；不同项目还延伸到乡村和假期托育场景。",
+      "topics": [
+        "学校社会工作",
+        "青少年心理支持",
+        "家校社协同",
+        "分层服务"
+      ],
+      "research_question": null,
+      "practice_problem": "如何把校园心理支持前移至预防与持续跟进。此为编辑归纳，并非原文提出的研究问题。",
+      "methods": null,
+      "practice_methods": [
+        "定期驻校与跨部门会商",
+        "筛查复核及分级建档",
+        "团体教育与个案服务",
+        "家长支持及危机转介"
+      ],
+      "data": null,
+      "sample": null,
+      "reported_service_metrics": [
+        {
+          "metric": "驻校频率",
+          "value_as_reported": "每周2~3天",
+          "interpretation": "服务安排"
+        },
+        {
+          "metric": "情绪行为改善比例",
+          "value_as_reported": "85％以上",
+          "interpretation": "供稿方自报；分母、量表、时点、统计检验与比较设计均未披露，不能作为效应量"
+        }
+      ],
+      "findings": [
+        "可确认当地报道了常态驻校和分层干预流程；不能据文中改善比例推断项目的因果效果。"
+      ],
+      "limitations": null,
+      "evidence_caveats": [
+        "属于地方实施方经验报道。",
+        "未披露学校或学生样本数量、结果测量工具、基线及追踪期。",
+        "文章使用显著改善等表述但无统计检验资料，不应转写为研究证明。"
+      ],
+      "evidence": [
+        {
+          "snippet": "每周2~3天驻校制度",
+          "locator": "正文第2段，制度体系段（网页提取L59）",
+          "supports": [
+            "常态化驻校服务安排"
+          ],
+          "url": "https://www.zyshgzb.gov.cn/n1/2026/0709/c462436-40756718.html"
+        }
+      ],
+      "verification": {
+        "search_query": "site.zyshgzb.gov.cn 2026 社会工作报 社工 个案",
+        "original_authoritative_page_opened": true,
+        "access": "完整公开HTML正文",
+        "metadata_locator": "标题及日期来源L53-L56；供稿单位L65；自报改善比例L60"
+      },
+      "source_file": "practice.json",
+      "missing_reasons": {
+        "authors": "页面只列供稿单位，无个人作者。",
+        "research_question": "未陈述学术研究问题。",
+        "methods": "未披露研究或效果评估设计；服务流程另列。",
+        "data": "未公开原始数据、指标定义或分析结果表。",
+        "sample": "未说明改善比例的分母、纳入标准或样本构成。",
+        "limitations": "原文没有作者自述局限性；核验者边界提醒另列。",
+        "publication_issue": "本次读取材料未核实该字段；不作推断补全。",
+        "publication_pages": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "source_scope": "official_practice_full_page",
+      "evidence_scope": "official_practice_report",
+      "source_publisher": "中共中央社会工作部",
+      "source_published_at": "2026-07-09",
+      "source_date_label": "官方报道网页发布日期",
+      "published_at_precision": "day",
+      "published_at_display": "2026-07-09",
+      "publication_year": 2026,
+      "publication_issue": null,
+      "publication_pages": null,
+      "verification_note": "已打开官方实践报道全文；仅核验报道内容，不代表独立效果评估。",
+      "editorial_caveat": "实践报道中的实施方判断不等于经过研究设计验证的成效。",
+      "source_snapshot": {
+        "captured_at": "2026-10-01T04:36:04Z",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "中共中央社会工作部",
+        "page_published_at": "2026-07-09",
+        "excerpt_pointer": "evidence",
+        "note": "保留元数据和最小核验摘录，不复制全文。"
+      },
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    },
+    {
+      "id": "practice-2026-gansu-three-regions",
+      "title": "从精准服务到专业赋能——甘肃全力推进“三区”社会工作专业人员支持计划",
+      "authors": [
+        "马思津",
+        "崔亚明"
+      ],
+      "author_roles": [
+        "本报记者",
+        "通讯员"
+      ],
+      "corporate_contributor": null,
+      "published_at": "2026-09-04",
+      "source_display_datetime": "2026年09月04日09:27",
+      "source_name": "中国社会工作报",
+      "hosting_authority": "中共中央社会工作部",
+      "url": "https://www.zyshgzb.gov.cn/n1/2026/0904/c462594-40792520.html",
+      "material_type": "official_practice",
+      "verification_status": "practice_signal",
+      "discovered_at": "2026-10-01T04:35:55Z",
+      "verified_at": "2026-10-01T04:36:04Z",
+      "summary": "报道甘肃向受援地区派出社工，在牧区入户、分层需求管理及志愿者带教中开展服务；具体呈现天祝、会宁、静宁等地的实施方式。",
+      "topics": [
+        "农村社会工作",
+        "民族地区服务",
+        "困境群体",
+        "本土人才培养"
+      ],
+      "research_question": null,
+      "practice_problem": "如何兼顾受援地区的即时服务与本土专业能力建设。此为编辑归纳，并非原文提出的研究问题。",
+      "methods": null,
+      "practice_methods": [
+        "社区调研、访谈及问卷用于需求评估",
+        "入户探访与定点服务",
+        "个案管理及小组工作",
+        "实务督导和志愿者带教"
+      ],
+      "data": null,
+      "sample": null,
+      "reported_service_metrics": [
+        {
+          "metric": "派出专业人员",
+          "value_as_reported": "130余名",
+          "interpretation": "项目投入，非研究样本"
+        },
+        {
+          "metric": "承担机构",
+          "value_as_reported": "10家",
+          "interpretation": "组织规模"
+        },
+        {
+          "metric": "静宁服务小组配置",
+          "value_as_reported": "1名专业社工带5名志愿者",
+          "interpretation": "当地服务组织模式"
+        }
+      ],
+      "findings": [
+        "报道提供需求评估、跨组织协作与本土带教的实践线索；未给出能力增长或受益者结局的可复核测量。"
+      ],
+      "limitations": null,
+      "evidence_caveats": [
+        "新闻报道汇总多个地区经验，不是统一研究设计。",
+        "未提供调查样本、工具、原始数据、比较组或长期追踪，投入规模不能替代成效证据。"
+      ],
+      "evidence": [
+        {
+          "snippet": "入户探访+定点服务",
+          "locator": "正文天祝县服务段（网页提取L68）",
+          "supports": [
+            "受援地区具体实施方法"
+          ],
+          "url": "https://www.zyshgzb.gov.cn/n1/2026/0904/c462594-40792520.html"
+        }
+      ],
+      "verification": {
+        "search_query": "site.zyshgzb.gov.cn 2026 社会工作报 社工 个案",
+        "original_authoritative_page_opened": true,
+        "access": "完整公开HTML正文",
+        "metadata_locator": "标题副题及日期来源L54-L57；人员机构L59-L61；署名L79"
+      },
+      "source_file": "practice.json",
+      "missing_reasons": {
+        "corporate_contributor": "页面署名记者与通讯员，未另列供稿单位。",
+        "research_question": "没有明确的学术研究问题。",
+        "methods": "提到需求评估工具，但未披露研究设计和分析方法。",
+        "data": "未公开调查记录或研究数据集。",
+        "sample": "未披露受访者或受益者样本数量和抽样框。",
+        "limitations": "原文没有作者自述局限性；核验者边界提醒另列。",
+        "publication_issue": "本次读取材料未核实该字段；不作推断补全。",
+        "publication_pages": "本次读取材料未核实该字段；不作推断补全。"
+      },
+      "source_scope": "official_practice_full_page",
+      "evidence_scope": "official_practice_report",
+      "source_publisher": "中共中央社会工作部",
+      "source_published_at": "2026-09-04",
+      "source_date_label": "官方报道网页发布日期",
+      "published_at_precision": "day",
+      "published_at_display": "2026-09-04",
+      "publication_year": 2026,
+      "publication_issue": null,
+      "publication_pages": null,
+      "verification_note": "已打开官方实践报道全文；仅核验报道内容，不代表独立效果评估。",
+      "editorial_caveat": "实践报道中的实施方判断不等于经过研究设计验证的成效。",
+      "source_snapshot": {
+        "captured_at": "2026-10-01T04:36:04Z",
+        "kind": "metadata_and_short_excerpt",
+        "publisher": "中共中央社会工作部",
+        "page_published_at": "2026-09-04",
+        "excerpt_pointer": "evidence",
+        "note": "保留元数据和最小核验摘录，不复制全文。"
+      },
+      "within_preferred_window": true,
+      "ingestion_note": "仅用于人工整理新闻流和关键词检索；未运行embedding或付费模型。"
+    }
+  ]
+}

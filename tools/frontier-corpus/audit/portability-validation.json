@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "network_requests": 0,
+  "tested_live_refetch": false,
+  "checks": [
+    "bundled_input_hashes_match",
+    "moved_directory_other_cwd_offline_assembly_201",
+    "record_payload_matches_original_201",
+    "research_138_practice_63",
+    "issue_only_16_excluded",
+    "recent_day_dated_113",
+    "offline_record_payload_repeatable",
+    "missing_input_fails_before_output",
+    "all_crawler_help_offline",
+    "network_gate_fails_before_output",
+    "crawler_imports_do_not_write_or_fetch",
+    "url_allowlist_and_all_redirects_rejected"
+  ],
+  "record_count": 201,
+  "runtime": "3.12.14",
+  "validation_scope": "Offline portability, frozen-record equivalence, CLI/network boundaries; no assertion about current source availability."
+}

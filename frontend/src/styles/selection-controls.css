@@ -1,0 +1,42 @@
+/* Shared selection control, using the same semantic tokens as qx-segmented. */
+.qx-selection-control {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--qx-space-1);
+  padding: var(--qx-space-1);
+  border: 1px solid var(--qx-color-rule);
+  border-radius: var(--qx-radius-control);
+  background: var(--qx-color-surface-muted);
+}
+.qx-selection-control > button {
+  min-height: var(--qx-control-height);
+  padding: 0 var(--qx-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--qx-radius-compact);
+  box-shadow: none;
+  background: transparent;
+  color: var(--qx-color-muted);
+  font-family: var(--qx-font-ui);
+  font-size: var(--qx-text-control);
+  line-height: var(--qx-text-control--line-height);
+  text-decoration: none;
+  transition: none;
+  cursor: pointer;
+}
+.qx-selection-control > button:hover {
+  background: var(--qx-color-accent-muted);
+  color: var(--qx-color-ink);
+}
+.qx-selection-control > button:is([aria-selected='true'], [aria-pressed='true']) {
+  border-color: var(--qx-color-accent);
+  background: var(--qx-color-accent-soft);
+  color: var(--qx-color-ink);
+  font-weight: 600;
+  box-shadow: none;
+}
+.qx-selection-control > button:focus-visible:not(:disabled) {
+  outline: 2px solid var(--qx-color-accent);
+  outline-offset: 2px;
+}
+.qx-selection-control > button:disabled { opacity: .5; cursor: default; }

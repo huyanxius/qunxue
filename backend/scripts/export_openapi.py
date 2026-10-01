@@ -9,7 +9,7 @@ def main() -> None:
     content = json.dumps(
         app.openapi(),
         ensure_ascii=False,
-        indent=2,
+        separators=(",", ":"),
         sort_keys=True,
     )
     output_path.write_text(f"{content}\n", encoding="utf-8")

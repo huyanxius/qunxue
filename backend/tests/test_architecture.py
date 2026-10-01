@@ -19,6 +19,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "billing": set(),
     "identity": set(),
     "knowledge_catalog": set(),
+    "frontier_knowledge": set(),
     "research_intake": set(),
     "research_analysis": {"research_materials"},
     "research_cycle": {

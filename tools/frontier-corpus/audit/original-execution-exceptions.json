@@ -1,0 +1,10 @@
+[
+  {
+    "at": "2026-10-01T05:50:00Z",
+    "event": "brief_overlapping_debug_instances",
+    "cause": "Initial shell SIGINT did not stop the running exec session; second process started before confirming termination.",
+    "resolution": "Both exec sessions terminated using write_stdin Ctrl-C, each confirmed exit_code=130. Added exclusive flock and atomic writes before resuming.",
+    "access_restrictions_observed": false,
+    "raw_content_exported": false
+  }
+]

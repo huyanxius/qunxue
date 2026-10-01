@@ -366,14 +366,11 @@ describe('App routes', () => {
       '研究工具',
       '我的研究',
       '课程',
-      '知识库',
       '知识图谱',
     ])
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(5)
-    expect(within(mobileNavigation).getByRole('link', { name: '知识' })).toHaveAttribute(
-      'href',
-      '/knowledge',
-    )
+    expect(within(desktopNavigation).getByRole('button', { name: '知识库' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(4)
+    expect(within(mobileNavigation).getByRole('button', { name: '知识库' })).toHaveAttribute('aria-expanded', 'false')
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',

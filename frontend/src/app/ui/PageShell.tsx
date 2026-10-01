@@ -1,8 +1,9 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useId, useState } from 'react'
 import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import {
   BellIcon,
+  CaretDownIcon,
   BooksIcon,
   GraduationCapIcon,
   ChatCircleDotsIcon,
@@ -61,7 +62,10 @@ function PrimaryNavigation({
   mobile = false,
   moreExpanded = false,
   onMore,
+  onKnowledgeOpen,
   conversationHref,
+  railCollapsed = false,
+  onExpandRail,
 }: {
   className: string
   label: string
@@ -69,9 +73,29 @@ function PrimaryNavigation({
   mobile?: boolean
   moreExpanded?: boolean
   onMore?: () => void
+  onKnowledgeOpen?: () => void
   conversationHref?: string
+  railCollapsed?: boolean
+  onExpandRail?: () => void
 }) {
   const { text } = useAppLocale()
+  const location = useLocation()
+  const scope = new URLSearchParams(location.search).get('scope')
+  const inKnowledge = location.pathname !== '/knowledge/graph' && (location.pathname === '/knowledge' || location.pathname.startsWith('/knowledge/'))
+  const activeLibrary = inKnowledge
+    ? scope === 'frontier' ? 'frontier' : scope === 'courses' ? 'courses' : 'discipline'
+    : null
+  const [knowledgeOpen, setKnowledgeOpen] = useState(!mobile && inKnowledge)
+  const childrenId = useId()
+  useEffect(() => {
+    setKnowledgeOpen(!mobile && inKnowledge)
+  }, [mobile, inKnowledge, scope, location.pathname])
+  const knowledgeItems = [
+    { key: 'discipline', href: '/knowledge', label: text('学科知识库', 'Discipline library') },
+    { key: 'courses', href: '/knowledge?scope=courses', label: text('课程知识库', 'Course library') },
+    { key: 'frontier', href: '/knowledge?scope=frontier', label: text('学术前沿', 'Academic frontier') },
+  ]
+  const expanded = knowledgeOpen && (mobile || !railCollapsed)
   const navigationItems = [
     { href: '/app', label: text('工作台', 'Workbench'), mobileLabel: text('工作台', 'Home'), icon: HouseIcon, end: true },
     { href: '/agent', label: text('研究 Agent', 'Research Agent'), mobileLabel: 'Agent', icon: ChatCircleDotsIcon, end: true },
@@ -93,7 +117,44 @@ function PrimaryNavigation({
     : navigationItems
   return (
     <nav className={className} aria-label={label}>
-      {visibleItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => (
+      {visibleItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => href === '/knowledge' ? (
+        <div className="knowledge-navigation" key={href} onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setKnowledgeOpen(false)
+            event.currentTarget.querySelector('button')?.focus()
+          }
+        }}>
+          <button
+            type="button"
+            className="knowledge-navigation__toggle"
+            aria-label={itemLabel}
+            aria-expanded={expanded}
+            aria-controls={childrenId}
+            data-active={inKnowledge || undefined}
+            title={itemLabel}
+            onClick={() => {
+              if (mobile && !knowledgeOpen) onKnowledgeOpen?.()
+              if (railCollapsed && !mobile) {
+                onExpandRail?.()
+                setKnowledgeOpen(true)
+              } else setKnowledgeOpen((open) => !open)
+            }}
+          >
+            <span className="navigation-icon" aria-hidden="true"><BooksIcon size={18} /></span>
+            <span className="navigation-label">{compact ? mobileLabel : itemLabel}</span>
+            <CaretDownIcon className="knowledge-navigation__chevron" size={14} aria-hidden="true" />
+          </button>
+          <div id={childrenId} className="knowledge-navigation__children" hidden={!expanded}>
+            {knowledgeItems.map((item) => (
+              <Link key={item.key} to={item.href}
+                aria-current={activeLibrary === item.key ? 'page' : undefined}
+                onClick={() => { if (mobile) setKnowledgeOpen(false) }}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
         <NavLink key={href} to={href === '/agent' && conversationHref ? conversationHref : href} end={end}>
           <span className="navigation-icon" aria-hidden="true">
             <NavigationIcon size={18} weight="regular" />
@@ -107,7 +168,7 @@ function PrimaryNavigation({
           type="button"
           aria-expanded={moreExpanded}
           aria-controls="mobile-more-panel"
-          onClick={onMore}
+          onClick={() => { setKnowledgeOpen(false); onMore?.() }}
         >
           <span className="navigation-icon" aria-hidden="true">
             <DotsThreeIcon size={20} weight="bold" />
@@ -237,7 +298,7 @@ export function PageShell({
               </button>
             </div>
             <div className="desktop-rail__body">
-              <PrimaryNavigation conversationHref={conversationHref} className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
+              <PrimaryNavigation railCollapsed={railCollapsed} onExpandRail={() => setRailCollapsed(false)} conversationHref={conversationHref} className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
               {viewDestination ? <nav className="desktop-navigation" aria-label={text('对话视图', 'Conversation views')}>
                 <Link to={viewDestination}>
                   <span className="navigation-icon" aria-hidden="true"><ChatCircleDotsIcon size={18} /></span>
@@ -339,6 +400,7 @@ export function PageShell({
             mobile
             moreExpanded={mobileMoreOpen}
             onMore={() => setMobileMoreOpen((open) => !open)}
+            onKnowledgeOpen={() => setMobileMoreOpen(false)}
           />
           {mobileMoreOpen ? (
             <div className="mobile-more" id="mobile-more-panel">

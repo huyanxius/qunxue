@@ -1,0 +1,13 @@
+{
+  "$format": "qunxue-json-shards-v1",
+  "kind": "mapping",
+  "count": 185,
+  "canonical_sha256": "f060b48dcc145d2970fe82dcfd24df3d1bd37413a0ed5fb44be7059e11f48ff6",
+  "parts": [
+    {
+      "path": "prior-verified-publication-dates.parts/001.json",
+      "sha256": "b50411b534dec07c6e9f8abf6af7714ad10ff4f14ba340e14263282beb90ef6a",
+      "count": 185
+    }
+  ]
+}

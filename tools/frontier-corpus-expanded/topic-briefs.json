@@ -1,0 +1,462 @@
+{
+  "briefs": [
+    {
+      "topic_key": "care-family",
+      "stream": "research",
+      "title": "照护关系如何形成：AI与家属的两条参与路径",
+      "summary": "AI安宁疗护与机构养老研究共同关注参与角色如何建立：技术需要经历现场调适与伦理协商，家属的到场则受机构权责、空间与关系约束塑造。",
+      "why_it_matters": "把参与关系具体化，有助于解释同一项照护安排在不同组织中为何运行不同。",
+      "evidence_record_ids": [
+        "algorithm-society-22481",
+        "research-shxyj-2026-3-care-presence"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "照护关系如何形成：AI与家属的两条参与路径",
+        "development": {
+          "text": "这组研究将照护参与细化为角色、责任和关系的形成过程。AI的参与资格与家庭成员的探访节律，都需要放进具体机构安排中理解。",
+          "evidence_record_ids": [
+            "algorithm-society-22481",
+            "research-shxyj-2026-3-care-presence"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "两文都把组织安排和关系过程作为解释参与方式的关键，不能仅用人员或技术是否到场概括参与。",
+            "evidence_record_ids": [
+              "algorithm-society-22481",
+              "research-shxyj-2026-3-care-presence"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "安宁疗护论文追踪新技术参与者如何进入照护；养老机构论文分析既有家庭成员如何被规则与空间重新组织。",
+            "evidence_record_ids": [
+              "algorithm-society-22481",
+              "research-shxyj-2026-3-care-presence"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "AI论文把质性研究嵌入三甲医院社工项目评估；机构养老论文使用三家养老机构实地材料。前者强调参与过程，后者比较制度与空间的作用。",
+            "evidence_record_ids": [
+              "algorithm-society-22481",
+              "research-shxyj-2026-3-care-presence"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "研究设计可分别记录谁能进入、如何分工、谁承担责任、哪些空间与情感规则影响持续参与，再比较不同机构中的组合。",
+          "evidence_record_ids": [
+            "algorithm-society-22481",
+            "research-shxyj-2026-3-care-presence"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "algorithm-society-22481",
+            "reason": "先看技术角色如何在现场协商中形成。"
+          },
+          {
+            "record_id": "research-shxyj-2026-3-care-presence",
+            "reason": "再用家庭成员的制度与空间处境检验参与框架的适用范围。"
+          }
+        ],
+        "evidence_record_ids": [
+          "algorithm-society-22481",
+          "research-shxyj-2026-3-care-presence"
+        ]
+      }
+    },
+    {
+      "topic_key": "youth",
+      "stream": "research",
+      "title": "青年家庭选择背后的债务、就业与支持",
+      "summary": "债务研究把健康压力和社会支持引入生育意愿分析；非正规就业研究把收入、保障与性别观念连接到婚姻动机。两者揭示经济风险进入家庭选择的不同路径。",
+      "why_it_matters": "可将家庭形成研究拆解到具体风险与资源，明确研究对象究竟是婚姻动机、生育意愿还是实际行为。",
+      "evidence_record_ids": [
+        "research-shjs-2026-699",
+        "youth-2026-zhou-informal-employment-marriage"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "青年家庭选择背后的债务、就业与支持",
+        "development": {
+          "text": "两项调查研究把青年经济处境进一步分解为债务压力、就业形态、健康、保障及观念，形成可以分别测量的家庭选择机制。",
+          "evidence_record_ids": [
+            "research-shjs-2026-699",
+            "youth-2026-zhou-informal-employment-marriage"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "两文均将家庭相关意愿放在经济条件与支持资源之中，提示不能只从个人偏好解释青年选择。",
+            "evidence_record_ids": [
+              "research-shjs-2026-699",
+              "youth-2026-zhou-informal-employment-marriage"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "债务论文关心是否愿意生育及健康压力的中介路径；就业论文关心婚姻动机的理性化，并比较城乡、代际和教育群体。二者研究的结局不同。",
+            "evidence_record_ids": [
+              "research-shjs-2026-699",
+              "youth-2026-zhou-informal-employment-marriage"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "债务研究使用CFPS，并以压力过程和缓冲模型组织分析；就业研究使用2021年CGSS。跨数据比较时需要对齐年龄、家庭阶段与风险测量。",
+            "evidence_record_ids": [
+              "research-shjs-2026-699",
+              "youth-2026-zhou-informal-employment-marriage"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "可将债务与就业风险同时纳入设计，检验健康、保障及正式和非正式支持各自发挥作用的条件，同时区分意愿与行为。",
+          "evidence_record_ids": [
+            "research-shjs-2026-699",
+            "youth-2026-zhou-informal-employment-marriage"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "research-shjs-2026-699",
+            "reason": "先看债务、健康压力与支持资源怎样连接到生育意愿。"
+          },
+          {
+            "record_id": "youth-2026-zhou-informal-employment-marriage",
+            "reason": "再比较就业形态与婚姻动机的群体差异。"
+          }
+        ],
+        "evidence_record_ids": [
+          "research-shjs-2026-699",
+          "youth-2026-zhou-informal-employment-marriage"
+        ]
+      }
+    },
+    {
+      "topic_key": "work-trust",
+      "stream": "research",
+      "title": "劳动经历的社会后果取决于风险类型与组织位置",
+      "summary": "换职频率与社会信任、非正规就业与婚姻动机、同伴组织与治理参与，呈现劳动处境向不同社会关系延伸的路径。制度位置与支持资源使这些联系产生差异。",
+      "why_it_matters": "劳动流动、就业形态和集体参与不能混成一个笼统的“不稳定就业”变量。",
+      "evidence_record_ids": [
+        "research-shfzyj-2025-3-mobility-trust",
+        "youth-2026-zhou-informal-employment-marriage",
+        "research-shjs-2026-689"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "劳动经历的社会后果取决于风险类型与组织位置",
+        "development": {
+          "text": "职业流动研究区分频率和方向，就业研究区分收入与保障机制，劳动者互助研究则追踪同伴网络如何组织参与。三者提供了互补的风险与行动维度。",
+          "evidence_record_ids": [
+            "research-shfzyj-2025-3-mobility-trust",
+            "youth-2026-zhou-informal-employment-marriage",
+            "research-shjs-2026-689"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "这些材料都提示劳动者的社会关系受到组织条件影响：部门位置、保障安排及同伴支持分别改变风险经历和行动机会。",
+            "evidence_record_ids": [
+              "research-shfzyj-2025-3-mobility-trust",
+              "youth-2026-zhou-informal-employment-marriage",
+              "research-shjs-2026-689"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "频繁流动与低信任的关联在体制外更突出，但地位下降不必然对应低信任；婚姻研究关注另一类态度后果；同伴治理材料关注组织行动过程。",
+            "evidence_record_ids": [
+              "research-shfzyj-2025-3-mobility-trust",
+              "youth-2026-zhou-informal-employment-marriage",
+              "research-shjs-2026-689"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "前两篇分别使用城市居民调查和CGSS；同伴治理论文给出专业支持的实践路径。它们适合组成机制问题清单，不能直接合并为一个效果量。",
+            "evidence_record_ids": [
+              "research-shfzyj-2025-3-mobility-trust",
+              "youth-2026-zhou-informal-employment-marriage",
+              "research-shjs-2026-689"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "可以并列测量流动频率、流动方向、就业保障与同伴组织资源，追踪它们对信任、家庭计划和公共参与的不同联系。",
+          "evidence_record_ids": [
+            "research-shfzyj-2025-3-mobility-trust",
+            "youth-2026-zhou-informal-employment-marriage",
+            "research-shjs-2026-689"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "research-shfzyj-2025-3-mobility-trust",
+            "reason": "先拆开职业流动频率、方向与制度部门。"
+          },
+          {
+            "record_id": "youth-2026-zhou-informal-employment-marriage",
+            "reason": "再看就业风险怎样进入家庭动机。"
+          },
+          {
+            "record_id": "research-shjs-2026-689",
+            "reason": "最后追踪同伴网络与专业支持如何转化为参与机会。"
+          }
+        ],
+        "evidence_record_ids": [
+          "research-shfzyj-2025-3-mobility-trust",
+          "youth-2026-zhou-informal-employment-marriage",
+          "research-shjs-2026-689"
+        ]
+      }
+    },
+    {
+      "topic_key": "organization",
+      "stream": "research",
+      "title": "多重约束怎样塑造组织边界与责任安排",
+      "summary": "治理理论用目标、预算和规则解释组织取舍；医院临床试验研究则揭示一种外包人员进入内部工作体系的混合安排，以及收益、专业与行政要求如何同时发挥作用。",
+      "why_it_matters": "理论约束可以转化为可观察的用工、空间、身份与风险安排。",
+      "evidence_record_ids": [
+        "algorithm-society-22355",
+        "research-shxyj-2026-4-organizational-outsourcing"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "多重约束怎样塑造组织边界与责任安排",
+        "development": {
+          "text": "这组材料将组织协作具体化为约束处理方式：理论论文提出不同刚性要求之间的张力，临床试验研究展现混合组织如何分配控制与风险。",
+          "evidence_record_ids": [
+            "algorithm-society-22355",
+            "research-shxyj-2026-4-organizational-outsourcing"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "两文都把组织安排理解为回应多重要求的产物，形式上的标准化或外包并不能概括实际运作。",
+            "evidence_record_ids": [
+              "algorithm-society-22355",
+              "research-shxyj-2026-4-organizational-outsourcing"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "治理三角是带有成立条件的理论框架；组织内外包是具体医疗场景中的模式分析。后者可启发检验问题，但并不自动验证前者的所有命题。",
+            "evidence_record_ids": [
+              "algorithm-society-22355",
+              "research-shxyj-2026-4-organizational-outsourcing"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "治理三角比较行政发包、理性科层与公司治理；临床试验简介区分混合用工、院内空间与身份边界三项机制。",
+            "evidence_record_ids": [
+              "algorithm-society-22355",
+              "research-shxyj-2026-4-organizational-outsourcing"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "比较研究可以分别记录目标考核、资源约束、程序要求、实际控制和责任归属，寻找它们何时一致、何时出现错位。",
+          "evidence_record_ids": [
+            "algorithm-society-22355",
+            "research-shxyj-2026-4-organizational-outsourcing"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "algorithm-society-22355",
+            "reason": "先用目标、预算与规则梳理约束。"
+          },
+          {
+            "record_id": "research-shxyj-2026-4-organizational-outsourcing",
+            "reason": "再看用工和空间安排怎样具体吸收这些要求。"
+          }
+        ],
+        "evidence_record_ids": [
+          "algorithm-society-22355",
+          "research-shxyj-2026-4-organizational-outsourcing"
+        ]
+      }
+    },
+    {
+      "topic_key": "digital-society",
+      "stream": "research",
+      "title": "算法怎样改变工资规则、劳动关系与职业想象",
+      "summary": "三篇研究分别分析外卖计件收入、AI训练劳动与平台降薪。数字控制既改变任务和收入安排，也通过组织形式、规则调整和职业期待塑造劳动关系。",
+      "why_it_matters": "可把算法研究具体拆成规则、组织和时间变化三个层次，避免把所有平台都归为同一种控制机制。",
+      "evidence_record_ids": [
+        "algorithm-society-20503",
+        "algorithm-society-21260",
+        "algorithm-society-21261"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "算法怎样改变工资规则、劳动关系与职业想象",
+        "development": {
+          "text": "2024年的计件研究突出派单、奖惩与劳动者策略；2025年的两篇研究进一步考察AI训练的内包、外包、众包组织，以及降薪事件中算法作用的变化。这里比较的是三篇具体研究的问题推进。",
+          "evidence_record_ids": [
+            "algorithm-society-20503",
+            "algorithm-society-21260",
+            "algorithm-society-21261"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "三文都显示，数字化控制嵌在收入规则和组织安排中，并会影响劳动者怎样理解自主性与职业机会。",
+            "evidence_record_ids": [
+              "algorithm-society-20503",
+              "algorithm-society-21260",
+              "algorithm-society-21261"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "计件论文关注收入规则下的策略博弈；AI训练论文比较不同公司的项目制和控制方式；降薪论文追踪规则调整怎样重塑既有劳资关系。",
+            "evidence_record_ids": [
+              "algorithm-society-20503",
+              "algorithm-society-21260",
+              "algorithm-society-21261"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "证据分别来自平台派单奖惩与劳动意识分析、三家AI公司的劳动考察、一个平台降薪事件。前两者比较结构，事件研究突出变化过程。",
+            "evidence_record_ids": [
+              "algorithm-society-20503",
+              "algorithm-society-21260",
+              "algorithm-society-21261"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "研究设计可同时追踪规则版本、合同与外包关系、收入风险及职业期待；将制度变化前后的行动过程与不同组织形式作比较。",
+          "evidence_record_ids": [
+            "algorithm-society-20503",
+            "algorithm-society-21260",
+            "algorithm-society-21261"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "algorithm-society-20503",
+            "reason": "先理解平台计件收入与传统工厂计件的差异。"
+          },
+          {
+            "record_id": "algorithm-society-21260",
+            "reason": "再观察AI生产背后的劳动组织和职业想象。"
+          },
+          {
+            "record_id": "algorithm-society-21261",
+            "reason": "最后把静态控制框架推进到规则变化与关系重组。"
+          }
+        ],
+        "evidence_record_ids": [
+          "algorithm-society-20503",
+          "algorithm-society-21260",
+          "algorithm-society-21261"
+        ]
+      }
+    },
+    {
+      "topic_key": "urban-rural",
+      "stream": "research",
+      "title": "乡村参与的关键是关系与自主空间怎样被组织",
+      "summary": "关系圈层、乡情重组和乡村场景建设说明外部资源需要经过地方组织关系才能转化为行动；轻钢住宅案例则提示，降低技术操作门槛也可能增加对技术提供者的依赖。",
+      "why_it_matters": "“参与了项目”和“拥有自主决定空间”需要分别观察，技术、文化与资金投入可能带来不同结果。",
+      "evidence_record_ids": [
+        "algorithm-society-20378",
+        "algorithm-society-20821",
+        "research-shjs-2025-656",
+        "research-shjs-2025-655"
+      ],
+      "generated_by": "assistant_evidence_synthesis",
+      "research_brief": {
+        "headline": "乡村参与的关键是关系与自主空间怎样被组织",
+        "development": {
+          "text": "这些案例把农民参与进一步分解为关系位置、资源连接和技术可改造性，显示项目投入如何通过地方社会结构产生不同结果。",
+          "evidence_record_ids": [
+            "algorithm-society-20378",
+            "algorithm-society-20821",
+            "research-shjs-2025-656",
+            "research-shjs-2025-655"
+          ]
+        },
+        "consensus": [
+          {
+            "text": "关系网络与组织中介是外部项目进入地方行动的重要环节：圈层影响合作和责任，乡情重组与乡土关系影响资源连接。",
+            "evidence_record_ids": [
+              "algorithm-society-20378",
+              "research-shjs-2025-656",
+              "research-shjs-2025-655"
+            ]
+          }
+        ],
+        "differences": [
+          {
+            "text": "乡情与场景研究强调地方关系的动员能力；轻钢项目却表明，技术标准化可能压缩改造空间。参与机会增加与自主能力增强因此需要分别检验。",
+            "evidence_record_ids": [
+              "algorithm-society-20821",
+              "research-shjs-2025-656",
+              "research-shjs-2025-655"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "text": "材料涉及村庄保护项目、轻钢住宅建造、广东社区营造与苏南薄弱村转型等案例，比较对象是机制及条件，并非统一效果指标。",
+            "evidence_record_ids": [
+              "algorithm-society-20378",
+              "algorithm-society-20821",
+              "research-shjs-2025-656",
+              "research-shjs-2025-655"
+            ]
+          }
+        ],
+        "research_implication": {
+          "text": "评估乡村参与项目时，可分别记录谁能表达需求、谁能修改技术方案、谁掌握资源入口，以及项目退出后地方是否仍能自主行动。",
+          "evidence_record_ids": [
+            "algorithm-society-20378",
+            "algorithm-society-20821",
+            "research-shjs-2025-656",
+            "research-shjs-2025-655"
+          ]
+        },
+        "priority_reads": [
+          {
+            "record_id": "algorithm-society-20378",
+            "reason": "先识别参与者在村庄关系圈层中的位置。"
+          },
+          {
+            "record_id": "algorithm-society-20821",
+            "reason": "用技术依赖案例检查参与是否真正转化为自主性。"
+          },
+          {
+            "record_id": "research-shjs-2025-656",
+            "reason": "再看中介组织如何把情感资源变为协作关系。"
+          }
+        ],
+        "evidence_record_ids": [
+          "algorithm-society-20378",
+          "algorithm-society-20821",
+          "research-shjs-2025-656",
+          "research-shjs-2025-655"
+        ]
+      }
+    }
+  ]
+}
