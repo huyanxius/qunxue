@@ -8,6 +8,7 @@ import {
   registrationCodeFailureMessage,
   registrationFailureMessage,
 } from './accountApi'
+import { requestPasswordResetViaApi } from './accountApi'
 import { AccountPaperShader } from './AccountPaperShader'
 import './account.css'
 
@@ -155,6 +156,7 @@ export function LoginPage({
             </button>
           </div>
         </div>
+        <p className="account-switch"><a href="/forgot-password">忘记密码？</a></p>
         {error ? <p className="account-error" role="alert">{error}</p> : null}
         <button className="account-primary" type="submit" disabled={submitting}>
           {submitting ? '正在登录…' : '登录并继续'}
@@ -300,6 +302,61 @@ export function RegisterPage({
           </button>
         </form>
       )}
+    </AccountPortal>
+  )
+}
+
+
+export function ForgotPasswordPage({
+  onRequestReset = requestPasswordResetViaApi,
+  loginHref,
+}: {
+  onRequestReset?(email: string): Promise<{ resendAfterSeconds: number }>
+  loginHref: string
+}) {
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState(false)
+  const [resendAfter, setResendAfter] = useState(0)
+
+  useEffect(() => {
+    if (resendAfter <= 0) return
+    const timer = window.setTimeout(() => setResendAfter((value) => Math.max(0, value - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendAfter])
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (submitting || resendAfter > 0) return
+    const email = String(new FormData(event.currentTarget).get('email') ?? '').trim()
+    if (!emailPattern.test(email) || email.length > 320) {
+      setError('请输入有效的邮箱地址。')
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      const response = await onRequestReset(email)
+      setSent(true)
+      setResendAfter(response.resendAfterSeconds)
+    } catch {
+      setError('重置邮件暂时无法发送，请稍后重试。')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <AccountPortal kind="login" title="找回密码" formLabel="重设研究档案密码"
+      switcher={<p className="account-switch"><a href={loginHref}>返回登录</a></p>}>
+      <form className="account-form" onSubmit={submit} noValidate>
+        <label><span>邮箱</span><input name="email" type="email" autoComplete="email" maxLength={320} required /></label>
+        {sent ? <p className="account-notice" role="status">如果该邮箱已注册，我们会发送一封重置邮件。链接在 15 分钟内有效，请同时检查垃圾邮件。</p> : null}
+        {error ? <p className="account-error" role="alert">{error}</p> : null}
+        <button className="account-primary" type="submit" disabled={submitting || resendAfter > 0}>
+          {submitting ? '正在发送…' : resendAfter > 0 ? `${resendAfter} 秒后可重新发送` : '发送重置链接'}
+        </button>
+      </form>
     </AccountPortal>
   )
 }

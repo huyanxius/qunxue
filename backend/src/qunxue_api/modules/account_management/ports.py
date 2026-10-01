@@ -117,7 +117,7 @@ class AccountRepository(Protocol):
         reset_id: UUID,
         user_id: UUID,
         token_digest: str,
-        requested_by_user_id: UUID,
+        requested_by_user_id: UUID | None,
         now: datetime,
         expires_at: datetime,
     ) -> dict[str, object]: ...
@@ -129,6 +129,11 @@ class AccountRepository(Protocol):
         password_hash: str,
         now: datetime,
     ) -> UUID: ...
+
+    def reserve_password_reset_requests(
+        self, *, scopes: tuple[tuple[str, int, int], ...], now: datetime,
+        window_seconds: int,
+    ) -> bool: ...
 
     def create_export(
         self,

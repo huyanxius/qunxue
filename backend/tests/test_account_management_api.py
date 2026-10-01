@@ -971,3 +971,173 @@ def test_export_includes_audit_rows_where_the_user_is_the_target_not_the_actor(
     serialized = json.dumps(payload, ensure_ascii=False)
     assert "password_reset.issued" in serialized
     assert reset.json()["reset_token"] not in serialized
+
+def test_self_service_recovery_is_generic_and_revokes_old_sessions(client):
+    from urllib.parse import parse_qs, urlsplit
+
+    class EmailProvider:
+        def __init__(self):
+            self.deliveries = []
+
+        def send_password_reset(self, email, reset_url):
+            self.deliveries.append((email, reset_url))
+
+    provider = EmailProvider()
+    client.app.state.email_provider = provider
+    register(client, "recover@example.com")
+    login(client, "recover@example.com")
+    response = client.post(
+        "/api/account/password-resets/request",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "recover@example.com"},
+    )
+    assert response.status_code == 202, response.text
+    assert response.headers["cache-control"] == "no-store"
+    assert len(provider.deliveries) == 1
+    url = urlsplit(provider.deliveries[0][1])
+    assert url.path == "/password-reset" and not url.query
+    token = parse_qs(url.fragment)["token"][0]
+    repeated = client.post(
+        "/api/account/password-resets/request",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "absent@example.com"},
+    )
+    assert repeated.status_code == 202 and repeated.json() == response.json()
+    assert len(provider.deliveries) == 1
+    consumed = client.post(
+        "/api/account/password-resets/consume",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"token": token, "new_password": "replacement-passphrase"},
+    )
+    assert consumed.status_code == 200, consumed.text
+    assert client.get("/api/account").status_code == 401
+    replay = client.post(
+        "/api/account/password-resets/consume",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"token": token, "new_password": "another-passphrase"},
+    )
+    assert replay.status_code == 410
+    login(client, "recover@example.com", password="replacement-passphrase")
+
+
+def test_self_service_recovery_without_email_returns_capability_error(client):
+    client.app.state.email_provider = None
+    response = client.post(
+        "/api/account/password-resets/request",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "absent@example.com"},
+    )
+    assert response.status_code == 503
+
+
+@pytest.mark.parametrize("token_case", ["invalid", "expired"])
+def test_recovery_rejects_bad_tokens_without_changing_password(client, token_case):
+    from urllib.parse import parse_qs, urlsplit
+
+    class EmailProvider:
+        deliveries = []
+
+        def send_password_reset(self, email, reset_url):
+            self.deliveries.append(reset_url)
+
+    provider = EmailProvider()
+    client.app.state.email_provider = provider
+    register(client, "token-check@example.com")
+    login(client, "token-check@example.com")
+    response = client.post(
+        "/api/account/password-resets/request",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"email": "token-check@example.com"},
+    )
+    assert response.status_code == 202
+    token = parse_qs(urlsplit(provider.deliveries[-1]).fragment)["token"][0]
+    if token_case == "invalid":
+        token = "invalid-token-that-has-never-been-issued"
+    else:
+        with client.app.state.database.engine.begin() as connection:
+            connection.execute(
+                text(
+                    "UPDATE account_password_resets SET expires_at='2000-01-01 00:00:00'"
+                )
+            )
+    response = client.post(
+        "/api/account/password-resets/consume",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"token": token, "new_password": "replacement-passphrase"},
+    )
+    assert response.status_code == 410
+    assert client.get("/api/account").status_code == 200
+    login(client, "token-check@example.com")
+
+
+def test_recovery_preserves_email_cooldown_and_hourly_limit(client):
+    from datetime import timedelta
+
+    register(client, "limited@example.com")
+    now = datetime(2026, 10, 1, tzinfo=UTC)
+
+    def request(at, email="limited@example.com"):
+        with client.app.state.account_management_service_scope() as service:
+            service._clock = lambda: at
+            return service.request_password_reset(
+                email=email, client_key="isolated-client"
+            )
+
+    assert request(now) is not None
+    assert request(now + timedelta(seconds=3)) is None
+    for minute in range(1, 5):
+        assert request(now + timedelta(minutes=minute)) is not None
+    assert request(now + timedelta(minutes=5)) is None
+    assert request(now + timedelta(hours=1)) is not None
+    with client.app.state.database.engine.connect() as connection:
+        keys = (
+            connection.execute(text("SELECT scope_key FROM password_reset_rate_limits"))
+            .scalars()
+            .all()
+        )
+    assert all("limited@example.com" not in key for key in keys)
+
+
+def test_unknown_recovery_address_uses_same_cooldown_gates(client):
+    from datetime import timedelta
+
+    now = datetime(2026, 10, 1, tzinfo=UTC)
+    for seconds in (0, 3):
+        with client.app.state.account_management_service_scope() as service:
+            service._clock = lambda seconds=seconds: now + timedelta(seconds=seconds)
+            assert (
+                service.request_password_reset(
+                    email="absent@example.com", client_key="isolated-client"
+                )
+                is None
+            )
+    with client.app.state.database.engine.connect() as connection:
+        count = connection.execute(
+            text(
+                "SELECT request_count FROM password_reset_rate_limits "
+                "WHERE scope_key LIKE 'email:%'"
+            )
+        ).scalar_one()
+    assert count == 1
+
+def test_recovery_cooldown_burst_cannot_exhaust_global_capacity(client):
+    now = datetime(2026, 10, 1, tzinfo=UTC)
+    for _ in range(120):
+        with client.app.state.account_management_service_scope() as service:
+            service._clock = lambda: now
+            service.request_password_reset(
+                email="unknown@example.com", client_key="burst-client"
+            )
+    with client.app.state.account_management_service_scope() as service:
+        service._clock = lambda: now
+        service.request_password_reset(
+            email="other-unknown@example.com", client_key="other-client"
+        )
+    with client.app.state.database.engine.connect() as connection:
+        count = connection.execute(
+            text(
+                "SELECT request_count FROM password_reset_rate_limits "
+                "WHERE scope_key='global'"
+            )
+        ).scalar_one()
+    assert count == 2

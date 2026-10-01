@@ -138,7 +138,10 @@ class CourseKnowledgeGenerator:
             {"segment_id": str(i), "text": item["text"]} for i, item in enumerate(batch)
         ]
         if _is_deepseek_flash(base_url=endpoint.base_url, model=endpoint.model):
-            settings["extra_body"] = {"thinking": {"type": "disabled"}}
+            settings["extra_body"] = {"thinking": {"type": "enabled"}}
+            settings["openai_reasoning_effort"] = "high"
+        if endpoint.store is not None:
+            settings["openai_store"] = endpoint.store
         if endpoint.extra_headers:
             settings["extra_headers"] = dict(endpoint.extra_headers)
         async with AsyncOpenAI(

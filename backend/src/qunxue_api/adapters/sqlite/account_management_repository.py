@@ -1,9 +1,10 @@
 from collections import deque
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import MetaData, delete, func, or_, select, tuple_, update
+from sqlalchemy import MetaData, case, delete, func, or_, select, tuple_, update
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,7 @@ from qunxue_api.adapters.sqlite.account_management_model import (
     AccountMutationRequestRow,
     AccountPasswordResetRow,
     AccountSystemStateRow,
+    PasswordResetRateLimitRow,
     PersonalDataExportRow,
     UserPreferenceRow,
 )
@@ -485,7 +487,7 @@ class SqliteAccountRepository:
         reset_id: UUID,
         user_id: UUID,
         token_digest: str,
-        requested_by_user_id: UUID,
+        requested_by_user_id: UUID | None,
         now: datetime,
         expires_at: datetime,
     ) -> dict[str, object]:
@@ -503,7 +505,7 @@ class SqliteAccountRepository:
             reset_id=str(reset_id),
             user_id=str(user_id),
             token_digest=token_digest,
-            requested_by_user_id=str(requested_by_user_id),
+            requested_by_user_id=str(requested_by_user_id) if requested_by_user_id else None,
             created_at=now,
             expires_at=expires_at,
             used_at=None,
@@ -523,17 +525,20 @@ class SqliteAccountRepository:
         password_hash: str,
         now: datetime,
     ) -> UUID:
-        row = self._db.scalar(
-            select(AccountPasswordResetRow).where(
-                AccountPasswordResetRow.token_digest == token_digest
-            )
+        claimed_user_id = self._db.scalar(
+            update(AccountPasswordResetRow).where(
+                AccountPasswordResetRow.token_digest == token_digest,
+                AccountPasswordResetRow.used_at.is_(None),
+                AccountPasswordResetRow.expires_at > now,
+            ).values(used_at=now).returning(AccountPasswordResetRow.user_id)
         )
-        if row is None or row.used_at is not None:
+        if claimed_user_id is None:
+            row = self._db.scalar(select(AccountPasswordResetRow).where(
+                AccountPasswordResetRow.token_digest == token_digest))
+            if row is not None and row.used_at is None and _as_utc(row.expires_at) <= now:
+                raise ExpiredAccountToken
             raise InvalidPasswordReset
-        if _as_utc(row.expires_at) <= now:
-            raise ExpiredAccountToken
-        row.used_at = now
-        user_id = UUID(row.user_id)
+        user_id = UUID(claimed_user_id)
         self.change_password(
             user_id=user_id,
             password_hash=password_hash,
@@ -542,6 +547,45 @@ class SqliteAccountRepository:
             now=now,
         )
         return user_id
+
+    def reserve_password_reset_requests(
+        self, *, scopes: tuple[tuple[str, int, int], ...], now: datetime,
+        window_seconds: int,
+    ) -> bool:
+        # A rejected client/email gate must not consume an earlier global gate.
+        # Keep this transaction detail behind the repository boundary.
+        with self._db.begin_nested() as reservation:
+            for scope_key, cooldown_seconds, limit in scopes:
+                if not self._reserve_password_reset_request(
+                    scope_key=scope_key, now=now,
+                    cooldown_seconds=cooldown_seconds,
+                    window_seconds=window_seconds, limit=limit,
+                ):
+                    reservation.rollback()
+                    return False
+        return True
+
+    def _reserve_password_reset_request(
+        self, *, scope_key: str, now: datetime,
+        cooldown_seconds: int, window_seconds: int, limit: int,
+    ) -> bool:
+        table = PasswordResetRateLimitRow.__table__
+        self._db.execute(delete(table).where(table.c.updated_at < now - timedelta(days=2)))
+        expired = table.c.window_started_at <= now - timedelta(seconds=window_seconds)
+        next_allowed = now + timedelta(seconds=cooldown_seconds)
+        statement = sqlite_insert(table).values(
+            scope_key=scope_key, window_started_at=now, request_count=1,
+            next_allowed_at=next_allowed, updated_at=now,
+        ).on_conflict_do_update(
+            index_elements=[table.c.scope_key],
+            set_={
+                "window_started_at": case((expired, now), else_=table.c.window_started_at),
+                "request_count": case((expired, 1), else_=table.c.request_count + 1),
+                "next_allowed_at": next_allowed, "updated_at": now,
+            },
+            where=(table.c.next_allowed_at <= now) & (expired | (table.c.request_count < limit)),
+        ).returning(table.c.scope_key)
+        return self._db.scalar(statement) is not None
 
     def create_export(
         self,

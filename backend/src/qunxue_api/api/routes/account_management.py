@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import subprocess
 import tempfile
@@ -7,7 +8,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, status
 
 from qunxue_api.api.contracts.account_management import (
     AccountAuditPageResponse,
@@ -38,6 +39,8 @@ from qunxue_api.api.contracts.account_management import (
     PasswordResetConsumeRequest,
     PasswordResetConsumeResponse,
     PasswordResetLinkResponse,
+    PasswordResetRequest,
+    PasswordResetRequestResponse,
     RevokeSessionResponse,
     UpdateModelDataAuthorizationRequest,
     UpdatePreferencesRequest,
@@ -46,7 +49,10 @@ from qunxue_api.api.contracts.account_management import (
 from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
-from qunxue_api.modules.account_management import AccountManagementService
+from qunxue_api.modules.account_management import (
+    AccountCapabilityUnavailable,
+    AccountManagementService,
+)
 from qunxue_api.modules.billing import (
     INPUT_TOKENS_PER_CREDIT,
     OUTPUT_TOKENS_PER_CREDIT,
@@ -303,6 +309,45 @@ def change_account_password(
             idempotency_key=idempotency_key,
         )
     )
+
+
+def _send_recovery_email(provider, email: str, reset_url: str) -> None:
+    try:
+        provider.send_password_reset(email, reset_url)
+    except Exception:
+        logging.getLogger("qunxue.email").error("Password recovery email delivery failed")
+
+
+@account_router.post(
+    "/password-resets/request",
+    operation_id="request_account_password_reset",
+    response_model=PasswordResetRequestResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def request_account_password_reset(
+    payload: PasswordResetRequest,
+    request: Request,
+    response: Response,
+    background_tasks: BackgroundTasks,
+    _idempotency_key: IdempotencyKey,
+) -> PasswordResetRequestResponse:
+    provider = request.app.state.email_provider
+    if provider is None or not callable(getattr(provider, "send_password_reset", None)):
+        raise AccountCapabilityUnavailable("Password recovery email is temporarily unavailable")
+    # Commit the token before sending, without holding a transaction during network I/O.
+    with request.app.state.account_management_service_scope() as service:
+        delivery = service.request_password_reset(
+            email=payload.email,
+            client_key=request.client.host if request.client else "unknown",
+        )
+    if delivery is not None:
+        email, token = delivery
+        origin = request.app.state.settings.password_reset_origin
+        background_tasks.add_task(
+            _send_recovery_email, provider, email, f"{origin}/password-reset#token={token}",
+        )
+    response.headers["Cache-Control"] = "no-store"
+    return PasswordResetRequestResponse()
 
 
 @account_router.post(

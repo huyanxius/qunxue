@@ -1171,7 +1171,7 @@ def test_sqlite_application_persists_tool_summary_for_interrupted_run(client) ->
         ]
 
 
-def test_deepseek_flash_disables_thinking_by_default() -> None:
+def test_deepseek_flash_keeps_production_high_reasoning() -> None:
     runner = PydanticAIKnowledgeRunner(
         base_url="https://api.deepseek.com",
         api_key="local-test-key",
@@ -1182,7 +1182,8 @@ def test_deepseek_flash_disables_thinking_by_default() -> None:
     assert runner._agent.model.settings == {
         "timeout": 30,
         "max_tokens": 2400,
-        "extra_body": {"thinking": {"type": "disabled"}},
+        "extra_body": {"thinking": {"type": "enabled"}},
+        "openai_reasoning_effort": "high",
     }
     assert runner._usage_limits.request_limit == 12
     assert runner._usage_limits.tool_calls_limit == 20
@@ -1210,7 +1211,7 @@ def test_agent_builds_independent_settings_without_leaking_deepseek_options_to_f
     fallback = primary._endpoint_models["fallback-1"]
 
     assert primary.settings is not fallback.settings
-    assert primary.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert primary.settings["extra_body"] == {"thinking": {"type": "enabled"}}
     assert "extra_body" not in fallback.settings
     assert fallback.model_name == "gpt-5.6-sol"
 
@@ -1238,7 +1239,7 @@ def test_agent_applies_deepseek_options_to_a_deepseek_fallback_only() -> None:
 
     assert primary.settings is not fallback.settings
     assert "extra_body" not in primary.settings
-    assert fallback.settings["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert fallback.settings["extra_body"] == {"thinking": {"type": "enabled"}}
     assert fallback.model_name == "deepseek-v4-flash"
 
 
@@ -1339,7 +1340,7 @@ def test_agent_fallback_call_merges_its_defaults_with_runtime_overrides(
     assert fallback_settings["max_tokens"] == 777
     if fallback_model == "deepseek-v4-flash":
         assert fallback_settings["extra_body"] == {
-            "thinking": {"type": "disabled"}
+            "thinking": {"type": "enabled"}
         }
     else:
         assert "extra_body" not in fallback_settings

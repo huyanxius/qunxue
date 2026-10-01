@@ -1,5 +1,5 @@
 export { AccountProvider, useAccount } from './AccountProvider'
-export { LoginPage, RegisterPage } from './AccountPages'
+export { ForgotPasswordPage, LoginPage, RegisterPage } from './AccountPages'
 export { AccountSettingsPage } from './AccountSettingsPage'
 export { AdminUsersPage } from './AdminUsersPage'
 export { AdminOperationsPage } from './AdminOperationsPage'

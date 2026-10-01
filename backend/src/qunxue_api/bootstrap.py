@@ -994,6 +994,16 @@ def create_app(
                     ),
                     timeout_seconds=resolved_settings.model_timeout_seconds,
                     extra_headers=primary_endpoint.extra_headers,
+                    fallback_model_settings={
+                        endpoint.endpoint_id: {
+                            "extra_headers": dict(endpoint.extra_headers),
+                            **(
+                                {"openai_store": endpoint.store}
+                                if endpoint.store is not None else {}
+                            ),
+                        }
+                        for endpoint in agent_endpoints[1:]
+                    },
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                     direct_task=teaching,
@@ -1488,6 +1498,7 @@ def _model_provider_from_settings(
             timeout_seconds=endpoint.timeout_seconds,
             capability_tier=runtime_mode,
             extra_headers=dict(endpoint.extra_headers),
+            store=endpoint.store,
             probe_transport=probe_transport,
         )
         for endpoint in endpoints
@@ -1511,7 +1522,15 @@ def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, .
             model=endpoint.model,
             timeout_seconds=endpoint.timeout_seconds,
             provider="openai-compatible",
-            extra_headers=dict(headers),
+            extra_headers=(
+                dict(headers)
+                if endpoint.extra_headers is None
+                else {
+                    name: value.get_secret_value()
+                    for name, value in endpoint.extra_headers.items()
+                }
+            ),
+            store=endpoint.store,
         )
         for endpoint in settings.resolved_model_endpoints()
     )
