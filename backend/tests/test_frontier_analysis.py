@@ -47,7 +47,6 @@ def _persistence_records(prior_count: int = 3) -> list[dict]:
 @pytest.mark.parametrize(
     ("age", "days_30", "days_90", "days_180", "growth_prior", "previous_90"),
     [
-        (-1, 0, 0, 0, 0, 0),
         (0, 1, 1, 1, 0, 0),
         (29, 1, 1, 1, 0, 0),
         (30, 0, 1, 1, 1, 0),
@@ -113,15 +112,15 @@ def test_invalid_or_non_calendar_dates_are_not_treated_as_day_precision(publishe
     assert result["counts"]["dated"] == 0
 
 
-def test_undated_and_future_records_remain_auditable_without_inflating_windows() -> None:
+def test_future_records_are_absent_from_historical_evidence_and_summary() -> None:
     result = _topic([_record("past", 5), _record("undated", None), _record("future", -5)])
-    assert result["counts"]["total"] == 3
+    assert result["counts"]["total"] == 2
     assert result["counts"]["dated"] == 1
     assert result["counts"]["undated"] == 1
-    assert result["counts"]["future_dated"] == 1
+    assert result["counts"]["future_dated"] == 0
     assert result["counts"]["days_30"] == 1
-    assert result["record_ids"] == ["future", "past", "undated"]
-    assert {row["date_status"] for row in result["evidence"]} == {"dated", "undated", "future"}
+    assert result["record_ids"] == ["past", "undated"]
+    assert {row["date_status"] for row in result["evidence"]} == {"dated", "undated"}
 
 
 def test_canonical_studies_are_deduplicated_but_all_record_references_remain() -> None:
