@@ -22,8 +22,10 @@ function Harness() {
   return <FrontierPage data={data} state={state} onStateChange={setState} onOpenLibrary={() => {}} />
 }
 afterEach(cleanup)
-it('defaults to a substantive corpus overview, with practice separated and citations readable', () => {
+it('opens the complete review from the date-first home, with practice separated and citations readable', () => {
   render(<Harness />)
+  expect(screen.getByText(corpus.overview!.summary)).not.toBeVisible()
+  fireEvent.click(screen.getByText('阅读完整研究综述'))
   expect(screen.getByRole('heading', { name: '研究总览' })).toBeVisible()
   expect(screen.getByText(corpus.overview!.summary)).toBeVisible()
   expect(screen.getByRole('heading', { name: '研究方法的特点' })).toBeVisible()
@@ -31,10 +33,11 @@ it('defaults to a substantive corpus overview, with practice separated and citat
   expect(screen.queryByRole('region', { name: '最新收录' })).not.toBeInTheDocument()
   const controls = screen.getByRole('group', { name: '学术前沿视图' })
   expect(controls).toHaveClass('qx-selection-control')
-  expect(within(controls).getByRole('button', { name: '研究总览' })).toHaveAttribute('aria-pressed', 'true')
+  expect(within(controls).getByRole('button', { name: '值得关注' })).toHaveAttribute('aria-pressed', 'true')
   fireEvent.click(screen.getByRole('button', { name: '阅读文献 1' }))
   expect(screen.getByRole('heading', { name: research[0].title, level: 1 })).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: '返回资料列表' }))
+  fireEvent.click(screen.getByText('阅读完整研究综述'))
   expect(screen.getByRole('heading', { name: '研究总览' })).toBeVisible()
   fireEvent.click(within(screen.getByRole('group', { name: '学术前沿视图' })).getByRole('button', { name: '全部文献' }))
   expect(screen.getByRole('region', { name: '最新收录' })).toBeVisible()
@@ -52,11 +55,12 @@ it('does not label selected topic summaries or a partial/stale corpus as a compl
 it('keeps large evidence sets expandable instead of flooding the overview with citation chips', () => {
   const enlarged = { ...corpus, overview: { ...corpus.overview!, sections: [{ id: 'methods', title: '方法综合', statements: [{ text: '全量方法分析。', evidenceRecordIds: ids }] }] } };
   render(<FrontierPage data={{ ...data, corpusOverview: enlarged }} state={readFrontierState(new URLSearchParams())} onStateChange={() => {}} onOpenLibrary={() => {}} />);
+  fireEvent.click(screen.getByText('阅读完整研究综述'));
   expect(screen.getAllByRole('button', { name: /^阅读文献 / })).toHaveLength(3);
   const expand = screen.getByRole('button', { name: `查看这条结论的全部 ${ids.length} 篇依据` });
   expect(expand).toHaveTextContent(`查看${ids.length}篇依据`);
   fireEvent.click(expand);
-  expect(within(screen.getByRole('article')).getByRole('button', { name: research.at(-1)!.title })).toBeVisible();
+  expect(within(within(screen.getByRole('region', { name: '研究总览' })).getByRole('article')).getByRole('button', { name: research.at(-1)!.title })).toBeVisible();
   expect(screen.getByRole('navigation', { name: '总览章节' })).toBeVisible();
 });
 
@@ -64,6 +68,7 @@ it('does not present unclassified records or missing extraction fields as resear
   const missing = { key: 'unknown', label: '未知数据字段', count: 244, recordIds: ids };
   const stats = { ...corpus.statistics, topicDistribution: [{ key: 'uncategorized', label: '待归类的研究线索', count: 112, recordIds: ids }], methodDistribution: [missing], dataDistribution: [missing] };
   render(<FrontierPage data={{ ...data, corpusOverview: { ...corpus, statistics: stats } }} state={readFrontierState(new URLSearchParams())} onStateChange={() => {}} onOpenLibrary={() => {}} />);
+  fireEvent.click(screen.getByText('阅读完整研究综述'));
   expect(screen.queryByText('未知数据字段')).not.toBeInTheDocument();
   expect(screen.queryByText('待归类的研究线索')).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: '发表年份' })).toBeVisible();
@@ -77,6 +82,7 @@ it('numbers cited papers by first appearance while preserving the full coverage 
   ] };
   const stats = { ...corpus.statistics, yearDistribution: [2025, 2026, 2024, 2023, 2022].map((year) => ({ key: String(year), label: String(year), count: 1, recordIds: [ids[0]] })) };
   render(<FrontierPage data={{ ...data, corpusOverview: { ...corpus, overview, statistics: stats } }} state={readFrontierState(new URLSearchParams())} onStateChange={onChange} onOpenLibrary={() => {}} />);
+  fireEvent.click(screen.getByText('阅读完整研究综述'));
   fireEvent.click(screen.getByRole('button', { name: '阅读文献 1' }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ record: ids.at(-1) }));
   expect(screen.getAllByRole('button', { name: '阅读文献 2' })).toHaveLength(2);

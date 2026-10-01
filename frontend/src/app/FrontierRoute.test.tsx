@@ -47,7 +47,10 @@ const routeDataset: FrontierDataset = {
 const readDataset = vi.hoisted(() => vi.fn());
 vi.mock("../modules/frontier/frontierApi", () => ({
   readFrontierDataset: readDataset,
+  readFrontierCalendar: vi.fn(async () => null),
+  readFrontierPeriod: vi.fn(async () => null),
 }));
+vi.mock("../modules/frontier/FrontierRecordInsights", () => ({ FrontierRecordInsights: () => null }));
 beforeEach(() => readDataset.mockResolvedValue(routeDataset));
 afterEach(() => {
   cleanup();
@@ -82,7 +85,7 @@ it("keeps the frontier route offline and restores query and detail through brows
     </MemoryRouter>,
   );
   const searchbox = await screen.findByRole("searchbox");
-  expect(screen.getByRole("heading", { name: "学术前沿", level: 1 })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "10月1日", level: 1 })).toBeVisible();
   expect(screen.queryByRole("navigation", { name: "知识库栏目" })).not.toBeInTheDocument();
   const navigation = within(screen.getByRole("navigation", { name: "桌面主导航" }));
   expect(navigation.getByRole("button", { name: "知识库" })).toHaveAttribute("aria-expanded", "true");

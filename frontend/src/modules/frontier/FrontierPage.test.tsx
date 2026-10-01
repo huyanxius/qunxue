@@ -12,8 +12,9 @@ import { FrontierPage } from "./FrontierPage";
 import { readFrontierState, type FrontierState } from "./model";
 
 function Harness({ initial }: { initial?: Partial<FrontierState> }) {
-  const [state, setState] = useState({
+  const [state, setState] = useState<FrontierState>({
     ...readFrontierState(new URLSearchParams()),
+    landingView: "papers" as const,
     ...initial,
   });
   return (
@@ -147,6 +148,7 @@ it("keeps cross-paper briefs, topic evidence and source filters functional in th
     return <FrontierPage data={{ ...testDataset, topics: [topic] }} state={state} onStateChange={setState} onOpenLibrary={vi.fn()} />;
   }
   render(<TopicHarness />);
+  fireEvent.click(screen.getByRole('button', { name: '研究议题' }));
   expect(screen.getByText(topic.editorialBrief.summary)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: '分析 组织研究' }));
   expect(screen.getByText(topic.editorialBrief.whyItMatters)).toBeVisible();

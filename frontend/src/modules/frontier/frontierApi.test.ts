@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { frontierRecords } from "./__fixtures__/catalog";
-import { readFrontierDataset, topicView, corpusOverviewView } from "./frontierApi";
+import { readFrontierDataset, readFrontierPeriod, readFrontierCalendar, readFrontierKnowledgeLinks, topicView, corpusOverviewView } from "./frontierApi";
 const sdk = vi.hoisted(() => ({
   searchFrontierRecords: vi.fn(),
   listFrontierTopics: vi.fn(),
   listFrontierSources: vi.fn(),
   getFrontierStatus: vi.fn(),
+  getFrontierCalendar: vi.fn(),
+  getFrontierPeriodReport: vi.fn(),
+  getFrontierKnowledgeLinks: vi.fn(),
   getFrontierOverview: vi.fn(),
 }));
 vi.mock("../../api/generated/sdk.gen", () => sdk);
@@ -86,4 +89,32 @@ it('maps a full-corpus overview with exact coverage, references and statistic me
   expect(result.overview?.sections[0].statements[0].evidenceRecordIds).toEqual(['r1']);
   expect(result.statistics.methodDistribution[0].recordIds).toEqual(['r1']);
   expect(result.statistics.practiceCount).toBe(1);
+});
+
+it("loads real calendar, period report and read-only knowledge leads through the SDK", async () => {
+  sdk.getFrontierCalendar.mockResolvedValue({data:{year:2026,days:[]}});
+  sdk.getFrontierPeriodReport.mockResolvedValue({data:{current_share:null,semantic_status:"not_assessed"}});
+  sdk.getFrontierKnowledgeLinks.mockResolvedValue({data:{record_id:"r",matches:[]}});
+  expect((await readFrontierCalendar("2026-01-20")).year).toBe(2026);
+  expect((await readFrontierPeriod("youth-research","2026-01-20")).current_share).toBeNull();
+  expect((await readFrontierKnowledgeLinks("r")).record_id).toBe("r");
+  expect(sdk.getFrontierCalendar).toHaveBeenCalledWith({client:{},query:{year:2026,as_of:"2026-01-20"}});
+  expect(sdk.getFrontierPeriodReport.mock.calls[0][0].query).toMatchObject({topic_key:"youth",as_of:"2026-01-20",previous_start:"2024-01-01",current_start:"2025-01-01",previous_end:"2024-12-31",current_end:"2025-12-31"});
+  expect(sdk.getFrontierKnowledgeLinks.mock.calls[0][0].path).toEqual({record_id:"r"});
+});
+
+it('requests explicit complete annual windows for a real topic ID and historical cutoff', async () => {
+  sdk.getFrontierPeriodReport.mockResolvedValue({data:{comparability:'complete_common_cohort',coverage_scope:'fixed_issue_sample'}});
+  await readFrontierPeriod('organization-research', '2026-01-20', 2024);
+  expect(sdk.getFrontierPeriodReport.mock.calls[0][0].query).toEqual({
+    previous_start:'2023-01-01', previous_end:'2023-12-31',
+    current_start:'2024-01-01', current_end:'2024-12-31',
+    topic_key:'organization', as_of:'2026-01-20',
+  });
+});
+
+it('does not accept an open comparison year or malformed as_of', async () => {
+  await expect(readFrontierPeriod('organization-research', '2026-01-20', 2026)).rejects.toThrow();
+  await expect(readFrontierPeriod('organization-research', '2026-02-30', 2024)).rejects.toThrow();
+  expect(sdk.getFrontierPeriodReport).not.toHaveBeenCalled();
 });
