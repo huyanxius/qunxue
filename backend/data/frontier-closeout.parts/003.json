@@ -1,0 +1,5449 @@
+[
+  {
+    "id": "research-shjs-2023-52",
+    "external_id": "shjs.ruc.edu.cn:article:52",
+    "title": "国家逻辑、市场逻辑与公益伦理：中国社会组织研究领域的多重分析视角",
+    "authors": [
+      "董慧娜"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01/42",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-01-20",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章比较研究社会组织的国家、市场与公益伦理三种视角，指出前两者强调外部约束，公益伦理则解释组织内部活力与自主性，三者相互补充。",
+    "research_question": "不同分析视角怎样解释中国社会组织的分化发展？",
+    "methods": "社会组织研究中三类理论视角的比较梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "国家与市场逻辑可能共同构成组织发展的双重约束。",
+      "关注内部伦理认知，可补充只从资源与制度环境解释组织行动的不足。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会组织与慈善"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art52 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art52 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:1",
+    "why_read": "为选择社会组织研究的解释层次和变量提供理论地图。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章比较研究社会组织的国家、市场与公益伦理三种视角，指出前两者强调外部约束，公益伦理则解释组织内部活力与自主性，三者相互补充。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "不同分析视角怎样解释中国社会组织的分化发展？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "社会组织研究中三类理论视角的比较梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "国家与市场逻辑可能共同构成组织发展的双重约束。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "关注内部伦理认知，可补充只从资源与制度环境解释组织行动的不足。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-52",
+    "private_source_record_sha256": "9ff927de161c1ef09f72eb9c28993b116690cba4b3ae888d03220f8c2071fd40"
+  },
+  {
+    "id": "research-shjs-2023-53",
+    "external_id": "shjs.ruc.edu.cn:article:53",
+    "title": "多元化筹资与“过渡治理”——基于福建省晋江市长护险筹资实践的考察",
+    "authors": [
+      "陈泽霖",
+      "陈旻"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01/57",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-01-20",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究从晋江长护险筹资实践讨论试点转向推广时的过渡形态，指出多元筹资涉及主体、结构和规则调整，需要协调制度统一、地方资源与治理有效性。",
+    "research_question": "长期护理保险转向多元筹资时，地方如何协调制度与治理需要？",
+    "methods": "福建晋江长期护理保险筹资实践考察",
+    "data": null,
+    "sample": "福建省晋江市长护险筹资实践",
+    "findings": [
+      "筹资转型在参与主体、结构和规则上呈现过渡特征。",
+      "持续创新需要兼顾合法、合理与地方情境，充分运用社会资源。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "老龄化与照护"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art53 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art53 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:1",
+    "why_read": "有助于理解长护险筹资不仅是财务安排，也是地方治理过程。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究从晋江长护险筹资实践讨论试点转向推广时的过渡形态，指出多元筹资涉及主体、结构和规则调整，需要协调制度统一、地方资源与治理有效性。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "长期护理保险转向多元筹资时，地方如何协调制度与治理需要？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "福建晋江长期护理保险筹资实践考察",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "筹资转型在参与主体、结构和规则上呈现过渡特征。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "持续创新需要兼顾合法、合理与地方情境，充分运用社会资源。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-53",
+    "private_source_record_sha256": "38364b6828628754f05684d354ae70997e72965f24b69e896010658b524d36ce"
+  },
+  {
+    "id": "research-shjs-2023-54",
+    "external_id": "shjs.ruc.edu.cn:article:54",
+    "title": "组织统合：乡村慈善的发展逻辑与治理效能——以福建省晋江市A村为例",
+    "authors": [
+      "杜鹏"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01/70",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-01-20",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究以晋江村庄慈善为例，指出宗族伦理在市场化分化中，经基层组织动员和协调，逐渐转向面向全村的公共实践，并把社会竞争导向共同建设。",
+    "research_question": "乡村慈善如何从伦理实践发展为公共治理资源？",
+    "methods": "福建晋江市A村案例研究",
+    "data": null,
+    "sample": "福建省晋江市A村",
+    "findings": [
+      "基层组织通过精英动员、动力调节和社会吸纳促进慈善转型。",
+      "慈善可以激活社会参与、调节村庄关系并支持公共秩序形成。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "乡村与城乡",
+      "社会组织与慈善"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art54 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art54 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:1",
+    "why_read": "适合观察传统社会关系如何在组织协调下形成公共行动。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究以晋江村庄慈善为例，指出宗族伦理在市场化分化中，经基层组织动员和协调，逐渐转向面向全村的公共实践，并把社会竞争导向共同建设。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "乡村慈善如何从伦理实践发展为公共治理资源？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "福建晋江市A村案例研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "基层组织通过精英动员、动力调节和社会吸纳促进慈善转型。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "慈善可以激活社会参与、调节村庄关系并支持公共秩序形成。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-54",
+    "private_source_record_sha256": "50c6fb38aa2d01be86769103012f0d42dc1ae553f82cab49178a109f215669bf"
+  },
+  {
+    "id": "research-shjs-2023-55",
+    "external_id": "shjs.ruc.edu.cn:article:55",
+    "title": "人民公社时期农村电影放映的运作机理与实践效能——谈国家对乡村的柔性治理",
+    "authors": [
+      "王顺平",
+      "张晶晶"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01/83",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-01-20",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究用口述历史考察人民公社时期农村电影放映，发现宣传教育与集体娱乐相互交织，国家部分实现观念塑造目标，但村民的实际使用也限制并改变了治理效果。",
+    "research_question": "农村电影放映如何作为柔性治理运作，其效果有哪些边界？",
+    "methods": "比较基层政治精英与农民视角的口述历史分析",
+    "data": "基层政治精英与农民的口述历史资料",
+    "sample": null,
+    "findings": [
+      "电影放映强化了部分集体和政治观念，但既定目标并未全部达成。",
+      "国家与村民存在各取所需的互动，关系不能完全概括为支配与抵抗。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "乡村与城乡",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art55 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art55 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:1",
+    "why_read": "展示从不同参与者经验辨认文化治理实际效果的历史方法。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究用口述历史考察人民公社时期农村电影放映，发现宣传教育与集体娱乐相互交织，国家部分实现观念塑造目标，但村民的实际使用也限制并改变了治理效果。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "农村电影放映如何作为柔性治理运作，其效果有哪些边界？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "比较基层政治精英与农民视角的口述历史分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "电影放映强化了部分集体和政治观念，但既定目标并未全部达成。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "国家与村民存在各取所需的互动，关系不能完全概括为支配与抵抗。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-55",
+    "private_source_record_sha256": "ddc0724480bede81eb9dbd4f6f31cc174244e50ad33b37f197aa9b105fffe213"
+  },
+  {
+    "id": "research-shjs-2023-547",
+    "external_id": "shjs.ruc.edu.cn:article:547",
+    "title": "银发网红：缘起、机遇与挑战",
+    "authors": [
+      "杜鹏",
+      "马琦峰"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/15",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章讨论老年网红带来的新型社会参与机会，既看到老年人内部及代际互动的拓展，也指出商业异化、内容引导和持续能力等风险。",
+    "research_question": "老年网红现象为老年社会参与带来哪些机会与挑战？",
+    "methods": "老龄化与网络化背景下的概念和现象分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "短视频等平台扩展了老年人与外界、同龄人及其他代际的互动。",
+      "支持老年表达需要同时处理商业利益、新型风险和持续参与能力问题。"
+    ],
+    "limitations": null,
+    "topics": [
+      "老龄化与照护",
+      "家庭与生育",
+      "数字社会与技术"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art547 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art547 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "适合将数字老龄化讨论扩展到主动表达和平台化参与。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章讨论老年网红带来的新型社会参与机会，既看到老年人内部及代际互动的拓展，也指出商业异化、内容引导和持续能力等风险。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "老年网红现象为老年社会参与带来哪些机会与挑战？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "老龄化与网络化背景下的概念和现象分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "短视频等平台扩展了老年人与外界、同龄人及其他代际的互动。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "支持老年表达需要同时处理商业利益、新型风险和持续参与能力问题。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-547",
+    "private_source_record_sha256": "a0f92a528028a275a911d4a749818eed14422d2d6620f5e9cd90d8954fc0d54b"
+  },
+  {
+    "id": "research-shjs-2023-548",
+    "external_id": "shjs.ruc.edu.cn:article:548",
+    "title": "殊途同归：农村老年协会互助养老的发展脉络与优化导向",
+    "authors": [
+      "刘妮娜",
+      "房罗鑫"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/26",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章比较农村老年协会互助养老的不同发展类型，指出行政、市场、专业力量虽会改变组织路径，但持续性最终仍需要保持老人之间的互助逻辑。",
+    "research_question": "不同制度逻辑如何影响农村老年协会互助养老的发展？",
+    "methods": "基于主导制度逻辑的类型比较与发展过程梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "协会一般经历非正式互助、规范组织和设施运营的发展过程。",
+      "多元力量可能强化也可能削弱互助，作者认为持续发展必须巩固互助基础。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "老龄化与照护",
+      "乡村与城乡",
+      "社会组织与慈善"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art548 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art548 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "为判断互助养老是否被行政任务或设施运营替代提供标准。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章比较农村老年协会互助养老的不同发展类型，指出行政、市场、专业力量虽会改变组织路径，但持续性最终仍需要保持老人之间的互助逻辑。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "不同制度逻辑如何影响农村老年协会互助养老的发展？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "基于主导制度逻辑的类型比较与发展过程梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "协会一般经历非正式互助、规范组织和设施运营的发展过程。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "多元力量可能强化也可能削弱互助，作者认为持续发展必须巩固互助基础。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-548",
+    "private_source_record_sha256": "4ac40f805c73876e7c0eea24adef7d20c0dcd06adeae01eb297c3e6a7d9affb1"
+  },
+  {
+    "id": "research-shjs-2023-546",
+    "external_id": "shjs.ruc.edu.cn:article:546",
+    "title": "中国社会救助的政策范式变迁与高质量发展内涵",
+    "authors": [
+      "赵晰"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/3",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章用政策内部工具、横向制度关系和纵向政策定位三个维度，回顾社会救助由初创到转型、扩量和规范发展的过程，并据此解释高质量发展的内涵。",
+    "research_question": "中国社会救助政策范式如何变化，高质量发展要求什么？",
+    "methods": "社会救助政策历史的多维范式分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "政策发展同时涉及工具优化、与其他制度协调及回应上层定位。",
+      "作者认为高质量发展需要三方面配合，不能仅以数量增长或规范化衡量。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会政策与保障"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art546 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art546 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "为评估救助改革提供横向、纵向和内部变化的共同框架。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章用政策内部工具、横向制度关系和纵向政策定位三个维度，回顾社会救助由初创到转型、扩量和规范发展的过程，并据此解释高质量发展的内涵。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "中国社会救助政策范式如何变化，高质量发展要求什么？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "社会救助政策历史的多维范式分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "政策发展同时涉及工具优化、与其他制度协调及回应上层定位。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者认为高质量发展需要三方面配合，不能仅以数量增长或规范化衡量。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-546",
+    "private_source_record_sha256": "121277367f9e6c778388e884bd30446647e5bf95233a4eb14fc750323a465379"
+  },
+  {
+    "id": "research-shjs-2023-549",
+    "external_id": "shjs.ruc.edu.cn:article:549",
+    "title": "从社会互动到国家战略：中国老年社会参与的概念拓展与新时代特色",
+    "authors": [
+      "朱荟",
+      "肖春卉"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/37",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章追踪老年社会参与概念在中国从社会互动视角向政策话语扩展的过程，强调老人既融入社会也参与建设，目标还涉及代际共同体和全生命周期支持。",
+    "research_question": "老年社会参与概念在中国政策语境中如何扩展？",
+    "methods": "老年社会参与概念及四十余年政策发展的理论梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "中国语境中的参与包含更综合的领域、层次和主体角色。",
+      "老年人自主性与参与社会建设被同时强调，参与被联结到代际关系与整体社会动力。"
+    ],
+    "limitations": null,
+    "topics": [
+      "老龄化与照护",
+      "家庭与生育"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art549 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art549 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "有助于区分老年参与的抽象理念、政策目标和可测量指标。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章追踪老年社会参与概念在中国从社会互动视角向政策话语扩展的过程，强调老人既融入社会也参与建设，目标还涉及代际共同体和全生命周期支持。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "老年社会参与概念在中国政策语境中如何扩展？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "老年社会参与概念及四十余年政策发展的理论梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "中国语境中的参与包含更综合的领域、层次和主体角色。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "老年人自主性与参与社会建设被同时强调，参与被联结到代际关系与整体社会动力。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-549",
+    "private_source_record_sha256": "d53b7ebb859c8996d2a83332a45b4c70d7217477653802060a03ee4e30691c3a"
+  },
+  {
+    "id": "research-shjs-2023-550",
+    "external_id": "shjs.ruc.edu.cn:article:550",
+    "title": "乡村振兴背景下大学生支教动员机制研究——基于三类典型项目的比较分析",
+    "authors": [
+      "王建民",
+      "何鹏"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/46",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究比较官方支教、社会实践和公益社团三类项目，发现规则与资源在不同组织环境中形成规范引导、平台竞争和意义动员三种稳定机制。",
+    "research_question": "不同大学生支教项目怎样动员青年参与？",
+    "methods": "结构化理论视角下的三类典型项目比较分析",
+    "data": null,
+    "sample": "官方发起、社会实践、公益社团三类支教项目",
+    "findings": [
+      "动员不仅依赖个人意愿，也由项目规则和资源持续塑造。",
+      "三类机制分别强调规范、机会平台和意义认同，体现不同组织与行动者互动方式。"
+    ],
+    "limitations": null,
+    "topics": [
+      "数字社会与技术",
+      "乡村与城乡",
+      "社会组织与慈善",
+      "教育与社会分层",
+      "青年",
+      "志愿参与",
+      "组织动员"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art550 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art550 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "为设计青年志愿参与项目提供可比较的组织动员路径。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究比较官方支教、社会实践和公益社团三类项目，发现规则与资源在不同组织环境中形成规范引导、平台竞争和意义动员三种稳定机制。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "不同大学生支教项目怎样动员青年参与？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "结构化理论视角下的三类典型项目比较分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "动员不仅依赖个人意愿，也由项目规则和资源持续塑造。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "三类机制分别强调规范、机会平台和意义认同，体现不同组织与行动者互动方式。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-550",
+    "private_source_record_sha256": "c91fe995d0d1e93922f15039a97284aa2485788ec1d2f2445e20551aa73e0973"
+  },
+  {
+    "id": "research-shjs-2023-551",
+    "external_id": "shjs.ruc.edu.cn:article:551",
+    "title": "非家庭层面代际互动项目评述——基于近十年中英文献的系统综述",
+    "authors": [
+      "孙茜",
+      "周庆红"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/58",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究综述近十年家庭之外的代际互动项目，发现活动丰富但社区发展议题不足，理论和操作结合不紧，评估也缺少对整体及持续效果的考察。",
+    "research_question": "非家庭代际互动项目的研究和实践存在哪些缺口？",
+    "methods": "近十年中英文文献的系统综述",
+    "data": "近十年非家庭代际互动项目的中英文研究文献",
+    "sample": null,
+    "findings": [
+      "本土经验的学术表达和理论到操作的共同建构不足。",
+      "作者建议扩展社区发展目标，并持续评估项目多方面效果。"
+    ],
+    "limitations": null,
+    "topics": [
+      "家庭与生育"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art551 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art551 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "适合策划跨代社区活动及设计长期评估方案。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究综述近十年家庭之外的代际互动项目，发现活动丰富但社区发展议题不足，理论和操作结合不紧，评估也缺少对整体及持续效果的考察。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "非家庭代际互动项目的研究和实践存在哪些缺口？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "近十年中英文文献的系统综述",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "本土经验的学术表达和理论到操作的共同建构不足。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者建议扩展社区发展目标，并持续评估项目多方面效果。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-551",
+    "private_source_record_sha256": "0e36ca7c682c3f50e0dc56cd57cf053d3d85df1f802f7b2204be920bfec4e2f8"
+  },
+  {
+    "id": "research-shjs-2023-552",
+    "external_id": "shjs.ruc.edu.cn:article:552",
+    "title": "我国家庭养老床位发展现状与城市居民需求特征",
+    "authors": [
+      "王永梅",
+      "武佳",
+      "纪竞垚"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/68",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究结合政策文本与调查分析家庭养老床位，发现服务需求较大，但基层医疗卫生力量尚未充分进入，需要整合医护资源并完善标准。",
+    "research_question": "家庭养老床位发展到何种阶段，哪些居民更有需求？",
+    "methods": "家庭养老床位政策文本与调查数据分析",
+    "data": "相关政策文本与城市居民调查数据",
+    "sample": null,
+    "findings": [
+      "政策实践已涵盖生活照料、护理、康复、医疗和精神支持，但医疗资源衔接不足。",
+      "身体脆弱、中心城区居住、较高收入或自感经济困难与潜在需求相关。"
+    ],
+    "limitations": null,
+    "topics": [
+      "老龄化与照护",
+      "家庭与生育",
+      "健康与医疗"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art552 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art552 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "为识别居家养老需求和医疗社会服务衔接缺口提供依据。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究结合政策文本与调查分析家庭养老床位，发现服务需求较大，但基层医疗卫生力量尚未充分进入，需要整合医护资源并完善标准。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "家庭养老床位发展到何种阶段，哪些居民更有需求？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "家庭养老床位政策文本与调查数据分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "政策实践已涵盖生活照料、护理、康复、医疗和精神支持，但医疗资源衔接不足。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "身体脆弱、中心城区居住、较高收入或自感经济困难与潜在需求相关。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-552",
+    "private_source_record_sha256": "e0795b3c30c6b92f11241accc2a7a30955984307e34d789795996401957a2400"
+  },
+  {
+    "id": "research-shjs-2023-553",
+    "external_id": "shjs.ruc.edu.cn:article:553",
+    "title": "成员非正规就业对家庭稳定脱贫的影响——基于PSM 方法对低收入和低保家庭的检验",
+    "authors": [
+      "樊丹迪"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02/83",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-03-20",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究用倾向值匹配比较低收入及低保家庭的就业与收入，发现非正规就业家庭收入虽较低，但就业形式只解释有限差距，仍应重视其维持生计的作用。",
+    "research_question": "非正规就业在低收入和低保家庭稳定脱贫中发挥什么作用？",
+    "methods": "CGSS 2017数据分析，以最低工资和低保标准分组并采用倾向值匹配",
+    "data": "2017年中国综合社会调查",
+    "sample": null,
+    "findings": [
+      "非正规就业在两类家庭中较常见，就业者与正规就业者的教育、户籍等条件也不同。",
+      "匹配分析显示非正规就业仅解释有限收入差距，不能据此否认其生计支持价值。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会政策与保障",
+      "家庭与生育",
+      "劳动与就业",
+      "教育与社会分层",
+      "贫困与不平等",
+      "非正规就业",
+      "家庭生计"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art553 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art553 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:2",
+    "why_read": "提醒讨论就业质量时区分选择差异、收入差距与实际生计贡献。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究用倾向值匹配比较低收入及低保家庭的就业与收入，发现非正规就业家庭收入虽较低，但就业形式只解释有限差距，仍应重视其维持生计的作用。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "非正规就业在低收入和低保家庭稳定脱贫中发挥什么作用？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "CGSS 2017数据分析，以最低工资和低保标准分组并采用倾向值匹配",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "非正规就业在两类家庭中较常见，就业者与正规就业者的教育、户籍等条件也不同。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "匹配分析显示非正规就业仅解释有限收入差距，不能据此否认其生计支持价值。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-553",
+    "private_source_record_sha256": "cc8db0926ce86c77acda5dc3a0486dcf756336de92b887f2571e60297d37bdf1"
+  },
+  {
+    "id": "research-shjs-2023-556",
+    "external_id": "shjs.ruc.edu.cn:article:556",
+    "title": "儿童友好家庭指标体系构建——基于儿童和专家的双重反馈视角",
+    "authors": [
+      "何彩平",
+      "赵芳",
+      "曾凡林"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/26",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-05-20",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究结合儿童意见与五轮专家咨询，构建包含三级指标的儿童友好家庭体系，强调基本权利、非暴力与避免忽视，并同时考察家庭环境、互动和儿童状态。",
+    "research_question": "如何让儿童和专家共同参与定义儿童友好家庭的评价指标？",
+    "methods": "定性与定量收集儿童意见，结合Delphi法和五轮专家咨询",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "最终形成3个一级、9个二级和42个三级指标。",
+      "指标考虑不同成长阶段，既关注环境条件，也关注儿童与环境互动及儿童自身状态。"
+    ],
+    "limitations": null,
+    "topics": [
+      "儿童与青少年",
+      "家庭与生育",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art556 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art556 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:3",
+    "why_read": "为家庭服务评价展示将儿童声音与专家判断结合的指标开发过程。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究结合儿童意见与五轮专家咨询，构建包含三级指标的儿童友好家庭体系，强调基本权利、非暴力与避免忽视，并同时考察家庭环境、互动和儿童状态。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "如何让儿童和专家共同参与定义儿童友好家庭的评价指标？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "定性与定量收集儿童意见，结合Delphi法和五轮专家咨询",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "最终形成3个一级、9个二级和42个三级指标。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "指标考虑不同成长阶段，既关注环境条件，也关注儿童与环境互动及儿童自身状态。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-556",
+    "private_source_record_sha256": "cd3ff984fd9096a1d543d32ff7cf018e37dc193c5ef1b0003f7833c6da24d57a"
+  },
+  {
+    "id": "research-shjs-2023-557",
+    "external_id": "shjs.ruc.edu.cn:article:557",
+    "title": "家庭策略视角下合作育儿型临时主干家庭的形成机制与逻辑",
+    "authors": [
+      "王美华"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/39",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-05-20",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章讨论核心家庭因育儿资源不足而暂时恢复多代共居的过程，认为竞争压力、代际责任与照顾制度缺口推动家庭成员协商利益、整合资源并调整结构。",
+    "research_question": "合作育儿的临时主干家庭如何形成，其背后的家庭策略是什么？",
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": [
+      "小家庭化并不排除为照料需要重新组合为多代家庭。",
+      "这种组合回应家庭发展与亲密关系的双重需要，代际协商在其中发挥作用。"
+    ],
+    "limitations": null,
+    "topics": [
+      "儿童与青少年",
+      "家庭与生育"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art557 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art557 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "methods": "公开摘要未披露足够细节。",
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:3",
+    "why_read": "适合研究育儿压力怎样具体改变家庭结构和代际安排。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章讨论核心家庭因育儿资源不足而暂时恢复多代共居的过程，认为竞争压力、代际责任与照顾制度缺口推动家庭成员协商利益、整合资源并调整结构。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "合作育儿的临时主干家庭如何形成，其背后的家庭策略是什么？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "小家庭化并不排除为照料需要重新组合为多代家庭。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "这种组合回应家庭发展与亲密关系的双重需要，代际协商在其中发挥作用。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-557",
+    "private_source_record_sha256": "f5bbda4c469ac11fddcd2e2dc2dbf8385fcfbe2c2dacb165cf3950cce0fc208a"
+  },
+  {
+    "id": "research-shjs-2023-558",
+    "external_id": "shjs.ruc.edu.cn:article:558",
+    "title": "镶套、内卷与自证：社会工作者书写的三重动力机制",
+    "authors": [
+      "焦若水",
+      "高怀阳"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/51",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-05-20",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章解释一线社工书写为何兼具行政问责、机构竞争和专业证明三种动力，指出标准化记录既可能偏离实务，也可能成为争取承认与反思知识的工具。",
+    "research_question": "社工为何大量书写，规范记录背后有哪些不同动力？",
+    "methods": "治理情境与专业回应的理论框架分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "项目制下的标准书写同时服务绩效呈现、机构竞争及专业身份证明。",
+      "写作问题不能完全归因管理主义，提升书写主体性有助于连接职业反思和知识生产。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art558 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art558 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:3",
+    "why_read": "帮助区分机构文书的行政用途、竞争用途与专业知识用途。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章解释一线社工书写为何兼具行政问责、机构竞争和专业证明三种动力，指出标准化记录既可能偏离实务，也可能成为争取承认与反思知识的工具。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "社工为何大量书写，规范记录背后有哪些不同动力？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "治理情境与专业回应的理论框架分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "项目制下的标准书写同时服务绩效呈现、机构竞争及专业身份证明。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "写作问题不能完全归因管理主义，提升书写主体性有助于连接职业反思和知识生产。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-558",
+    "private_source_record_sha256": "fc139ac7f46d959ebeefdea1511efcbf3dbb0a11876ce513a240384b1ce7cecf"
+  },
+  {
+    "id": "research-shjs-2023-559",
+    "external_id": "shjs.ruc.edu.cn:article:559",
+    "title": "社会组织领域中地方政府的治理逻辑与制度生产——基于A、B 两省省级制度文本的比较分析",
+    "authors": [
+      "方亚琴"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/68",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-05-20",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究比较两省社会组织制度文本，指出地方对发展和控制的不同取向，会在政策目标、偏好组织类型和实施策略上留下差异，进而塑造不同发展机会。",
+    "research_question": "地方治理逻辑如何通过制度文本影响社会组织发展？",
+    "methods": "A、B两省省级社会组织制度文本的比较分析",
+    "data": "A、B两省省级制度文本",
+    "sample": null,
+    "findings": [
+      "地方逻辑可区分为偏发展、偏控制和相对均衡三类。",
+      "这些取向形成不同制度激励与约束，政策生产应回应地方社会经济需求。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "社会组织与慈善"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art559 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art559 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:3",
+    "why_read": "提供从政策文本追踪组织发展条件差异的研究路径。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究比较两省社会组织制度文本，指出地方对发展和控制的不同取向，会在政策目标、偏好组织类型和实施策略上留下差异，进而塑造不同发展机会。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "地方治理逻辑如何通过制度文本影响社会组织发展？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "A、B两省省级社会组织制度文本的比较分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "地方逻辑可区分为偏发展、偏控制和相对均衡三类。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "这些取向形成不同制度激励与约束，政策生产应回应地方社会经济需求。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-559",
+    "private_source_record_sha256": "15ee6870e048c15f72e1e9b53ed1e6c5fa19e13c82621e95c68046ce810a01ba"
+  },
+  {
+    "id": "research-shjs-2023-560",
+    "external_id": "shjs.ruc.edu.cn:article:560",
+    "title": "人力资本、社区认同与农村居民社区参与意愿——基于江苏数据的实证研究",
+    "authors": [
+      "刘影",
+      "李阿特"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03/81",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2023-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2023-05-20",
+    "publication_year": 2023,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究分析江苏农村1363份问卷，区分经济发展与志愿服务两种参与意愿，发现人力资本的作用因活动类型而异，社区认同则具有较一致的关联。",
+    "research_question": "人力资本与社区认同怎样关联农村居民不同类型的参与意愿？",
+    "methods": "江苏农村1363份问卷的统计分析",
+    "data": null,
+    "sample": "1363份江苏农村居民问卷",
+    "findings": [
+      "受访者对经济发展和志愿服务两种社区参与均有较强意愿。",
+      "人力资本的关联随参与类型变化，社区认同的作用较为共同。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作",
+      "社会治理",
+      "数字社会与技术",
+      "乡村与城乡",
+      "社会组织与慈善",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art560 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art560 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2023/V10/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2023:3",
+    "why_read": "提醒社区动员研究区分参与类型，并同时测量资源和归属感。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究分析江苏农村1363份问卷，区分经济发展与志愿服务两种参与意愿，发现人力资本的作用因活动类型而异，社区认同则具有较一致的关联。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "人力资本与社区认同怎样关联农村居民不同类型的参与意愿？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "江苏农村1363份问卷的统计分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "受访者对经济发展和志愿服务两种社区参与均有较强意愿。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "人力资本的关联随参与类型变化，社区认同的作用较为共同。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2023-560",
+    "private_source_record_sha256": "5b5a9d436982b403c2e49725fe304c9105eb093419468323bc6a1d9504b25775"
+  },
+  {
+    "id": "research-shjs-2022-3",
+    "external_id": "shjs.ruc.edu.cn:article:3",
+    "title": "“双减”与“双拼”：教育政策大变革中的亲职焦虑与家庭教养",
+    "authors": [
+      "张品",
+      "林晓珊"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/15",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章讨论双减之后家长角色的调整，指出课余时间增加并未自动消解教育竞争，部分竞争转向家庭投入与亲职能力。作者从教育市场化、科学教养标准和家庭角色结构解释不同阶层的亲职焦虑。",
+    "research_question": "双减后教育竞争为何继续通过家庭教养表现出来？",
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": [
+      "家庭教育投入和父母能力差异使竞争压力在阶层之间呈现不同形态。",
+      "以儿童为中心的家庭安排与科学教养标准共同提高了家长对履职表现的关注。"
+    ],
+    "limitations": null,
+    "topics": [
+      "家庭与生育",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art3 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art3 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "methods": "公开摘要未披露足够细节。",
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "帮助把政策效果研究的观察单位从培训机构延伸到家庭时间、照护分工与阶层资源。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章讨论双减之后家长角色的调整，指出课余时间增加并未自动消解教育竞争，部分竞争转向家庭投入与亲职能力。作者从教育市场化、科学教养标准和家庭角色结构解释不同阶层的亲职焦虑。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "双减后教育竞争为何继续通过家庭教养表现出来？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "家庭教育投入和父母能力差异使竞争压力在阶层之间呈现不同形态。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "以儿童为中心的家庭安排与科学教养标准共同提高了家长对履职表现的关注。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-3",
+    "private_source_record_sha256": "f3e8ea0d45f924aa5aa57421cf2d66675125609fc99be4dd21b76bb226d8590c"
+  },
+  {
+    "id": "research-shjs-2022-4",
+    "external_id": "shjs.ruc.edu.cn:article:4",
+    "title": "教育母职化与母职的焦虑",
+    "authors": [
+      "杨笛",
+      "金一虹"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/25",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "作者把教育责任更多落在母亲身上的现象，解释为教育竞争和责任家庭化共同塑造的母职重构。这种安排加剧育儿与职业发展的冲突，也可能推动教育竞争和亲职共担进入公共讨论。",
+    "research_question": "教育责任母职化怎样影响女性生活及公共议题形成？",
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": [
+      "教育责任集中于母亲，会强化子女学业与女性职业发展之间的张力。",
+      "个体母职焦虑的社会化表达可能推动教育公共性与家庭性别分工的讨论。"
+    ],
+    "limitations": null,
+    "topics": [
+      "家庭与生育",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art4 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art4 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "methods": "公开摘要未披露足够细节。",
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "可与育儿市场、双减研究对读，区分市场机制、政策变化与家庭性别分工三条解释线索。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "作者把教育责任更多落在母亲身上的现象，解释为教育竞争和责任家庭化共同塑造的母职重构。这种安排加剧育儿与职业发展的冲突，也可能推动教育竞争和亲职共担进入公共讨论。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "教育责任母职化怎样影响女性生活及公共议题形成？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "教育责任集中于母亲，会强化子女学业与女性职业发展之间的张力。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "个体母职焦虑的社会化表达可能推动教育公共性与家庭性别分工的讨论。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-4",
+    "private_source_record_sha256": "22796566adc57c2dd0337dbdbd1aec1858732404f9618a16903c245f0aa6d6b4"
+  },
+  {
+    "id": "research-shjs-2022-2",
+    "external_id": "shjs.ruc.edu.cn:article:2",
+    "title": "技术的魅惑：育儿市场化中的焦虑生产与反生产",
+    "authors": [
+      "刘秀秀"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/3",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章将育儿市场的技术运作纳入母职研究：营销传播制造焦虑，线上社群汇聚并数据化家长，产品技术再把这些关系转为消费。作者同时指出，商家也会受流量与数据逻辑牵制，形成焦虑的反向作用。",
+    "research_question": "育儿市场如何通过技术组织家长焦虑并促成消费？",
+    "methods": null,
+    "data": null,
+    "sample": null,
+    "findings": [
+      "传播、社群和生产技术在焦虑传播、用户聚集与消费转化中分工协作。",
+      "市场主体也可能被自身依赖的流量机制反噬。"
+    ],
+    "limitations": null,
+    "topics": [
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art2 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art2 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "methods": "公开摘要未披露足够细节。",
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "将教育焦虑从家庭内部心理问题推进到平台技术与市场组织的分析，可用于设计育儿消费和数字社群研究。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章将育儿市场的技术运作纳入母职研究：营销传播制造焦虑，线上社群汇聚并数据化家长，产品技术再把这些关系转为消费。作者同时指出，商家也会受流量与数据逻辑牵制，形成焦虑的反向作用。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "育儿市场如何通过技术组织家长焦虑并促成消费？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "传播、社群和生产技术在焦虑传播、用户聚集与消费转化中分工协作。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "市场主体也可能被自身依赖的流量机制反噬。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-2",
+    "private_source_record_sha256": "119b56d6745305afcb526b95ffd40c8b4d8878b53cf0ac61f40230897fd34bad"
+  },
+  {
+    "id": "research-shjs-2022-5",
+    "external_id": "shjs.ruc.edu.cn:article:5",
+    "title": "城市更新背景下危旧房改造与社会治理策略研究",
+    "authors": [
+      "麻国庆"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/36",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究以G市危旧房改造经验为中心，将旧建筑视为承载居民历史与社会文化资源的空间。作者建议以文化资源连接利益主体，以经济安排支持改造，形成政府主导的多方协作。",
+    "research_question": "危旧房更新如何兼顾物质改造与既有社会文化关系？",
+    "methods": "地方改造经验分析与国内外治理模式参照",
+    "data": "G市危旧房改造的历史经验与现实实践",
+    "sample": null,
+    "findings": [
+      "单线推进物质更新容易忽略旧空间中的文化与社会关系。",
+      "文章提出文化联结和经济支持相结合的多主体治理策略。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art5 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art5 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "适合把城市更新中的建筑、居民关系和资源配置纳入同一分析框架。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究以G市危旧房改造经验为中心，将旧建筑视为承载居民历史与社会文化资源的空间。作者建议以文化资源连接利益主体，以经济安排支持改造，形成政府主导的多方协作。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "危旧房更新如何兼顾物质改造与既有社会文化关系？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "地方改造经验分析与国内外治理模式参照",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "单线推进物质更新容易忽略旧空间中的文化与社会关系。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章提出文化联结和经济支持相结合的多主体治理策略。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-5",
+    "private_source_record_sha256": "7516b090c7e318296f6a5d12fc9cef1709f91d3ae08fb4bbb83e9a9eb3b61cfe"
+  },
+  {
+    "id": "research-shjs-2022-6",
+    "external_id": "shjs.ruc.edu.cn:article:6",
+    "title": "贫困治理与社会工作教育对口扶贫的中国实践",
+    "authors": [
+      "马凤芝"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/48",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章回顾国内外反贫困社会工作理论和实践，整理中国社会工作教育院校参与对口扶贫的经验。重点是专业教育如何支持服务对象能力发展，并在脱贫与乡村振兴衔接中形成持续的贫困治理机制。",
+    "research_question": "社会工作教育如何形成制度性参与贫困治理的路径？",
+    "methods": "反贫困社会工作理论与实践回顾",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "作者将以人为本、激发内生动力和专业支持作为院校参与扶贫的重要特点。",
+      "巩固脱贫成果需要把短期帮扶转为持续的知识支持与制度化参与。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作",
+      "乡村与城乡",
+      "教育与社会分层",
+      "贫困与不平等"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art6 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art6 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "为研究高校专业资源怎样进入地方治理提供历史与实践框架。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章回顾国内外反贫困社会工作理论和实践，整理中国社会工作教育院校参与对口扶贫的经验。重点是专业教育如何支持服务对象能力发展，并在脱贫与乡村振兴衔接中形成持续的贫困治理机制。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "社会工作教育如何形成制度性参与贫困治理的路径？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "反贫困社会工作理论与实践回顾",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者将以人为本、激发内生动力和专业支持作为院校参与扶贫的重要特点。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "巩固脱贫成果需要把短期帮扶转为持续的知识支持与制度化参与。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-6",
+    "private_source_record_sha256": "b62f2fe28d35c9106d607266043d85ebba7a4e56c35ac070f916310ac5f79a84"
+  },
+  {
+    "id": "research-shjs-2022-7",
+    "external_id": "shjs.ruc.edu.cn:article:7",
+    "title": "人口老龄化背景下家庭成员慢性病与压力感知度的代际传递——基于中国健康与营养调查数据的分析",
+    "authors": [
+      "和红",
+      "谈甜"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/60",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究利用2015年中国健康与营养调查，考察父母与成年子女的慢性病、体重状况和压力感知。分析发现三类健康指标均存在代际相关，因而提出以家庭为单位及早安排疾病预防和情绪支持。",
+    "research_question": "父母与成年子女的疾病风险和压力感知是否相互关联？",
+    "methods": "Logistic回归与多元线性回归",
+    "data": "2015年中国健康与营养调查",
+    "sample": null,
+    "findings": [
+      "亲代与成年子女的慢性病、超重或肥胖以及压力感知呈代际相关。",
+      "研究建议将疾病与情绪健康干预结合，并关注家庭内部风险聚集。"
+    ],
+    "limitations": null,
+    "topics": [
+      "老龄化与照护",
+      "家庭与生育",
+      "健康与医疗"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art7 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art7 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "可用于把个体健康研究拓展为家庭关联研究，并比较生理与情绪指标的共同分布。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究利用2015年中国健康与营养调查，考察父母与成年子女的慢性病、体重状况和压力感知。分析发现三类健康指标均存在代际相关，因而提出以家庭为单位及早安排疾病预防和情绪支持。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "父母与成年子女的疾病风险和压力感知是否相互关联？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "Logistic回归与多元线性回归",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "亲代与成年子女的慢性病、超重或肥胖以及压力感知呈代际相关。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "研究建议将疾病与情绪健康干预结合，并关注家庭内部风险聚集。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-7",
+    "private_source_record_sha256": "a06b2b66ebdd4154600d92dd31754380d8de0be83adfa36a86951fbe7724df91"
+  },
+  {
+    "id": "research-shjs-2022-8",
+    "external_id": "shjs.ruc.edu.cn:article:8",
+    "title": "中国社会学早期口述记忆研究的特征",
+    "authors": [
+      "刘亚秋"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/74",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章以方慧容的口述记忆研究为切口，讨论中国社会学如何从重大历史实践中形成解释性概念，并与国际理论展开对话。作者将无事件境理解为传统社区日常生活的一种心态，也探讨其跨文化意义。",
+    "research_question": "中国早期口述记忆研究怎样形成兼具本土解释力和对话能力的概念？",
+    "methods": "代表性研究与记忆理论的概念比较",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "从中国历史实践提出概念与吸收海外理论可以相互促进。",
+      "作者认为日常生存经验与现代理性之间的张力为记忆研究提供了跨文化讨论空间。"
+    ],
+    "limitations": null,
+    "topics": [
+      "乡村与城乡"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art8 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art8 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "适合研究本土概念形成、日常经验及口述材料的理论化路径。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章以方慧容的口述记忆研究为切口，讨论中国社会学如何从重大历史实践中形成解释性概念，并与国际理论展开对话。作者将无事件境理解为传统社区日常生活的一种心态，也探讨其跨文化意义。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "中国早期口述记忆研究怎样形成兼具本土解释力和对话能力的概念？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "代表性研究与记忆理论的概念比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "从中国历史实践提出概念与吸收海外理论可以相互促进。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者认为日常生存经验与现代理性之间的张力为记忆研究提供了跨文化讨论空间。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-8",
+    "private_source_record_sha256": "14f32ee4cef00efab220dfb2abbeab28ccd1718b199e28e836c78e15035c47b3"
+  },
+  {
+    "id": "research-shjs-2022-9",
+    "external_id": "shjs.ruc.edu.cn:article:9",
+    "title": "中国经验研究及其拓展何以可能?——以郑杭生的“主体意识”概念为例",
+    "authors": [
+      "李秋祺",
+      "杨发祥"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01/86",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-01-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-01-20",
+    "publication_year": 2022,
+    "publication_issue": 1,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章梳理郑杭生的主体意识概念，分别讨论研究者面对社会事实、理论资源和国际同行时的责任。核心问题是如何在选择性吸收中形成有解释力的中国经验研究，并把本土问题转化为可对话的理论贡献。",
+    "research_question": "中国经验研究如何形成自主的问题意识并进入国际理论讨论？",
+    "methods": "主体意识概念阐释",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章将社会责任、建设性反思和超越地方特色的理论发展联系起来。",
+      "本土化研究的目标包括将经验解释转为能够参与国际讨论的理论表达。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会理论与方法"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art9 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art9 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I01",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:1",
+    "why_read": "适合用于检查研究选题的问题意识、理论借鉴方式和经验贡献是否彼此衔接。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章梳理郑杭生的主体意识概念，分别讨论研究者面对社会事实、理论资源和国际同行时的责任。核心问题是如何在选择性吸收中形成有解释力的中国经验研究，并把本土问题转化为可对话的理论贡献。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "中国经验研究如何形成自主的问题意识并进入国际理论讨论？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "主体意识概念阐释",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章将社会责任、建设性反思和超越地方特色的理论发展联系起来。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "本土化研究的目标包括将经验解释转为能够参与国际讨论的理论表达。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-9",
+    "private_source_record_sha256": "a9e21630370a3ba5153e09a18741c00346e4e701c91465995b49c1cb606a3ed1"
+  },
+  {
+    "id": "research-shjs-2022-11",
+    "external_id": "shjs.ruc.edu.cn:article:11",
+    "title": "燕京大学社会学系社会工作本土化的特色与经验",
+    "authors": [
+      "齐钊"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/29",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究通过相关文献梳理燕京大学社会学系推动社会工作本土化的经验，突出学科建设、服务对象需求和方法灵活运用之间的关联。",
+    "research_question": "燕京大学社会学系的社会工作本土化有哪些持续性经验？",
+    "methods": "相关历史文献梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "社会工作在社会学专业建设中被赋予重要位置。",
+      "面向现实需要组织实务和灵活运用方法构成其专业特色。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art11 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art11 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "可与蒋旨昂研究对读，从个人实践和院系制度两个层次理解学科本土化。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究通过相关文献梳理燕京大学社会学系推动社会工作本土化的经验，突出学科建设、服务对象需求和方法灵活运用之间的关联。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "燕京大学社会学系的社会工作本土化有哪些持续性经验？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "相关历史文献梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "社会工作在社会学专业建设中被赋予重要位置。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "面向现实需要组织实务和灵活运用方法构成其专业特色。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-11",
+    "private_source_record_sha256": "c69ad51eb869875cc98b32cb8c414f1767fcedb1713243d9d84a94daf81a69d3"
+  },
+  {
+    "id": "research-shjs-2022-10",
+    "external_id": "shjs.ruc.edu.cn:article:10",
+    "title": "20世纪前半叶中国社会工作的架构与实践——以蒋旨昂为中心",
+    "authors": [
+      "岳永逸",
+      "熊诗维"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/3",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章围绕蒋旨昂的教学与实践，重建20世纪前半叶社会工作本土化的一条路径：把乡村建设、人文区位学和基层服务经验结合，建立研究、服务与训练相互支持的体系。",
+    "research_question": "早期中国社会工作如何将理论、服务实践与人才培养结合？",
+    "methods": "以蒋旨昂为中心的社会工作学科史考察",
+    "data": "清河试验区、燕京大学乡村建设及石羊场社会研习站相关历史实践",
+    "sample": null,
+    "findings": [
+      "蒋旨昂将多种理论与中国基层服务经验结合，推动社会工作教学改革。",
+      "石羊场社会研习站体现研究、服务和训练联动的专业培养思路。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作",
+      "乡村与城乡"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art10 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art10 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "为当代实践教学和服务学习设计提供可追溯的本土学科史参照。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章围绕蒋旨昂的教学与实践，重建20世纪前半叶社会工作本土化的一条路径：把乡村建设、人文区位学和基层服务经验结合，建立研究、服务与训练相互支持的体系。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "早期中国社会工作如何将理论、服务实践与人才培养结合？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "以蒋旨昂为中心的社会工作学科史考察",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "蒋旨昂将多种理论与中国基层服务经验结合，推动社会工作教学改革。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "石羊场社会研习站体现研究、服务和训练联动的专业培养思路。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-10",
+    "private_source_record_sha256": "ec9243732f8d6a0fe5d1e9d25deb2ca9acc81e5e745ec6839124cfad179d82bb"
+  },
+  {
+    "id": "research-shjs-2022-12",
+    "external_id": "shjs.ruc.edu.cn:article:12",
+    "title": "需要“照顾”的照顾者：夹心世代研究的文本脉络与本土意义",
+    "authors": [
+      "臧其胜"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/42",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章回顾夹心世代研究，关注同时工作并承担父母与子女照护的人群。作者区分照顾者、雇员、志愿者和公民四种角色，讨论多重责任与福祉的关系，并提出以照顾者为中心的工作家庭平衡政策。",
+    "research_question": "承担跨代双重照护的人群需要怎样的政策支持？",
+    "methods": "夹心世代概念与相关研究脉络回顾",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "多重照护与工作角色之间的竞争使夹心世代面临福祉风险。",
+      "结构功能与行动者视角为理解其政策需求提供不同解释路径。"
+    ],
+    "limitations": null,
+    "topics": [
+      "家庭与生育",
+      "社会组织与慈善"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art12 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art12 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "将照护研究从被照顾者延伸到照顾者自身，适合形成工作家庭平衡和服务支持选题。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章回顾夹心世代研究，关注同时工作并承担父母与子女照护的人群。作者区分照顾者、雇员、志愿者和公民四种角色，讨论多重责任与福祉的关系，并提出以照顾者为中心的工作家庭平衡政策。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "承担跨代双重照护的人群需要怎样的政策支持？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "夹心世代概念与相关研究脉络回顾",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "多重照护与工作角色之间的竞争使夹心世代面临福祉风险。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "结构功能与行动者视角为理解其政策需求提供不同解释路径。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-12",
+    "private_source_record_sha256": "a80f5681e8006e8cd02794318b123e33ef3aa863c7af2fcb05c048372f08ea1f"
+  },
+  {
+    "id": "research-shjs-2022-13",
+    "external_id": "shjs.ruc.edu.cn:article:13",
+    "title": "预期悲伤理论视域中社会工作专业硕士生结案经历与挑战",
+    "authors": [
+      "吴蕾",
+      "李雯娟"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/58",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究回顾10名社会工作专业硕士生的实习结案经历，分析自然结案、案主提出结案和强制结案中的情绪反应。学生需要同时处理案主依赖、自身感受及结束后的联系边界，学校教学和机构督导因而成为重要支持条件。",
+    "research_question": "社工实习生如何应对专业关系结束带来的情绪与边界挑战？",
+    "methods": "预期悲伤理论指导的实习经历回顾性研究",
+    "data": null,
+    "sample": {
+      "student_count": 10
+    },
+    "findings": [
+      "不同结案方式都可能引发案主和学生的多种情绪反应。",
+      "学生通过回顾肯定、身份澄清等技巧结束服务，同时面临技能、联系边界及督导支持问题。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作",
+      "教育与社会分层"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art13 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art13 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "提供把结案从程序步骤转为关系与情感过程的视角，可直接用于实习督导设计。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究回顾10名社会工作专业硕士生的实习结案经历，分析自然结案、案主提出结案和强制结案中的情绪反应。学生需要同时处理案主依赖、自身感受及结束后的联系边界，学校教学和机构督导因而成为重要支持条件。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "社工实习生如何应对专业关系结束带来的情绪与边界挑战？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "预期悲伤理论指导的实习经历回顾性研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "不同结案方式都可能引发案主和学生的多种情绪反应。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "学生通过回顾肯定、身份澄清等技巧结束服务，同时面临技能、联系边界及督导支持问题。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-13",
+    "private_source_record_sha256": "47d44f99af2c0ac5374449cd3423152d55adff246eb7143ebf3a3499aea61198"
+  },
+  {
+    "id": "research-shjs-2022-14",
+    "external_id": "shjs.ruc.edu.cn:article:14",
+    "title": "学习型组织如何影响公共服务人员的专业自主性？——基于情感劳动和新管理主义理论的模型比较研究",
+    "authors": [
+      "王晔安",
+      "张心怡",
+      "宋雅君"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/73",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究使用全国社会工作者调查数据和结构方程模型，比较情感劳动与新管理主义两种解释。结果显示学习型组织与较低职业倦怠、较高专业能力和专业自主性相关，并在这些变量关系中发挥中介作用。",
+    "research_question": "学习型组织如何关联公共服务人员的专业自主性？",
+    "methods": "结构方程模型与两种理论模型比较",
+    "data": "全国社会工作者调查数据",
+    "sample": null,
+    "findings": [
+      "情感劳动模型中，学习型组织与职业倦怠负相关、与专业自主性正相关。",
+      "新管理主义模型中，学习型组织部分中介专业能力与专业自主性的关系。",
+      "作者据此提出整合情感、能力和科层组织特征的分析模型。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作",
+      "劳动与就业"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art14 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art14 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "可用于比较专业自主性的情感支持路径与能力发展路径，连接组织研究和社工职业研究。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究使用全国社会工作者调查数据和结构方程模型，比较情感劳动与新管理主义两种解释。结果显示学习型组织与较低职业倦怠、较高专业能力和专业自主性相关，并在这些变量关系中发挥中介作用。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "学习型组织如何关联公共服务人员的专业自主性？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "结构方程模型与两种理论模型比较",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "情感劳动模型中，学习型组织与职业倦怠负相关、与专业自主性正相关。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "新管理主义模型中，学习型组织部分中介专业能力与专业自主性的关系。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者据此提出整合情感、能力和科层组织特征的分析模型。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-14",
+    "private_source_record_sha256": "1e5d83bf9827955b79e3f97c614a588518a413528adaae09123f988b3ea2bbfb"
+  },
+  {
+    "id": "research-shjs-2022-15",
+    "external_id": "shjs.ruc.edu.cn:article:15",
+    "title": "靠近体验与缩短距离：对人类学生命史研究方法的反思",
+    "authors": [
+      "常姝"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02/87",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-03-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-03-20",
+    "publication_year": 2022,
+    "publication_issue": 2,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章回顾生命史方法并评述三本人类学民族志，提出研究者需要同时缩短人际关系距离和体验理解距离。前者影响讲述者是否愿意真诚表达，后者影响研究者能否恰当理解和呈现经验。",
+    "research_question": "生命史研究怎样接近讲述者的主体体验？",
+    "methods": "方法史回顾与三部经典生命史民族志评述",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "关系建立和经验理解是生命史研究中相互联系但不同的两项方法任务。",
+      "对两类距离的处理会影响体验讲述与文本解释的质量。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会理论与方法"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art15 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art15 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I02",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:2",
+    "why_read": "适合用于设计访谈关系、反思研究者位置以及改进生命史材料的解释过程。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章回顾生命史方法并评述三本人类学民族志，提出研究者需要同时缩短人际关系距离和体验理解距离。前者影响讲述者是否愿意真诚表达，后者影响研究者能否恰当理解和呈现经验。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "生命史研究怎样接近讲述者的主体体验？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "方法史回顾与三部经典生命史民族志评述",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "关系建立和经验理解是生命史研究中相互联系但不同的两项方法任务。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "对两类距离的处理会影响体验讲述与文本解释的质量。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-15",
+    "private_source_record_sha256": "7e1baa9084384df177059002d07ebdf5eb3ec9421dff13dae8a875ebf87c9730"
+  },
+  {
+    "id": "research-shjs-2022-18",
+    "external_id": "shjs.ruc.edu.cn:article:18",
+    "title": "彝族传统家支制度衰微对新时代彝区乡村振兴的影响",
+    "authors": [
+      "奂平清",
+      "王策明"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/18",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章梳理凉山彝族家支制度在国家治理、市场发展和人口流动中的变化。家支曾承担维系秩序等功能，后来经历空间收缩、部分复苏与组织弱化；作者讨论这种变化对乡村振兴的双重影响。",
+    "research_question": "家支制度的变迁怎样影响彝区乡村治理和发展？",
+    "methods": "家支制度的历史变迁与功能分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "国家治理介入、经济发展及人口流动共同改变家支制度的活动空间。",
+      "家支组织功能具有多面性，其弱化不能只按单一的积极或消极效果评价。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会治理",
+      "乡村与城乡"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art18 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art18 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "为研究传统组织与现代基层治理的关系提供分阶段、分功能的分析视角。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章梳理凉山彝族家支制度在国家治理、市场发展和人口流动中的变化。家支曾承担维系秩序等功能，后来经历空间收缩、部分复苏与组织弱化；作者讨论这种变化对乡村振兴的双重影响。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "家支制度的变迁怎样影响彝区乡村治理和发展？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "家支制度的历史变迁与功能分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "国家治理介入、经济发展及人口流动共同改变家支制度的活动空间。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "家支组织功能具有多面性，其弱化不能只按单一的积极或消极效果评价。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-18",
+    "private_source_record_sha256": "f37d6fc8f702a7574c3cbd2281ab35d5962dda2dbb201171ef2d00c4f00826ec"
+  },
+  {
+    "id": "research-shjs-2022-19",
+    "external_id": "shjs.ruc.edu.cn:article:19",
+    "title": "以环境正义促进社会正义：绿色社会工作的国际实践及其本土化空间",
+    "authors": [
+      "方劲",
+      "朱予嘉"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/27",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章梳理绿色社会工作的理论和国际实践，把物理环境问题与社会不平等联系起来。其服务范围从灾害管理、社区重建延伸到城市生态和边缘群体发展，并讨论在中国生态治理中的应用空间。",
+    "research_question": "社会工作如何将环境正义纳入专业理论与干预？",
+    "methods": "绿色社会工作理论与国际实践梳理",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "绿色社会工作将环境风险对脆弱群体的影响置于专业关注中心。",
+      "实践需要连接地方能力建设与跨领域合作，并突破专业能力壁垒。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art19 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art19 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "可用于拓展气候风险、灾害和生态治理中的社会工作研究问题及跨学科合作设计。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章梳理绿色社会工作的理论和国际实践，把物理环境问题与社会不平等联系起来。其服务范围从灾害管理、社区重建延伸到城市生态和边缘群体发展，并讨论在中国生态治理中的应用空间。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "社会工作如何将环境正义纳入专业理论与干预？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "绿色社会工作理论与国际实践梳理",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "绿色社会工作将环境风险对脆弱群体的影响置于专业关注中心。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "实践需要连接地方能力建设与跨领域合作，并突破专业能力壁垒。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-19",
+    "private_source_record_sha256": "09f5685186709fd8ad5e34d47617b30b8a30b734673a61b274f356e2f7590049"
+  },
+  {
+    "id": "research-shjs-2022-20",
+    "external_id": "shjs.ruc.edu.cn:article:20",
+    "title": "论社会福利理念的衍生与制度化",
+    "authors": [
+      "于建琳",
+      "宣朝庆"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/43",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章追溯近代中国社会福利概念的形成及其进入政策制度的过程，分析学术表达、政府组织和立法如何共同推动福利责任的制度化。",
+    "research_question": "社会福利理念怎样在近代中国转化为制度安排？",
+    "methods": "社会福利概念演变与制度史考察",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "国家责任意识和社会转型需求共同推动福利理念发展。",
+      "概念、思想和制度表达经由研究、机构与立法相互衔接。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会政策与保障"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art20 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art20 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "帮助区分福利理念形成与政策制度落地，适合社会政策史和概念史研究。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章追溯近代中国社会福利概念的形成及其进入政策制度的过程，分析学术表达、政府组织和立法如何共同推动福利责任的制度化。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "社会福利理念怎样在近代中国转化为制度安排？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "社会福利概念演变与制度史考察",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "国家责任意识和社会转型需求共同推动福利理念发展。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "概念、思想和制度表达经由研究、机构与立法相互衔接。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-20",
+    "private_source_record_sha256": "976eaef9d32f02ef99af6b83459ec329ee6e7a57c57d2d6f9b2c983b7c837dda"
+  },
+  {
+    "id": "research-shjs-2022-21",
+    "external_id": "shjs.ruc.edu.cn:article:21",
+    "title": "医务社会工作协同防控公共卫生事件的循证实践模式",
+    "authors": [
+      "童峰",
+      "拜争刚"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/53",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章以新冠疫情防控为情境，提出医务社会工作的循证实践流程：明确目标、筛选评价证据、转化为决策，再在实践中更新证据。核心是把服务判断与可检验的知识基础连接起来。",
+    "research_question": "医务社会工作如何在公共卫生事件中组织循证决策？",
+    "methods": "循证实践流程建构与公共卫生情境应用讨论",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "目标、证据评价、决策和更新构成持续循环的实践步骤。",
+      "医务社会工作需要同步推进证据生产、应用与积累。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会工作"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art21 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art21 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "为设计服务评估与知识转化流程提供操作框架，适合与具体医疗社工案例对读。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章以新冠疫情防控为情境，提出医务社会工作的循证实践流程：明确目标、筛选评价证据、转化为决策，再在实践中更新证据。核心是把服务判断与可检验的知识基础连接起来。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "医务社会工作如何在公共卫生事件中组织循证决策？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "循证实践流程建构与公共卫生情境应用讨论",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "目标、证据评价、决策和更新构成持续循环的实践步骤。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "医务社会工作需要同步推进证据生产、应用与积累。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-21",
+    "private_source_record_sha256": "ba46a2308c383d868acfce6a53fd43cda845d560150734ad7625f7adb3c4c5b3"
+  },
+  {
+    "id": "research-shjs-2022-22",
+    "external_id": "shjs.ruc.edu.cn:article:22",
+    "title": "母职策略：城市中产女性孕产期的母职实践",
+    "authors": [
+      "王蕾"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/64",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究根据深度访谈分析城市中产女性孕产期的母职实践，展示她们如何调动经济、知识与家庭资源协调个人体验、医疗技术和家庭关系。作者据此讨论现代育儿实践中的消费性与阶层差异。",
+    "research_question": "城市中产女性如何在孕产期形成并实施母职策略？",
+    "methods": "深度访谈分析",
+    "data": "城市中产阶层女性孕产期经历",
+    "sample": null,
+    "findings": [
+      "孕产期实践涉及个人心理与物质准备、医疗安排及家庭关系协调。",
+      "资源调动使母职实践呈现现代理性、消费性和阶层性。"
+    ],
+    "limitations": null,
+    "topics": [
+      "家庭与生育",
+      "教育与社会分层",
+      "健康与医疗"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art22 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art22 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "适合将母职理解为资源配置和关系协调过程，并与教育母职化研究比较不同生命阶段。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究根据深度访谈分析城市中产女性孕产期的母职实践，展示她们如何调动经济、知识与家庭资源协调个人体验、医疗技术和家庭关系。作者据此讨论现代育儿实践中的消费性与阶层差异。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "城市中产女性如何在孕产期形成并实施母职策略？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "深度访谈分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "孕产期实践涉及个人心理与物质准备、医疗安排及家庭关系协调。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "资源调动使母职实践呈现现代理性、消费性和阶层性。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-22",
+    "private_source_record_sha256": "bc9469c40102cd2294dea26d5f5f914c6ffeee014be7eea083411918ca093046"
+  },
+  {
+    "id": "research-shjs-2022-17",
+    "external_id": "shjs.ruc.edu.cn:article:17",
+    "title": "返乡能人“经营村庄”的路径、机制与风险探析——基于两个村庄的案例研究",
+    "authors": [
+      "陈锋",
+      "孙锦帆"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/7",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "研究以两个村庄的实地材料分析返乡能人经营集体经济，指出集体土地与政府项目成为重要经营资本。资源集聚可能改善短期福利，但监督薄弱与公私利益转换也可能带来利益集中和风险向集体转移。",
+    "research_question": "返乡能人经营村庄的动力来自哪里，又带来哪些治理风险？",
+    "methods": "两个村庄的实地案例研究",
+    "data": null,
+    "sample": {
+      "village_count": 2
+    },
+    "findings": [
+      "地方典型建设和项目争取推动资源向部分村庄集中。",
+      "公私利益转化为经营提供动力，监督不足时也可能形成少数人主导的利益分配。",
+      "盘活资产和短期福利改善与经营风险转嫁可能同时出现。"
+    ],
+    "limitations": null,
+    "topics": [
+      "社会政策与保障",
+      "乡村与城乡"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art17 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art17 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "适合分析乡村经营绩效与公共性之间的张力，避免仅凭资源投入或示范称号评价治理效果。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究以两个村庄的实地材料分析返乡能人经营集体经济，指出集体土地与政府项目成为重要经营资本。资源集聚可能改善短期福利，但监督薄弱与公私利益转换也可能带来利益集中和风险向集体转移。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "返乡能人经营村庄的动力来自哪里，又带来哪些治理风险？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "两个村庄的实地案例研究",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "地方典型建设和项目争取推动资源向部分村庄集中。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "公私利益转化为经营提供动力，监督不足时也可能形成少数人主导的利益分配。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "盘活资产和短期福利改善与经营风险转嫁可能同时出现。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-17",
+    "private_source_record_sha256": "634f24c2a272e63557b4b31a4e0f44f4381836f4962023486e112bfafe7ff782"
+  },
+  {
+    "id": "research-shjs-2022-23",
+    "external_id": "shjs.ruc.edu.cn:article:23",
+    "title": "儿童家庭寄养的理论透视与整合",
+    "authors": [
+      "陈丽"
+    ],
+    "source_name": "社会建设",
+    "source_publisher": "《社会建设》编辑部 / 中国人民大学",
+    "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03/79",
+    "source_scope": "official_journal_issue_abstract",
+    "published_at": "2022-05-20",
+    "published_at_precision": "day",
+    "published_at_display": "2022-05-20",
+    "publication_year": 2022,
+    "publication_issue": 3,
+    "source_published_at": null,
+    "source_date_label": "网页上线日期未核实；未用抓取日代替发表日",
+    "material_type": "research_abstract",
+    "summary": "文章比较依恋、生态系统和抗逆力三类理论对寄养儿童发展的解释，再以嵌入性视角连接制度、结构和关系条件，提出从需要与供给匹配理解寄养融合发展的框架。",
+    "research_question": "如何整合不同理论解释寄养儿童的发展差异？",
+    "methods": "三类理论比较与整合框架建构",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "既有理论分别突出亲密关系、系统网络及个体环境互动。",
+      "嵌入性视角把制度、结构和关系条件纳入同一需要供给分析。"
+    ],
+    "limitations": null,
+    "topics": [
+      "儿童与青少年",
+      "家庭与生育"
+    ],
+    "human_full_text_reviewed": false,
+    "verification_status": "lead_only",
+    "verification_note": "助手实际阅读官方期次页完整公开摘要后释义；分析范围为摘要，不代表论文全文审读或研究结论独立复现。方法、数据、样本仅在摘要披露时填写。",
+    "evidence": [
+      {
+        "locator": "#art23 .j-abstract",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "abstract_read_status",
+          "title_abstract_keyword_lead"
+        ]
+      },
+      {
+        "locator": "#art23 .j-title-1, .j-author, .j-volumn",
+        "url": "https://shjs.ruc.edu.cn/CN/Y2022/V9/I03",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_issue",
+          "publication_pages"
+        ]
+      }
+    ],
+    "discovered_at": "2026-10-01T09:45:36Z",
+    "within_preferred_window": false,
+    "missing_reasons": {
+      "data": "公开摘要未披露足够细节。",
+      "sample": "公开摘要未披露足够细节。",
+      "limitations": "未阅读全文。",
+      "source_published_at": "期次页未单独确认网页上线日期。"
+    },
+    "editorial_caveat": "来源与期次覆盖不均，关键词只用于此采集样本内描述；不得解释为学科总体趋势、因果证据或质量排序。",
+    "source_id": "social-construction",
+    "issue_id": "social-construction:2022:3",
+    "why_read": "适合用于构建寄养服务评估维度，并检查个体支持与制度安排之间的衔接。",
+    "summary_method": "assistant_evidence_synthesis",
+    "extraction_method": "assistant_evidence_synthesis",
+    "analysis_scope": "abstract",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章比较依恋、生态系统和抗逆力三类理论对寄养儿童发展的解释，再以嵌入性视角连接制度、结构和关系条件，提出从需要与供给匹配理解寄养融合发展的框架。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "如何整合不同理论解释寄养儿童的发展差异？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "三类理论比较与整合框架建构",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "既有理论分别突出亲密关系、系统网络及个体环境互动。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "嵌入性视角把制度、结构和关系条件纳入同一需要供给分析。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "stream": "research",
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "social-construction",
+    "source_aliases": [],
+    "canonical_study_id": "research-shjs-2022-23",
+    "private_source_record_sha256": "672e9b0c1d23198d8927801f74475341ea975338b865320b243bffacbe47ccf2"
+  },
+  {
+    "id": "algorithm-society-19517",
+    "external_id": "society:19517",
+    "title": "国际竞争与古代宪章：休谟论光荣革命与英格兰现代政体的形成",
+    "authors": [
+      "张帅"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "对休谟光荣革命论述的分析显示，限制王权与建立财政军事能力并非对立；改造传统宪章同时回应了自由诉求和国际竞争压力。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "国家建构",
+      "政治思想"
+    ],
+    "research_question": "英国如何借传统宪章的变革兼顾国家能力与自由？",
+    "methods": "政治思想文本与历史解释分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "对休谟光荣革命论述的分析显示，限制王权与建立财政军事能力并非对立；改造传统宪章同时回应了自由诉求和国际竞争压力。"
+    ],
+    "limitations": null,
+    "why_read": "可用来比较战争压力与制度自由化的不同国家路径。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19517; metadata #art19517",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "对休谟光荣革命论述的分析显示，限制王权与建立财政军事能力并非对立；改造传统宪章同时回应了自由诉求和国际竞争压力。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "英国如何借传统宪章的变革兼顾国家能力与自由？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "政治思想文本与历史解释分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "对休谟光荣革命论述的分析显示，限制王权与建立财政军事能力并非对立；改造传统宪章同时回应了自由诉求和国际竞争压力。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19517",
+    "private_source_record_sha256": "41b84a52aa6932cfba4fa73d22dfe38e62ff7a8f2c8d919b462badf06169bf9f"
+  },
+  {
+    "id": "algorithm-society-19518",
+    "external_id": "society:19518",
+    "title": "“对共同伤害的复仇”或义愤的社会化维度——斯宾诺莎《政治论》与一个自由共同体的情动基础",
+    "authors": [
+      "宋一帆"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/27",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "作者将斯宾诺莎的义愤理解为共同体形成的力量：空间上的情感认同促进社会化，时间上的伤害记忆可进入制度，并推动团结从恐惧转向希望。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "社会情感",
+      "政治思想"
+    ],
+    "research_question": "反抗性的义愤怎样成为自由共同体的基础？",
+    "methods": "斯宾诺莎《政治论》的理论阐释",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "作者将斯宾诺莎的义愤理解为共同体形成的力量：空间上的情感认同促进社会化，时间上的伤害记忆可进入制度，并推动团结从恐惧转向希望。"
+    ],
+    "limitations": null,
+    "why_read": "为集体情绪如何进入制度提供时空维度的分析。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19518; metadata #art19518",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "作者将斯宾诺莎的义愤理解为共同体形成的力量：空间上的情感认同促进社会化，时间上的伤害记忆可进入制度，并推动团结从恐惧转向希望。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "反抗性的义愤怎样成为自由共同体的基础？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "斯宾诺莎《政治论》的理论阐释",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "作者将斯宾诺莎的义愤理解为共同体形成的力量：空间上的情感认同促进社会化，时间上的伤害记忆可进入制度，并推动团结从恐惧转向希望。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19518",
+    "private_source_record_sha256": "8db40e7d6541af05f1440be9d0d91985b3b1e80775c2d41b7d0c76494baaf553"
+  },
+  {
+    "id": "algorithm-society-19519",
+    "external_id": "society:19519",
+    "title": "传重之制与尊尊之义：从宗统与君统看传统中国政治权力的伦理化",
+    "authors": [
+      "吴柳财"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/55",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "通过宗统和君统继承的对照，文章认为传统中国权力交接以伦理秩序为根据，政治权威的合法性与父子关系及尊卑规范相连。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "亲属制度",
+      "政治权威"
+    ],
+    "research_question": "传统政治权力为何具有伦理化特征？",
+    "methods": "宗法与君权继承制度的理论分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "通过宗统和君统继承的对照，文章认为传统中国权力交接以伦理秩序为根据，政治权威的合法性与父子关系及尊卑规范相连。"
+    ],
+    "limitations": null,
+    "why_read": "帮助区分亲属伦理支配与非人格化行政权威。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19519; metadata #art19519",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "通过宗统和君统继承的对照，文章认为传统中国权力交接以伦理秩序为根据，政治权威的合法性与父子关系及尊卑规范相连。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "传统政治权力为何具有伦理化特征？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "宗法与君权继承制度的理论分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "通过宗统和君统继承的对照，文章认为传统中国权力交接以伦理秩序为根据，政治权威的合法性与父子关系及尊卑规范相连。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19519",
+    "private_source_record_sha256": "ffee5816aab9ac82c6a4a38fe9c5c106ac02a9586cc971c1d2a45f0f00281bbb"
+  },
+  {
+    "id": "algorithm-society-19520",
+    "external_id": "society:19520",
+    "title": "传统父系宗族中“族”的意义：以九族亲属制度的建构为例",
+    "authors": [
+      "秦鹏飞"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/84",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章围绕《礼记》相关经文解释九族的形成：亲属范围从父子关系出发，按亲疏递减向上下代及旁系展开，并由此限定家庭形式。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "亲属制度",
+      "家庭"
+    ],
+    "research_question": "九族的亲属边界如何被建构？",
+    "methods": "儒家经典经文解释",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章围绕《礼记》相关经文解释九族的形成：亲属范围从父子关系出发，按亲疏递减向上下代及旁系展开，并由此限定家庭形式。"
+    ],
+    "limitations": null,
+    "why_read": "可作为分析传统亲属分类与家族边界的概念材料。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19520; metadata #art19520",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章围绕《礼记》相关经文解释九族的形成：亲属范围从父子关系出发，按亲疏递减向上下代及旁系展开，并由此限定家庭形式。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "九族的亲属边界如何被建构？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "儒家经典经文解释",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章围绕《礼记》相关经文解释九族的形成：亲属范围从父子关系出发，按亲疏递减向上下代及旁系展开，并由此限定家庭形式。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19520",
+    "private_source_record_sha256": "e56d68defe3ed0256876f82a0eef33fd69faade5adfa4101ac92c01901edb73d"
+  },
+  {
+    "id": "algorithm-society-19521",
+    "external_id": "society:19521",
+    "title": "以人民性为中心的科学实践——20世纪50年代精神预防性无痛分娩法在中国",
+    "authors": [
+      "王颖"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/109",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "1950年代无痛分娩知识的传播并非政治对科学的单向替代；医护人员把推广要求转化为在地技术实践，体现有限专业自主性及性别、阶级和国家叙事的交织。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "科学社会学",
+      "医疗实践"
+    ],
+    "research_question": "苏联分娩知识如何在中国被接纳和重新解释？",
+    "methods": "科学实践史分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "1950年代无痛分娩知识的传播并非政治对科学的单向替代；医护人员把推广要求转化为在地技术实践，体现有限专业自主性及性别、阶级和国家叙事的交织。"
+    ],
+    "limitations": null,
+    "why_read": "可观察技术传播中专业人员的转译角色及自主空间。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19521; metadata #art19521",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "1950年代无痛分娩知识的传播并非政治对科学的单向替代；医护人员把推广要求转化为在地技术实践，体现有限专业自主性及性别、阶级和国家叙事的交织。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "苏联分娩知识如何在中国被接纳和重新解释？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "科学实践史分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "1950年代无痛分娩知识的传播并非政治对科学的单向替代；医护人员把推广要求转化为在地技术实践，体现有限专业自主性及性别、阶级和国家叙事的交织。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19521",
+    "private_source_record_sha256": "a935dbfb84d33f5b634aa28a275cb217ea68ca463b922e4e0fb38a4174d4edf9"
+  },
+  {
+    "id": "algorithm-society-19522",
+    "external_id": "society:19522",
+    "title": "移动互联时代的互动规则变迁——以微信聊天中的语音—文字选择为例",
+    "authors": [
+      "郑丹丹",
+      "董珂含"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/138",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "微信访谈显示，语音和文字选择承载地位差异：高位者更能自由使用语音，低位者承担更多避让；缺乏共同情境及聊天记录留存进一步增强低位者顾虑。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "数字互动",
+      "社会地位"
+    ],
+    "research_question": "移动聊天中的媒介选择怎样重塑互动等级？",
+    "methods": "半结构式访谈",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "微信访谈显示，语音和文字选择承载地位差异：高位者更能自由使用语音，低位者承担更多避让；缺乏共同情境及聊天记录留存进一步增强低位者顾虑。"
+    ],
+    "limitations": null,
+    "why_read": "将数字沟通形式与组织地位、互动礼仪直接联系。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19522; metadata #art19522",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "微信访谈显示，语音和文字选择承载地位差异：高位者更能自由使用语音，低位者承担更多避让；缺乏共同情境及聊天记录留存进一步增强低位者顾虑。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "移动聊天中的媒介选择怎样重塑互动等级？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "半结构式访谈",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "微信访谈显示，语音和文字选择承载地位差异：高位者更能自由使用语音，低位者承担更多避让；缺乏共同情境及聊天记录留存进一步增强低位者顾虑。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19522",
+    "private_source_record_sha256": "260cdb44d4028e1c38765e0c3f0c04f09e0280a537898a92aad5f81326a844e8"
+  },
+  {
+    "id": "algorithm-society-19523",
+    "external_id": "society:19523",
+    "title": "家、工厂与中国现代个体的诞生——对《茧》中人物生活世界的分析",
+    "authors": [
+      "凌鹏",
+      "孟奇"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/173",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "对费孝通小说人物的生活世界分析认为，现代个体并非简单脱离家庭，而是在家庭与工厂的重叠和冲突中成长；家庭还提供养育、行动动力和归属。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "个体化",
+      "家庭"
+    ],
+    "research_question": "费孝通如何理解中国现代个体的形成？",
+    "methods": "小说人物与生活世界的文本分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "对费孝通小说人物的生活世界分析认为，现代个体并非简单脱离家庭，而是在家庭与工厂的重叠和冲突中成长；家庭还提供养育、行动动力和归属。"
+    ],
+    "limitations": null,
+    "why_read": "为超越个人化等同于去家庭化的解释提供材料。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19523; metadata #art19523",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "对费孝通小说人物的生活世界分析认为，现代个体并非简单脱离家庭，而是在家庭与工厂的重叠和冲突中成长；家庭还提供养育、行动动力和归属。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "费孝通如何理解中国现代个体的形成？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "小说人物与生活世界的文本分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "对费孝通小说人物的生活世界分析认为，现代个体并非简单脱离家庭，而是在家庭与工厂的重叠和冲突中成长；家庭还提供养育、行动动力和归属。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19523",
+    "private_source_record_sha256": "7c9dfb835f863cb1548fbdcbd1485c91e0edcc6228235786dd3816371893ba36"
+  },
+  {
+    "id": "algorithm-society-19524",
+    "external_id": "society:19524",
+    "title": "遵从抑或濡染？班级同伴网络视角下的心理健康研究",
+    "authors": [
+      "张骞"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第1期",
+    "publication_year": 2023,
+    "publication_issue": 1,
+    "issue_id": "society:2023:1",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I1/203",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "CEPS两期数据表明，班级心理状态与学生心理健康相关，同伴作用因学生原有状态而异；更强的集体融入和亲子交流削弱抑郁同伴作用、增强积极同伴作用。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "同伴网络",
+      "心理健康",
+      "教育"
+    ],
+    "research_question": "班级同伴网络怎样影响学生心理健康？",
+    "methods": "中国教育追踪调查两期数据分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "CEPS两期数据表明，班级心理状态与学生心理健康相关，同伴作用因学生原有状态而异；更强的集体融入和亲子交流削弱抑郁同伴作用、增强积极同伴作用。"
+    ],
+    "limitations": null,
+    "why_read": "提示心理健康干预需同时考虑班级网络与家庭支持。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19524; metadata #art19524",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "CEPS两期数据表明，班级心理状态与学生心理健康相关，同伴作用因学生原有状态而异；更强的集体融入和亲子交流削弱抑郁同伴作用、增强积极同伴作用。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "班级同伴网络怎样影响学生心理健康？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "中国教育追踪调查两期数据分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "CEPS两期数据表明，班级心理状态与学生心理健康相关，同伴作用因学生原有状态而异；更强的集体融入和亲子交流削弱抑郁同伴作用、增强积极同伴作用。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19524",
+    "private_source_record_sha256": "37ac585e9538870bf1714ee4722e1293b2073d40efdf5bea835e1227a5f7134a"
+  },
+  {
+    "id": "algorithm-society-19619",
+    "external_id": "society:19619",
+    "title": "山林与社会",
+    "authors": [
+      "渠敬东"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第2期",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "issue_id": "society:2023:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I2/1",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "文章把山林文化理解为中国精神传统的承载空间：佛道影响与士人艺术实践共同维持超越世俗政治的价值世界，并与王朝和社会持续互动。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "文化社会学",
+      "文明研究"
+    ],
+    "research_question": "山林文化如何维系文明的超越性精神？",
+    "methods": "文明史与文化理论分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "文章把山林文化理解为中国精神传统的承载空间：佛道影响与士人艺术实践共同维持超越世俗政治的价值世界，并与王朝和社会持续互动。"
+    ],
+    "limitations": null,
+    "why_read": "提供考察精神生活与政治秩序关系的中国经验视角。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19619; metadata #art19619",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "文章把山林文化理解为中国精神传统的承载空间：佛道影响与士人艺术实践共同维持超越世俗政治的价值世界，并与王朝和社会持续互动。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "山林文化如何维系文明的超越性精神？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "文明史与文化理论分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "文章把山林文化理解为中国精神传统的承载空间：佛道影响与士人艺术实践共同维持超越世俗政治的价值世界，并与王朝和社会持续互动。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19619",
+    "private_source_record_sha256": "b8e514be726ef83474642b11ab4e41c6a391825440dd0ef334453bebe92a74a7"
+  },
+  {
+    "id": "algorithm-society-19620",
+    "external_id": "society:19620",
+    "title": "修身、成圣与革命：五四时期道德主义者的激进化",
+    "authors": [
+      "陈艳楠"
+    ],
+    "published_at": null,
+    "published_at_precision": "issue",
+    "published_at_display": "2023年第2期",
+    "publication_year": 2023,
+    "publication_issue": 2,
+    "issue_id": "society:2023:2",
+    "source_name": "社会",
+    "source_publisher": "上海大学《社会》编辑部",
+    "source_published_at": null,
+    "url": "https://www.society.shu.edu.cn/CN/Y2023/V43/I2/18",
+    "material_type": "research_abstract",
+    "source_scope": "journal_original_abstract",
+    "summary": "恽代英走向革命并不意味着放弃道德理想；心学修养和社会服务经验使其接近共产主义认知，道德结社受挫则推动他转向政党与群众行动。",
+    "summary_method": "assistant_evidence_synthesis",
+    "topics": [
+      "政治动员",
+      "思想史"
+    ],
+    "research_question": "温和的道德实践者为何转向革命？",
+    "methods": "恽代英早期经历的思想史分析",
+    "data": null,
+    "sample": null,
+    "findings": [
+      "恽代英走向革命并不意味着放弃道德理想；心学修养和社会服务经验使其接近共产主义认知，道德结社受挫则推动他转向政党与群众行动。"
+    ],
+    "limitations": null,
+    "why_read": "可分析道德承诺如何转化为政治动员。",
+    "analysis_scope": "abstract",
+    "verification_status": "lead_only",
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T09:48:52+00:00",
+    "evidence": [
+      {
+        "locator": "official annual contents #Abstract19620; metadata #art19620",
+        "url": "https://www.society.shu.edu.cn/CN/article/showVolumnArticle.do?nian=2023&juan=43",
+        "supports": [
+          "readable_abstract",
+          "metadata"
+        ]
+      }
+    ],
+    "extraction_method": "assistant_evidence_synthesis",
+    "verification_note": "助手依据原刊公开摘要逐篇释义；不是人类全文审稿，因果识别和方法细节仍需查阅论文。",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "恽代英走向革命并不意味着放弃道德理想；心学修养和社会服务经验使其接近共产主义认知，道德结社受挫则推动他转向政党与群众行动。",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "温和的道德实践者为何转向革命？",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "恽代英早期经历的思想史分析",
+        "evidence_indexes": [
+          0
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "恽代英走向革命并不意味着放弃道德理想；心学修养和社会服务经验使其接近共产主义认知，道德结社受挫则推动他转向政党与群众行动。",
+        "evidence_indexes": [
+          0
+        ]
+      }
+    ],
+    "missing_reasons": {
+      "data": "公开摘要未报告可核实细节。",
+      "sample": "公开摘要未报告可核实细节。",
+      "limitations": "公开摘要未报告可核实细节。"
+    },
+    "topics_source": "assistant_coded_from_abstract",
+    "stream": "research",
+    "source_id": "society-journal",
+    "within_preferred_window": null,
+    "media": [],
+    "display_ready": true,
+    "origin_source_id": "society-journal",
+    "source_aliases": [
+      "society"
+    ],
+    "canonical_study_id": "algorithm-society-19620",
+    "private_source_record_sha256": "7afff90a650858ff8dacfdcb70cb72da97b2dbdcd1db6fd6cf7072eb56511b9b"
+  }
+]

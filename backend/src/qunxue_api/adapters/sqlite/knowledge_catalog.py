@@ -157,6 +157,26 @@ class SqliteKnowledgeCatalog(KnowledgeCatalog):
                 row = self._publish_preview(session)
             return _release_ref(row)
 
+    def existing_release(
+        self, *, purpose: KnowledgeUsePurpose,
+    ) -> KnowledgeReleaseRef | None:
+        level, config = (
+            (KnowledgeReleaseLevel.FINAL.value, _PRE_REVIEWED_BUILD_CONFIG_VERSION)
+            if purpose is KnowledgeUsePurpose.MATCH
+            else (KnowledgeReleaseLevel.PREVIEW.value, _BUILD_CONFIG_VERSION)
+        )
+        with self._database.session() as session:
+            row = session.scalar(
+                select(KnowledgeReleaseRow)
+                .where(
+                    KnowledgeReleaseRow.is_current.is_(True),
+                    KnowledgeReleaseRow.level == level,
+                    KnowledgeReleaseRow.build_config_version == config,
+                )
+                .order_by(KnowledgeReleaseRow.built_at.desc())
+            )
+            return _release_ref(row) if row is not None else None
+
     def browse(
         self,
         *,

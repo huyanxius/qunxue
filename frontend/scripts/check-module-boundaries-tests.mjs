@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { findBoundaryViolations } from './check-module-boundaries.mjs'
+import { defaultBoundaryPolicy, findBoundaryViolations } from './check-module-boundaries.mjs'
 
 const roots = []
 after(async () => {
@@ -255,4 +255,24 @@ test('allows explicit classroom DTO facades while rejecting raw generated functi
     'modules/alpha/researchTaskApi.ts': "import { raw } from '../../api/generated/index.js'; export type { Dto } from '../../api/generated/index.js'; export { raw }; export const load = () => raw()",
   }, { alpha: [] }, { ...adapters, publicModuleAdapters: ['modules/alpha/researchTaskApi.ts'] })
   assert.deepEqual(violations, ['modules/alpha/researchTaskApi.ts re-exports raw generated API value raw'])
+})
+
+
+test('permits the reading insights adapter while keeping sibling views outside API internals', async () => {
+  const files = {
+    'api/client.ts': 'export const apiClient = {}',
+    'api/generated/sdk.gen.ts': 'export const getPriority = () => ({ record_id: "paper" })',
+    'modules/frontier/index.ts': 'export { readPriority } from "./readingPriorityAccess"',
+    'modules/frontier/readingPriorityAccess.ts': 'import { readPriority as load } from "./readingInsightsApi"; export const readPriority = () => load()',
+    'modules/frontier/readingInsightsApi.ts': `
+      import { apiClient } from '../../api/client'
+      import { getPriority } from '../../api/generated/sdk.gen'
+      export const readPriority = () => ({ recordId: getPriority(apiClient).record_id })
+    `,
+  }
+  assert.deepEqual(await check(files, { frontier: [] }, defaultBoundaryPolicy), [])
+  const invalid = await check({ ...files,
+    'modules/frontier/View.tsx': 'import { getPriority } from "../../api/generated/sdk.gen"',
+  }, { frontier: [] }, defaultBoundaryPolicy)
+  assert(invalid.some(message => message.includes('View.tsx imports generated API')))
 })

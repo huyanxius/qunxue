@@ -36,6 +36,7 @@ from .ports import (
 )
 from .series import topic_series
 from .service import FrontierService
+from .value import assess_record_value, reading_basis
 
 __all__ = [
     "RULE_VERSION",
@@ -79,3 +80,5 @@ __all__ += [
     "corpus_statistics",
     "visible_corpus_records",
 ]
+
+__all__ += ["assess_record_value", "reading_basis"]

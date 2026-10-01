@@ -166,6 +166,8 @@ from qunxue_api.application import (
     TranscriptionApplication,
 )
 from qunxue_api.application.agent_research_workflow import AgentResearchWorkflow
+from qunxue_api.application.frontier_knowledge_links import FrontierKnowledgeLinks
+from qunxue_api.application.frontier_reading_priority import FrontierReadingPriority
 from qunxue_api.application.memory_learning import MemoryLearningWorker
 from qunxue_api.application.memory_overview import MemoryOverview
 from qunxue_api.application.shared_knowledge import SharedKnowledgeApplication
@@ -394,6 +396,12 @@ def create_app(
     app.state.knowledge_catalog = SqliteKnowledgeCatalog(
         resolved_database,
         knowledge_root=KNOWLEDGE_ROOT,
+    )
+    app.state.frontier_knowledge_links = FrontierKnowledgeLinks(
+        app.state.frontier_store, app.state.knowledge_catalog, app.state.frontier_service
+    )
+    app.state.frontier_reading_priority = FrontierReadingPriority(
+        app.state.frontier_store, app.state.frontier_service
     )
     resolved_knowledge_retriever = knowledge_retriever or _retriever_from_settings(
         resolved_settings
@@ -999,7 +1007,8 @@ def create_app(
                             "extra_headers": dict(endpoint.extra_headers),
                             **(
                                 {"openai_store": endpoint.store}
-                                if endpoint.store is not None else {}
+                                if endpoint.store is not None
+                                else {}
                             ),
                         }
                         for endpoint in agent_endpoints[1:]
@@ -1526,8 +1535,7 @@ def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, .
                 dict(headers)
                 if endpoint.extra_headers is None
                 else {
-                    name: value.get_secret_value()
-                    for name, value in endpoint.extra_headers.items()
+                    name: value.get_secret_value() for name, value in endpoint.extra_headers.items()
                 }
             ),
             store=endpoint.store,

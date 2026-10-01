@@ -3,11 +3,33 @@
 from datetime import date, timedelta
 
 from .analysis import aggregate_topics
-from .domain import frontier_today
+from .calendar import publication_calendar
+from .domain import content_hash, frontier_today
 from .overview import overview_basis
 from .overview_stats import corpus_statistics, visible_corpus_records
+from .period_report import period_report
+from .periods import PublicationInterval, available_as_of, browse_visible
 from .ports import FrontierStore
 from .series import topic_series
+
+
+def _brief_references_visible(value: object, allowed: set[str]) -> bool:
+    if isinstance(value, list):
+        return all(_brief_references_visible(item, allowed) for item in value)
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "evidence_record_ids":
+                if not isinstance(item, list) or any(
+                    not isinstance(ref, str) or ref not in allowed for ref in item
+                ):
+                    return False
+            elif (
+                key == "record_id"
+                and (not isinstance(item, str) or item not in allowed)
+                or not _brief_references_visible(item, allowed)
+            ):
+                return False
+    return True
 
 
 class FrontierService:
@@ -15,9 +37,58 @@ class FrontierService:
         self.store = store
         self.vector_retriever = vector_retriever
 
+    def record(self, record_id: str, *, as_of: date | None = None) -> dict:
+        record = self.store.get_record(record_id)
+        if (
+            not record
+            or not browse_visible(record)
+            or not available_as_of(record, as_of or frontier_today())
+        ):
+            raise LookupError("Frontier record not found")
+        return record
+
+    def calendar(self, *, year: int, as_of: date | None = None) -> dict:
+        cutoff = as_of or frontier_today()
+        return publication_calendar(
+            [
+                r
+                for r in self.store.list_records()
+                if browse_visible(r) and available_as_of(r, cutoff)
+            ],
+            year=year,
+            as_of=cutoff,
+        )
+
+    def period_report(
+        self,
+        *,
+        previous_start: date,
+        previous_end: date,
+        current_start: date,
+        current_end: date,
+        topic_key: str,
+        as_of: date | None = None,
+    ) -> dict:
+        previous = PublicationInterval(previous_start, previous_end)
+        current = PublicationInterval(current_start, current_end)
+        if previous.end >= current.start:
+            raise ValueError("comparison periods must not overlap")
+        return period_report(
+            self.store.list_records(),
+            self.store.list_issue_coverage(),
+            previous=previous,
+            current=current,
+            topic_key=topic_key,
+            as_of=as_of or frontier_today(),
+        )
+
     def overview(self, *, as_of: date | None = None) -> dict:
         as_of = as_of or frontier_today()
-        records = visible_corpus_records(self.store.list_records())
+        records = [
+            r
+            for r in visible_corpus_records(self.store.list_records())
+            if browse_visible(r) and available_as_of(r, as_of)
+        ]
         research = [r for r in records if r["material_type"] != "official_practice"]
         stored = self.store.get_corpus_overview()
         ready = bool(stored and stored["basis_content_hash"] == overview_basis(research))
@@ -42,7 +113,9 @@ class FrontierService:
         as_of: date | None = None,
     ) -> dict:
         as_of = as_of or frontier_today()
-        records = [r for r in self.store.list_records() if r["eligibility"]["browse"]]
+        records = [
+            r for r in self.store.list_records() if browse_visible(r) and available_as_of(r, as_of)
+        ]
         if topic_id:
             topic = next((t for t in aggregate_topics(records, as_of) if t["id"] == topic_id), None)
             member_ids = set(topic["record_ids"] if topic else [])
@@ -125,10 +198,15 @@ class FrontierService:
         }
 
     def topics(self, *, as_of: date | None = None) -> list[dict]:
-        visible = [r for r in self.store.list_records() if r["eligibility"]["browse"]]
         as_of = as_of or frontier_today()
-        coverage_start = self.coverage_start(as_of)
-        topics = aggregate_topics(visible, as_of, coverage_start=coverage_start)
+        visible = [
+            r for r in self.store.list_records() if browse_visible(r) and available_as_of(r, as_of)
+        ]
+        # Legacy rolling day counts describe samples. Only the period report can
+        # establish a covered fixed cohort from actual ledgers.
+        coverage_start = None
+        topics = aggregate_topics(visible, as_of)
+        record_by_id = {r["id"]: r for r in visible}
         briefs = {f"{b['topic_key']}-{b['stream']}": b for b in self.store.list_briefs()}
         sources = self.store.list_sources()
         issue_coverage = self.store.list_issue_coverage()
@@ -139,6 +217,21 @@ class FrontierService:
                     "本批为人工或定额采样，未证明连续完整覆盖；数量仅描述收录样本"
                 )
             brief = briefs.get(topic["id"])
+            if brief:
+                ids = brief.get("evidence_record_ids", [])
+                valid = (
+                    isinstance(ids, list)
+                    and bool(ids)
+                    and all(isinstance(i, str) and i in topic["record_ids"] for i in ids)
+                    and _brief_references_visible(brief, set(ids))
+                )
+                digest = (
+                    content_hash(sorted((i, record_by_id[i].get("content_hash")) for i in set(ids)))
+                    if valid
+                    else None
+                )
+                if not valid or digest != brief.get("basis_content_hash"):
+                    brief = None
             topic["editorial_brief"] = brief
             topic["research_brief"] = brief.get("research_brief") if brief else None
             if brief:

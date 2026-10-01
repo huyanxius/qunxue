@@ -1,0 +1,3786 @@
+[
+  {
+    "source_id": "sociological-studies",
+    "title": "构建“实践场景”：生活方式绿色转型的组织与动员机制——基于两个社区项目的研究",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "绿色转型",
+      "生活方式",
+      "实践场景",
+      "社区项目"
+    ],
+    "id": "shxyj-121912",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121912",
+    "authors": [
+      "黄燕华"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121912",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "绿色转型",
+      "生活方式",
+      "实践场景",
+      "社区项目"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121912",
+    "private_source_record_sha256": "6461d47638f67a533a6ec8886c5249decb451892410e43cec834e6cb0f027c7e"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "再造团结：文化视角下的基层党组织与乡村治理——对关中乡村新时代文明实践的考察",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "乡村治理",
+      "基层党组织",
+      "规范共享",
+      "象征对接"
+    ],
+    "id": "shxyj-121913",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121913",
+    "authors": [
+      "王心怡",
+      "张竞衔",
+      "孟天广"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121913",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "乡村治理",
+      "基层党组织",
+      "规范共享",
+      "象征对接"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001010&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121913",
+    "private_source_record_sha256": "c3349986fbb91194a7c27c4cd09ba5d546d9282e19747b4a49cb6270f15291ff"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "人工智能算法何以重构社会治理？——基于中国警务部门算法运作的实证研究",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "人工智能",
+      "算法治理",
+      "警务部门",
+      "社会治理"
+    ],
+    "id": "shxyj-121906",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121906",
+    "authors": [
+      "宋锴业",
+      "徐雅倩"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121906",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "基于警务部门、企业和工程师的田野材料，研究指出算法同时改变部门协作和内部权力分配，并可能挤压一线经验的作用。",
+    "summary_method": "assistant_evidence_synthesis",
+    "findings": [
+      "算法应用涉及组织关系和权力边界的重组，不能只用工作效率衡量。"
+    ],
+    "research_question": "算法进入警务组织后，部门协作和一线工作方式怎样改变？",
+    "methods": "参与式观察与深度访谈",
+    "data": null,
+    "topics": [
+      "人工智能",
+      "算法治理",
+      "警务部门",
+      "社会治理"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "abstract",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001003&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "why_read": "适合研究数字治理的组织机制，也能帮助区分技术能力与一线经验之间的关系。",
+    "extraction_method": "assistant_evidence_synthesis",
+    "reading_note_basis_sha256": "6fda545b789b9c57ac094ef1b870d1b2fb98e90e5b250e4dd4676d8a281fa278",
+    "reading_note_review_type": "assistant_abstract_reading",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "基于警务部门、企业和工程师的田野材料，研究指出算法同时改变部门协作和内部权力分配，并可能挤压一线经验的作用。",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "算法进入警务组织后，部门协作和一线工作方式怎样改变？",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "参与式观察与深度访谈",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "算法应用涉及组织关系和权力边界的重组，不能只用工作效率衡量。",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "why_read",
+        "statement": "适合研究数字治理的组织机制，也能帮助区分技术能力与一线经验之间的关系。",
+        "evidence_indexes": [
+          1
+        ]
+      }
+    ],
+    "canonical_study_id": "shxyj-121906",
+    "private_source_record_sha256": "a587ac0abc2cbb4f1efa913e06bfd08d66152c20f91d09593008fa08738910fb"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "乡村数字自主性及其生成机制——以一个电商平台的经营实践为例",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "平台下沉",
+      "乡村自主平台",
+      "乡村数字自主性",
+      "青年入乡"
+    ],
+    "id": "shxyj-121907",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121907",
+    "authors": [
+      "沙垚",
+      "杨文根"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121907",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "平台下沉",
+      "乡村自主平台",
+      "乡村数字自主性",
+      "青年入乡"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001004&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121907",
+    "private_source_record_sha256": "cf29c9fc3276a8ce5a3c254ded25ccc80afa7a10de6904de2df3ac652ff6610d"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "大学层级抑或专业更重要？——中国高等教育水平分层与优势阶层地位获得",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "社会阶层",
+      "水平分层",
+      "大学层级",
+      "专业",
+      "二元分层体系"
+    ],
+    "id": "shxyj-121908",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121908",
+    "authors": [
+      "刘欣",
+      "覃文晶"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121908",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社会阶层",
+      "水平分层",
+      "大学层级",
+      "专业",
+      "二元分层体系"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001005&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121908",
+    "private_source_record_sha256": "638a376a4a9c9ee24bc31125fe00dc324ad614576f53bb7e76e94e627a4fa7ee"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "教育失配、社会流动与优绩主义观念",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "优绩主义观念",
+      "教育失配",
+      "社会流动",
+      "地位不一致"
+    ],
+    "id": "shxyj-121909",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121909",
+    "authors": [
+      "赵青矣",
+      "史海钧"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121909",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "优绩主义观念",
+      "教育失配",
+      "社会流动",
+      "地位不一致"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001006&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121909",
+    "private_source_record_sha256": "806508fade53067e6f61c84c61ad5f8e0b933b99dd65178d87d47e3a856a1dd4"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "关系社会学：基于中国经验的社会学自主知识体系构建",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "关系社会学",
+      "中国经验",
+      "理论创新",
+      "自主知识体系"
+    ],
+    "id": "shxyj-121904",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121904",
+    "authors": [
+      "张文宏",
+      "牛梓宁",
+      "刘飞"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121904",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "关系社会学",
+      "中国经验",
+      "理论创新",
+      "自主知识体系"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001001&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121904",
+    "private_source_record_sha256": "904d54b05068a4cceae1319a4d85d900b7ac0a1186447fcde40e2d01eb228857"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "天命自我：中国文化社会学的标识性概念",
+    "publication_year": 2026,
+    "publication_issue": 1,
+    "published_at": "2026-01-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "天命自我",
+      "双极运作",
+      "自我继替",
+      "文化变迁"
+    ],
+    "id": "shxyj-121905",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=121905",
+    "authors": [
+      "李向平",
+      "邢培霞"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:1",
+    "external_id": "shxyj-121905",
+    "published_at_display": "2026-01-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "天命自我",
+      "双极运作",
+      "自我继替",
+      "文化变迁"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=1",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026001002&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-121905",
+    "private_source_record_sha256": "528f2ab420410d869206d5f3a40f34d81888a9a88456f4400f0d0495c1b36def"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "重返描述：定量研究中的数据深描",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "数据深描",
+      "因果分析",
+      "定量研究方法",
+      "自主知识体系"
+    ],
+    "id": "shxyj-122489",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122489",
+    "authors": [
+      "马文",
+      "陈云松"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122489",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数据深描",
+      "因果分析",
+      "定量研究方法",
+      "自主知识体系"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002006&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122489",
+    "private_source_record_sha256": "0051970ed68aae811cc33a8bb7b27c3be51353d8fc25d53568d63fc0995edf97"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "发挥文化的“解释力”：对文化社会学强范式的反思",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "文化解释力",
+      "强范式",
+      "文化社会学",
+      "认知社会学"
+    ],
+    "id": "shxyj-122490",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122490",
+    "authors": [
+      "胡安宁"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122490",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "文化解释力",
+      "强范式",
+      "文化社会学",
+      "认知社会学"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002007&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122490",
+    "private_source_record_sha256": "e9ec5933f86d23814ba852d7314b89d2df9ef2d4d986c9589e8a789613e1d0b5"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "化解劳动力流动的不确定性——B市线上日结零工中介的管理策略研究",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "劳动力流动",
+      "日结零工",
+      "劳动力市场秩序",
+      "主体性"
+    ],
+    "id": "shxyj-122491",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122491",
+    "authors": [
+      "张笑辰",
+      "汪建华"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122491",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "劳动力流动",
+      "日结零工",
+      "劳动力市场秩序",
+      "主体性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002008&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122491",
+    "private_source_record_sha256": "a45aa4b9f598530bedf85111ca9d45f27a62633ec243fbeec6e8223746f3220c"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "“工作生活一体化”与农村基层政府治理——以“城乡两栖干部”为例",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "城乡两栖",
+      "家庭拆分",
+      "行动伦理",
+      "基层政府治理"
+    ],
+    "id": "shxyj-122492",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122492",
+    "authors": [
+      "郑博文",
+      "狄金华"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122492",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "城乡两栖",
+      "家庭拆分",
+      "行动伦理",
+      "基层政府治理"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122492",
+    "private_source_record_sha256": "617aa07d51bc19a8b35519e8104d6fcbe2f2534cdfbd5af33c91483bba6bb07d"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "睡眠社会学：现代社会睡眠危机的社会学回应",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "睡眠社会学",
+      "睡眠危机",
+      "睡眠健康",
+      "睡眠友好型社会"
+    ],
+    "id": "shxyj-122493",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122493",
+    "authors": [
+      "李晓谕",
+      "李园园"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122493",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "睡眠社会学",
+      "睡眠危机",
+      "睡眠健康",
+      "睡眠友好型社会"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002010&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122493",
+    "private_source_record_sha256": "9583f92b901da098e9c0e3e1074888b06cd85b1c8653fdfe4cb3051626ddde1b"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "数字平台中的权利关系重塑——一项基于互联网广告平台的案例研究",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "数字平台",
+      "平台治理",
+      "双边市场",
+      "制度主义"
+    ],
+    "id": "shxyj-122486",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122486",
+    "authors": [
+      "朱涛",
+      "周杨"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122486",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数字平台",
+      "平台治理",
+      "双边市场",
+      "制度主义"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002003&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122486",
+    "private_source_record_sha256": "387ea6f58ec8bf2c1e23aea0e4a8940c25c4fad1f6faf9bcd5d43b93aafb9ad7"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "数字趣缘社群中的互动机制——基于关系事件模型的动态分析",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "数字社群",
+      "趣缘组织",
+      "关系事件模型",
+      "互动秩序",
+      "互惠性"
+    ],
+    "id": "shxyj-122487",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122487",
+    "authors": [
+      "宋庆宇"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122487",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "数字社群",
+      "趣缘组织",
+      "关系事件模型",
+      "互动秩序",
+      "互惠性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002004&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122487",
+    "private_source_record_sha256": "07f8bab22fee5e95a3a9bfc8896cddb42693b859e396c18c7dedaea66dc81d4d"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "人工智能社会化：内容生成与符号重塑",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "人工智能社会化",
+      "准社会主体",
+      "社会符号系统",
+      "内容生成",
+      "大语言模型"
+    ],
+    "id": "shxyj-122488",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122488",
+    "authors": [
+      "刘河庆"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122488",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "研究让四个大语言模型扮演不同角色回答知乎问题，发现输出容易强化角色刻板印象，并向相似表达集中。",
+    "summary_method": "assistant_evidence_synthesis",
+    "findings": [
+      "角色设定带来适应性，也可能强化刻板印象；生成内容存在趋同现象。"
+    ],
+    "research_question": "大语言模型扮演不同角色时，会带来更多样的表达吗？",
+    "methods": "四个大语言模型的角色模拟回答比较",
+    "data": null,
+    "topics": [
+      "人工智能社会化",
+      "准社会主体",
+      "社会符号系统",
+      "内容生成",
+      "大语言模型"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "abstract",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002005&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "why_read": "把AI研究从使用规模推进到表达差异，适合关注平台内容与数字文化的读者。",
+    "extraction_method": "assistant_evidence_synthesis",
+    "reading_note_basis_sha256": "dfc71415b7e379beeddcebc74dedfd6a383d0ca403a6141d5622b2b37f0e760e",
+    "reading_note_review_type": "assistant_abstract_reading",
+    "analysis_evidence": [
+      {
+        "field": "summary",
+        "statement": "研究让四个大语言模型扮演不同角色回答知乎问题，发现输出容易强化角色刻板印象，并向相似表达集中。",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "research_question",
+        "statement": "大语言模型扮演不同角色时，会带来更多样的表达吗？",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "methods",
+        "statement": "四个大语言模型的角色模拟回答比较",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "findings",
+        "statement": "角色设定带来适应性，也可能强化刻板印象；生成内容存在趋同现象。",
+        "evidence_indexes": [
+          1
+        ]
+      },
+      {
+        "field": "why_read",
+        "statement": "把AI研究从使用规模推进到表达差异，适合关注平台内容与数字文化的读者。",
+        "evidence_indexes": [
+          1
+        ]
+      }
+    ],
+    "canonical_study_id": "shxyj-122488",
+    "private_source_record_sha256": "d7758bf346801b19eb82f52f40fe48fe758c064f7356f2d103527369903a818e"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "中国视角下的革命社会学：传统溯源与内涵探析",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "革命社会学",
+      "中国视角",
+      "自主知识体系构建"
+    ],
+    "id": "shxyj-122484",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122484",
+    "authors": [
+      "应星"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122484",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "革命社会学",
+      "中国视角",
+      "自主知识体系构建"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002001&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122484",
+    "private_source_record_sha256": "cae7592c9bf0efa827360b50930c115e6e46ee7e921e6935c5f17d9d634ae9aa"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "非人行动者与社会学研究范式的转型——兼论超越人类主体的社会学",
+    "publication_year": 2026,
+    "publication_issue": 2,
+    "published_at": "2026-03-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "非人行动者",
+      "超越人类主体的社会学",
+      "范式转型",
+      "中国探索"
+    ],
+    "id": "shxyj-122485",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122485",
+    "authors": [
+      "文军",
+      "王云龙"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:2",
+    "external_id": "shxyj-122485",
+    "published_at_display": "2026-03-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "非人行动者",
+      "超越人类主体的社会学",
+      "范式转型",
+      "中国探索"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=2",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026002002&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122485",
+    "private_source_record_sha256": "f4bbb612c6134b3063a5196cfe8bd521d46da6e846e014933d509c2d7c7843ef"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "本体类型与案例研究的方法论自觉——以形态学和发生学的区分为基础",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "案例研究",
+      "本体论",
+      "方法论",
+      "形态学",
+      "发生学"
+    ],
+    "id": "shxyj-122860",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122860",
+    "authors": [
+      "张兆曙"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122860",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "案例研究",
+      "本体论",
+      "方法论",
+      "形态学",
+      "发生学"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003007&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122860",
+    "private_source_record_sha256": "64f1499f27ac580f1b559942f4a848fa403f8628c81dab90a49556251a13a1f9"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "复杂制度与组织行动——制度主义范式的新探索",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "复杂制度",
+      "组织行动",
+      "多重性",
+      "悖论性",
+      "去中心性"
+    ],
+    "id": "shxyj-122861",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122861",
+    "authors": [
+      "史普原"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122861",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "复杂制度",
+      "组织行动",
+      "多重性",
+      "悖论性",
+      "去中心性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003008&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122861",
+    "private_source_record_sha256": "d809cea8d8f203d9ad604244ca0b0019f5b7a4680e193c3b0f43cf2c4865c8fd"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "选择性融入：来华国际移民的经济融入",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "国际移民",
+      "移民过渡期",
+      "选择性融入",
+      "本土化"
+    ],
+    "id": "shxyj-122862",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122862",
+    "authors": [
+      "李蔓莉"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122862",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "国际移民",
+      "移民过渡期",
+      "选择性融入",
+      "本土化"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122862",
+    "private_source_record_sha256": "26659489664f71c462d5b7eed715a5d34d6fcb9480729090d9c52e66af3751a8"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "制度与空间的互动：养老机构子代“在场”的形塑机制",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "制度—空间互动",
+      "照护方式转型",
+      "机构养老",
+      "代际关系",
+      "生命晚期"
+    ],
+    "id": "shxyj-122863",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122863",
+    "authors": [
+      "卓唯佳"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122863",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "制度—空间互动",
+      "照护方式转型",
+      "机构养老",
+      "代际关系",
+      "生命晚期"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003010&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "research-shxyj-2026-3-care-presence",
+    "private_source_record_sha256": "1cfa51cc2e0b8c448676710c2b1f7cc2166d03d64b0552186a14a5292be5a7cc"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "伦理人类学：脉络及前景",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "伦理转向",
+      "道德人类学",
+      "伦理与道德",
+      "中国人类学“人”的研究"
+    ],
+    "id": "shxyj-122856",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122856",
+    "authors": [
+      "黄剑波",
+      "乔毕洋"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122856",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "伦理转向",
+      "道德人类学",
+      "伦理与道德",
+      "中国人类学“人”的研究"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003003&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122856",
+    "private_source_record_sha256": "206c3f24e999d4c588bdcc448aa08a4febd8f5fa019ed9158e5e1c0b8e5498bd"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "西方人类学的“伦理转向”及其对中国人类学研究的启示",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "伦理转向",
+      "道德伦理",
+      "日常伦理",
+      "伦理实践"
+    ],
+    "id": "shxyj-122857",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122857",
+    "authors": [
+      "袁同凯",
+      "陈楠",
+      "鞠佩知"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122857",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "伦理转向",
+      "道德伦理",
+      "日常伦理",
+      "伦理实践"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003004&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122857",
+    "private_source_record_sha256": "df602b4a37a515d6a25529b6b5510f040b5f01cbee17384698722d8b75d2a4ce"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "谈“钱”还是谈“感情”——多维交换结构中的关系成本与关系策略",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "社会关系",
+      "关系运作",
+      "关系成本",
+      "多维结构"
+    ],
+    "id": "shxyj-122858",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122858",
+    "authors": [
+      "刘梦岳"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122858",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社会关系",
+      "关系运作",
+      "关系成本",
+      "多维结构"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003005&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122858",
+    "private_source_record_sha256": "d705d49123bb41de1c3898307a1c6b1574ea21cb796bb951240b7ceca8f7b878"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "平等效应还是分化效应？——家庭金融化与收入不平等的关系研究",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "家庭金融化",
+      "收入不平等",
+      "阶层地位",
+      "平等效应",
+      "分化效应"
+    ],
+    "id": "shxyj-122859",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122859",
+    "authors": [
+      "柳建坤",
+      "何晓斌"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122859",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "家庭金融化",
+      "收入不平等",
+      "阶层地位",
+      "平等效应",
+      "分化效应"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003006&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122859",
+    "private_source_record_sha256": "2d2ca319cb1c7cf5158cf421c39fa8f8aad928824e9a1b1778dc9019d416ec43"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "集分相制：中国特色政府间财政关系的制度逻辑",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "政府间财政关系",
+      "集分相制",
+      "财政分权",
+      "国家治理"
+    ],
+    "id": "shxyj-122854",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122854",
+    "authors": [
+      "吕冰洋",
+      "郭雨萌"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122854",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "政府间财政关系",
+      "集分相制",
+      "财政分权",
+      "国家治理"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003001&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122854",
+    "private_source_record_sha256": "9260ea0aba0a1195e44627d163ce07ab7932b2fe1862978c9266b9e44a54c64f"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "“事在人为”与“成事在天”——中国社会的机会信念与代内流动",
+    "publication_year": 2026,
+    "publication_issue": 3,
+    "published_at": "2026-05-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "优绩主义信念",
+      "宿命主义信念",
+      "结构主义信念",
+      "代内流动",
+      "阶层差异"
+    ],
+    "id": "shxyj-122855",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=122855",
+    "authors": [
+      "干一卿",
+      "王鹏"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:3",
+    "external_id": "shxyj-122855",
+    "published_at_display": "2026-05-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "优绩主义信念",
+      "宿命主义信念",
+      "结构主义信念",
+      "代内流动",
+      "阶层差异"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=3",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026003002&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-122855",
+    "private_source_record_sha256": "0046c51246c3159217bd68851f641feea5f43cdefdb247fb515be4b04e490f7a"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "中国民众如何看待贫穷与富裕？——社会地位归因的情境差异",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "贫富归因",
+      "情境化归因",
+      "社会流动",
+      "优绩主义",
+      "地位认同"
+    ],
+    "id": "shxyj-123245",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123245",
+    "authors": [
+      "黄超"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123245",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "贫富归因",
+      "情境化归因",
+      "社会流动",
+      "优绩主义",
+      "地位认同"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004008&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123245",
+    "private_source_record_sha256": "094521c03f49c026c512f59fd9ab3a730158a38df2d04b7b1036409b4edea40c"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "代际流动视角下的家庭教育投入：影响效应与变化趋势",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "代际流动",
+      "家庭教育投入",
+      "惯习",
+      "增长曲线"
+    ],
+    "id": "shxyj-123246",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123246",
+    "authors": [
+      "朱晓文",
+      "王廷威"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123246",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "代际流动",
+      "家庭教育投入",
+      "惯习",
+      "增长曲线"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004009&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123246",
+    "private_source_record_sha256": "488a6357ba8b2f2ea2892986d4789342434a655f91a5812705d0505c25d0cf50"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "老龄社会学：迈向更具包容性的理论框架",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "老龄社会学",
+      "老年人",
+      "年龄",
+      "老龄化与生命历程"
+    ],
+    "id": "shxyj-123247",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123247",
+    "authors": [
+      "侯逸飞"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123247",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "老龄社会学",
+      "老年人",
+      "年龄",
+      "老龄化与生命历程"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004010&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123247",
+    "private_source_record_sha256": "2f37ace1a9968e2281fdcc834e3f9c607df60501c43c2bbc67d58769144cf29e"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "“组织内外包”：新药临床试验的组织管理模式研究",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "组织内外包",
+      "新药临床试验",
+      "多重制度逻辑"
+    ],
+    "id": "shxyj-123241",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123241",
+    "authors": [
+      "贾焦钰",
+      "陈家建"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123241",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "组织内外包",
+      "新药临床试验",
+      "多重制度逻辑"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004004&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "research-shxyj-2026-4-organizational-outsourcing",
+    "private_source_record_sha256": "5e7687d5a99574bac0ccbeb2c08c5f4c54ddc4b3c9bda5b340f7b9727f98e986"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "强激励与强约束如何共存？——房产交易平台的分支树治理结构",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "房产交易平台",
+      "激励",
+      "约束",
+      "分支树"
+    ],
+    "id": "shxyj-123242",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123242",
+    "authors": [
+      "帅满",
+      "关佳佳"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123242",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "房产交易平台",
+      "激励",
+      "约束",
+      "分支树"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004005&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123242",
+    "private_source_record_sha256": "76e1bbcb28ed759a297d0adb5f3a57bad7ea9c74fef55a67ffcf3f601ce2971f"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "农业资本跨区域生产的组织机制——以菜心产业为典型案例",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "农业转型",
+      "跨区域生产",
+      "空间组织",
+      "去地方化",
+      "空间转向"
+    ],
+    "id": "shxyj-123243",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123243",
+    "authors": [
+      "陈航英"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123243",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "农业转型",
+      "跨区域生产",
+      "空间组织",
+      "去地方化",
+      "空间转向"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004006&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123243",
+    "private_source_record_sha256": "74b5fc88f46291fb38aa7b996e777e31b81dca7f0efc5748cb3a5818ceff6292"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "打造特产：地方政府重塑自然风土的逻辑及实践机制——以Z县乌龙茶产业的发展为例",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "农业产业化",
+      "地理标志",
+      "打造特产",
+      "风土",
+      "物质性"
+    ],
+    "id": "shxyj-123244",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123244",
+    "authors": [
+      "颜燕华"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123244",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "农业产业化",
+      "地理标志",
+      "打造特产",
+      "风土",
+      "物质性"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004007&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123244",
+    "private_source_record_sha256": "1b2b701caadfcc80009aa19c88072ceeb16d17ad943073f7a99d411b9b443672"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "从江村到中国式现代化：费孝通的社区研究脉络及其当代启示",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "社区研究",
+      "方法论",
+      "原型",
+      "类型谱系",
+      "真实整体"
+    ],
+    "id": "shxyj-123238",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123238",
+    "authors": [
+      "李培林"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123238",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "社区研究",
+      "方法论",
+      "原型",
+      "类型谱系",
+      "真实整体"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004001&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123238",
+    "private_source_record_sha256": "4c8f81ee5d965628df95fe3c43a6b2c47d74ad54feaba1b93ffae34b2ddd1379"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "报：儒家的社会交往理论",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "报",
+      "礼",
+      "关系",
+      "孝"
+    ],
+    "id": "shxyj-123239",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123239",
+    "authors": [
+      "许方毅",
+      "周飞舟"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123239",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "报",
+      "礼",
+      "关系",
+      "孝"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004002&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123239",
+    "private_source_record_sha256": "f1acf4d8fd0d71211c85e63c2171b930fcff3fb37f0d7633afe0faa6bbf3490f"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "从“三史交汇”看学派的形成：以结构功能学派兴起为例",
+    "publication_year": 2026,
+    "publication_issue": 4,
+    "published_at": "2026-07-20",
+    "published_at_precision": "day",
+    "keywords": [
+      "结构功能学派",
+      "中国学派",
+      "知识生产",
+      "关键人"
+    ],
+    "id": "shxyj-123240",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123240",
+    "authors": [
+      "陈心想"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:4",
+    "external_id": "shxyj-123240",
+    "published_at_display": "2026-07-20",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [
+      "结构功能学派",
+      "中国学派",
+      "知识生产",
+      "关键人"
+    ],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=4",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      },
+      {
+        "url": "https://m.ncpssd.org/Literature/articleinfo?id=SHXYJ2026004003&synUpdateType=&type=journalArticle&nav=1&langType=1",
+        "locator": "public displayed metadata",
+        "supports": [
+          "title",
+          "authors",
+          "abstract",
+          "keywords",
+          "pages",
+          "published_at",
+          "publication_year",
+          "publication_volume",
+          "publication_issue"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123240",
+    "private_source_record_sha256": "e259fbb3019feda46bbff5a95221936610eb0debd6cdf6fea17a459e70c23ccc"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "生产治理模式与工人权益保障——对两个服装生产片区的比较研究",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123573",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123573",
+    "authors": [
+      "范璐璐",
+      "韩晶莹"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123573",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[0]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123573",
+    "private_source_record_sha256": "486193bcc7c2b29db3d39f894388e257e2596aed871b4df092766757e1bba5f2"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "建构关联生态：抑郁症的知识分形及其启示",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123574",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123574",
+    "authors": [
+      "吕小康"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123574",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[1]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123574",
+    "private_source_record_sha256": "2155937a3180369d68aac8c4650ec564a9a930a7ab57c8216c7d638c8047e8bc"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "“神话”还是“祛魅”：公共讨论中的科学话语",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123575",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123575",
+    "authors": [
+      "卫天乐",
+      "李凌浩"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123575",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[2]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123575",
+    "private_source_record_sha256": "4fe1350594a29191b7155e04c079c57fe0996668c407517ca91218e9f3ec54de"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "重新定位国家：中国住房社会学的知识生产与理论建构",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123576",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123576",
+    "authors": [
+      "孙小梅",
+      "朱亚鹏"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123576",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[3]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123576",
+    "private_source_record_sha256": "4edcb9322f062bf946cfebbe9ce02b6fb0e5fa19428663d456b2752230745e70"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "中国改革进程中的产权分割实践——对农地“三权分置”演变历程的社会学研究",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123571",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123571",
+    "authors": [
+      "陈颀"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123571",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[4]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123571",
+    "private_source_record_sha256": "37fd84704fda56a13faf4f24bb0df111397a61f1f418bd238ac6497733a54f25"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "制造愿景：自治项目如何增进社区公共性？——基于G市A社区“蔷薇花开”项目的分析",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123572",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123572",
+    "authors": [
+      "李朔严"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123572",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[5]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123572",
+    "private_source_record_sha256": "abffe53be6309877dc55fd1fb052daccb82361287fc3e765d40d7bd272e8dc8e"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "把“生产性”带回来：“投资于人”导向与中国社会政策迭代",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123567",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123567",
+    "authors": [
+      "林闽钢",
+      "吴小芳"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123567",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[6]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "research-shxyj-2026-5-social-investment",
+    "private_source_record_sha256": "c00b6f46cbf95d0fa56db1b4409e689119305eb3a3fd9af2f7a6e61652471719"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "从“双轨运行”到“一体推进”：中国社会工作的国家建构路径",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123568",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123568",
+    "authors": [
+      "卫小将",
+      "王志豪"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123568",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_abstract_excerpt",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[7]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract_excerpt"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123568",
+    "private_source_record_sha256": "6bcdfc6502a0afad239e7a9aa26a83568b35d828f5e20aa4455207e08656a273"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "絜矩论：将心比心的社会行动基础研究",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123569",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123569",
+    "authors": [
+      "王建民"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123569",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[8]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123569",
+    "private_source_record_sha256": "5f8522bc859b977714430e93a227553c0004b9cab42d6011eb3314e71b62d834"
+  },
+  {
+    "source_id": "sociological-studies",
+    "title": "结构组合体：结构—行动关系的中层分析框架",
+    "publication_year": 2026,
+    "publication_issue": 5,
+    "published_at": null,
+    "published_at_precision": "issue",
+    "keywords": null,
+    "id": "shxyj-123570",
+    "url": "https://shxyj.ajcass.com/Magazine/show/?id=123570",
+    "authors": [
+      "郑丹丹"
+    ],
+    "source_name": "社会学研究",
+    "source_publisher": "社会学研究",
+    "issue_id": "sociological-studies:2026:5",
+    "external_id": "shxyj-123570",
+    "published_at_display": "2026年第5期",
+    "source_published_at": null,
+    "material_type": "research_abstract",
+    "stream": "research",
+    "summary": "",
+    "summary_method": null,
+    "findings": [],
+    "research_question": null,
+    "methods": null,
+    "data": null,
+    "topics": [],
+    "topics_source": "publisher_keywords",
+    "verification_status": "lead_only",
+    "verification_note": "公开来源的题名、作者、刊期与摘要状态已核；未读取或审读全文。",
+    "editorial_caveat": "仅展示元数据和原始来源链接；摘要内容保留作内部分析，不是我们的研究总结。",
+    "source_scope": "public_complete_abstract",
+    "analysis_scope": "metadata",
+    "display_ready": true,
+    "evidence": [
+      {
+        "url": "https://shxyj.ajcass.com/Magazine/?Year=2026&Issue=5",
+        "locator": "#tab tr[9]",
+        "supports": [
+          "title",
+          "authors",
+          "publication_year",
+          "publication_volume",
+          "publication_issue",
+          "abstract"
+        ]
+      }
+    ],
+    "full_text_verified": false,
+    "human_full_text_reviewed": false,
+    "discovered_at": "2026-10-01T20:00:00+00:00",
+    "origin_source_id": "sociological-studies",
+    "source_aliases": [],
+    "canonical_study_id": "shxyj-123570",
+    "private_source_record_sha256": "800e7c7815947243722a56a62c4c3fc0f0ec1929f4f213ba6816bca9d8bd6eaa"
+  }
+]

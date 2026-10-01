@@ -16,6 +16,7 @@ ALLOWED_MODULE_DEPENDENCIES = {
     "agent_conversation": set(),
     "agent_memory": set(),
     "shared_knowledge": set(),
+    "teaching_assistant": set(),
     "billing": set(),
     "identity": set(),
     "knowledge_catalog": set(),
@@ -79,6 +80,7 @@ ALLOWED_TOP_LEVEL_DEPENDENCIES = {
         "modules",
         "settings",
     },
+    "json_shards": set(),
     "settings": set(),
     "main": {"bootstrap"},
 }
@@ -90,6 +92,16 @@ ALLOWED_MODULE_INTERNAL_DEPENDENCIES = {
 }
 MODULE_INTERNAL_ROLE_ALIASES = {
     "qualitative_workspace": "domain",
+    "analysis": "domain",
+    "measurement": "domain",
+    "briefs": "domain",
+    "calendar": "domain",
+    "overview": "domain",
+    "overview_stats": "domain",
+    "period_report": "domain",
+    "periods": "domain",
+    "series": "domain",
+
     "research_map": "domain",
     "canvas_editing": "domain",
 }

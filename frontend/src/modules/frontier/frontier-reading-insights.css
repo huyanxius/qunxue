@@ -1,0 +1,13 @@
+.frontier-reading-insights { padding: 1rem 0; border-top: 1px solid var(--border, #dedbd4); font-size: .9rem; line-height: 1.65; }
+.frontier-reading-insights h3 { margin: 0 0 .6rem; font-size: 1rem; }
+.frontier-reading-insights p { margin: .5rem 0; }
+.frontier-reading-note, .frontier-reading-insights small { color: var(--muted, #6d6962); }
+.frontier-reading-source { margin: .75rem 0; padding: .2rem .8rem; border-left: 2px solid var(--border, #dedbd4); }
+.frontier-reading-insights ul { padding-left: 1.1rem; }
+.frontier-reading-insights li { margin: .6rem 0; }
+.frontier-reading-insights li span, .frontier-reading-insights li small { display: block; }
+.frontier-reading-insights details { margin: .6rem 0; }
+.frontier-reading-insights summary { cursor: pointer; }
+.frontier-reading-insights dl > div { margin: .5rem 0; }
+.frontier-reading-insights dt { font-weight: 600; }
+.frontier-reading-insights dd { margin-left: 0; }

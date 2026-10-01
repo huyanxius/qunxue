@@ -250,6 +250,12 @@ class KnowledgeCatalog(Protocol):
         purpose: KnowledgeUsePurpose,
     ) -> KnowledgeReleaseRef: ...
 
+    def existing_release(
+        self, *, purpose: KnowledgeUsePurpose,
+    ) -> KnowledgeReleaseRef | None:
+        """Read an existing release without importing or publishing a preview."""
+        ...
+
     def browse(
         self,
         *,

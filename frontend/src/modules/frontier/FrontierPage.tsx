@@ -1,5 +1,5 @@
 import "../../styles/selection-controls.css";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -18,12 +18,37 @@ import { FrontierTopicPanel, FrontierTopicRows, FrontierRecordResults } from "./
 import type { FrontierDataset } from "./dataset";
 import "../../styles/knowledge-library.css";
 import "./frontier.css";
+import "./frontier-reading.css";
+import { FrontierFocus, FrontierTrends } from "./FrontierReadingHome";
+import { FrontierCalendar } from "./FrontierCalendar";
+import type { FrontierCalendarData, FrontierPeriodData } from "./frontierReadingTypes";
 
 export interface FrontierPageProps {
   data: FrontierDataset;
   state: FrontierState;
   onStateChange: (state: FrontierState) => void;
   onOpenLibrary: () => void;
+  readingDate?: string;
+  maxReadingDate?: string;
+  onReadingDateChange?: (date: string) => void;
+  calendar?: FrontierCalendarData | null;
+  report?: FrontierPeriodData | null;
+  reportTopic?: string;
+  onReportTopicChange?: (key: string) => void;
+  comparisonYear?: number | null;
+  onComparisonYearChange?: (year: number | null) => void;
+  loading?: boolean;
+  calendarLoading?: boolean;
+  reportLoading?: boolean;
+  calendarError?: string;
+  reportError?: string;
+  dataError?: string;
+  onRetry?: () => void;
+  renderRecordInsights?: (id: string) => ReactNode;
+
+}
+function landingRecords(records: FrontierRecord[], landing: FrontierState['landingView'], kind: FrontierState['kind']) {
+  return (landing ?? 'overview') === 'overview' && kind === 'all' ? records.filter(record => ['lead_only', 'verified_frontier'].includes(record.verification_status)) : records;
 }
 const kinds = [
   { key: "all", label: "全部资料" },
@@ -117,11 +142,11 @@ function RecordDetail({
   );
 }
 
-export function FrontierPage({ state, onStateChange, data }: FrontierPageProps) {
+export function FrontierPage({ state, onStateChange, data, readingDate = data.asOf, maxReadingDate = data.asOf, onReadingDateChange, calendar, report, reportTopic, onReportTopicChange, comparisonYear, onComparisonYearChange, loading, calendarLoading, reportLoading, calendarError, reportError, dataError, onRetry, renderRecordInsights }: FrontierPageProps) {
   const [input, setInput] = useState(state.query);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollPositions = useRef(new Map<string, number>());
-  const listKey = [state.query, state.kind, state.source, state.topic].join("|");
+  const listKey = [readingDate, state.query, state.kind, state.source, state.topic].join("|");
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = state.record ? 0 : (scrollPositions.current.get(listKey) ?? 0);
   }, [listKey, state.record]);
@@ -131,14 +156,21 @@ export function FrontierPage({ state, onStateChange, data }: FrontierPageProps) 
   const topic = data.topics.find((item) => item.id === state.topic);
   const eligible = topic ? allRecords.filter((record) => topic.recordIds.includes(record.id)) : allRecords;
   const records = filterFrontier(eligible, topic ? { ...state, topic: "" } : state);
+  const homeRecords = landingRecords(records, state.landingView, state.kind);
   const corpusReady = hasCompleteCorpusOverview(data);
-  const requestedLanding = state.landingView ?? "overview";
-  const landing = requestedLanding === "overview" && !corpusReady ? "topics" : requestedLanding;
+  const landing = state.landingView ?? "overview";
   const selected = allRecords.find((record) => record.id === state.record);
   const changeFilter = (patch: Partial<FrontierState>) => onStateChange({ ...state, ...patch, record: "", limit: 6 });
   const topics = data.topics.filter((item) => item.counts.total > 0 && item.key !== "uncategorized" && (state.kind === "all" || item.stream === state.kind)).toSorted((a, b) => Number(Boolean(b.researchBrief || b.editorialBrief)) - Number(Boolean(a.researchBrief || a.editorialBrief)) || b.counts.total - a.counts.total);
   const hasFilters = Boolean(state.query || state.source || state.kind !== "all");
   const openRecord = (record: string) => onStateChange({ ...state, record });
+  const shiftDate = (delta: number) => {
+    const date = new Date(`${readingDate}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + delta);
+    const next = date.toISOString().slice(0, 10);
+    if (next <= maxReadingDate) onReadingDateChange?.(next);
+  };
+  const date = new Date(`${readingDate}T12:00:00Z`);
   return <section className="knowledge-surface knowledge-library frontier frontier-feedly" data-dimension-tone="ontology">
     <main className="knowledge-library__main">
       <header className="knowledge-library__topbar"><p><span>知识库</span><b>/</b>学术前沿</p>
@@ -147,23 +179,27 @@ export function FrontierPage({ state, onStateChange, data }: FrontierPageProps) 
         </form>
       </header>
       <div className="knowledge-library__content frontier-scroll" ref={scrollRef} data-topic-open={Boolean(topic && !state.record)} onScroll={(event) => { if (!state.record) scrollPositions.current.set(listKey, event.currentTarget.scrollTop); }}>
-        {selected ? <RecordDetail record={selected} onBack={() => onStateChange({ ...state, record: "" })} /> : state.record ? <div className="frontier-empty"><h1>未找到这条资料</h1><button type="button" onClick={() => onStateChange({ ...state, record: "" })}>返回资料列表</button></div> : <div className="frontier-workspace" data-topic-open={Boolean(topic)}>
+        <header className="frontier-reading-date"><div><small>{date.getUTCFullYear()}年 · {new Intl.DateTimeFormat('zh-CN', { weekday: 'long', timeZone: 'UTC' }).format(date)}</small><h1>{date.getUTCMonth() + 1}月{date.getUTCDate()}日</h1></div><div className="frontier-date-actions"><button type="button" aria-label="前一天" disabled={!onReadingDateChange} onClick={() => shiftDate(-1)}>‹</button><label><span className="knowledge-ui__visually-hidden">阅读日期</span><input aria-label="阅读日期" type="date" value={readingDate} max={maxReadingDate} disabled={!onReadingDateChange} onChange={event => { if (/^\d{4}-\d{2}-\d{2}$/.test(event.target.value) && event.target.value <= maxReadingDate) onReadingDateChange?.(event.target.value); }} /></label><button type="button" aria-label="后一天" disabled={!onReadingDateChange || readingDate >= maxReadingDate} onClick={() => shiftDate(1)}>›</button></div></header>
+        <div className="frontier-reading-layout"><div className="frontier-reading-primary">
+        {loading ? <p className="frontier-reading-status" role="status">正在读取这个日期的资料…</p> : dataError ? <div className="frontier-reading-status" role="alert"><p>这个日期的资料暂时无法读取。</p><button type="button" onClick={onRetry}>重新加载</button></div> : selected ? <><RecordDetail record={selected} onBack={() => onStateChange({ ...state, record: "" })} />{renderRecordInsights?.(selected.id)}</> : state.record ? <div className="frontier-empty"><h1>未找到这条资料</h1><button type="button" onClick={() => onStateChange({ ...state, record: "" })}>返回资料列表</button></div> : <div className="frontier-workspace" data-topic-open={Boolean(topic)}>
           <div className="frontier-index">
-            <header className="frontier-index-heading"><div><h1>学术前沿</h1>{landing !== "overview" || topic ? <p>{allRecords.length} 篇文献 · {allSources.length} 种来源</p> : null}</div><span>{data.asOf}</span></header>
-            {!topic ? <div className="frontier-home-controls qx-selection-control" role="group" aria-label="学术前沿视图">{([{ id: "overview", label: "研究总览" }, { id: "topics", label: "研究议题" }, { id: "papers", label: "全部文献" }] as const).map((item) => <button key={item.id} type="button" aria-pressed={landing === item.id} onClick={() => onStateChange({ ...state, landingView: item.id, topic: "", record: "", query: "", source: "", kind: item.id === "overview" ? "all" : state.kind, limit: 6 })}>{item.label}</button>)}</div> : null}
-            {!topic && landing === "overview" ? <FrontierCorpusOverview data={data} onOpenRecord={openRecord} /> : null}
-            {topic || landing !== "overview" ? <div className="frontier-filterbar"><div className="frontier-kind-controls qx-selection-control" aria-label="资料类型">{kinds.map((kind) => <button type="button" key={kind.key} aria-label={kind.label} aria-pressed={state.kind === kind.key} onClick={() => changeFilter({ kind: kind.key, topic: "", topicView: "overview" })}>{kind.label}</button>)}</div>
+            <p className="frontier-reading-scope">{allRecords.filter(record => ["lead_only", "verified_frontier"].includes(record.verification_status)).length} 篇研究 · {allRecords.filter(record => record.verification_status === "practice_signal").length} 篇新闻与实践观察</p>
+            {!topic ? <div className="frontier-home-controls qx-selection-control" role="group" aria-label="学术前沿视图">{([{ id: "overview", label: "值得关注" }, { id: "topics", label: "研究议题" }, { id: "papers", label: "全部文献" }] as const).map((item) => <button key={item.id} type="button" aria-pressed={landing === item.id} onClick={() => onStateChange({ ...state, landingView: item.id, topic: "", record: "", kind: item.id === "overview" ? "all" : state.kind, limit: 6 })}>{item.label}</button>)}</div> : null}
+            {!topic && landing === "overview" ? <><FrontierFocus records={records} onOpenRecord={openRecord} /><FrontierTrends data={data} report={report} topic={reportTopic} onTopicChange={onReportTopicChange} comparisonYear={comparisonYear} onComparisonYearChange={onComparisonYearChange} loading={reportLoading} error={reportError} onRetry={onRetry} onOpenRecord={openRecord} />{corpusReady ? <details className="frontier-long-review"><summary>阅读完整研究综述</summary><FrontierCorpusOverview data={data} onOpenRecord={openRecord} /></details> : null}</> : null}
+            {topic || landing !== "overview" || !corpusReady ? <div className="frontier-filterbar"><div className="frontier-kind-controls qx-selection-control" aria-label="资料类型">{kinds.map((kind) => <button type="button" key={kind.key} aria-label={kind.label} aria-pressed={state.kind === kind.key} onClick={() => changeFilter({ kind: kind.key, topic: "", topicView: "overview" })}>{kind.label}</button>)}</div>
               {!topic ? <div className="frontier-selects"><select aria-label="筛选议题" value={state.topic} onChange={(event) => changeFilter({ topic: event.target.value, topicView: "overview" })}><option value="">全部议题</option>{topics.map((item) => <option key={item.id} value={item.id}>{item.title}{state.kind === "all" ? ` · ${item.stream === "research" ? "研究" : "实践"}` : ""}</option>)}</select><select aria-label="筛选来源" value={state.source} onChange={(event) => changeFilter({ source: event.target.value, topicView: "sources" })}><option value="">全部来源</option>{allSources.map((source) => <option key={source}>{source}</option>)}</select></div> : null}
             </div> : null}
             {(topic || landing === "topics") && topics.length ? <section className="frontier-topic-overview"><header><h2>研究议题</h2><span>{topics.length} 个议题</span></header><FrontierTopicRows topics={topics} data={data} selected={state.topic} onSelect={(id) => changeFilter({ topic: id, topicView: "overview" })} /></section> : null}
-            {!topic && (landing === "papers" || (landing === "topics" && !corpusReady)) ? <>
+            {!topic && (landing === "overview" || landing === "papers" || !corpusReady) ? <>
               {hasFilters ? <div className="knowledge-library__filters frontier-active-filter"><span>{[state.query, state.source, state.kind !== "all" ? kinds.find((kind) => kind.key === state.kind)?.label : ""].filter(Boolean).join(" · ")}</span><button type="button" onClick={() => changeFilter({ query: "", source: "", kind: "all" })}>清除筛选</button></div> : null}
               <div aria-live="polite" className="knowledge-ui__visually-hidden">找到 {records.length} 条资料</div>
-              <FrontierRecordResults records={records} state={state} title={hasFilters ? "筛选结果" : "最新收录"} onStateChange={onStateChange} onOpenRecord={openRecord} />
+              <FrontierRecordResults records={homeRecords} state={state} title={hasFilters ? "筛选结果" : landing === "overview" ? "最新研究" : "最新收录"} onStateChange={onStateChange} onOpenRecord={openRecord} />
             </> : null}
+            {!topic && landing === "overview" && state.kind === "all" && records.some(record => record.verification_status === "practice_signal") ? <section className="frontier-practice-reading" aria-label="新闻与实践观察"><header className="frontier-reading-section"><h2>新闻与实践观察</h2><span>{records.filter(record => record.verification_status === "practice_signal").length} 篇</span></header><ul>{records.filter(record => record.verification_status === "practice_signal").slice(0, 3).map(record => <li key={record.id}><small>{record.source_name} · {record.published_at_display}</small><button type="button" onClick={() => openRecord(record.id)}>{record.title}</button></li>)}</ul><button type="button" onClick={() => changeFilter({ kind: "practice", landingView: "papers" })}>浏览新闻与实践观察</button></section> : null}
           </div>
           {topic ? <FrontierTopicPanel topic={topic} data={data} records={records} state={state} onStateChange={onStateChange} onOpenRecord={openRecord} onClose={() => changeFilter({ topic: "", topicView: "overview" })} /> : null}
         </div>}
+        </div><FrontierCalendar data={data} calendar={calendar} readingDate={readingDate} onOpenRecord={openRecord} loading={calendarLoading || loading} error={calendarError} onRetry={onRetry} /></div>
       </div>
     </main>
   </section>;

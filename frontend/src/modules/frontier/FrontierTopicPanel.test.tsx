@@ -21,6 +21,7 @@ afterEach(cleanup)
 
 it('opens a full analysis pane from a dense topic row and closes without duplicating the application navigation', () => {
   render(<Harness />)
+  fireEvent.click(screen.getByRole('button', { name: '研究议题' }))
   const row = screen.getByRole('button', { name: '分析 照护关系' })
   expect(within(row).getByText(topic.researchBrief!.development!.text)).toBeVisible()
   expect(within(row).getByText('2026-08—2026-08')).toBeVisible()

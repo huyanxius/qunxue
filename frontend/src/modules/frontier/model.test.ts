@@ -8,6 +8,15 @@ import {
 } from "./model";
 
 const empty = readFrontierState(new URLSearchParams());
+it.each(['2024-02-29', '2026-02-30', 'not-a-date', '', '9999-12-31'])('preserves explicit URL reading date %s for validation without replacing it', asOf => {
+  const state = readFrontierState(new URLSearchParams({ as_of: asOf }));
+  expect(state.asOf).toBe(asOf);
+  expect(readFrontierState(writeFrontierState(state))).toEqual(state);
+});
+it('leaves the reading date absent when the URL has no historical date', () => {
+  expect(readFrontierState(new URLSearchParams()).asOf).toBeUndefined();
+  expect(writeFrontierState(empty).has('as_of')).toBe(false);
+});
 describe("frontier source catalog", () => {
   it("ships real traceable records without upgrading abstracts into verified evidence", () => {
     expect(frontierRecords).toHaveLength(12);

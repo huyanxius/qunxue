@@ -34,6 +34,7 @@ export interface FrontierRecord {
 
 export type FrontierKind = "all" | "research" | "practice";
 export interface FrontierState {
+  asOf?: string;
   query: string;
   kind: FrontierKind;
   source: string;
@@ -47,6 +48,9 @@ export function readFrontierState(params: URLSearchParams): FrontierState {
   const kind = params.get("kind");
   const limit = Number(params.get("limit"));
   return {
+    // Preserve explicit invalid values too: the connected page reports them
+    // instead of silently replacing a requested historical date with today.
+    ...(params.has("as_of") ? { asOf: params.get("as_of")! } : {}),
     query: params.get("q")?.trim().slice(0, 200) ?? "",
     kind: kind === "research" || kind === "practice" ? kind : "all",
     source: params.get("source") ?? "",
@@ -59,6 +63,7 @@ export function readFrontierState(params: URLSearchParams): FrontierState {
 }
 export function writeFrontierState(state: FrontierState): URLSearchParams {
   const params = new URLSearchParams({ scope: "frontier" });
+  if (state.asOf !== undefined) params.set("as_of", state.asOf);
   if (state.query.trim()) params.set("q", state.query.trim().slice(0, 200));
   if (state.kind !== "all") params.set("kind", state.kind);
   if (state.source) params.set("source", state.source);
