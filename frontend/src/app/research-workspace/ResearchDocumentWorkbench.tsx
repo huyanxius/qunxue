@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useEditor, EditorContent } from '@tiptap/react'
@@ -972,7 +973,7 @@ export function ResearchDocumentWorkbench({
           </section>
         ) : null}
 
-        {loadState === 'loading' ? <div className="document-loading"><CircleNotchIcon className="spin" /> 正在恢复文档版本…</div> : (
+        {loadState === 'loading' ? <BrandLoading message="正在恢复文档版本…" /> : (
           <>
             <h2 id="research-document-heading" aria-label="研究文档正文">{activeSection?.title ?? '研究文档正文'}</h2>
             {runtimeBoundary && <div className="document-boundary"><WarningCircleIcon /> {error ?? '当前 Agent 运行环境未连接；不会把静态示例当作真实研究结果。'}</div>}

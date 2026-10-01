@@ -49,7 +49,7 @@ import { legacyResearchWorkspaceDestination } from './research-workspace/researc
 import { FoundationPage } from './foundation/FoundationPage'
 import { AppHomePage } from './home/AppHomePage'
 import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
-import { BrandLoading } from './ui/BrandLoading'
+import { BrandLoading } from '../ui/BrandLoading'
 import { ErrorState } from './ui/States'
 import { RouteMotionSurface } from './route-motion'
 import { SettingsModal } from './ui/SettingsModal'

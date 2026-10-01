@@ -1,4 +1,5 @@
-import { CircleNotchIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { BrandLoading } from '../../ui/BrandLoading'
+import { WarningCircleIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { ResearchAnalysisDecision } from './ResearchAnalysisCandidateCard'
@@ -259,10 +260,10 @@ export function ResearchAnalysisPanel({ taskId, refreshKey = 0, embedded = false
       {notice ? <p className="qx-message is-success" role="status">{notice}</p> : null}
       {error ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{error}</p> : null}
       {cycleError ? <p className="qx-message is-error" role="alert"><WarningCircleIcon size={15} aria-hidden="true" />{cycleError}</p> : null}
-      {cycleLoading && !cycle ? <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在整理证据缺口</p> : null}
+      {cycleLoading && !cycle ? <BrandLoading compact message="正在整理证据缺口" /> : null}
 
       {loading && !snapshot ? (
-        <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在加载分析记录</p>
+        <BrandLoading compact message="正在加载分析记录" />
       ) : snapshot ? (
         <>
           {cycle?.gaps.length ? embedded ? <details className="coding-workspace__gaps"><summary>研究检查 · {cycle.gaps.length} 项待完善</summary><ResearchCyclePanel snapshot={cycle} /></details> : <ResearchCyclePanel snapshot={cycle} /> : null}

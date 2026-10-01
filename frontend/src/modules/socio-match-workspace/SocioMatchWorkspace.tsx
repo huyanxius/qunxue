@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import type { MouseEvent } from 'react'
 
 import './workspace.css'
@@ -55,7 +56,7 @@ export function SocioMatchWorkspace({
         </p>
       </section>
 
-      {task.isPending ? <p className="loading-line">正在恢复任务…</p> : null}
+      {task.isPending ? <BrandLoading message="正在恢复任务…" /> : null}
       {task.isError ? (
         <section className="recovery-error">
           <h2>没有找到这项研究任务。</h2>

@@ -1,8 +1,8 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   ArrowDownIcon,
   BookOpenTextIcon,
   CheckCircleIcon,
-  CircleNotchIcon,
   FileArrowUpIcon,
   FolderPlusIcon,
   LinkSimpleIcon,
@@ -276,7 +276,7 @@ export function ProfessionalMaterialArchivePanel({
   }
 
   if (loading && !archive) {
-    return <p className="professional-archive__loading" role="status"><CircleNotchIcon className="is-spinning" size={16} />正在清点研究档案</p>
+    return <BrandLoading message="正在清点研究档案" />
   }
   if (!archive || !draft) {
     return <p className="professional-archive__message is-error" role="alert"><WarningCircleIcon size={16} />{error || '当前材料档案暂时无法打开。'}</p>

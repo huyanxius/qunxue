@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import './course-home-layout.css'
 import { CourseWorkshop } from './CourseWorkshop'
 import { courseWorkshops } from './courseWorkshops'
@@ -28,7 +29,7 @@ export function CourseHome({ course, onRead, onMaterials, onTeaching }: { course
       <div className="course-brief__copy"><span className="course-catalog__eyebrow">课程总览 / {teacher ? '教学空间' : '学习空间'}</span><h3>{template?.subtitle || course.name}</h3><p>{template?.description || course.description || '阅读课程材料，完成练习，并依据反馈修订成果。'}</p><div className="course-brief__facts"><span><strong>{ready.length}</strong> 份课程资料</span><span><strong>{loaded ? activities.filter((a) => a.kind === 'assignment_review').length : '—'}</strong> 份作业记录</span>{template && <span><strong>{template.chapters.length}</strong> 个方法单元</span>}</div></div>
       <img src={courseArtwork[template?.id ?? 'library']} alt="" />
     </header>
-    <section className="course-command-bar" aria-label="课程操作"><div><span className="course-command-bar__dot" /><span>{loaded ? `${pending.length} ${teacher ? '份作业待处理' : '条学习记录未完成'}` : '正在读取教学记录'}</span></div><div><button className="qx-button" onClick={onMaterials}><FileTextIcon size={16} />{teacher ? '管理资料' : '课程资料'}</button><button className="research-hub__new" onClick={onTeaching}>{teacher ? '备课与批改' : '学习与作业'}<ArrowRightIcon size={16} /></button></div></section>
+    <section className="course-command-bar" aria-label="课程操作"><div><span className="course-command-bar__dot" />{!loaded && !error ? <BrandLoading compact message="正在读取教学记录" /> : <span>{loaded ? `${pending.length} ${teacher ? '份作业待处理' : '条学习记录未完成'}` : '教学记录暂时无法读取'}</span>}</div><div><button className="qx-button" onClick={onMaterials}><FileTextIcon size={16} />{teacher ? '管理资料' : '课程资料'}</button><button className="research-hub__new" onClick={onTeaching}>{teacher ? '备课与批改' : '学习与作业'}<ArrowRightIcon size={16} /></button></div></section>
     <section className="course-objectives-strip" aria-label="课程目标与评价">
       <div><h3>学习目标</h3>{objectiveLines.length ? <ul>{objectiveLines.map((outcome) => <li key={outcome}><CheckCircleIcon size={14} />{outcome}</li>)}</ul> : <p>{settings?.objectives || '课程目标尚未单独设置，请结合课程资料阅读。'}</p>}</div>
       <div><h3>评价维度</h3>{settings?.rubric?.length ? <dl>{settings.rubric.map((dimension) => <div key={dimension.id}><dt>{dimension.title}</dt><dd>{dimension.max_score}<small> 分</small></dd></div>)}</dl> : <p>评价要求待教师设置</p>}<small>正式成绩以教师复核发布为准</small></div>

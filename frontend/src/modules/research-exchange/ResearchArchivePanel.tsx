@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import {
   ArchiveBoxIcon,
   CheckCircleIcon,
@@ -182,7 +183,7 @@ export function ResearchArchivePanel({ taskId }: ResearchArchivePanelProps) {
         <div>
           <h3 id="research-exchange-audit-title">交换审计</h3>
         </div>
-        {auditLoading ? <p>正在读取审计记录…</p> : events.length === 0 ? (
+        {auditLoading ? <BrandLoading compact message="正在读取审计记录…" /> : events.length === 0 ? (
           <p>还没有项目交换记录。</p>
         ) : (
           <ol>

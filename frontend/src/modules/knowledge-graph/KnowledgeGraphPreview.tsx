@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useQuery } from '@tanstack/react-query'
 
 import { ObsidianKnowledgeGraph } from './ObsidianKnowledgeGraph'
@@ -27,7 +28,7 @@ export function KnowledgeGraphPreview({
   })
 
   if (preview.isPending) {
-    return <div className="graph-preview-state" role="status">正在整理知识位置</div>
+    return <BrandLoading message="正在整理知识位置" />
   }
   if (preview.isError) {
     return (

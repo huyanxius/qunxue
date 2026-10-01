@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUpRightIcon, BrainIcon, ClockCounterClockwiseIcon, PencilSimpleIcon, PlusIcon, QuotesIcon, SlidersHorizontalIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
@@ -160,7 +161,7 @@ export function ResearchMemoryPanel({ taskId, projectName, preview = false }: { 
         <div><h2>{taskId ? '关于这个项目' : 'Agent 记住了什么'}</h2><p>{taskId ? projectName ?? '项目记忆' : '个人记忆'}<span>·</span><span>{loading ? '正在读取…' : `${items.length} 条记忆`}</span>{!loading && limits ? <span>上限 {limits.max_entries} 条</span> : null}</p></div>
         <button type="button" aria-expanded={settingsOpen} aria-controls="memory-settings" onClick={() => setSettingsOpen(open => !open)}><SlidersHorizontalIcon size={16} />记忆设置</button>
       </header>
-      {loading || summaryBusy ? <p className="research-memory__summary-status" role="status">{loading ? '正在读取记忆…' : 'Agent 正在整理记忆概览…'}</p>
+      {loading || summaryBusy ? <BrandLoading compact message={loading ? '正在读取记忆…' : 'Agent 正在整理记忆概览…'} />
         : summary ? <p className="research-memory__summary">{summary}</p>
         : summaryError ? <div className="research-memory__summary-status"><p>{summaryError}</p><button type="button" onClick={() => setReload(value => value + 1)}>重新整理</button></div>
         : <p className="research-memory__summary-status">{error ? '暂时无法读取记忆。' : taskId ? '这里保存当前项目的研究约定。你可以先添加一条，也可以在项目对话中让 Agent 记住。' : '这里会逐渐形成 Agent 对你的了解。你可以先添加一条记忆，也可以在对话中让它记住。'}</p>}
@@ -207,7 +208,7 @@ export function ResearchMemoryPanel({ taskId, projectName, preview = false }: { 
           <dl><div><dt>范围</dt><dd>{taskId ? projectName ?? '当前项目' : '个人记忆'}</dd></div><div><dt>来源</dt><dd>{originLabels[selected.origin]}</dd></div><div><dt>创建于</dt><dd>{date(selected.created_at)}</dd></div><div><dt>更新于</dt><dd>{date(selected.updated_at)}</dd></div></dl>
           {selected.source_quote ? <section className="research-memory__source"><h3><QuotesIcon size={14} />来源原话</h3><blockquote>{selected.source_quote}</blockquote>{selected.source_conversation_id ? <Link to={`/agent?conversation_id=${encodeURIComponent(selected.source_conversation_id)}`}>打开来源对话</Link> : null}</section> : null}
           <button type="button" className="research-memory__history-trigger" aria-expanded={historyId === selected.memory_id} disabled={historyBusy} onClick={() => void showHistory(selected)}><ClockCounterClockwiseIcon size={15} />修改历史<span>最近 {Math.min(selected.version, 50)} 个版本</span></button>
-          {historyId === selected.memory_id ? <div className="research-memory__history" aria-label="修改历史">{historyBusy && !history[selected.memory_id] ? <p role="status">正在读取修改历史…</p> : history[selected.memory_id]?.slice().sort((a, b) => b.version - a.version).map(revision => <div key={revision.version}><small>第 {revision.version} 版 · {date(revision.updated_at)} · {originLabels[revision.origin]}</small><p>{revision.content}</p>{revision.source_quote ? <blockquote>{revision.source_quote}</blockquote> : null}</div>)}</div> : null}
+          {historyId === selected.memory_id ? <div className="research-memory__history" aria-label="修改历史">{historyBusy && !history[selected.memory_id] ? <BrandLoading compact message="正在读取修改历史…" /> : history[selected.memory_id]?.slice().sort((a, b) => b.version - a.version).map(revision => <div key={revision.version}><small>第 {revision.version} 版 · {date(revision.updated_at)} · {originLabels[revision.origin]}</small><p>{revision.content}</p>{revision.source_quote ? <blockquote>{revision.source_quote}</blockquote> : null}</div>)}</div> : null}
           {deleteId === selected.memory_id ? <div className="research-memory__delete" role="group" aria-label="确认删除记忆"><p>{preview ? '删除这条示例记忆？刷新预览可以恢复。' : '删除这条记忆及其修改历史？原始对话仍保留。'}</p><button type="button" disabled={busy} onClick={() => setDeleteId(null)}>取消</button><button type="button" className="research-memory__danger" disabled={busy} onClick={() => void remove(selected)}>确认删除</button></div> : null}
         </> : null}
       </aside> : null}

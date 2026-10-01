@@ -1,4 +1,4 @@
-import { BrandLoading } from '../ui/BrandLoading'
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CourseCatalog } from './CourseCatalog'
 import { copyCourseText } from './copyCourseText'
 import { useAccount } from '../../modules/account'
@@ -184,14 +184,14 @@ export function CoursesPage() {
     <div className="research-hub__body"><div className="research-hub__panel">
       {error ? <p className="qx-message is-error" role="alert">{error}<CourseIconButton label="重试" onClick={() => setReload((n) => n + 1)}><ArrowClockwiseIcon size={18} /></CourseIconButton></p> : null}
       {notice ? <p className="research-hub__notice" role="status">{notice}</p> : null}
-      {uploadProgress ? <p className="research-hub__notice" role="status">{uploadProgress}</p> : null}
-      {loading && role !== undefined ? <p role="status" className="research-hub__notice">正在读取课程资料…</p> : null}
+      {uploadProgress ? <BrandLoading compact message={uploadProgress} /> : null}
+      {loading && role !== undefined ? <BrandLoading compact message="正在读取课程资料…" /> : null}
       {role && !guideDismissed && !choosingRole && !source && !editing && !joinOpen ? <CourseGuide role={role} hasCourse={Boolean(guideCourse)} hasDocuments={Boolean(guideCourse?.readyDocumentCount || guideCourse?.documents.length)} shared={guideCourse?.sharingEnabled ?? false}
         onCreate={() => { setName(''); setDescription(''); setEditing(true) }}
         onUpload={() => { if (detail) uploadRef.current?.click(); else openFirstCourse() }} onShare={openFirstCourse}
         onJoin={() => setJoinOpen(true)} onRead={openFirstCourse}
         onDismiss={() => void action(async () => { await saveCourseRole(role, true); setGuideDismissed(true) })} /> : null}
-      {welcome ? <><CourseWelcome onStart={() => setOnboardingStarted(true)} /><CourseCatalog courses={[]} role="student" query="" onOpen={() => setOnboardingStarted(true)} onRemove={() => undefined} /></> : role === undefined ? <p role="status">正在读取课程身份…</p> : !role || choosingRole ? <section className="courses-page__onboarding">
+      {welcome ? <><CourseWelcome onStart={() => setOnboardingStarted(true)} /><CourseCatalog courses={[]} role="student" query="" onOpen={() => setOnboardingStarted(true)} onRemove={() => undefined} /></> : role === undefined ? <BrandLoading message="正在读取课程身份…" /> : !role || choosingRole ? <section className="courses-page__onboarding">
         <div className="courses-page__onboarding-nav"><CourseIconButton label={role ? "返回课程" : "返回介绍"} disabled={busy} onClick={() => { if (role) setChoosingRole(false); else setOnboardingStarted(false) }}><ArrowLeftIcon size={19} /></CourseIconButton><span>课程 <span aria-hidden="true">/</span> 选择身份</span></div>
         <h1>你将如何使用课程？</h1><p>选择你的角色，之后可随时更改。</p>
         <div className="courses-page__role-options">{(['teacher', 'student'] as const).map((choice) => <button key={choice} type="button" aria-label={choice === 'teacher' ? '我是教师' : '我是学生'} disabled={busy} aria-busy={busy} onClick={() => void action(async () => { setRole(await saveCourseRole(choice)); setGuideDismissed(false); setChoosingRole(false) })}>

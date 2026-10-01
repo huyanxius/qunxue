@@ -1,4 +1,5 @@
-import { CaretRightIcon, CircleNotchIcon, MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
+import { BrandLoading } from '../../ui/BrandLoading'
+import { CaretRightIcon, MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react'
 import type { ReactNode, Ref, MouseEventHandler } from 'react'
 import { formatMaterialLocator, type ResearchMaterialSegment } from './researchMaterialsModel'
 
@@ -32,7 +33,7 @@ export function DocumentSourceView({ children, scrollRef, loading = false, note 
   children: ReactNode; scrollRef?: Ref<HTMLElement>; loading?: boolean; note?: { tone: 'plain' | 'error'; text: string } | null; error?: ReactNode; empty?: boolean; query?: string; page?: number; pageCount?: number; onPageChange: (page: number) => void; railLabel?: string
 }) {
   return <main className="qx-reader__scroll" ref={scrollRef} role="region" aria-label="文档阅读器">
-    {loading ? <p className="qx-message" role="status"><CircleNotchIcon className="is-spinning" size={16} aria-hidden="true" />正在读取原文结构</p> : null}
+    {loading ? <BrandLoading compact message="正在读取原文结构" /> : null}
     {note ? <p className={`qx-message${note.tone === 'error' ? ' is-error' : ''}`} role={note.tone === 'error' ? 'alert' : undefined}>{note.tone === 'error' ? <WarningCircleIcon size={15} aria-hidden="true" /> : null}{note.text}</p> : null}
     {error}
     <div className="qx-reader__ruler"><span>{railLabel}</span><span>行</span><span>原文</span></div>

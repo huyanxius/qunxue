@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 
 import {
@@ -289,16 +290,16 @@ export function MediaTranscriptWorkspace({ taskId, materialId, mediaType, initia
 
         {mediaType.startsWith('video/') ? <video {...mediaProps} /> : <audio {...mediaProps} />}
 
-        {loading ? <p className="media-transcript__notice" role="status">正在加载转录时间轴……</p> : null}
+        {loading ? <BrandLoading compact message="正在加载转录时间轴……" /> : null}
         {notice || transcriptionActive ? (
-          <div className={`media-transcript__status${transcriptionActive ? ' is-active' : ''}`} role="status" aria-label="转写状态">
+          <div className={`media-transcript__status${transcriptionActive ? ' is-active' : ''}`} role="status" aria-live="off" aria-label="转写状态">
             <div>
-              <strong>{transcriptionActive ? '正在转写音频' : notice}</strong>
+              {transcriptionActive ? <BrandLoading compact message="正在转写音频" /> : <strong role="status">{notice}</strong>}
               {transcriptionStartedAt !== null ? <span>已等待 {formatElapsed(elapsedSeconds)}</span> : null}
             </div>
             {transcriptionActive ? <>
               <p>预计约 1–3 分钟，长音频会更久。可以离开此页，完成后重新打开即可查看。</p>
-              <span className="media-transcript__progress" aria-hidden="true"><i /></span>
+
             </> : null}
           </div>
         ) : null}

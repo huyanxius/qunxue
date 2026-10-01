@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../../ui/BrandLoading'
 import lessonArtwork from '../../../assets/classroom/humanist-seminar.webp'
 import assignmentArtwork from '../../../assets/classroom/civic-observation.webp'
 import { BookOpenIcon, ClipboardTextIcon, ArrowUpRightIcon, ClockIcon, LockSimpleIcon, CheckCircleIcon, FilesIcon } from '@phosphor-icons/react'
@@ -118,7 +119,7 @@ function StudentWorkspace({ course, onDirtyChange }: { course: SharedCourse; onD
     <div className="classroom-layout"><div className="classroom-main">
     {(selected?.kind ?? kind) === 'learning_check' && <ol className="classroom-learning-stages" aria-label="学习阶段">{['明确目标', '诊断问答', '情境练习', '反馈与改进'].map((label, index) => { const stage = selected?.result?.stage; const current = stage === 'feedback' || stage === 'complete' ? 3 : stage === 'practice' ? 2 : stage === 'diagnostic' ? 1 : 0; return <li key={label} aria-current={index === current ? 'step' : undefined} data-complete={index < current}><span>{index < current ? <CheckCircleIcon size={17} /> : index + 1}</span>{label}</li> })}</ol>}
     {error ? <p role="alert" className="qx-message is-error">{error} <button type="button" className="qx-button" disabled={busy} onClick={() => void action(async () => { if (selected) accept(await getTeachingActivity(selected.id)); setReload((n) => n + 1) })}>刷新记录</button></p> : null}
-    {loading ? <p role="status">正在读取学习记录…</p> : null}
+    {loading ? <BrandLoading compact message="正在读取学习记录…" /> : busy ? <BrandLoading compact message="正在处理学习记录…" /> : null}
     {selected ? <StudentActivityDetail key={selected.id} activity={selected} records={records} busy={busy} onDirty={setDirty}
       onSave={(next, run) => void action(() => saveInput(selected, next, run))}
       onRun={() => void action(async () => accept(await write(`run:${selected.id}`, { version: selected.version }, (key) => runTeachingActivity(selected.id, { version: selected.version }, key))))}

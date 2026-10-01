@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading';
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { FrontierPage, type FrontierPageProps } from './FrontierPage';
 import type { FrontierDataset } from './dataset';
@@ -88,7 +89,7 @@ export function FrontierConnectedPage(props: Omit<FrontierPageProps, 'data'>) {
     return () => { cancelled = true; };
   }, [preview, asOf, topicKey, comparisonYear, year, retry, dateError]);
   if (dateError) return <section className="knowledge-surface frontier"><div className="frontier-empty" role="alert"><h1>学术前沿</h1><p>{dateError}</p><button type="button" onClick={props.onOpenLibrary}>返回知识库</button></div></section>;
-  if (!data) return <section className="knowledge-surface frontier"><div className="frontier-empty" role={error ? 'alert' : 'status'}><h1>学术前沿</h1><p>{error ? '资料暂时无法读取。' : '正在读取前沿资料…'}</p>{error ? <button type="button" onClick={reload}>重新加载</button> : null}<button type="button" onClick={props.onOpenLibrary}>返回知识库</button></div></section>;
+  if (!data) return <section className="knowledge-surface frontier"><div className="frontier-empty" role={error ? 'alert' : undefined}><h1>学术前沿</h1>{error ? <p>资料暂时无法读取。</p> : <BrandLoading message="正在读取前沿资料…" />}{error ? <button type="button" onClick={reload}>重新加载</button> : null}<button type="button" onClick={props.onOpenLibrary}>返回知识库</button></div></section>;
   const insights = props.renderRecordInsights || (preview ? undefined : (id: string) => <FrontierRecordInsights recordId={id} asOf={asOf} />);
   return <FrontierPage {...props} data={data} readingDate={asOf} maxReadingDate={latestDate} onReadingDateChange={preview ? undefined : date => { props.onStateChange({ ...props.state, asOf: date }); }} calendar={calendar} report={report} reportTopic={topicKey} onReportTopicChange={setTrendTopic} comparisonYear={comparisonYear} onComparisonYearChange={setYear} loading={dataLoading || (!error && data.asOf !== asOf)} dataError={error} calendarLoading={calendarLoading} reportLoading={reportLoading} calendarError={calendarError} reportError={reportError} onRetry={reload} renderRecordInsights={insights} />;
 }

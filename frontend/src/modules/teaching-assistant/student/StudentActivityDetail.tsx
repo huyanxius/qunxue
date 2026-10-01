@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../../ui/BrandLoading'
 import { useEffect, useRef, useState } from 'react'
 import { DocumentSourceSegment, DocumentSourceView, DocumentWorkspace, DocumentWorkspaceToolbar, type ResearchMaterialSegment } from '../../research-materials'
 import { getTeachingSource, type getTeachingActivity } from '../teachingApi'
@@ -48,7 +49,7 @@ export function StudentActivityDetail({ activity, records, busy, onSave, onRun, 
   return <article className="student-learning__result">
     <h3>{activity.input.title || activity.input.objectives || '学习记录'}</h3>
     {activity.input.difficulties ? <p>开始时的困难：{activity.input.difficulties}</p> : null}
-    {running ? <p role="status">正在生成，离开后可从这条记录继续。</p> : null}
+    {running ? <BrandLoading compact message="正在生成，离开后可从这条记录继续。" /> : null}
     {activity.state === 'failed' ? <p role="alert" className="qx-message is-error">{activity.error_message || '生成失败，已保留输入。'}</p> : null}
     {assignment ? <>
       <p>{activity.shared_with_teacher ? '本次作业及所选材料已提交给课程教师。' : '本次作业尚未分享给课程教师。'}</p>
@@ -82,7 +83,7 @@ export function StudentActivityDetail({ activity, records, busy, onSave, onRun, 
       {activity.state === 'failed' ? <button type="button" className="qx-button" disabled={disabled} onClick={onRun}>重试当前阶段</button> : null}
     </>}
     <div className="courses-page__actions"><button type="button" className="qx-button" disabled={reading} onClick={() => void readSource(null)}>阅读本次材料</button></div>
-    {reading ? <p role="status">正在读取原文…</p> : null}
+    {reading ? <BrandLoading compact message="正在读取原文…" /> : null}
     {sourceError ? <p className="qx-message is-error" role="alert">{sourceError}</p> : null}
     {source ? <DocumentWorkspace workspace={false}><DocumentWorkspaceToolbar workspace={false}><strong>{citation?.title || '本次材料原文'}</strong><button type="button" className="qx-button" onClick={() => { sourceRequest.current++; setSource(null) }}>收起原文</button></DocumentWorkspaceToolbar><DocumentSourceView railLabel="" empty={!sourceItems.some((item) => item.segments.length)} onPageChange={() => undefined}>
       {sourceItems.map((item, itemIndex) => <section key={itemIndex}><h4>{item.title}</h4>{item.segments.map((segment, index) => {

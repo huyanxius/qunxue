@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useEffect, useMemo, useState } from 'react'
 
 import { KnowledgeGraph } from './KnowledgeGraph'
@@ -68,6 +69,7 @@ export function KnowledgeGraphWorkspace({
   const [relationTotal, setRelationTotal] = useState<number>()
   const [selectedEdgeId, setSelectedEdgeId] = useState<string>()
   const [error, setError] = useState('')
+  const [loadingFocus, setLoadingFocus] = useState(false)
   const [loadingNodeId, setLoadingNodeId] = useState<string>()
 
   useEffect(() => {
@@ -82,12 +84,14 @@ export function KnowledgeGraphWorkspace({
 
   useEffect(() => {
     if (!focusEntry) {
+      setLoadingFocus(false)
       setRelationTotal(undefined)
       return
     }
     let cancelled = false
 
     async function restoreFocus() {
+      setLoadingFocus(true)
       setError('')
       try {
         setCandidateEnabled(false)
@@ -153,6 +157,8 @@ export function KnowledgeGraphWorkspace({
         setRelationTotal(total)
       } catch (nextError) {
         if (!cancelled) setError(message(nextError))
+      } finally {
+        if (!cancelled) setLoadingFocus(false)
       }
     }
 
@@ -256,7 +262,8 @@ export function KnowledgeGraphWorkspace({
       {focusEntry ? <p>当前条目：{focusEntry.title}</p> : (
         <p>从搜索结果选择“在图中定位”，即可恢复完整目录路径。</p>
       )}
-      {loadingNodeId ? <p role="status">正在展开 {loadingNodeId} 的直接子级……</p> : null}
+      {loadingFocus ? <BrandLoading compact message="正在恢复知识关系…" /> : null}
+      {loadingNodeId ? <BrandLoading compact message={`正在展开 ${loadingNodeId} 的直接子级……`} /> : null}
       {error ? <p className="knowledge-graph-workspace__error" role="alert">{error}</p> : null}
       {focusEntry && relationTotal === 0 ? (
         <p>当前条目没有知识关系。</p>

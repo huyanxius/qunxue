@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useMemo, useState } from 'react'
 
 import type {
@@ -368,7 +369,7 @@ function CodingPlanCard({
       </div>
       <label><span>逐条判断依据</span><textarea aria-label="编码计划判断依据" value={reason} onChange={(event) => setReason(event.target.value)} rows={2} placeholder="回到原文核对后再确认或拒绝" /></label>
       {!onDecide ? <p>当前界面暂不支持确认，请回到研究分析页。</p> : null}
-      {allDecided && pending ? <p role="status">正在保存编码计划…</p> : null}
+      {allDecided && pending ? <BrandLoading compact message="正在保存编码计划…" /> : null}
       {error ? <p role="alert" className="research-analysis-candidate__error">{error}</p> : null}
     </article>
   )

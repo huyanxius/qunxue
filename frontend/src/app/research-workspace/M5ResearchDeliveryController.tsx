@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -140,7 +141,7 @@ export function M5ResearchDeliveryController({
       </section>
     )
   }
-  if (!state) return <section className="m5-delivery-stack" role="status">正在恢复 M5 研究交付…</section>
+  if (!state) return <BrandLoading message="正在恢复 M5 研究交付…" />
 
   return (
     <M5ResearchDeliveryPanel

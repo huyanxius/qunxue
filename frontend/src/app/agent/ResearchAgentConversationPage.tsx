@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CourseReferenceSelector } from '../courses/CourseReferenceSelector'
 import { composeResearchDiscussion, latestResearchAsk, resolveResearchCitation, type ResearchDiscussion } from '../../modules/research-workspace'
 import {
@@ -8,7 +9,6 @@ import {
   CaretRightIcon,
   CheckIcon,
   CheckCircleIcon,
-  CircleNotchIcon,
   CirclesThreeIcon,
   CompassIcon,
   CopyIcon,
@@ -1215,7 +1215,7 @@ function AgentConversationHistoryRail({
       {projectCreateAnchor ? <ProjectCreatePopover anchor={projectCreateAnchor} title={projectTitle} saving={savingProject} error={projectError}
         onTitleChange={setProjectTitle} onCancel={() => setProjectCreateAnchor(null)} onSubmit={(event) => { void createProject(event) }} /> : null}
       {projectListError ? <p role="alert">{projectListError}</p> : null}
-      {loading ? <p role="status">{text('正在加载记录…', 'Loading history…')}</p> : (
+      {loading ? <BrandLoading compact message={text('正在加载记录…', 'Loading history…')} /> : (
         <ProjectConversationList projects={projects} conversations={safeConversations} onDeleteProject={onDeleteProject}
           activeTaskId={safeConversations.find((item) => item.conversation_id === activeConversationId)?.task_id ?? selectedTaskId}
           onStart={onNewConversation} onStartIndependent={() => onNewConversation()} renderConversation={(conversation) => {
@@ -1420,9 +1420,9 @@ function StreamingRunStatus({ status, steps }: { status: AgentPageStatus; steps:
               ? text('正在生成回答', 'Writing the answer')
               : text('正在理解并整理研究问题', 'Understanding and structuring the research question')
   return (
-    <p className="new-research__run-status" role="status">
-      <strong>{phase}</strong>
-    </p>
+    <div className="new-research__run-status">
+      <BrandLoading compact message={phase} />
+    </div>
   )
 }
 
@@ -1620,7 +1620,7 @@ function AssistantTurn({
           {progressEnd > 0 ? <ReactMarkdown remarkPlugins={[remarkGfm, remarkProgressParagraphs]}>{displayAgentText(answer.slice(0, progressEnd))}</ReactMarkdown> : null}
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer.slice(progressEnd))}</ReactMarkdown>
         </div> : null}
-        {!streaming && !answer && !interrupted && !failure ? <p className="new-research__thinking" role="status"><CircleNotchIcon size={14} />{text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')}</p> : null}
+        {!streaming && !answer && !interrupted && !failure ? <BrandLoading compact message={text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')} /> : null}
         {interrupted ? (
           <p className="qx-notice-surface new-research__turn-note is-interrupted">
             <WarningCircleIcon size={14} />
@@ -3275,6 +3275,7 @@ export function ResearchAgentConversationPage({
           )}
 
           <main className="research-agent-page__scroll-region new-research__conversation" aria-label={text('对话内容', 'Conversation content')} role="log">
+            {status === 'loading' ? <BrandLoading compact message={text('正在恢复对话…', 'Loading conversation…')} /> : null}
             {isEmpty ? (
               <div className="research-agent-page__empty-state">
                 <div className="research-agent-page__empty-copy">
@@ -3339,7 +3340,7 @@ export function ResearchAgentConversationPage({
                     }}
                   />
                 ) : null}
-                {status === 'pausing' ? <p role="status">正在暂停，等待当前操作结束…</p> : null}
+                {status === 'pausing' ? <BrandLoading compact message="正在暂停，等待当前操作结束…" /> : null}
                 {status === 'pause-failed' ? <button type="button" onClick={() => { void stopGeneration() }}>重试暂停</button> : null}
                 {streamingTurn ? (
                   <AssistantTurn
@@ -3460,7 +3461,7 @@ export function ResearchAgentConversationPage({
                         ><XIcon size={12} /></button>
                       </span>
                     ))}
-                    {materialUploading ? <span className="research-agent-composer__uploading" role="status"><CircleNotchIcon size={14} className="spin" />{text('正在上传…', 'Uploading…')}</span> : null}
+                    {materialUploading ? <BrandLoading compact message={text('正在上传…', 'Uploading…')} /> : null}
                   </div>
                 ) : null}
                 <textarea

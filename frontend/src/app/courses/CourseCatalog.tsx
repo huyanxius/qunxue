@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { CourseWorkshop } from './CourseWorkshop'
 import { useRef, useState } from 'react'
 import { ArrowLeftIcon, ArrowRightIcon, BookOpenIcon, CheckCircleIcon, ClockIcon, CopyIcon, FileTextIcon, GraduationCapIcon, ListChecksIcon, StackIcon } from '@phosphor-icons/react'
@@ -38,6 +39,7 @@ export function CourseCatalog({ courses, role, query, onOpen, onRemove }: { cour
           <div className="course-section-heading"><h3>课程单元</h3><span>{preview.chapters.length} 个学习单元</span></div><div className="course-unit-list">{preview.chapters.map((item, index) => <button key={item.title} onClick={() => setChapter(index)}><span className="course-unit-number">{String(index + 1).padStart(2, '0')}</span><span><strong>{item.title}</strong><small>{item.objective}</small></span><span className="course-unit-duration">{item.duration} 分钟</span><ArrowRightIcon size={17} /></button>)}</div>
           <CourseWorkshop templateId={preview.id} courseTitle={preview.title} /><div className="course-teaching-plan"><section><h4>适合谁学习</h4><p>{preview.level === '方法进阶' ? '已有基础研究方法知识，希望练习访谈与材料分析的学习者。' : '希望从具体案例理解社会学与研究方法的初学者，无需先修专业课程。'}</p></section><section><h4>学习与评价方式</h4><p>阅读单元讲义后完成练习，依据自查要点检查。用于正式课堂时，由教师设定评价标准、复核并发布反馈。</p></section></div><section className="course-template-action"><div><h4>{role === 'teacher' ? '以这门课程开始你的教学' : '先体验阅读，再进入你的课堂'}</h4><p>{role === 'teacher' ? '复制后将创建你的课程，并导入各单元讲义。你可以编辑课程、备课和分享给学生。' : '示范课程可以直接阅读。正式作业与学习反馈，请进入老师分享给你的课程。'}</p></div>{role === 'teacher' ? <button className="research-hub__new" disabled={importing} onClick={() => void handleImportTemplate(preview)}><CopyIcon size={17} />{importing ? `正在导入 ${currentProgress?.uploaded ?? 0}/${preview.chapters.length}` : currentProgress?.courseId ? '继续导入课程' : '使用此课程模板'}</button> : <button className="research-hub__new" onClick={() => setChapter(0)}>开始第一单元<ArrowRightIcon size={16} /></button>}</section>
         </>}
+        {importing ? <BrandLoading compact message="正在导入课程资料…" progress={preview.chapters.length ? ((currentProgress?.uploaded ?? 0) / preview.chapters.length) * 100 : undefined} /> : null}
         {error && <p className="qx-message is-error" role="alert">{error}{currentProgress?.courseId && <button className="courses-page__text-button" onClick={() => onOpen(currentProgress.courseId!)}>打开已创建的课程</button>}</p>}
       </main></div>
     </section>

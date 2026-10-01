@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   confirmMethodPlan, createMethodPlan, getCurrentMethodPlan, listMethodPlanVersions,
@@ -151,7 +152,7 @@ export function MethodPlanWorkspace({ taskId }: { taskId: string }) {
   if (loading) {
     return (
       <section className="research-method" aria-label="研究方法计划">
-        <p className="research-method__muted" role="status">正在恢复方法计划…</p>
+        <BrandLoading message="正在恢复方法计划…" />
       </section>
     )
   }

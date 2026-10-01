@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { createContext, useContext, useEffect, useId, useState } from 'react'
 import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
@@ -274,7 +275,7 @@ export function PageShell({
                   </button>
                 </>
               ) : account.sessionState.status === 'loading' ? (
-                <span className="session-email">{text('确认中', 'Checking…')}</span>
+                <BrandLoading compact message={text('确认中', 'Checking…')} />
               ) : (
                 <NavLink to="/login">{text('登录', 'Sign in')}</NavLink>
               )}
@@ -372,7 +373,7 @@ export function PageShell({
                   ) : null}
                 </>
               ) : account.sessionState.status === 'loading' ? (
-                <span className="desktop-rail__session" role="status" aria-label={text('正在确认账户', 'Checking account')} />
+                <BrandLoading compact message={text('正在确认账户', 'Checking account')} />
               ) : (
                 <NavLink to="/login" aria-label={text('登录', 'Sign in')} title={text('登录', 'Sign in')}>
                   <UserCircleIcon size={18} weight="regular" />

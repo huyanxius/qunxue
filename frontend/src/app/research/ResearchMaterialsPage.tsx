@@ -1,3 +1,4 @@
+import { BrandLoading } from '../../ui/BrandLoading'
 import { ArrowLeftIcon, ArrowUpRightIcon, FolderSimpleIcon, CheckCircleIcon, FileDocIcon, FilePdfIcon, FileTextIcon, MarkdownLogoIcon, PlusIcon, TrashIcon, VideoCameraIcon, WaveformIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
@@ -307,7 +308,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
             <ResearchHubToolbar query={projectQuery} onQueryChange={setProjectQuery} searchLabel="搜索研究项目" placeholder="搜索项目">
               <Link className="research-hub__new" to="/research/new"><PlusIcon size={17} />新建研究</Link>
             </ResearchHubToolbar>
-            {loading ? <p className="research-hub__notice" role="status">正在读取研究项目…</p> : <div className="research-hub__projects">
+            {loading ? <BrandLoading compact message="正在读取研究项目…" /> : <div className="research-hub__projects">
               {visibleProjects.map((item) => <Link className="research-project-card" key={item.taskId} to={`/research/materials?task_id=${encodeURIComponent(item.taskId)}`} aria-label={`打开研究 ${researchTitle(item)}`} onClick={() => { setQuery(''); setCategory('all'); setUploadTaskId(item.taskId) }}>
                 <div className="research-project-card__top"><span className="research-project-card__icon"><FolderSimpleIcon size={23} /></span><ArrowUpRightIcon className="research-project-card__arrow" size={16} /></div>
                 <h2 title={researchTitle(item)}>{researchTitle(item)}</h2>
@@ -337,7 +338,7 @@ export function ResearchMaterialsPage({ userId: _userId = null }: { userId?: str
                 <span>{currentLibraryLoading ? `已读取 ${visibleMaterials.length} 份材料` : `${visibleMaterials.length} 份材料`}</span>
                 <select className="research-hub__sort" aria-label="材料排序" value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)}><option value="updated">最近修改</option><option value="name">文件名称</option></select>
               </div>
-              {loading || currentLibraryLoading ? <p className="research-hub__notice" role="status">正在读取研究材料…</p> : null}
+              {loading || currentLibraryLoading ? <BrandLoading compact message="正在读取研究材料…" /> : null}
               {failedProjects.length ? <p className="research-hub__notice" role="alert">{selectedTaskId ? '当前项目的文件暂时无法读取。' : `${failedProjects.length} 个项目的文件暂时无法读取。`}<button type="button" onClick={() => setMaterialReload(value => value + 1)}>重试</button></p> : null}
               {materialActionError ? <p className="research-hub__notice" role="alert">{materialActionError}</p> : null}
               {emptyUploadError ? <p className="research-hub__notice" role="alert">{emptyUploadError}</p> : null}
