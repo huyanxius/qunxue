@@ -625,9 +625,10 @@ def test_http_and_json_failures_map_to_sanitized_provider_failures(
         (500, "model_unavailable"),
         (503, "model_unavailable"),
         (400, "model_request_rejected"),
-        (401, "model_request_rejected"),
-        (403, "model_request_rejected"),
-        (404, "model_request_rejected"),
+        (401, "model_unavailable"),
+        (402, "model_unavailable"),
+        (403, "model_unavailable"),
+        (404, "model_unavailable"),
         (422, "model_request_rejected"),
     ],
 )
@@ -661,7 +662,7 @@ def test_http_error_status_preserves_retry_classification_without_details(
     assert base_url not in str(raised.value)
 
 
-def test_routed_unauthorized_request_does_not_call_backup() -> None:
+def test_routed_unauthorized_endpoint_uses_configured_backup() -> None:
     with _fake_openai_service(_Reply(body=b"private denial", status=401)) as (
         primary_url,
         primary_requests,
@@ -705,17 +706,16 @@ def test_routed_unauthorized_request_does_not_call_backup() -> None:
             contract_version="v1",
         )
 
-        with pytest.raises(model.ModelInvocationError) as raised:
-            gateway.build(
-                task_id=UUID(int=30),
-                raw_input="same input",
-                research_intent=None,
-                context=None,
-            )
+        draft = gateway.build(
+            task_id=UUID(int=30),
+            raw_input="same input",
+            research_intent=None,
+            context=None,
+        )
 
-    assert raised.value.code == "model_request_rejected"
+    assert draft.phenomenon == "backup endpoint"
     assert len(primary_requests) == 1
-    assert backup_requests == []
+    assert len(backup_requests) == 1
 
 
 def test_timeout_and_connection_failure_are_recoverable_without_leaking_config() -> None:

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { loginViaApi } from './accountApi'
-import { LoginPage, RegisterPage } from './AccountPages'
+import { ForgotPasswordPage, LoginPage, RegisterPage } from './AccountPages'
 
 vi.mock('@paper-design/shaders-react', () => ({
   GrainGradient: ({ className }: { className?: string }) => <div className={className} />,
@@ -231,4 +231,18 @@ describe('account pages', () => {
       )
     })
   })
+})
+
+it('offers self-service recovery from login', () => {
+  render(<LoginPage onLogin={vi.fn()} onAuthenticated={vi.fn()} registerHref="/register" />)
+  expect(screen.getByRole('link', { name: '忘记密码？' })).toHaveAttribute('href', '/forgot-password')
+})
+
+it('requests recovery with a normalized email and gives a generic confirmation', async () => {
+  const requestReset = vi.fn(async () => ({ resendAfterSeconds: 60 }))
+  render(<ForgotPasswordPage onRequestReset={requestReset} loginHref="/login" />)
+  fireEvent.change(screen.getByLabelText('邮箱'), { target: { value: ' recover@example.com ' } })
+  fireEvent.click(screen.getByRole('button', { name: '发送重置链接' }))
+  await waitFor(() => expect(requestReset).toHaveBeenCalledWith('recover@example.com'))
+  expect(await screen.findByRole('status')).toHaveTextContent('如果该邮箱已注册')
 })

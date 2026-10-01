@@ -4,6 +4,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from hmac import new as hmac_new
+from secrets import token_urlsafe
 from typing import TypeVar
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -568,6 +569,34 @@ class AccountManagementService:
             sanitize_for_storage=lambda result: {**result, "reset_token": None},
         )
         return {**result, "reset_token": token}
+
+    def request_password_reset(
+        self, *, email: str, client_key: str,
+    ) -> tuple[str, str] | None:
+        """Prepare a private email delivery; public callers always receive the same ack."""
+        normalized = email.strip().casefold()
+        now = self._clock()
+        # Apply gates before account lookup, equally for registered and unknown addresses.
+        # Global/client gates also bound storage growth from random email addresses.
+        if not self._repository.reserve_password_reset_requests(
+            scopes=(
+                ("global", 0, 120),
+                ("client:" + self._digest(client_key), 2, 20),
+                ("email:" + self._digest(normalized), 60, 5),
+            ),
+            now=now, window_seconds=3600,
+        ):
+            return None
+        account = self._repository.get_user_by_email(normalized)
+        if account is None or account["status"] != "active":
+            return None
+        token = token_urlsafe(32)
+        self._repository.create_password_reset(
+            reset_id=self._id_factory(), user_id=UUID(str(account["user_id"])),
+            token_digest=self._digest(token), requested_by_user_id=None,
+            now=now, expires_at=now + timedelta(minutes=15),
+        )
+        return normalized, token
 
     def _create_password_reset(
         self,

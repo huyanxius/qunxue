@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from qunxue_api.modules.identity import AccountRole, AccountStatus
 
@@ -179,6 +179,25 @@ class PasswordResetLinkResponse(BaseModel):
     user_id: UUID
     expires_at: datetime
     reset_token: str | None = None
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        import re
+        value = value.strip().casefold()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
+            raise ValueError("Invalid email address")
+        return value
+
+
+class PasswordResetRequestResponse(BaseModel):
+    status: Literal["accepted"] = "accepted"
+    expires_in_seconds: int = 900
+    resend_after_seconds: int = 60
 
 
 class PasswordResetConsumeRequest(BaseModel):

@@ -9,6 +9,7 @@ import {
   logoutSession,
   registerSession,
   sendRegistrationCode,
+  requestAccountPasswordReset,
   type SessionResponse,
 } from '../../api/generated'
 import type { AccountSession, MyResearchItem } from './types'
@@ -155,4 +156,14 @@ export async function deleteMyResearchViaApi(taskId: string): Promise<void> {
     headers: { 'Idempotency-Key': idempotencyKey() },
   })
   if (!data) throw new ApiRequestError('研究删除失败。', response?.status)
+}
+
+export async function requestPasswordResetViaApi(email: string): Promise<{ resendAfterSeconds: number }> {
+  const { data, response } = await requestAccountPasswordReset({
+    client: apiClient,
+    headers: { 'Idempotency-Key': globalThis.crypto.randomUUID() },
+    body: { email },
+  })
+  if (!data) throw new ApiRequestError('重置邮件暂时无法发送。', response?.status)
+  return { resendAfterSeconds: data.resend_after_seconds }
 }

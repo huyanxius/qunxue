@@ -18,6 +18,7 @@ import {
   AccountSettingsPage,
   AdminUsersPage,
   AdminOperationsPage,
+  ForgotPasswordPage,
   LoginPage,
   PasswordResetPage,
   RegisterPage,
@@ -340,7 +341,9 @@ function AdminOperationsRoute() {
 }
 
 function PasswordResetRoute() {
-  const { token = '' } = useParams<{ token: string }>()
+  const { token: pathToken = '' } = useParams<{ token: string }>()
+  const location = useLocation()
+  const token = pathToken || new URLSearchParams(location.hash.slice(1)).get('token') || ''
   return (
     <PageShell immersive>
       <PasswordResetPage token={token} loginHref="/login" />
@@ -461,6 +464,8 @@ export function AppRoutes({
       />
       <Route path="/login" element={<LoginRoute sessionState={resolvedSessionState} />} />
       <Route path="/register" element={<RegisterRoute sessionState={resolvedSessionState} />} />
+      <Route path="/forgot-password" element={<PageShell immersive><ForgotPasswordPage loginHref="/login" /></PageShell>} />
+      <Route path="/password-reset" element={<PasswordResetRoute />} />
       <Route path="/password-reset/:token" element={<PasswordResetRoute />} />
       <Route path="/my" element={protectedRoute(<Navigate replace to="/app?research=all" />)} />
       <Route path="/settings" element={protectedRoute(<AccountSettingsRoute />)} />

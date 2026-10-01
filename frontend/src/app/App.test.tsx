@@ -1192,6 +1192,8 @@ describe('App routes', () => {
     ['/login', '登录'],
     ['/register', '注册'],
     ['/password-reset/reset-token-value', '重设密码'],
+    ['/password-reset#token=fragment-reset-token', '重设密码'],
+    ['/forgot-password', '找回密码'],
   ])('renders the public account route %s for an anonymous visitor', async (path, title) => {
     renderRoute(path)
 

@@ -25,6 +25,7 @@ class ModelEndpoint:
     timeout_seconds: float
     provider: str | None = None
     extra_headers: Mapping[str, str] = field(default_factory=dict, repr=False)
+    store: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)

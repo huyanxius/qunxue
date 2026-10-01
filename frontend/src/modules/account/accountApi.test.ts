@@ -1,3 +1,4 @@
+import { requestPasswordResetViaApi } from './accountApi'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -151,4 +152,16 @@ describe('account API adapter', () => {
       updatedAt: '2026-08-21T09:00:00Z',
     }])
   })
+})
+
+it('requests recovery through the account adapter with an idempotency key', async () => {
+  const fetchMock = vi.fn(async (_input: RequestInfo | URL) => new Response(JSON.stringify({ status: 'accepted', resend_after_seconds: 60 }), {
+    status: 202, headers: { 'Content-Type': 'application/json' },
+  }))
+  vi.stubGlobal('fetch', fetchMock)
+  expect(await requestPasswordResetViaApi('recover@example.com')).toEqual({ resendAfterSeconds: 60 })
+  const request = fetchMock.mock.calls[0][0] as Request
+  expect(request.url).toContain('/api/account/password-resets/request')
+  expect(request.headers.get('Idempotency-Key')).toBeTruthy()
+  expect(await request.json()).toEqual({ email: 'recover@example.com' })
 })

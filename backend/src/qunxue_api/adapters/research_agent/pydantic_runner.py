@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import replace
 from typing import Any, Literal, cast
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 from openai import AsyncOpenAI
@@ -625,6 +626,7 @@ class PydanticAIKnowledgeRunner:
         model: str,
         timeout_seconds: float,
         extra_headers: Mapping[str, str] | None = None,
+        fallback_model_settings: Mapping[str, OpenAIChatModelSettings] | None = None,
         reasoning_effort: ReasoningEffort | None = None,
         route_executor: ModelRouteExecutor | None = None,
         direct_task: bool = False,
@@ -645,15 +647,16 @@ class PydanticAIKnowledgeRunner:
             }
             if extra_headers:
                 endpoint_settings["extra_headers"] = dict(extra_headers)
-            if reasoning_effort is not None:
-                endpoint_settings["openai_reasoning_effort"] = reasoning_effort
             if _is_deepseek_flash(
                 base_url=endpoint_url,
                 model=endpoint_model,
             ):
                 endpoint_settings["extra_body"] = {
-                    "thinking": {"type": "disabled"}
+                    "thinking": {"type": "enabled"}
                 }
+                endpoint_settings["openai_reasoning_effort"] = "high"
+            elif reasoning_effort is not None:
+                endpoint_settings["openai_reasoning_effort"] = reasoning_effort
             return endpoint_settings
 
         primary_model_settings = settings_for(base_url, model)
@@ -666,6 +669,7 @@ class PydanticAIKnowledgeRunner:
             endpoint_url: str,
             endpoint_key: str | None,
             endpoint_model: str,
+            endpoint_id: str,
         ) -> OpenAIChatModel:
             provider = OpenAIProvider(
                 openai_client=AsyncOpenAI(
@@ -677,7 +681,13 @@ class PydanticAIKnowledgeRunner:
             return OpenAIChatModel(
                 endpoint_model,
                 provider=provider,
-                settings=settings_for(endpoint_url, endpoint_model),
+                settings=cast(
+                    OpenAIChatModelSettings,
+                    merge_model_settings(
+                        settings_for(endpoint_url, endpoint_model),
+                        (fallback_model_settings or {}).get(endpoint_id),
+                    ),
+                ),
             )
 
         fallback_models: dict[str, OpenAIChatModel] = {}
@@ -688,6 +698,7 @@ class PydanticAIKnowledgeRunner:
                 endpoint_url,
                 endpoint_key,
                 endpoint_model,
+                f"fallback-{index}",
             )
         expected_endpoint_ids = ("primary", *fallback_models)
         if (
@@ -2516,7 +2527,9 @@ class PydanticAIKnowledgeRunner:
 
 
 def _is_deepseek_flash(*, base_url: str, model: str) -> bool:
-    return "deepseek.com" in base_url.lower() and model.lower() == "deepseek-v4-flash"
+    return urlsplit(base_url).hostname == "api.deepseek.com" and model.lower() in {
+        "deepseek-flash", "deepseek-v4-flash",
+    }
 
 
 def _is_transient_unknown_provider(error: ModelHTTPError) -> bool:
@@ -2536,7 +2549,7 @@ def _is_retryable_model_error(error: ModelHTTPError | ModelAPIError) -> bool:
     if isinstance(error, ModelHTTPError):
         return (
             _is_transient_unknown_provider(error)
-            or error.status_code in {408, 409, 429}
+            or error.status_code in {401, 402, 403, 404, 408, 409, 429}
             or error.status_code >= 500
         )
     return True
@@ -2549,7 +2562,7 @@ def _model_attempt_failure_code(error: ModelHTTPError | ModelAPIError) -> str:
         return "model_rate_limited"
     if (
         _is_transient_unknown_provider(error)
-        or error.status_code in {408, 409}
+        or error.status_code in {401, 402, 403, 404, 408, 409}
         or error.status_code >= 500
     ):
         return "model_unavailable"

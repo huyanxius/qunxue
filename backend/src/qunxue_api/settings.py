@@ -64,6 +64,8 @@ class ResolvedModelEndpointSettings:
     model: str
     api_key: SecretStr | None = field(repr=False)
     timeout_seconds: float
+    extra_headers: dict[str, SecretStr] | None = field(default=None, repr=False)
+    store: bool | None = None
 
 
 class ModelFallbackSettings(BaseModel):
@@ -72,6 +74,8 @@ class ModelFallbackSettings(BaseModel):
     base_url: str
     api_key: SecretStr
     model: str | None = None
+    extra_headers: dict[str, SecretStr] | None = Field(default=None, repr=False)
+    store: bool | None = None
 
     @field_validator("base_url")
     @classmethod
@@ -177,6 +181,7 @@ class Settings(BaseSettings):
     account_initial_admin_password: SecretStr | None = None
     resend_api_key: SecretStr | None = None
     email_from: str = "群学致知 <noreply@qunxue.qiyuankaiwu.com>"
+    password_reset_origin: str = "https://qunxue.xyz"
     cors_allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5178",
@@ -226,6 +231,15 @@ class Settings(BaseSettings):
         extra="ignore",
         hide_input_in_errors=True,
     )
+
+    @field_validator("password_reset_origin")
+    @classmethod
+    def validate_password_reset_origin(cls, value: str) -> str:
+        parts = urlsplit(value)
+        if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
+                or parts.query or parts.fragment or parts.path not in {"", "/"}):
+            raise ValueError("Password reset origin must be a trusted HTTPS origin")
+        return value.rstrip("/")
 
     @field_validator("model_base_url")
     @classmethod
@@ -286,6 +300,8 @@ class Settings(BaseSettings):
                 api_key=fallback.api_key,
                 model=fallback.model or primary_model,
                 timeout_seconds=self.model_timeout_seconds,
+                extra_headers=fallback.extra_headers,
+                store=fallback.store,
             )
             for index, fallback in enumerate(self.model_fallbacks, start=1)
         )

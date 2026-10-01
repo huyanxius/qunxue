@@ -179,6 +179,7 @@ class OpenAICompatibleModelProvider:
         timeout_seconds: float,
         capability_tier: str,
         extra_headers: dict[str, str] | None = None,
+        store: bool | None = None,
         probe_transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         parsed_url = urlsplit(base_url)
@@ -199,6 +200,17 @@ class OpenAICompatibleModelProvider:
             raise ValueError("model capability tier must be base or sft")
 
         self._extra_headers = _validated_headers(extra_headers or {})
+        self._storage_options = {} if store is None else {"store": store}
+        self._generation_options = (
+            {"thinking": {"type": "enabled"}, "reasoning_effort": "high"}
+            if parsed_url.hostname == "api.deepseek.com"
+            and model.strip().lower() in {"deepseek-flash", "deepseek-v4-flash"}
+            else {}
+        )
+        # Reachability probes do not need reasoning and retain their one-token budget.
+        self._probe_options = (
+            {"thinking": {"type": "disabled"}} if self._generation_options else {}
+        )
         self._endpoint = f"{base_url.rstrip('/')}/chat/completions"
         self._api_key = _validated_api_key(api_key)
         self._model = model.strip()
@@ -230,6 +242,8 @@ class OpenAICompatibleModelProvider:
                         "model": self._model,
                         "messages": [{"role": "user", "content": "Reply with OK."}],
                         "max_tokens": 1,
+                        **self._storage_options,
+                        **self._probe_options,
                     },
                 )
         except httpx.HTTPError as error:
@@ -557,6 +571,8 @@ class OpenAICompatibleModelProvider:
                     },
                 ],
                 "response_format": {"type": "json_object"},
+                **self._storage_options,
+                **self._generation_options,
             },
             ensure_ascii=False,
             separators=(",", ":"),
@@ -631,7 +647,9 @@ class OpenAICompatibleModelProvider:
                     knowledge_release_id=knowledge_release_id,
                     scenario=ModelScenario.RATE_LIMITED,
                 ) from error
-            if error.code in {408, 409} or 500 <= error.code < 600:
+            # Endpoint credentials, quota or model access may fail independently;
+            # another configured endpoint can still serve the same valid request.
+            if error.code in {401, 402, 403, 404, 408, 409} or 500 <= error.code < 600:
                 raise ModelProviderFailure(
                     code="model_unavailable",
                     message="The model provider could not complete the request.",

@@ -61,7 +61,7 @@ export function PasswordResetPage({
     } catch (failure) {
       setError(
         isAccountManagementRequestError(failure) && failure.status === 410
-          ? '重置链接已过期或已使用。请联系管理员创建新链接。'
+          ? '重置链接已过期或已使用。请重新申请重置邮件。'
           : '暂时无法重设密码。请检查网络后重试。',
       )
     } finally {
@@ -97,7 +97,7 @@ export function PasswordResetPage({
         <section className="account-flow__sheet" role="alert">
           <p className="account-flow__eyebrow">PASSWORD RESET</p>
           <h1 id="invalid-reset-title">重置链接无效</h1>
-          <p>链接中缺少必要的重置信息。请联系管理员创建新链接。</p>
+          <p>链接中缺少必要的重置信息。请重新申请重置邮件。</p>
         </section>
       </main>
     )
@@ -152,6 +152,7 @@ export function PasswordResetPage({
             {submitting ? '正在重设…' : '重设密码'}
           </button>
         </form>
+        <p className="account-flow__footer"><a href="/forgot-password">重新申请重置邮件</a></p>
         <p className="account-flow__footer">想起密码了？<a href={loginHref}>返回登录</a></p>
       </section>
     </main>

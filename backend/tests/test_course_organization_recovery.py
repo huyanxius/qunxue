@@ -266,3 +266,54 @@ def test_bounded_parallel_batches_save_out_of_order_and_merge_in_source_order():
     assert peak == 3
     assert snapshots == sorted(snapshots)
     assert result["topics"][0]["segment_ids"] == ["s0", "s1", "s2", "s3"]
+
+@pytest.mark.parametrize("store", [False, True, None])
+def test_course_generation_keeps_endpoint_storage_option_without_network(
+    monkeypatch, store
+):
+    import asyncio
+    from types import SimpleNamespace
+
+    from qunxue_api.adapters.research_agent import course_knowledge as module
+
+    captured = {}
+
+    class FakeAgent:
+        def __init__(self, *args, **kwargs):
+            captured.update(kwargs["model_settings"])
+
+        async def run(self, *args, **kwargs):
+            return SimpleNamespace(
+                output=module.BatchKnowledge.model_validate(
+                    {
+                        "summary": "isolated summary",
+                        "topics": [
+                            {
+                                "title": "isolated",
+                                "summary": "source",
+                                "segment_ids": ["0"],
+                            }
+                        ],
+                    }
+                )
+            )
+
+    monkeypatch.setattr(module, "Agent", FakeAgent)
+    endpoint = ModelEndpoint(
+        "primary",
+        "https://provider.invalid",
+        "gpt-5.6-sol",
+        "isolated-test-key",
+        30,
+        store=store,
+    )
+    generator = module.CourseKnowledgeGenerator((endpoint,))
+    asyncio.run(
+        generator._generate_at_endpoint(
+            endpoint, [{"segment_id": "source", "text": "isolated input"}]
+        )
+    )
+    if store is None:
+        assert "openai_store" not in captured
+    else:
+        assert captured["openai_store"] is store

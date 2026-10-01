@@ -100,6 +100,16 @@ class AccountPasswordResetRow(Base):
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class PasswordResetRateLimitRow(Base):
+    __tablename__ = "password_reset_rate_limits"
+
+    scope_key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    request_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    next_allowed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class PersonalDataExportRow(Base):
     __tablename__ = "personal_data_exports"
     __table_args__ = (
