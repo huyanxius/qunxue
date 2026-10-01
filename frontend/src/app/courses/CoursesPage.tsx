@@ -1,3 +1,4 @@
+import { BrandLoading } from '../ui/BrandLoading'
 import { CourseCatalog } from './CourseCatalog'
 import { copyCourseText } from './copyCourseText'
 import { useAccount } from '../../modules/account'
@@ -206,7 +207,7 @@ export function CoursesPage() {
           <button type="button" className="qx-button" aria-pressed={!teachingOpen && !homeOpen} onClick={() => { if (!teachingDirty || window.confirm('当前教学修改尚未保存，确定离开？')) setParams((current) => { const next = new URLSearchParams(current); next.delete('teaching'); next.delete('section'); return next }) }}>课程资料</button>
           <button type="button" className="qx-button" aria-pressed={teachingOpen} onClick={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })}>{owned ? '备课与作业' : '学习与作业'}</button>
         </nav>
-        {homeOpen ? <Suspense fallback={<p role="status">正在读取课程概览…</p>}><CourseHome key={detail.id} course={detail} onRead={(documentId) => navigate(view, detail.id, documentId)} onMaterials={() => setParams((current) => { const next = new URLSearchParams(current); next.delete('section'); next.delete('teaching'); return next })} onTeaching={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })} /></Suspense> : teachingOpen ? <Suspense fallback={<p role="status">正在打开课程工具…</p>}>
+        {homeOpen ? <Suspense fallback={<BrandLoading compact message="正在读取课程概览…" />}><CourseHome key={detail.id} course={detail} onRead={(documentId) => navigate(view, detail.id, documentId)} onMaterials={() => setParams((current) => { const next = new URLSearchParams(current); next.delete('section'); next.delete('teaching'); return next })} onTeaching={() => setParams((current) => { const next = new URLSearchParams(current); next.set('teaching', '1'); return next })} /></Suspense> : teachingOpen ? <Suspense fallback={<BrandLoading compact message="正在打开课程工具…" />}>
           {owned ? <TeacherTeachingPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} /> : <StudentLearningPanel key={detail.id} course={detail} onDirtyChange={setTeachingDirty} />}
         </Suspense> : <>
         <div className="courses-page__actions"><Link className="qx-button" to={`/knowledge?scope=courses&kb_id=${encodeURIComponent(detail.id)}`}><TreeStructureIcon size={17} />浏览课程知识库</Link></div>

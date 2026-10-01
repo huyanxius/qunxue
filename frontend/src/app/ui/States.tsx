@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { BrandLoading } from './BrandLoading'
 
 type ActionStateProps = {
   title?: string
@@ -7,11 +8,7 @@ type ActionStateProps = {
 }
 
 export function LoadingState({ message = '正在准备页面' }: { message?: string }) {
-  return (
-    <section className="state-panel" role="status" aria-live="polite">
-      <p>{message}</p>
-    </section>
-  )
+  return <BrandLoading message={message} />
 }
 
 export function EmptyState({

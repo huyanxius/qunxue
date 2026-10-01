@@ -1,5 +1,7 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
+
+import { BrandLoading } from './app/ui/BrandLoading'
 
 import { App } from './app/App'
 import { AppProviders } from './app/AppProviders'
@@ -15,7 +17,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <AppProviders>
-        <App />
+        <Suspense fallback={<BrandLoading fullscreen />}><App /></Suspense>
       </AppProviders>
     </ErrorBoundary>
   </StrictMode>,
