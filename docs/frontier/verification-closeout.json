@@ -1,0 +1,102 @@
+{
+  "base_commit": "7ed326036b0fce885131d31d79c7595ed200e528",
+  "backend_freeze_commit": "62849a0a256d60c00cbc66828b53c98040c3292c",
+  "backend_full_suite": {
+    "passed": 1389,
+    "failed": 54,
+    "skipped": 3
+  },
+  "clean_main_same_failed_nodes": {
+    "failed": 54,
+    "new_failures": [],
+    "baseline_failures": [
+      "tests/test_agent_conversation.py::test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select",
+      "tests/test_agent_conversation.py::test_agent_does_not_infer_citations_by_scanning_a_bare_knowledge_id",
+      "tests/test_agent_conversation.py::test_agent_does_not_infer_citations_by_scanning_a_catalog_suffix",
+      "tests/test_agent_conversation.py::test_agent_rejects_an_ambiguous_catalog_suffix",
+      "tests/test_agent_conversation.py::test_agent_runner_sends_previous_turns_as_role_preserving_message_history",
+      "tests/test_agent_conversation.py::test_agent_shared_router_records_primary_and_fallback_with_run_context",
+      "tests/test_agent_conversation.py::test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed",
+      "tests/test_agent_conversation.py::test_planner_route_context_is_correlated_and_reset_after_every_exit[error]",
+      "tests/test_agent_conversation.py::test_planner_route_context_is_correlated_and_reset_after_every_exit[normal]",
+      "tests/test_agent_conversation.py::test_sqlite_application_replaces_start_placeholders_with_runner_identity",
+      "tests/test_agent_file_attachments.py::test_standalone_file_answer_survives_history_and_respects_scope[deep_research]",
+      "tests/test_api_contract_freeze.py::test_every_documented_json_error_uses_error_response",
+      "tests/test_api_contract_freeze.py::test_every_mutating_endpoint_requires_the_idempotency_header",
+      "tests/test_build_retrieval_index_cli.py::test_cli_builds_the_explicit_release_with_the_real_embedding_http_adapter",
+      "tests/test_imported_knowledge_availability.py::test_upgrade_corrects_existing_imports_without_changing_content",
+      "tests/test_imported_knowledge_availability.py::test_upload_and_legacy_defaults_allow_agent_read_and_citation",
+      "tests/test_knowledge_retrieval.py::test_knowledge_registry_does_not_fall_back_to_a_preview_release",
+      "tests/test_knowledge_retrieval.py::test_knowledge_search_requires_the_release_bound_hybrid_retriever",
+      "tests/test_migrations.py::test_database_url_override_drives_offline_migrations",
+      "tests/test_openai_compatible_provider.py::test_environment_configuration_switches_bootstrap_between_base_and_sft",
+      "tests/test_openai_compatible_provider.py::test_framework_candidate_reference_outside_the_input_is_rejected",
+      "tests/test_openai_compatible_provider.py::test_gateway_records_http_failures_with_input_release_and_retry_state[reply0-model_rate_limited]",
+      "tests/test_openai_compatible_provider.py::test_gateway_records_http_failures_with_input_release_and_retry_state[reply1-model_invalid_output]",
+      "tests/test_openai_compatible_provider.py::test_http_and_json_failures_map_to_sanitized_provider_failures[response0-model_rate_limited-rate_limited]",
+      "tests/test_openai_compatible_provider.py::test_http_and_json_failures_map_to_sanitized_provider_failures[response1-model_invalid_output-invalid_output]",
+      "tests/test_openai_compatible_provider.py::test_http_and_json_failures_map_to_sanitized_provider_failures[response2-model_invalid_output-invalid_output]",
+      "tests/test_openai_compatible_provider.py::test_http_and_json_failures_map_to_sanitized_provider_failures[response3-model_invalid_output-invalid_output]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[400-model_request_rejected]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[401-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[402-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[403-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[404-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[408-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[409-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[422-model_request_rejected]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[429-model_rate_limited]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[500-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_http_error_status_preserves_retry_classification_without_details[503-model_unavailable]",
+      "tests/test_openai_compatible_provider.py::test_interrupted_http_response_is_recorded_as_provider_unavailable[disconnect]",
+      "tests/test_openai_compatible_provider.py::test_interrupted_http_response_is_recorded_as_provider_unavailable[truncated-response]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[invalid-enum]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[unknown-conflicting-evidence]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[unknown-evidence]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[unknown-release]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[unknown-supporting-evidence]",
+      "tests/test_openai_compatible_provider.py::test_invalid_or_out_of_closed_set_judgement_is_rejected_and_not_returned[unknown-theory]",
+      "tests/test_openai_compatible_provider.py::test_one_provider_maps_four_capabilities_over_real_local_http",
+      "tests/test_openai_compatible_provider.py::test_only_configuration_switches_between_two_compatible_endpoints",
+      "tests/test_openai_compatible_provider.py::test_routed_unauthorized_endpoint_uses_configured_backup",
+      "tests/test_openai_compatible_provider.py::test_sft_uses_the_same_provider_with_a_controlled_resource_header",
+      "tests/test_openai_compatible_provider.py::test_source_insufficiency_preserves_the_input_release_in_the_failure",
+      "tests/test_openai_compatible_provider.py::test_timeout_and_connection_failure_are_recoverable_without_leaking_config",
+      "tests/test_research_material_agent_tools.py::test_attached_file_opens_without_a_search_result",
+      "tests/test_research_start_journey.py::test_failed_start_proposal_does_not_attach_handoff_trace_to_reloaded_turn"
+    ]
+  },
+  "backend_ruff": "passed",
+  "frontier_api_value_architecture_private_corpus_regressions": {
+    "passed": 30
+  },
+  "frontend_integrated_frontier_and_route": {
+    "passed": 53
+  },
+  "frontend_initial_full_suite": {
+    "passed": 710,
+    "failed": 3,
+    "note": "Before final UI patch; frontier route mocks updated and covered by integrated frontier rerun."
+  },
+  "frontend_targeted_baseline_comparison": {
+    "agent_workspace": {
+      "integrated_passed": 38,
+      "main_passed": 38
+    },
+    "research_map": {
+      "integrated_failed": 1,
+      "main_failed": 1,
+      "node": "explains the dotted canvas without duplicating the Agent prompts"
+    }
+  },
+  "public_source_material_scan": "recursive raw abstract/source response keys absent",
+  "private_runtime_canonical_sha256": "40900786b0b32fc2704b20f439f5b95920fec5b8f795e1c3ea45399dd03ae43a",
+  "public_canonical_sha256": "7d6a534a6f3187935084217994e09f0eb6ab6df14c155a3cef4f058f8bf8ee7e",
+  "identity_manifest_sha256": "21ef769e344c42c433f17a50bdd6a8f9ad4b82c47c21b82ee3bb8d3c875b3694",
+  "frontend_final_frontier_and_route": {
+    "passed": 68,
+    "files": 13
+  },
+  "frontend_build_typecheck_lint_boundaries": "passed",
+  "browser_acceptance": "cancelled by user; user will accept deployed UI"
+}
