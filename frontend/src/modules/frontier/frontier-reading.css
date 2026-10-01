@@ -1,0 +1,79 @@
+.frontier { --frontier-date-size: clamp(calc(var(--qx-text-section) * 1.5), 5vw, calc(var(--qx-text-section) * 2.5)); --frontier-share-size: calc(var(--qx-text-section) * 1.25); }
+/* Date-first reading surface: the product shell and all color/font tokens stay shared. */
+.frontier .frontier-reading-date { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 26px; padding-bottom: 24px; border-bottom: 1px solid var(--qx-color-rule); }
+.frontier-reading-date small { color: var(--qx-color-muted); font-size: var(--qx-text-control); }
+.frontier .frontier-reading-date h1 { margin: 8px 0 0; font-family: var(--qx-font-reading); font-size: var(--frontier-date-size); font-weight: 500; line-height: 1.35; letter-spacing: -.04em; }
+.frontier-date-actions { display: flex; gap: 8px; align-items: center; }
+.frontier-date-actions :is(button, input) { border: 1px solid var(--qx-color-rule); border-radius: var(--qx-radius-control); background: var(--qx-color-surface); color: var(--qx-color-ink); padding: 6px 9px; font: inherit; font-size: var(--qx-text-control); min-height: var(--qx-control-height); }
+.frontier-reading-layout { display: grid; grid-template-columns: minmax(0, 1fr) 276px; gap: 36px; align-items: start; }
+.frontier-reading-primary, .frontier-reading-primary .frontier-index { min-width: 0; }
+.frontier .frontier-workspace { display: block; }
+.frontier .frontier-workspace[data-topic-open='true'] { display: block; }
+.frontier-reading-scope, .frontier-reading-status { color: var(--qx-color-muted); font-size: var(--qx-text-control); line-height: 1.65; }
+.frontier-reading-scope { margin: 0 0 14px; }
+.frontier-reading-section { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 18px; }
+.frontier .frontier-reading-section h2 { margin: 0; font-family: var(--qx-font-reading); font-size: var(--qx-text-title); font-weight: var(--qx-text-title--font-weight); line-height: 1.5; }
+.frontier-reading-section span { color: var(--qx-color-muted); font-size: var(--qx-text-eyebrow); }
+.frontier-reading-focus { margin-top: 26px; }
+.frontier-focus-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.frontier-focus-story { padding-bottom: 22px; border-bottom: 1px solid var(--qx-color-rule); }
+.frontier-focus-story small { color: var(--qx-color-muted); font-size: var(--qx-text-eyebrow); }
+.frontier .frontier-focus-story h3 { font-family: var(--qx-font-reading); font-size: var(--qx-text-section); font-weight: 550; line-height: 1.6; margin: 9px 0 12px; }
+.frontier-focus-story button { text-align: left; background: transparent; padding: 0; border: 0; color: inherit; font: inherit; }
+.frontier-focus-story p { font-size: var(--qx-text-control); line-height: 1.8; margin: 0 0 18px; color: var(--qx-color-ink-soft); }
+.frontier-focus-story footer { display: grid; gap: 7px; font-size: var(--qx-text-eyebrow); line-height: 1.7; }
+.frontier-focus-story footer > span { color: var(--qx-color-muted); }
+.frontier-reading-trends { margin: 30px 0; padding: 22px 0; border-top: 1px solid var(--qx-color-rule); border-bottom: 1px solid var(--qx-color-rule); }
+.frontier-trend-controls { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.frontier-trend-controls select { color: var(--qx-color-ink); background: var(--qx-color-surface); border: 1px solid var(--qx-color-rule); padding: 5px; font-size: var(--qx-text-meta); max-width: 100%; }
+.frontier-trend-basis, .frontier-trend-counts { font-size: var(--qx-text-eyebrow); line-height: 1.8; color: var(--qx-color-muted); }
+.frontier-share-comparison { display: flex; align-items: baseline; flex-wrap: wrap; gap: 18px; margin-top: 20px; }
+.frontier-share-comparison strong { font-family: var(--qx-font-reading); font-size: var(--frontier-share-size); font-weight: 500; }
+.frontier-share-comparison > span { font-size: var(--qx-text-meta); color: var(--qx-color-muted); }
+.frontier-share-bars { width: 100%; display: grid; gap: 7px; }
+.frontier-share-bars i { display: block; min-height: 5px; background: var(--qx-color-muted); }
+.frontier-share-bars i + i { background: var(--qx-color-ink); }
+.frontier-trend-evidence { display: grid; gap: 7px; margin-bottom: 14px; }
+.frontier-trend-evidence button, .frontier-calendar-results button, .frontier-calendar-precision button { text-align: left; padding: 0; border: 0; background: transparent; color: var(--qx-color-ink); font-size: var(--qx-text-meta); line-height: 1.65; }
+.frontier-reading-trends > small { font-size: var(--qx-text-eyebrow); color: var(--qx-color-muted); }
+.frontier-long-review { padding: 15px 0; font-size: var(--qx-text-control); }
+.frontier-calendar-rail { position: sticky; top: 0; align-self: start; border-left: 1px solid var(--qx-color-rule); padding-left: 24px; }
+.frontier-calendar-rail > section + section { padding-top: 26px; margin-top: 26px; border-top: 1px solid var(--qx-color-rule); }
+.frontier-calendar-month { display: flex; justify-content: space-between; align-items: center; font-size: var(--qx-text-meta); margin-bottom: 16px; }
+.frontier-calendar-month button { border: 0; background: transparent; color: var(--qx-color-ink); padding: 5px 10px; }
+.frontier-calendar-week, .frontier-calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.frontier-calendar-week { margin-bottom: 9px; text-align: center; color: var(--qx-color-muted); font-size: var(--qx-text-locator); }
+.frontier-calendar-days button { aspect-ratio: 1; border: 0; border-radius: var(--qx-radius-control); font-size: var(--qx-text-eyebrow); background: transparent; color: var(--qx-color-ink); }
+.frontier-calendar-rail button[data-level='1'] { background: var(--qx-color-surface-strong); }
+.frontier-calendar-rail button[data-level='2'] { background: var(--qx-color-muted); color: var(--qx-color-on-accent); }
+.frontier-calendar-rail button[data-level='3'] { background: var(--qx-color-ink); color: var(--qx-color-on-accent); }
+.frontier-calendar-rail button:disabled { opacity: .3; cursor: default; }
+.frontier-calendar-rail button[aria-pressed='true'] { outline: 1px solid var(--qx-color-ink); outline-offset: 2px; }
+.frontier-calendar-results { margin-top: 18px; font-size: var(--qx-text-meta); display: grid; gap: 9px; }
+.frontier .frontier-calendar-results h3 { font: inherit; margin: 0; font-weight: 600; }
+.frontier-heat-months { display: flex; justify-content: space-between; color: var(--qx-color-muted); font-size: var(--qx-text-locator); margin-bottom: 6px; }
+.frontier-heatmap { display: grid; grid-template-rows: repeat(7, 4px); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; }
+.frontier-heatmap button { padding: 0; border: 0; border-radius: var(--qx-radius-compact); background: var(--qx-color-surface-muted); }
+.frontier-calendar-precision { font-size: var(--qx-text-eyebrow); color: var(--qx-color-muted); line-height: 1.8; margin-top: 22px; }
+.frontier-calendar-precision details { margin-top: 8px; }
+.frontier-calendar-precision button { display: block; margin-top: 8px; }
+.frontier-reading-layout button:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }
+.frontier-reading-layout :is(button, select, input):focus-visible, .frontier-date-actions :is(button, input):focus-visible { outline: 2px solid var(--qx-color-ink); outline-offset: 3px; }
+@container frontier (max-width: 950px) { .frontier-reading-layout { grid-template-columns: minmax(0, 1fr) 232px; gap: 24px; } .frontier-calendar-rail { padding-left: 18px; } .frontier-focus-grid { grid-template-columns: 1fr; } }
+@container frontier (max-width: 700px) { .frontier-reading-layout { grid-template-columns: 1fr; } .frontier-calendar-rail { position: static; border-left: 0; border-top: 1px solid var(--qx-color-rule); padding: 24px 0 0; } .frontier .frontier-reading-date { align-items: start; flex-direction: column; gap: 14px; } }
+.frontier.frontier-feedly .frontier-scroll { padding: 28px 32px 48px; overflow-y: auto; }
+.frontier.frontier-feedly .frontier-workspace, .frontier.frontier-feedly .frontier-workspace[data-topic-open='true'] { display: block; height: auto; min-height: 0; }
+.frontier.frontier-feedly .frontier-index { padding: 0; }
+.frontier.frontier-feedly .frontier-workspace[data-topic-open='true'] > .frontier-index { padding: 0 0 20px; border-right: 0; background: transparent; }
+.frontier.frontier-feedly .frontier-analysis-panel { min-height: 0; height: auto; }
+@container frontier (max-width: 700px) { .frontier.frontier-feedly .frontier-scroll { padding: 20px 18px 36px; } }
+.frontier-heatmap > span { background: var(--qx-color-surface-muted); border-radius: var(--qx-radius-compact); }
+.frontier-practice-reading { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--qx-color-rule); }
+.frontier-practice-reading ul { list-style: none; margin: 0 0 16px; padding: 0; }
+.frontier-practice-reading li { display: grid; gap: 7px; padding: 14px 0; border-bottom: 1px solid var(--qx-color-rule); }
+.frontier-practice-reading small { color: var(--qx-color-muted); font-size: var(--qx-text-eyebrow); }
+.frontier-practice-reading button { padding: 0; border: 0; background: transparent; color: var(--qx-color-ink); font-size: var(--qx-text-meta); text-align: left; line-height: 1.75; }
+.frontier.frontier-feedly .frontier-scroll > .frontier-reading-date, .frontier.frontier-feedly .frontier-scroll > .frontier-reading-layout { width: 100%; max-width: none; margin-inline: 0; }
+.frontier-trend-window, .frontier-trend-scope { font-size: var(--qx-text-eyebrow); line-height: 1.75; color: var(--qx-color-muted); }
+.frontier-trend-scope { margin-bottom: 14px; overflow-wrap: anywhere; }
+.frontier-calendar-results { max-height: min(calc(var(--qx-control-height) * 6), 25dvh); overflow-y: auto; overscroll-behavior: contain; }

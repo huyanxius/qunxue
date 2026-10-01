@@ -3910,6 +3910,144 @@ export type FrameworkReviewRunStatus = 'requested' | 'running' | 'succeeded' | '
 export type FrameworkStatus = 'draft' | 'under_review' | 'revision_required' | 'ready_to_confirm' | 'confirmed';
 
 /**
+ * FrontierCalendarDayResponse
+ */
+export type FrontierCalendarDayResponse = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Record Ids
+     */
+    record_ids: Array<string>;
+};
+
+/**
+ * FrontierCalendarIssueResponse
+ */
+export type FrontierCalendarIssueResponse = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Publication Year
+     */
+    publication_year: number;
+    /**
+     * Record Ids
+     */
+    record_ids: Array<string>;
+    /**
+     * Source Id
+     */
+    source_id: string;
+};
+
+/**
+ * FrontierCalendarMonthResponse
+ */
+export type FrontierCalendarMonthResponse = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Month
+     */
+    month: string;
+    /**
+     * Record Ids
+     */
+    record_ids: Array<string>;
+};
+
+/**
+ * FrontierCalendarResponse
+ */
+export type FrontierCalendarResponse = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Conflicting Record Ids
+     */
+    conflicting_record_ids: Array<string>;
+    /**
+     * Days
+     */
+    days: Array<FrontierCalendarDayResponse>;
+    /**
+     * Future Record Ids
+     */
+    future_record_ids: Array<string>;
+    /**
+     * Issue Precision
+     */
+    issue_precision: Array<FrontierCalendarIssueResponse>;
+    /**
+     * Month Precision
+     */
+    month_precision: Array<FrontierCalendarMonthResponse>;
+    /**
+     * Timezone
+     */
+    timezone: 'Asia/Shanghai';
+    /**
+     * Undated Record Ids
+     */
+    undated_record_ids: Array<string>;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * FrontierClassificationCountsResponse
+ */
+export type FrontierClassificationCountsResponse = {
+    /**
+     * Classified
+     */
+    classified: number;
+    /**
+     * Denominator
+     */
+    denominator: number;
+    /**
+     * Publisher Keywords Available
+     */
+    publisher_keywords_available: number;
+    /**
+     * Title Available
+     */
+    title_available: number;
+    /**
+     * Uncategorized
+     */
+    uncategorized: number;
+};
+
+/**
+ * FrontierClassificationCoverageResponse
+ */
+export type FrontierClassificationCoverageResponse = {
+    current: FrontierClassificationCountsResponse;
+    previous: FrontierClassificationCountsResponse;
+};
+
+/**
  * FrontierCorpusOverviewResponse
  */
 export type FrontierCorpusOverviewResponse = {
@@ -3988,6 +4126,32 @@ export type FrontierCorpusStatisticsResponse = {
      * Year Distribution
      */
     year_distribution: Array<FrontierDistributionResponse>;
+};
+
+/**
+ * FrontierCriterionRatingResponse
+ */
+export type FrontierCriterionRatingResponse = {
+    /**
+     * Evidence
+     */
+    evidence: Array<FrontierRatingEvidenceResponse>;
+    /**
+     * Missing Reason
+     */
+    missing_reason: string | null;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+    /**
+     * Score
+     */
+    score: number | null;
+    /**
+     * Weight
+     */
+    weight: number;
 };
 
 /**
@@ -4188,6 +4352,78 @@ export type FrontierIssuePointResponse = {
 };
 
 /**
+ * FrontierKnowledgeLinkResponse
+ */
+export type FrontierKnowledgeLinkResponse = {
+    /**
+     * Content Version
+     */
+    content_version: number;
+    /**
+     * Knowledge Id
+     */
+    knowledge_id: string;
+    /**
+     * Matched Topics
+     */
+    matched_topics: Array<string>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * FrontierKnowledgeLinksResponse
+ */
+export type FrontierKnowledgeLinksResponse = {
+    /**
+     * Knowledge Release Hash
+     */
+    knowledge_release_hash: string | null;
+    /**
+     * Knowledge Release Id
+     */
+    knowledge_release_id: string | null;
+    /**
+     * Knowledge Release Level
+     */
+    knowledge_release_level: 'preview' | 'final' | 'working' | null;
+    /**
+     * Limitations
+     */
+    limitations: Array<string>;
+    /**
+     * Match Basis
+     */
+    match_basis: 'topic_lexical_retrieval';
+    /**
+     * Matches
+     */
+    matches: Array<FrontierKnowledgeLinkResponse>;
+    /**
+     * Record Content Hash
+     */
+    record_content_hash: string;
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Record Version
+     */
+    record_version: number;
+    /**
+     * Relationship
+     */
+    relationship: 'reading_lead';
+    /**
+     * Status
+     */
+    status: 'ready' | 'no_release' | 'no_topics' | 'no_matches' | 'low_evidence';
+};
+
+/**
  * FrontierMediaResponse
  */
 export type FrontierMediaResponse = {
@@ -4346,6 +4582,127 @@ export type FrontierPaperAnalysisEvidenceResponse = {
 };
 
 /**
+ * FrontierPeriodReportResponse
+ */
+export type FrontierPeriodReportResponse = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    classification_coverage: FrontierClassificationCoverageResponse;
+    /**
+     * Cohort Current Count
+     */
+    cohort_current_count: number;
+    /**
+     * Cohort Previous Count
+     */
+    cohort_previous_count: number;
+    /**
+     * Cohort Source Ids
+     */
+    cohort_source_ids: Array<string>;
+    /**
+     * Comparability
+     */
+    comparability: string;
+    /**
+     * Comparison Issue Keys
+     */
+    comparison_issue_keys: Array<string>;
+    /**
+     * Coverage Evidence Refs
+     */
+    coverage_evidence_refs: Array<string>;
+    /**
+     * Coverage Scope
+     */
+    coverage_scope: string;
+    /**
+     * Current Count
+     */
+    current_count: number;
+    /**
+     * Current Denominator
+     */
+    current_denominator: number;
+    /**
+     * Current Share
+     */
+    current_share: number | null;
+    current_window: FrontierTimeWindowResponse;
+    /**
+     * Date Basis
+     */
+    date_basis: string;
+    /**
+     * Decline Allowed
+     */
+    decline_allowed: boolean;
+    /**
+     * Delta Pp
+     */
+    delta_pp: number | null;
+    /**
+     * Direction
+     */
+    direction: string | null;
+    /**
+     * Emerging Allowed
+     */
+    emerging_allowed: boolean;
+    /**
+     * Evidence Record Ids
+     */
+    evidence_record_ids: Array<string>;
+    /**
+     * Hotspot Allowed
+     */
+    hotspot_allowed: boolean;
+    /**
+     * Measurement Method
+     */
+    measurement_method: string;
+    /**
+     * Measurement Version
+     */
+    measurement_version: string;
+    /**
+     * Method Version
+     */
+    method_version: string;
+    /**
+     * Persistent Allowed
+     */
+    persistent_allowed: boolean;
+    /**
+     * Previous Count
+     */
+    previous_count: number;
+    /**
+     * Previous Denominator
+     */
+    previous_denominator: number;
+    /**
+     * Previous Share
+     */
+    previous_share: number | null;
+    previous_window: FrontierTimeWindowResponse;
+    /**
+     * Semantic Status
+     */
+    semantic_status: string;
+    /**
+     * Share Basis
+     */
+    share_basis: string;
+    /**
+     * Timezone
+     */
+    timezone: string;
+};
+
+/**
  * FrontierPriorityReadResponse
  */
 export type FrontierPriorityReadResponse = {
@@ -4357,6 +4714,153 @@ export type FrontierPriorityReadResponse = {
      * Record Id
      */
     record_id: string;
+};
+
+/**
+ * FrontierRatingEvidenceResponse
+ */
+export type FrontierRatingEvidenceResponse = {
+    /**
+     * Locator
+     */
+    locator: string;
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Reviewed By
+     */
+    reviewed_by: string;
+    /**
+     * Snapshot Hash
+     */
+    snapshot_hash: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FrontierReadingBasisResponse
+ */
+export type FrontierReadingBasisResponse = {
+    /**
+     * Basis Type
+     */
+    basis_type: 'located_source_excerpt' | 'assistant_abstract_reading';
+    /**
+     * Block Id
+     */
+    block_id: string;
+    /**
+     * Fields
+     */
+    fields: Array<string>;
+    /**
+     * Locator
+     */
+    locator: string;
+    /**
+     * Snippet
+     */
+    snippet: string;
+    /**
+     * Source Content Hash
+     */
+    source_content_hash: string;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * FrontierReadingPriorityPageResponse
+ */
+export type FrontierReadingPriorityPageResponse = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Items
+     */
+    items: Array<FrontierReadingPriorityResponse>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Next Offset
+     */
+    next_offset: number | null;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Sort Basis
+     */
+    sort_basis: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * FrontierReadingPriorityResponse
+ */
+export type FrontierReadingPriorityResponse = {
+    assessment: FrontierValueAssessmentResponse;
+    /**
+     * Basis
+     */
+    basis: Array<FrontierReadingBasisResponse>;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Evidence Readiness
+     */
+    evidence_readiness: string;
+    /**
+     * Limitations
+     */
+    limitations: Array<string>;
+    /**
+     * Missing Fields
+     */
+    missing_fields: {
+        [key: string]: string;
+    };
+    /**
+     * Reading Priority
+     */
+    reading_priority: 'passage_supported' | 'abstract_supported' | 'metadata_only';
+    /**
+     * Reading Rule Version
+     */
+    reading_rule_version: string;
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Supported Fields
+     */
+    supported_fields: Array<string>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -4627,6 +5131,20 @@ export type FrontierResearchBriefResponse = {
      * Updated At
      */
     updated_at: string;
+};
+
+/**
+ * FrontierScoreBoundsResponse
+ */
+export type FrontierScoreBoundsResponse = {
+    /**
+     * Lower
+     */
+    lower: number;
+    /**
+     * Upper
+     */
+    upper: number;
 };
 
 /**
@@ -5039,6 +5557,59 @@ export type FrontierTopicResponse = {
      * Trend Status
      */
     trend_status: 'insufficient_evidence' | 'supported';
+};
+
+/**
+ * FrontierValueAssessmentResponse
+ */
+export type FrontierValueAssessmentResponse = {
+    /**
+     * Academic Value
+     */
+    academic_value: number | null;
+    /**
+     * Authorizes Publication
+     */
+    authorizes_publication: false;
+    /**
+     * Criteria
+     */
+    criteria: {
+        [key: string]: FrontierCriterionRatingResponse;
+    };
+    /**
+     * Evidence Readiness
+     */
+    evidence_readiness: string;
+    /**
+     * Missing Reasons
+     */
+    missing_reasons: {
+        [key: string]: string;
+    };
+    /**
+     * Priority
+     */
+    priority: 'priority_review' | 'candidate' | 'not_yet_for_update' | null;
+    /**
+     * Ratings
+     */
+    ratings: {
+        [key: string]: number | null;
+    };
+    /**
+     * Rule Version
+     */
+    rule_version: string;
+    score_bounds: FrontierScoreBoundsResponse;
+    /**
+     * Status
+     */
+    status: 'unassessed' | 'partial' | 'assessed';
+    /**
+     * Track
+     */
+    track: 'empirical' | 'theoretical' | 'policy_practice' | null;
 };
 
 /**
@@ -12851,6 +13422,40 @@ export type RetryFrameworkReviewResponses = {
 
 export type RetryFrameworkReviewResponse = RetryFrameworkReviewResponses[keyof RetryFrameworkReviewResponses];
 
+export type GetFrontierCalendarData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Year
+         */
+        year: number;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/frontier/calendar';
+};
+
+export type GetFrontierCalendarErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetFrontierCalendarError = GetFrontierCalendarErrors[keyof GetFrontierCalendarErrors];
+
+export type GetFrontierCalendarResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierCalendarResponse;
+};
+
+export type GetFrontierCalendarResponse = GetFrontierCalendarResponses[keyof GetFrontierCalendarResponses];
+
 export type GetFrontierOverviewData = {
     body?: never;
     path?: never;
@@ -12881,6 +13486,110 @@ export type GetFrontierOverviewResponses = {
 
 export type GetFrontierOverviewResponse = GetFrontierOverviewResponses[keyof GetFrontierOverviewResponses];
 
+export type GetFrontierPeriodReportData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Previous Start
+         */
+        previous_start: string;
+        /**
+         * Previous End
+         */
+        previous_end: string;
+        /**
+         * Current Start
+         */
+        current_start: string;
+        /**
+         * Current End
+         */
+        current_end: string;
+        /**
+         * Topic Key
+         */
+        topic_key: string;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/frontier/period-report';
+};
+
+export type GetFrontierPeriodReportErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetFrontierPeriodReportError = GetFrontierPeriodReportErrors[keyof GetFrontierPeriodReportErrors];
+
+export type GetFrontierPeriodReportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierPeriodReportResponse;
+};
+
+export type GetFrontierPeriodReportResponse = GetFrontierPeriodReportResponses[keyof GetFrontierPeriodReportResponses];
+
+export type ListFrontierReadingPrioritiesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Readiness
+         */
+        readiness?: 'passage_supported' | 'abstract_supported' | 'metadata_only' | null;
+        /**
+         * Assessment Status
+         */
+        assessment_status?: 'unassessed' | 'partial' | 'assessed' | null;
+        /**
+         * Min Academic Value
+         */
+        min_academic_value?: number | null;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/frontier/reading-priorities';
+};
+
+export type ListFrontierReadingPrioritiesErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListFrontierReadingPrioritiesError = ListFrontierReadingPrioritiesErrors[keyof ListFrontierReadingPrioritiesErrors];
+
+export type ListFrontierReadingPrioritiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierReadingPriorityPageResponse;
+};
+
+export type ListFrontierReadingPrioritiesResponse = ListFrontierReadingPrioritiesResponses[keyof ListFrontierReadingPrioritiesResponses];
+
 export type GetFrontierRecordData = {
     body?: never;
     path: {
@@ -12889,7 +13598,12 @@ export type GetFrontierRecordData = {
          */
         record_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
     url: '/api/frontier/records/{record_id}';
 };
 
@@ -12914,6 +13628,84 @@ export type GetFrontierRecordResponses = {
 };
 
 export type GetFrontierRecordResponse = GetFrontierRecordResponses[keyof GetFrontierRecordResponses];
+
+export type GetFrontierKnowledgeLinksData = {
+    body?: never;
+    path: {
+        /**
+         * Record Id
+         */
+        record_id: string;
+    };
+    query?: {
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/frontier/records/{record_id}/knowledge-links';
+};
+
+export type GetFrontierKnowledgeLinksErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetFrontierKnowledgeLinksError = GetFrontierKnowledgeLinksErrors[keyof GetFrontierKnowledgeLinksErrors];
+
+export type GetFrontierKnowledgeLinksResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierKnowledgeLinksResponse;
+};
+
+export type GetFrontierKnowledgeLinksResponse = GetFrontierKnowledgeLinksResponses[keyof GetFrontierKnowledgeLinksResponses];
+
+export type GetFrontierReadingPriorityData = {
+    body?: never;
+    path: {
+        /**
+         * Record Id
+         */
+        record_id: string;
+    };
+    query?: {
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/frontier/records/{record_id}/reading-priority';
+};
+
+export type GetFrontierReadingPriorityErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetFrontierReadingPriorityError = GetFrontierReadingPriorityErrors[keyof GetFrontierReadingPriorityErrors];
+
+export type GetFrontierReadingPriorityResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierReadingPriorityResponse;
+};
+
+export type GetFrontierReadingPriorityResponse = GetFrontierReadingPriorityResponses[keyof GetFrontierReadingPriorityResponses];
 
 export type SearchFrontierRecordsData = {
     body?: never;

@@ -1,6 +1,9 @@
 import { apiClient } from "../../api/client";
 import {
   getFrontierStatus,
+  getFrontierCalendar,
+  getFrontierPeriodReport,
+  getFrontierKnowledgeLinks,
   getFrontierOverview,
   listFrontierSources,
   listFrontierTopics,
@@ -166,9 +169,9 @@ export function datasetFromSnapshot(
     corpusOverview: snapshot.overview ? corpusOverviewView(snapshot.overview) : undefined,
   };
 }
-export async function readFrontierDataset(): Promise<FrontierDataset> {
+export async function readFrontierDataset(asOf?: string): Promise<FrontierDataset> {
   const [topics, sources, status] = await Promise.all([
-    listFrontierTopics({ client: apiClient }),
+    listFrontierTopics({ client: apiClient, query: asOf ? { as_of: asOf } : undefined }),
     listFrontierSources({ client: apiClient }),
     getFrontierStatus({ client: apiClient }),
   ]);
@@ -209,4 +212,44 @@ export async function readFrontierDataset(): Promise<FrontierDataset> {
     modelStatus: status.data.extractor_status,
     corpusOverview: overview.data ? corpusOverviewView(overview.data) : undefined,
   };
+}
+
+export function frontierPeriodQuery(topicKey: string, asOf: string, comparisonYear?: number) {
+  const cutoff = new Date(`${asOf}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf) || Number.isNaN(cutoff.getTime()) || cutoff.toISOString().slice(0, 10) !== asOf)
+    throw new Error("请选择有效统计日期");
+  topicKey = topicKey.replace(/-research$/, "");
+  if (topicKey.endsWith("-practice")) throw new Error("期次报告仅比较研究资料");
+  if (comparisonYear !== undefined) {
+    if (!Number.isInteger(comparisonYear) || comparisonYear < 1000 || comparisonYear >= cutoff.getUTCFullYear())
+      throw new Error("请选择已结束的完整年度");
+    return {
+      previous_start: `${comparisonYear - 1}-01-01`, previous_end: `${comparisonYear - 1}-12-31`,
+      current_start: `${comparisonYear}-01-01`, current_end: `${comparisonYear}-12-31`,
+      topic_key: topicKey, as_of: asOf,
+    };
+  }
+  const end = new Date(Date.UTC(cutoff.getUTCFullYear(), cutoff.getUTCMonth(), 0));
+  const year = end.getUTCFullYear();
+  return {
+    previous_start: `${year - 1}-01-01`,
+    previous_end: new Date(Date.UTC(year - 1, end.getUTCMonth() + 1, 0)).toISOString().slice(0, 10),
+    current_start: `${year}-01-01`, current_end: end.toISOString().slice(0, 10),
+    topic_key: topicKey, as_of: asOf,
+  };
+}
+export async function readFrontierPeriod(topicKey: string, asOf: string, comparisonYear?: number) {
+  const result = await getFrontierPeriodReport({ client: apiClient, query: frontierPeriodQuery(topicKey, asOf, comparisonYear) });
+  if (!result.data) throw new Error("时期报告暂时无法读取");
+  return result.data;
+}
+export async function readFrontierCalendar(asOf: string) {
+  const result = await getFrontierCalendar({ client: apiClient, query: { year: Number(asOf.slice(0,4)), as_of: asOf }});
+  if (!result.data) throw new Error("发表日历暂时无法读取");
+  return result.data;
+}
+export async function readFrontierKnowledgeLinks(recordId: string) {
+  const result = await getFrontierKnowledgeLinks({ client: apiClient, path: {record_id: recordId} });
+  if (!result.data) throw new Error("知识阅读线索暂时无法读取");
+  return result.data;
 }
