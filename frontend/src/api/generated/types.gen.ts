@@ -5090,6 +5090,134 @@ export type FrontierRecordResponse = {
 };
 
 /**
+ * FrontierRecordSummaryPageResponse
+ */
+export type FrontierRecordSummaryPageResponse = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Date Filter Basis
+     */
+    date_filter_basis: string;
+    /**
+     * Items
+     */
+    items: Array<FrontierRecordSummaryResponse>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Next Offset
+     */
+    next_offset: number | null;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Search Mode
+     */
+    search_mode: string;
+    /**
+     * Sort Basis
+     */
+    sort_basis: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * FrontierRecordSummaryResponse
+ */
+export type FrontierRecordSummaryResponse = {
+    /**
+     * Authors
+     */
+    authors?: Array<string> | null;
+    /**
+     * Findings
+     */
+    findings?: Array<string>;
+    /**
+     * Has Media
+     */
+    has_media?: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Material Type
+     */
+    material_type: string;
+    /**
+     * Publication Issue
+     */
+    publication_issue?: number | null;
+    /**
+     * Publication Year
+     */
+    publication_year?: number | null;
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+    /**
+     * Published At Display
+     */
+    published_at_display: string;
+    /**
+     * Research Question
+     */
+    research_question?: string | null;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Name
+     */
+    source_name: string;
+    /**
+     * Source Published At
+     */
+    source_published_at?: string | null;
+    /**
+     * Source Publisher
+     */
+    source_publisher: string;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Topics
+     */
+    topics: Array<string>;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Verification Status
+     */
+    verification_status: string;
+    /**
+     * Within Preferred Window
+     */
+    within_preferred_window?: boolean | null;
+};
+
+/**
  * FrontierResearchBriefResponse
  */
 export type FrontierResearchBriefResponse = {
@@ -13819,6 +13947,80 @@ export type GetFrontierStatusResponses = {
 
 export type GetFrontierStatusResponse = GetFrontierStatusResponses[keyof GetFrontierStatusResponses];
 
+export type ListFrontierSummariesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Stream
+         */
+        stream?: 'research' | 'practice' | null;
+        /**
+         * Source Id
+         */
+        source_id?: string | null;
+        /**
+         * Source Name
+         */
+        source_name?: string | null;
+        /**
+         * Topic Id
+         */
+        topic_id?: string | null;
+        /**
+         * Since Days
+         */
+        since_days?: number | null;
+        /**
+         * Material Type
+         */
+        material_type?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+        /**
+         * Focus
+         */
+        focus?: boolean;
+        /**
+         * Record Ids
+         */
+        record_ids?: Array<string> | null;
+    };
+    url: '/api/frontier/summaries';
+};
+
+export type ListFrontierSummariesErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ListFrontierSummariesError = ListFrontierSummariesErrors[keyof ListFrontierSummariesErrors];
+
+export type ListFrontierSummariesResponses = {
+    /**
+     * Successful Response
+     */
+    200: FrontierRecordSummaryPageResponse;
+};
+
+export type ListFrontierSummariesResponse = ListFrontierSummariesResponses[keyof ListFrontierSummariesResponses];
+
 export type ListFrontierTopicsData = {
     body?: never;
     path?: never;
@@ -13827,6 +14029,14 @@ export type ListFrontierTopicsData = {
          * As Of
          */
         as_of?: string | null;
+        /**
+         * Detail
+         */
+        detail?: boolean;
+        /**
+         * Topic Id
+         */
+        topic_id?: string | null;
     };
     url: '/api/frontier/topics';
 };

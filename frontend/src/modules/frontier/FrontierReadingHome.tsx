@@ -41,7 +41,7 @@ export function FrontierTrends({ data, report, topic, onTopicChange, comparisonY
       </div> : <p className="frontier-reading-status">完整同期覆盖不足，暂不判断趋势。</p>}
       <p className="frontier-trend-counts">前期：命中 {report.cohort_previous_count} 篇，样本 {report.previous_denominator} 篇；当期：命中 {report.cohort_current_count} 篇，样本 {report.current_denominator} 篇</p>
       <details className="frontier-trend-scope"><summary>查看样本与测量方法</summary>{report.comparison_issue_keys.length ? <p>{report.comparison_issue_keys.join('、')}</p> : null}<p>题名与出版者关键词词典命中；不作语义主题判定。</p><p>未分类：前期 {report.classification_coverage.previous.uncategorized} 篇，当期 {report.classification_coverage.current.uncategorized} 篇。</p><p>方法版本：{report.method_version} · {report.measurement_version}</p></details>
-      <div className="frontier-trend-evidence">{report.evidence_record_ids.flatMap(id => { const record = data.records.find(item => item.id === id); return record && ['lead_only', 'verified_frontier'].includes(record.verification_status) ? [record] : []; }).slice(0, 3).map(record => <button key={record.id} type="button" onClick={() => onOpenRecord(record.id)}>{record.title}</button>)}</div>
+      <div className="frontier-trend-evidence">{report.evidence_record_ids.flatMap(id => { const record = data.records.find(item => item.id === id); return record && ['lead_only', 'verified_frontier'].includes(record.verification_status) ? [record] : data.partialRecords && !record ? [{ id, title: `查看文献 ${id}` }] : []; }).slice(0, 3).map(record => <button key={record.id} type="button" onClick={() => onOpenRecord(record.id)}>{record.title}</button>)}</div>
     </> : <p className="frontier-reading-status">尚无同期比较数据。</p>}
     <small>发表数量不代表研究价值。</small>
   </section>;

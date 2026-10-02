@@ -1,6 +1,7 @@
 """Frontier persistence, separate tables and provenance from stable knowledge."""
 
 from sqlalchemy import (
+    DDL,
     JSON,
     Boolean,
     Float,
@@ -10,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -65,7 +67,13 @@ class FrontierSnapshotRow(Base):
 
 class FrontierRecordRow(Base):
     __tablename__ = "frontier_records"
-    __table_args__ = (UniqueConstraint("item_id", "version", name="uq_frontier_record_version"),)
+    __table_args__ = (
+        UniqueConstraint("item_id", "version", name="uq_frontier_record_version"),
+        Index(
+            "ix_frontier_browse_date_id", "is_current", "read_browse", "read_sort_date", "record_id"
+        ),
+        Index("ix_frontier_browse_available", "is_current", "read_browse", "read_available_on"),
+    )
     record_id: Mapped[str] = mapped_column(String(200), primary_key=True)
     item_id: Mapped[str] = mapped_column(ForeignKey("frontier_items.item_id"))
     snapshot_id: Mapped[str] = mapped_column(ForeignKey("frontier_snapshots.snapshot_id"))
@@ -76,6 +84,16 @@ class FrontierRecordRow(Base):
     rag_eligible: Mapped[bool] = mapped_column(Boolean)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
     structured_json: Mapped[dict] = mapped_column(JSON)
+    read_browse: Mapped[bool] = mapped_column(Boolean, default=False)
+    read_available_on: Mapped[str | None] = mapped_column(String(10))
+    read_topic_available_on: Mapped[str | None] = mapped_column(String(10))
+    read_display_date: Mapped[str] = mapped_column(String(40), default="")
+    read_sort_date: Mapped[str] = mapped_column(String(40), default="")
+    read_publication_day: Mapped[str | None] = mapped_column(String(10))
+    read_stream: Mapped[str] = mapped_column(String(20), default="research")
+    read_topic_keys: Mapped[list] = mapped_column(JSON, default=list)
+    read_lexical_text: Mapped[str] = mapped_column(Text, default="")
+    read_summary: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
 class FrontierClaimRow(Base):
@@ -162,3 +180,39 @@ class FrontierVectorRow(Base):
     schema_version: Mapped[str] = mapped_column(String(40))
     content_hash: Mapped[str] = mapped_column(String(64))
     vector: Mapped[list] = mapped_column(JSON)
+
+
+class FrontierRevisionRow(Base):
+    __tablename__ = "frontier_revision"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+@event.listens_for(FrontierRecordRow, "before_insert")
+@event.listens_for(FrontierRecordRow, "before_update")
+def refresh_read_projection(_mapper, _connection, row):
+    from qunxue_api.modules.frontier_knowledge import read_projection
+
+    for key, value in read_projection(row.structured_json).items():
+        setattr(row, key, value)
+
+
+# A persistent revision works across API/worker processes and raw SQL writes.
+# It is changed in the writer's transaction, including import/update/withdrawal.
+FRONTIER_REVISION_TABLES = (
+    "frontier_records",
+    "frontier_sources",
+    "frontier_editorial_briefs",
+    "frontier_topic_runs",
+)
+for _table in FRONTIER_REVISION_TABLES:
+    for _operation in ("INSERT", "UPDATE", "DELETE"):
+        event.listen(
+            Base.metadata.tables[_table],
+            "after_create",
+            DDL(f"""CREATE TRIGGER IF NOT EXISTS {_table}_revision_{_operation.lower()}
+                AFTER {_operation} ON {_table} BEGIN
+                INSERT INTO frontier_revision (id, revision) VALUES (1, 1)
+                ON CONFLICT(id) DO UPDATE SET revision = revision + 1;
+                END"""),
+        )

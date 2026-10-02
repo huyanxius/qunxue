@@ -1,8 +1,9 @@
 """Transactional frontier storage; networking is never done inside a transaction."""
 
+import json
 import re
 from copy import deepcopy
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select, text, update
@@ -386,6 +387,123 @@ class SqliteFrontierStore:
                 *record.get("topics", []),
             ]
         ).casefold()
+
+    def read_revision(self) -> int:
+        with self.database.session() as session:
+            return session.scalar(text("SELECT revision FROM frontier_revision WHERE id = 1")) or 0
+
+    def search_records(
+        self,
+        *,
+        q: str = "",
+        stream: str | None = None,
+        source_id: str | None = None,
+        source_name: str | None = None,
+        topic_id: str | None = None,
+        since_days: int | None = None,
+        material_type: str | None = None,
+        limit: int = 24,
+        offset: int = 0,
+        as_of: date,
+        summaries: bool = False,
+        focus: bool = False,
+        record_ids: list[str] | None = None,
+    ) -> dict:
+        # Filter before canonical deduplication, matching FrontierService.search.
+        # Only the requested page is deserialized; evidence never enters list reads.
+        clauses = ["r.is_current = 1", "r.read_browse = 1", "r.read_available_on <= :as_of"]
+        params = {"as_of": as_of.isoformat(), "limit": limit, "offset": offset}
+        for key, value, column in (
+            ("stream", stream, "json_extract(r.read_summary, '$.material_type')"),
+            ("source_id", source_id, "r.source_id"),
+            ("source_name", source_name, "json_extract(r.read_summary, '$.source_name')"),
+            ("material_type", material_type, "json_extract(r.read_summary, '$.material_type')"),
+        ):
+            if value:
+                params[key] = value
+                if key == "stream":
+                    clauses.append(
+                        f"{column} {'=' if value == 'practice' else '!='} 'official_practice'"
+                    )
+                else:
+                    clauses.append(f"{column} = :{key}")
+        if since_days is not None:
+            clauses.append("r.read_publication_day BETWEEN :since AND :as_of")
+            params["since"] = (as_of - timedelta(days=since_days - 1)).isoformat()
+        for index, term in enumerate(q.casefold().split()):
+            key = f"term{index}"
+            clauses.append(f"instr(r.read_lexical_text, :{key}) > 0")
+            params[key] = term
+        if topic_id:
+            topic_key, _, topic_stream = topic_id.rpartition("-")
+            params.update(topic_key=topic_key, topic_stream=topic_stream)
+            clauses.append("r.read_stream = :topic_stream")
+            clauses.append("r.read_topic_available_on <= :as_of")
+            # Topic membership unions tags across visible canonical variants, before
+            # applying source/search filters. Uncategorized means no known tags at all.
+            membership = (
+                "json_array_length(t.read_topic_keys) > 0"
+                if topic_key == "uncategorized"
+                else "EXISTS (SELECT 1 FROM json_each(t.read_topic_keys) WHERE value = :topic_key)"
+            )
+            clauses.append(f"""{"NOT " if topic_key == "uncategorized" else ""}EXISTS (
+                SELECT 1 FROM frontier_records t WHERE t.canonical_study_id = r.canonical_study_id
+                AND t.read_stream = r.read_stream AND t.is_current = 1 AND t.read_browse = 1
+                AND t.read_topic_available_on <= :as_of AND {membership})""")
+        where = " AND ".join(clauses)
+        cte = f"""WITH ranked AS (
+            SELECT r.record_id, r.read_sort_date,
+                row_number() OVER (PARTITION BY r.canonical_study_id
+                    ORDER BY r.read_sort_date DESC, r.record_id DESC) AS rank
+            FROM frontier_records r WHERE {where})"""
+        column = "read_summary" if summaries else "structured_json"
+        focus_filter = (
+            """ AND coalesce(json_extract(r.read_summary, '$.research_question'), '') != ''
+            AND json_array_length(json_extract(r.read_summary, '$.findings')) > 0
+            AND r.verification_status IN ('lead_only', 'verified_frontier')"""
+            if focus
+            else ""
+        )
+        if record_ids is not None:
+            placeholders = []
+            for index, record_id in enumerate(record_ids):
+                key = f"id{index}"
+                params[key] = record_id
+                placeholders.append(f":{key}")
+            focus_filter += " AND r.record_id IN (" + ",".join(placeholders) + ")"
+        order = (
+            "r.read_display_date DESC, p.record_id ASC"
+            if summaries
+            else "p.read_sort_date DESC, p.record_id DESC"
+        )
+        page_from = (
+            "FROM ranked p JOIN frontier_records r ON r.record_id = p.record_id WHERE p.rank = 1"
+            + focus_filter
+        )
+        with self.database.session() as session:
+            # Keep count and page on one SQLite read snapshot during imports.
+            session.execute(text("BEGIN"))
+            total = session.scalar(text(f"{cte} SELECT count(*) {page_from}"), params)
+            rows = session.scalars(
+                text(f"""{cte}
+                SELECT r.{column} {page_from} ORDER BY {order}
+                LIMIT :limit OFFSET :offset"""),
+                params,
+            )
+            items = [json.loads(row) for row in rows]
+        return {
+            "items": items,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "next_offset": offset + limit if offset + limit < total else None,
+            "as_of": as_of.isoformat(),
+            "search_mode": "lexical",
+            "sort_basis": "publication_date_or_source_page_date_desc_then_id_asc"
+            if summaries
+            else "source_page_date_desc_then_id_desc",
+            "date_filter_basis": "exact_publication_date_only",
+        }
 
     def list_records(self) -> list[dict]:
         with self.database.session() as session:

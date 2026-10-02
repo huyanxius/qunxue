@@ -31,12 +31,12 @@ export function knowledgeLinksView(item: FrontierKnowledgeLinksResponse) {
 }
 export type ReadingPriority = ReturnType<typeof readingPriorityView>;
 export type KnowledgeReadingLinks = ReturnType<typeof knowledgeLinksView>;
-export async function readRecordInsights(recordId: string, asOf?: string) {
+export async function readRecordInsights(recordId: string, asOf?: string, signal?: AbortSignal) {
   const query = asOf ? { as_of: asOf } : undefined;
   const path = { record_id: recordId };
   const [priority, links] = await Promise.all([
-    getFrontierReadingPriority({ client: apiClient, path, query }),
-    getFrontierKnowledgeLinks({ client: apiClient, path, query }),
+    getFrontierReadingPriority({ client: apiClient, path, query, signal }),
+    getFrontierKnowledgeLinks({ client: apiClient, path, query, signal }),
   ]);
   if (!priority.data || !links.data) throw new Error('阅读依据暂时无法读取，请重试');
   return { priority: readingPriorityView(priority.data), links: knowledgeLinksView(links.data) };
