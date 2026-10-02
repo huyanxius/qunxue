@@ -49,5 +49,3 @@
   .site-scrim { top: 112px; }
 }
 @media(prefers-reduced-motion:reduce) { .site-menu { animation: none; }.site-nav svg { transition: none; } }
-
-
