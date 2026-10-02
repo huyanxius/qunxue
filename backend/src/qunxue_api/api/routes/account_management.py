@@ -87,7 +87,10 @@ account_router = APIRouter(
 admin_router = APIRouter(
     prefix="/api/admin",
     tags=["admin"],
-    responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
+    responses={
+        401: {"model": ErrorResponse}, 403: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
 )
 
 

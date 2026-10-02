@@ -205,6 +205,7 @@ class ConversationRepository(Protocol):
         provider: str | None = None,
         model: str | None = None,
         lease_token: str | None = None,
+        expected_status: str = "running",
     ) -> None: ...
 
     def checkpoint_run(

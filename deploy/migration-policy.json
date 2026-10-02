@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "strategy": "expand-only",
+  "rollback_compatible": true,
+  "approved_additions": []
+}

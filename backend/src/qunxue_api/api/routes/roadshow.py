@@ -6,9 +6,13 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
 
+from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.dependencies import CurrentSessionDependency
+from qunxue_api.api.routes.stubs import IdempotencyKey
 
-router = APIRouter(prefix="/api/roadshow", tags=["roadshow"])
+router = APIRouter(
+    prefix="/api/roadshow", tags=["roadshow"], responses={422: {"model": ErrorResponse}},
+)
 CONFIG_PATH = Path(__file__).resolve().parents[4] / "var" / "roadshow.json"
 
 
@@ -70,7 +74,10 @@ def get_settings(request: Request, current: CurrentSessionDependency):
 
 
 @router.put("", response_model=RoadshowSettings, operation_id="save_roadshow_settings")
-def save_settings(payload: RoadshowSettings, request: Request, current: CurrentSessionDependency):
+def save_settings(
+    payload: RoadshowSettings, request: Request, current: CurrentSessionDependency,
+    idempotency_key: IdempotencyKey,
+):
     path, data = _config(request, current)
     original = path.with_name("roadshow.original.json")
     if not original.exists():
@@ -80,7 +87,9 @@ def save_settings(payload: RoadshowSettings, request: Request, current: CurrentS
 
 
 @router.post("/reset", response_model=RoadshowSettings, operation_id="reset_roadshow_settings")
-def reset_settings(request: Request, current: CurrentSessionDependency):
+def reset_settings(
+    request: Request, current: CurrentSessionDependency, idempotency_key: IdempotencyKey,
+):
     path, data = _config(request, current)
     original = path.with_name("roadshow.original.json")
     if original.exists():

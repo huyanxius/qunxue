@@ -15,7 +15,11 @@ from qunxue_api.adapters.retrieval.hybrid import (
     HybridRetrievalResult,
     RetrievalPipelineUnavailable,
 )
-from qunxue_api.adapters.theory_evidence import CatalogTheoryLexicalRetriever
+from qunxue_api.adapters.theory_evidence import (
+    CatalogTheoryEvidenceSource,
+    CatalogTheoryLexicalRetriever,
+)
+from qunxue_api.modules.knowledge_catalog import KnowledgeReleaseLevel
 
 
 def test_normalize_query_collapses_punctuation_and_case_for_fuzzy_matching() -> None:
@@ -77,39 +81,33 @@ def test_lexical_fallback_returns_no_hits_when_query_has_no_relevance() -> None:
     assert result.hits == ()
 
 
-def test_knowledge_search_requires_the_release_bound_hybrid_retriever() -> None:
+def test_theory_matching_requires_an_explicit_release_bound_retriever() -> None:
     release = SimpleNamespace(
         knowledge_release_id="release-reviewed-v1",
         content_hash="sha256:release-reviewed-v1",
     )
-
-    class Catalog:
-        def current_release(self, *, purpose):
-            del purpose
-            return release
-
-        def browse(self, **kwargs):
-            del kwargs
-            return SimpleNamespace(entries=(), next_cursor=None)
-
+    # Ordinary Agent use supports reviewed-upload lexical fallback. The strict
+    # MATCH evidence adapter owns the no-implicit-retriever requirement.
+    evidence = CatalogTheoryEvidenceSource(SimpleNamespace())
     with pytest.raises(RetrievalPipelineUnavailable, match="hybrid retriever"):
-        KnowledgeToolRegistry(Catalog()).search_knowledge("青年孤独的结构成因")
+        evidence._select_profiles(profiles=(), query="青年孤独的结构成因", release=release)
 
 
-def test_knowledge_registry_does_not_fall_back_to_a_preview_release() -> None:
+def test_theory_matching_rejects_a_preview_release_before_retrieval() -> None:
     calls = []
 
     class Catalog:
-        def current_release(self, *, purpose):
-            calls.append(purpose.value)
-            if purpose.value == "match":
-                raise LookupError("no final MATCH release")
-            return SimpleNamespace(knowledge_release_id="preview-release")
+        def list_match_profiles(self, **kwargs):
+            calls.append(kwargs)
+            raise AssertionError("Preview content must never reach MATCH retrieval")
 
-    with pytest.raises(RetrievalPipelineUnavailable, match="final MATCH"):
-        KnowledgeToolRegistry(Catalog(), retriever=object())
-
-    assert calls == ["match"]
+    evidence = CatalogTheoryEvidenceSource(Catalog(), retriever=object())
+    with pytest.raises(ValueError, match="final MATCH"):
+        evidence.retrieve(
+            phenomenon=SimpleNamespace(),
+            release=SimpleNamespace(level=KnowledgeReleaseLevel.PREVIEW),
+        )
+    assert calls == []
 
 
 def test_knowledge_search_maps_hybrid_chunks_to_auditable_evidence() -> None:
