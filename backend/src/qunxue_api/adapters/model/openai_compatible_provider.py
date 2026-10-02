@@ -254,16 +254,21 @@ class OpenAICompatibleModelProvider:
                 response = await client.post(
                     self._endpoint, headers=self._request_headers(), json=payload
                 )
-            completion = response.json()
+            try:
+                completion = response.json()
+            except (TypeError, ValueError):
+                raise self._probe_failure() from None
             if scope:
                 scope.complete(
                     attempt, completion, outcome="success" if response.is_success else "error"
                 )
             if not response.is_success or not isinstance(completion, dict):
                 raise self._probe_failure()
-        except BaseException:
+        except BaseException as error:
             if scope:
                 scope.complete(attempt, outcome="error", failure_code="probe_failed")
+            if isinstance(error, httpx.HTTPError):
+                raise self._probe_failure() from None
             raise
         choices = completion.get("choices")
         if not isinstance(choices, list) or not choices:
