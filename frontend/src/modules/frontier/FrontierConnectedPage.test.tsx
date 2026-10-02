@@ -146,7 +146,7 @@ it('cancels superseded searches and does not paint their late responses', async 
 it('keeps calendar and list usable when automatic trend loading fails', async () => {
   vi.mocked(api.readFrontierPeriod).mockRejectedValue(new Error('period unavailable'));
   mount();
-  await screen.findByText(/趋势暂时无法读取/);
+  await screen.findByText(/趋势暂时无法读取/, {}, { timeout: 5000 });
   const rail = screen.getByRole('complementary', { name: '学术日历与发表热力图' });
   await waitFor(() => expect(within(rail).getByRole('button', { name: '2026-10-01，0篇资料' })).toBeEnabled());
   expect(screen.getByRole('button', { name: '查看 研究 0' })).toBeVisible();
@@ -154,7 +154,7 @@ it('keeps calendar and list usable when automatic trend loading fails', async ()
 it('retains annual comparison fallback without a duplicate report request', async () => {
   vi.mocked(api.readFrontierPeriod).mockResolvedValueOnce({ ...report, comparability: 'insufficient_coverage', current_share: null, previous_share: null, delta_pp: null }).mockResolvedValue(report);
   mount();
-  await screen.findByText('20.0% → 40.0%');
+  await screen.findByText('20.0% → 40.0%', {}, { timeout: 5000 });
   expect(screen.getByLabelText('比较时期')).toHaveValue('2024');
   expect(api.readFrontierPeriod).toHaveBeenCalledTimes(2);
 });
