@@ -84,16 +84,16 @@ class FrontierRecordRow(Base):
     rag_eligible: Mapped[bool] = mapped_column(Boolean)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
     structured_json: Mapped[dict] = mapped_column(JSON)
-    read_browse: Mapped[bool] = mapped_column(Boolean, default=False)
+    read_browse: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     read_available_on: Mapped[str | None] = mapped_column(String(10))
     read_topic_available_on: Mapped[str | None] = mapped_column(String(10))
-    read_display_date: Mapped[str] = mapped_column(String(40), default="")
-    read_sort_date: Mapped[str] = mapped_column(String(40), default="")
+    read_display_date: Mapped[str] = mapped_column(String(40), default="", nullable=True)
+    read_sort_date: Mapped[str] = mapped_column(String(40), default="", nullable=True)
     read_publication_day: Mapped[str | None] = mapped_column(String(10))
-    read_stream: Mapped[str] = mapped_column(String(20), default="research")
-    read_topic_keys: Mapped[list] = mapped_column(JSON, default=list)
-    read_lexical_text: Mapped[str] = mapped_column(Text, default="")
-    read_summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    read_stream: Mapped[str] = mapped_column(String(20), default="research", nullable=True)
+    read_topic_keys: Mapped[list] = mapped_column(JSON, default=list, nullable=True)
+    read_lexical_text: Mapped[str] = mapped_column(Text, default="", nullable=True)
+    read_summary: Mapped[dict] = mapped_column(JSON, default=dict, nullable=True)
 
 
 class FrontierClaimRow(Base):
