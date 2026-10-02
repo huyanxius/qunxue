@@ -20,7 +20,8 @@
 .site-account { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .site-account a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; white-space: nowrap; }
 .site-login { color: inherit; padding: 0 12px; }
-.site-account .site-start { color: light-dark(#f8fafc, #1b2329); background: light-dark(#315f80, #b9cedd); padding: 0 20px; border-radius: 28px; gap: 6px; }
+.site-account .site-start { color: var(--qx-color-on-accent); background: var(--qx-color-accent); padding: 0 20px; border-radius: 28px; gap: 6px; }
+.site-account .site-start:hover { background: var(--qx-color-accent-hover); }
 .site-header :is(a,button):focus-visible { outline: 2px solid light-dark(#356b95, #b1cee3); outline-offset: 5px; }
 .site-header--open { background: var(--site-glass); backdrop-filter: blur(24px) saturate(115%); -webkit-backdrop-filter: blur(24px) saturate(115%); }
 .site-menu { position: relative; z-index: 2; background: var(--site-glass); border-bottom: 1px solid var(--site-line); box-shadow: 0 24px 50px rgb(0 0 0 / 10%); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); animation: site-menu-in 180ms ease-out; }

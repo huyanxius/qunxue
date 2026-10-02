@@ -6,7 +6,8 @@
 .product-eyebrow { font-size: 12px; letter-spacing: .06em; color: var(--product-muted); }
 .product-intro h1 { font-family: var(--qx-font-reading); font-weight: 500; font-size: clamp(40px, 6vw, 74px); line-height: 1.32; letter-spacing: -.035em; margin: 20px 0 24px; }
 .product-intro > p { font-size: 18px; line-height: 1.9; max-width: 620px; color: var(--product-muted); margin: 0 0 30px; }
-.product-button { display: inline-flex; align-items: center; min-height: 46px; border-radius: 28px; padding: 0 23px; background: light-dark(#315f80, #b9cedd); color: light-dark(#f8fafc, #1b2329) !important; text-decoration: none; font-size: 14px; }
+.product-site .product-button { display: inline-flex; align-items: center; min-height: 46px; border-radius: 28px; padding: 0 23px; background: var(--qx-color-accent); color: var(--qx-color-on-accent); text-decoration: none; font-size: 14px; }
+.product-site .product-button:hover { background: var(--qx-color-accent-hover); }
 .product-inline-link { display: inline-block; font-size: 14px; margin: 12px 24px 12px 0; text-decoration: underline; text-underline-offset: 5px; }
 .product-intro .product-inline-link { margin-left: 24px; }
 .product-chapters { display: flex; gap: 32px; flex-wrap: wrap; border-block: 1px solid var(--product-line); padding: 20px 0; }
