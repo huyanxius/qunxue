@@ -5741,16 +5741,6 @@ export type FrontierValueAssessmentResponse = {
 };
 
 /**
- * HTTPValidationError
- */
-export type HttpValidationError = {
-    /**
-     * Detail
-     */
-    detail?: Array<ValidationError>;
-};
-
-/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -11678,34 +11668,6 @@ export type UpdateTeachingSettings = {
     version: number;
 };
 
-/**
- * ValidationError
- */
-export type ValidationError = {
-    /**
-     * Context
-     */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
-};
-
 export type GetAccountData = {
     body?: never;
     path?: never;
@@ -12220,9 +12182,9 @@ export type ListAccountAuditEventsErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListAccountAuditEventsError = ListAccountAuditEventsErrors[keyof ListAccountAuditEventsErrors];
@@ -12259,9 +12221,9 @@ export type CreateAdminCreditRedemptionCodesErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateAdminCreditRedemptionCodesError = CreateAdminCreditRedemptionCodesErrors[keyof CreateAdminCreditRedemptionCodesErrors];
@@ -12291,6 +12253,10 @@ export type GetAdminRuntimeSettingsErrors = {
      * Forbidden
      */
     403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
 };
 
 export type GetAdminRuntimeSettingsError = GetAdminRuntimeSettingsErrors[keyof GetAdminRuntimeSettingsErrors];
@@ -12327,9 +12293,9 @@ export type UpdateAdminRuntimeSettingsErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateAdminRuntimeSettingsError = UpdateAdminRuntimeSettingsErrors[keyof UpdateAdminRuntimeSettingsErrors];
@@ -12381,9 +12347,9 @@ export type ListAdminUsersErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListAdminUsersError = ListAdminUsersErrors[keyof ListAdminUsersErrors];
@@ -12425,9 +12391,9 @@ export type DisableAdminUserErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type DisableAdminUserError = DisableAdminUserErrors[keyof DisableAdminUserErrors];
@@ -12469,9 +12435,9 @@ export type EnableAdminUserErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type EnableAdminUserError = EnableAdminUserErrors[keyof EnableAdminUserErrors];
@@ -12513,9 +12479,9 @@ export type CreateAdminPasswordResetErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateAdminPasswordResetError = CreateAdminPasswordResetErrors[keyof CreateAdminPasswordResetErrors];
@@ -12557,9 +12523,9 @@ export type UpdateAdminUserRoleErrors = {
      */
     403: ErrorResponse;
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateAdminUserRoleError = UpdateAdminUserRoleErrors[keyof UpdateAdminUserRoleErrors];
@@ -19074,6 +19040,15 @@ export type GetRoadshowSettingsData = {
     url: '/api/roadshow';
 };
 
+export type GetRoadshowSettingsErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type GetRoadshowSettingsError = GetRoadshowSettingsErrors[keyof GetRoadshowSettingsErrors];
+
 export type GetRoadshowSettingsResponses = {
     /**
      * Successful Response
@@ -19085,6 +19060,12 @@ export type GetRoadshowSettingsResponse = GetRoadshowSettingsResponses[keyof Get
 
 export type SaveRoadshowSettingsData = {
     body: RoadshowSettings;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/api/roadshow';
@@ -19092,9 +19073,9 @@ export type SaveRoadshowSettingsData = {
 
 export type SaveRoadshowSettingsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type SaveRoadshowSettingsError = SaveRoadshowSettingsErrors[keyof SaveRoadshowSettingsErrors];
@@ -19110,10 +19091,25 @@ export type SaveRoadshowSettingsResponse = SaveRoadshowSettingsResponses[keyof S
 
 export type ResetRoadshowSettingsData = {
     body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/api/roadshow/reset';
 };
+
+export type ResetRoadshowSettingsErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+};
+
+export type ResetRoadshowSettingsError = ResetRoadshowSettingsErrors[keyof ResetRoadshowSettingsErrors];
 
 export type ResetRoadshowSettingsResponses = {
     /**
@@ -19839,9 +19835,9 @@ export type GetLearningSummaryData = {
 
 export type GetLearningSummaryErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetLearningSummaryError = GetLearningSummaryErrors[keyof GetLearningSummaryErrors];
@@ -19869,9 +19865,9 @@ export type ListTeachingActivitiesData = {
 
 export type ListTeachingActivitiesErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type ListTeachingActivitiesError = ListTeachingActivitiesErrors[keyof ListTeachingActivitiesErrors];
@@ -19905,9 +19901,9 @@ export type CreateTeachingActivityData = {
 
 export type CreateTeachingActivityErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type CreateTeachingActivityError = CreateTeachingActivityErrors[keyof CreateTeachingActivityErrors];
@@ -19935,9 +19931,9 @@ export type GetTeachingSettingsData = {
 
 export type GetTeachingSettingsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetTeachingSettingsError = GetTeachingSettingsErrors[keyof GetTeachingSettingsErrors];
@@ -19971,9 +19967,9 @@ export type UpdateTeachingSettingsData = {
 
 export type UpdateTeachingSettingsErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateTeachingSettingsError = UpdateTeachingSettingsErrors[keyof UpdateTeachingSettingsErrors];
@@ -20001,9 +19997,9 @@ export type GetTeachingActivityData = {
 
 export type GetTeachingActivityErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetTeachingActivityError = GetTeachingActivityErrors[keyof GetTeachingActivityErrors];
@@ -20037,9 +20033,9 @@ export type UpdateTeachingActivityData = {
 
 export type UpdateTeachingActivityErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type UpdateTeachingActivityError = UpdateTeachingActivityErrors[keyof UpdateTeachingActivityErrors];
@@ -20073,9 +20069,9 @@ export type PublishTeachingActivityData = {
 
 export type PublishTeachingActivityErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type PublishTeachingActivityError = PublishTeachingActivityErrors[keyof PublishTeachingActivityErrors];
@@ -20109,9 +20105,9 @@ export type RunTeachingActivityData = {
 
 export type RunTeachingActivityErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type RunTeachingActivityError = RunTeachingActivityErrors[keyof RunTeachingActivityErrors];
@@ -20139,9 +20135,9 @@ export type GetTeachingSourceData = {
 
 export type GetTeachingSourceErrors = {
     /**
-     * Validation Error
+     * Unprocessable Entity
      */
-    422: HttpValidationError;
+    422: ErrorResponse;
 };
 
 export type GetTeachingSourceError = GetTeachingSourceErrors[keyof GetTeachingSourceErrors];

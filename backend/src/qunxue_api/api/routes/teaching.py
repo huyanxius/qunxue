@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 
+from qunxue_api.api.contracts.common import ErrorResponse
 from qunxue_api.api.contracts.teaching import (
     CreateTeachingActivity,
     LearningSummary,
@@ -18,7 +19,9 @@ from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.application.teaching_assistant import TeachingAssistantApplication
 
-router = APIRouter(prefix="/api", tags=["teaching-assistant"])
+router = APIRouter(
+    prefix="/api", tags=["teaching-assistant"], responses={422: {"model": ErrorResponse}},
+)
 
 
 def get_application(request: Request):

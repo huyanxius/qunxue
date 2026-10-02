@@ -18,5 +18,5 @@ export interface RoadshowSettings {
   cases: RoadshowCase[]
 }
 export const getRoadshowSettings = () => get({ client: apiClient })
-export const saveRoadshowSettings = (body: RoadshowSettings) => save({ client: apiClient, body, throwOnError: true })
-export const resetRoadshowSettings = () => reset({ client: apiClient, throwOnError: true })
+export const saveRoadshowSettings = (body: RoadshowSettings) => save({ client: apiClient, body, headers: { 'Idempotency-Key': crypto.randomUUID() }, throwOnError: true })
+export const resetRoadshowSettings = () => reset({ client: apiClient, headers: { 'Idempotency-Key': crypto.randomUUID() }, throwOnError: true })

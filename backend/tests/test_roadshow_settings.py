@@ -40,8 +40,13 @@ def test_settings_only_configured_user_can_read_and_write(tmp_path):
         body = client.get("/api/roadshow").json()
         assert "user_id" not in body
         body["cases"][0]["answer"] = "修改后的回答"
-        assert client.put("/api/roadshow", json=body).status_code == 200
+        assert client.put("/api/roadshow", json=body).status_code == 422
+        assert client.post("/api/roadshow/reset").status_code == 422
+        headers = {"Idempotency-Key": "roadshow-settings-test"}
+        assert client.put("/api/roadshow", json=body, headers=headers).status_code == 200
         saved = json.loads(path.read_text())
         assert saved["user_id"] == str(UUID(int=1))
         assert saved["cases"][0]["answer"] == "修改后的回答"
-        assert client.post("/api/roadshow/reset").json()["cases"][0]["answer"].startswith("# 报告")
+        reset = client.post("/api/roadshow/reset", headers=headers)
+        assert reset.status_code == 200
+        assert reset.json()["cases"][0]["answer"].startswith("# 报告")
