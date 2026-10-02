@@ -56,7 +56,13 @@ class CreditRepository(Protocol):
 
 class BillingOperations(Protocol):
     def open(
-        self, *, user_id: UUID, run_id: UUID, payload: object, before_network: object = None
+        self,
+        *,
+        user_id: UUID,
+        run_id: UUID,
+        payload: object,
+        before_network: object = None,
+        phase: str = "agent_turn",
     ): ...
 
     def close(self, *, run_id: UUID, outcome: str) -> None: ...

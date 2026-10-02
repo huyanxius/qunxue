@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import ExitStack, asynccontextmanager, contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
@@ -496,6 +496,23 @@ def create_app(
                 SqliteResearchTaskRepository(session),
             )
 
+    @contextmanager
+    def phenomenon_extraction_scope(*, user_id, run_id, payload):
+        # Financial scope outlives the business transaction, including its final commit.
+        with ExitStack() as stack:
+            scope = None
+            with resolved_database.session() as session:
+                if not app.state.model_gateway.descriptor.demonstration:
+                    scope = stack.enter_context(app.state.billing_operations.open(
+                        user_id=user_id, run_id=run_id, payload=payload,
+                        before_network=session.commit, phase="user_research",
+                    ))
+                yield PhenomenonService(
+                    SqlitePhenomenonRepository(session), SqliteResearchTaskRepository(session),
+                )
+            if scope is not None:
+                scope.finish("success")
+
     def build_research_analysis_application(
         session,
         *,
@@ -533,6 +550,8 @@ def create_app(
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 rollback=session.rollback,
+                billing=app.state.billing_operations if not descriptor.demonstration else None,
+                commit=session.commit,
                 invalidate_method_plan=(
                     lambda task_id, reason: method_plan_service.mark_stale_for_task(
                         task_id=task_id, reason=reason
@@ -542,6 +561,7 @@ def create_app(
 
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
+    app.state.phenomenon_extraction_scope = phenomenon_extraction_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
 
     @contextmanager

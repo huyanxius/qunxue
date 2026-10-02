@@ -92,9 +92,12 @@ and the >272000 full-request multiplier follow the supplied parent contract.
 
 The paid health probe now requires an operator scope and known tariff/configuration;
 an unconfigured probe cannot silently spend. Legacy synchronous Chat calls made
-inside an Agent/tool operation are metered before raw HTTP. Standalone legacy
-research API calls without an operation scope are blocked by the production guard;
-that compatibility change needs a route-level scope decision in review.
+inside an Agent/tool operation are metered before raw HTTP. The mounted standalone phenomenon extraction API in both products, and theory
+matching/candidate retry APIs in qunxue, now open a user-funded `user_research` operation after authentication
+and ownership checks. Cached business replays return before a new hold or HTTP
+attempt. These user actions cannot be made operator-funded by phase configuration;
+existing administrator exemptions still retain usage and risk records. Dormant or
+unowned direct adapter calls remain guarded before paid HTTP.
 
 ## Coverage and known limits
 
@@ -107,7 +110,8 @@ that compatibility change needs a route-level scope decision in review.
 | Everplain GraphTopicNamer | Optional operator-only scope, real route/receipt/cost; missing configuration skips naming and preserves source labels/graph |
 | Vision/OCR and other multimodal paths | Outside strict text-estimate coverage; this Chat meter rejects non-text content before HTTP, existing separate bounded operator vision behavior remains outside new user charges |
 | Legacy Chat inside operation | Same raw-HTTP meter |
-| Standalone legacy Chat without scope | Explicit blocked compatibility decision |
+| Existing mounted standalone phenomenon extraction (both), matching and retry (qunxue) APIs | Authenticated user scope, same finite budgets, actual legacy HTTP route/receipt, persistence before settlement |
+| Dormant/unowned direct legacy Chat calls | Still blocked before HTTP; no inferred owner or operator subsidy |
 | Embedding/rerank/course index, frontier encoders/models, transcription and web services | Existing bounded operator behavior preserved; outside this Chat credit patch, no new user charges or fabricated tariffs |
 
 Official user-reference amounts and procurement cash cost are separate fields.

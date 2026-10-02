@@ -16,7 +16,9 @@ class SqliteBillingOperations:
         self.phase_policies = phase_policies or {}
 
     def open(self, *, user_id, run_id, payload, before_network=None, phase="agent_turn"):
-        policy = "user" if phase == "agent_turn" else self.phase_policies.get(phase)
+        policy = (
+            "user" if phase in {"agent_turn", "user_research"} else self.phase_policies.get(phase)
+        )
         if phase in {"model_probe", "graph_topic_naming"} and policy != "operator":
             raise BillingContextMissing("optional naming and probes must be operator-funded")
         if policy not in {"user", "operator"}:
