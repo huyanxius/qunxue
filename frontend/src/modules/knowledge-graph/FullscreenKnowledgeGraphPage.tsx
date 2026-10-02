@@ -251,7 +251,7 @@ export function FullscreenKnowledgeGraphPage({
           parentNodeId ? readStructuralConnectionPage({
             releaseId: activeReleaseId,
             sourceNodeId: parentNodeId,
-          }) : Promise.resolve({ connections: [] as const, nextCursor: undefined }),
+          }) : Promise.resolve<Awaited<ReturnType<typeof readStructuralConnectionPage>>>({ connections: [], nextCursor: undefined }),
           readIncidentRelationPage({
             releaseId: activeReleaseId,
             knowledgeId: nextFocus.knowledgeId,
