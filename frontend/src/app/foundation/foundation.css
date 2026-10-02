@@ -3193,6 +3193,7 @@
   width: 100%;
   height: 100%;
   opacity: 1;
+  background: light-dark(#151515, #1b1a19);
 }
 
 .foundation-agent__dialog {
@@ -3354,10 +3355,10 @@
   min-height: 0;
   margin: 0 0 0 calc(50% - 50vw);
   overflow: hidden;
-  border: 1px solid light-dark(rgb(21 21 21 / 16%), rgb(158 158 158 / 0.16));
+  border: 0;
   border-radius: calc(34px * (1 - var(--agent-progress)))
     calc(34px * (1 - var(--agent-progress))) 0 0;
-  background: light-dark(#151515, #e3e3e3);
+  background: light-dark(#151515, #1b1a19);
   box-shadow: 0 30px 90px rgb(21 21 21 / 18%);
   animation: none !important;
   clip-path: inset(
@@ -3877,8 +3878,8 @@
 .public-site.is-dark-backdrop-active > main > .foundation-method {
   position: relative;
   isolation: isolate;
-  color: light-dark(#f5f5f0, #1b1b1a);
-  background: light-dark(#151515, #e3e3e3);
+  color: light-dark(#f5f5f0, #f1eee7);
+  background: light-dark(#151515, #1b1a19);
 }
 
 .foundation-method__shader {
@@ -3887,7 +3888,7 @@
   inset: 0 calc(50% - 50vw);
   overflow: hidden;
   pointer-events: none;
-  background: light-dark(#151515, #e3e3e3);
+  background: light-dark(#151515, #1b1a19);
 }
 
 .foundation-method__shader .foundation-agent__background-shader {
@@ -4357,47 +4358,58 @@
   }
 }
 
-/* The Agent and method chapter already use a dark field in both appearances. */
+/* The Agent and method chapter use a dark field in both appearances. Keep
+   their content readable when a preview overrides the system color scheme. */
 @media (prefers-color-scheme: dark) {
   .public-header .public-wordmark img {
     filter: brightness(0) invert(.9);
   }
+}
 
-  .foundation-agent__dialog {
-    border-color: rgb(255 255 255 / 14%);
-    background: rgb(24 28 27 / 88%);
-  }
+.foundation-agent__dialog {
+  border-color: light-dark(rgb(255 255 255 / 18%), rgb(239 232 219 / 20%));
+  background: light-dark(rgb(12 14 14 / 82%), rgb(24 23 22 / 94%));
+}
 
-  .foundation-agent__question-field strong,
-  .foundation-agent__composer strong {
-    color: #e6e7e3;
-  }
+.foundation-agent__question-field strong,
+.foundation-agent__composer strong {
+  color: light-dark(rgb(255 255 255 / 92%), #f1eee7);
+}
 
-  .foundation-agent__question-field input {
-    caret-color: #e6e7e3;
-  }
+.foundation-agent__question-field input {
+  caret-color: light-dark(rgb(255 255 255 / 92%), #f1eee7);
+}
 
-  .foundation-agent__composer > a {
-    color: #20241f;
-    background: #e0e4db;
-  }
+.foundation-agent__composer > a {
+  color: light-dark(#151515, #24221f);
+  background: light-dark(rgb(255 255 255 / 88%), #ece7dc);
+}
 
-  .public-site > main > .foundation-method,
-  .public-site.is-agent-expanded > main > .foundation-method,
-  .public-site.is-dark-backdrop-active > main > .foundation-method,
-  .foundation-method__shader {
-    color: #e6e7e3;
-    background: #1a1d1b;
-  }
+.foundation-agent__composer > a:hover {
+  background: light-dark(#fff, #f8f3e9);
+}
 
-  .public-site .foundation-method .foundation-section-heading h2,
-  .public-site .foundation-method .foundation-method__steps h3 {
-    color: #e6e7e3;
-  }
+.public-site > main > .foundation-method,
+.public-site.is-agent-expanded > main > .foundation-method,
+.public-site.is-dark-backdrop-active > main > .foundation-method,
+.foundation-method__shader {
+  color: light-dark(#f5f5f0, #f1eee7);
+}
 
-  .public-site .foundation-method .foundation-section-heading > p,
-  .public-site .foundation-method .foundation-method__steps p,
-  .public-site .foundation-method .foundation-kicker {
-    color: #b9bfb7;
-  }
+.public-site .foundation-method .foundation-section-heading h2,
+.public-site .foundation-method .foundation-method__steps h3 {
+  color: light-dark(#f5f5f0, #f1eee7);
+}
+
+.public-site .foundation-method .foundation-section-heading > p,
+.public-site .foundation-method .foundation-section-heading > div > p {
+  color: light-dark(rgb(245 245 240 / 70%), #c4beb3);
+}
+
+.public-site .foundation-method .foundation-method__steps p {
+  color: light-dark(rgb(245 245 240 / 62%), #c4beb3);
+}
+
+.public-site .foundation-method .foundation-kicker {
+  color: light-dark(rgb(245 245 240 / 68%), #c4beb3);
 }
