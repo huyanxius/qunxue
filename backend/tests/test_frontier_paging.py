@@ -17,7 +17,7 @@ from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.adapters.sqlite.frontier_models import FrontierRecordRow
 from qunxue_api.adapters.sqlite.frontier_repository import SqliteFrontierStore
 from qunxue_api.api.routes.frontier import router
-from qunxue_api.modules.frontier_knowledge import FrontierService, read_projection
+from qunxue_api.modules.frontier_knowledge import FrontierService, build_read_projection
 from qunxue_api.modules.frontier_knowledge.periods import available_as_of
 
 SEED = json.loads((Path(__file__).parents[1] / "data/frontier-seed.json").read_text())
@@ -97,7 +97,7 @@ def test_projection_preserves_historical_availability(precision, value, year):
         "publication_year": year,
         "discovered_at": "2026-09-20",
     }
-    projection = read_projection(record)
+    projection = build_read_projection(record)
     for cutoff in (
         date(2025, 12, 31),
         date(2026, 9, 19),

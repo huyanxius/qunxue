@@ -64,7 +64,7 @@ def test_mock_embeddings_validate_and_sort_indices():
 def test_incremental_embedding_cache_zero_repeat_calls(seeded):
     provider = FakeEmbedding()
     index = FrontierVectorIndex(seeded, provider)
-    record = seeded.list_records()[0]
+    record = seeded.get_record(SEED["records"][0]["id"])
     assert index.index_record(record["id"]) == 1
     assert index.index_record(record["id"]) == 0
     assert len(provider.calls) == 1

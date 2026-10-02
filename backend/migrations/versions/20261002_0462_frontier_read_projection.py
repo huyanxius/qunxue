@@ -5,7 +5,7 @@ import json
 import sqlalchemy as sa
 from alembic import op
 
-from qunxue_api.modules.frontier_knowledge import read_projection
+from qunxue_api.modules.frontier_knowledge import build_read_projection
 
 revision = "20261002_0462"
 down_revision = "20261001_0461"
@@ -47,7 +47,7 @@ def upgrade():
         connection.execute(
             table.update()
             .where(table.c.record_id == row.record_id)
-            .values(**read_projection(record))
+            .values(**build_read_projection(record))
         )
     op.create_index(
         "ix_frontier_browse_date_id",

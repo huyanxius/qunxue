@@ -35,7 +35,7 @@ def record_summary(record: dict) -> dict:
     }
 
 
-def read_projection(record: dict) -> dict:
+def build_read_projection(record: dict) -> dict:
     span = record_publication_interval(record)
     available = span.end if span else None
     discovered = publication_interval((record.get("discovered_at") or "")[:10], "day")

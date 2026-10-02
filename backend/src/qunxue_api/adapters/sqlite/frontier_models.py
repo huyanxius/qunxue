@@ -191,9 +191,9 @@ class FrontierRevisionRow(Base):
 @event.listens_for(FrontierRecordRow, "before_insert")
 @event.listens_for(FrontierRecordRow, "before_update")
 def refresh_read_projection(_mapper, _connection, row):
-    from qunxue_api.modules.frontier_knowledge import read_projection
+    from qunxue_api.modules.frontier_knowledge import build_read_projection
 
-    for key, value in read_projection(row.structured_json).items():
+    for key, value in build_read_projection(row.structured_json).items():
         setattr(row, key, value)
 
 
