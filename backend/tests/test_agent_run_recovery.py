@@ -1,5 +1,6 @@
 """Interrupted requests stay durable and cannot change identity when resumed."""
 
+from contextlib import nullcontext
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -393,6 +394,43 @@ def test_sqlite_old_lease_cannot_checkpoint_or_finish_new_attempt(client):
         assert actual.status == "running"
         assert actual.partial_answer == ""
 
+
+
+@pytest.mark.parametrize("backend", ["memory", "sqlite"])
+def test_finalization_failure_is_fenced_to_the_same_completed_lease(client, backend):
+    from qunxue_api.adapters.sqlite.agent_conversation_repository import (
+        SqliteConversationRepository,
+    )
+
+    user_id = registered_user(client)
+    context = client.app.state.database.session() if backend == "sqlite" else nullcontext(None)
+    with context as session:
+        service = (ConversationService(SqliteConversationRepository(session))
+                   if session is not None else ConversationService.in_memory())
+        conversation = service.create_conversation(user_id=user_id, title="提案收尾")
+        run = service.start_run(
+            user_id=user_id, conversation_id=conversation.conversation_id,
+            idempotency_key="finalization-fence", knowledge_release_id="release-a",
+        )
+        service.finish_run(run_id=run.run_id, status="completed", lease_token=run.lease_token)
+        service.finish_run(
+            run_id=run.run_id, status="failed", lease_token="stale-worker",
+            expected_status="completed",
+        )
+        assert service.find_run_by_id(user_id=user_id, run_id=run.run_id).status == "completed"
+        with pytest.raises(ValueError, match="fenced finalization"):
+            service.finish_run(
+                run_id=run.run_id, status="running", lease_token=run.lease_token,
+                expected_status="completed",
+            )
+        service.finish_run(
+            run_id=run.run_id, status="failed", lease_token=run.lease_token,
+            expected_status="completed", error="proposal persistence failed",
+        )
+        failed = service.find_run_by_id(user_id=user_id, run_id=run.run_id)
+        assert failed.status == "failed"
+        assert failed.turn_id is None
+        assert failed.tool_summary == ()
 
 def test_unfinished_deleted_material_text_cannot_reappear_on_reload_or_resume(client):
     from qunxue_api.adapters.sqlite.agent_conversation_repository import (

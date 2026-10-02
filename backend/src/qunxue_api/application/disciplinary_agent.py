@@ -518,12 +518,14 @@ class DisciplinaryAgentApplication:
         last_cancel_check = 0.0
         persisted_cancelled = False
 
-        def owns_run() -> bool:
+        finalization_pending = False
+
+        def owns_run(expected_status: str = "running") -> bool:
             latest = self._conversations.find_run_by_id(user_id=user_id, run_id=run.run_id)
             return (
                 latest is not None
                 and latest.lease_token == run.lease_token
-                and latest.status == "running"
+                and latest.status == expected_status
             )
 
         def cancelled() -> bool:
@@ -891,21 +893,32 @@ class DisciplinaryAgentApplication:
                     provider=result.provider,
                     model=result.model,
                 )
+                # The proposal repository requires a completed source run. If its
+                # finalizer fails outside a savepoint, fence cleanup by this lease
+                # and the exact completed state instead of leaving a success trace.
+                finalization_pending = True
                 if isinstance(turn_result, AgentTurn):
                     finalize_agent_turn = getattr(tools, "finalize_agent_turn", None)
                     if callable(finalize_agent_turn):
                         finalize_agent_turn(source_turn_id=turn_result.turn_id)
+                finalization_pending = False
         except Exception as error:
-            if owns_run():
-                checkpoint(force=True)
+            failure_status = (
+                "completed" if finalization_pending and owns_run("completed") else "running"
+            )
+            if owns_run(failure_status):
+                if failure_status == "running":
+                    checkpoint(force=True)
                 if self._credits is not None:
                     self._credits.release(user_id=user_id, run_id=run.run_id)
                 self._conversations.finish_run(
                     run_id=run.run_id,
                     lease_token=run.lease_token,
-                    status="interrupted" if isinstance(error, AgentInterrupted) else "failed",
+                    status=("interrupted" if isinstance(error, AgentInterrupted)
+                            and failure_status == "running" else "failed"),
                     error=None if isinstance(error, AgentInterrupted) else str(error),
                     tool_summary=saved_summary(),
+                    expected_status=failure_status,
                 )
                 self._conversations.commit()
             raise

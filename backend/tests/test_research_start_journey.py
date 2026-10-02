@@ -295,6 +295,11 @@ def test_failed_start_proposal_does_not_attach_handoff_trace_to_reloaded_turn(
     assert len(reloaded.turns) == 1
     assert reloaded.turns[0].tool_summary == ()
     assert releases == {}
+    with client.app.state.database.session() as session:
+        run = session.query(AgentRunRow).filter_by(idempotency_key="failed-start-proposal").one()
+        assert run.status == "failed"
+        assert run.turn_id is None
+        assert run.error == "proposal persistence failed"
 
 
 def test_completed_agent_turn_persists_a_refreshable_start_proposal(client: TestClient) -> None:

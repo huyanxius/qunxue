@@ -625,7 +625,12 @@ class SqliteConversationRepository:
         provider: str | None = None,
         model: str | None = None,
         lease_token: str | None = None,
+        expected_status: str = "running",
     ) -> None:
+        if expected_status != "running" and not (
+            expected_status == "completed" and status == "failed" and lease_token is not None
+        ):
+            raise ValueError("Only fenced finalization failure can amend a completed run")
         row = self._session.get(AgentRunRow, str(run_id), populate_existing=True)
         if row is None:
             return
@@ -636,7 +641,7 @@ class SqliteConversationRepository:
                 update(AgentRunRow).where(
                     AgentRunRow.run_id == str(run_id),
                     AgentRunRow.lease_token == lease_token,
-                    AgentRunRow.status == "running",
+                    AgentRunRow.status == expected_status,
                 ).values(status=status)
             ).rowcount
             if not claimed:

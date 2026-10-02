@@ -264,11 +264,16 @@ class _MemoryRepository:
         provider: str | None = None,
         model: str | None = None,
         lease_token: str | None = None,
+        expected_status: str = "running",
     ) -> None:
+        if expected_status != "running" and not (
+            expected_status == "completed" and status == "failed" and lease_token is not None
+        ):
+            raise ValueError("Only fenced finalization failure can amend a completed run")
         del error
         current = self.runs[run_id]
         if lease_token is not None and (
-            current.lease_token != lease_token or current.status != "running"
+            current.lease_token != lease_token or current.status != expected_status
         ):
             return
         self.runs[run_id] = replace(
@@ -520,6 +525,7 @@ class ConversationService:
         provider: str | None = None,
         model: str | None = None,
         lease_token: str | None = None,
+        expected_status: str = "running",
     ) -> None:
         self._repository.finish_run(
             run_id=run_id,
@@ -530,6 +536,7 @@ class ConversationService:
             provider=provider,
             model=model,
             lease_token=lease_token,
+            expected_status=expected_status,
         )
 
     def checkpoint_run(self, **kwargs) -> bool:
