@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+from billing_test_support import configure_synthetic_billing
 
 from qunxue_api.adapters.model.routing import (
     InMemoryModelAttemptRecorder,
@@ -122,6 +123,7 @@ def test_worker_persists_checkpoint_and_safe_failed_batch(client):
 
     from qunxue_api.adapters.sqlite.shared_knowledge import SharedDocumentRow
 
+    configure_synthetic_billing(client.app, phase="course_knowledge")
     _authenticate(client)
     kb = create_library(client)
     doc = upload(client, kb["id"])

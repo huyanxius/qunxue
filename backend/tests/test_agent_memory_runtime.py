@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import pytest
+from billing_test_support import configure_synthetic_billing
 from openai import AsyncOpenAI
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
@@ -120,6 +121,8 @@ def test_extractor_uses_one_bounded_model_request_with_source_provenance(
     from qunxue_api.adapters.research_agent import memory_extractor
 
     client = plain_client
+    configure_synthetic_billing(client.app, phase="memory_learning")
+    client.app.state.memory_worker._billing = client.app.state.billing_operations
     user_id = register(client)
     _, source_id = seed_learning_source(client, user_id)
     requests = []
@@ -134,7 +137,7 @@ def test_extractor_uses_one_bounded_model_request_with_source_provenance(
                 "id": "memory-output",
                 "object": "chat.completion",
                 "created": 1,
-                "model": "test-model",
+                "model": model_name,
                 "choices": [
                     {
                         "index": 0,
@@ -168,7 +171,12 @@ def test_extractor_uses_one_bounded_model_request_with_source_provenance(
                         },
                     }
                 ],
-                "usage": {"prompt_tokens": 80, "completion_tokens": 20, "total_tokens": 100},
+                "usage": {
+                    "prompt_tokens": 80,
+                    "completion_tokens": 20,
+                    "total_tokens": 100,
+                    "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+                },
             },
         )
 

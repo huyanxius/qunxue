@@ -1,3 +1,4 @@
+from billing_test_support import configure_synthetic_billing
 from test_research_material_api import _authenticate
 from test_shared_knowledge_api import create_library, mutation, upload
 
@@ -18,6 +19,7 @@ def test_course_identity_is_saved_per_account(client):
 
 
 def test_uploaded_document_is_organized_with_original_source_anchors(client):
+    configure_synthetic_billing(client.app, phase="course_knowledge")
     _authenticate(client)
     kb = create_library(client)
     doc = upload(client, kb["id"])
@@ -50,6 +52,7 @@ def test_uploaded_document_is_organized_with_original_source_anchors(client):
 
 
 def test_organization_rejects_invented_sources_and_can_retry(client):
+    configure_synthetic_billing(client.app, phase="course_knowledge")
     _authenticate(client)
     kb = create_library(client)
     doc = upload(client, kb["id"])
