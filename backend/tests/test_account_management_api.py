@@ -167,6 +167,10 @@ def test_registration_grants_a_visible_credit_balance_and_ledger_entry(
     assert payload["pricing"] == {
         "input_tokens_per_credit": 100,
         "output_tokens_per_credit": 25,
+        "mode": "unconfigured",
+        "credits_per_usd": None,
+        "price_version": None,
+        "reference_currency": "USD",
     }
     assert payload["entries"] == []
     assert payload["total_entries"] == 0

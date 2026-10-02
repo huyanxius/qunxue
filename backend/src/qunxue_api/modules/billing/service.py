@@ -59,6 +59,9 @@ class CreditService:
                 total_entries=summary.total_entries,
                 next_cursor=summary.next_cursor,
                 is_unlimited=True,
+                frozen_points=summary.frozen_points,
+                available_balance=summary.available_balance,
+                operations=summary.operations,
             )
         return summary
 
@@ -92,9 +95,7 @@ class CreditService:
                 hashlib.sha256,
             ).digest()
             token = base64.b32encode(digest[:10]).decode("ascii").rstrip("=")
-            code = "QX-" + "-".join(
-                token[index : index + 4] for index in range(0, len(token), 4)
-            )
+            code = "QX-" + "-".join(token[index : index + 4] for index in range(0, len(token), 4))
             plain_codes.append(code)
             specs.append(
                 CreditCodeSpec(

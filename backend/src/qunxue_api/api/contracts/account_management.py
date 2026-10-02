@@ -47,9 +47,14 @@ class CreditLedgerEntryResponse(BaseModel):
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
     created_at: datetime
+    model: str | None = None
 
 
 class CreditPricingResponse(BaseModel):
+    mode: Literal["legacy_tokens", "model_rates", "unconfigured"] = "legacy_tokens"
+    credits_per_usd: int | None = None
+    price_version: str | None = None
+    reference_currency: str = "USD"
     input_tokens_per_credit: int = Field(ge=1)
     output_tokens_per_credit: int = Field(ge=1)
 
@@ -60,6 +65,9 @@ class CreditSummaryResponse(BaseModel):
     grant_amount: int = Field(ge=0)
     is_unlimited: bool
     pricing: CreditPricingResponse
+    frozen_points: int = Field(default=0, ge=0)
+    available_balance: int | None = None
+    operations: list[dict] = Field(default_factory=list)
     entries: list[CreditLedgerEntryResponse]
     total_entries: int = Field(ge=0)
     next_cursor: str | None
@@ -188,6 +196,7 @@ class PasswordResetRequest(BaseModel):
     @classmethod
     def normalize_email(cls, value: str) -> str:
         import re
+
         value = value.strip().casefold()
         if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
             raise ValueError("Invalid email address")

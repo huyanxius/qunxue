@@ -188,6 +188,19 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:5178",
     )
+    billing_credits_per_usd: int | None = Field(default=None, gt=0)
+    billing_price_version: str | None = None
+    billing_model_aliases: dict[str, str] = Field(default_factory=dict)
+    billing_usage_policies: dict[str, Literal["omitted_cache_subsets_are_zero"]] = Field(
+        default_factory=dict
+    )
+    billing_phase_policies: dict[str, Literal["user", "operator"]] = Field(default_factory=dict)
+    billing_max_attempt_usd_micro: int | None = Field(default=None, gt=0)
+    billing_max_operation_usd_micro: int | None = Field(default=None, gt=0)
+    billing_daily_budget_usd_micro: int | None = Field(default=None, gt=0)
+    billing_deepseek_time_basis: Literal["server_dispatch_at"] | None = None
+    billing_calendar_version: str | None = None
+    billing_max_attempts: int = Field(default=64, gt=0, le=256)
     model_base_url: str | None = None
     model_api_key: SecretStr | None = None
     model_fallbacks: list[ModelFallbackSettings] = Field(default_factory=list)
@@ -236,8 +249,15 @@ class Settings(BaseSettings):
     @classmethod
     def validate_password_reset_origin(cls, value: str) -> str:
         parts = urlsplit(value)
-        if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
-                or parts.query or parts.fragment or parts.path not in {"", "/"}):
+        if (
+            parts.scheme != "https"
+            or not parts.hostname
+            or parts.username
+            or parts.password
+            or parts.query
+            or parts.fragment
+            or parts.path not in {"", "/"}
+        ):
             raise ValueError("Password reset origin must be a trusted HTTPS origin")
         return value.rstrip("/")
 

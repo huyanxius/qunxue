@@ -200,11 +200,11 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
         candidates: tuple[MemoryCandidate, ...],
         input_tokens: int,
         output_tokens: int,
-    ) -> None:
+    ) -> bool:
         now = datetime.now(UTC)
         job = self.session.get(MemoryJobRow, str(batch.conversation_id), populate_existing=True)
         if job is None or job.lease_token != batch.lease_token or utc(job.lease_until) <= now:
-            return
+            return False
         # Check and acquire the job inside the same write transaction as the merge.
         claimed = self.session.execute(
             update(MemoryJobRow)
@@ -224,7 +224,7 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             .execution_options(synchronize_session=False)
         )
         if claimed.rowcount != 1:
-            return
+            return False
         sources = {s.message_id: s for s in batch.sources}
         for snapshot in batch.scopes:
             current = self.scope(batch.user_id, snapshot.task_id)
@@ -317,6 +317,8 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             usage.output_tokens += max(0, output_tokens)
             if total:
                 usage.budget_tokens += total - LEARNING_RESERVATION
+
+        return True
 
     def failed(self, batch: LearningBatch) -> None:
         self.session.execute(

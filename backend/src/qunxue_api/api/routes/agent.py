@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 
+from qunxue_api.api.billing_errors import billing_error
 from qunxue_api.api.contracts.agent import (
     AgentCanvasNodeEditRequest,
     AgentCitationResponse,
@@ -49,7 +50,7 @@ from qunxue_api.modules.agent_conversation import (
     ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
 )
-from qunxue_api.modules.billing import CreditRunInProgress, CreditsDepleted
+from qunxue_api.modules.billing import BillingFailure, CreditRunInProgress, CreditsDepleted
 from qunxue_api.modules.knowledge_catalog import RetrievalPipelineUnavailable
 from qunxue_api.modules.research_intake import ResearchStartProposalStatus
 
@@ -237,9 +238,13 @@ def edit_agent_canvas_node(
             )
         except CanvasEditConflict as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return _conversation(result, release_ids=app.release_ids_by_turn(
-            user_id=current.user.user_id, conversation_id=conversation_id,
-        ))
+        return _conversation(
+            result,
+            release_ids=app.release_ids_by_turn(
+                user_id=current.user.user_id,
+                conversation_id=conversation_id,
+            ),
+        )
 
 
 @router.delete(
@@ -622,6 +627,9 @@ def stream_agent_turn(
                     "message": "积分不足，请前往账户设置查看用量。",
                 },
             )
+        except BillingFailure as error:
+            _, code, message = billing_error(error)
+            yield _event("turn_failed", {"code": code, "message": message})
         except AgentInterrupted:
             yield _event(
                 "turn_interrupted",

@@ -10,10 +10,10 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 from pydantic_ai import Agent, UnexpectedModelBehavior
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
-from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
+from qunxue_api.adapters.model.metering import MeteredOpenAIChatModel, reject_current_attempt
 from qunxue_api.adapters.model.routing import (
     ModelAttemptFailure,
     ModelAttemptResult,
@@ -148,7 +148,11 @@ class CourseKnowledgeGenerator:
             base_url=endpoint.base_url, api_key=endpoint.api_key, max_retries=0, timeout=timeout
         ) as client:
             agent = Agent(
-                OpenAIChatModel(endpoint.model, provider=OpenAIProvider(openai_client=client)),
+                MeteredOpenAIChatModel(
+                    endpoint.model,
+                    provider=OpenAIProvider(openai_client=client),
+                    require_billing=True,
+                ),
                 output_type=BatchKnowledge,
                 retries=0,
                 model_settings=settings,
@@ -165,6 +169,7 @@ class CourseKnowledgeGenerator:
             value = result.output.model_dump()
             for item in (*value["topics"], *value["relations"]):
                 if not set(item["segment_ids"]) <= sources.keys():
+                    reject_current_attempt("invalid_course_source_alias")
                     raise ValueError("unknown source alias")
                 item["segment_ids"] = list(
                     dict.fromkeys(sources[key] for key in item["segment_ids"])
@@ -218,6 +223,7 @@ class CourseKnowledgeGenerator:
                     except TimeoutError:
                         raise ModelAttemptFailure(code="model_timeout", retryable=True) from None
                     except (ValueError, UnexpectedModelBehavior):
+                        reject_current_attempt("invalid_course_output")
                         raise ModelAttemptFailure(
                             code="model_invalid_output", retryable=True
                         ) from None
