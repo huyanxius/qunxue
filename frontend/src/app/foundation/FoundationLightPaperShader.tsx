@@ -38,8 +38,8 @@ export function FoundationLightPaperShader() {
         <GrainGradient
           className="foundation-knowledge__paper-flow"
           data-color-scheme={dark ? 'dark' : 'light'}
-          colorBack={dark ? '#242620' : '#f7f7f2'}
-          colors={dark ? ['#262821', '#464637', '#686b57', '#565040'] : ['#fbfaf4', '#d8d0c1', '#888b83', '#c2b29b']}
+          colorBack={dark ? '#242321' : '#f7f7f2'}
+          colors={dark ? ['#282623', '#444039', '#645e53', '#50483e'] : ['#fbfaf4', '#d8d0c1', '#888b83', '#c2b29b']}
           softness={0.72}
           intensity={0.42}
           noise={0.18}

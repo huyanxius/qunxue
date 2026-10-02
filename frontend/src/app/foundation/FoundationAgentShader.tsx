@@ -47,13 +47,13 @@ vec3 grainField(vec2 uv, float t) {
   float wave = sin(p.x * 1.35 + p.y * 1.1 - t * 0.22 + drift * 1.6);
   float bands = smoothstep(0.18, 0.9, 0.5 + 0.5 * wave + (drift - 0.5) * 0.24);
 
-  vec3 color = mix(mix(vec3(0.0824), vec3(0.10, 0.115, 0.105), u_dark), mix(vec3(0.1373, 0.1412, 0.1216), vec3(0.17, 0.20, 0.17), u_dark), smoothstep(0.0, 0.42, bands));
-  color = mix(color, mix(vec3(0.2275, 0.2667, 0.2667), vec3(0.25, 0.31, 0.29), u_dark), smoothstep(0.38, 0.7, bands) * 0.72);
-  color = mix(color, mix(vec3(0.5020), vec3(0.40, 0.45, 0.40), u_dark), smoothstep(0.66, 0.88, bands) * 0.48);
-  color = mix(color, mix(vec3(0.8980, 0.9020, 0.8824), vec3(0.58, 0.63, 0.56), u_dark), smoothstep(0.84, 1.0, bands) * 0.34);
+  vec3 color = mix(mix(vec3(0.0824), vec3(0.095, 0.094, 0.090), u_dark), mix(vec3(0.1373, 0.1412, 0.1216), vec3(0.155, 0.150, 0.140), u_dark), smoothstep(0.0, 0.42, bands));
+  color = mix(color, mix(vec3(0.2275, 0.2667, 0.2667), vec3(0.235, 0.226, 0.211), u_dark), smoothstep(0.38, 0.7, bands) * 0.72);
+  color = mix(color, mix(vec3(0.5020), vec3(0.420, 0.405, 0.380), u_dark), smoothstep(0.66, 0.88, bands) * 0.48);
+  color = mix(color, mix(vec3(0.8980, 0.9020, 0.8824), vec3(0.600, 0.580, 0.540), u_dark), smoothstep(0.84, 1.0, bands) * 0.34);
 
-  color += (hash21(floor(gl_FragCoord.xy * 0.72)) - 0.5) * 0.045;
-  color += (fbm(p * 3.1 + vec2(t * 0.06, -t * 0.04)) - 0.5) * 0.035;
+  color += (hash21(floor(gl_FragCoord.xy * 0.72)) - 0.5) * mix(0.045, 0.022, u_dark);
+  color += (fbm(p * 3.1 + vec2(t * 0.06, -t * 0.04)) - 0.5) * mix(0.035, 0.020, u_dark);
   return color;
 }
 
