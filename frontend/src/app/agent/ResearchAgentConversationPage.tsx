@@ -1141,6 +1141,30 @@ function AgentConversationHistoryRail({
     ? safeConversations.find((conversation) => conversation.conversation_id === actionView.conversationId) ?? null
     : null
 
+  useLayoutEffect(() => {
+    if (!actionView?.conversationId || window.innerWidth > 760) return
+    const place = () => {
+      const viewport = window.visualViewport
+      const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0
+      const width = viewport?.width ?? window.innerWidth, height = viewport?.height ?? window.innerHeight
+      const anchor = railRef.current?.querySelector<HTMLElement>('.agent-conversation-history__actions[aria-expanded="true"]')
+      const rect = anchor?.getBoundingClientRect()
+      const panel = popoverRef.current
+      setActionView(current => {
+        if (!current) return current
+        const nextLeft = Math.max(left + 8, Math.min(rect?.right ?? current.left, left + width - (panel?.offsetWidth || 244) - 8))
+        const nextTop = Math.max(top + 8, Math.min(rect?.top ?? current.top, top + height - (panel?.offsetHeight || 180) - 8))
+        return current.left === nextLeft && current.top === nextTop ? current : { ...current, left: nextLeft, top: nextTop }
+      })
+    }
+    place()
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', place)
+    viewport?.addEventListener('scroll', place)
+    window.addEventListener('resize', place)
+    return () => { viewport?.removeEventListener('resize', place); viewport?.removeEventListener('scroll', place); window.removeEventListener('resize', place) }
+  }, [actionView?.conversationId, actionView?.mode, actionError])
+
   useEffect(() => {
     if (!actionView) return undefined
     const closePopover = (event: globalThis.PointerEvent) => {
@@ -1150,9 +1174,12 @@ function AgentConversationHistoryRail({
       }
     }
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setActionView(null)
+      if (event.key === 'Escape') {
+        const trigger = railRef.current?.querySelector<HTMLElement>('.agent-conversation-history__actions[aria-expanded="true"]')
+        setActionView(null); trigger?.focus({ preventScroll: true })
+      }
     }
-    const closeOnViewportChange = () => setActionView(null)
+    const closeOnViewportChange = () => { if (window.innerWidth > 760) setActionView(null) }
     document.addEventListener('pointerdown', closePopover)
     document.addEventListener('keydown', closeOnEscape)
     window.addEventListener('resize', closeOnViewportChange)
@@ -1301,7 +1328,7 @@ function AgentConversationHistoryRail({
           )}
           {actionError ? <p role="alert">{actionError}</p> : null}
         </div>,
-        railRef.current?.closest('.app-frame') ?? document.body,
+        (window.innerWidth <= 760 ? railRef.current?.closest('.desktop-rail') : null) ?? railRef.current?.closest('.app-frame') ?? document.body,
       ) : null}
     </>
   )

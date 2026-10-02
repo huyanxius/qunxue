@@ -26,6 +26,7 @@ vi.mock('@paper-design/shaders-react', () => ({
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
 })
 
 function renderRoute(
@@ -351,10 +352,9 @@ describe('App routes', () => {
 
     const desktopNavigation = await screen.findByRole('navigation', { name: '桌面主导航' })
     const desktopRail = screen.getByRole('complementary', { name: '群学致知功能栏' })
-    const mobileNavigation = screen.getByRole('navigation', { name: '移动主导航' })
+
 
     expect(desktopNavigation).toBeInTheDocument()
-    expect(mobileNavigation).toBeInTheDocument()
     expect(within(desktopRail).getByRole('link', { name: '群学致知工作台' })).toHaveAttribute('href', '/app')
     expect(
       within(desktopNavigation).getAllByRole('link').every((link) => Boolean(link.querySelector('svg'))),
@@ -369,26 +369,23 @@ describe('App routes', () => {
       '知识图谱',
     ])
     expect(within(desktopNavigation).getByRole('button', { name: '知识库' })).toHaveAttribute('aria-expanded', 'false')
-    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(4)
-    expect(within(mobileNavigation).getByRole('button', { name: '知识库' })).toHaveAttribute('aria-expanded', 'false')
     expect(within(desktopNavigation).getByRole('link', { name: '研究 Agent' })).toHaveAttribute(
       'href',
       '/agent',
     )
     expect(within(desktopNavigation).queryByRole('link', { name: '首页' })).not.toBeInTheDocument()
-    fireEvent.click(within(mobileNavigation).getByRole('button', { name: '更多' }))
-
-    const mobileMore = screen.getByRole('dialog', { name: '更多功能' })
-    expect(within(mobileMore).getByRole('link', { name: '研究工具' })).toHaveAttribute(
-      'href',
-      '/research/tools',
-    )
-    expect(within(mobileMore).getByRole('link', { name: '知识图谱' })).toHaveAttribute(
-      'href',
-      '/knowledge/graph',
-    )
-    fireEvent.click(within(mobileMore).getByRole('button', { name: '关闭更多功能' }))
-    expect(screen.queryByRole('dialog', { name: '更多功能' })).not.toBeInTheDocument()
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+    fireEvent(window, new Event('resize'))
+    fireEvent.click(screen.getByRole('button', { name: '打开导航菜单' }))
+    const mobileDrawer = screen.getByRole('dialog', { name: '群学致知功能栏' })
+    const mobileNavigation = within(mobileDrawer).getByRole('navigation', { name: '移动主导航' })
+    expect(within(mobileNavigation).getByRole('link', { name: '研究工具' })).toHaveAttribute('href', '/research/tools')
+    expect(within(mobileNavigation).getByRole('link', { name: '知识图谱' })).toHaveAttribute('href', '/knowledge/graph')
+    expect(within(mobileNavigation).getByRole('link', { name: '课程' })).toHaveAttribute('href', '/courses')
+    expect(within(mobileNavigation).getAllByRole('link')).toHaveLength(7)
+    expect(document.querySelector('.mobile-navigation')).not.toBeInTheDocument()
+    fireEvent.click(within(mobileDrawer).getByRole('button', { name: '关闭导航菜单' }))
+    expect(screen.queryByRole('dialog', { name: '群学致知功能栏' })).not.toBeInTheDocument()
   })
 
   it('opens a compact research tools catalog from the primary navigation', async () => {

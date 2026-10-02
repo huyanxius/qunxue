@@ -3,18 +3,46 @@
 
 @media (max-width: 760px) {
   .app-frame:not(.app-frame--immersive) {
-    --mobile-top: 56px;
-    --mobile-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
-    --mobile-content: calc(100dvh - var(--mobile-top) - var(--mobile-bottom));
-    padding-top: var(--mobile-top);
-    padding-bottom: var(--mobile-bottom);
+    --mobile-top: calc(56px + env(safe-area-inset-top, 0px));
+    --mobile-bottom: 0px;
+    --mobile-content: calc(var(--qunxue-mobile-height, 100dvh) - var(--mobile-top));
+    position: fixed;
+    inset: var(--qunxue-mobile-offset-top, 0px) 0 auto;
+    height: var(--qunxue-mobile-height, 100dvh);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: var(--mobile-top) 0 0;
   }
 
   .app-frame .mobile-only { display: flex; }
-  .app-frame .mobile-navigation { height: var(--mobile-bottom); padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)); }
+  .app-frame .page-shell { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(24px, env(safe-area-inset-bottom, 0px)); }
+  .app-frame .page-shell--workspace { flex: none; overflow: hidden; padding-bottom: 0; }
+  .app-frame .mobile-masthead { top: var(--qunxue-mobile-offset-top, 0px); height: var(--mobile-top); display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; padding: env(safe-area-inset-top, 0px) max(8px, env(safe-area-inset-right, 0px)) 0 max(8px, env(safe-area-inset-left, 0px)); border-bottom: 0; background: var(--app-canvas); }
+  .app-frame .mobile-masthead .wordmark { justify-self: center; min-width: 0; font-size: 16px; }
+  .app-frame .mobile-masthead__action { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; color: var(--app-ink); background: transparent; cursor: pointer; text-decoration: none; }
+  .app-frame .mobile-drawer-backdrop { position: fixed; z-index: 55; inset: 0; width: 100%; border: 0; border-radius: 0; background: color-mix(in srgb, var(--app-ink) 30%, transparent); }
+  .app-frame .desktop-rail { position: fixed; z-index: 60; inset: var(--qunxue-mobile-offset-top, 0px) auto auto 0; display: flex; width: min(86vw, 340px); height: var(--qunxue-mobile-height, 100dvh); min-height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); background: var(--app-sidebar); transform: translateX(-100%); visibility: hidden; transition: none; }
+  .app-frame .desktop-rail--mobile-open { transform: none; visibility: visible; box-shadow: 8px 0 32px color-mix(in srgb, var(--app-ink) 12%, transparent); }
+  .app-frame .desktop-rail__topbar { height: 56px; }
+  .app-frame .desktop-rail__collapse { width: 44px; height: 44px; }
+  .app-frame .desktop-rail__body { overflow-y: auto; overscroll-behavior: contain; }
+  .app-frame .desktop-navigation { flex: none; }
+  .app-frame .desktop-navigation a, .app-frame .knowledge-navigation__toggle { min-height: 44px; }
+  .app-frame .navigation-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .app-frame .desktop-rail__secondary { display: block; flex: none; margin-top: 20px; }
+  .app-frame .desktop-rail__secondary .agent-conversation-history { height: auto; min-height: 0; overflow: visible; }
+  .app-frame .desktop-rail__account { margin: 8px 8px 0; padding: 4px; border-radius: 16px; background: var(--app-canvas); box-shadow: 0 2px 12px color-mix(in srgb, var(--app-ink) 8%, transparent); }
+  .app-frame .desktop-rail__account > button { flex-basis: 44px; min-height: 44px; }
+  .app-frame .desktop-rail__identity { min-height: 48px; }
+  .app-frame .desktop-rail__notification-panel { left: 0; bottom: calc(100% + 8px); width: min(340px, calc(100vw - 32px)); max-height: calc(var(--qunxue-mobile-height, 100dvh) - var(--mobile-top) - 80px); background: var(--app-canvas); }
+  .app-frame .mobile-notifications-close { float: right; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; color: inherit; background: transparent; }
+  .app-frame .desktop-rail__notification-tabs button { min-height: 44px; }
+  .app-frame .skip-link { left: 8px; }
+  .app-frame .network-status-notice { top: calc(var(--qunxue-mobile-offset-top, 0px) + var(--mobile-top) + 8px); }
   .app-frame .page-shell--workspace { height: var(--mobile-content); }
   .app-frame .page-shell--workspace > .page-content { height: 100%; min-height: 0; }
-  .app-frame .mobile-more__sheet { bottom: calc(var(--mobile-bottom) + 8px); max-height: calc(var(--mobile-content) - 16px); overflow-y: auto; }
 
   .app-frame .research-agent-page,
   .app-frame .new-research,
@@ -53,7 +81,7 @@
     width: 100%;
     height: auto;
     min-height: 64px;
-    max-height: min(320px, 40dvh);
+    max-height: min(240px, calc(var(--mobile-content) * .3));
     padding: 6px 8px;
     font-size: 16px;
     line-height: 24px;
@@ -81,7 +109,7 @@
   .app-frame .research-agent-conversation .deep-research-intro { right: -50px; max-width: calc(100vw - 48px); }
   .app-frame .research-agent-conversation .deep-research-intro__close { width: 44px; height: 44px; }
   .app-frame .research-agent-conversation .new-research__agent-actions button { width: 44px; height: 44px; flex-shrink: 0; }
-  .app-frame .research-agent-conversation .research-agent-page__composer-dock { padding-bottom: 10px; overflow: visible; }
+  .app-frame .research-agent-conversation .research-agent-page__composer-dock { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); overflow: visible; }
   .app-frame .research-agent-conversation .deep-research-mock-card--question { max-height: 28dvh; overflow-y: auto; }
   .app-frame .mobile-agent-history { position: absolute; top: 4px; left: 12px; z-index: 6; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border: 0; background: var(--app-canvas); color: var(--app-ink-soft); font: inherit; font-size: 12px; border-radius: 10px; }
   .app-frame .research-agent-page__empty-state { padding-top: 56px; }
@@ -108,4 +136,17 @@
   .app-frame .research-project-workspace__tools { overflow-x: auto; }
   .app-frame .research-project-workspace__tools a { min-height: 44px; }
   .app-frame .research-project-workspace__identity { flex-basis: 30%; }
+}
+
+@media (max-width: 760px) {
+  .app-frame .desktop-rail { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .app-frame .desktop-rail:has(.agent-conversation-history__popover) { overflow: visible; }
+  .app-frame .desktop-rail__secondary :is(.agent-conversation-history__list, .project-conversation-list) { overflow: visible; }
+  .app-frame .desktop-rail__secondary .agent-conversation-history { margin-top: 0; }
+  .app-frame .desktop-rail__secondary :is(.agent-conversation-history__new, .agent-conversation-history__actions, .project-conversation-list__actions, .project-conversation-list__new, .project-conversation-list__independent-heading button) { width: 44px; min-width: 44px; height: 44px; min-height: 44px; opacity: 1; pointer-events: auto; }
+  .app-frame .desktop-rail__secondary .agent-conversation-history__open { min-height: 44px; }
+  .app-frame .project-conversation-list__resources a { display: inline-flex; align-items: center; min-height: 44px; }
+  .app-frame .agent-conversation-history__popover { max-width: calc(100vw - 16px); max-height: calc(var(--qunxue-mobile-height, 100dvh) - 16px); overflow-y: auto; }
+  .app-frame .agent-conversation-history__popover button { min-height: 44px; }
+  .app-frame .agent-conversation-history__popover input { font-size: 16px; }
 }

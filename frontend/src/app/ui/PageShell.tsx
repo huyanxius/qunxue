@@ -1,5 +1,5 @@
 import { BrandLoading } from '../../ui/BrandLoading'
-import { createContext, useContext, useEffect, useId, useState } from 'react'
+import { createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import type { Dispatch, PropsWithChildren, ReactNode, Ref, SetStateAction } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -11,6 +11,8 @@ import {
   DotsThreeIcon,
   FileTextIcon,
   HouseIcon,
+  ListIcon,
+  SignOutIcon,
   PlusIcon,
   SidebarSimpleIcon,
   ToolboxIcon,
@@ -26,6 +28,7 @@ import { SettingsModal } from './SettingsModal'
 import { useAppLocale } from '../i18n/AppLocaleProvider'
 import { AppFrameShader } from './AppFrameShader'
 import { NetworkStatusNotice } from './NetworkStatusNotice'
+import { useMobileViewport } from './useMobileViewport'
 
 type PageTitleProps = {
   eyebrow: string
@@ -120,7 +123,8 @@ function PrimaryNavigation({
     <nav className={className} aria-label={label}>
       {visibleItems.map(({ href, label: itemLabel, mobileLabel, icon: NavigationIcon, end }) => href === '/knowledge' ? (
         <div className="knowledge-navigation" key={href} onKeyDown={(event) => {
-          if (event.key === 'Escape') {
+          if (event.key === 'Escape' && expanded) {
+            event.preventDefault(); event.stopPropagation()
             setKnowledgeOpen(false)
             event.currentTarget.querySelector('button')?.focus()
           }
@@ -223,7 +227,40 @@ export function PageShell({
   const viewLabel = location.pathname === '/agent' ? text('研究画布', 'Research canvas') : text('对话视图', 'Conversation view')
   const [logoutFailed, setLogoutFailed] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
+  const [narrow, setNarrow] = useState(() => window.innerWidth <= 760)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawerRef = useRef<HTMLElement>(null)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const notificationButtonRef = useRef<HTMLButtonElement>(null)
+  useMobileViewport(narrow && !immersive)
+  useEffect(() => {
+    const resize = () => setNarrow(window.innerWidth <= 760)
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+  }, [])
+  useEffect(() => { setDrawerOpen(false); setNotificationsOpen(false) }, [location.pathname, location.search, narrow])
+  useEffect(() => {
+    if (!narrow || !drawerOpen || immersive) return
+    const overflow = document.body.style.overflow
+    const trigger = menuButtonRef.current
+    document.body.style.overflow = 'hidden'
+    drawerRef.current?.querySelector<HTMLButtonElement>('[data-close-drawer]')?.focus()
+    const keydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || document.querySelector('dialog[open]')) return
+      if (event.key === 'Escape') {
+        if (drawerRef.current?.querySelector('.agent-conversation-history__popover')) return
+        event.preventDefault(); setDrawerOpen(false); return
+      }
+      if (event.key !== 'Tab') return
+      const controls = Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), summary, [tabindex="0"]') ?? []).filter(element => !element.closest('[hidden], [inert]') && element.getClientRects().length > 0)
+      const first = controls[0], last = controls.at(-1)
+      if (!first || !last) return
+      if (event.shiftKey && (document.activeElement === first || !drawerRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !drawerRef.current?.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', keydown)
+    return () => { document.removeEventListener('keydown', keydown); document.body.style.overflow = overflow; if (trigger?.isConnected) trigger.focus({ preventScroll: true }) }
+  }, [narrow, drawerOpen, immersive])
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'updates' | 'messages'>('all')
   const sharedRailState = useContext(RailStateContext)
   const [localRailCollapsed, setLocalRailCollapsed] = useState(defaultRailCollapsed)
@@ -249,7 +286,7 @@ export function PageShell({
     <div className={[
       'app-frame',
       immersive ? 'app-frame--immersive' : '',
-      railCollapsed && !immersive ? 'app-frame--rail-collapsed' : '',
+      railCollapsed && !immersive && !narrow ? 'app-frame--rail-collapsed' : '',
     ].filter(Boolean).join(' ')}>
       {immersive ? null : (
         <div className="app-frame__backdrop" aria-hidden="true">
@@ -260,46 +297,32 @@ export function PageShell({
       {immersive ? null : (
         <>
           <a className="skip-link" href="#main-content">{text('跳到主要内容', 'Skip to main content')}</a>
-          <header className="masthead mobile-masthead">
-            <Link className="wordmark" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
-              <ProductMark />
-              <strong>群学致知</strong>
-            </Link>
-            <nav className="account-navigation" aria-label={text('账户导航', 'Account navigation')}>
-              {viewDestination ? <Link to={viewDestination}>{viewLabel}</Link> : null}
-              {account.sessionState.status === 'authenticated' ? (
-                <>
-                  <NavLink to="/settings" state={{ settingsBackground: location }}>{text('账户', 'Account')}</NavLink>
-                  <button className="nav-action" type="button" onClick={logout}>
-                    {logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出', 'Sign out')}
-                  </button>
-                </>
-              ) : account.sessionState.status === 'loading' ? (
-                <BrandLoading compact message={text('确认中', 'Checking…')} />
-              ) : (
-                <NavLink to="/login">{text('登录', 'Sign in')}</NavLink>
-              )}
-            </nav>
-          </header>
+          {narrow ? <header className="masthead mobile-masthead" inert={drawerOpen}>
+            <button ref={menuButtonRef} className="mobile-masthead__action" type="button" aria-label={text('打开导航菜单', 'Open navigation menu')} aria-expanded={drawerOpen} aria-controls="application-navigation" onClick={() => setDrawerOpen(true)}><ListIcon size={22} aria-hidden="true" /></button>
+            <Link className="wordmark" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}><ProductMark /><strong>群学致知</strong></Link>
+            <Link className="mobile-masthead__action" to="/research/new" aria-label={text('新建研究', 'New research')}><PlusIcon size={22} aria-hidden="true" /></Link>
+          </header> : null}
+          {narrow && drawerOpen ? <button className="mobile-drawer-backdrop" type="button" tabIndex={-1} aria-label={text('关闭导航菜单', 'Close navigation menu')} onClick={() => setDrawerOpen(false)} /> : null}
 
-          <aside className={`desktop-rail${railCollapsed ? ' desktop-rail--collapsed' : ''}`} aria-label={text('群学致知功能栏', 'Qunxue Zhizhi navigation')}>
+          <aside ref={drawerRef} id="application-navigation" className={`desktop-rail${railCollapsed && !narrow ? ' desktop-rail--collapsed' : ''}${narrow && drawerOpen ? ' desktop-rail--mobile-open' : ''}`} aria-label={text('群学致知功能栏', 'Qunxue Zhizhi navigation')} role={narrow ? 'dialog' : undefined} aria-modal={narrow && drawerOpen || undefined} aria-hidden={narrow && !drawerOpen || undefined} inert={narrow && !drawerOpen} onClick={event => { if (narrow && (event.target as HTMLElement).closest('a[href]')) setDrawerOpen(false) }}>
             <div className="desktop-rail__topbar">
               <Link className="desktop-rail__brand" to="/app" aria-label={text('群学致知工作台', 'Qunxue Zhizhi workbench')}>
                 <ProductMark />
                 <strong>群学致知</strong>
               </Link>
               <button
+                data-close-drawer={narrow || undefined}
                 className="desktop-rail__collapse"
                 type="button"
-                aria-label={railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
-                title={railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
-                onClick={() => setRailCollapsed((collapsed) => !collapsed)}
+                aria-label={narrow ? text('关闭导航菜单', 'Close navigation menu') : railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
+                title={narrow ? text('关闭导航菜单', 'Close navigation menu') : railCollapsed ? text('展开侧栏', 'Expand sidebar') : text('收起侧栏', 'Collapse sidebar')}
+                onClick={() => narrow ? setDrawerOpen(false) : setRailCollapsed((collapsed) => !collapsed)}
               >
-                <SidebarSimpleIcon size={18} weight="regular" />
+                {narrow ? <XIcon size={22} aria-hidden="true" /> : <SidebarSimpleIcon size={18} weight="regular" />}
               </button>
             </div>
             <div className="desktop-rail__body">
-              <PrimaryNavigation railCollapsed={railCollapsed} onExpandRail={() => setRailCollapsed(false)} conversationHref={conversationHref} className="desktop-navigation" label={text('桌面主导航', 'Main navigation')} />
+              <PrimaryNavigation railCollapsed={railCollapsed && !narrow} onExpandRail={() => setRailCollapsed(false)} conversationHref={conversationHref} className="desktop-navigation" label={narrow ? text('移动主导航', 'Mobile navigation') : text('桌面主导航', 'Main navigation')} />
               {viewDestination ? <nav className="desktop-navigation" aria-label={text('对话视图', 'Conversation views')}>
                 <Link to={viewDestination}>
                   <span className="navigation-icon" aria-hidden="true"><ChatCircleDotsIcon size={18} /></span>
@@ -323,6 +346,7 @@ export function PageShell({
                     <strong>{accountName}</strong>
                   </NavLink>
                   <button
+                    ref={notificationButtonRef}
                     className="desktop-rail__notifications"
                     type="button"
                     aria-label={roadshow.data ? '开发者选项' : text('通知', 'Notifications')}
@@ -334,9 +358,11 @@ export function PageShell({
                     <BellIcon size={19} weight="regular" aria-hidden="true" />
                     <span className="desktop-rail__notification-dot" aria-hidden="true" />
                   </button>
+                  {narrow ? <button className="desktop-rail__logout" type="button" aria-label={logoutFailed ? text('退出失败，请重试', 'Sign out failed. Try again') : text('退出登录', 'Sign out')} title={text('退出登录', 'Sign out')} onClick={() => void logout()}><SignOutIcon size={20} aria-hidden="true" /></button> : null}
                   {developerOpen && roadshow.data ? <SettingsModal label="开发者选项" onClose={() => setDeveloperOpen(false)}><RoadshowPanel initial={roadshow.data} onClose={() => setDeveloperOpen(false)} /></SettingsModal> : null}
                   {notificationsOpen ? (
-                    <div className="desktop-rail__notification-panel" id="desktop-notifications" aria-label={text('通知栏', 'Notifications panel')}>
+                    <div className="desktop-rail__notification-panel" id="desktop-notifications" aria-label={text('通知栏', 'Notifications panel')} onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setNotificationsOpen(false); notificationButtonRef.current?.focus() } }}>
+                      {narrow ? <button className="mobile-notifications-close" type="button" aria-label={text('关闭通知', 'Close notifications')} onClick={() => { setNotificationsOpen(false); notificationButtonRef.current?.focus() }}><XIcon size={20} aria-hidden="true" /></button> : null}
                       <h2>{text('通知', 'Notifications')}</h2>
                       <div className="desktop-rail__notification-tabs" role="tablist" aria-label={text('通知分类', 'Notification categories')}>
                         {([
@@ -389,51 +415,8 @@ export function PageShell({
         workspace ? 'page-shell--workspace' : '',
         immersive ? 'page-shell--immersive' : '',
         wide ? 'page-shell--wide' : '',
-      ].filter(Boolean).join(' ')} id="main-content">{children}</main>
+      ].filter(Boolean).join(' ')} id="main-content" inert={!immersive && narrow && drawerOpen}>{children}</main>
 
-      {immersive ? null : (
-        <>
-          <PrimaryNavigation
-            conversationHref={conversationHref}
-            className="mobile-navigation"
-            label={text('移动主导航', 'Mobile navigation')}
-            compact
-            mobile
-            moreExpanded={mobileMoreOpen}
-            onMore={() => setMobileMoreOpen((open) => !open)}
-            onKnowledgeOpen={() => setMobileMoreOpen(false)}
-          />
-          {mobileMoreOpen ? (
-            <div className="mobile-more" id="mobile-more-panel">
-              <button
-                className="mobile-more__backdrop"
-                type="button"
-                aria-label={text('关闭更多功能', 'Close more features')}
-                onClick={() => setMobileMoreOpen(false)}
-              />
-              <section className="mobile-more__sheet" role="dialog" aria-modal="true" aria-label={text('更多功能', 'More features')}>
-                <header>
-                  <strong>{text('更多功能', 'More features')}</strong>
-                  <button type="button" aria-label={text('关闭更多功能', 'Close more features')} onClick={() => setMobileMoreOpen(false)}>
-                    <XIcon size={20} aria-hidden="true" />
-                  </button>
-                </header>
-                <nav aria-label={text('更多功能', 'More features')}>
-                  <NavLink to="/research/tools" onClick={() => setMobileMoreOpen(false)}>
-                    <ToolboxIcon size={20} aria-hidden="true" />
-                    <span>{text('研究工具', 'Research tools')}</span>
-                  </NavLink>
-                  <NavLink to="/courses" onClick={() => setMobileMoreOpen(false)}><GraduationCapIcon size={20} aria-hidden="true" /><span>{text('课程', 'Courses')}</span></NavLink>
-                  <NavLink to="/knowledge/graph" onClick={() => setMobileMoreOpen(false)}>
-                    <TreeStructureIcon size={20} aria-hidden="true" />
-                    <span>{text('知识图谱', 'Knowledge graph')}</span>
-                  </NavLink>
-                </nav>
-              </section>
-            </div>
-          ) : null}
-        </>
-      )}
     </div>
   )
 }
