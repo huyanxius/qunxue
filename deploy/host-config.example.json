@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "app": "qunxue",
+  "configured": false,
+  "root": "/srv/qunxue",
+  "runtime_uid": 0,
+  "runtime_gid": 0,
+  "release_mode": "0755",
+  "python": "/usr/bin/python3.12",
+  "pm2": "/usr/bin/pm2",
+  "pm2_home": "/root/.pm2",
+  "ecosystem": "/etc/qunxue/ecosystem.config.cjs",
+  "environment_file": "/root/qunxue-release421-d27c99d/backend/.env",
+  "state_directory": "/root/qunxue-release421-d27c99d/backend/var",
+  "databases": [
+    {
+      "name": "probe",
+      "path": "/root/qunxue-release421-d27c99d/backend/var/probe.db",
+      "migrate": false
+    },
+    {
+      "name": "qunxue",
+      "path": "/root/qunxue-release421-d27c99d/backend/var/qunxue.db",
+      "migrate": true
+    },
+    {
+      "name": "retrieval",
+      "path": "/root/qunxue-release421-d27c99d/backend/var/retrieval.db",
+      "migrate": false
+    }
+  ],
+  "all_writers_are_qunxue_pm2": false,
+  "public_origin": "https://qunxue.xyz",
+  "local_origin": "http://127.0.0.1:8096",
+  "expected_runtime_mode": "base",
+  "minimum_free_bytes": 2147483648,
+  "health_attempts": 12
+}

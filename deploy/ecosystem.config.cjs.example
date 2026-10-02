@@ -1,0 +1,18 @@
+// One-time reviewed host installation only; never overwritten by CD.
+// Adjust executable paths during bootstrap after inspecting the existing PM2 process.
+module.exports = {
+  apps: [{
+    name: 'qunxue-api',
+    script: '/srv/qunxue/current/backend/.venv/bin/python',
+    args: '-m uvicorn qunxue_api.main:app --host 127.0.0.1 --port 8092',
+    cwd: '/srv/qunxue/current/backend',
+    interpreter: 'none',
+    instances: 1,
+    exec_mode: 'fork',
+    kill_timeout: 300000,
+    env: {
+      PYTHONPATH: '/srv/qunxue/current/backend/src',
+      QUNXUE_RELEASE_REVISION: process.env.QUNXUE_RELEASE_REVISION,
+    },
+  }],
+};
