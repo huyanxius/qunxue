@@ -52,6 +52,7 @@ class DisciplinaryAgentApplication:
         tools_factory: Callable[[], AgentToolContext],
         credits: CreditService | None = None,
         billing: BillingOperations | None = None,
+        rollback: Callable[[], None] | None = None,
         atomic: Callable[[], AbstractContextManager[object]] | None = None,
         ensure_research_draft: Callable[..., UUID] | None = None,
         bind_research_draft: Callable[..., UUID] | None = None,
@@ -63,6 +64,7 @@ class DisciplinaryAgentApplication:
         self._tools_factory = tools_factory
         self._credits = credits
         self._billing = billing
+        self._rollback = rollback
         self._atomic = atomic or nullcontext
         self._ensure_research_draft = ensure_research_draft
         self._bind_research_draft = bind_research_draft
@@ -498,6 +500,9 @@ class DisciplinaryAgentApplication:
             "_confirmed_research_plan": confirmed_plan,
             "_research_intent": "research" if research_required else None,
         }
+        billing_resume = existing_run is not None and existing_run.status in {
+            "awaiting_clarification", "awaiting_plan_confirmation"
+        }
         run = self._conversations.start_run(
             user_id=user_id,
             conversation_id=conversation.conversation_id,
@@ -595,6 +600,7 @@ class DisciplinaryAgentApplication:
                     run_id=run.run_id,
                     payload=request_snapshot,
                     before_network=lambda: checkpoint(force=True),
+                    **({"resume": True} if billing_resume else {}),
                 )
                 billing_candidate.__enter__()
                 billing_context = billing_candidate
@@ -784,24 +790,25 @@ class DisciplinaryAgentApplication:
                         }
                         if deep_research_selection:
                             pending["selected_intent"] = deep_research_selection
-                        request_snapshot["_research_intent"] = "research"
-                        self._conversations.checkpoint_run(
-                            user_id=user_id,
-                            run_id=run.run_id,
-                            lease_token=run.lease_token,
-                            request_snapshot=request_snapshot,
-                        )
-                        self._conversations.finish_run(
-                            run_id=run.run_id,
-                            lease_token=run.lease_token,
-                            status=state,
-                            tool_summary=(pending,),
-                        )
-                        if self._credits is not None:
-                            self._credits.release(user_id=user_id, run_id=run.run_id)
+                        with self._atomic():
+                            request_snapshot["_research_intent"] = "research"
+                            self._conversations.checkpoint_run(
+                                user_id=user_id,
+                                run_id=run.run_id,
+                                lease_token=run.lease_token,
+                                request_snapshot=request_snapshot,
+                            )
+                            self._conversations.finish_run(
+                                run_id=run.run_id,
+                                lease_token=run.lease_token,
+                                status=state,
+                                tool_summary=(pending,),
+                            )
+                            if self._credits is not None:
+                                self._credits.release(user_id=user_id, run_id=run.run_id)
+                            if billing_context is not None:
+                                billing_context.finish("paused")
                         self._conversations.commit()
-                        if billing_context is not None:
-                            billing_context.finish("success")
                         return AgentTurnExecution(
                             conversation=current,
                             run_id=run.run_id,
@@ -940,35 +947,44 @@ class DisciplinaryAgentApplication:
                     if callable(finalize_agent_turn):
                         finalize_agent_turn(source_turn_id=turn_result.turn_id)
                 finalization_pending = False
+                if billing_context is not None:
+                    billing_context.finish("success")
             if billing_context is not None:
                 self._conversations.commit()
-                billing_context.finish("success")
         except Exception as error:
-            failure_status = (
-                "completed" if finalization_pending and owns_run("completed") else "running"
-            )
-            if owns_run(failure_status):
-                if failure_status == "running":
-                    checkpoint(force=True)
-                if self._credits is not None:
-                    self._credits.release(user_id=user_id, run_id=run.run_id)
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    lease_token=run.lease_token,
-                    status=(
-                        "interrupted"
-                        if isinstance(error, AgentInterrupted) and failure_status == "running"
-                        else "failed"
-                    ),
-                    error=None if isinstance(error, AgentInterrupted) else str(error),
-                    tool_summary=saved_summary(),
-                    expected_status=failure_status,
+            if self._rollback is not None:
+                self._rollback()
+            try:
+                failure_status = (
+                    "completed" if finalization_pending and owns_run("completed") else "running"
                 )
-                self._conversations.commit()
-            if billing_context is not None:
-                billing_context.finish(
-                    "cancelled" if isinstance(error, AgentInterrupted) else "error"
-                )
+                if owns_run(failure_status):
+                    if failure_status == "running":
+                        checkpoint(force=True)
+                    if self._credits is not None:
+                        self._credits.release(user_id=user_id, run_id=run.run_id)
+                    self._conversations.finish_run(
+                        run_id=run.run_id,
+                        lease_token=run.lease_token,
+                        status=(
+                            "interrupted"
+                            if isinstance(error, AgentInterrupted) and failure_status == "running"
+                            else "failed"
+                        ),
+                        error=None if isinstance(error, AgentInterrupted) else str(error),
+                        tool_summary=saved_summary(),
+                        expected_status=failure_status,
+                    )
+                    self._conversations.commit()
+            except BaseException:
+                if self._rollback is not None:
+                    self._rollback()
+                raise
+            finally:
+                if billing_context is not None:
+                    billing_context.finish(
+                        "cancelled" if isinstance(error, AgentInterrupted) else "error"
+                    )
             raise
         finally:
             if billing_context is not None:

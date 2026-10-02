@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+from contextlib import contextmanager
+from copy import copy
 
 from qunxue_api.adapters.model.metering import BillingContextMissing, OperationScope
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
@@ -14,8 +16,33 @@ class SqliteBillingOperations:
         self.runtime = runtime
         self.exempt_user_ids = exempt_user_ids
         self.phase_policies = phase_policies or {}
+        self.session = None
 
-    def open(self, *, user_id, run_id, payload, before_network=None, phase="agent_turn"):
+    def bound_to(self, session):
+        operations = copy(self)
+        operations.session = session
+        return operations
+
+    @contextmanager
+    def atomic(self):
+        # Python sqlite3 legacy mode does not BEGIN for SAVEPOINT. Without an
+        # explicit outer transaction, RELEASE commits before Session.commit().
+        # Bind only these existing business savepoints to a real transaction.
+        connection = self.session.connection()
+        if (
+            connection.dialect.name == "sqlite"
+            and not connection.connection.driver_connection.in_transaction
+        ):
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
+        with self.session.begin_nested():
+            yield
+
+    def _settlement_connection(self):
+        self.session.flush()
+        return self.session.connection()
+
+    def open(self, *, user_id, run_id, payload, before_network=None, phase="agent_turn",
+             resume=False):
         policy = (
             "user" if phase in {"agent_turn", "user_research"} else self.phase_policies.get(phase)
         )
@@ -51,6 +78,8 @@ class SqliteBillingOperations:
                 )
             },
             before_network=before_network,
+            resume=resume,
+            settlement_connection=self._settlement_connection if self.session is not None else None,
         )
 
     def close(self, *, run_id, outcome):

@@ -5,6 +5,7 @@ from typing import Literal
 from uuid import UUID
 
 WELCOME_GRANT = 10_000
+SIGNUP_GRANT = 3_000
 INPUT_TOKENS_PER_CREDIT = 100
 OUTPUT_TOKENS_PER_CREDIT = 25
 
@@ -93,6 +94,9 @@ class CreditSummary:
     frozen_points: int = 0
     available_balance: int | None = None
     operations: tuple[dict, ...] = ()
+    total_granted_points: int | None = None
+    active_usage_buckets: tuple[dict, ...] = ()
+    quota_status: Literal["known", "unavailable"] = "unavailable"
 
 
 @dataclass(frozen=True, slots=True)

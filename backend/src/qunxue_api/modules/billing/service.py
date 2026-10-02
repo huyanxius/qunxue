@@ -62,6 +62,9 @@ class CreditService:
                 frozen_points=summary.frozen_points,
                 available_balance=summary.available_balance,
                 operations=summary.operations,
+                total_granted_points=summary.total_granted_points,
+                active_usage_buckets=summary.active_usage_buckets,
+                quota_status=summary.quota_status,
             )
         return summary
 

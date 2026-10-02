@@ -111,6 +111,7 @@ class TheoryMatchingApplication:
         ) as scope:
             try:
                 yield
+                scope.finish("success")
                 if self._commit is not None:
                     self._commit()
             except BaseException:
@@ -118,7 +119,6 @@ class TheoryMatchingApplication:
                 if self._rollback is not None:
                     self._rollback()
                 raise
-            scope.finish("success")
 
     def start(
         self,

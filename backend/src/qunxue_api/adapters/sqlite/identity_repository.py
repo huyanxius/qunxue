@@ -22,8 +22,9 @@ def _as_utc(value: datetime) -> datetime:
 
 
 class SqliteIdentityRepository(IdentityRepository):
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, *, on_user_created=None) -> None:
         self._db_session = session
+        self._on_user_created = on_user_created
 
     def get_user_by_email(self, email: str) -> User | None:
         row = self._db_session.scalar(select(UserRow).where(UserRow.email == email))
@@ -68,6 +69,8 @@ class SqliteIdentityRepository(IdentityRepository):
             )
         )
         self._db_session.flush()
+        if self._on_user_created is not None:
+            self._on_user_created(user)
         return self._user(row)
 
     def add_session(self, session: UserSession) -> None:

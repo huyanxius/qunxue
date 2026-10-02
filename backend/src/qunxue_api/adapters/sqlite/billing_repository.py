@@ -1,5 +1,6 @@
 import json
 from datetime import UTC, datetime, timedelta
+from fractions import Fraction
 from uuid import UUID, uuid4
 
 from sqlalchemy import case, func, select, text, update
@@ -114,11 +115,30 @@ class SqliteCreditRepository:
             .limit(page_limit)
         ).all()
         frozen, operations = self._billing_details(user_id, page_limit, offset)
+        grants = self._session.scalars(
+            select(CreditLedgerRow).where(
+                CreditLedgerRow.user_id == str(user_id), CreditLedgerRow.kind != "usage"
+            )
+        ).all()
+        welcome_only = (
+            len(grants) == 1 and grants[0].kind == "signup_grant"
+            and 0 <= account.balance <= grants[0].points
+        )
+        # Historic redemption resets and subscriptions do not establish paid
+        # bucket attribution. Only an unmixed welcome balance is provable here.
+        buckets = ({
+            "bucket_id": grants[0].entry_id, "kind": "welcome",
+            "available_points": max(0, account.balance - frozen),
+            "limit_points": grants[0].points, "expires_at": None,
+        },) if welcome_only else ()
         return CreditSummary(
             balance=account.balance,
             frozen_points=frozen,
             available_balance=max(0, account.balance - frozen),
             operations=operations,
+            total_granted_points=grants[0].points if welcome_only else None,
+            active_usage_buckets=buckets,
+            quota_status="known" if welcome_only else "unavailable",
             entries=tuple(self._entry(row) for row in rows),
             total_entries=total_entries,
             next_cursor=(str(offset + page_limit) if offset + page_limit < total_entries else None),
@@ -416,12 +436,23 @@ class SqliteCreditRepository:
                     "outcome": row["status"],
                     "frozen_points": row["hold_points"],
                     "points_charged": row["charged_points"],
-                    "exact_credit_numerator": row["credit_pico"],
-                    "original_credit_numerator": row["original_credit_pico"],
+                    "exact_credit_numerator": str(Fraction(row["credit_pico"]).numerator),
+                    "exact_credit_denominator": str(Fraction(row["credit_pico"]).denominator),
+                    "original_credit_numerator": str(
+                        Fraction(row["original_credit_pico"]).numerator
+                    ),
+                    "original_credit_denominator": str(
+                        Fraction(row["original_credit_pico"]).denominator
+                    ),
                     "credit_scale": "1000000000000",
                     "price_version": prices["version"],
                     "credits_per_usd": prices["credits_per_usd"],
                     "reference_currency": "USD",
+                    "retail_snapshot": {key: prices.get(key) for key in (
+                        "points_per_cny", "retail_rate_ppm", "fx_cny_per_usd_micro",
+                        "fx_snapshot_id", "fx_as_of", "fx_source",
+                        "procurement_estimate_source", "procurement_estimate_ratio",
+                    )},
                     "exempt": bool(row["exempt"]),
                     "created_at": row["created_at"],
                     "attempts": [

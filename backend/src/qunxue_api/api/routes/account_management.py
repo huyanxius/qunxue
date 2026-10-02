@@ -56,7 +56,7 @@ from qunxue_api.modules.account_management import (
 from qunxue_api.modules.billing import (
     INPUT_TOKENS_PER_CREDIT,
     OUTPUT_TOKENS_PER_CREDIT,
-    WELCOME_GRANT,
+    SIGNUP_GRANT,
     CreditService,
 )
 
@@ -159,12 +159,15 @@ def get_account_credits(
     )
     return CreditSummaryResponse(
         balance=summary.balance,
-        credit_limit=WELCOME_GRANT,
-        grant_amount=WELCOME_GRANT,
+        credit_limit=summary.total_granted_points or 0,
+        grant_amount=SIGNUP_GRANT,
         is_unlimited=summary.is_unlimited,
         frozen_points=summary.frozen_points,
         available_balance=summary.available_balance,
         operations=list(summary.operations),
+        total_granted_points=summary.total_granted_points,
+        active_usage_buckets=list(summary.active_usage_buckets),
+        quota_status=summary.quota_status,
         pricing=CreditPricingResponse(
             mode="model_rates" if request.app.state.billing_operations.runtime else "unconfigured",
             credits_per_usd=(
@@ -177,6 +180,10 @@ def get_account_credits(
                 if request.app.state.billing_operations.runtime
                 else None
             ),
+            **{name: getattr(request.app.state.billing_operations.runtime.book, name)
+               if request.app.state.billing_operations.runtime else None
+               for name in ("points_per_cny", "retail_rate_ppm", "fx_cny_per_usd_micro",
+                            "fx_snapshot_id", "fx_as_of", "fx_source")},
             input_tokens_per_credit=INPUT_TOKENS_PER_CREDIT,
             output_tokens_per_credit=OUTPUT_TOKENS_PER_CREDIT,
         ),

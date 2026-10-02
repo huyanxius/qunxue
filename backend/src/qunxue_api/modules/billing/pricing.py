@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+from fractions import Fraction
 from zoneinfo import ZoneInfo
 
 from qunxue_api.modules.billing.domain import BillingFailure
@@ -41,7 +42,7 @@ STANDARD_TARIFFS = {
 
 @dataclass(frozen=True)
 class PriceBook:
-    credits_per_usd: int
+    credits_per_usd: int | None
     version: str
     aliases: Mapping[str, str] = field(default_factory=dict)
     usage_policies: Mapping[str, str] = field(default_factory=dict)
@@ -51,6 +52,14 @@ class PriceBook:
     calendar_version: str | None = None
     reference_band: str | None = None
     dispatch_at: str | None = None
+    points_per_cny: int | None = None
+    retail_rate_ppm: int | None = None
+    fx_cny_per_usd_micro: int | None = None
+    fx_snapshot_id: str | None = None
+    fx_as_of: str | None = None
+    fx_source: str | None = None
+    procurement_estimate_source: str = "user_reported_estimate"
+    procurement_estimate_ratio: str = "1/35"
 
     def lock_dispatch(self, model: str, instant: datetime):
         if self.aliases.get(model, model) != "deepseek-flash":
@@ -93,8 +102,22 @@ class PriceBook:
         )
 
     def __post_init__(self):
-        if type(self.credits_per_usd) is not int or self.credits_per_usd <= 0 or not self.version:
-            raise ValueError("billing conversion and version must be explicitly configured")
+        fx_fields = (self.points_per_cny, self.retail_rate_ppm, self.fx_cny_per_usd_micro,
+                     self.fx_snapshot_id, self.fx_as_of, self.fx_source)
+        if any(value is not None for value in fx_fields):
+            if (self.credits_per_usd is not None or self.points_per_cny != 100
+                    or self.retail_rate_ppm != 100000
+                    or type(self.fx_cny_per_usd_micro) is not int
+                    or self.fx_cny_per_usd_micro <= 0
+                    or not self.fx_snapshot_id or not self.fx_source or not self.fx_as_of):
+                raise ValueError("complete explicit CNY retail and FX snapshot required")
+            instant = datetime.fromisoformat(self.fx_as_of)
+            if instant.tzinfo is None:
+                raise ValueError("FX snapshot timestamp must include its timezone")
+        elif type(self.credits_per_usd) is not int or self.credits_per_usd <= 0:
+            raise ValueError("billing conversion must be explicitly configured")
+        if not self.version:
+            raise ValueError("billing price version must be explicitly configured")
         if any(
             policy != "omitted_cache_subsets_are_zero" for policy in self.usage_policies.values()
         ):
@@ -150,5 +173,10 @@ class PriceBook:
         u, c, w, o = tariff.reservation_rates or tariff.rates(input_limit)
         return input_limit * max(u, c, w) + output_limit * o
 
-    def credit_numerator(self, cost_pico_usd: int) -> int:
+    def credit_numerator(self, cost_pico_usd: int) -> int | Fraction:
+        if self.points_per_cny is not None:
+            return Fraction(
+                cost_pico_usd * self.points_per_cny * self.fx_cny_per_usd_micro
+                * self.retail_rate_ppm, 10**12,
+            )
         return cost_pico_usd * self.credits_per_usd

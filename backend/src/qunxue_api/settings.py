@@ -190,6 +190,10 @@ class Settings(BaseSettings):
     )
     billing_credits_per_usd: int | None = Field(default=None, gt=0)
     billing_price_version: str | None = None
+    billing_fx_cny_per_usd_micro: int | None = Field(default=None, gt=0)
+    billing_fx_snapshot_id: str | None = None
+    billing_fx_as_of: str | None = None
+    billing_fx_source: str | None = None
     billing_model_aliases: dict[str, str] = Field(default_factory=dict)
     billing_usage_policies: dict[str, Literal["omitted_cache_subsets_are_zero"]] = Field(
         default_factory=dict

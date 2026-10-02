@@ -75,7 +75,8 @@ def _safe_usage_evidence(raw):
 
 
 class OperationScope:
-    def __init__(self, runtime, *, user_id, run_id, fingerprint, exempt=False, before_network=None):
+    def __init__(self, runtime, *, user_id, run_id, fingerprint, exempt=False,
+                 before_network=None, resume=False, settlement_connection=None):
         self.runtime = runtime
         self.run_id = str(run_id)
         self.user_id = str(user_id)
@@ -83,6 +84,8 @@ class OperationScope:
         self.exempt = exempt
         self.before_network = before_network
         self.finished = False
+        self.resume = resume
+        self.settlement_connection = settlement_connection
 
     def __enter__(self):
         self.runtime.start(
@@ -90,14 +93,22 @@ class OperationScope:
             run_id=self.run_id,
             fingerprint=self.fingerprint,
             exempt=self.exempt,
+            **({"resume": True} if self.resume else {}),
         )
         self.token = _current_operation.set(self)
         self.last_token = _last_attempt.set(None)
         return self
 
-    def finish(self, outcome):
-        self.runtime.finish(run_id=self.run_id, outcome=outcome)
+    def finish(self, outcome, *, connection=None):
+        if connection is None and outcome in {"success", "paused"} and self.settlement_connection:
+            connection = self.settlement_connection()
+        settled = self.runtime.finish(
+            run_id=self.run_id, outcome=outcome,
+            **({"connection": connection} if connection is not None else {}),
+        )
         self.finished = True
+        if outcome in {"success", "paused"} and settled in {"error", "cancelled", "refunded"}:
+            raise ModelDeliveryRejected("billing operation failed delivery checks")
 
     def __exit__(self, exc_type, exc, tb):
         try:

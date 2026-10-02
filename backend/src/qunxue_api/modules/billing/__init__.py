@@ -1,6 +1,7 @@
 from qunxue_api.modules.billing.domain import (
     INPUT_TOKENS_PER_CREDIT,
     OUTPUT_TOKENS_PER_CREDIT,
+    SIGNUP_GRANT,
     WELCOME_GRANT,
     BillingBudgetExceeded,
     BillingContextMissing,
@@ -38,6 +39,7 @@ __all__ = [
     "INPUT_TOKENS_PER_CREDIT",
     "OUTPUT_TOKENS_PER_CREDIT",
     "WELCOME_GRANT",
+    "SIGNUP_GRANT",
     "CreditCodeBatchConflict",
     "CreditCodeSpec",
     "CreditCodeUnavailable",

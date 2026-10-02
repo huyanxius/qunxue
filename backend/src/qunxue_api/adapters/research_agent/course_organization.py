@@ -199,7 +199,7 @@ class CourseOrganizationWorker:
                 )
                 if saved.rowcount != 1:
                     raise CourseWorkCancelled()
+                if scope:
+                    scope.finish("error" if error else "success", connection=session.connection())
                 session.commit()
-            if scope:
-                scope.finish("error" if error else "success")
             return True

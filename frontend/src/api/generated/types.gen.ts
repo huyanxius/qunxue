@@ -2957,6 +2957,22 @@ export type CreditPricingResponse = {
      */
     credits_per_usd?: number | null;
     /**
+     * Fx As Of
+     */
+    fx_as_of?: string | null;
+    /**
+     * Fx Cny Per Usd Micro
+     */
+    fx_cny_per_usd_micro?: number | null;
+    /**
+     * Fx Snapshot Id
+     */
+    fx_snapshot_id?: string | null;
+    /**
+     * Fx Source
+     */
+    fx_source?: string | null;
+    /**
      * Input Tokens Per Credit
      */
     input_tokens_per_credit: number;
@@ -2969,6 +2985,10 @@ export type CreditPricingResponse = {
      */
     output_tokens_per_credit: number;
     /**
+     * Points Per Cny
+     */
+    points_per_cny?: number | null;
+    /**
      * Price Version
      */
     price_version?: string | null;
@@ -2976,6 +2996,10 @@ export type CreditPricingResponse = {
      * Reference Currency
      */
     reference_currency?: string;
+    /**
+     * Retail Rate Ppm
+     */
+    retail_rate_ppm?: number | null;
 };
 
 /**
@@ -3006,6 +3030,10 @@ export type CreditRedemptionResponse = {
  * CreditSummaryResponse
  */
 export type CreditSummaryResponse = {
+    /**
+     * Active Usage Buckets
+     */
+    active_usage_buckets?: Array<CreditUsageBucketResponse>;
     /**
      * Available Balance
      */
@@ -3046,9 +3074,43 @@ export type CreditSummaryResponse = {
     }>;
     pricing: CreditPricingResponse;
     /**
+     * Quota Status
+     */
+    quota_status?: 'known' | 'unavailable';
+    /**
      * Total Entries
      */
     total_entries: number;
+    /**
+     * Total Granted Points
+     */
+    total_granted_points?: number | null;
+};
+
+/**
+ * CreditUsageBucketResponse
+ */
+export type CreditUsageBucketResponse = {
+    /**
+     * Available Points
+     */
+    available_points: number;
+    /**
+     * Bucket Id
+     */
+    bucket_id: string;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'subscription' | 'top_up' | 'welcome';
+    /**
+     * Limit Points
+     */
+    limit_points: number;
 };
 
 /**

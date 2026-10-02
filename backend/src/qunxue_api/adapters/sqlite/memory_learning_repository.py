@@ -318,6 +318,12 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             if total:
                 usage.budget_tokens += total - LEARNING_RESERVATION
 
+        from qunxue_api.adapters.model.metering import current_operation
+
+        scope = current_operation()
+        if scope is not None:
+            self.session.flush()
+            scope.finish("success", connection=self.session.connection())
         return True
 
     def failed(self, batch: LearningBatch) -> None:

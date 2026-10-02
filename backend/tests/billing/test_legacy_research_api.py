@@ -116,7 +116,7 @@ def test_existing_extraction_route_meter_owner_persistence_and_replay(client, mo
 
     with database.engine.connect() as c:
         assert c.scalar(text("SELECT balance FROM credit_accounts")) == (
-            9999 if mode == "success" else 10000
+            2999 if mode == "success" else 3000
         )
         if calls:
             row = c.execute(
@@ -255,7 +255,7 @@ def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
         assert retry.json()["error"]["code"] == "billing_provider_error"
     with database.engine.connect() as c:
         assert c.scalar(text("SELECT balance FROM credit_accounts")) == (
-            9996 if mode == "success" else 9997
+            2996 if mode == "success" else 2997
         )
         assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 2
     register(client, "synthetic-matching-other@example.com")
