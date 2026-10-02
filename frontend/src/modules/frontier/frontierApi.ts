@@ -1,16 +1,17 @@
 import { apiClient } from "../../api/client";
 import {
-  getFrontierStatus,
   getFrontierCalendar,
   getFrontierPeriodReport,
   getFrontierKnowledgeLinks,
   getFrontierOverview,
   listFrontierSources,
   listFrontierTopics,
-  searchFrontierRecords,
+  listFrontierSummaries,
+  getFrontierRecord,
 } from "../../api/generated/sdk.gen";
 import type {
   FrontierRecordResponse,
+  FrontierRecordSummaryResponse,
   FrontierTopicResponse,
   FrontierTopicPageResponse,
   FrontierSourcePageResponse,
@@ -22,7 +23,7 @@ import type {
 import type { FrontierRecord } from "./model";
 import type { FrontierDataset, FrontierTopic, FrontierEvidenceStatement, FrontierCorpusOverview } from "./dataset";
 
-function recordView(record: FrontierRecordResponse): FrontierRecord {
+export function recordView(record: FrontierRecordResponse): FrontierRecord {
   return {
     id: record.id,
     title: record.title,
@@ -67,7 +68,7 @@ export function topicView(topic: FrontierTopicResponse): FrontierTopic {
     key: topic.topic_key,
     title: topic.title,
     stream: topic.stream,
-    recordIds: topic.record_ids,
+    recordIds: topic.record_ids ?? [],
     sourceIds: topic.source_ids,
     sourceDistribution: topic.source_distribution,
     summary: topic.summary,
@@ -169,49 +170,51 @@ export function datasetFromSnapshot(
     corpusOverview: snapshot.overview ? corpusOverviewView(snapshot.overview) : undefined,
   };
 }
-export async function readFrontierDataset(asOf?: string): Promise<FrontierDataset> {
-  const [topics, sources, status] = await Promise.all([
-    listFrontierTopics({ client: apiClient, query: asOf ? { as_of: asOf } : undefined }),
-    listFrontierSources({ client: apiClient }),
-    getFrontierStatus({ client: apiClient }),
-  ]);
-  if (!topics.data || !sources.data || !status.data)
-    throw new Error("前沿资料服务暂时不可用，请稍后重试");
-  const records: FrontierRecord[] = [];
-  const seen = new Set<string>();
-  let offset = 0;
-  while (true) {
-    const result = await searchFrontierRecords({
-      client: apiClient,
-      query: { limit: 200, offset, as_of: topics.data.as_of },
-    });
-    if (!result.data) throw new Error("前沿资料尚未完整加载，请重试");
-    for (const row of result.data.items) {
-      if (!seen.has(row.id)) {
-        seen.add(row.id);
-        records.push(recordView(row));
-      }
-    }
-    const next = result.data.next_offset;
-    if (next === null) break;
-    if (next <= offset || result.data.items.length === 0)
-      throw new Error("前沿资料分页异常，请重试");
-    offset = next;
-  }
-  const overview = await getFrontierOverview({ client: apiClient, query: { as_of: topics.data.as_of } });
+// Lists never request full records. Detail-only fields stay empty until selection.
+export function summaryView(record: FrontierRecordSummaryResponse): FrontierRecord {
   return {
-    records,
-    topics: topics.data.items.map(topicView),
-    sources: sources.data.items.map((source) => ({
-      id: source.source_id,
-      name: source.name,
-      status: source.status,
-      lastSuccessAt: source.last_success_at,
-    })),
-    asOf: topics.data.as_of,
-    modelStatus: status.data.extractor_status,
-    corpusOverview: overview.data ? corpusOverviewView(overview.data) : undefined,
+    ...record, authors: record.authors ?? null, source_published_at: record.source_published_at ?? null,
+    published_at: record.published_at ?? null, publication_year: record.publication_year ?? null,
+    publication_issue: record.publication_issue ?? null, summary: record.summary ?? '',
+    verification_note: '', editorial_caveat: '', research_question: record.research_question ?? null, methods: null,
+    data: null, findings: record.findings ?? [], evidence: [], within_preferred_window: record.within_preferred_window ?? null,
   };
+}
+export interface FrontierListFilters {
+  asOf?: string; query?: string; stream?: 'research' | 'practice'; sourceId?: string; sourceName?: string; topicId?: string; focus?: boolean; limit?: number; recordIds?: string[];
+}
+export async function readFrontierSummaries(filters: FrontierListFilters, offset = 0, signal?: AbortSignal) {
+  const result = await listFrontierSummaries({ client: apiClient, signal, query: {
+    as_of: filters.asOf, q: filters.query || undefined, stream: filters.stream,
+    source_id: filters.sourceId || undefined, source_name: filters.sourceName || undefined, topic_id: filters.topicId || undefined, focus: filters.focus || undefined, record_ids: filters.recordIds, limit: filters.limit ?? 24, offset,
+  } });
+  if (!result.data) throw new Error('前沿资料服务暂时不可用，请稍后重试');
+  const page = result.data;
+  if (page.next_offset !== null && (page.next_offset <= offset || page.items.length === 0))
+    throw new Error('前沿资料分页异常，请重试');
+  return { records: page.items.map(summaryView), total: page.total, offset: page.offset,
+    nextOffset: page.next_offset, asOf: page.as_of };
+}
+export async function readFrontierSources(signal?: AbortSignal) {
+  const result = await listFrontierSources({ client: apiClient, signal });
+  if (!result.data) throw new Error('来源暂时无法读取');
+  return result.data.items.map(source => ({ id: source.source_id, name: source.name, status: source.status, lastSuccessAt: source.last_success_at }));
+}
+export async function readFrontierTopics(asOf: string, topicId?: string, signal?: AbortSignal) {
+  const result = await listFrontierTopics({ client: apiClient, signal, query: { as_of: asOf, detail: Boolean(topicId), topic_id: topicId } });
+  if (!result.data) throw new Error('议题暂时无法读取');
+  return result.data.items.map(topicView);
+}
+export async function readFrontierOverview(asOf: string, signal?: AbortSignal) {
+  const result = await getFrontierOverview({ client: apiClient, signal, query: { as_of: asOf } });
+  if (!result.data) throw new Error('研究统计暂时无法读取');
+  return corpusOverviewView(result.data);
+}
+export async function readFrontierRecord(recordId: string, asOf: string, signal?: AbortSignal) {
+  const result = await getFrontierRecord({ client: apiClient, signal, path: { record_id: recordId }, query: { as_of: asOf } });
+  if (result.response.status === 404) return null;
+  if (!result.data) throw new Error('文献详情暂时无法读取');
+  return recordView(result.data);
 }
 
 export function frontierPeriodQuery(topicKey: string, asOf: string, comparisonYear?: number) {
@@ -238,13 +241,13 @@ export function frontierPeriodQuery(topicKey: string, asOf: string, comparisonYe
     topic_key: topicKey, as_of: asOf,
   };
 }
-export async function readFrontierPeriod(topicKey: string, asOf: string, comparisonYear?: number) {
-  const result = await getFrontierPeriodReport({ client: apiClient, query: frontierPeriodQuery(topicKey, asOf, comparisonYear) });
+export async function readFrontierPeriod(topicKey: string, asOf: string, comparisonYear?: number, signal?: AbortSignal) {
+  const result = await getFrontierPeriodReport({ client: apiClient, signal, query: frontierPeriodQuery(topicKey, asOf, comparisonYear) });
   if (!result.data) throw new Error("时期报告暂时无法读取");
   return result.data;
 }
-export async function readFrontierCalendar(asOf: string) {
-  const result = await getFrontierCalendar({ client: apiClient, query: { year: Number(asOf.slice(0,4)), as_of: asOf }});
+export async function readFrontierCalendar(asOf: string, signal?: AbortSignal) {
+  const result = await getFrontierCalendar({ client: apiClient, signal, query: { year: Number(asOf.slice(0,4)), as_of: asOf }});
   if (!result.data) throw new Error("发表日历暂时无法读取");
   return result.data;
 }

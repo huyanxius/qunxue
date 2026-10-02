@@ -20,6 +20,7 @@ export interface FrontierRecord {
   summary: string;
   why_read?: string | null;
   media?: FrontierMedia[];
+  has_media?: boolean;
   topics: string[];
   verification_status: string;
   verification_note: string;

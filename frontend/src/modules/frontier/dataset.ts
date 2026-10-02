@@ -90,6 +90,8 @@ export interface FrontierTopic {
 }
 export interface FrontierDataset {
   records: readonly FrontierRecord[];
+  /** Live lists contain summaries for loaded pages, never the complete corpus. */
+  partialRecords?: boolean;
   topics: readonly FrontierTopic[];
   sources: readonly {
     id: string;

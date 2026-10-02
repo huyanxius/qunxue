@@ -10,6 +10,7 @@ from .overview_stats import corpus_statistics, visible_corpus_records
 from .period_report import period_report
 from .periods import PublicationInterval, available_as_of, browse_visible
 from .ports import FrontierStore
+from .read_projection import record_summary
 from .series import topic_series
 
 
@@ -105,14 +106,36 @@ class FrontierService:
         q: str = "",
         stream: str | None = None,
         source_id: str | None = None,
+        source_name: str | None = None,
         topic_id: str | None = None,
         since_days: int | None = None,
         material_type: str | None = None,
         limit: int = 24,
         offset: int = 0,
+        summaries: bool = False,
+        focus: bool = False,
+        record_ids: list[str] | None = None,
         as_of: date | None = None,
     ) -> dict:
         as_of = as_of or frontier_today()
+        sql_search = getattr(self.store, "search_records", None)
+        dense_ready = q and self.vector_retriever and self.vector_retriever.status == "ready"
+        if sql_search and not dense_ready:
+            return sql_search(
+                q=q,
+                stream=stream,
+                source_id=source_id,
+                source_name=source_name,
+                topic_id=topic_id,
+                since_days=since_days,
+                material_type=material_type,
+                limit=limit,
+                offset=offset,
+                as_of=as_of,
+                summaries=summaries,
+                focus=focus,
+                record_ids=record_ids,
+            )
         records = [
             r for r in self.store.list_records() if browse_visible(r) and available_as_of(r, as_of)
         ]
@@ -138,6 +161,8 @@ class FrontierService:
             if stream and stream != record_stream:
                 continue
             if source_id and record["source_id"] != source_id:
+                continue
+            if source_name and record["source_name"] != source_name:
                 continue
             if material_type and record["material_type"] != material_type:
                 continue
@@ -184,20 +209,42 @@ class FrontierService:
             if record["canonical_study_id"] not in seen:
                 seen.add(record["canonical_study_id"])
                 deduped.append(record)
+        if record_ids is not None:
+            deduped = [r for r in deduped if r["id"] in record_ids]
+        if summaries:
+            deduped.sort(key=lambda r: r["id"])
+            deduped.sort(
+                key=lambda r: r.get("published_at") or r.get("source_published_at") or "",
+                reverse=True,
+            )
+        if focus:
+            deduped = [
+                r
+                for r in deduped
+                if r.get("research_question", "")
+                and any((text or "").strip() for text in r.get("findings") or [])
+                and r["verification_status"] in {"lead_only", "verified_frontier"}
+            ]
         total = len(deduped)
         return {
-            "items": deduped[offset : offset + limit],
+            "items": [
+                record_summary(r) if summaries else r for r in deduped[offset : offset + limit]
+            ],
             "total": total,
             "offset": offset,
             "limit": limit,
             "next_offset": offset + limit if offset + limit < total else None,
             "as_of": as_of.isoformat(),
             "search_mode": "lexical_dense_rrf" if dense else "lexical",
-            "sort_basis": "source_page_date_desc_then_id_desc",
+            "sort_basis": "publication_date_or_source_page_date_desc_then_id_asc"
+            if summaries
+            else "source_page_date_desc_then_id_desc",
             "date_filter_basis": "exact_publication_date_only",
         }
 
-    def topics(self, *, as_of: date | None = None) -> list[dict]:
+    def topics(
+        self, *, as_of: date | None = None, detail: bool = True, topic_id: str | None = None
+    ) -> list[dict]:
         as_of = as_of or frontier_today()
         visible = [
             r for r in self.store.list_records() if browse_visible(r) and available_as_of(r, as_of)
@@ -210,6 +257,15 @@ class FrontierService:
         briefs = {f"{b['topic_key']}-{b['stream']}": b for b in self.store.list_briefs()}
         sources = self.store.list_sources()
         issue_coverage = self.store.list_issue_coverage()
+        if topic_id:
+            topics = [topic for topic in topics if topic["id"] == topic_id]
+        source_order = (
+            sorted(
+                visible, key=lambda r: (r.get("source_published_at") or "", r["id"]), reverse=True
+            )
+            if not detail
+            else []
+        )
         for topic in topics:
             topic.update(topic_series(topic, visible, sources, issue_coverage, as_of))
             if coverage_start is None:
@@ -237,6 +293,44 @@ class FrontierService:
             if brief:
                 topic["summary"] = brief["summary"]
                 topic["summary_method"] = brief["generated_by"]
+            if not detail:
+                member_ids = set(topic["record_ids"])
+                representative = next((r for r in source_order if r["id"] in member_ids), None)
+                if not brief and representative:
+                    topic["summary"] = (
+                        representative.get("research_question")
+                        or representative.get("summary")
+                        or ""
+                    )
+                topic.update(record_ids=[], evidence=[])
+                topic["summary"] = topic["summary"][:280]
+                # Preserve the existing row headline/sparkline, without transporting
+                # its corpus-sized evidence membership or detail analysis.
+                for key in ("monthly_series", "issue_series"):
+                    for point in topic.get(key, []):
+                        for field in list(point):
+                            if field.endswith("record_ids"):
+                                point[field] = []
+                if brief:
+                    topic["editorial_brief"] = {
+                        **brief,
+                        "evidence_record_ids": [],
+                        "research_brief": None,
+                    }
+                    research = brief.get("research_brief")
+                    if research:
+                        topic["research_brief"] = {
+                            **research,
+                            "evidence_record_ids": [],
+                            "priority_reads": [],
+                            "consensus": [],
+                            "differences": [],
+                            "methods": [],
+                            "research_implication": None,
+                            "development": {**research["development"], "evidence_record_ids": []}
+                            if research.get("development")
+                            else None,
+                        }
         return topics
 
     def coverage_start(self, as_of: date) -> date | None:

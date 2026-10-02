@@ -98,6 +98,7 @@ MODULE_INTERNAL_ROLE_ALIASES = {
     "calendar": "domain",
     "overview": "domain",
     "overview_stats": "domain",
+    "read_projection": "domain",
     "period_report": "domain",
     "periods": "domain",
     "series": "domain",

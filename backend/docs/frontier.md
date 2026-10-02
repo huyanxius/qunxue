@@ -225,3 +225,26 @@ kind仅支持figure/chart/article_photo/illustration，排除logo、banner和默
 大记录文件以 `qunxue-json-shards-v1` 清单和同目录 `.parts/` JSON 数组保存，每片不超过 250,000 UTF-8 字节。导入/回放、预览导出和离线组装命令不变；不要对清单直接使用 `json.loads` 当作业务数据。Python 消费者应使用随包提供的 `json_shards.load_json`（后端为 `qunxue_api.json_shards.load_json`）。必须连同清单复制整个 `.parts/` 目录；加载器拒绝越界路径、重复分片、缺片、SHA256 或记录数量不匹配。
 
 这只是无损存储方式变更，记录顺序、字段和规范记录哈希不变。组装输出仍为普通 JSON，当前扩展数据的全部冻结输出 SHA256 不变。两个工具包各带相同的小型标准库加载器，以保持可单独移动、离线复现。`snapshot.json` 与 `SHA256SUMS` 记录新的清单和分片文件哈希。
+
+### Lightweight public reads
+
+`GET /api/frontier/summaries` returns at most the requested page (default 24),
+with bounded abstract/question/finding text and existing list badges. It uses
+SQLite projections and SQL filtering, canonical deduplication and pagination;
+it never deserializes the full corpus for an ordinary lexical list request.
+Its display order matches the existing reading UI (publication date, falling
+back to source-page date, then ID). `/search` keeps its prior ordering and full
+record contract. The optional configured dense-search path retains its existing
+RRF semantics. Details continue through `/records/{id}?as_of=...`.
+
+`/topics?detail=false` keeps row headlines and small chart values while omitting
+record/evidence memberships. Selecting a topic uses `detail=true&topic_id=...`.
+Calendar, topics, overview and reports load independently of the first page.
+
+Migration `20261002_0462` backfills the read projection. ORM record writes keep
+it current; transactional SQLite triggers advance a shared dataset revision on
+record, source/coverage, brief and topic-run writes. Import, update and withdrawal
+therefore invalidate the API's bounded public response cache across processes.
+The cache key includes revision, date and query parameters; ETag responses
+require revalidation. No authenticated/private APIs or knowledge links receive
+these public cache headers. No external cache service or CDN rule is required.

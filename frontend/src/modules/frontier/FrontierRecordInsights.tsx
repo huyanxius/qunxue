@@ -7,8 +7,8 @@ import { readRecordInsights } from './readingInsightsApi';
 export interface FrontierRecordInsightsProps { recordId: string; asOf?: string }
 export function FrontierRecordInsights({ recordId, asOf }: FrontierRecordInsightsProps) {
   const query = useQuery({ queryKey: ['frontier-record-insights', recordId, asOf],
-    queryFn: () => readRecordInsights(recordId, asOf), enabled: Boolean(recordId),
-    staleTime: 0, refetchOnMount: 'always', refetchInterval: false, refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false,
+    queryFn: ({ signal }) => readRecordInsights(recordId, asOf, signal), enabled: Boolean(recordId),
+    staleTime: 5 * 60_000, gcTime: 30 * 60_000, refetchOnMount: true, refetchInterval: false, refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false,
   });
   if (query.isPending || query.isFetching) return <BrandLoading compact message="正在读取阅读依据…" />;
   if (query.isError || !query.data) return <div role="alert">阅读依据暂时无法读取。<button onClick={() => void query.refetch()}>重试</button></div>;

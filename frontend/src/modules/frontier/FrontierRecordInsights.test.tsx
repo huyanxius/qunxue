@@ -31,23 +31,19 @@ it('rejects cross-version details and offers a manual refresh', async () => {
   expect(screen.queryByRole('heading', { name: '知识阅读线索' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: '刷新阅读依据' })).toBeVisible();
 });
-it('reloads on reopening the same record and hides cached evidence until both requests finish', async () => {
+it('reuses matching cached evidence when reopening and refreshes only on request', async () => {
   let version = 1;
-  let requestGate: Promise<void> | undefined;
-  vi.stubGlobal('fetch', async (request: Request) => { await requestGate; return response(request, version); });
+  const fetchMock = vi.fn(async (request: Request) => response(request, version));
+  vi.stubGlobal('fetch', fetchMock);
   const client = new QueryClient();
   const first = mount(client);
   expect(await screen.findByText(/文献版本 1/)).toBeVisible();
   first.unmount();
   version = 2;
-  let release: () => void = () => {};
-  requestGate = new Promise<void>(resolve => { release = resolve; });
   mount(client);
-  expect(screen.getByRole('status')).toHaveTextContent('正在读取');
-  expect(screen.queryByText(/文献版本 1/)).not.toBeInTheDocument();
-  release();
-  expect(await screen.findByText(/文献版本 2/)).toBeVisible();
-  version = 3;
+  expect(screen.getByText(/文献版本 1/)).toBeVisible();
+  expect(fetchMock).toHaveBeenCalledTimes(2);
   fireEvent.click(screen.getByRole('button', { name: '刷新阅读依据' }));
-  expect(await screen.findByText(/文献版本 3/)).toBeVisible();
+  expect(await screen.findByText(/文献版本 2/)).toBeVisible();
+  expect(fetchMock).toHaveBeenCalledTimes(4);
 });

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { frontierRecords } from "./__fixtures__/catalog";
-import { readFrontierDataset, readFrontierPeriod, readFrontierCalendar, readFrontierKnowledgeLinks, topicView, corpusOverviewView } from "./frontierApi";
+import { readFrontierSummaries, readFrontierRecord, readFrontierTopics, readFrontierPeriod, readFrontierCalendar, readFrontierKnowledgeLinks, topicView, corpusOverviewView } from "./frontierApi";
 const sdk = vi.hoisted(() => ({
-  searchFrontierRecords: vi.fn(),
+  listFrontierSummaries: vi.fn(),
+  getFrontierRecord: vi.fn(),
   listFrontierTopics: vi.fn(),
   listFrontierSources: vi.fn(),
   getFrontierStatus: vi.fn(),
@@ -24,37 +25,40 @@ beforeEach(() => {
     data: { extractor_status: "not_configured" },
   });
 });
-describe("persistent frontier adapter", () => {
-  it("loads all pages and deduplicates IDs without any model dependency", async () => {
-    sdk.searchFrontierRecords
-      .mockResolvedValueOnce({
-        data: { items: [{ ...frontierRecords[0], why_read: "从组织机制理解研究问题。", media: [{ url: "https://publisher.example/figure.png", caption: "研究机制图", source_url: "https://publisher.example/paper", kind: "figure" }] }, ...frontierRecords.slice(1, 6)], next_offset: 6 },
-      })
-      .mockResolvedValueOnce({
-        data: { items: frontierRecords.slice(5), next_offset: null },
-      });
-    const result = await readFrontierDataset();
-    expect(result.records).toHaveLength(12);
-    expect(result.records[0].why_read).toBe("从组织机制理解研究问题。");
-    expect(result.records[0].media?.[0]).toMatchObject({ url: "https://publisher.example/figure.png", kind: "figure", caption: "研究机制图" });
-    expect(result.modelStatus).toBe("not_configured");
-    expect(sdk.searchFrontierRecords).toHaveBeenLastCalledWith({
-      client: {},
-      query: { limit: 200, offset: 6, as_of: "2026-10-01" },
-    });
+describe("lightweight frontier adapter", () => {
+  it("requests only one 24-record summary page with server filters and cancellation", async () => {
+    const signal = new AbortController().signal;
+    sdk.listFrontierSummaries.mockResolvedValue({ data: { items: [{ ...frontierRecords[0], source_id: 'journal' }], total: 50, offset: 0, next_offset: 24, as_of: '2026-10-01' } });
+    const result = await readFrontierSummaries({ asOf: '2026-10-01', query: '养老', stream: 'research', sourceId: 'journal', topicId: 'care-research' }, 0, signal);
+    expect(result).toMatchObject({ total: 50, nextOffset: 24, asOf: '2026-10-01' });
+    expect(result.records[0]).toMatchObject({ findings: frontierRecords[0].findings, evidence: [], research_question: frontierRecords[0].research_question });
+    expect(sdk.listFrontierSummaries).toHaveBeenCalledExactlyOnceWith({ client: {}, signal, query: { q: '养老', stream: 'research', source_id: 'journal', source_name: undefined, topic_id: 'care-research', focus: undefined, record_ids: undefined, limit: 24, offset: 0, as_of: '2026-10-01' } });
+    expect(sdk.getFrontierRecord).not.toHaveBeenCalled();
+    expect(sdk.listFrontierTopics).not.toHaveBeenCalled();
+    expect(sdk.getFrontierOverview).not.toHaveBeenCalled();
   });
-  it("reports an unavailable service rather than showing seed records as live data", async () => {
-    sdk.listFrontierTopics.mockResolvedValue({ data: undefined });
-    await expect(readFrontierDataset()).rejects.toThrow(
-      "前沿资料服务暂时不可用",
-    );
-    expect(sdk.searchFrontierRecords).not.toHaveBeenCalled();
+  it("does not substitute seed records or accept a broken next-page pointer", async () => {
+    sdk.listFrontierSummaries.mockResolvedValueOnce({ data: undefined });
+    await expect(readFrontierSummaries({})).rejects.toThrow('前沿资料服务暂时不可用');
+    sdk.listFrontierSummaries.mockResolvedValueOnce({ data: { items: [frontierRecords[0]], next_offset: 24 } });
+    await expect(readFrontierSummaries({}, 24)).rejects.toThrow('分页异常');
   });
-  it("stops invalid pagination instead of looping forever", async () => {
-    sdk.searchFrontierRecords.mockResolvedValue({
-      data: { items: frontierRecords.slice(0, 1), next_offset: 0 },
-    });
-    await expect(readFrontierDataset()).rejects.toThrow("分页异常");
+  it("loads topic detail only when explicitly selected", async () => {
+    const signal = new AbortController().signal;
+    await readFrontierTopics('2026-10-01', undefined, signal);
+    expect(sdk.listFrontierTopics).toHaveBeenLastCalledWith({ client: {}, signal, query: { as_of: '2026-10-01', detail: false, topic_id: undefined } });
+    await readFrontierTopics('2026-10-01', 'care-research', signal);
+    expect(sdk.listFrontierTopics).toHaveBeenLastCalledWith({ client: {}, signal, query: { as_of: '2026-10-01', detail: true, topic_id: 'care-research' } });
+  });
+  it("requests one historical record and distinguishes unavailable from missing", async () => {
+    const signal = new AbortController().signal;
+    sdk.getFrontierRecord.mockResolvedValueOnce({ data: frontierRecords[0], response: { status: 200 } });
+    expect((await readFrontierRecord('one', '2026-09-28', signal))?.id).toBe(frontierRecords[0].id);
+    expect(sdk.getFrontierRecord).toHaveBeenLastCalledWith({ client: {}, signal, path: { record_id: 'one' }, query: { as_of: '2026-09-28' } });
+    sdk.getFrontierRecord.mockResolvedValueOnce({ response: { status: 404 } });
+    expect(await readFrontierRecord('gone', '2026-09-28')).toBeNull();
+    sdk.getFrontierRecord.mockResolvedValueOnce({ response: { status: 503 } });
+    await expect(readFrontierRecord('one', '2026-09-28')).rejects.toThrow('文献详情暂时无法读取');
   });
 });
 
@@ -98,7 +102,7 @@ it("loads real calendar, period report and read-only knowledge leads through the
   expect((await readFrontierCalendar("2026-01-20")).year).toBe(2026);
   expect((await readFrontierPeriod("youth-research","2026-01-20")).current_share).toBeNull();
   expect((await readFrontierKnowledgeLinks("r")).record_id).toBe("r");
-  expect(sdk.getFrontierCalendar).toHaveBeenCalledWith({client:{},query:{year:2026,as_of:"2026-01-20"}});
+  expect(sdk.getFrontierCalendar).toHaveBeenCalledWith({client:{},signal:undefined,query:{year:2026,as_of:"2026-01-20"}});
   expect(sdk.getFrontierPeriodReport.mock.calls[0][0].query).toMatchObject({topic_key:"youth",as_of:"2026-01-20",previous_start:"2024-01-01",current_start:"2025-01-01",previous_end:"2024-12-31",current_end:"2025-12-31"});
   expect(sdk.getFrontierKnowledgeLinks.mock.calls[0][0].path).toEqual({record_id:"r"});
 });

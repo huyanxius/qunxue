@@ -46,7 +46,11 @@ const routeDataset: FrontierDataset = {
 };
 const readDataset = vi.hoisted(() => vi.fn());
 vi.mock("../modules/frontier/frontierApi", () => ({
-  readFrontierDataset: readDataset,
+  readFrontierSummaries: async () => ({ records: (await readDataset()).records, total: 1, offset: 0, nextOffset: null, asOf: '2026-10-01' }),
+  readFrontierSources: vi.fn(async () => []),
+  readFrontierTopics: vi.fn(async () => []),
+  readFrontierOverview: vi.fn(async () => undefined),
+  readFrontierRecord: async () => (await readDataset()).records[0],
   readFrontierCalendar: vi.fn(async () => null),
   readFrontierPeriod: vi.fn(async () => null),
 }));

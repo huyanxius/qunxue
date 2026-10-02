@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
@@ -13,15 +13,20 @@ from qunxue_api.api.contracts.frontier import (
     FrontierReadingPriorityResponse,
     FrontierRecordPageResponse,
     FrontierRecordResponse,
+    FrontierRecordSummaryPageResponse,
     FrontierSourcePageResponse,
     FrontierStatusResponse,
     FrontierTopicPageResponse,
 )
+from qunxue_api.api.frontier_cache import FrontierPublicReadRoute
 from qunxue_api.api.presenters.frontier import public_record
 from qunxue_api.modules.frontier_knowledge import frontier_today
 
 router = APIRouter(
-    prefix="/api/frontier", tags=["frontier"], responses={422: {"model": ErrorResponse}}
+    prefix="/api/frontier",
+    tags=["frontier"],
+    responses={422: {"model": ErrorResponse}},
+    route_class=FrontierPublicReadRoute,
 )
 
 
@@ -62,6 +67,43 @@ def search_frontier_records(
 
 
 @router.get(
+    "/summaries",
+    operation_id="list_frontier_summaries",
+    response_model=FrontierRecordSummaryPageResponse,
+)
+def list_frontier_summaries(
+    request: Request,
+    q: str = Query(default="", max_length=200),
+    stream: Literal["research", "practice"] | None = None,
+    source_id: str | None = None,
+    source_name: str | None = None,
+    topic_id: str | None = None,
+    since_days: int | None = Query(default=None, ge=1, le=3660),
+    material_type: str | None = None,
+    limit: int = Query(default=24, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    as_of: date | None = None,
+    focus: bool = False,
+    record_ids: Annotated[list[str] | None, Query(max_length=100)] = None,
+):
+    return request.app.state.frontier_service.search(
+        q=q,
+        stream=stream,
+        source_id=source_id,
+        source_name=source_name,
+        topic_id=topic_id,
+        since_days=since_days,
+        material_type=material_type,
+        limit=limit,
+        offset=offset,
+        as_of=as_of,
+        summaries=True,
+        focus=focus,
+        record_ids=record_ids,
+    )
+
+
+@router.get(
     "/records/{record_id}",
     operation_id="get_frontier_record",
     response_model=FrontierRecordResponse,
@@ -77,10 +119,14 @@ def get_frontier_record(request: Request, record_id: str, as_of: date | None = N
 @router.get(
     "/topics", operation_id="list_frontier_topics", response_model=FrontierTopicPageResponse
 )
-def list_frontier_topics(request: Request, as_of: date | None = None):
+def list_frontier_topics(
+    request: Request, as_of: date | None = None, detail: bool = True, topic_id: str | None = None
+):
     as_of = as_of or frontier_today()
     return {
-        "items": request.app.state.frontier_service.topics(as_of=as_of),
+        "items": request.app.state.frontier_service.topics(
+            as_of=as_of, detail=detail, topic_id=topic_id
+        ),
         "as_of": as_of.isoformat(),
     }
 

@@ -85,6 +85,29 @@ class FrontierRecordResponse(BaseModel):
     within_preferred_window: bool | None = None
 
 
+class FrontierRecordSummaryResponse(BaseModel):
+    id: str
+    title: str
+    authors: list[str] | None = None
+    source_id: str
+    source_name: str
+    source_publisher: str
+    source_published_at: str | None = None
+    published_at: str | None = None
+    published_at_display: str
+    publication_year: int | None = None
+    publication_issue: int | None = None
+    url: str
+    summary: str
+    topics: list[str]
+    material_type: str
+    verification_status: str
+    has_media: bool = False
+    research_question: str | None = None
+    findings: list[str] = Field(default_factory=list)
+    within_preferred_window: bool | None = None
+
+
 class FrontierRecordPageResponse(BaseModel):
     items: list[FrontierRecordResponse]
     total: int
@@ -95,6 +118,10 @@ class FrontierRecordPageResponse(BaseModel):
     search_mode: str
     sort_basis: str
     date_filter_basis: str
+
+
+class FrontierRecordSummaryPageResponse(FrontierRecordPageResponse):
+    items: list[FrontierRecordSummaryResponse]
 
 
 class FrontierTopicCountsResponse(BaseModel):
