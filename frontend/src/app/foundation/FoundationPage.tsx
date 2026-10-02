@@ -9,6 +9,7 @@ import { FoundationAgentReveal } from './FoundationAgentReveal'
 import { FoundationLightPaperShader } from './FoundationLightPaperShader'
 import { FoundationModelDemo, FoundationQuestionFlow } from './FoundationModelDemo'
 import './foundation.css'
+import { SiteHeader } from '../site/SiteHeader'
 
 const researchOrigins = [
   '真实困惑',
@@ -348,28 +349,9 @@ export function FoundationPage({ authenticated = false }: { authenticated?: bool
   return (
     <div className="public-site">
       <FoundationDarkFieldController />
-      <header className="public-header">
-        <div className="public-header__inner">
-          <Link className="public-wordmark" to="/welcome" aria-label="群学致知介绍页">
-            <img src={brandMark} alt="" />
-            <span>
-              <strong>群学致知</strong>
-              <small>COLLECTIVE INQUIRY</small>
-            </span>
-          </Link>
-          <nav className="public-navigation" aria-label="介绍页导航">
-            <a href="#method">研究方法</a>
-            <Link to="/knowledge">知识库</Link>
-            {authenticated ? (
-              <Link className="public-navigation__account" to="/app">工作台</Link>
-            ) : (
-              <Link className="public-navigation__account" to="/login">登录</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SiteHeader authenticated={authenticated} />
 
-      <main>
+      <main id="site-main">
         <section className="foundation-hero" aria-labelledby="foundation-title">
           <div className="foundation-hero__inner">
             <div className="foundation-hero__copy">
