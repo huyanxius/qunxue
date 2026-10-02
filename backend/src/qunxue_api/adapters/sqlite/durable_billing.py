@@ -563,8 +563,11 @@ class DurableBilling:
             charged = run["charged_points"]
             if not run["exempt"]:
                 new_total = previous_total - old_exact + numerator
-                points = (new_total // PICO_USD - previous_total // PICO_USD
-                          if delivered else -charged)
+                # Integer rounding belongs to the account's shared exact total.
+                # Removing a run also removes its fraction: refund the signed
+                # change in that total's floor, not this run's historical debit.
+                # Other runs/phases may have consumed its fractional carry.
+                points = new_total // PICO_USD - previous_total // PICO_USD
                 if delivered:
                     account = self._one(
                         conn, "SELECT balance FROM credit_accounts WHERE user_id=:user",
@@ -574,7 +577,7 @@ class DurableBilling:
                         outcome, delivered = "error", False
                         numerator = 0
                         new_total = previous_total - old_exact
-                        points = -charged
+                        points = new_total // PICO_USD - previous_total // PICO_USD
                 if new_total != previous_total:
                     conn.execute(
                         text("INSERT INTO billing_precision(user_id,total_credit_pico) "
@@ -582,7 +585,9 @@ class DurableBilling:
                              "total_credit_pico=excluded.total_credit_pico"),
                         {"user": run["user_id"], "total": str(new_total)},
                     )
-                if points or (delivered and numerator != old_exact):
+                # Record a zero-point fractional withdrawal as well; the stable
+                # refund receipt and terminal status make repeated refunds no-ops.
+                if points or numerator != old_exact:
                     conn.execute(
                         text("UPDATE credit_accounts SET balance=balance+:change,updated_at=:now "
                              "WHERE user_id=:user"),
