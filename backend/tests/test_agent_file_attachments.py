@@ -113,7 +113,7 @@ def test_explicit_attachment_can_read_other_owned_task_and_reject_other_user(cli
 def test_standalone_file_answer_survives_history_and_respects_scope(client, mode):
     from types import SimpleNamespace
 
-    from qunxue_api.modules.agent_conversation import AgentRunResult
+    from qunxue_api.modules.agent_conversation import AgentResearchEvent, AgentRunResult
 
     user_id = register(client)
     source = upload(client)
@@ -124,6 +124,14 @@ def test_standalone_file_answer_survives_history_and_respects_scope(client, mode
 
     class FileRunner:
         runtime_identity = SimpleNamespace(provider="test", model="test")
+
+        def prepare_research(self, *, prompt, conversation, on_event, mode):
+            if mode == "deep_research":
+                on_event(AgentResearchEvent(
+                    kind="plan", payload={"title": prompt, "steps": ["读取已选择的材料"]},
+                ))
+                return "research"
+            return "conversation"
 
         def run(self, *, prompt, conversation, tools):
             files = tools.material_prompt_context
@@ -149,17 +157,31 @@ def test_standalone_file_answer_survives_history_and_respects_scope(client, mode
                 model="test",
             )
 
+    request_key = str(uuid4())
     with client.app.state.disciplinary_agent_scope() as app:
         app._runner = FileRunner()
         execution = app.run_turn(
             user_id=user_id,
             conversation_id=UUID(context["conversation_id"]),
             prompt="夜间互助有几位居民？",
-            idempotency_key=str(uuid4()),
+            idempotency_key=request_key,
             workspace="agent",
             mode=mode,
             material_ids=(UUID(source["material_id"]),),
         )
+        if mode == "deep_research":
+            assert execution.turn is None
+            assert execution.pending_research["state"] == "awaiting_plan_confirmation"
+            execution = app.run_turn(
+                user_id=user_id,
+                conversation_id=execution.conversation.conversation_id,
+                prompt="夜间互助有几位居民？",
+                idempotency_key=request_key,
+                workspace="agent",
+                mode=mode,
+                deep_research_run_id=execution.run_id,
+                deep_research_action="confirm",
+            )
     history = client.get(
         f"/api/agent/conversations/{execution.conversation.conversation_id}"
     ).json()

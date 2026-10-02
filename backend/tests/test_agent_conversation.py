@@ -3,7 +3,7 @@ import threading
 import traceback
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
 import pytest
@@ -119,6 +119,14 @@ def _agent_route_executor(
             )
         )
     return ModelRouteExecutor(endpoints=tuple(endpoints))
+
+
+@pytest.fixture
+def _block_external_model_requests(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def unexpected_request(*args, **kwargs):
+        pytest.fail("Agent fixture must not make an external model request")
+
+    monkeypatch.setattr(OpenAIChatModel, "_completions_create", unexpected_request)
 
 
 def test_agent_runtime_mode_honors_api_key_override_without_using_legacy_gateway() -> None:
@@ -1017,6 +1025,7 @@ def test_sqlite_application_persists_failed_run_before_outer_rollback(client) ->
         assert failed.status == "failed"
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
     client,
     monkeypatch: pytest.MonkeyPatch,
@@ -1036,11 +1045,16 @@ def test_sqlite_application_replaces_start_placeholders_with_runner_identity(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         configured_runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(output="已配置模型的回答。"),
+        "run",
+        AsyncMock(return_value=SimpleNamespace(output="已配置模型的回答。")),
     )
 
     observed_before_result: dict[str, tuple[str, str] | None] = {}
@@ -1628,6 +1642,7 @@ def test_reading_an_unknown_knowledge_id_returns_a_tool_error() -> None:
     }
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_runner_sends_previous_turns_as_role_preserving_message_history(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1636,15 +1651,20 @@ def test_agent_runner_sends_previous_turns_as_role_preserving_message_history(
         api_key="local-test-key",
         model="sociology-model",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://models.example.test/v1",
+            api_key="local-test-key",
+            model="sociology-model",
+        ),
     )
     captured: dict[str, object] = {}
 
-    def run_sync(user_prompt, **kwargs):
+    async def run(user_prompt, **kwargs):
         captured["user_prompt"] = user_prompt
         captured["message_history"] = kwargs.get("message_history")
         return SimpleNamespace(output="米德与戈夫曼的自我理论侧重不同。")
 
-    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    monkeypatch.setattr(runner._agent, "run", run)
     previous_turn = AgentTurn.create(
         user_content="请介绍米德的自我理论。",
         assistant_content="米德区分了主我与客我。",
@@ -1772,6 +1792,7 @@ def test_agent_identity_request_is_answered_naturally_by_the_agent() -> None:
     assert regular_runner.calls == 1
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1787,11 +1808,16 @@ def test_agent_sync_uses_the_main_model_when_no_knowledge_tool_is_needed(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(output="这是基于通用社会学知识的回答。"),
+        "run",
+        AsyncMock(return_value=SimpleNamespace(output="这是基于通用社会学知识的回答。")),
     )
 
     result = runner.run(prompt="问题", conversation=(), tools=_Tools())
@@ -2107,6 +2133,7 @@ def test_agent_policy_answers_tool_strategy_questions_without_searching() -> Non
     assert result.answer == "我会根据问题的社会学内容判断是否需要知识库支持。"
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2127,11 +2154,16 @@ def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(output="这是没有使用该候选证据的回答。"),
+        "run",
+        AsyncMock(return_value=SimpleNamespace(output="这是没有使用该候选证据的回答。")),
     )
 
     result = runner.run(prompt="解释一个社会现象", conversation=(), tools=_Tools())
@@ -2139,6 +2171,7 @@ def test_agent_does_not_auto_cite_tool_evidence_the_model_did_not_select(
     assert result.citations == ()
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_does_not_infer_citations_by_scanning_a_bare_knowledge_id(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2159,13 +2192,18 @@ def test_agent_does_not_infer_citations_by_scanning_a_bare_knowledge_id(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(
+        "run",
+        AsyncMock(return_value=SimpleNamespace(
             output="知识卡片 ID：D1:C029，可从社会行动四类型展开理解。"
-        ),
+        )),
     )
 
     result = runner.run(prompt="解释社会行动四类型", conversation=(), tools=_Tools())
@@ -2173,6 +2211,7 @@ def test_agent_does_not_infer_citations_by_scanning_a_bare_knowledge_id(
     assert result.citations == ()
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_does_not_infer_citations_by_scanning_a_catalog_suffix(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2193,13 +2232,18 @@ def test_agent_does_not_infer_citations_by_scanning_a_catalog_suffix(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(
+        "run",
+        AsyncMock(return_value=SimpleNamespace(
             output="知识库中的个体化条目（C1059）支持这一理论线索。"
-        ),
+        )),
     )
 
     result = runner.run(prompt="解释年轻人的孤独", conversation=(), tools=_Tools())
@@ -2207,6 +2251,7 @@ def test_agent_does_not_infer_citations_by_scanning_a_catalog_suffix(
     assert result.citations == ()
 
 
+@pytest.mark.usefixtures("_block_external_model_requests")
 def test_agent_rejects_an_ambiguous_catalog_suffix(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2231,11 +2276,16 @@ def test_agent_rejects_an_ambiguous_catalog_suffix(
         api_key="local-test-key",
         model="deepseek-v4-flash",
         timeout_seconds=30,
+        route_executor=_agent_route_executor(
+            base_url="https://api.deepseek.com",
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+        ),
     )
     monkeypatch.setattr(
         runner._agent,
-        "run_sync",
-        lambda *args, **kwargs: SimpleNamespace(output="可参考知识条目 C001。"),
+        "run",
+        AsyncMock(return_value=SimpleNamespace(output="可参考知识条目 C001。")),
     )
 
     result = runner.run(prompt="解释社会行动", conversation=(), tools=_Tools())
@@ -2541,17 +2591,15 @@ def test_agent_shared_router_records_primary_and_fallback_with_run_context(
 
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
 
-    def run_sync(*args, **kwargs):
+    async def run(*args, **kwargs):
         del args, kwargs
-        result = asyncio.run(
-            runner._agent.model._completions_create(
-                [], False, {}, ModelRequestParameters()
-            )
+        result = await runner._agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
         )
         assert result is completed_request
         return SimpleNamespace(output="路由完成")
 
-    monkeypatch.setattr(runner._agent, "run_sync", run_sync)
+    monkeypatch.setattr(runner._agent, "run", run)
 
     result = runner.run(
         prompt="你好",
@@ -2608,12 +2656,10 @@ def test_planner_route_context_is_correlated_and_reset_after_every_exit(
             raise asyncio.CancelledError
         return object()
 
-    def planner_run_sync(*args, **kwargs):
+    async def planner_run(*args, **kwargs):
         del args, kwargs
-        asyncio.run(
-            runner._planner_agent.model._completions_create(
-                [], False, {}, ModelRequestParameters()
-            )
+        await runner._planner_agent.model._completions_create(
+            [], False, {}, ModelRequestParameters()
         )
         if outcome == "error":
             raise RuntimeError("planner failed after completion")
@@ -2627,7 +2673,7 @@ def test_planner_route_context_is_correlated_and_reset_after_every_exit(
         }
     )
     monkeypatch.setattr(OpenAIChatModel, "_completions_create", request_once)
-    monkeypatch.setattr(runner._planner_agent, "run_sync", planner_run_sync)
+    monkeypatch.setattr(runner._planner_agent, "run", planner_run)
 
     if outcome == "cancelled":
         with pytest.raises(asyncio.CancelledError):
@@ -2637,13 +2683,22 @@ def test_planner_route_context_is_correlated_and_reset_after_every_exit(
                 tools=tools,
                 on_event=lambda event: None,
             )
+    elif outcome == "error":
+        with pytest.raises(RuntimeError, match="planner failed after completion"):
+            runner.prepare_research(
+                prompt="研究平台劳动关系",
+                conversation=(),
+                tools=tools,
+                on_event=lambda event: None,
+            )
     else:
-        runner.prepare_research(
+        result = runner.prepare_research(
             prompt="研究平台劳动关系",
             conversation=(),
             tools=tools,
             on_event=lambda event: None,
         )
+        assert result == "conversation"
 
     asyncio.run(
         runner._agent.model._completions_create(
@@ -2652,6 +2707,8 @@ def test_planner_route_context_is_correlated_and_reset_after_every_exit(
     )
 
     records = attempts.list_all()
+    assert request_count == 2
+    assert len(records) == 2
     assert records[0].task_id == task_id
     assert records[0].agent_run_id == agent_run_id
     assert records[0].capability == "agent_completion"

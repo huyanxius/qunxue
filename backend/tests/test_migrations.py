@@ -357,7 +357,7 @@ def test_research_project_lifecycle_upgrade_preserves_task_conversation_and_mate
         database.engine.dispose()
 
 
-def test_database_url_override_drives_offline_migrations(
+def test_database_url_override_drives_offline_initial_migration(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     alembic_config: Config,
@@ -376,7 +376,9 @@ def test_database_url_override_drives_offline_migrations(
     output = StringIO()
     alembic_config.output_buffer = output
 
-    command.upgrade(alembic_config, "head", sql=True)
+    # This checks URL resolution without opening a DB. Later SQLite batch
+    # migrations require live reflection and cannot emit the full history offline.
+    command.upgrade(alembic_config, "20260728_0001", sql=True)
 
     assert resolved_urls == [database_url]
     assert "CREATE TABLE research_tasks" in output.getvalue()

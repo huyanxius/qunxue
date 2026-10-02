@@ -1050,9 +1050,13 @@ def test_attached_file_opens_without_a_search_result():
     assert result["segment_id"] == materials.block.segment_id
     assert result["next_segment_id"] is None
     assert registry.evidence[result["citation_id"]].material_id == str(MATERIAL_ID)
-    assert registry.material_prompt_context == {
-        "attachments": [{"material_id": str(MATERIAL_ID), "parse_id": str(PARSE_ID)}]
-    }
+    assert registry.material_prompt_context == [{
+        "material_id": str(MATERIAL_ID),
+        "parse_id": str(PARSE_ID),
+        "filename": materials.material.display_name,
+        "first_segment_id": materials.block.segment_id,
+        "segment_count": 1,
+    }]
 
 
 def test_direct_file_read_can_continue_through_all_blocks():

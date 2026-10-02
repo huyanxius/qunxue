@@ -2,7 +2,9 @@ from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
-from alembic import command
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
@@ -12,6 +14,17 @@ from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
 from qunxue_api.modules.agent_conversation import AgentRunResult
 from qunxue_api.modules.knowledge_catalog import KnowledgeReviewStatus, KnowledgeUsePurpose
 from qunxue_api.settings import KNOWLEDGE_ROOT
+
+
+def _apply_uploaded_knowledge_correction(database, alembic_config):
+    # These are data-correction tests against the current ORM fixture. Reapply
+    # only 0350, never falsely stamp the complete schema back to 0340 and replay DDL.
+    migration = ScriptDirectory.from_config(alembic_config).get_revision("20260905_0350")
+    with database.engine.begin() as connection:
+        before = connection.execute(text("SELECT version_num FROM alembic_version")).all()
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.module.upgrade()
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).all() == before
 
 
 @pytest.fixture
@@ -77,8 +90,7 @@ def test_upgrade_corrects_existing_imports_without_changing_content(
                 "WHERE source_type='repository_markdown'"
             )
         )
-    command.stamp(alembic_config, "20260905_0340")
-    command.upgrade(alembic_config, "head")
+    _apply_uploaded_knowledge_correction(database, alembic_config)
     after = imported_catalog.get_entry(
         release_id=release.knowledge_release_id, knowledge_id="D1:C001"
     )
@@ -175,15 +187,13 @@ def test_upload_and_legacy_defaults_allow_agent_read_and_citation(
             "UPDATE research_material_archive_profiles SET model_processing_scope='not_assessed', "
             "deidentification_status='pending'"
         ))
-    command.stamp(alembic_config, "20260905_0340")
-    command.upgrade(alembic_config, "head")
+    _apply_uploaded_knowledge_correction(database, alembic_config)
     read()
     with database.session() as session:
         session.execute(text(
             "UPDATE research_material_archive_profiles SET model_processing_scope='manual_only'"
         ))
-    command.stamp(alembic_config, "20260905_0340")
-    command.upgrade(alembic_config, "head")
+    _apply_uploaded_knowledge_correction(database, alembic_config)
     with database.session() as session:
         assert session.execute(text(
             "SELECT model_processing_scope FROM research_material_archive_profiles"
