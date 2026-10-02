@@ -17,7 +17,7 @@ vi.mock('elkjs/lib/elk.bundled.js', () => ({
 }))
 
 vi.mock('@xyflow/react', () => ({
-  Background: () => <div className="react-flow__background" />,
+  Background: ({ variant, gap, size }: { variant: string; gap: number; size: number }) => <div className="react-flow__background" data-variant={variant} data-gap={gap} data-size={size} />,
   BackgroundVariant: { Dots: 'dots' },
   Controls: () => <div data-testid="flow-controls" />,
   Handle: () => null,
@@ -61,11 +61,12 @@ const projection: ResearchCanvasProjection = {
 }
 
 describe('ResearchMapCanvas', () => {
-  it('explains the dotted canvas without duplicating the Agent prompts', () => {
+  it('explains the empty canvas without duplicating the Agent prompts', () => {
     const { container } = render(<ResearchMapCanvas projection={{ status: 'empty', question: '', nodes: [], edges: [] }} />)
 
     expect(screen.getByLabelText('空白研究画布')).toBeVisible()
-    expect(container.querySelector('.react-flow__background')).toBeInTheDocument()
+    // The empty state has its own idle shader/static-paper backdrop, not the node grid.
+    expect(container.querySelector('.react-flow__background')).not.toBeInTheDocument()
     expect(container.querySelector('[data-research-agent-bot]')).toBeInTheDocument()
     expect(screen.getByLabelText('画布说明')).toHaveTextContent('对话中形成的研究结构会在这里展开。')
     expect(within(screen.getByLabelText('画布说明')).queryByRole('button')).not.toBeInTheDocument()
@@ -75,10 +76,15 @@ describe('ResearchMapCanvas', () => {
     expect(screen.queryByText(/0 个节点/)).not.toBeInTheDocument()
   })
 
-  it('lays out typed argument nodes with mature navigation aids', async () => {
-    render(<ResearchMapCanvas projection={projection} />)
+  it('lays out typed argument nodes on the dotted canvas with mature navigation aids', async () => {
+    const { container } = render(<ResearchMapCanvas projection={projection} />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: '时间贫困压缩关系维护' })).toBeVisible())
+    const background = container.querySelector('.react-flow__background')
+    expect(background).toBeInTheDocument()
+    expect(background).toHaveAttribute('data-variant', 'dots')
+    expect(background).toHaveAttribute('data-gap', '24')
+    expect(background).toHaveAttribute('data-size', '1')
     expect(screen.queryByLabelText('画布说明')).not.toBeInTheDocument()
     expect(screen.getByTestId('flow-controls')).toBeInTheDocument()
     expect(screen.queryByTestId('flow-minimap')).not.toBeInTheDocument()
