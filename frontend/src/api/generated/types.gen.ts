@@ -2935,6 +2935,10 @@ export type CreditLedgerEntryResponse = {
      */
     kind: 'signup_grant' | 'usage' | 'redemption';
     /**
+     * Model
+     */
+    model?: string | null;
+    /**
      * Output Tokens
      */
     output_tokens: number;
@@ -2949,13 +2953,29 @@ export type CreditLedgerEntryResponse = {
  */
 export type CreditPricingResponse = {
     /**
+     * Credits Per Usd
+     */
+    credits_per_usd?: number | null;
+    /**
      * Input Tokens Per Credit
      */
     input_tokens_per_credit: number;
     /**
+     * Mode
+     */
+    mode?: 'legacy_tokens' | 'model_rates' | 'unconfigured';
+    /**
      * Output Tokens Per Credit
      */
     output_tokens_per_credit: number;
+    /**
+     * Price Version
+     */
+    price_version?: string | null;
+    /**
+     * Reference Currency
+     */
+    reference_currency?: string;
 };
 
 /**
@@ -2987,6 +3007,10 @@ export type CreditRedemptionResponse = {
  */
 export type CreditSummaryResponse = {
     /**
+     * Available Balance
+     */
+    available_balance?: number | null;
+    /**
      * Balance
      */
     balance: number;
@@ -2999,6 +3023,10 @@ export type CreditSummaryResponse = {
      */
     entries: Array<CreditLedgerEntryResponse>;
     /**
+     * Frozen Points
+     */
+    frozen_points?: number;
+    /**
      * Grant Amount
      */
     grant_amount: number;
@@ -3010,6 +3038,12 @@ export type CreditSummaryResponse = {
      * Next Cursor
      */
     next_cursor: string | null;
+    /**
+     * Operations
+     */
+    operations?: Array<{
+        [key: string]: unknown;
+    }>;
     pricing: CreditPricingResponse;
     /**
      * Total Entries
@@ -3411,7 +3445,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'doi_metadata_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credits_depleted' | 'credit_run_in_progress' | 'billing_budget_exceeded' | 'billing_not_configured' | 'billing_replay_blocked' | 'billing_provider_error' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'doi_metadata_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail
