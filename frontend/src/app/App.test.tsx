@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from './App'
 import { AccountProvider } from '../modules/account'
@@ -22,6 +22,20 @@ vi.mock('@paper-design/shaders-react', () => ({
   ShaderMount: () => null,
   Warp: () => null,
 }))
+
+const dialogMethods = ['showModal', 'close'] as const
+const originalDialogMethods = dialogMethods.map(name => Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, name))
+beforeAll(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value(this: HTMLDialogElement) { this.setAttribute('open', '') } })
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value(this: HTMLDialogElement) { this.removeAttribute('open') } })
+})
+afterAll(() => {
+  dialogMethods.forEach((name, index) => {
+    const descriptor = originalDialogMethods[index]
+    if (descriptor) Object.defineProperty(HTMLDialogElement.prototype, name, descriptor)
+    else Reflect.deleteProperty(HTMLDialogElement.prototype, name)
+  })
+})
 
 afterEach(() => {
   cleanup()
@@ -1322,7 +1336,8 @@ describe('App routes', () => {
     expect(screen.getByTestId('route-location')).toHaveTextContent('/research/task-1/workspace/writing?from=my#methods')
   })
 
-  it('returns home after logging out from my research', async () => {
+  it.each([1024, 390])('returns home after logging out from my research at %spx', async (width) => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const request = input as Request
       if (request.method === 'GET' && request.url.endsWith('/api/session')) {
@@ -1338,6 +1353,34 @@ describe('App routes', () => {
           },
           expires_at: '2026-08-14T00:00:00Z',
         }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (request.method === 'GET' && request.url.endsWith('/api/account')) {
+        return json({
+          user_id: '95306bf9-194d-4677-be2d-eef4f6aa86d1',
+          email: 'researcher@example.com',
+          display_name: null,
+          role: 'member',
+          status: 'active',
+          version: 1,
+          created_at: '2026-08-01T00:00:00Z',
+          is_protected_admin: false,
+          preferences: {
+            locale: 'zh-CN',
+            timezone: 'Asia/Shanghai',
+            research_updates_enabled: false,
+            model_improvement_allowed: false,
+            consent_policy_version: '2026-08-secondary-use-v1',
+            consent_updated_at: null,
+            version: 1,
+          },
+        })
+      }
+      if (request.method === 'GET' && new URL(request.url).pathname === '/api/account/credits') {
+        return json({
+          balance: 0, credit_limit: 0, grant_amount: 0, is_unlimited: false,
+          pricing: { input_tokens_per_credit: 100, output_tokens_per_credit: 25 },
+          entries: [], total_entries: 0, next_cursor: null,
+        })
       }
       if (request.method === 'GET') {
         return new Response(JSON.stringify({ items: [], next_cursor: null }), {
@@ -1363,7 +1406,14 @@ describe('App routes', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: '退出' }))
+    if (width === 390) {
+      fireEvent.click(await screen.findByRole('button', { name: '打开导航菜单' }))
+      const drawer = screen.getByRole('dialog', { name: '群学致知功能栏' })
+      fireEvent.click(await within(drawer).findByRole('button', { name: '退出登录' }))
+    } else {
+      fireEvent.click(await screen.findByRole('link', { name: '账户 研究者' }))
+      fireEvent.click(await screen.findByRole('button', { name: '退出登录' }))
+    }
 
     expect(await screen.findByRole('heading', { name: /从真实困惑.*找到可研究的问题。/ })).toBeVisible()
     expect(screen.getByTestId('route-location')).toHaveTextContent('/')
