@@ -46,6 +46,17 @@ function json(body: unknown, status = 200) {
 }
 
 describe('FoundationPage', () => {
+  it('opens feature navigation and returns keyboard focus when dismissed', () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({}, 503)))
+    renderPage()
+    const trigger = screen.getByRole('button', { name: '功能' })
+    fireEvent.click(trigger)
+    expect(screen.getByRole('link', { name: /深入研究/ })).toHaveAttribute('href', '/features#deep-research')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
+  })
+
   it('leads with user value and expands into a focused research Agent scene', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ error: { code: 'offline' } }, 503)))
 

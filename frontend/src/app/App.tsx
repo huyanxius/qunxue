@@ -47,6 +47,7 @@ import { ResearchToolsPage } from './research-tools/ResearchToolsPage'
 import { ResearchProjectWorkspacePage } from './research-workspace/ResearchProjectWorkspacePage'
 import { legacyResearchWorkspaceDestination } from './research-workspace/researchProjectWorkspaceModel'
 import { FoundationPage } from './foundation/FoundationPage'
+import { FeaturesPage, DocsPage } from './site/ProductPages'
 import { AppHomePage } from './home/AppHomePage'
 import { PageContent, PageShell, RailStateProvider } from './ui/PageShell'
 import { BrandLoading } from '../ui/BrandLoading'
@@ -428,6 +429,8 @@ export function AppRoutes({
           : productHome}
       />
       <Route path="/welcome" element={productHome} />
+      <Route path="/features" element={<FeaturesPage authenticated={resolvedSessionState.status === 'authenticated'} />} />
+      <Route path="/docs" element={<DocsPage authenticated={resolvedSessionState.status === 'authenticated'} />} />
       <Route path="/app" element={protectedRoute(<AppHomePage />)} />
       <Route path="/agent" element={protectedRoute(<ResearchAgentPage userId={authenticatedUserId} introSessionId={authenticatedSessionId} />)} />
       <Route path="/knowledge" element={<KnowledgeExplorerRoute />} />
