@@ -2935,6 +2935,10 @@ export type CreditLedgerEntryResponse = {
      */
     kind: 'signup_grant' | 'usage' | 'redemption';
     /**
+     * Model
+     */
+    model?: string | null;
+    /**
      * Output Tokens
      */
     output_tokens: number;
@@ -2949,13 +2953,53 @@ export type CreditLedgerEntryResponse = {
  */
 export type CreditPricingResponse = {
     /**
+     * Credits Per Usd
+     */
+    credits_per_usd?: number | null;
+    /**
+     * Fx As Of
+     */
+    fx_as_of?: string | null;
+    /**
+     * Fx Cny Per Usd Micro
+     */
+    fx_cny_per_usd_micro?: number | null;
+    /**
+     * Fx Snapshot Id
+     */
+    fx_snapshot_id?: string | null;
+    /**
+     * Fx Source
+     */
+    fx_source?: string | null;
+    /**
      * Input Tokens Per Credit
      */
     input_tokens_per_credit: number;
     /**
+     * Mode
+     */
+    mode?: 'legacy_tokens' | 'model_rates' | 'unconfigured';
+    /**
      * Output Tokens Per Credit
      */
     output_tokens_per_credit: number;
+    /**
+     * Points Per Cny
+     */
+    points_per_cny?: number | null;
+    /**
+     * Price Version
+     */
+    price_version?: string | null;
+    /**
+     * Reference Currency
+     */
+    reference_currency?: string;
+    /**
+     * Retail Rate Ppm
+     */
+    retail_rate_ppm?: number | null;
 };
 
 /**
@@ -2987,6 +3031,14 @@ export type CreditRedemptionResponse = {
  */
 export type CreditSummaryResponse = {
     /**
+     * Active Usage Buckets
+     */
+    active_usage_buckets?: Array<CreditUsageBucketResponse>;
+    /**
+     * Available Balance
+     */
+    available_balance?: number | null;
+    /**
      * Balance
      */
     balance: number;
@@ -2999,6 +3051,10 @@ export type CreditSummaryResponse = {
      */
     entries: Array<CreditLedgerEntryResponse>;
     /**
+     * Frozen Points
+     */
+    frozen_points?: number;
+    /**
      * Grant Amount
      */
     grant_amount: number;
@@ -3010,11 +3066,51 @@ export type CreditSummaryResponse = {
      * Next Cursor
      */
     next_cursor: string | null;
+    /**
+     * Operations
+     */
+    operations?: Array<{
+        [key: string]: unknown;
+    }>;
     pricing: CreditPricingResponse;
+    /**
+     * Quota Status
+     */
+    quota_status?: 'known' | 'unavailable';
     /**
      * Total Entries
      */
     total_entries: number;
+    /**
+     * Total Granted Points
+     */
+    total_granted_points?: number | null;
+};
+
+/**
+ * CreditUsageBucketResponse
+ */
+export type CreditUsageBucketResponse = {
+    /**
+     * Available Points
+     */
+    available_points: number;
+    /**
+     * Bucket Id
+     */
+    bucket_id: string;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'subscription' | 'top_up' | 'welcome';
+    /**
+     * Limit Points
+     */
+    limit_points: number;
 };
 
 /**
@@ -3411,7 +3507,7 @@ export type EntryType = 'direct_input' | 'material_input';
 /**
  * ErrorCode
  */
-export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'doi_metadata_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
+export type ErrorCode = 'unauthenticated' | 'session_expired' | 'forbidden' | 'not_found' | 'method_not_allowed' | 'conflict' | 'idempotency_conflict' | 'reauthentication_required' | 'account_inactive' | 'capability_unavailable' | 'provisioned_administrator_protected' | 'password_reset_invalid' | 'token_expired' | 'credits_depleted' | 'credit_run_in_progress' | 'billing_budget_exceeded' | 'billing_not_configured' | 'billing_replay_blocked' | 'billing_provider_error' | 'credit_code_unavailable' | 'credit_code_batch_conflict' | 'email_verification_invalid' | 'email_verification_rate_limited' | 'email_delivery_unavailable' | 'research_task_not_found' | 'research_start_proposal_not_found' | 'research_start_idempotency_conflict' | 'research_start_proposal_conflict' | 'research_start_source_incomplete' | 'research_material_not_found' | 'research_material_too_large' | 'unsupported_material_format' | 'no_extractable_text' | 'research_material_idempotency_conflict' | 'research_material_version_conflict' | 'validation_error' | 'phenomenon_unconfirmed' | 'catalog_not_ready' | 'retrieval_unavailable' | 'doi_metadata_unavailable' | 'no_adopted_theory' | 'candidate_ineligible' | 'external_candidate_adoption_blocked' | 'model_timeout' | 'no_reliable_candidate' | 'insufficient_sources' | 'stale_framework_revision' | 'unresolved_blocking_audit' | 'not_implemented' | 'internal_server_error';
 
 /**
  * ErrorDetail

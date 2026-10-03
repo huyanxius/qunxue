@@ -3,7 +3,7 @@ import binascii
 from dataclasses import replace
 from datetime import datetime
 from io import BytesIO
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from xml.etree import ElementTree
 from zipfile import BadZipFile, ZipFile
 
@@ -203,44 +203,52 @@ def extract_phenomenon_candidates(
         raise HTTPException(status_code=409)
     existing = service.progress(task_id).candidate
     if existing is None:
-        draft = request.app.state.model_gateway.build(
-            task_id=task_id,
-            raw_input=direct.phenomenon,
-            research_intent=direct.research_intent,
-            context=direct.context,
-        )
-        draft = replace(
-            draft,
-            source_ref_ids=tuple(
-                dict.fromkeys((*draft.source_ref_ids, "input:direct"))
+        with request.app.state.phenomenon_extraction_scope(
+            user_id=owned_task.user_id,
+            run_id=uuid5(
+                NAMESPACE_URL,
+                f"user-research:extract:{owned_task.user_id}:{task_id}:{_idempotency_key}",
             ),
-        )
-        invocation = request.app.state.model_invocation_recorder.list_for_task(task_id)[-1]
-        evidence = PhenomenonEvidenceRefSnapshot(
-            evidence_ref_id="input:direct",
-            excerpt=direct.phenomenon,
-            source_ref_id="input:direct",
-            source_description="用户直接输入",
-            locator=None,
-            verification_status=PhenomenonEvidenceVerificationStatus.USER_ATTESTED,
-            use_boundary="仅代表用户陈述，尚未经外部来源核验。",
-        )
-        existing = service.save_candidate(
-            task_id=task_id,
-            task=owned_task,
-            draft=draft,
-            evidence_refs=(evidence,),
-            model=PhenomenonModelSnapshot(
-                provider=invocation.provider,
-                model_version=invocation.model_version,
-                capability=invocation.capability_tier,
-                degraded=invocation.degraded,
-                knowledge_release_id=invocation.knowledge_release_id,
-                trace_id=invocation.trace_id,
-                request_id=invocation.request_id,
-                contract_version=invocation.contract_version,
-            ),
-        )
+            payload={"task_id": str(task_id), "input": direct, "request": payload.model_dump()},
+        ) as extraction_service:
+            draft = request.app.state.model_gateway.build(
+                task_id=task_id,
+                raw_input=direct.phenomenon,
+                research_intent=direct.research_intent,
+                context=direct.context,
+            )
+            draft = replace(
+                draft,
+                source_ref_ids=tuple(
+                    dict.fromkeys((*draft.source_ref_ids, "input:direct"))
+                ),
+            )
+            invocation = request.app.state.model_invocation_recorder.list_for_task(task_id)[-1]
+            evidence = PhenomenonEvidenceRefSnapshot(
+                evidence_ref_id="input:direct",
+                excerpt=direct.phenomenon,
+                source_ref_id="input:direct",
+                source_description="用户直接输入",
+                locator=None,
+                verification_status=PhenomenonEvidenceVerificationStatus.USER_ATTESTED,
+                use_boundary="仅代表用户陈述，尚未经外部来源核验。",
+            )
+            existing = extraction_service.save_candidate(
+                task_id=task_id,
+                task=owned_task,
+                draft=draft,
+                evidence_refs=(evidence,),
+                model=PhenomenonModelSnapshot(
+                    provider=invocation.provider,
+                    model_version=invocation.model_version,
+                    capability=invocation.capability_tier,
+                    degraded=invocation.degraded,
+                    knowledge_release_id=invocation.knowledge_release_id,
+                    trace_id=invocation.trace_id,
+                    request_id=invocation.request_id,
+                    contract_version=invocation.contract_version,
+                ),
+            )
     response = _candidate_response(existing)
     return PhenomenonCandidatePageResponse(
         task_id=task_id,

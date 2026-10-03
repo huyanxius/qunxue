@@ -161,12 +161,22 @@ def test_registration_grants_a_visible_credit_balance_and_ledger_entry(
     assert response.status_code == 200
     payload = response.json()
     assert payload["is_unlimited"] is False
-    assert payload["balance"] == 10000
-    assert payload["credit_limit"] == 10000
-    assert payload["grant_amount"] == 10000
+    assert payload["balance"] == 3000
+    assert payload["credit_limit"] == 3000
+    assert payload["grant_amount"] == 3000
     assert payload["pricing"] == {
         "input_tokens_per_credit": 100,
         "output_tokens_per_credit": 25,
+        "mode": "unconfigured",
+        "credits_per_usd": None,
+        "price_version": None,
+        "reference_currency": "USD",
+        "points_per_cny": None,
+        "retail_rate_ppm": None,
+        "fx_cny_per_usd_micro": None,
+        "fx_snapshot_id": None,
+        "fx_as_of": None,
+        "fx_source": None,
     }
     assert payload["entries"] == []
     assert payload["total_entries"] == 0
@@ -218,7 +228,7 @@ def test_credit_reservation_fallback_uses_the_current_welcome_grant(
         summary = repository.get_summary(user_id=user_id, limit=10)
 
     assert summary is not None
-    assert summary.balance == 10000
+    assert summary.balance == 3000
 
 
 def test_new_credit_reservation_preempts_an_abandoned_agent_run(
@@ -344,7 +354,9 @@ def test_administrator_generates_hashed_codes_and_member_redeems_once(
     assert replayed_redemption.json() == {"redeemed_points": 10000, "balance": 2936}
     summary = client.get("/api/account/credits").json()
     assert summary["balance"] == 2936
-    assert summary["credit_limit"] == 10000
+    assert summary["credit_limit"] == 0
+    assert summary["quota_status"] == "unavailable"
+    assert summary["active_usage_buckets"] == []
     assert summary["entries"] == []
     with client.app.state.database.engine.connect() as connection:
         redemption_entry = connection.execute(

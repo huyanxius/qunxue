@@ -7,11 +7,13 @@ from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
+from billing_test_support import synthetic_billing_runtime
 
 import qunxue_api.adapters.model as model
+from qunxue_api.adapters.model.metering import OperationScope
 from qunxue_api.adapters.sqlite import Base
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.bootstrap import create_app
@@ -513,9 +515,24 @@ def test_environment_configuration_switches_bootstrap_between_base_and_sft(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
 ) -> None:
+    def metered_completion(phenomenon):
+        payload = json.loads(_completion(_phenomenon_response(phenomenon)).body)
+        payload["usage"] = {
+            "prompt_tokens": 80,
+            "completion_tokens": 20,
+            "total_tokens": 100,
+            "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+        }
+        return _Reply(body=json.dumps(payload).encode())
+
+    aliases = {
+        "base-model": "gpt-6-luna",
+        "sft-model": "gpt-6-luna",
+        "local-sociology-model": "gpt-6-luna",
+    }
     with (
-        _fake_openai_service(_completion(_phenomenon_response("base-endpoint"))) as first,
-        _fake_openai_service(_completion(_phenomenon_response("sft-endpoint"))) as second,
+        _fake_openai_service(metered_completion("base-endpoint")) as first,
+        _fake_openai_service(metered_completion("sft-endpoint")) as second,
     ):
         first_url, first_requests = first
         second_url, second_requests = second
@@ -535,12 +552,23 @@ def test_environment_configuration_switches_bootstrap_between_base_and_sft(
             knowledge_retriever=object(),
         )
 
-        base_result = base_app.state.model_gateway.build(
-            task_id=UUID(int=20),
-            raw_input="same input",
-            research_intent=None,
-            context=None,
+        runtime = synthetic_billing_runtime(
+            base_database.engine, aliases=aliases, create_tables=True
         )
+        with OperationScope(
+            runtime,
+            user_id="operator:synthetic-provider",
+            run_id=uuid4(),
+            fingerprint="synthetic-ci:base",
+            exempt=True,
+        ) as scope:
+            base_result = base_app.state.model_gateway.build(
+                task_id=UUID(int=20),
+                raw_input="same input",
+                research_intent=None,
+                context=None,
+            )
+            scope.finish("success")
 
         monkeypatch.setenv("QUNXUE_RUNTIME_MODE", "sft")
         monkeypatch.setenv("QUNXUE_MODEL_BASE_URL", second_url)
@@ -558,12 +586,23 @@ def test_environment_configuration_switches_bootstrap_between_base_and_sft(
             knowledge_retriever=object(),
         )
 
-        sft_result = sft_app.state.model_gateway.build(
-            task_id=UUID(int=21),
-            raw_input="same input",
-            research_intent=None,
-            context=None,
+        runtime = synthetic_billing_runtime(
+            sft_database.engine, aliases=aliases, create_tables=True
         )
+        with OperationScope(
+            runtime,
+            user_id="operator:synthetic-provider",
+            run_id=uuid4(),
+            fingerprint="synthetic-ci:sft",
+            exempt=True,
+        ) as scope:
+            sft_result = sft_app.state.model_gateway.build(
+                task_id=UUID(int=21),
+                raw_input="same input",
+                research_intent=None,
+                context=None,
+            )
+            scope.finish("success")
 
     base_database.engine.dispose()
     sft_database.engine.dispose()

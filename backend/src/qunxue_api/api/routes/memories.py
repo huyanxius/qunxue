@@ -13,6 +13,7 @@ from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.application.memory_overview import (
     MemoryOverviewBusy,
+    MemoryOverviewStale,
     MemoryOverviewUnavailable,
     memory_overview_fingerprint,
 )
@@ -183,26 +184,33 @@ def summarize_memory(
         if scope.version != payload.expected_version:
             raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
         items = memory.repository.list(user_id, payload.task_id)
-    # Model work runs after releasing the database session. Check again before
-    # returning so a correction or deletion cannot display an obsolete summary.
+    # Validate the final snapshot before the paid operation settles. Cache hits
+    # have no paid operation and perform the same check after returning.
+    latest, validation_done = scope, False
+
+    def verify_snapshot():
+        nonlocal latest, validation_done
+        with service(request) as memory:
+            latest = memory.repository.scope(user_id, payload.task_id)
+            if latest.version != scope.version and memory_overview_fingerprint(
+                memory.repository.list(user_id, payload.task_id)
+            ) != memory_overview_fingerprint(items):
+                request.app.state.memory_overview.invalidate(user_id, payload.task_id)
+                raise MemoryOverviewStale()
+        validation_done = True
+
     try:
         summary = request.app.state.memory_overview.summarize(
-            user_id,
-            payload.task_id,
-            scope.version,
-            items,
+            user_id, payload.task_id, scope.version, items, before_delivery=verify_snapshot
         )
+        if not validation_done:
+            verify_snapshot()
     except MemoryOverviewBusy as error:
         raise HTTPException(429, str(error)) from error
     except MemoryOverviewUnavailable as error:
         raise HTTPException(503, str(error)) from error
-    with service(request) as memory:
-        latest = memory.repository.scope(user_id, payload.task_id)
-        if latest.version != scope.version and memory_overview_fingerprint(
-            memory.repository.list(user_id, payload.task_id)
-        ) != memory_overview_fingerprint(items):
-            request.app.state.memory_overview.invalidate(user_id, payload.task_id)
-            raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
+    except MemoryOverviewStale as error:
+        raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。") from error
     return MemoryOverviewResponse(
         summary=summary, scope_version=latest.version, memory_count=len(items)
     )

@@ -3,10 +3,10 @@ import json
 
 from openai import AsyncOpenAI
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
+from qunxue_api.adapters.model.metering import MeteredOpenAIChatModel
 from qunxue_api.modules.agent_memory import Memory
 
 from .pydantic_runner import _is_deepseek_flash
@@ -60,7 +60,9 @@ class PydanticMemoryOverview:
             if self._headers:
                 settings["extra_headers"] = self._headers
             agent = Agent(
-                OpenAIChatModel(self._model, provider=OpenAIProvider(openai_client=client)),
+                MeteredOpenAIChatModel(
+                    self._model, provider=OpenAIProvider(openai_client=client), require_billing=True
+                ),
                 instructions=_INSTRUCTIONS,
                 retries=0,
                 model_settings=settings,

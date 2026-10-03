@@ -5,8 +5,43 @@ from typing import Literal
 from uuid import UUID
 
 WELCOME_GRANT = 10_000
+SIGNUP_GRANT = 3_000
 INPUT_TOKENS_PER_CREDIT = 100
 OUTPUT_TOKENS_PER_CREDIT = 25
+
+
+class BillingFailure(RuntimeError):
+    """Public billing error boundary; adapters may provide an internal reason."""
+
+    def __init__(self, message="billing operation unavailable", *, reason=None):
+        super().__init__(message)
+        self.reason = reason
+
+
+class BillingBudgetExceeded(BillingFailure):
+    code = "billing_budget_exceeded"
+
+
+class BillingContextMissing(BillingFailure):
+    code = "billing_context_missing"
+
+
+class BillingReplayBlocked(BillingFailure):
+    code = "billing_replay_blocked"
+
+
+class BillingRouteMismatch(BillingFailure):
+    code = "billing_route_mismatch"
+
+
+class ModelDeliveryRejected(BillingFailure):
+    code = "model_delivery_rejected"
+
+
+class UnknownTokenUsage(BillingFailure, ValueError):
+    """Unknown or contradictory provider counters require reconciliation."""
+
+    code = "billing_usage_unknown"
 
 
 class CreditsDepleted(Exception):
@@ -56,6 +91,12 @@ class CreditSummary:
     total_entries: int
     next_cursor: str | None
     is_unlimited: bool = False
+    frozen_points: int = 0
+    available_balance: int | None = None
+    operations: tuple[dict, ...] = ()
+    total_granted_points: int | None = None
+    active_usage_buckets: tuple[dict, ...] = ()
+    quota_status: Literal["known", "unavailable"] = "unavailable"
 
 
 @dataclass(frozen=True, slots=True)

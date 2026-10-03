@@ -46,6 +46,7 @@ from qunxue_api.adapters.model import (
     ModelRouteExecutor,
     ModelRoutesUnavailable,
 )
+from qunxue_api.adapters.model.metering import MeteredOpenAIChatModel
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
 )
@@ -442,7 +443,7 @@ def _insufficient_evidence_answer() -> str:
     )
 
 
-class _RetryingOpenAIChatModel(OpenAIChatModel):
+class _RetryingOpenAIChatModel(MeteredOpenAIChatModel):
     """Bridge Pydantic AI serialization onto the shared route executor."""
 
     def __init__(
@@ -533,7 +534,7 @@ class _RetryingOpenAIChatModel(OpenAIChatModel):
                 merge_model_settings(model.settings, runtime_overrides) or {},
             )
             try:
-                value = await OpenAIChatModel._completions_create(
+                value = await MeteredOpenAIChatModel._completions_create(
                     model,
                     messages,
                     stream,
@@ -594,8 +595,8 @@ _agent_route_correlation: ContextVar[Mapping[str, UUID | None] | None] = Context
     "agent_route_correlation",
     default=None,
 )
-_agent_model_settings_overrides: ContextVar[OpenAIChatModelSettings | None] = (
-    ContextVar("agent_model_settings_overrides", default=None)
+_agent_model_settings_overrides: ContextVar[OpenAIChatModelSettings | None] = ContextVar(
+    "agent_model_settings_overrides", default=None
 )
 
 
@@ -620,9 +621,7 @@ class PydanticAIKnowledgeRunner:
         *,
         base_url: str,
         api_key: str | None,
-        fallback_endpoints: Sequence[
-            tuple[str, str] | tuple[str, str, str]
-        ] = (),
+        fallback_endpoints: Sequence[tuple[str, str] | tuple[str, str, str]] = (),
         model: str,
         timeout_seconds: float,
         extra_headers: Mapping[str, str] | None = None,
@@ -630,6 +629,7 @@ class PydanticAIKnowledgeRunner:
         reasoning_effort: ReasoningEffort | None = None,
         route_executor: ModelRouteExecutor | None = None,
         direct_task: bool = False,
+        require_billing: bool = False,
     ) -> None:
         self._model = model
         self.runtime_identity = AgentRuntimeIdentity(
@@ -651,9 +651,7 @@ class PydanticAIKnowledgeRunner:
                 base_url=endpoint_url,
                 model=endpoint_model,
             ):
-                endpoint_settings["extra_body"] = {
-                    "thinking": {"type": "enabled"}
-                }
+                endpoint_settings["extra_body"] = {"thinking": {"type": "enabled"}}
                 endpoint_settings["openai_reasoning_effort"] = "high"
             elif reasoning_effort is not None:
                 endpoint_settings["openai_reasoning_effort"] = reasoning_effort
@@ -665,6 +663,7 @@ class PydanticAIKnowledgeRunner:
             request_limit=48,
             tool_calls_limit=100,
         )
+
         def build_model(
             endpoint_url: str,
             endpoint_key: str | None,
@@ -678,7 +677,7 @@ class PydanticAIKnowledgeRunner:
                     max_retries=0,
                 )
             )
-            return OpenAIChatModel(
+            return MeteredOpenAIChatModel(
                 endpoint_model,
                 provider=provider,
                 settings=cast(
@@ -701,10 +700,7 @@ class PydanticAIKnowledgeRunner:
                 f"fallback-{index}",
             )
         expected_endpoint_ids = ("primary", *fallback_models)
-        if (
-            route_executor is not None
-            and route_executor.endpoint_ids != expected_endpoint_ids
-        ):
+        if route_executor is not None and route_executor.endpoint_ids != expected_endpoint_ids:
             raise ValueError("Agent model endpoints must match the shared route executor")
 
         model_instance = _RetryingOpenAIChatModel(
@@ -719,6 +715,7 @@ class PydanticAIKnowledgeRunner:
             settings=primary_model_settings,
             route_executor=route_executor,
             fallback_models=fallback_models,
+            require_billing=require_billing,
         )
         # Classroom inputs already contain the authorized source snapshot. A tool-free
         # completion prevents research planning from changing that scope or output format.
@@ -891,6 +888,7 @@ class PydanticAIKnowledgeRunner:
                 "只有问候时用‘日常问候’，不要凭空编造研究主题。"
             ),
         )
+
         @self._planner_agent.output_validator
         def validate_planning(decision: DeepResearchDecision) -> DeepResearchDecision:
             research_required, skip_clarification = self._planning_policy.get()
@@ -903,7 +901,8 @@ class PydanticAIKnowledgeRunner:
                     if skip_clarification:
                         raise ModelRetry("用户已跳过澄清，请明确默认范围并生成待确认提案。")
                     options = [
-                        v.strip() for v in decision.options
+                        v.strip()
+                        for v in decision.options
                         if v.strip() != "更多自定义" and v.strip()
                     ]
                     if not decision.question.strip() or len(set(options)) < 3:
@@ -942,7 +941,8 @@ class PydanticAIKnowledgeRunner:
             default=None,
         )
         self._active_cancelled: ContextVar[Callable[[], bool] | None] = ContextVar(
-            f"agent_cancelled_{id(self)}", default=None,
+            f"agent_cancelled_{id(self)}",
+            default=None,
         )
         self._register_tools()
 
@@ -2192,16 +2192,17 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        route_token = _agent_route_correlation.set(
-            _agent_route_context_from_tools(tools)
-        )
+        route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
         try:
             if self._task_agent is not None:
                 result = self._task_agent.run_sync(
                     prompt, usage_limits=UsageLimits(request_limit=2)
                 )
                 return _text_result(
-                    result.output, tools=tools, model=self._model, usage=_result_usage(result)
+                    result.output,
+                    tools=tools,
+                    model=_result_model(result, self._model),
+                    usage=_result_usage(result),
                 )
             retrieved_evidence = self._preload_bound_research_evidence(
                 prompt=prompt,
@@ -2227,7 +2228,7 @@ class PydanticAIKnowledgeRunner:
             return _text_result(
                 result.output,
                 tools=tools,
-                model=self._model,
+                model=_result_model(result, self._model),
                 usage=_result_usage(result),
             )
         finally:
@@ -2247,9 +2248,7 @@ class PydanticAIKnowledgeRunner:
     ) -> AgentRunResult:
         token = self._active_tool_event.set(on_tool_event)
         cancel_token = self._active_cancelled.set(is_cancelled)
-        route_token = _agent_route_correlation.set(
-            _agent_route_context_from_tools(tools)
-        )
+        route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
         visible_stream = VisibleTextStream(on_delta)
 
         async def stream_text(
@@ -2320,7 +2319,7 @@ class PydanticAIKnowledgeRunner:
             return _text_result(
                 str(result.output),
                 tools=tools,
-                model=self._model,
+                model=_result_model(result, self._model),
                 usage=_result_usage(result),
             )
         finally:
@@ -3392,6 +3391,16 @@ def _text_result(
     )
 
 
+def _result_model(result, fallback):
+    """Keep the delivered response identity when a route selected a fallback."""
+    messages = result.all_messages() if callable(getattr(result, "all_messages", None)) else ()
+    for message in reversed(messages):
+        model = getattr(message, "model_name", None)
+        if isinstance(model, str) and model:
+            return model
+    return fallback
+
+
 def _result_usage(result: object) -> tuple[int, int]:
     raw_usage = getattr(result, "usage", None)
     if raw_usage is None:
@@ -3549,11 +3558,18 @@ def _run_cancellable(operation, is_cancelled, *, on_checkpoint=None, can_cancel=
 _worker_event_loop = threading.local()
 
 
-_REPLAYABLE_WRITES = frozenset({
-    "propose_analysis_code", "propose_analysis_memo", "propose_coding_plan",
-    "propose_case_comparison", "propose_document_revision", "propose_document_creation",
-    "start_theory_matching", "save_confirmed_theory_plan",
-})
+_REPLAYABLE_WRITES = frozenset(
+    {
+        "propose_analysis_code",
+        "propose_analysis_memo",
+        "propose_coding_plan",
+        "propose_case_comparison",
+        "propose_document_revision",
+        "propose_document_creation",
+        "start_theory_matching",
+        "save_confirmed_theory_plan",
+    }
+)
 
 
 def _completed_write_result(tools, tool_name: str, payload: dict[str, object]):
