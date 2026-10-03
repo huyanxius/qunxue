@@ -4,6 +4,7 @@ import subprocess
 import sys
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
@@ -227,6 +228,11 @@ def crash_delivery(database_url, user_id, stage):
 def test_process_exit_cannot_save_success_without_financial_settlement(plain_client, stage):
     user = register(plain_client)
     database = plain_client.app.state.database
+    backend = Path(__file__).resolve().parents[2]
+    child_pythonpath = os.pathsep.join(
+        [str(backend / "src"), str(backend / "tests"), str(backend / "tests/billing")]
+        + ([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])
+    )
     process = subprocess.run(
         [
             sys.executable,
@@ -237,7 +243,7 @@ def test_process_exit_cannot_save_success_without_financial_settlement(plain_cli
             user,
             stage,
         ],
-        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": child_pythonpath},
         capture_output=True,
         timeout=20,
     )
