@@ -252,6 +252,9 @@ class ModelGateway:
             ):
                 result = call()
         except ModelProviderFailure as error:
+            from qunxue_api.adapters.model.metering import reject_current_attempt
+
+            reject_current_attempt(error.code)
             completed_at = self._clock()
             descriptor = error.selected_descriptor or descriptor
             self._recorder.record(

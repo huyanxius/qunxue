@@ -1,7 +1,13 @@
 from qunxue_api.modules.billing.domain import (
     INPUT_TOKENS_PER_CREDIT,
     OUTPUT_TOKENS_PER_CREDIT,
+    SIGNUP_GRANT,
     WELCOME_GRANT,
+    BillingBudgetExceeded,
+    BillingContextMissing,
+    BillingFailure,
+    BillingReplayBlocked,
+    BillingRouteMismatch,
     CreditCodeBatchConflict,
     CreditCodeSpec,
     CreditCodeUnavailable,
@@ -11,21 +17,36 @@ from qunxue_api.modules.billing.domain import (
     CreditsDepleted,
     CreditSummary,
     GeneratedCreditCodeBatch,
+    ModelDeliveryRejected,
+    UnknownTokenUsage,
     usage_credit_cost,
 )
-from qunxue_api.modules.billing.ports import CreditRepository
+from qunxue_api.modules.billing.ports import BillingOperations, CreditRepository
 from qunxue_api.modules.billing.service import CreditService
 
 __all__ = [
+    "BillingFailure",
+    "BillingBudgetExceeded",
+    "BillingContextMissing",
+    "BillingReplayBlocked",
+    "BillingRouteMismatch",
+    "ModelDeliveryRejected",
+    "UnknownTokenUsage",
+    "PICO_USD",
+    "PriceBook",
+    "Tariff",
+    "UnknownPrice",
     "INPUT_TOKENS_PER_CREDIT",
     "OUTPUT_TOKENS_PER_CREDIT",
     "WELCOME_GRANT",
+    "SIGNUP_GRANT",
     "CreditCodeBatchConflict",
     "CreditCodeSpec",
     "CreditCodeUnavailable",
     "CreditEntry",
     "CreditRedemption",
     "CreditRepository",
+    "BillingOperations",
     "CreditRunInProgress",
     "CreditService",
     "CreditSummary",
@@ -33,3 +54,5 @@ __all__ = [
     "GeneratedCreditCodeBatch",
     "usage_credit_cost",
 ]
+
+from qunxue_api.modules.billing.pricing import PICO_USD, PriceBook, Tariff, UnknownPrice

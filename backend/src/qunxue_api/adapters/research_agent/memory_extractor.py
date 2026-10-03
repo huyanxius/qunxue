@@ -7,10 +7,10 @@ from uuid import UUID
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
+from qunxue_api.adapters.model.metering import MeteredOpenAIChatModel
 from qunxue_api.modules.agent_memory import LearningBatch, MemoryCandidate, redact_sensitive
 
 from .pydantic_runner import _is_deepseek_flash
@@ -72,7 +72,9 @@ class PydanticMemoryExtractor:
         async with AsyncOpenAI(
             base_url=self._base_url, api_key=self._api_key, max_retries=0, timeout=self._timeout
         ) as client:
-            model = OpenAIChatModel(self._model, provider=OpenAIProvider(openai_client=client))
+            model = MeteredOpenAIChatModel(
+                self._model, provider=OpenAIProvider(openai_client=client), require_billing=True
+            )
             settings = {"timeout": self._timeout, "max_tokens": 1500}
             if _is_deepseek_flash(base_url=self._base_url, model=self._model):
                 settings["extra_body"] = {"thinking": {"type": "disabled"}}

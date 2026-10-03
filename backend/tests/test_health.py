@@ -8,6 +8,7 @@ from time import monotonic
 
 import httpx
 import pytest
+from billing_test_support import synthetic_billing_runtime
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
@@ -419,7 +420,17 @@ def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
                 second_probe.set()
         if current_count == 1:
             raise httpx.ConnectError("private transport failure", request=request)
-        return httpx.Response(200, json=_probe_completion(), request=request)
+        completion = {
+            **_probe_completion(),
+            "model": "private-model-name",
+            "id": f"synthetic-probe-{current_count}",
+            "usage": {
+                "prompt_tokens": 1,
+                "completion_tokens": 1,
+                "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+            },
+        }
+        return httpx.Response(200, json=completion, request=request)
 
     transport = httpx.MockTransport(handle)
     app = create_app(
@@ -435,6 +446,10 @@ def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
         database=client.app.state.database,
         model_probe_transport=transport,
     )
+    app.state.billing_operations.runtime = synthetic_billing_runtime(
+        app.state.database.engine, aliases={"private-model-name": "gpt-6-luna"}
+    )
+    app.state.billing_operations.phase_policies["model_probe"] = "operator"
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
     with TestClient(app):
@@ -462,6 +477,10 @@ def test_shutdown_cancels_an_in_flight_probe_without_orphan_work(
         database=client.app.state.database,
         model_probe_transport=transport,
     )
+    app.state.billing_operations.runtime = synthetic_billing_runtime(
+        app.state.database.engine, aliases={"private-model-name": "gpt-6-luna"}
+    )
+    app.state.billing_operations.phase_policies["model_probe"] = "operator"
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
     with TestClient(app):

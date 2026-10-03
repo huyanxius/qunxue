@@ -3,16 +3,21 @@
 import json
 from collections import OrderedDict
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass
 from hashlib import sha256
 from threading import Lock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from qunxue_api.modules.agent_memory import Memory
 
 
 class MemoryOverviewUnavailable(Exception):
     pass
+
+
+class MemoryOverviewStale(Exception):
+    """The requested snapshot changed before the summary could be delivered."""
 
 
 class MemoryOverviewBusy(Exception):
@@ -41,8 +46,11 @@ class _OverviewEntry:
 
 
 class MemoryOverview:
-    def __init__(self, generate: Callable[[tuple[Memory, ...]], str] | None = None):
+    def __init__(
+        self, generate: Callable[[tuple[Memory, ...]], str] | None = None, *, billing=None
+    ):
         self.generate = generate
+        self.billing = billing
         self._lock = Lock()
         self._active: set[UUID] = set()
         self._cache: OrderedDict[tuple[UUID, UUID | None], _OverviewEntry] = OrderedDict()
@@ -52,7 +60,13 @@ class MemoryOverview:
             self._cache.pop((user_id, task_id), None)
 
     def summarize(
-        self, user_id: UUID, task_id: UUID | None, version: int, items: tuple[Memory, ...]
+        self,
+        user_id: UUID,
+        task_id: UUID | None,
+        version: int,
+        items: tuple[Memory, ...],
+        *,
+        before_delivery=None,
     ) -> str:
         if not items:
             self.invalidate(user_id, task_id)
@@ -81,19 +95,36 @@ class MemoryOverview:
             while len(self._cache) > 64:
                 self._cache.popitem(last=False)
         try:
-            summary = self.generate(items).strip()
-            if not summary or len(summary) > 2000:
-                raise ValueError("invalid_memory_overview")
-            with self._lock:
-                # A mutation can invalidate this placeholder while the model
-                # runs. Its old result must never repopulate a cleared scope.
-                if self._cache.get(key) is entry:
-                    entry.summary = summary
-            return summary
+            context = (
+                self.billing.open(
+                    user_id=user_id,
+                    run_id=uuid4(),
+                    payload={"fingerprint": fingerprint.hex()},
+                    phase="memory_overview",
+                )
+                if self.billing
+                else nullcontext()
+            )
+            with context as scope:
+                summary = self.generate(items).strip()
+                if not summary or len(summary) > 2000:
+                    raise ValueError("invalid_memory_overview")
+                with self._lock:
+                    # A mutation can invalidate this placeholder while the model
+                    # runs. Its old result must never repopulate a cleared scope.
+                    if self._cache.get(key) is entry:
+                        entry.summary = summary
+                if before_delivery:
+                    before_delivery()
+                if scope:
+                    scope.finish("success")
+                return summary
         except Exception as error:
             with self._lock:
                 if self._cache.get(key) is entry:
                     del self._cache[key]
+            if isinstance(error, MemoryOverviewStale):
+                raise
             raise MemoryOverviewUnavailable("概览暂未生成，可以先查看下方记忆记录。") from error
         finally:
             with self._lock:

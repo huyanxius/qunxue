@@ -56,6 +56,7 @@ from qunxue_api.application import (
     MatchingRequestConflict,
     MatchingSnapshotConflict,
 )
+from qunxue_api.modules.billing import BillingFailure
 from qunxue_api.modules.knowledge_catalog import RetrievalPipelineUnavailable
 from qunxue_api.modules.theory_matching import (
     ConfirmedTheoryPlanSnapshot,
@@ -234,6 +235,8 @@ def retry_match_candidate(
             ErrorCode.NOT_FOUND,
             "Match run or failed candidate was not found.",
         )
+    except BillingFailure:
+        raise
     except ValueError as error:
         return _error_response(409, ErrorCode.VALIDATION_ERROR, str(error))
     return _match_run_response(snapshot)

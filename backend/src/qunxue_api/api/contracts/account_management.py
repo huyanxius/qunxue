@@ -47,11 +47,30 @@ class CreditLedgerEntryResponse(BaseModel):
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
     created_at: datetime
+    model: str | None = None
 
 
 class CreditPricingResponse(BaseModel):
+    mode: Literal["legacy_tokens", "model_rates", "unconfigured"] = "legacy_tokens"
+    credits_per_usd: int | None = None
+    price_version: str | None = None
+    reference_currency: str = "USD"
+    points_per_cny: int | None = None
+    retail_rate_ppm: int | None = None
+    fx_cny_per_usd_micro: int | None = None
+    fx_snapshot_id: str | None = None
+    fx_as_of: str | None = None
+    fx_source: str | None = None
     input_tokens_per_credit: int = Field(ge=1)
     output_tokens_per_credit: int = Field(ge=1)
+
+
+class CreditUsageBucketResponse(BaseModel):
+    bucket_id: str
+    kind: Literal["subscription", "top_up", "welcome"]
+    available_points: int = Field(ge=0)
+    limit_points: int = Field(gt=0)
+    expires_at: datetime | None = None
 
 
 class CreditSummaryResponse(BaseModel):
@@ -60,6 +79,12 @@ class CreditSummaryResponse(BaseModel):
     grant_amount: int = Field(ge=0)
     is_unlimited: bool
     pricing: CreditPricingResponse
+    frozen_points: int = Field(default=0, ge=0)
+    available_balance: int | None = None
+    operations: list[dict] = Field(default_factory=list)
+    total_granted_points: int | None = Field(default=None, ge=0)
+    active_usage_buckets: list[CreditUsageBucketResponse] = Field(default_factory=list)
+    quota_status: Literal["known", "unavailable"] = "unavailable"
     entries: list[CreditLedgerEntryResponse]
     total_entries: int = Field(ge=0)
     next_cursor: str | None
@@ -188,6 +213,7 @@ class PasswordResetRequest(BaseModel):
     @classmethod
     def normalize_email(cls, value: str) -> str:
         import re
+
         value = value.strip().casefold()
         if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
             raise ValueError("Invalid email address")

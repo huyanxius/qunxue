@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, nullcontext
 
 from qunxue_api.modules.agent_memory import LearningBatch, MemoryCandidate, MemoryLearningRepository
 
@@ -19,7 +19,9 @@ class MemoryLearningWorker:
         idle_seconds: int = 600,
         daily_calls: int = 8,
         daily_tokens: int = 64000,
+        billing=None,
     ) -> None:
+        self._billing = billing
         self._repository_scope = repository_scope
         self._extractor = extractor
         self._idle_seconds = idle_seconds
@@ -39,9 +41,24 @@ class MemoryLearningWorker:
         if batch is None:
             return False
         try:
-            candidates, input_tokens, output_tokens = extract(batch)
-            with self._repository_scope() as repository:
-                repository.complete(batch, candidates, input_tokens, output_tokens)
+            context = (
+                self._billing.open(
+                    user_id=batch.user_id,
+                    run_id=batch.lease_token,
+                    payload={"conversation_id": str(batch.conversation_id)},
+                    phase="memory_learning",
+                )
+                if self._billing
+                else nullcontext()
+            )
+            with context as scope:
+                candidates, input_tokens, output_tokens = extract(batch)
+                with self._repository_scope() as repository:
+                    completed = repository.complete(batch, candidates, input_tokens, output_tokens)
+                if completed is False:
+                    raise RuntimeError("memory_learning_lease_lost")
+                if scope:
+                    scope.finish("success")
         except Exception:
             # Store a stable error code, never prompts, credentials or provider error bodies.
             logger.warning("Memory learning attempt failed; the conversation remains usable.")

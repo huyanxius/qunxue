@@ -23,6 +23,7 @@ from sqlalchemy.schema import CreateIndex
 
 from qunxue_api.adapters.sqlite import Base
 from qunxue_api.adapters.sqlite.database import Database
+from qunxue_api.adapters.sqlite.durable_billing import create_billing_tables
 from qunxue_api.settings import BACKEND_ROOT, Settings
 
 
@@ -824,7 +825,28 @@ def test_alembic_head_matches_orm_metadata(
                 and not table_name.startswith("research_material_search")
         }
         metadata_tables = set(Base.metadata.tables)
-        assert database_tables == metadata_tables
+        native_billing_tables = {"billing_operations", "billing_attempts", "billing_precision"}
+        assert database_tables == metadata_tables | native_billing_tables
+        # Billing uses native SQL tables. Check their complete installed DDL
+        # against a fresh reference before comparing the remaining ORM tables.
+        reference = create_engine("sqlite://")
+        try:
+            create_billing_tables(reference)
+            schema_query = text(
+                "SELECT type,name,sql FROM sqlite_master "
+                "WHERE tbl_name IN ('billing_operations','billing_attempts','billing_precision') "
+                "AND type IN ('table','index')"
+            )
+            with reference.connect() as expected, database.engine.connect() as actual:
+                def definitions(connection):
+                    return {
+                        (kind, name, _normalize_sql(sql) if sql is not None else None)
+                        for kind, name, sql in connection.execute(schema_query)
+                    }
+
+                assert definitions(actual) == definitions(expected)
+        finally:
+            reference.dispose()
         assert _primary_key_mismatches(inspector, Base.metadata) == {}
 
         # Alembic covers foreign keys, server defaults, types, uniqueness, and
@@ -841,7 +863,10 @@ def test_alembic_head_matches_orm_metadata(
                 reflected
                 and object_type == "table"
                 and name is not None
-                    and name.startswith(("knowledge_search_fts", "research_material_search"))
+                    and (
+                        name in native_billing_tables
+                        or name.startswith(("knowledge_search_fts", "research_material_search"))
+                    )
             ):
                 return False
             if object_type == "foreign_key_constraint":

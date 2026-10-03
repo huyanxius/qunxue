@@ -1,7 +1,9 @@
+import json
 from datetime import UTC, datetime, timedelta
+from fractions import Fraction
 from uuid import UUID, uuid4
 
-from sqlalchemy import case, func, select, update
+from sqlalchemy import case, func, select, text, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
@@ -86,14 +88,17 @@ class SqliteCreditRepository:
         account = self._session.get(CreditAccountRow, str(user_id))
         if account is None:
             return None
-        total_entries = self._session.scalar(
-            select(func.count())
-            .select_from(CreditLedgerRow)
-            .where(
-                CreditLedgerRow.user_id == str(user_id),
-                CreditLedgerRow.kind == "usage",
+        total_entries = (
+            self._session.scalar(
+                select(func.count())
+                .select_from(CreditLedgerRow)
+                .where(
+                    CreditLedgerRow.user_id == str(user_id),
+                    CreditLedgerRow.kind == "usage",
+                )
             )
-        ) or 0
+            or 0
+        )
         page_limit = max(1, min(limit, 100))
         rows = self._session.scalars(
             select(CreditLedgerRow)
@@ -109,15 +114,34 @@ class SqliteCreditRepository:
             .offset(max(0, offset))
             .limit(page_limit)
         ).all()
+        frozen, operations = self._billing_details(user_id, page_limit, offset)
+        grants = self._session.scalars(
+            select(CreditLedgerRow).where(
+                CreditLedgerRow.user_id == str(user_id), CreditLedgerRow.kind != "usage"
+            )
+        ).all()
+        welcome_only = (
+            len(grants) == 1 and grants[0].kind == "signup_grant"
+            and 0 <= account.balance <= grants[0].points
+        )
+        # Historic redemption resets and subscriptions do not establish paid
+        # bucket attribution. Only an unmixed welcome balance is provable here.
+        buckets = ({
+            "bucket_id": grants[0].entry_id, "kind": "welcome",
+            "available_points": max(0, account.balance - frozen),
+            "limit_points": grants[0].points, "expires_at": None,
+        },) if welcome_only else ()
         return CreditSummary(
             balance=account.balance,
+            frozen_points=frozen,
+            available_balance=max(0, account.balance - frozen),
+            operations=operations,
+            total_granted_points=grants[0].points if welcome_only else None,
+            active_usage_buckets=buckets,
+            quota_status="known" if welcome_only else "unavailable",
             entries=tuple(self._entry(row) for row in rows),
             total_entries=total_entries,
-            next_cursor=(
-                str(offset + page_limit)
-                if offset + page_limit < total_entries
-                else None
-            ),
+            next_cursor=(str(offset + page_limit) if offset + page_limit < total_entries else None),
         )
 
     def create_redemption_codes(self, *, codes: tuple[CreditCodeSpec, ...]) -> None:
@@ -139,16 +163,13 @@ class SqliteCreditRepository:
             for code in codes
         ]
         self._session.execute(
-            sqlite_insert(CreditRedemptionCodeRow)
-            .values(values)
-            .on_conflict_do_nothing()
+            sqlite_insert(CreditRedemptionCodeRow).values(values).on_conflict_do_nothing()
         )
         self._session.flush()
         stored = self._session.scalars(
             select(CreditRedemptionCodeRow)
             .where(
-                CreditRedemptionCodeRow.created_by_user_id
-                == str(first.created_by_user_id),
+                CreditRedemptionCodeRow.created_by_user_id == str(first.created_by_user_id),
                 CreditRedemptionCodeRow.batch_id == first.batch_id,
             )
             .order_by(CreditRedemptionCodeRow.code_index)
@@ -168,10 +189,18 @@ class SqliteCreditRepository:
         code_hash: str,
         now: datetime,
     ) -> CreditRedemption:
+        # A no-op account UPDATE acquires SQLite's writer lock before reading
+        # frozen funds or claiming the code. DurableBilling reserves with BEGIN
+        # IMMEDIATE, so a new hold cannot interleave with this balance reset.
+        # The caller's existing transaction owns the lock through commit/rollback.
+        self._session.execute(
+            update(CreditAccountRow)
+            .where(CreditAccountRow.user_id == str(user_id))
+            .values(balance=CreditAccountRow.balance)
+            .execution_options(synchronize_session=False)
+        )
         code = self._session.scalar(
-            select(CreditRedemptionCodeRow).where(
-                CreditRedemptionCodeRow.code_hash == code_hash
-            )
+            select(CreditRedemptionCodeRow).where(CreditRedemptionCodeRow.code_hash == code_hash)
         )
         if code is None or _as_utc(code.expires_at) < _as_utc(now):
             raise CreditCodeUnavailable
@@ -186,6 +215,11 @@ class SqliteCreditRepository:
                 balance=self._current_balance(user_id),
             )
 
+        frozen, _ = self._billing_details(user_id, 1, 0)
+        if frozen:
+            from qunxue_api.modules.billing import CreditRunInProgress
+
+            raise CreditRunInProgress
         claimed = self._session.execute(
             update(CreditRedemptionCodeRow)
             .where(
@@ -347,6 +381,90 @@ class SqliteCreditRepository:
             self._session.flush()
             return self._entry(row)
         raise RuntimeError("credit balance changed concurrently")
+
+    def _billing_details(self, user_id, limit, offset):
+        exists = self._session.scalar(
+            text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='billing_operations'")
+        )
+        if not exists:
+            return 0, ()
+        frozen = self._session.scalar(
+            text(
+                "SELECT coalesce(sum(hold_points),0) "
+                "FROM billing_operations WHERE user_id=:user AND status='active'"
+            ),
+            {"user": str(user_id)},
+        )
+        rows = (
+            self._session.execute(
+                text(
+                    "SELECT * FROM billing_operations WHERE user_id=:user "
+                    "ORDER BY created_at DESC,run_id DESC LIMIT :limit OFFSET :offset"
+                ),
+                {"user": str(user_id), "limit": limit, "offset": max(0, offset)},
+            )
+            .mappings()
+            .all()
+        )
+        operations = []
+        for row in rows:
+            prices = json.loads(row["price_json"])
+            attempts = (
+                self._session.execute(
+                    text(
+                        "SELECT attempt_id,endpoint_id,provider_host,api_type,"
+                        "requested_model,returned_model,requested_effort,requested_service_tier"
+                        ",billable,"
+                        "returned_service_tier,provider_response_id,outcome,usage_state,input_t"
+                        "okens,"
+                        "cache_read_tokens,cache_write_tokens,output_tokens,reasoning_tokens,fi"
+                        "nish_reason,"
+                        "reference_cost_pico,procurement_cost_pico,procurement_status,overrun_c"
+                        "ost_pico,"
+                        "failure_code,price_json,created_at,updated_at FROM billing_attempts WHERE "
+                        "run_id=:run "
+                        "ORDER BY created_at,attempt_id"
+                    ),
+                    {"run": row["run_id"]},
+                )
+                .mappings()
+                .all()
+            )
+            operations.append(
+                {
+                    "operation_id": row["run_id"],
+                    "outcome": row["status"],
+                    "frozen_points": row["hold_points"],
+                    "points_charged": row["charged_points"],
+                    "exact_credit_numerator": str(Fraction(row["credit_pico"]).numerator),
+                    "exact_credit_denominator": str(Fraction(row["credit_pico"]).denominator),
+                    "original_credit_numerator": str(
+                        Fraction(row["original_credit_pico"]).numerator
+                    ),
+                    "original_credit_denominator": str(
+                        Fraction(row["original_credit_pico"]).denominator
+                    ),
+                    "credit_scale": "1000000000000",
+                    "price_version": prices["version"],
+                    "credits_per_usd": prices["credits_per_usd"],
+                    "reference_currency": "USD",
+                    "retail_snapshot": {key: prices.get(key) for key in (
+                        "points_per_cny", "retail_rate_ppm", "fx_cny_per_usd_micro",
+                        "fx_snapshot_id", "fx_as_of", "fx_source",
+                        "procurement_estimate_source", "procurement_estimate_ratio",
+                    )},
+                    "exempt": bool(row["exempt"]),
+                    "created_at": row["created_at"],
+                    "attempts": [
+                        {
+                            **{key: value for key, value in a.items() if key != "price_json"},
+                            "price_snapshot": json.loads(a["price_json"]),
+                        }
+                        for a in attempts
+                    ],
+                }
+            )
+        return frozen, tuple(operations)
 
     def _current_balance(self, user_id: UUID) -> int:
         account = self._session.get(

@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from enum import Enum
@@ -20,6 +21,7 @@ from qunxue_api.adapters.model.types import (
     ModelProviderResult,
     ModelScenario,
 )
+from qunxue_api.modules.billing import BillingFailure
 from qunxue_api.modules.research_framework import (
     AuditFindingDraft,
     AuditFindingSeverity,
@@ -181,7 +183,9 @@ class OpenAICompatibleModelProvider:
         extra_headers: dict[str, str] | None = None,
         store: bool | None = None,
         probe_transport: httpx.AsyncBaseTransport | None = None,
+        require_billing: bool = False,
     ) -> None:
+        self._require_billing = require_billing
         parsed_url = urlsplit(base_url)
         if (
             parsed_url.scheme not in {"http", "https"}
@@ -208,9 +212,7 @@ class OpenAICompatibleModelProvider:
             else {}
         )
         # Reachability probes do not need reasoning and retain their one-token budget.
-        self._probe_options = (
-            {"thinking": {"type": "disabled"}} if self._generation_options else {}
-        )
+        self._probe_options = {"thinking": {"type": "disabled"}} if self._generation_options else {}
         self._endpoint = f"{base_url.rstrip('/')}/chat/completions"
         self._api_key = _validated_api_key(api_key)
         self._model = model.strip()
@@ -230,40 +232,49 @@ class OpenAICompatibleModelProvider:
     async def probe(self) -> None:
         """Send the smallest useful completion request to verify reachability."""
 
+        from qunxue_api.adapters.model.metering import current_operation
+
+        scope = current_operation(required=self._require_billing)
+        payload = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": "Reply with OK."}],
+            "max_tokens": 1,
+            **self._storage_options,
+            **self._probe_options,
+        }
+        attempt = (
+            scope.before_attempt_payload(payload, provider_host=urlsplit(self._endpoint).hostname)
+            if scope
+            else None
+        )
         try:
             async with httpx.AsyncClient(
-                timeout=self._timeout_seconds,
-                transport=self._probe_transport,
+                timeout=self._timeout_seconds, transport=self._probe_transport
             ) as client:
                 response = await client.post(
-                    self._endpoint,
-                    headers=self._request_headers(),
-                    json={
-                        "model": self._model,
-                        "messages": [{"role": "user", "content": "Reply with OK."}],
-                        "max_tokens": 1,
-                        **self._storage_options,
-                        **self._probe_options,
-                    },
+                    self._endpoint, headers=self._request_headers(), json=payload
                 )
-        except httpx.HTTPError as error:
-            raise self._probe_failure() from error
-
-        if not response.is_success:
-            raise self._probe_failure()
-        try:
-            completion = response.json()
-        except (TypeError, ValueError):
-            raise self._probe_failure() from None
-        if not isinstance(completion, dict):
-            raise self._probe_failure()
+            try:
+                completion = response.json()
+            except (TypeError, ValueError):
+                raise self._probe_failure() from None
+            if scope:
+                scope.complete(
+                    attempt, completion, outcome="success" if response.is_success else "error"
+                )
+            if not response.is_success or not isinstance(completion, dict):
+                raise self._probe_failure()
+        except BaseException as error:
+            if scope:
+                scope.complete(attempt, outcome="error", failure_code="probe_failed")
+            if isinstance(error, httpx.HTTPError):
+                raise self._probe_failure() from None
+            raise
         choices = completion.get("choices")
         if not isinstance(choices, list) or not choices:
             raise self._probe_failure()
         first_choice = choices[0]
-        if not isinstance(first_choice, dict) or not isinstance(
-            first_choice.get("message"), dict
-        ):
+        if not isinstance(first_choice, dict) or not isinstance(first_choice.get("message"), dict):
             raise self._probe_failure()
 
     def extract_phenomenon(
@@ -535,9 +546,7 @@ class OpenAICompatibleModelProvider:
             "allowed_references": allowed_references,
             "response_contract": {
                 "success": response_type.model_json_schema(),
-                "insufficient_sources": (
-                    _InsufficientSourcesResponse.model_json_schema()
-                ),
+                "insufficient_sources": (_InsufficientSourcesResponse.model_json_schema()),
             },
             "input": _to_jsonable(input_payload),
         }
@@ -571,6 +580,7 @@ class OpenAICompatibleModelProvider:
                     },
                 ],
                 "response_format": {"type": "json_object"},
+                "max_tokens": 5000,
                 **self._storage_options,
                 **self._generation_options,
             },
@@ -617,25 +627,37 @@ class OpenAICompatibleModelProvider:
         request_body: bytes,
         knowledge_release_id: str | None,
     ) -> bytes:
+        from qunxue_api.adapters.model.metering import current_operation
+        from qunxue_api.adapters.model.routing import current_model_route_scope
+
+        scope = current_operation(required=self._require_billing)
+        attempt = (
+            scope.before_attempt_payload(
+                json.loads(request_body), current_model_route_scope(),
+                provider_host=urlsplit(self._endpoint).hostname
+            )
+            if scope
+            else None
+        )
         request = Request(
             self._endpoint,
             data=request_body,
             headers=self._request_headers(),
             method="POST",
         )
+        completion_called = False
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
                 raw_response = response.read(_MAX_RESPONSE_BYTES + 1)
+                if scope:
+                    completion = json.loads(raw_response)
+                    completion_called = True
+                    scope.complete(attempt, completion, outcome="success")
                 declared_length = response.headers.get("Content-Length")
-                if (
-                    declared_length is not None
-                    and int(declared_length) > len(raw_response)
-                ):
+                if declared_length is not None and int(declared_length) > len(raw_response):
                     raise ModelProviderFailure(
                         code="model_unavailable",
-                        message=(
-                            "The model provider closed the response before it completed."
-                        ),
+                        message=("The model provider closed the response before it completed."),
                         knowledge_release_id=knowledge_release_id,
                         scenario=ModelScenario.PROVIDER_UNAVAILABLE,
                     )
@@ -676,7 +698,7 @@ class OpenAICompatibleModelProvider:
                 knowledge_release_id=knowledge_release_id,
                 scenario=ModelScenario.PROVIDER_UNAVAILABLE,
             ) from error
-        except ModelProviderFailure:
+        except (ModelProviderFailure, BillingFailure):
             raise
         except (HTTPException, ConnectionError, OSError, ValueError) as error:
             raise ModelProviderFailure(
@@ -685,6 +707,12 @@ class OpenAICompatibleModelProvider:
                 knowledge_release_id=knowledge_release_id,
                 scenario=ModelScenario.PROVIDER_UNAVAILABLE,
             ) from error
+        finally:
+            if scope and sys.exc_info()[0] is not None:
+                if completion_called:
+                    scope.runtime.mark_attempt_error(attempt, "legacy_transport_failed")
+                else:
+                    scope.complete(attempt, failure_code="legacy_transport_failed")
 
         return raw_response
 

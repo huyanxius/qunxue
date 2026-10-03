@@ -27,7 +27,7 @@ from qunxue_api.modules.agent_conversation import (
     RunAlreadyActive,
     SubjectAgentRunner,
 )
-from qunxue_api.modules.billing import CreditService
+from qunxue_api.modules.billing import BillingOperations, CreditService
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +51,8 @@ class DisciplinaryAgentApplication:
         runner: SubjectAgentRunner,
         tools_factory: Callable[[], AgentToolContext],
         credits: CreditService | None = None,
+        billing: BillingOperations | None = None,
+        rollback: Callable[[], None] | None = None,
         atomic: Callable[[], AbstractContextManager[object]] | None = None,
         ensure_research_draft: Callable[..., UUID] | None = None,
         bind_research_draft: Callable[..., UUID] | None = None,
@@ -61,6 +63,8 @@ class DisciplinaryAgentApplication:
         self._runner = runner
         self._tools_factory = tools_factory
         self._credits = credits
+        self._billing = billing
+        self._rollback = rollback
         self._atomic = atomic or nullcontext
         self._ensure_research_draft = ensure_research_draft
         self._bind_research_draft = bind_research_draft
@@ -80,6 +84,9 @@ class DisciplinaryAgentApplication:
                 self._credits.release(user_id=user_id, run_id=run.run_id)
         if expired:
             self._conversations.commit()
+            if self._billing is not None:
+                for run in expired:
+                    self._billing.close(run_id=run.run_id, outcome="error")
         return self._conversations.get_conversation(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -493,6 +500,9 @@ class DisciplinaryAgentApplication:
             "_confirmed_research_plan": confirmed_plan,
             "_research_intent": "research" if research_required else None,
         }
+        billing_resume = existing_run is not None and existing_run.status in {
+            "awaiting_clarification", "awaiting_plan_confirmation"
+        }
         run = self._conversations.start_run(
             user_id=user_id,
             conversation_id=conversation.conversation_id,
@@ -581,8 +591,20 @@ class DisciplinaryAgentApplication:
             if on_delta is not None:
                 on_delta(delta)
 
+        billing_context = None
         try:
-            if self._credits is not None:
+            if self._billing is not None:
+                self._conversations.commit()
+                billing_candidate = self._billing.open(
+                    user_id=user_id,
+                    run_id=run.run_id,
+                    payload=request_snapshot,
+                    before_network=lambda: checkpoint(force=True),
+                    **({"resume": True} if billing_resume else {}),
+                )
+                billing_candidate.__enter__()
+                billing_context = billing_candidate
+            elif self._credits is not None:
                 self._credits.reserve(user_id=user_id, run_id=run.run_id)
                 self._conversations.commit()
             current = self.get_conversation(
@@ -694,11 +716,18 @@ class DisciplinaryAgentApplication:
             # plan. Missing decisions never authorize research, including on retries.
             needs_planning = not deep_research_started and (
                 mode == "deep_research"
-                or ((deep_research_action not in {"clarify", "confirm"}
-                     or (deep_research_action == "clarify"
-                         and getattr(self._runner, "handles", lambda **_: False)(
-                             prompt=prompt, tools=tools)))
-                    and not (run.partial_answer or prior_summary))
+                or (
+                    (
+                        deep_research_action not in {"clarify", "confirm"}
+                        or (
+                            deep_research_action == "clarify"
+                            and getattr(self._runner, "handles", lambda **_: False)(
+                                prompt=prompt, tools=tools
+                            )
+                        )
+                    )
+                    and not (run.partial_answer or prior_summary)
+                )
             )
             if needs_planning:
                 prepare_research = getattr(self._runner, "prepare_research", None)
@@ -706,16 +735,17 @@ class DisciplinaryAgentApplication:
                 decision = None
                 if callable(prepare_research):
                     prepare_kwargs = {
-                        "prompt": prompt, "conversation": conversation_history,
+                        "prompt": prompt,
+                        "conversation": conversation_history,
                         "on_event": planning_events.append,
                     }
                     parameters = signature(prepare_research).parameters
                     accepts_kwargs = any(
-                        parameter.kind is Parameter.VAR_KEYWORD
-                        for parameter in parameters.values()
+                        parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters.values()
                     )
                     for name, value in {
-                        "tools": tools, "mode": mode,
+                        "tools": tools,
+                        "mode": mode,
                         "research_required": research_required,
                         "skip_clarification": deep_research_action == "skip",
                         "is_cancelled": cancelled,
@@ -747,38 +777,53 @@ class DisciplinaryAgentApplication:
                         if on_research_event is not None:
                             on_research_event(planning_event)
                         state = (
-                            "awaiting_clarification" if planning_event.kind == "ask"
+                            "awaiting_clarification"
+                            if planning_event.kind == "ask"
                             else "awaiting_plan_confirmation"
                         )
                         pending = {
-                            "kind": "deep_research_pending", "version": 1,
-                            "state": state, "prompt": prompt,
+                            "kind": "deep_research_pending",
+                            "version": 1,
+                            "state": state,
+                            "prompt": prompt,
                             **dict(planning_event.payload),
                         }
                         if deep_research_selection:
                             pending["selected_intent"] = deep_research_selection
-                        request_snapshot["_research_intent"] = "research"
-                        self._conversations.checkpoint_run(
-                            user_id=user_id, run_id=run.run_id, lease_token=run.lease_token,
-                            request_snapshot=request_snapshot,
-                        )
-                        self._conversations.finish_run(
-                            run_id=run.run_id, lease_token=run.lease_token,
-                            status=state, tool_summary=(pending,),
-                        )
-                        if self._credits is not None:
-                            self._credits.release(user_id=user_id, run_id=run.run_id)
+                        with self._atomic():
+                            request_snapshot["_research_intent"] = "research"
+                            self._conversations.checkpoint_run(
+                                user_id=user_id,
+                                run_id=run.run_id,
+                                lease_token=run.lease_token,
+                                request_snapshot=request_snapshot,
+                            )
+                            self._conversations.finish_run(
+                                run_id=run.run_id,
+                                lease_token=run.lease_token,
+                                status=state,
+                                tool_summary=(pending,),
+                            )
+                            if self._credits is not None:
+                                self._credits.release(user_id=user_id, run_id=run.run_id)
+                            if billing_context is not None:
+                                billing_context.finish("paused")
                         self._conversations.commit()
                         return AgentTurnExecution(
-                            conversation=current, run_id=run.run_id,
+                            conversation=current,
+                            run_id=run.run_id,
                             result=AgentRunResult(
-                                answer="", citations=(),
+                                answer="",
+                                citations=(),
                                 release_id=(
                                     run.knowledge_release_id or tools.release.knowledge_release_id
                                 ),
-                                provider=run.provider, model=run.model,
+                                provider=run.provider,
+                                model=run.model,
                             ),
-                            turn=None, replayed=False, tool_summary=(pending,),
+                            turn=None,
+                            replayed=False,
+                            tool_summary=(pending,),
                             pending_research=pending,
                         )
                 elif mode == "deep_research":
@@ -872,7 +917,7 @@ class DisciplinaryAgentApplication:
                     evidence_ids=evidence_ids,
                     turn_id=planned_turn_id,
                 )
-                if self._credits is not None:
+                if self._credits is not None and self._billing is None:
                     self._credits.charge(
                         user_id=user_id,
                         run_id=run.run_id,
@@ -902,26 +947,48 @@ class DisciplinaryAgentApplication:
                     if callable(finalize_agent_turn):
                         finalize_agent_turn(source_turn_id=turn_result.turn_id)
                 finalization_pending = False
-        except Exception as error:
-            failure_status = (
-                "completed" if finalization_pending and owns_run("completed") else "running"
-            )
-            if owns_run(failure_status):
-                if failure_status == "running":
-                    checkpoint(force=True)
-                if self._credits is not None:
-                    self._credits.release(user_id=user_id, run_id=run.run_id)
-                self._conversations.finish_run(
-                    run_id=run.run_id,
-                    lease_token=run.lease_token,
-                    status=("interrupted" if isinstance(error, AgentInterrupted)
-                            and failure_status == "running" else "failed"),
-                    error=None if isinstance(error, AgentInterrupted) else str(error),
-                    tool_summary=saved_summary(),
-                    expected_status=failure_status,
-                )
+                if billing_context is not None:
+                    billing_context.finish("success")
+            if billing_context is not None:
                 self._conversations.commit()
+        except Exception as error:
+            if self._rollback is not None:
+                self._rollback()
+            try:
+                failure_status = (
+                    "completed" if finalization_pending and owns_run("completed") else "running"
+                )
+                if owns_run(failure_status):
+                    if failure_status == "running":
+                        checkpoint(force=True)
+                    if self._credits is not None:
+                        self._credits.release(user_id=user_id, run_id=run.run_id)
+                    self._conversations.finish_run(
+                        run_id=run.run_id,
+                        lease_token=run.lease_token,
+                        status=(
+                            "interrupted"
+                            if isinstance(error, AgentInterrupted) and failure_status == "running"
+                            else "failed"
+                        ),
+                        error=None if isinstance(error, AgentInterrupted) else str(error),
+                        tool_summary=saved_summary(),
+                        expected_status=failure_status,
+                    )
+                    self._conversations.commit()
+            except BaseException:
+                if self._rollback is not None:
+                    self._rollback()
+                raise
+            finally:
+                if billing_context is not None:
+                    billing_context.finish(
+                        "cancelled" if isinstance(error, AgentInterrupted) else "error"
+                    )
             raise
+        finally:
+            if billing_context is not None:
+                billing_context.__exit__(None, None, None)
         if isinstance(turn_result, IdempotentTurn):
             refreshed = self.get_conversation(
                 user_id=user_id,

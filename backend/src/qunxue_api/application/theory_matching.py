@@ -1,11 +1,13 @@
 import json
 from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Protocol
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
+from qunxue_api.modules.billing import BillingOperations
 from qunxue_api.modules.knowledge_catalog import (
     KnowledgeCatalog,
     KnowledgeReleaseLevel,
@@ -76,6 +78,8 @@ class TheoryMatchingApplication:
         matching_requests: MatchingRequestRepository,
         research_tasks: ResearchTaskRepository,
         rollback: Callable[[], None] | None = None,
+        billing: BillingOperations | None = None,
+        commit: Callable[[], None] | None = None,
         invalidate_method_plan: Callable[[UUID, str], None] | None = None,
         id_factory: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
@@ -85,9 +89,36 @@ class TheoryMatchingApplication:
         self._matching_requests = matching_requests
         self._research_tasks = research_tasks
         self._rollback = rollback
+        self._billing = billing
+        self._commit = commit
         self._invalidate_method_plan = invalidate_method_plan
         self._id_factory = id_factory
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    @contextmanager
+    def _paid_scope(self, *, user_id, operation, idempotency_key, payload):
+        if self._billing is None:
+            # Mock applications and Agent tools already inside the outer turn scope.
+            yield
+            return
+        run_id = uuid5(NAMESPACE_URL, f"user-research:{operation}:{user_id}:{idempotency_key}")
+        with self._billing.open(
+            user_id=user_id,
+            run_id=run_id,
+            payload=payload,
+            before_network=self._commit,
+            phase="user_research",
+        ) as scope:
+            try:
+                yield
+                scope.finish("success")
+                if self._commit is not None:
+                    self._commit()
+            except BaseException:
+                # Release business write locks before the separate financial transaction.
+                if self._rollback is not None:
+                    self._rollback()
+                raise
 
     def start(
         self,
@@ -102,7 +133,9 @@ class TheoryMatchingApplication:
         requested_knowledge_release_id: str | None,
     ) -> MatchRunSnapshot:
         return self._start_impl(
-            user_id=user_id, task=task, phenomenon=phenomenon,
+            user_id=user_id,
+            task=task,
+            phenomenon=phenomenon,
             idempotency_key=idempotency_key,
             expected_task_version=expected_task_version,
             phenomenon_query_id=phenomenon_query_id,
@@ -122,6 +155,8 @@ class TheoryMatchingApplication:
         phenomenon_version: int,
         requested_knowledge_release_id: str | None,
     ) -> MatchRunSnapshot:
+        if task.user_id != user_id:
+            raise LookupError(task.task_id)
         request_hash = _request_hash(
             task_id=task.task_id,
             expected_task_version=expected_task_version,
@@ -164,8 +199,7 @@ class TheoryMatchingApplication:
                 )
             if (
                 requested_knowledge_release_id is not None
-                and requested_knowledge_release_id
-                != pinned.knowledge_release.knowledge_release_id
+                and requested_knowledge_release_id != pinned.knowledge_release.knowledge_release_id
             ):
                 raise MatchingSnapshotConflict(
                     "Research task is already pinned to another knowledge release."
@@ -212,44 +246,50 @@ class TheoryMatchingApplication:
                 "The research task is not pinned to a pre-reviewed final release."
             )
 
-        match_run = self._matching.start(
+        with self._paid_scope(
             user_id=user_id,
-            phenomenon=phenomenon,
-            release=release,
-        )
-        now = self._clock()
-        saved_task = self._research_tasks.save_progress(
-            replace(
-                current_task,
-                status=ResearchTaskStatus.MATCH_GENERATING,
-                version=current_task.version + 1,
-                updated_at=now,
-                current_match_run_id=match_run.match_run_id,
-                current_method_plan_status=None,
+            operation="match_start",
+            idempotency_key=idempotency_key,
+            payload={"request_hash": request_hash},
+        ):
+            match_run = self._matching.start(
+                user_id=user_id,
+                phenomenon=phenomenon,
+                release=release,
             )
-        )
-        if saved_task is None:
-            discard = getattr(self._matching, "discard", None)
-            if discard is not None:
-                discard(match_run.match_run_id)
-            if self._rollback is not None:
-                self._rollback()
-            raise MatchingSnapshotConflict("Research task version is stale.")
-        self._matching_requests.add(
-            request_record_id=self._id_factory(),
-            user_id=user_id,
-            idempotency_key=idempotency_key,
-            request_hash=request_hash,
-            match_run_id=match_run.match_run_id,
-            created_at=now,
-        )
-        claimed = self._matching_requests.get_by_idempotency_key(
-            user_id=user_id,
-            idempotency_key=idempotency_key,
-        )
-        if claimed is not None and claimed[1] != match_run.match_run_id:
-            return self._matching.get(claimed[1])
-        return match_run
+            now = self._clock()
+            saved_task = self._research_tasks.save_progress(
+                replace(
+                    current_task,
+                    status=ResearchTaskStatus.MATCH_GENERATING,
+                    version=current_task.version + 1,
+                    updated_at=now,
+                    current_match_run_id=match_run.match_run_id,
+                    current_method_plan_status=None,
+                )
+            )
+            if saved_task is None:
+                discard = getattr(self._matching, "discard", None)
+                if discard is not None:
+                    discard(match_run.match_run_id)
+                if self._rollback is not None:
+                    self._rollback()
+                raise MatchingSnapshotConflict("Research task version is stale.")
+            self._matching_requests.add(
+                request_record_id=self._id_factory(),
+                user_id=user_id,
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                match_run_id=match_run.match_run_id,
+                created_at=now,
+            )
+            claimed = self._matching_requests.get_by_idempotency_key(
+                user_id=user_id,
+                idempotency_key=idempotency_key,
+            )
+            if claimed is not None and claimed[1] != match_run.match_run_id:
+                return self._matching.get(claimed[1])
+            return match_run
 
     def get(self, match_run_id: UUID, *, user_id: UUID) -> MatchRunSnapshot:
         if not self._matching_requests.owns(user_id=user_id, match_run_id=match_run_id):
@@ -266,7 +306,7 @@ class TheoryMatchingApplication:
         expected_candidate_version: int,
         idempotency_key: str,
     ) -> MatchRunSnapshot:
-        self.get(match_run_id, user_id=user_id)
+        snapshot = self.get(match_run_id, user_id=user_id)
         request_hash = _payload_hash(
             {
                 "match_run_id": str(match_run_id),
@@ -275,7 +315,7 @@ class TheoryMatchingApplication:
                 "expected_candidate_version": expected_candidate_version,
             }
         )
-        return self._matching.retry_candidate(
+        kwargs = dict(
             match_run_id=match_run_id,
             candidate_id=candidate_id,
             expected_version=expected_match_run_version,
@@ -283,6 +323,16 @@ class TheoryMatchingApplication:
             idempotency_key=idempotency_key,
             request_hash=request_hash,
         )
+        if any(r.idempotency_key == idempotency_key for r in snapshot.candidate_retry_records):
+            # The module validates the original payload hash before returning the replay.
+            return self._matching.retry_candidate(**kwargs)
+        with self._paid_scope(
+            user_id=user_id,
+            operation=f"match_retry:{match_run_id}",
+            idempotency_key=idempotency_key,
+            payload={"request_hash": request_hash},
+        ):
+            return self._matching.retry_candidate(**kwargs)
 
     def record_decisions(
         self,
@@ -357,10 +407,7 @@ class TheoryMatchingApplication:
             )
         else:
             draft = current_draft
-            if (
-                expected_draft_version is not None
-                and draft.version != expected_draft_version
-            ):
+            if expected_draft_version is not None and draft.version != expected_draft_version:
                 raise ValueError("stale theory decision draft version")
         request_hash = _payload_hash(
             {
@@ -430,9 +477,7 @@ class TheoryMatchingApplication:
             relations=relations,
             acknowledged_candidate_ids=acknowledged_candidate_ids,
             failed_candidate_ids=failed_candidate_ids,
-            partial_completion_acknowledgement_reason=(
-                partial_completion_acknowledgement_reason
-            ),
+            partial_completion_acknowledgement_reason=(partial_completion_acknowledgement_reason),
         )
         return self._matching.save_decision_draft(
             match_run_id=match_run_id,
@@ -444,9 +489,7 @@ class TheoryMatchingApplication:
             relations=relations,
             acknowledged_candidate_ids=acknowledged_candidate_ids,
             failed_candidate_ids=failed_candidate_ids,
-            partial_completion_acknowledgement_reason=(
-                partial_completion_acknowledgement_reason
-            ),
+            partial_completion_acknowledgement_reason=(partial_completion_acknowledgement_reason),
             idempotency_key=idempotency_key,
             request_hash=_payload_hash(hash_payload),
         )
@@ -474,9 +517,7 @@ class TheoryMatchingApplication:
             {
                 "match_run_id": str(match_run_id),
                 "expected_version": expected_version,
-                "acknowledged_candidate_ids": [
-                    str(value) for value in acknowledged_candidate_ids
-                ],
+                "acknowledged_candidate_ids": [str(value) for value in acknowledged_candidate_ids],
                 "failed_candidate_ids": [str(value) for value in failed_candidate_ids],
                 "reason": reason,
             }
@@ -491,9 +532,7 @@ class TheoryMatchingApplication:
             request_hash=request_hash,
         )
         decisions = current_draft.decisions if current_draft is not None else ()
-        use_assignments = (
-            current_draft.use_assignments if current_draft is not None else ()
-        )
+        use_assignments = current_draft.use_assignments if current_draft is not None else ()
         relations = current_draft.relations if current_draft is not None else ()
         draft_hash_payload = _decision_draft_hash_payload(
             match_run_id=match_run_id,
@@ -509,9 +548,7 @@ class TheoryMatchingApplication:
         self._matching.save_decision_draft(
             match_run_id=match_run_id,
             expected_match_run_version=acknowledged.version,
-            expected_draft_version=(
-                current_draft.version if current_draft is not None else 0
-            ),
+            expected_draft_version=(current_draft.version if current_draft is not None else 0),
             completion_basis=acknowledged.completion_basis,
             decisions=decisions,
             use_assignments=use_assignments,
@@ -519,10 +556,7 @@ class TheoryMatchingApplication:
             acknowledged_candidate_ids=acknowledged_candidate_ids,
             failed_candidate_ids=failed_candidate_ids,
             partial_completion_acknowledgement_reason=reason.strip(),
-            idempotency_key=(
-                "partial-ack-draft:"
-                + sha256(idempotency_key.encode()).hexdigest()
-            ),
+            idempotency_key=("partial-ack-draft:" + sha256(idempotency_key.encode()).hexdigest()),
             request_hash=_payload_hash(draft_hash_payload),
         )
         return acknowledged
@@ -630,9 +664,7 @@ def _decision_draft_hash_payload(
                 "reason": item.reason,
                 "related_source_ids": list(item.related_source_ids),
                 "revised_applicability": item.revised_applicability,
-                "related_candidate_ids": [
-                    str(value) for value in item.related_candidate_ids
-                ],
+                "related_candidate_ids": [str(value) for value in item.related_candidate_ids],
             }
             for item in decisions
         ],
@@ -656,13 +688,9 @@ def _decision_draft_hash_payload(
             }
             for item in relations
         ],
-        "acknowledged_candidate_ids": [
-            str(value) for value in acknowledged_candidate_ids
-        ],
+        "acknowledged_candidate_ids": [str(value) for value in acknowledged_candidate_ids],
         "failed_candidate_ids": [str(value) for value in failed_candidate_ids],
-        "partial_completion_acknowledgement_reason": (
-            partial_completion_acknowledgement_reason
-        ),
+        "partial_completion_acknowledgement_reason": (partial_completion_acknowledgement_reason),
     }
 
 

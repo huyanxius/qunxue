@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import ExitStack, asynccontextmanager, contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
@@ -175,7 +175,7 @@ from qunxue_api.application.teaching_assistant import TeachingAssistantApplicati
 from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
-from qunxue_api.modules.billing import CreditService
+from qunxue_api.modules.billing import SIGNUP_GRANT, CreditService
 from qunxue_api.modules.frontier_knowledge import FrontierService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -265,7 +265,14 @@ def create_app(
     async def run_model_probe_loop(app: FastAPI) -> None:
         while True:
             try:
-                await app.state.model_provider.probe()
+                with app.state.billing_operations.open(
+                    user_id="operator:model_probe",
+                    run_id=uuid4(),
+                    payload={"phase": "model_probe"},
+                    phase="model_probe",
+                ) as scope:
+                    await app.state.model_provider.probe()
+                    scope.finish("success")
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -274,6 +281,10 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        if app.state.billing_operations.runtime:
+            app.state.billing_operations.runtime.recover_stale(
+                before=datetime.now(UTC) - timedelta(minutes=30)
+            )
         probe_task = None
         memory_task = None
         course_task = None
@@ -363,6 +374,9 @@ def create_app(
         description="群学致知前后端架构基线 API。",
         lifespan=lifespan,
     )
+    from qunxue_api.api.billing_errors import install_billing_error_handlers
+
+    install_billing_error_handlers(app)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved_settings.cors_allowed_origins),
@@ -437,6 +451,14 @@ def create_app(
     app.state.model_endpoints = model_endpoints
     app.state.model_router = model_router
     app.state.model_attempt_recorder = model_attempt_recorder
+    from qunxue_api.adapters.model.billing_operations import SqliteBillingOperations
+
+    app.state.billing_operations = SqliteBillingOperations(
+        resolved_database,
+        _billing_runtime(resolved_settings, resolved_database),
+        exempt_user_ids=lambda: getattr(app.state, "credit_exempt_user_ids", ()),
+        phase_policies=resolved_settings.billing_phase_policies,
+    )
     app.state.model_provider = resolved_model_provider
     app.state.model_gateway = ModelGateway(
         provider=resolved_model_provider,
@@ -453,7 +475,14 @@ def create_app(
     def identity_service_scope() -> Iterator[IdentityService]:
         with resolved_database.session() as session:
             yield IdentityService(
-                SqliteIdentityRepository(session),
+                SqliteIdentityRepository(
+                    session,
+                    on_user_created=lambda user: (
+                        SqliteCreditRepository(session).ensure_welcome_grant(
+                        user_id=user.user_id, points=SIGNUP_GRANT, now=user.created_at,
+                        )
+                    ),
+                ),
                 password_hasher,
                 invalid_password_hash=invalid_password_hash,
                 session_ttl=timedelta(seconds=resolved_settings.session_ttl_seconds),
@@ -473,6 +502,24 @@ def create_app(
                 SqlitePhenomenonRepository(session),
                 SqliteResearchTaskRepository(session),
             )
+
+    @contextmanager
+    def phenomenon_extraction_scope(*, user_id, run_id, payload):
+        # Financial scope outlives the business transaction, including its final commit.
+        with ExitStack() as stack:
+            scope = None
+            with resolved_database.session() as session:
+                if not app.state.model_gateway.descriptor.demonstration:
+                    scope = stack.enter_context(app.state.billing_operations.open(
+                        user_id=user_id, run_id=run_id, payload=payload,
+                        before_network=session.commit, phase="user_research",
+                    ))
+                yield PhenomenonService(
+                    SqlitePhenomenonRepository(session), SqliteResearchTaskRepository(session),
+                )
+                if scope is not None:
+                    session.flush()
+                    scope.finish("success", connection=session.connection())
 
     def build_research_analysis_application(
         session,
@@ -511,6 +558,9 @@ def create_app(
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 rollback=session.rollback,
+                billing=app.state.billing_operations.bound_to(session)
+                if not descriptor.demonstration else None,
+                commit=session.commit,
                 invalidate_method_plan=(
                     lambda task_id, reason: method_plan_service.mark_stale_for_task(
                         task_id=task_id, reason=reason
@@ -520,6 +570,7 @@ def create_app(
 
     app.state.research_task_service_scope = research_task_service_scope
     app.state.phenomenon_service_scope = phenomenon_service_scope
+    app.state.phenomenon_extraction_scope = phenomenon_extraction_scope
     app.state.theory_matching_application_scope = theory_matching_application_scope
 
     @contextmanager
@@ -1016,6 +1067,7 @@ def create_app(
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                     direct_task=teaching,
+                    require_billing=True,
                 )
             from qunxue_api.adapters.research_agent.roadshow_runner import RoadshowRunner
 
@@ -1033,6 +1085,10 @@ def create_app(
                     ),
                     conversations=conversations,
                     runner=runner,
+                    billing=(
+                        app.state.billing_operations.bound_to(session) if use_real_agent else None
+                    ),
+                    rollback=session.rollback,
                     credits=CreditService(
                         SqliteCreditRepository(session),
                         exempt_user_ids=getattr(
@@ -1041,7 +1097,10 @@ def create_app(
                             (),
                         ),
                     ),
-                    atomic=session.begin_nested,
+                    atomic=(
+                        app.state.billing_operations.bound_to(session).atomic
+                        if use_real_agent else session.begin_nested
+                    ),
                     ensure_research_draft=(
                         lambda **payload: (
                             research_start_application.ensure_draft_project(**payload).task_id
@@ -1099,7 +1158,9 @@ def create_app(
             yield MemoryService(SqliteMemoryRepository(memory_session))
 
     app.state.memory_service_scope = memory_service_scope
-    app.state.memory_overview = MemoryOverview()
+    app.state.memory_overview = MemoryOverview(
+        billing=app.state.billing_operations if app.state.model_endpoints else None
+    )
     if app.state.model_endpoints:
         endpoint = app.state.model_endpoints[0]
         app.state.memory_overview.generate = PydanticMemoryOverview(
@@ -1128,6 +1189,7 @@ def create_app(
     app.state.memory_worker = MemoryLearningWorker(
         memory_learning_scope,
         extractor=memory_extractor,
+        billing=app.state.billing_operations if memory_extractor else None,
         idle_seconds=resolved_settings.memory_learning_idle_seconds,
         daily_calls=resolved_settings.memory_learning_daily_calls,
         daily_tokens=resolved_settings.memory_learning_daily_tokens,
@@ -1149,6 +1211,7 @@ def create_app(
         else None,
         embedder=course_embedder,
         embedding_model=resolved_settings.embedding_model,
+        billing=app.state.billing_operations,
     )
     app.include_router(shared_knowledge_router)
     app.include_router(teaching_router)
@@ -1501,6 +1564,7 @@ def _model_provider_from_settings(
 
     providers: tuple[ProbeableModelProvider, ...] = tuple(
         OpenAICompatibleModelProvider(
+            require_billing=True,
             base_url=endpoint.base_url,
             api_key=endpoint.api_key,
             model=endpoint.model,
@@ -1617,3 +1681,50 @@ def _create_frontier_vector_index(settings: Settings, store: SqliteFrontierStore
         )
     )
     return FrontierVectorIndex(store, provider)
+
+
+def _billing_runtime(settings, database):
+    from qunxue_api.adapters.sqlite.durable_billing import DurableBilling
+    from qunxue_api.modules.billing import PriceBook
+
+    fields = (
+        settings.billing_price_version,
+        settings.billing_max_attempt_usd_micro,
+        settings.billing_max_operation_usd_micro,
+        settings.billing_daily_budget_usd_micro,
+    )
+    if any(value is None for value in fields):
+        return None
+    fx_fields = (
+        settings.billing_fx_cny_per_usd_micro, settings.billing_fx_snapshot_id,
+        settings.billing_fx_as_of, settings.billing_fx_source,
+    )
+    if any(value is not None for value in fx_fields):
+        if any(value is None for value in fx_fields):
+            return None
+        conversion = dict(
+            credits_per_usd=None, points_per_cny=100, retail_rate_ppm=100000,
+            fx_cny_per_usd_micro=settings.billing_fx_cny_per_usd_micro,
+            fx_snapshot_id=settings.billing_fx_snapshot_id,
+            fx_as_of=settings.billing_fx_as_of, fx_source=settings.billing_fx_source,
+        )
+    elif settings.billing_credits_per_usd is not None:
+        # Compatibility for explicit legacy snapshots; no inferred conversion.
+        conversion = dict(credits_per_usd=settings.billing_credits_per_usd)
+    else:
+        return None
+    return DurableBilling(
+        database.engine,
+        price_book=PriceBook(
+            **conversion,
+            version=settings.billing_price_version,
+            aliases=settings.billing_model_aliases,
+            usage_policies=settings.billing_usage_policies,
+            deepseek_time_basis=settings.billing_deepseek_time_basis,
+            calendar_version=settings.billing_calendar_version,
+        ),
+        max_attempt_pico=settings.billing_max_attempt_usd_micro * 10**6,
+        max_operation_pico=settings.billing_max_operation_usd_micro * 10**6,
+        daily_budget_pico=settings.billing_daily_budget_usd_micro * 10**6,
+        max_attempts=settings.billing_max_attempts,
+    )
