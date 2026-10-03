@@ -40,6 +40,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
+      - name: Hash-pinned wheel build tooling
+        run: python3 -m pip install --require-hashes --no-deps -r deploy/wheel-build-tools.lock
       - name: Deployment safety tests (synthetic only)
         run: python3 -m unittest discover -s deploy/tests -v
       - name: Frozen dependencies
@@ -57,17 +59,16 @@ jobs:
           npm run lint
           npm run test -- --maxWorkers=1 --no-file-parallelism
           npm run build
-      - name: Export locked binary dependencies
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      # Validate packaging on PRs too; deployment and artifact publication remain main-only.
+      - name: Build locked offline wheels
         run: |
-          mkdir -p release/wheelhouse
+          mkdir -p release
           cd backend
-          uv export --frozen --no-dev --no-emit-project --format requirements-txt --output-file ../release/requirements.lock
+          uv export --frozen --no-dev --no-emit-project --format requirements-txt --output-file ../release/source-requirements.lock
           cd ..
-          python3 -m pip download --only-binary=:all: --require-hashes --dest release/wheelhouse -r release/requirements.lock
+          python3 deploy/build_wheelhouse.py --source-requirements release/source-requirements.lock --wheelhouse release/wheelhouse --output release/requirements.lock --provenance release/wheel-build-provenance.json
       - name: Package exact checked commit
         id: package
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           RELEASE_REVISION: ${{ github.sha }}
         run: >-
@@ -83,6 +84,7 @@ jobs:
           path: |
             release/qunxue-release.tar.gz
             release/qunxue-release.tar.gz.sha256
+            release/wheel-build-provenance.json
           if-no-files-found: error
           retention-days: 30
           compression-level: 0

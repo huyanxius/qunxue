@@ -336,6 +336,15 @@ class DeliveryTests(unittest.TestCase):
             if 'uses:' in line:
                 self.assertRegex(line, r'@[0-9a-f]{40}( |$)')
 
+    def test_pull_requests_exercise_packaging_without_publishing(self):
+        workflow = (ROOT / '.github/workflows/delivery.yml').read_text()
+        build = workflow.split('      - name: Build locked offline wheels\n')[1]
+        build, publish = build.split('      - name: Save immutable release\n')
+        self.assertNotIn('        if:', build)
+        self.assertIn('deploy/build_wheelhouse.py', build)
+        self.assertIn('deploy/build_release.py', build)
+        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'", publish)
+
     def test_builder_packages_only_clean_checked_commit_and_verifies_roundtrip(self):
         spec = importlib.util.spec_from_file_location('builder', ROOT / 'deploy/build_release.py')
         builder = importlib.util.module_from_spec(spec)
@@ -344,6 +353,7 @@ class DeliveryTests(unittest.TestCase):
         repo.mkdir()
         (repo / 'backend/migrations/versions').mkdir(parents=True)
         (repo / 'backend/migrations/versions/one.py').write_text('revision="one"')
+        (repo / 'backend/uv.lock').write_text('# synthetic lock')
         (repo / 'frontend/dist').mkdir(parents=True)
         (repo / 'frontend/dist/index.html').write_text('<html>fixture</html>')
         (repo / 'deploy').mkdir()

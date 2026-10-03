@@ -45,6 +45,7 @@ def package(repo, wheelhouse, requirements, output, revision):
     manifest = {
         'version': 1, 'app': 'qunxue', 'revision': revision,
         'python': '3.12', 'platform': 'linux-x86_64',
+        'dependency_lock_sha256': digest(repo / 'backend/uv.lock'),
         'files': {name: digest(path) for name, path in sorted(files.items())},
         'migration_policy': policy,
     }

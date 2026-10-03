@@ -68,3 +68,11 @@ python3 -m py_compile deploy/*.py
 - [Python SQLite backup API](https://docs.python.org/3.12/library/sqlite3.html#sqlite3.Connection.backup)
 
 最近离线验证还包括现有完整 migration tree 在全新临时 SQLite 中通过固定 DB-only driver 升级至 20261002_0462（113 张表，integrity ok），没有创建 API 进程或模型调用。此数字是空库合成验证，不是三份生产库 211 张原表的重测。
+
+## 锁定 sdist 的离线 wheel 构建修复
+
+PyPI 的 bibtexparser 1.4.4 与 srt 3.5.3 只有 source distribution，`pip download --only-binary=:all:` 会阻止 main artifact 生成。CI现在先安装单独 SHA256 锁定的构建工具，再用 `pip wheel --require-hashes --no-deps --no-build-isolation` 从原始导出锁构建，不升级应用版本或重新解析依赖。
+
+`build_wheelhouse.py` 验证当前平台所需包名/版本、wheel metadata和标签，基于实际wheel bytes生成部署requirements.lock及来源证明。不能把sdist hash误当作新wheel hash。服务器仍只有wheel、`--no-index --require-hashes`，不联网编译。原始backend/uv.lock的SHA256记入release manifest，来源导出锁hash与每个wheel hash记入随artifact保存的wheel-build-provenance.json。构建工具是CI工具，不进入应用锁版本。
+
+PR 与 main 都执行离线 wheel 构建和完整打包验证；发布 artifact 和生产部署仍仅允许 main push。构建禁用 pip wheel 缓存，确保本次从 hash 核验后的源输入构建。可在临时虚拟环境用 `pip install --no-index --only-binary=:all: --require-hashes --find-links release/wheelhouse -r release/requirements.lock` 验证离线闭包。
