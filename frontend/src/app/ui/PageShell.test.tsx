@@ -3,6 +3,7 @@ import { MemoryRouter, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { PageShell } from './PageShell'
+import { ProjectActionsMenu } from '../agent/ProjectActionsMenu'
 
 vi.mock('../../modules/account', () => ({
   useAccount: () => ({
@@ -17,7 +18,7 @@ vi.mock('../../modules/account', () => ({
   }),
 }))
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.restoreAllMocks(); Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 }) })
 
 describe('PageShell global chrome', () => {
   it.each([
@@ -61,11 +62,15 @@ describe('PageShell global chrome', () => {
   })
 })
 
-it('exposes courses in desktop navigation and mobile more menu', () => {
+it.each([[1024, '桌面主导航'], [390, '移动主导航']])('keeps every destination in the navigation at %spx', (width, name) => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
   render(<MemoryRouter><PageShell><h1>课程测试</h1></PageShell></MemoryRouter>)
-  expect(within(screen.getByRole('navigation', { name: '桌面主导航' })).getByRole('link', { name: '课程' })).toHaveAttribute('href', '/courses')
-  fireEvent.click(screen.getByRole('button', { name: '更多' }))
-  expect(within(screen.getByRole('navigation', { name: '更多功能' })).getByRole('link', { name: '课程' })).toHaveAttribute('href', '/courses')
+  if (width === 390) fireEvent.click(screen.getByRole('button', { name: '打开导航菜单' }))
+  const nav = within(screen.getByRole('navigation', { name }))
+  for (const [label, href] of [['课程', '/courses'], ['研究工具', '/research/tools'], ['知识图谱', '/knowledge/graph'], ['我的研究', '/research/materials']]) {
+    expect(nav.getByRole('link', { name: label })).toHaveAttribute('href', href)
+  }
+  expect(document.querySelector('.mobile-navigation')).not.toBeInTheDocument()
 })
 
 describe('expandable knowledge folder', () => {
@@ -108,20 +113,28 @@ describe('expandable knowledge folder', () => {
     expect(nav.getByRole('link', { name: '学术前沿' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('reveals the same three links from mobile Knowledge and dismisses after selection or Escape', () => {
+  it('keeps all knowledge destinations in the drawer and closes one layer at a time', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
     render(<MemoryRouter initialEntries={['/knowledge?scope=frontier']}><PageShell><h1>页面</h1></PageShell></MemoryRouter>)
-    const nav = within(screen.getByRole('navigation', { name: '移动主导航' }))
-    const folder = nav.getByRole('button', { name: '知识库' })
-    expect(folder).toHaveAttribute('aria-expanded', 'false')
-    fireEvent.click(folder)
+    const opener = screen.getByRole('button', { name: '打开导航菜单' })
+    fireEvent.click(opener)
+    let nav = within(screen.getByRole('navigation', { name: '移动主导航' }))
+    let folder = nav.getByRole('button', { name: '知识库' })
     expect(nav.getByRole('link', { name: '学术前沿' })).toHaveAttribute('aria-current', 'page')
-    fireEvent.click(nav.getByRole('link', { name: '课程知识库' }))
-    expect(folder).toHaveAttribute('aria-expanded', 'false')
-    fireEvent.click(folder)
-    expect(nav.getByRole('link', { name: '课程知识库' })).toHaveAttribute('aria-current', 'page')
-    fireEvent.keyDown(nav.getByRole('link', { name: '课程知识库' }), { key: 'Escape' })
+    fireEvent.keyDown(nav.getByRole('link', { name: '学术前沿' }), { key: 'Escape' })
     expect(folder).toHaveAttribute('aria-expanded', 'false')
     expect(folder).toHaveFocus()
+    expect(screen.getByRole('dialog', { name: '群学致知功能栏' })).toBeInTheDocument()
+    fireEvent.click(folder)
+    fireEvent.click(nav.getByRole('link', { name: '课程知识库' }))
+    expect(screen.queryByRole('dialog', { name: '群学致知功能栏' })).not.toBeInTheDocument()
+    fireEvent.click(opener)
+    nav = within(screen.getByRole('navigation', { name: '移动主导航' }))
+    folder = nav.getByRole('button', { name: '知识库' })
+    expect(nav.getByRole('link', { name: '课程知识库' })).toHaveAttribute('aria-current', 'page')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: '群学致知功能栏' })).not.toBeInTheDocument()
+    expect(opener).toHaveFocus()
   })
 })
 
@@ -150,14 +163,62 @@ it('keeps the standalone graph selection outside the library folder', () => {
   expect(nav.getByRole('link', { name: '学科知识库' })).not.toHaveAttribute('aria-current')
 })
 
-it('keeps the mobile knowledge folder and More panel mutually exclusive', () => {
-  render(<MemoryRouter><PageShell><h1>页面</h1></PageShell></MemoryRouter>)
-  const nav = within(screen.getByRole('navigation', { name: '移动主导航' }))
-  fireEvent.click(nav.getByRole('button', { name: '更多' }))
-  expect(screen.getByRole('dialog', { name: '更多功能' })).toBeInTheDocument()
-  fireEvent.click(nav.getByRole('button', { name: '知识库' }))
-  expect(screen.queryByRole('dialog', { name: '更多功能' })).not.toBeInTheDocument()
-  expect(nav.getByRole('link', { name: '学术前沿' })).toBeInTheDocument()
-  fireEvent.click(nav.getByRole('button', { name: '更多' }))
-  expect(nav.queryByRole('link', { name: '学术前沿' })).not.toBeInTheDocument()
+it('keeps account, notifications and history accessible without a bottom navigation bar', () => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+  render(<MemoryRouter><PageShell railContent={<button>项目里的对话</button>}><h1>页面</h1></PageShell></MemoryRouter>)
+  const open = screen.getByRole('button', { name: '打开导航菜单' })
+  expect(screen.queryByRole('navigation', { name: '移动主导航' })).not.toBeInTheDocument()
+  fireEvent.click(open)
+  const drawer = screen.getByRole('dialog', { name: '群学致知功能栏' })
+  expect(within(drawer).getByRole('button', { name: '关闭导航菜单' })).toHaveFocus()
+  expect(screen.getByRole('main', { hidden: true })).toHaveAttribute('inert')
+  expect(document.querySelector('.mobile-masthead')).toHaveAttribute('inert')
+  expect(within(drawer).getByRole('button', { name: '项目里的对话' })).toBeInTheDocument()
+  expect(within(drawer).getByRole('link', { name: '账户 研究者' })).toHaveAttribute('href', '/settings')
+  expect(within(drawer).getByRole('button', { name: '退出登录' })).toBeInTheDocument()
+  fireEvent.click(within(drawer).getByRole('button', { name: '通知' }))
+  fireEvent.click(screen.getByRole('tab', { name: '更新日志' }))
+  fireEvent.keyDown(screen.getByRole('tab', { name: '更新日志' }), { key: 'Escape' })
+  expect(screen.queryByRole('tablist', { name: '通知分类' })).not.toBeInTheDocument()
+  expect(drawer).toBeInTheDocument()
+  fireEvent.click(within(drawer).getByRole('button', { name: '关闭导航菜单' }))
+  expect(open).toHaveFocus()
+  expect(screen.getByRole('main')).not.toHaveAttribute('inert')
+})
+
+it('restores the desktop rail without leaving a mobile scroll or focus lock', () => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+  render(<MemoryRouter><PageShell defaultRailCollapsed><h1>页面</h1></PageShell></MemoryRouter>)
+  fireEvent.click(screen.getByRole('button', { name: '打开导航菜单' }))
+  expect(document.body.style.overflow).toBe('hidden')
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
+  fireEvent(window, new Event('resize'))
+  expect(screen.getByRole('complementary', { name: '群学致知功能栏' })).toHaveClass('desktop-rail--collapsed')
+  expect(screen.queryByRole('dialog', { name: '群学致知功能栏' })).not.toBeInTheDocument()
+  expect(document.body.style.overflow).not.toBe('hidden')
+  expect(screen.getByRole('main')).not.toHaveAttribute('inert')
+})
+
+
+it('keeps project actions inside the mobile drawer and dismisses the inner menu first', () => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+  const onDelete = vi.fn()
+  render(<MemoryRouter><PageShell railContent={<ProjectActionsMenu taskId="project-a" title="社区研究" onDelete={onDelete} />}><h1>页面</h1></PageShell></MemoryRouter>)
+  fireEvent.click(screen.getByRole('button', { name: '打开导航菜单' }))
+  const drawer = screen.getByRole('dialog', { name: '群学致知功能栏' })
+  const trigger = within(drawer).getByRole('button', { name: '社区研究的项目操作' })
+  fireEvent.click(trigger)
+  const action = within(drawer).getByRole('menuitem', { name: '删除项目' })
+  fireEvent.keyDown(action, { key: 'Escape' })
+  expect(drawer).toBeInTheDocument()
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  expect(trigger).toHaveFocus()
+  fireEvent.click(trigger)
+  fireEvent.click(within(drawer).getByRole('menuitem', { name: '删除项目' }))
+  fireEvent(window, new Event('resize'))
+  expect(within(drawer).getByRole('dialog', { name: '删除项目' })).toBeInTheDocument()
+  expect(onDelete).not.toHaveBeenCalled()
+  fireEvent.keyDown(within(drawer).getByRole('button', { name: '取消' }), { key: 'Escape' })
+  expect(drawer).toBeInTheDocument()
+  expect(screen.queryByRole('dialog', { name: '删除项目' })).not.toBeInTheDocument()
 })

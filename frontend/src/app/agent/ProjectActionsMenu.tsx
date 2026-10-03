@@ -17,11 +17,24 @@ export function ProjectActionsMenu({ taskId, title, onDelete }: {
   const [position, setPosition] = useState({ left: 0, top: 0 })
   useLayoutEffect(() => {
     if (!mode || !anchor.current) return
-    const rect = anchor.current.getBoundingClientRect()
-    setPosition({
-      left: Math.max(8, Math.min(rect.right + 8, window.innerWidth - (panel.current?.offsetWidth ?? 240) - 8)),
-      top: Math.max(8, Math.min(rect.top, window.innerHeight - (panel.current?.offsetHeight ?? 180) - 8)),
-    })
+    const place = () => {
+      const target = anchor.current
+      if (!target) return
+      const rect = target.getBoundingClientRect()
+      const viewport = window.innerWidth <= 760 ? window.visualViewport : null
+      const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0
+      const width = viewport?.width ?? window.innerWidth, height = viewport?.height ?? window.innerHeight
+      setPosition({
+        left: Math.max(left + 8, Math.min(rect.right + 8, left + width - (panel.current?.offsetWidth || 244) - 8)),
+        top: Math.max(top + 8, Math.min(rect.top, top + height - (panel.current?.offsetHeight || 180) - 8)),
+      })
+    }
+    place()
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', place)
+    viewport?.addEventListener('scroll', place)
+    window.addEventListener('resize', place)
+    return () => { viewport?.removeEventListener('resize', place); viewport?.removeEventListener('scroll', place); window.removeEventListener('resize', place) }
   }, [mode, error])
   useEffect(() => {
     if (!mode) return
@@ -29,7 +42,7 @@ export function ProjectActionsMenu({ taskId, title, onDelete }: {
     const outside = (event: PointerEvent) => {
       if (!busy && !panel.current?.contains(event.target as Node) && !anchor.current?.contains(event.target as Node)) setMode(null)
     }
-    const dismiss = () => { if (!busy) setMode(null) }
+    const dismiss = () => { if (!busy && window.innerWidth > 760) setMode(null) }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) { setMode(null); anchor.current?.focus() } }
     const scroll = (event: Event) => { if (!panel.current?.contains(event.target as Node)) dismiss() }
     document.addEventListener('pointerdown', outside)
@@ -68,6 +81,6 @@ export function ProjectActionsMenu({ taskId, title, onDelete }: {
         </div>
       </div>}
       {error ? <p role="alert">{error}</p> : null}
-    </div>, anchor.current?.closest('.app-frame') ?? document.body) : null}
+    </div>, (window.innerWidth <= 760 ? anchor.current?.closest('.desktop-rail') : null) ?? anchor.current?.closest('.app-frame') ?? document.body) : null}
   </>
 }
