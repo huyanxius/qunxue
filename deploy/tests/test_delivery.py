@@ -29,7 +29,7 @@ class DeliveryTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        self.root = Path(self.tmp.name).resolve()
 
     def archive(self, extras=None, revision=SHA):
         files = {'frontend/index.html': b'<html>hello</html>', 'wheelhouse/fake.whl': b'wheel',
@@ -263,7 +263,8 @@ class DeliveryTests(unittest.TestCase):
         archive = root / 'archive'
         archive.write_bytes(b'payload')
         config = {'root': str(root), 'minimum_free_bytes': 0, 'pm2': '/test/pm2', 'databases': []}
-        policy = {'migration_policy': POLICY}
+        (previous / 'release.json').write_text(json.dumps({'files': {}, 'revision': OLD}))
+        policy = {'migration_policy': POLICY, 'files': {'backend/src/new.py': 'a' * 64}}
         with patch.object(receiver, 'active_release', return_value=(previous, OLD)), \
              patch.object(receiver, 'check_process'), patch.object(receiver, 'extract', return_value=policy), \
              patch.object(receiver, 'migration_changes'), patch.object(receiver, 'prepare_runtime'), \
@@ -288,6 +289,7 @@ class DeliveryTests(unittest.TestCase):
         target.mkdir()
         (root / 'current').symlink_to(current)
         (current / 'release.json').write_text(json.dumps({'migration_policy': POLICY}))
+        (target / 'release.json').write_text(json.dumps({'migration_policy': POLICY}))
         (root / 'deployment-state.json').write_text(json.dumps(
             {'revision': SHA, 'previous_revision': OLD, 'phase': 'healthy'}))
         config = {'root': str(root), 'pm2': '/test/pm2'}
@@ -336,14 +338,17 @@ class DeliveryTests(unittest.TestCase):
             if 'uses:' in line:
                 self.assertRegex(line, r'@[0-9a-f]{40}( |$)')
 
-    def test_pull_requests_exercise_packaging_without_publishing(self):
+    def test_wheel_build_and_packaging_are_scoped_to_live_main_baseline(self):
         workflow = (ROOT / '.github/workflows/delivery.yml').read_text()
-        build = workflow.split('      - name: Build locked offline wheels\n')[1]
-        build, publish = build.split('      - name: Save immutable release\n')
-        self.assertNotIn('        if:', build)
-        self.assertIn('deploy/build_wheelhouse.py', build)
-        self.assertIn('deploy/build_release.py', build)
-        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'", publish)
+        checks, deployment = workflow.split('\n  deploy:\n')
+        self.assertNotIn('deploy/build_wheelhouse.py', checks)
+        self.assertIn('deploy/send_release.py --status baseline.json', deployment)
+        self.assertIn('--baseline baseline.json', deployment)
+        self.assertIn("env.dependencies == 'true'", deployment)
+        self.assertIn('deploy/build_wheelhouse.py', deployment)
+        self.assertIn('deploy/build_release.py', deployment)
+        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'", deployment)
+        self.assertNotIn('qunxue-delivery-${{ github.ref }}', workflow)
 
     def test_builder_packages_only_clean_checked_commit_and_verifies_roundtrip(self):
         spec = importlib.util.spec_from_file_location('builder', ROOT / 'deploy/build_release.py')
