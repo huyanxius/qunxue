@@ -12,6 +12,7 @@ COMMAND = json.loads((ROOT / 'frontend/vercel.json').read_text())['ignoreCommand
 
 class VercelScope(unittest.TestCase):
     def test_build_only_changed_frontend_and_fail_open_without_base(self):
+        self.assertLessEqual(len(COMMAND), 256)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             front = root / 'frontend'
@@ -26,6 +27,7 @@ class VercelScope(unittest.TestCase):
             git('commit', '-qm', 'first')
             base = git('rev-parse', 'HEAD')
             (root / 'README.md').write_text('docs only')
+            (front / 'README.md').write_text('frontend docs only')
             git('add', '.')
             git('commit', '-qm', 'docs')
             def status(previous):

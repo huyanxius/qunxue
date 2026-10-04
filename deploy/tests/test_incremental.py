@@ -81,8 +81,9 @@ class IncrementalTests(unittest.TestCase):
         from release_scope import classify
         self.assertEqual(classify(['frontend/src/App.tsx']), {'backend': False, 'frontend': True, 'dependencies': False})
         self.assertEqual(classify(['backend/src/qunxue_api/main.py']), {'backend': True, 'frontend': False, 'dependencies': False})
-        self.assertEqual(classify(['docs/README.md', '.github/workflows/delivery.yml', 'frontend/vercel.json']), {'backend': False, 'frontend': False, 'dependencies': False})
+        self.assertEqual(classify(['docs/README.md', '.github/workflows/delivery.yml', 'frontend/vercel.json', 'frontend/README.md', 'frontend/docs/guide.md']), {'backend': False, 'frontend': False, 'dependencies': False})
         self.assertTrue(classify(['backend/uv.lock'])['dependencies'])
+        self.assertTrue(classify(['backend/src/qunxue_api/adapters/research_agent/prompts/memory_extraction.md'])['backend'])
 
     def delta(self, root, digest=None):
         old = root / 'old'
