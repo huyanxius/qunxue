@@ -76,6 +76,28 @@ class IncrementalTests(unittest.TestCase):
             package(repo, root / 'missing-wheels', root / 'missing-lock', root / 'docs.tar.gz', docs_sha, third / 'release.json')
             with tarfile.open(root / 'docs.tar.gz') as archive:
                 self.assertEqual(archive.getnames(), ['release.json'])
+            # Project metadata has no changed runtime bytes or dependency closure.
+            (repo / 'backend/pyproject.toml').write_text('description="metadata only"')
+            git('add', 'backend/pyproject.toml')
+            git('commit', '-qm', 'Metadata fixture')
+            metadata_sha = git('rev-parse', 'HEAD')
+            package(repo, root / 'missing-wheels', root / 'missing-lock', root / 'metadata.tar.gz', metadata_sha, third / 'release.json')
+            with tarfile.open(root / 'metadata.tar.gz') as archive:
+                self.assertEqual(archive.getnames(), ['release.json'])
+                self.assertEqual(json.load(archive.extractfile('release.json'))['backend_revision'], backend_sha)
+            # A lock fingerprint change is a backend dependency release even if wheel bytes match.
+            (repo / 'backend/uv.lock').write_text('new-lock-provenance')
+            git('commit', '-qam', 'Lock fixture')
+            lock_sha = git('rev-parse', 'HEAD')
+            package(repo, wheels, requirements, root / 'lock.tar.gz', lock_sha, third / 'release.json')
+            from payload_rules import backend_changed
+            with tarfile.open(root / 'lock.tar.gz') as archive:
+                locked = json.load(archive.extractfile('release.json'))
+            baseline = json.loads((third / 'release.json').read_text())
+            self.assertEqual(locked['files'], baseline['files'])
+            self.assertTrue(backend_changed(baseline, locked))
+            self.assertEqual(locked['backend_revision'], lock_sha)
+
 
     def test_scope_keeps_frontend_backend_and_operations_independent(self):
         from release_scope import classify

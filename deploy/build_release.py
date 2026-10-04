@@ -10,7 +10,7 @@ import subprocess
 import tarfile
 import tempfile
 
-from payload_rules import forbidden_payload
+from payload_rules import backend_changed, forbidden_payload
 from release_scope import classify
 
 SOURCE_ROOTS = ('backend/src/', 'backend/migrations/', 'backend/data/', 'knowledge/')
@@ -66,7 +66,7 @@ def package(repo, wheelhouse, requirements, output, revision, baseline=None):
     }
     if old:
         manifest.update(base_revision=old['revision'],
-                        backend_revision=revision if scope['backend'] else old.get('backend_revision', old['revision']),
+                        backend_revision=revision if backend_changed(old, manifest) else old.get('backend_revision', old['revision']),
                         frontend_revision=revision if scope['frontend'] else old.get('frontend_revision', old['revision']))
         manifest['payload'] = sorted(name for name in files if manifest['files'][name] != old['files'].get(name))
         files = {name: path for name, path in files.items() if name in manifest['payload']}
