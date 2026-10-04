@@ -10,5 +10,5 @@
       "destination": "/index.html"
     }
   ],
-  "ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- . ':(exclude)README.md' ':(exclude)AGENTS.md' ':(exclude)**/README.md' ':(exclude)**/AGENTS.md' ':(exclude)docs/**' ':(exclude)VERCEL_PREVIEW.md'; result=$?; if [ \"$result\" = 0 ]; then exit 0; else exit 1; fi"
+  "ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- . ':(exclude)README.md' ':(exclude)AGENTS.md' ':(exclude)**/README.md' ':(exclude)**/AGENTS.md' ':(exclude)docs/**' ':(exclude)VERCEL_PREVIEW.md'; [ $? -eq 0 ]"
 }
