@@ -10,6 +10,10 @@ import re
 import subprocess
 import tempfile
 
+# Existing authorized ubuntu login retains its current sudo capability.
+# A restricted forced key can also dispatch this exact fixed protocol prefix.
+RECEIVER = ['sudo', '-n', '/usr/bin/python3.12', '-I', '/usr/local/libexec/qunxue/receiver.py']
+
 
 @contextmanager
 def connection(checksum=False):
@@ -43,7 +47,7 @@ def connection(checksum=False):
 
 def baseline(path):
     with connection() as command:
-        result = subprocess.run(command + ['status'], check=True, capture_output=True, timeout=60)
+        result = subprocess.run(command + RECEIVER + ['status'], check=True, capture_output=True, timeout=60)
     value = json.loads(result.stdout)
     if value.get('app') != 'qunxue' or not re.fullmatch('[0-9a-f]{40}', value.get('revision', '')):
         raise ValueError('Unverified production baseline')
@@ -57,7 +61,7 @@ def send():
         if checksum != os.environ['RELEASE_SHA256']:
             raise ValueError('Downloaded artifact digest mismatch')
         with artifact.open('rb') as stream:
-            subprocess.run(command + ['deploy', os.environ['RELEASE_REVISION'], checksum],
+            subprocess.run(command + RECEIVER + ['deploy', os.environ['RELEASE_REVISION'], checksum],
                            stdin=stream, check=True, timeout=1800)
         print('Uploaded artifact bytes=' + str(artifact.stat().st_size))
 

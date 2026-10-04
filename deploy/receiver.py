@@ -762,6 +762,9 @@ def main():
     os.umask(0o077)
     # Do not read arbitrary CLI/config paths supplied by SSH. The forced command is fixed.
     command = os.environ.get('SSH_ORIGINAL_COMMAND') or ' '.join(sys.argv[1:])
+    prefix = 'sudo -n /usr/bin/python3.12 -I /usr/local/libexec/qunxue/receiver.py '
+    if command.startswith(prefix):
+        command = command[len(prefix):]
     trusted(CONFIG)
     value = json.loads(CONFIG.read_text())
     if value.get('layout') == 'legacy-root-pm2':

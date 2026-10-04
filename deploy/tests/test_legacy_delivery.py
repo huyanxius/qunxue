@@ -143,3 +143,18 @@ class LegacyDelivery(unittest.TestCase):
             self.assertEqual(Path(config['source_pointer']).resolve(), source)
             self.assertEqual(Path(config['frontend_pointer']).resolve(), front)
             self.assertEqual((state / 'db.sqlite3').read_bytes(), b'database-untouched')
+
+    def test_sender_uses_only_fixed_existing_sudo_receiver(self):
+        from contextlib import contextmanager
+        import subprocess
+        import send_release as sender
+        @contextmanager
+        def connection():
+            yield ['ssh', 'synthetic-host']
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'baseline.json'
+            result = subprocess.CompletedProcess([], 0, stdout=json.dumps({'app': 'qunxue', 'revision': 'b' * 40}).encode())
+            with patch.object(sender, 'connection', connection), patch.object(sender.subprocess, 'run', return_value=result) as run:
+                sender.baseline(path)
+            self.assertEqual(run.call_args.args[0], ['ssh', 'synthetic-host', 'sudo', '-n', '/usr/bin/python3.12',
+                                                     '-I', '/usr/local/libexec/qunxue/receiver.py', 'status'])
