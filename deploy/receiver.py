@@ -8,6 +8,7 @@ import ast
 from contextlib import contextmanager
 import fcntl
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -541,11 +542,48 @@ def rehearse_migration(config, release, revision, inventory, backup):
 
 
 def fetch(url):
-    request = Request(url, headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'})
+    request = Request(url, headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'User-Agent': 'qunxue-deploy/1'})
     with urlopen(request, timeout=15) as response:
         require(response.status == 200, 'Health/asset HTTP status is not 200')
         require(response.geturl().split('?', 1)[0] == url.split('?', 1)[0], 'Unexpected redirect')
         return response.read(32 * 1024 * 1024 + 1)
+
+
+def public_index_matches(content, digest):
+    """Only remove one verified empty Cloudflare analytics insertion, then hash all bytes."""
+    if hashlib.sha256(content).hexdigest() == digest:
+        return True
+    class Attributes(HTMLParser):
+        def handle_starttag(self, tag, attrs):
+            self.attrs = attrs
+    candidates = []
+    for match in re.finditer(rb'<script\b[^>]*>\s*</script\s*>', content, re.IGNORECASE):
+        parser = Attributes()
+        try:
+            parser.feed(match.group().decode('utf-8'))
+            attrs = parser.attrs
+            value = dict(attrs)
+            if (len(attrs) != len(value) or set(value) != {'type', 'src', 'integrity', 'data-cf-beacon', 'crossorigin'}
+                or value['type'] != 'module' or value['crossorigin'] != 'anonymous'
+                or not re.fullmatch(r'https://static\.cloudflareinsights\.com/beacon\.min\.js/v[0-9a-f]{32,80}', value['src'])
+                or not re.fullmatch(r'sha512-[A-Za-z0-9+/]{86}==', value['integrity'])):
+                continue
+            beacon = json.loads(value['data-cf-beacon'])
+            if (not isinstance(beacon, dict) or set(beacon) != {'version', 'token', 'r', 'spa'}
+                or not isinstance(beacon['version'], str) or not re.fullmatch('[0-9a-f]{32}', beacon['token'])
+                or type(beacon['r']) is not int or beacon['r'] != 1
+                or type(beacon['spa']) is not int or beacon['spa'] != 2):
+                continue
+            candidates.append(match)
+        except (ValueError, TypeError, AttributeError):
+            continue
+    if len(candidates) != 1:
+        return False
+    match = candidates[0]
+    for end in (match.end(), match.end() + 1 if content[match.end():match.end() + 1] == b'\n' else match.end()):
+        if hashlib.sha256(content[:match.start()] + content[end:]).hexdigest() == digest:
+            return True
+    return False
 
 
 def health(config, release, revision):
@@ -566,7 +604,9 @@ def health(config, release, revision):
                     'Unsafe public asset path')
             endpoint = '' if name == 'index.html' else name
             content = fetch(origin.rstrip('/') + '/' + endpoint + '?release=' + revision)
-            require(hashlib.sha256(content).hexdigest() == digest, 'Public asset mismatch: ' + name)
+            matches = (public_index_matches(content, digest) if name == 'index.html' and origin == config['public_origin']
+                       else hashlib.sha256(content).hexdigest() == digest)
+            require(matches, 'Public asset mismatch: ' + name)
 
 
 def wait_healthy(config, release, revision):
