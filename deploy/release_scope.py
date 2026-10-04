@@ -7,6 +7,8 @@ import subprocess
 def classify(paths):
     backend = frontend = dependencies = False
     for path in paths:
+        if path.startswith('frontend/') and (path.rsplit('/', 1)[-1] in {'README.md', 'AGENTS.md'} or path.startswith('frontend/docs/') or path == 'frontend/VERCEL_PREVIEW.md'):
+            continue
         if path.startswith(('backend/src/', 'backend/migrations/', 'backend/data/', 'knowledge/')) or path in {'backend/alembic.ini', 'backend/pyproject.toml', 'backend/uv.lock'}:
             backend = True
         if path != 'frontend/vercel.json' and path.startswith('frontend/') and not path.startswith(('frontend/node_modules/', 'frontend/dist/')):
