@@ -82,6 +82,7 @@ ALLOWED_TOP_LEVEL_DEPENDENCIES = {
     },
     "json_shards": set(),
     "settings": set(),
+    "retrieval_preflight": {"settings"},
     "main": {"bootstrap"},
 }
 ALLOWED_MODULE_INTERNAL_DEPENDENCIES = {

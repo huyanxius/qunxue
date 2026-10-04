@@ -14,6 +14,8 @@ DEFAULT_DATABASE_URL = f"sqlite:///{BACKEND_ROOT / 'var' / 'qunxue.db'}"
 DEFAULT_RETRIEVAL_INDEX_PATH = BACKEND_ROOT / "var" / "retrieval.db"
 SILICONFLOW_EMBEDDING_MODEL = "Pro/BAAI/bge-m3"
 SILICONFLOW_RERANKER_MODEL = "Pro/BAAI/bge-reranker-v2-m3"
+SILICONFLOW_EMBEDDING_MODELS = (SILICONFLOW_EMBEDDING_MODEL, "BAAI/bge-m3")
+SILICONFLOW_RERANKER_MODELS = (SILICONFLOW_RERANKER_MODEL, "BAAI/bge-reranker-v2-m3")
 DEFAULT_MODEL_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL_NAME = "deepseek-v4-flash"
 
@@ -355,10 +357,14 @@ class Settings(BaseSettings):
                 "retrieval configuration requires non-empty values for: "
                 + ", ".join(sorted(missing))
             )
-        if self.embedding_model.strip() != SILICONFLOW_EMBEDDING_MODEL:
-            raise ValueError("embedding_model must be " + SILICONFLOW_EMBEDDING_MODEL)
-        if self.reranker_model.strip() != SILICONFLOW_RERANKER_MODEL:
-            raise ValueError("reranker_model must be " + SILICONFLOW_RERANKER_MODEL)
+        if self.embedding_model.strip() not in SILICONFLOW_EMBEDDING_MODELS:
+            raise ValueError(
+                "embedding_model must be one of: " + ", ".join(SILICONFLOW_EMBEDDING_MODELS)
+            )
+        if self.reranker_model.strip() not in SILICONFLOW_RERANKER_MODELS:
+            raise ValueError(
+                "reranker_model must be one of: " + ", ".join(SILICONFLOW_RERANKER_MODELS)
+            )
         return RetrievalConfig(
             index_path=self.retrieval_index_path,
             embedding_base_url=cast(str, self.embedding_base_url).strip(),

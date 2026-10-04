@@ -31,6 +31,7 @@ React
 | `api/` | HTTP DTO、路由、依赖与异常映射 | 健康、账号、研究任务、现象与知识接口；M4/M5 为 501 契约 |
 | `adapters/` | 数据库、模型、检索等端口实现 | SQLite 仓储、Markdown 知识解析、deterministic Mock 与 OpenAI-compatible 模型 Provider |
 | `bootstrap.py` | 创建应用并装配具体实现 | 唯一装配入口 |
+| `retrieval_preflight.py` | 只读检查检索模型配置与索引元数据 | 仅依赖 `settings`；不调用模型或改写配置、索引 |
 
 业务模块之间的依赖是单向的：
 
