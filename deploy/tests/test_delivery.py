@@ -253,6 +253,23 @@ class DeliveryTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'revision/runtime'):
                 receiver.health(config, release, OLD)
 
+    def test_public_index_allows_only_one_empty_official_cloudflare_beacon(self):
+        good = b'<html><body>business</body></html>'
+        digest = hashlib.sha256(good).hexdigest()
+        beacon = (b'<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v' + b'a' * 40
+                  + b'" integrity="sha512-' + b'A' * 86 + b'==' + b'" data-cf-beacon=\'{"version":"2024.11.0","token":"'
+                  + b'0' * 32 + b'","r":1,"spa":2}\' crossorigin="anonymous"></script>')
+        def page(script): return good.replace(b'</body>', script + b'</body>')
+        self.assertTrue(receiver.public_index_matches(good, digest))
+        self.assertTrue(receiver.public_index_matches(page(beacon), digest))
+        self.assertTrue(receiver.public_index_matches(page(beacon + b'\n'), digest))
+        self.assertFalse(receiver.public_index_matches(page(beacon + b'\n\n'), digest))
+        for script in (beacon * 2, beacon.replace(b'insights.com', b'insights.invalid'),
+                       beacon.replace(b'></script>', b'>alert(1)</script>'),
+                       beacon.replace(b' crossorigin=', b' onload="evil()" crossorigin=')):
+            self.assertFalse(receiver.public_index_matches(page(script), digest))
+        self.assertFalse(receiver.public_index_matches(page(beacon).replace(b'business', b'wrong'), digest))
+
     def test_failed_deployment_rolls_code_back_without_db_restore(self):
         root = self.root
         (root / 'releases').mkdir()
