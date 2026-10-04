@@ -26,6 +26,7 @@ class VercelScope(unittest.TestCase):
             git('commit', '-qm', 'first')
             base = git('rev-parse', 'HEAD')
             (root / 'README.md').write_text('docs only')
+            (front / 'README.md').write_text('frontend docs only')
             git('add', '.')
             git('commit', '-qm', 'docs')
             def status(previous):
