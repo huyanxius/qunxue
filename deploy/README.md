@@ -33,7 +33,7 @@ version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线
 2. 固定协议 `status` 从实际两个指针及健康接口生成文件指纹，核验本地/公网 backend revision、运行模式和首页、JS/CSS 摘要后才保存基线。后续指针与元数据不一致会失败，不能把目标 commit 冒充已经部署的版本。状态不会输出私有配置、PM2 环境或数据库内容。
 3. GitHub `production` 保持仅 main。普通变量 `DEPLOY_HOST`、`DEPLOY_USER` 对应已授权连接；独立核验的公开主机记录存入 `DEPLOY_KNOWN_HOSTS`。拥有者安全录入缺少的 `DEPLOY_SSH_KEY`，不在聊天中发送，不由助手读取或上传现有通用私钥。只有接收器、可用 CI 连接和实际验证就绪后才设 `PRODUCTION_CONFIGURED=true`；此前部署明确失败。
 
-SSH 凭据应限制到固定接收器协议并关闭 PTY、端口/agent/X11 forwarding 和 user rc。若使用既有 ubuntu 登录身份，sudo 只传递严格验证的 `status` 或 `deploy <完整SHA> <SHA256>` 到固定 root-owned 接收器，不能让 payload 更新控制器或注入任意命令。凭据限制由拥有者核验，不自动创建或扩大权限。
+SSH 凭据应限制到固定接收器协议并关闭 PTY、端口/agent/X11 forwarding 和 user rc。发送端使用既有 ubuntu 身份和固定 sudo 接收器路径，不新装 wrapper 或扩大该身份权限；接收器仅接受严格验证的 `status` 或 `deploy <完整SHA> <SHA256>` 到固定 root-owned 接收器，不能让 payload 更新控制器或注入任意命令。凭据限制由拥有者核验，不自动创建或扩大权限。
 
 安全录入后可以重跑最新 main 的失败 job，沿用同一 workflow 的检查、实际生产基线和不可变 artifact；无需第二条发版入口。
 
