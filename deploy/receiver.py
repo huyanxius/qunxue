@@ -28,7 +28,7 @@ from urllib.request import Request, urlopen
 
 # The root-owned receiver is launched with Python -I; import only its audited sibling.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from payload_rules import forbidden_payload
+from payload_rules import backend_changed as changed_backend, forbidden_payload
 
 CONFIG = Path('/etc/qunxue/deploy.json')
 MAX_ARCHIVE = 1024 * 1024 * 1024
@@ -361,7 +361,7 @@ def validate_expand_migration(source):
 
 
 def app_command(config, argv, cwd=None, revision=None, extra_env=None, timeout=300):
-    """No shell=True; never execute application-controlled code as the controller/root."""
+    """No shell=True; retain only the explicitly configured application identity."""
     account = pwd.getpwuid(config['runtime_uid'])
     env = {'PATH': '/usr/local/bin:/usr/bin:/bin', 'HOME': account.pw_dir,
            'LANG': 'C.UTF-8', 'PM2_HOME': config['pm2_home'], 'PYTHONDONTWRITEBYTECODE': '1'}
@@ -633,10 +633,7 @@ def deploy(config, archive, revision, checksum):
     manifest = extract(archive, release, revision, previous=previous)
     additions = migration_changes(previous, release, manifest['migration_policy'])
     old_manifest = json.loads((previous / 'release.json').read_text())
-    changed = {name for name in set(old_manifest['files']) | set(manifest['files'])
-               if old_manifest['files'].get(name) != manifest['files'].get(name)}
-    backend_changed = any(name.startswith(('backend/', 'knowledge/', 'wheelhouse/'))
-                          or name == 'requirements.lock' for name in changed)
+    backend_changed = changed_backend(old_manifest, manifest)
     backend_revision = revision if backend_changed else old_manifest.get('backend_revision', previous_revision)
     require(manifest.get('backend_revision', revision) == backend_revision, 'Backend source identity mismatch')
     if backend_changed:
@@ -764,7 +761,16 @@ def rollback(config, current_revision, target_revision):
 def main():
     os.umask(0o077)
     # Do not read arbitrary CLI/config paths supplied by SSH. The forced command is fixed.
-    command = os.environ.get('SSH_ORIGINAL_COMMAND', '')
+    command = os.environ.get('SSH_ORIGINAL_COMMAND') or ' '.join(sys.argv[1:])
+    prefix = 'sudo -n /usr/bin/python3.12 -I /usr/local/libexec/qunxue/receiver.py '
+    if command.startswith(prefix):
+        command = command[len(prefix):]
+    trusted(CONFIG)
+    value = json.loads(CONFIG.read_text())
+    if value.get('layout') == 'legacy-root-pm2':
+        from legacy_receiver import main as legacy_main
+        legacy_main(value, command)
+        return
     if command == 'status':
         config = load_config()
         release, revision = active_release(config)

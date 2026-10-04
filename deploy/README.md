@@ -2,11 +2,11 @@
 
 ## 增量路径（Issue #437）
 
-现有生产接收器与 `production` 凭据尚未接通，这次修改不会替其创建账号、放宽权限或改变生产布局。正式站目前仍走现有运维身份；在固定接收器获配置前，新的 GitHub 自动发布会明确失败，不能报告上线成功。
+现网兼容接收器保留现有运维身份和生产布局。GitHub production 缺少可用部署私钥时，门控保持关闭，不能报告自动上线成功。
 
 检查按前后端变更分别运行并允许并行，只有生产发布保留串行锁。生产构建前通过固定 SSH `status` 协议读取真实 active manifest，累积比较实际已部署 commit 与目标 commit。文档或 CI 脚本变化不构建业务；前端变化不安装后端依赖。锁文件相同则沿用已验证 wheelhouse 与虚拟环境；锁文件变化时复用按锁摘要缓存的离线 wheelhouse。
 
-version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线与独立前后端 revision，tar 内只有变化字节。接收器逐一核验省略文件在基线中的摘要，独立复制已验证源文件，不允许路径逃逸或让新 release 的权限操作改变前一版本。前端只切 current，API PID 保留；后端才停止/重启 `qunxue-api`。仅实际新增且获既有 expand-only 策略批准的迁移执行停写、一致快照、演练及升级；普通业务代码与前端更新不做三库备份。
+version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线与独立前后端 revision，tar 内只有变化字节。接收器逐一核验省略文件在基线中的摘要，独立复制已验证源文件，不允许路径逃逸或让新 release 的权限操作改变前一版本。前端只切 current，API PID 保留；后端才停止/重启 `qunxue-api`。现网 adapter 遇到新增迁移在停机前拒绝，交由单独审计维护；普通业务代码与前端更新不做三库备份。
 
 `status` 只输出发布文件指纹，不返回配置或 secrets；接收器本身仍必须是预安装的固定可信文件，不能由应用差异包更新。旧 version 1 完整包保持兼容。完成真实生产三类改动及记录耗时、上传字节、PID 前后对照之前，不宣称满足十分钟目标。
 
@@ -15,51 +15,39 @@ version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线
 
 ## 正常路径
 
-`PR 无秘密检查 → main 同 commit 检查通过 → 不可变 artifact ID/文件 SHA256 → production 环境 → 固定接收器 → 同时切换后端和前端 → 私网/公网精确版本及资源校验`。
+`PR 无秘密检查 → main 同 commit 检查通过 → 不可变 artifact ID/文件 SHA256 → production 环境 → 固定接收器 → 按实际载荷切换受影响服务 → 私网/公网精确版本及资源校验`。
 
 - `.github/workflows/delivery.yml` 取代旧 `ci.yml`。旧 workflow 曾被人工停用，不能把它说成代码失败；本变更不操作 Actions 开关、账号权限或 secrets。
 - PR 不引用 production、不读生产 secret。GitHub token 仅 `contents: read`，checkout 不保存凭据；第三方 actions 固定完整 commit SHA。
-- main 的部署必须依赖本次 `checks` 成功，同一 job 构建已检查的前端及锁定依赖；下载指定 artifact ID，传输前及服务器再次校验 SHA256 和 commit。没有 `pull_request_target` 或手动任意 ref/命令输入。
+- main 的部署依赖本次 `checks` 成功；生产 job 读取实际基线，只构建受影响前端或已变化的离线依赖。差异包直接从同一 job 的已检查提交生成，并保存不可变 artifact；发送前及服务器再次校验 SHA256 和 commit。没有 `pull_request_target` 或手动任意 ref/命令输入。
 - GitHub 和服务器分别串行化；生产任务不取消正在运行的任务。GitHub concurrency 可能合并等待中的旧提交，已运行的部署不被新提交中断。
 - 不要求新增 native branch protection，也不强制每次人工批准。遵循仓库 Issue→分支→PR→验证→作者自合并流程；production 环境限制仅 main，初次接通由拥有者安全批准。更严格分支/人工审批规则是可选策略。
 - 数据库、`.env`、node_modules、密钥不进入 artifact。构建下载锁文件中 hash 约束的 binary wheels，服务器仅离线安装。目标为 Linux x86_64 / CPython 3.12；主机不兼容的 wheel 或未安装 Python 会在停止服务之前失败。
-- 部署会停止单实例写入者，因此有维护间隙；不是零停机或蓝绿部署。没有注册账号、收费平台、模型调用或自动知识入库步骤。
+- 前端和元数据更新保留 API PID；只有实际后端文件或依赖锁指纹变化才停止单实例写入者，因此后端更新有维护间隙，不是零停机或蓝绿部署。没有注册账号、收费平台、模型调用或自动知识入库步骤。
 
-## 一次性接通：必须单独授权和核验
+## 现网接通（Issue #444）
 
-此目录只提供模板，不运行 bootstrap，不生成/上传 key/token，不更改生产机器、DNS、Nginx、Cloudflare、系统账号、安全设置或 GitHub 权限。普通 CD 永远不触碰 cloudflared。
+现网使用 `legacy-root-pm2` 配置，通过同一个固定 `receiver.py` 入口调用 `legacy_receiver.py`。保留 `/root/qunxue-src`、`/var/www/qunxue` 两个发布指针、root PM2 `qunxue-api` 和现有 `backend/var`、私有 `.env`。无需新增账号、迁移数据目录或改 Nginx、DNS、Cloudflare。`/root/.qunxue-deploy` 仅保存私有发布元数据、锁和临时校验文件；应用代码仍在已有两处发布目录。
 
-生产 421 已知事实（2026-10-02 源交接，不能代替现场核验）：Tencent `43.142.87.170`，完整 revision `d27c99da860f2df0f0183ab9ea1fbd8cb68b19e5`；后端 `/root/qunxue-release421-d27c99d/backend`，前端 `/var/www/qunxue-release421-d27c99d`；root PM2 `qunxue-api` 单 fork，应用 8092、Nginx 8096；共有三个 SQLite 文件，0462 schema；已验证原有 211 张表计数保留。旧脚本的失败回滚分支未在生产演练。
+1. 从经过检查的 main 安装 root-owned 的 `receiver.py`、`legacy_receiver.py`、`payload_rules.py` 到 `/usr/local/libexec/qunxue/`，目录 0755、文件 0644，不能由 artifact 更新。固定入口为 `/usr/bin/python3.12 -I /usr/local/libexec/qunxue/receiver.py`。按主机已核验的 Python、PM2、现有 `.env` 和三个数据库真实路径填写 `/etc/qunxue/deploy.json`（root-owned 0600）；模板默认 `configured: false`。adapter 明确保留已有 root 应用身份，不把新增账户或隔离目录当作接通前提。
+2. 固定协议 `status` 从实际两个指针及健康接口生成文件指纹，核验本地/公网 backend revision、运行模式和首页、JS/CSS 摘要后才保存基线。后续指针与元数据不一致会失败，不能把目标 commit 冒充已经部署的版本。状态不会输出私有配置、PM2 环境或数据库内容。
+3. GitHub `production` 保持仅 main。普通变量 `DEPLOY_HOST`、`DEPLOY_USER` 对应已授权连接；独立核验的公开主机记录存入 `DEPLOY_KNOWN_HOSTS`。拥有者安全录入缺少的 `DEPLOY_SSH_KEY`，不在聊天中发送，不由助手读取或上传现有通用私钥。只有接收器、可用 CI 连接和实际验证就绪后才设 `PRODUCTION_CONFIGURED=true`；此前部署明确失败。
 
-接通清单：
+SSH 凭据应限制到固定接收器协议并关闭 PTY、端口/agent/X11 forwarding 和 user rc。发送端使用既有 ubuntu 身份和固定 sudo 接收器路径，不新装 wrapper 或扩大该身份权限；接收器仅接受严格验证的 `status` 或 `deploy <完整SHA> <SHA256>` 到固定 root-owned 接收器，不能让 payload 更新控制器或注入任意命令。凭据限制由拥有者核验，不自动创建或扩大权限。
 
-1. 拥有者核验新的 per-app 非 root 运行账户和权限，私有 `.env` 与三个数据库的**实际完整路径**及所有写入者。模板只记录已确认的旧路径，configured=false、运行 UID/GID=0 故意阻止使用；新隔离布局仍须核验后填入，不能按名字猜用途。已确认三个文件是现役 backend/var/probe.db、qunxue.db、retrieval.db；均 root:root 0600，probe 与 qunxue 是 WAL，retrieval 非 WAL（不能推定具体 journal mode）。probe 用途尚未证实，必须原样保全；整个 var 中附件和其他文件也必须保留。主机只读核验为 x86_64、Python3.12.3、uv0.11.31、Node24.21.0、PM2 7.0.4；这些版本不证明离线 wheel 已兼容。现网 root PM2/`/root` 布局不满足此隔离边界，必须单独计划迁移/授权，不能被首次 CD 顺便改掉。迁移期间保留原数据库、原 root PM2 配置、原 release 和可读备份。将所有需要的现网 PM2 环境值在原服务器内整理为该应用的私有配置，不能跨应用继承 API key。
-2. 在主机人工审计安装 root-owned、非 group/world-writable 的固定 `receiver.py` 和同目录 `payload_rules.py` 到 `/usr/local/libexec/qunxue/`，目录和两个脚本都不可被运行账户修改。强制命令使用固定 `/usr/bin/python3.12 -I /usr/local/libexec/qunxue/receiver.py`（Python 路径需现场核验），隔离 Python 环境注入；不能通过用户可写的 Python module 或 wrapper 以 root 执行。它不从 artifact 更新自己。`/etc/qunxue/deploy.json`、`/etc/qunxue/ecosystem.config.cjs` 也必须 root-owned；按核验值填写 `host-config.example.json`，最后才设置 `configured: true`。Python3.12、PM2 和兼容 glibc 必须预先具备。接收器以 root 维护 owner/mode，但所有 Python、pip、alembic、PM2 子进程降权到 qunxue 运行 UID/GID，无额外组。
-3. 建立 `/srv/qunxue/{releases,backups,incoming}`（root 拥有；备份及 incoming 为 0700），`current` 是唯一发布指针。经授权把已有 421 放入/映射到 `releases/<完整SHA>/{backend,frontend,knowledge}`，生成经核验的 `release.json`，至少包含 app、revision、所有前端文件 hash，保留旧 migration 源码。这里必须是**已有运行版本的清单**，不能伪装成新部署成功。
-4. 单独授权一次 Nginx web-root 适配 `/srv/qunxue/current/frontend` 和运行身份/PM2 adapter，保留现有 8096、`proxy_buffering off`、300s 超时。新 PM2 配置示例仅给出固定单进程路径，不覆盖私有参数；核验既有生产能力、持久 state 和原属主/组/权限。之后每次 CD 都不改 Nginx。无需改 Cloudflare/DNS/tunnel。之前 530 事故说明仅还原内容不够，恢复文件必须连同 uid/gid/mode 一起保留。
-5. 拥有者在 GitHub 创建/核验 `production` 环境仅允许 main；不默认 required reviewers。环境变量 `PRODUCTION_CONFIGURED=true`、`DEPLOY_HOST=43.142.87.170`、`DEPLOY_USER=<专用受限登录主体>`。安全录入 `DEPLOY_SSH_KEY`、`DEPLOY_KNOWN_HOSTS`，后者必须独立核验主机指纹，不能在 CI 里临时 `ssh-keyscan` 信任网络。新持久访问需用户动作时批准，不得复用不相关 key 或直接开放通用 root SSH。
-6. SSH key 必须仅允许固定强制命令接收器，并关闭 PTY、端口/agent/X11 forwarding 和 user rc；若独立 SSH 登录账户使用 sudo，sudo 仅放行固定 root-owned 接收器且只传递严格校验的协议字段，不能开放 shell、任意 env、任意脚本或通用 sudo。SSH 执行域和 key 限制由拥有者安全核验，此仓库不会替其自动安装。
-7. 使用模拟库/独立测试实例验证真实 receiver/PM2/权限、失败回退、重启持久化和公网资源，再走一次真实 main 发布，核对 workflow SHA/artifact SHA256、backup inventory、health 精确 revision、公网首页 JS/CSS 的 artifact hash。完成后才能声称自动发布已接通。不要故意破坏生产来验证回滚。
-
-模板缺值会明确失败，不会以绿色空操作冒充部署。
+安全录入后可以重跑最新 main 的失败 job，沿用同一 workflow 的检查、实际生产基线和不可变 artifact；无需第二条发版入口。
 
 ## 数据、迁移与回退
 
-普通发布遵循固定序列：
+构建器与接收器共用完整文件清单和依赖锁指纹判断后端变化。项目说明元信息变化不推进后端 revision；锁指纹变化仍是依赖发布。
 
-1. 有界接收 tar.gz，检验 SHA256、完整 SHA、allowlist 和逐文件 hash；拒绝路径逃逸、链接、重复项、额外文件、数据库/环境配置。
-2. 在新的 immutable release 目录安装 offline 依赖、核验设置中的数据库路径和生产模式；保留 shared state/env，冻结代码 owner/mode；先验证旧版本健康和资源。
-3. 停止 `qunxue-api` 并确认旧写入者已退出。要求所有数据库写入者都已盘点并由此 stop 涵盖；若有 cron、外部 worker 或手工 writer，不得把模板确认项设 true，先单独设计 quiesce adapter。
-4. 对显式三个 SQLite 使用 Online Backup API，包含 WAL 中已提交内容；做 integrity/FK 检查、记录每个原表计数及原文件 uid/gid/mode，backup 本身 0600，目录 0700。快照在 writer 全停下后顺序完成，三库间状态一致。
-5. 先对主库最终快照的隔离副本演练升级，不启动应用/model worker。固定数据库驱动仅提供明确 SQLite URL，不加载生产 .env，audit guard 禁止 socket、子进程和生产秘密文件访问；当前 migration 环境经过隔离 schema 测试验证。检查 integrity/FK/原表计数。通过后只对原地 live DB 执行 `alembic upgrade head`，再次检查原表计数和 metadata。
-6. 原子替换唯一 `current` symlink，保留其 owner/group。重启固定应用，要求本地 Nginx 和公共 HTTPS `/api/health` 的完整 revision、生产模式匹配，首页及全部构建 JS/CSS 的 SHA256 匹配；成功后 `pm2 save`。
-7. 出错则切回旧代码并重启/验证原版本，数据库前向 schema 保留，绝不自动 downgrade、覆盖 live DB 或倒灌备份。新 release、最终快照、journal 保留，不自动 GC。失败回退自身失败会明确输出 operator intervention，禁止宣称健康。deploy 和人工 rollback 的 SIGTERM/HUP/INT 都进入恢复；恢复期间忽略重复信号，所有子进程和健康重试有超时边界；机器断电/SIGKILL 时 journal 阻止下一次发布，须人工诊断，不假装能捕获 SIGKILL。
+1. 有界接收差异 tar，核验完整 SHA、SHA256、allowlist、实际基线及每个复用文件摘要；拒绝路径逃逸、链接、数据库和私有配置。提前检查重建磁盘空间，失败不停止进程。
+2. 前端变化只创建 `/var/www/qunxue-release-<完整SHA>` 并原子切换静态指针。API PID、源码指针和数据库均保留。无业务变化只更新已核验发布元数据，不切指针、不重启服务。
+3. 后端变化才创建 `/root/qunxue-release-<完整SHA>`。依赖锁相同复用旧虚拟环境；锁变化才离线安装已锁定 wheelhouse。上线前核验既有主库路径和运行模式，链接原有 `.env`、整个 `var`；随后只停止/重启 `qunxue-api`，保留原 PM2 参数和服务器内私有环境。
+4. 现网 adapter 拒绝修改/删除既有 migration，也拒绝新增 migration，在切换或停止前失败。新增 schema 需另行审计维护发布；普通代码更新不备份数据库、不停其他服务。保留的隔离布局接收器兼容测试不能被描述成现网 migration 已执行。
+5. 切换后核验本地/公网 backend 精确 revision、生产模式和首页全部 JS/CSS 摘要。成功才保存 active 元数据，后端变化才 `pm2 save`。失败只尝试一次切回本次受影响指针和旧 PM2 定义，再核验旧版本；不覆盖 live DB、不 downgrade、不倒灌备份。回退失败或断电/SIGKILL 的未完成 journal 要求人工诊断，下一次发布禁止越过它。
 
-`migration-policy.json` 每次必须准确列出相对当前部署的新增 migration（如 `versions/xxx.py`），无变化时为空。现有 migration 不可改/删；新迁移必须人工审计保证旧代码可在新 schema 上继续工作，并声明 `rollback_compatible: true`。控制器仅允许 literal 元数据、固定 alembic/sqlalchemy imports、create_table、非唯一 create_index、显式 nullable 且无约束的 add_column。拒绝 helpers/aliases/getattr/动态SQL/模块副作用/required列；其他形式全部要求单独维护发布。这一保守语法子集和计数检查不是任意生产语义的完整证明，review 仍须验证旧代码写入兼容性。拒绝意外原表计数变化，不自动执行破坏性收缩或数据变换。
-
-采用 expand → 兼容代码发布 → 观察 → 后续另行批准 contract。删列/重命名/破坏性类型变更等必须走单独维护方案，不能只改布尔值硬塞到 CD。跨多个未部署提交的 migration policy 必须相对实际 active release 合并，不能只看 PR diff。
-
-人工请求回退时固定协议为 `rollback <当前完整SHA> <上一次完整SHA>`，只允许最后一次成功发布的已验证 predecessor，校验兼容政策；仍只回退代码、保留当前数据和 schema。不提供任意 shell 输入或任意历史版本自动降库。若需恢复备份，停止所有写入者后由拥有者决定丢弃哪些发布后的写入，并按照备份记录 uid/gid/mode 单独恢复，不能当作常规自动 rollback。
+之前的 `/srv/qunxue` 隔离布局实现只保留兼容代码和合成测试，不是当前主机的接通要求；不得据此创建新身份或迁移现网。
 
 ## 验证与边界
 
@@ -85,4 +73,4 @@ PyPI 的 bibtexparser 1.4.4 与 srt 3.5.3 只有 source distribution，`pip down
 
 `build_wheelhouse.py` 验证当前平台所需包名/版本、wheel metadata和标签，基于实际wheel bytes生成部署requirements.lock及来源证明。不能把sdist hash误当作新wheel hash。服务器仍只有wheel、`--no-index --require-hashes`，不联网编译。原始backend/uv.lock的SHA256记入release manifest，来源导出锁hash与每个wheel hash记入随artifact保存的wheel-build-provenance.json。构建工具是CI工具，不进入应用锁版本。
 
-PR 与 main 都执行离线 wheel 构建和完整打包验证；发布 artifact 和生产部署仍仅允许 main push。构建禁用 pip wheel 缓存，确保本次从 hash 核验后的源输入构建。可在临时虚拟环境用 `pip install --no-index --only-binary=:all: --require-hashes --find-links release/wheelhouse -r release/requirements.lock` 验证离线闭包。
+PR/main 的发布安全测试使用合成离线包；生产 wheelhouse 按锁文件、构建工具锁与构建脚本摘要缓存，只有实际依赖锁变化且缓存未命中才重新构建。发布 artifact 和生产部署仅允许 main push。每次新 wheel 构建禁用 pip wheel 缓存，保证从 hash 核验后的源输入构建。可在临时虚拟环境用 `pip install --no-index --only-binary=:all: --require-hashes --find-links release/wheelhouse -r release/requirements.lock` 验证离线闭包。
