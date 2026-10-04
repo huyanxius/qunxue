@@ -12,7 +12,7 @@ python -m qunxue_api.retrieval_preflight --env-file /secure/qunxue.env
 
 该命令在内存中预览免费模型配置，不修改文件、数据库或索引，不调用模型。它只读索引 manifest 元数据，输出目标模型下的 ready 索引数量、其他模型索引数量及记录的维度；不读取文档正文或向量值，不输出凭据或完整配置。进程环境变量按现有 Settings 规则优先于显式 env 文件；未指定文件时只读进程环境，不隐式读取默认 dotenv。
 
-`configuration_valid` 只表示配置可被当前代码接受。`provider_verification` 和 `vector_dimension_verification` 均为 `not_performed`，不代表上游可调用或索引可用。`ready_target_indexes=0` 时，旧 Pro 索引不能满足免费模型的 release-bound 检索；数字非零也不能代替具体 release、content hash 和 schema 的匹配检查。
+`configuration_valid` 只表示配置可被当前代码接受。`provider_verification` 和 `vector_dimension_verification` 均为 `not_performed`，不代表上游可调用或索引可用。`ready_target_indexes` 只统计完全同名的索引；数字为零时，运行检索仍可按下述 SiliconFlow 别名规则选择旧索引。任何统计都不能代替具体 release、content hash 和 schema 的匹配检查。
 
 群学使用自身的配置和进程管理入口；该预检不接管现有部署流程。
 
@@ -31,7 +31,9 @@ QUNXUE_RERANKER_MODEL=BAAI/bge-reranker-v2-m3
 
 ## 索引与单文档重试
 
-缓存和 manifest 使用完整模型 ID。不得移除 `Pro/` 来复用缓存，不得把两个 ID 视为别名，即使维度相同。现有维度检查继续拒绝混合长度；不删除、改写或全库重建旧索引。
+缓存和 manifest 继续保存完整模型 ID。仅当实际 embedding 端点为 `https://api.siliconflow.cn/v1` 时，索引查找允许 `Pro/BAAI/bge-m3` 与 `BAAI/bge-m3` 互为别名，并优先选择完全同名的索引。别名索引必须为 1024 维，且 release、content hash、schema、ready 状态与完整点数校验全部通过；查询向量的维度检查保持不变。依据为 [SiliconFlow 官方 FAQ 第 4 节](https://docs.siliconflow.cn/docs/userguide/faqs/misc) 对同一模型免费版与 Pro 服务命名的说明，该说明不承诺逐字节一致的向量输出。
+
+该规则只用于发布版索引查找，不改写旧 manifest、索引 ID 或缓存 key，不重建索引；其他 provider 和模型名称保持精确匹配。实际请求仍发送配置中的模型 ID，免费配置不会被改为 Pro 请求。
 
 指定失败文档仅存在于 Everplain，本群学修复不操作该文档。模型验证成功后再按群学现有权限与入口处理需要重试的单个文档；不得在上游仍 402 时触发重试。
 
