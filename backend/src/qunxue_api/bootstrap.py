@@ -1532,6 +1532,7 @@ def _retriever_from_settings(settings: Settings) -> HybridRetriever | None:
         index=SqliteRetrievalIndex(config.index_path),
         embedder=embedder,
         embedding_model=config.embedding_model,
+        embedding_base_url=config.embedding_base_url,
         chunk_schema_version=RETRIEVAL_CORPUS_SCHEMA_VERSION,
         reranker=reranker,
         reranker_model=config.reranker_model,
