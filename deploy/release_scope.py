@@ -9,7 +9,7 @@ def classify(paths):
     for path in paths:
         if path.startswith(('backend/src/', 'backend/migrations/', 'backend/data/', 'knowledge/')) or path in {'backend/alembic.ini', 'backend/pyproject.toml', 'backend/uv.lock'}:
             backend = True
-        if path.startswith('frontend/') and not path.startswith(('frontend/node_modules/', 'frontend/dist/')):
+        if path != 'frontend/vercel.json' and path.startswith('frontend/') and not path.startswith(('frontend/node_modules/', 'frontend/dist/')):
             frontend = True
         if path in {'backend/uv.lock', 'backend/pyproject.toml'}:
             dependencies = True
