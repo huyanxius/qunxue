@@ -175,7 +175,7 @@ def receive(stream, path, expected):
     require(sha256(path) == expected, 'Artifact SHA256 mismatch')
 
 
-def extract(archive, stage, revision):
+def extract(archive, stage, revision, previous=None):
     """No links, devices, absolute paths, traversal, duplicates or unmanifested bytes."""
     with tarfile.open(archive, 'r:gz') as handle:
         members = handle.getmembers()
@@ -192,12 +192,24 @@ def extract(archive, stage, revision):
             require(total <= MAX_EXPANDED and len(names) <= 50000, 'Expanded archive exceeds limit')
         require('release.json' in names, 'Missing release manifest')
         manifest = json.load(handle.extractfile('release.json'))
-        require(manifest['version'] == 1 and manifest['app'] == 'qunxue'
+        require(manifest['version'] in (1, 2) and manifest['app'] == 'qunxue'
                 and manifest['revision'] == revision, 'Release identity mismatch')
         require(manifest['python'] == '3.12' and manifest['platform'] == 'linux-x86_64',
                 'Artifact runtime mismatch')
-        require(set(manifest['files']) | {'release.json'} == names, 'Manifest membership mismatch')
+        delta = manifest['version'] == 2
+        payload = set(manifest.get('payload', manifest['files']))
+        require(payload | {'release.json'} == names and payload <= set(manifest['files']),
+                'Manifest membership mismatch')
+        if delta:
+            require(previous is not None, 'Delta needs an existing verified baseline')
+            old = json.loads((previous / 'release.json').read_text())
+            require(old['revision'] == manifest['base_revision'], 'Stale delta baseline')
+        else:
+            old = None
         for name, digest in manifest['files'].items():
+            path = PurePosixPath(name)
+            require(not path.is_absolute() and '..' not in path.parts and str(path) == name
+                    and '\\' not in name, 'Unsafe manifest path')
             require(HASH.fullmatch(digest), 'Invalid file digest')
             require(name.startswith(('backend/src/', 'backend/migrations/', 'backend/data/',
                                      'knowledge/', 'frontend/', 'wheelhouse/'))
@@ -213,10 +225,22 @@ def extract(archive, stage, revision):
             target.chmod(0o644)
             if member.name != 'release.json':
                 require(sha256(target) == manifest['files'][member.name], 'File integrity mismatch')
+        if delta:
+            for name in set(manifest['files']) - payload:
+                require(old['files'].get(name) == manifest['files'][name], 'Unverified reused baseline content')
+                source = previous / name
+                require(source.is_file() and not source.is_symlink()
+                        and sha256(source) == manifest['files'][name], 'Reused baseline digest mismatch')
+                target = stage / name
+                target.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+                # Independent files: runtime preparation must not chmod/chown the prior release.
+                shutil.copyfile(source, target)
+                target.chmod(0o644)
         require((stage / 'frontend/index.html').is_file(), 'Frontend index missing')
-        require(any((stage / 'wheelhouse').glob('*.whl')), 'Offline wheelhouse missing')
-        require(json.loads((stage / 'deploy/migration-policy.json').read_text())
-                == manifest['migration_policy'], 'Migration policy mismatch')
+        if not delta:
+            require(any((stage / 'wheelhouse').glob('*.whl')), 'Offline wheelhouse missing')
+            require(json.loads((stage / 'deploy/migration-policy.json').read_text())
+                    == manifest['migration_policy'], 'Migration policy mismatch')
         return manifest
 
 
@@ -367,7 +391,7 @@ def check_process(config, stopped=False):
     return processes[0].get('pid', 0)
 
 
-def prepare_runtime(config, release, revision):
+def prepare_runtime(config, release, revision, previous=None):
     result = app_command(config, [config['python'], '-c',
                                  'import sys; print(".".join(map(str,sys.version_info[:2])))'])
     require(result.stdout.strip() == '3.12', 'Python 3.12 must be preinstalled')
@@ -377,10 +401,17 @@ def prepare_runtime(config, release, revision):
             os.chown(Path(directory) / name, config['runtime_uid'], config['runtime_gid'])
     backend = release / 'backend'
     python = backend / '.venv/bin/python'
-    app_command(config, [config['python'], '-m', 'venv', str(backend / '.venv')], timeout=120)
-    app_command(config, [str(python), '-m', 'pip', 'install', '--disable-pip-version-check',
-                        '--no-index', '--find-links', str(release / 'wheelhouse'), '--require-hashes',
-                        '-r', str(release / 'requirements.lock')], timeout=600)
+    manifest = json.loads((release / 'release.json').read_text())
+    old = json.loads((previous / 'release.json').read_text()) if previous else {}
+    reuse = (previous is not None and manifest['dependency_lock_sha256'] == old.get('dependency_lock_sha256')
+             and (previous / 'backend/.venv/bin/python').is_file())
+    if reuse:
+        (backend / '.venv').symlink_to((previous / 'backend/.venv').resolve())
+    else:
+        app_command(config, [config['python'], '-m', 'venv', str(backend / '.venv')], timeout=120)
+        app_command(config, [str(python), '-m', 'pip', 'install', '--disable-pip-version-check',
+                            '--no-index', '--find-links', str(release / 'wheelhouse'), '--require-hashes',
+                            '-r', str(release / 'requirements.lock')], timeout=600)
     (backend / '.env').symlink_to(config['environment_file'])
     (backend / 'var').symlink_to(config['state_directory'])
     primary = next(db for db in config['databases'] if db['migrate'])
@@ -527,7 +558,7 @@ def health(config, release, revision):
                 if name == 'index.html' or name.endswith(('.js', '.css'))}
     for origin in (config['local_origin'], config['public_origin']):
         data = json.loads(fetch(origin.rstrip('/') + '/api/health?release=' + revision))
-        require(data.get('status') == 'ok' and data.get('release_revision') == revision
+        require(data.get('status') == 'ok' and data.get('release_revision') == manifest.get('backend_revision', revision)
                 and data.get('runtime_mode') == config['expected_runtime_mode'],
                 'API health/revision/runtime mismatch')
         for name, digest in selected.items():
@@ -599,9 +630,22 @@ def deploy(config, archive, revision, checksum):
     capacity_preflight(config, root, archive.stat().st_size)
     require(sha256(archive) == checksum, 'Incoming archive changed')
     previous_pid = check_process(config)
-    manifest = extract(archive, release, revision)
-    migration_changes(previous, release, manifest['migration_policy'])
-    prepare_runtime(config, release, revision)
+    manifest = extract(archive, release, revision, previous=previous)
+    additions = migration_changes(previous, release, manifest['migration_policy'])
+    old_manifest = json.loads((previous / 'release.json').read_text())
+    changed = {name for name in set(old_manifest['files']) | set(manifest['files'])
+               if old_manifest['files'].get(name) != manifest['files'].get(name)}
+    backend_changed = any(name.startswith(('backend/', 'knowledge/', 'wheelhouse/'))
+                          or name == 'requirements.lock' for name in changed)
+    backend_revision = revision if backend_changed else old_manifest.get('backend_revision', previous_revision)
+    require(manifest.get('backend_revision', revision) == backend_revision, 'Backend source identity mismatch')
+    if backend_changed:
+        prepare_runtime(config, release, backend_revision, previous=previous)
+    else:
+        # Frontend/metadata changes reuse an already verified runtime without importing app code.
+        (release / 'backend/.venv').symlink_to((previous / 'backend/.venv').resolve())
+        (release / 'backend/.env').symlink_to(config['environment_file'])
+        (release / 'backend/var').symlink_to(config['state_directory'])
     # Preflight previous release identity before any interruption or migration.
     health(config, previous, previous_revision)
     capacity_preflight(config, root, archive.stat().st_size)
@@ -613,38 +657,46 @@ def deploy(config, archive, revision, checksum):
     stopped = False
     try:
         # Mark stopped before invoking PM2: timeout can mean the stop partially completed.
-        stopped = True
-        pm2(config, 'stop')
-        check_process(config, stopped=True)
-        require(not Path('/proc/' + str(previous_pid)).exists(), 'Previous writer PID still exists')
-        state['phase'] = 'stopped'
-        write_json(journal, state)
-        inventory = snapshot_databases(config, root / 'backups' / revision)
-        state['phase'] = 'backed-up'
-        write_json(journal, state)
-        rehearse_migration(config, release, revision, inventory, root / 'backups' / revision)
-        migrate(config, release, revision)
-        validate_database_contents(inventory)
-        validate_database_metadata(inventory)
-        state['phase'] = 'migrated'
-        write_json(journal, state)
+        if backend_changed:
+            stopped = True
+            pm2(config, 'stop')
+            check_process(config, stopped=True)
+            require(not Path('/proc/' + str(previous_pid)).exists(), 'Previous writer PID still exists')
+            state['phase'] = 'stopped'
+            write_json(journal, state)
+        if additions:
+            # Only an actual reviewed schema expansion requires quiescing and snapshots.
+            inventory = snapshot_databases(config, root / 'backups' / revision)
+            state['phase'] = 'backed-up'
+            write_json(journal, state)
+            rehearse_migration(config, release, revision, inventory, root / 'backups' / revision)
+            migrate(config, release, revision)
+            validate_database_contents(inventory)
+            validate_database_metadata(inventory)
+            state['phase'] = 'migrated'
+            write_json(journal, state)
         atomic_pointer(root / 'current', release)
         state['phase'] = 'switched'
         write_json(journal, state)
-        pm2(config, 'start', revision)
+        if backend_changed:
+            pm2(config, 'start', backend_revision)
         wait_healthy(config, release, revision)
-        validate_database_metadata(inventory)
-        app_command(config, [config['pm2'], 'save'])
+        if inventory:
+            validate_database_metadata(inventory)
+        if backend_changed:
+            app_command(config, [config['pm2'], 'save'])
         state['phase'] = 'healthy'
         write_json(journal, state)
     except BaseException:
-        if stopped:
+        if stopped or (root / 'current').resolve() == release:
             # Forward schema changes remain. Never downgrade, restore, or overwrite a live DB.
             with recovery_signals():
                 try:
-                    pm2(config, 'stop')
+                    if stopped:
+                        pm2(config, 'stop')
                     atomic_pointer(root / 'current', previous)
-                    pm2(config, 'start', previous_revision)
+                    if stopped:
+                        pm2(config, 'start', old_manifest.get('backend_revision', previous_revision))
                     wait_healthy(config, previous, previous_revision)
                     if inventory:
                         validate_database_metadata(inventory)
@@ -657,7 +709,9 @@ def deploy(config, archive, revision, checksum):
                     print('ROLLBACK FAILED: operator intervention required; retained DBs and releases untouched',
                           file=sys.stderr)
         raise
-    print('DEPLOYED qunxue ' + revision + ' artifact=' + checksum)
+    print('DEPLOYED qunxue ' + revision + ' artifact=' + checksum
+          + ' restarted=' + ('qunxue-api' if backend_changed else '[]')
+          + ' migration_backups=' + str(len(inventory)))
 
 
 def rollback(config, current_revision, target_revision):
@@ -668,15 +722,22 @@ def rollback(config, current_revision, target_revision):
     require(state['revision'] == current_revision and state['previous_revision'] == target_revision
             and state['phase'] == 'healthy', 'Rollback is limited to the last verified predecessor')
     target = root / 'releases' / target_revision
-    policy = json.loads((current / 'release.json').read_text())['migration_policy']
+    current_manifest = json.loads((current / 'release.json').read_text())
+    target_manifest = json.loads((target / 'release.json').read_text())
+    policy = current_manifest['migration_policy']
+    current_backend = current_manifest.get('backend_revision', current_revision)
+    target_backend = target_manifest.get('backend_revision', target_revision)
+    restart = current_backend != target_backend
     migration_changes(target, current, policy)
     state['phase'] = 'rolling-back'
     write_json(root / 'deployment-state.json', state)
     try:
-        pm2(config, 'stop')
-        check_process(config, stopped=True)
+        if restart:
+            pm2(config, 'stop')
+            check_process(config, stopped=True)
         atomic_pointer(root / 'current', target)
-        pm2(config, 'start', target_revision)
+        if restart:
+            pm2(config, 'start', target_backend)
         wait_healthy(config, target, target_revision)
         app_command(config, [config['pm2'], 'save'])
         state['phase'] = 'rolled-back'
@@ -684,9 +745,11 @@ def rollback(config, current_revision, target_revision):
     except BaseException:
         with recovery_signals():
             try:
-                pm2(config, 'stop')
+                if restart:
+                    pm2(config, 'stop')
                 atomic_pointer(root / 'current', current)
-                pm2(config, 'start', current_revision)
+                if restart:
+                    pm2(config, 'start', current_backend)
                 wait_healthy(config, current, current_revision)
                 app_command(config, [config['pm2'], 'save'])
                 state['phase'] = 'healthy'
@@ -702,6 +765,11 @@ def main():
     os.umask(0o077)
     # Do not read arbitrary CLI/config paths supplied by SSH. The forced command is fixed.
     command = os.environ.get('SSH_ORIGINAL_COMMAND', '')
+    if command == 'status':
+        config = load_config()
+        release, revision = active_release(config)
+        print((release / 'release.json').read_text())
+        return
     match = re.fullmatch(r'(deploy|rollback) ([0-9a-f]{40}) ([0-9a-f]{40}|[0-9a-f]{64})', command)
     require(match is not None, 'Only exact deploy/rollback protocol commands are allowed')
     operation, revision, digest = match.groups()
