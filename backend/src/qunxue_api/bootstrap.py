@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, asynccontextmanager, contextmanager, suppress
+from contextlib import asynccontextmanager, contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
@@ -175,7 +175,7 @@ from qunxue_api.application.teaching_assistant import TeachingAssistantApplicati
 from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
-from qunxue_api.modules.billing import SIGNUP_GRANT, CreditService
+from qunxue_api.modules.billing import SIGNUP_GRANT
 from qunxue_api.modules.frontier_knowledge import FrontierService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -262,29 +262,8 @@ def create_app(
     resolved_settings = settings or get_settings()
     resolved_database = database or Database(resolved_settings.database_url)
 
-    async def run_model_probe_loop(app: FastAPI) -> None:
-        while True:
-            try:
-                with app.state.billing_operations.open(
-                    user_id="operator:model_probe",
-                    run_id=uuid4(),
-                    payload={"phase": "model_probe"},
-                    phase="model_probe",
-                ) as scope:
-                    await app.state.model_provider.probe()
-                    scope.finish("success")
-            except asyncio.CancelledError:
-                raise
-            except Exception:
-                logger.warning("Model health probe failed.")
-            await asyncio.sleep(resolved_settings.model_probe_interval_seconds)
-
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if app.state.billing_operations.runtime:
-            app.state.billing_operations.runtime.recover_stale(
-                before=datetime.now(UTC) - timedelta(minutes=30)
-            )
         probe_task = None
         memory_task = None
         course_task = None
@@ -317,11 +296,6 @@ def create_app(
                     await asyncio.sleep(60)
 
             memory_task = asyncio.create_task(learn_memories(), name="qunxue-memory-learning")
-        if app.state.model_router is not None:
-            probe_task = asyncio.create_task(
-                run_model_probe_loop(app),
-                name="qunxue-model-health-probe",
-            )
         app.state.model_probe_task = probe_task
         try:
             yield
@@ -455,7 +429,7 @@ def create_app(
 
     app.state.billing_operations = SqliteBillingOperations(
         resolved_database,
-        _billing_runtime(resolved_settings, resolved_database),
+        None,
         exempt_user_ids=lambda: getattr(app.state, "credit_exempt_user_ids", ()),
         phase_policies=resolved_settings.billing_phase_policies,
     )
@@ -505,21 +479,10 @@ def create_app(
 
     @contextmanager
     def phenomenon_extraction_scope(*, user_id, run_id, payload):
-        # Financial scope outlives the business transaction, including its final commit.
-        with ExitStack() as stack:
-            scope = None
-            with resolved_database.session() as session:
-                if not app.state.model_gateway.descriptor.demonstration:
-                    scope = stack.enter_context(app.state.billing_operations.open(
-                        user_id=user_id, run_id=run_id, payload=payload,
-                        before_network=session.commit, phase="user_research",
-                    ))
-                yield PhenomenonService(
-                    SqlitePhenomenonRepository(session), SqliteResearchTaskRepository(session),
-                )
-                if scope is not None:
-                    session.flush()
-                    scope.finish("success", connection=session.connection())
+        with resolved_database.session() as session:
+            yield PhenomenonService(
+                SqlitePhenomenonRepository(session), SqliteResearchTaskRepository(session),
+            )
 
     def build_research_analysis_application(
         session,
@@ -558,8 +521,7 @@ def create_app(
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 rollback=session.rollback,
-                billing=app.state.billing_operations.bound_to(session)
-                if not descriptor.demonstration else None,
+                billing=None,
                 commit=session.commit,
                 invalidate_method_plan=(
                     lambda task_id, reason: method_plan_service.mark_stale_for_task(
@@ -1067,7 +1029,7 @@ def create_app(
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                     direct_task=teaching,
-                    require_billing=True,
+                    require_billing=False,
                 )
             from qunxue_api.adapters.research_agent.roadshow_runner import RoadshowRunner
 
@@ -1085,18 +1047,9 @@ def create_app(
                     ),
                     conversations=conversations,
                     runner=runner,
-                    billing=(
-                        app.state.billing_operations.bound_to(session) if use_real_agent else None
-                    ),
+                    billing=None,
                     rollback=session.rollback,
-                    credits=CreditService(
-                        SqliteCreditRepository(session),
-                        exempt_user_ids=getattr(
-                            app.state,
-                            "credit_exempt_user_ids",
-                            (),
-                        ),
-                    ),
+                    credits=None,
                     atomic=(
                         app.state.billing_operations.bound_to(session).atomic
                         if use_real_agent else session.begin_nested
@@ -1158,9 +1111,7 @@ def create_app(
             yield MemoryService(SqliteMemoryRepository(memory_session))
 
     app.state.memory_service_scope = memory_service_scope
-    app.state.memory_overview = MemoryOverview(
-        billing=app.state.billing_operations if app.state.model_endpoints else None
-    )
+    app.state.memory_overview = MemoryOverview(billing=None)
     if app.state.model_endpoints:
         endpoint = app.state.model_endpoints[0]
         app.state.memory_overview.generate = PydanticMemoryOverview(
@@ -1189,7 +1140,7 @@ def create_app(
     app.state.memory_worker = MemoryLearningWorker(
         memory_learning_scope,
         extractor=memory_extractor,
-        billing=app.state.billing_operations if memory_extractor else None,
+        billing=None,
         idle_seconds=resolved_settings.memory_learning_idle_seconds,
         daily_calls=resolved_settings.memory_learning_daily_calls,
         daily_tokens=resolved_settings.memory_learning_daily_tokens,
@@ -1211,7 +1162,7 @@ def create_app(
         else None,
         embedder=course_embedder,
         embedding_model=resolved_settings.embedding_model,
-        billing=app.state.billing_operations,
+        billing=None,
     )
     app.include_router(shared_knowledge_router)
     app.include_router(teaching_router)
@@ -1564,7 +1515,7 @@ def _model_provider_from_settings(
 
     providers: tuple[ProbeableModelProvider, ...] = tuple(
         OpenAICompatibleModelProvider(
-            require_billing=True,
+            require_billing=False,
             base_url=endpoint.base_url,
             api_key=endpoint.api_key,
             model=endpoint.model,
