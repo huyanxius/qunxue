@@ -57,7 +57,7 @@ describe('PasswordResetPage', () => {
     fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: 'different' } })
     fireEvent.click(screen.getByRole('button', { name: '重设密码' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('密码需要 12-128 个字符')
+    expect(await screen.findByRole('alert')).toHaveTextContent('密码需要 8-128 个字符')
     expect(consumePasswordReset).not.toHaveBeenCalled()
   })
 
@@ -74,8 +74,8 @@ describe('PasswordResetPage', () => {
       />,
     )
 
-    fireEvent.change(screen.getByLabelText('新密码'), { target: { value: 'reset-research-passphrase' } })
-    fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: 'reset-research-passphrase' } })
+    fireEvent.change(screen.getByLabelText('新密码'), { target: { value: '87654321' } })
+    fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: '87654321' } })
     const submit = screen.getByRole('button', { name: '重设密码' })
     fireEvent.click(submit)
     fireEvent.click(submit)
@@ -83,7 +83,7 @@ describe('PasswordResetPage', () => {
     expect(consumePasswordReset).toHaveBeenCalledOnce()
     expect(consumePasswordReset).toHaveBeenCalledWith(expect.objectContaining({
       token: 'reset-token',
-      newPassword: 'reset-research-passphrase',
+      newPassword: '87654321',
       idempotencyKey: expect.any(String),
     }))
     expect(submit).toBeDisabled()
@@ -107,8 +107,8 @@ describe('PasswordResetPage', () => {
       />,
     )
 
-    fireEvent.change(screen.getByLabelText('新密码'), { target: { value: 'reset-research-passphrase' } })
-    fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: 'reset-research-passphrase' } })
+    fireEvent.change(screen.getByLabelText('新密码'), { target: { value: '87654321' } })
+    fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: '87654321' } })
     fireEvent.click(screen.getByRole('button', { name: '重设密码' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('重置链接已过期或已使用')
