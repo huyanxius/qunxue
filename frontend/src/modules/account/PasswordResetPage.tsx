@@ -37,8 +37,8 @@ export function PasswordResetPage({
     const data = new FormData(event.currentTarget)
     const password = String(data.get('password') ?? '')
     const confirmation = String(data.get('confirmation') ?? '')
-    if (password.length < 12 || password.length > 128) {
-      setError('密码需要 12-128 个字符。')
+    if (password.length < 8 || password.length > 128) {
+      setError('密码需要 8-128 个字符。')
       return
     }
     if (password !== confirmation) {
@@ -124,12 +124,12 @@ export function PasswordResetPage({
               aria-label="新密码"
               type="password"
               autoComplete="new-password"
-              minLength={12}
+              minLength={8}
               maxLength={128}
               aria-describedby="reset-password-help"
               required
             />
-            <small id="reset-password-help">12-128 个字符，请使用不同于其他网站的密码。</small>
+            <small id="reset-password-help">8-128 个字符，请使用不同于其他网站的密码。</small>
           </label>
           <label>
             <span>确认新密码</span>
@@ -138,7 +138,7 @@ export function PasswordResetPage({
               aria-label="确认新密码"
               type="password"
               autoComplete="new-password"
-              minLength={12}
+              minLength={8}
               maxLength={128}
               required
             />
