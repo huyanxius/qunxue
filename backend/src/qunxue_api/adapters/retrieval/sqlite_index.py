@@ -288,7 +288,17 @@ class SqliteRetrievalIndex:
         release_content_hash: str,
         embedding_model: str,
         chunk_schema_version: str,
+        embedding_base_url: str | None = None,
     ) -> RetrievalIndexManifest:
+        alias_model = None
+        if (
+            embedding_base_url is not None
+            and embedding_base_url.rstrip("/") == "https://api.siliconflow.cn/v1"
+        ):
+            if embedding_model == "BAAI/bge-m3":
+                alias_model = "Pro/BAAI/bge-m3"
+            elif embedding_model == "Pro/BAAI/bge-m3":
+                alias_model = "BAAI/bge-m3"
         with self._connect() as connection:
             row = connection.execute(
                 """
@@ -305,7 +315,10 @@ class SqliteRetrievalIndex:
                 FROM retrieval_indexes AS manifest
                 WHERE manifest.knowledge_release_id = ?
                   AND manifest.release_content_hash = ?
-                  AND manifest.embedding_model = ?
+                  AND (
+                      manifest.embedding_model = ?
+                      OR (manifest.embedding_model = ? AND manifest.vector_dimension = 1024)
+                  )
                   AND manifest.chunk_schema_version = ?
                   AND manifest.status = 'ready'
                   AND manifest.point_count > 0
@@ -314,14 +327,17 @@ class SqliteRetrievalIndex:
                       FROM retrieval_points AS point
                       WHERE point.retrieval_index_id = manifest.retrieval_index_id
                   ) = manifest.point_count
-                ORDER BY manifest.retrieval_index_id
+                ORDER BY CASE WHEN manifest.embedding_model = ? THEN 0 ELSE 1 END,
+                         manifest.retrieval_index_id
                 LIMIT 1
                 """,
                 (
                     knowledge_release_id,
                     release_content_hash,
                     embedding_model,
+                    alias_model,
                     chunk_schema_version,
+                    embedding_model,
                 ),
             ).fetchone()
         if row is None:

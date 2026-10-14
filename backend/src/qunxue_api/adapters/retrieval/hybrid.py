@@ -109,10 +109,12 @@ class HybridRetriever:
         min_rerank_score: float,
         min_lexical_score: float = 0.12,
         recall_limit: int = 30,
+        embedding_base_url: str | None = None,
     ) -> None:
         self._index = index
         self._embedder = embedder
         self._embedding_model = embedding_model
+        self._embedding_base_url = embedding_base_url
         self._chunk_schema_version = chunk_schema_version
         self._reranker = reranker
         self._reranker_model = reranker_model
@@ -126,13 +128,14 @@ class HybridRetriever:
         knowledge_release_id: str,
         release_content_hash: str,
     ) -> RetrievalIndexManifest:
-        """Require the exact index identity used by live retrieval."""
+        """Require the pinned index, allowing only the explicit SiliconFlow BGE-M3 alias."""
 
         try:
             return self._index.find_ready_manifest(
                 knowledge_release_id=knowledge_release_id,
                 release_content_hash=release_content_hash,
                 embedding_model=self._embedding_model,
+                embedding_base_url=self._embedding_base_url,
                 chunk_schema_version=self._chunk_schema_version,
             )
         except (RetrievalIndexUnavailable, sqlite3.Error) as error:
