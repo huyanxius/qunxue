@@ -587,7 +587,7 @@ def test_password_change_revokes_other_sessions_and_keeps_the_current_session(
             headers={"Idempotency-Key": str(uuid4())},
             json={
                 "current_password": "research-passphrase",
-                "new_password": "new-research-passphrase",
+                "new_password": "12345678",
                 "revoke_other_sessions": True,
             },
         )
@@ -604,7 +604,7 @@ def test_password_change_revokes_other_sessions_and_keeps_the_current_session(
         json={"email": "security@example.com", "password": "research-passphrase"},
     )
     assert rejected.status_code == 401
-    login(client, "security@example.com", password="new-research-passphrase")
+    login(client, "security@example.com", password="12345678")
 
 
 def test_admin_disable_enable_and_password_reset_are_real_lifecycle_actions(
@@ -662,7 +662,7 @@ def test_admin_disable_enable_and_password_reset_are_real_lifecycle_actions(
         consumed = managed_user.post(
             "/api/account/password-resets/consume",
             headers={"Idempotency-Key": str(uuid4())},
-            json={"token": reset_token, "new_password": "reset-research-passphrase"},
+            json={"token": reset_token, "new_password": "87654321"},
         )
         assert consumed.status_code == 200
         reused = managed_user.post(
@@ -671,7 +671,7 @@ def test_admin_disable_enable_and_password_reset_are_real_lifecycle_actions(
             json={"token": reset_token, "new_password": "another-passphrase"},
         )
         assert reused.status_code == 410
-        login(managed_user, "managed-user@example.com", password="reset-research-passphrase")
+        login(managed_user, "managed-user@example.com", password="87654321")
 
     audit = client.get("/api/admin/audit-events")
     assert audit.status_code == 200

@@ -541,11 +541,11 @@ export function AccountSettingsPage({
 
   function submitPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (newPassword.length < 12 || newPassword.length > 128) {
+    if (newPassword.length < 8 || newPassword.length > 128) {
       setActionError(
         text(
-          '新密码需要 12-128 个字符。',
-          'New password must be between 12 and 128 characters.',
+          '新密码需要 8-128 个字符。',
+          'New password must be between 8 and 128 characters.',
         ),
       )
       return
@@ -983,7 +983,7 @@ export function AccountSettingsPage({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
-                  minLength={12}
+                  minLength={8}
                   maxLength={128}
                   required
                 />
@@ -995,7 +995,7 @@ export function AccountSettingsPage({
                   value={passwordConfirmation}
                   onChange={(e) => setPasswordConfirmation(e.target.value)}
                   autoComplete="new-password"
-                  minLength={12}
+                  minLength={8}
                   maxLength={128}
                   required
                 />

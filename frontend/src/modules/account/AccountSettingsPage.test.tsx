@@ -465,16 +465,16 @@ describe('AccountSettingsPage', () => {
       target: { value: 'research-passphrase' },
     })
     fireEvent.change(screen.getByLabelText('新密码'), {
-      target: { value: 'new-research-passphrase' },
+      target: { value: '12345678' },
     })
     fireEvent.change(screen.getByLabelText('确认新密码'), {
-      target: { value: 'new-research-passphrase' },
+      target: { value: '12345678' },
     })
     fireEvent.click(screen.getByRole('button', { name: '更新密码' }))
 
     await waitFor(() => expect(changePassword).toHaveBeenCalledWith({
       currentPassword: 'research-passphrase',
-      newPassword: 'new-research-passphrase',
+      newPassword: '12345678',
       revokeOtherSessions: true,
       idempotencyKey: expect.any(String),
     }))
