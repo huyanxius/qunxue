@@ -35,6 +35,7 @@ class SharedKnowledgeReferences:
                 coordinates[key] = (doc, segment)
         search = getattr(self.retriever, "search_chunks", None)
         mode, failure = "lexical", None
+        degraded_reason = None
         if callable(search) and chunks:
             try:
                 options = {}
@@ -51,6 +52,7 @@ class SharedKnowledgeReferences:
                     hit.chunk.chunk_id for hit in result.hits if hit.chunk.chunk_id in coordinates
                 ]
                 mode = result.mode
+                degraded_reason = result.degraded_reason
             except RetrievalPipelineUnavailable:
                 selected = []
                 failure = "课程资料检索暂时失败，本轮未取得教师依据。"
@@ -94,6 +96,7 @@ class SharedKnowledgeReferences:
             "knowledge_base_name": kb.name,
             "items": items,
             "retrieval_mode": mode,
+            "degraded_reason": degraded_reason,
             "error": failure,
         }
         # Release any cache writes before model telemetry opens another SQLite writer.

@@ -1,10 +1,12 @@
 """Release-bound lexical, dense, and reranked retrieval orchestration."""
 
+import logging
 import math
 import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
+from urllib.error import HTTPError
 
 from qunxue_api.adapters.research_agent.embedding import EmbeddingProviderError
 from qunxue_api.adapters.research_agent.reranker import (
@@ -35,6 +37,7 @@ _GENERIC_RETRIEVAL_TERMS = (
     "概念",
     "观点",
 )
+_LOGGER = logging.getLogger("qunxue_api.retrieval")
 
 
 class QueryEmbedder(Protocol):
@@ -189,6 +192,7 @@ class HybridRetriever:
         chunks_by_id = {chunk.chunk_id: chunk for chunk in values}
         lexical = self._lexical_candidates(query=query, chunks=values)
         semantic: list[RetrievalCandidate] = []
+        degraded: list[str] = []
         embed_documents = getattr(self._embedder, "embed_documents", None)
         if callable(embed_documents):
             try:
@@ -233,55 +237,23 @@ class HybridRetriever:
                     scored,
                     key=lambda item: (-item.score, item.citation_id),
                 )[: self._recall_limit]
-            except EmbeddingProviderError as error:
-                raise RetrievalPipelineUnavailable(
-                    "embedding service is unavailable"
-                ) from error
-            except (TypeError, ValueError) as error:
-                raise RetrievalPipelineUnavailable(
-                    "embedding service returned an invalid vector"
-                ) from error
+            except (EmbeddingProviderError, TypeError, ValueError) as error:
+                degraded.append("embedding_unavailable")
+                _log_degradation("embedding", error)
 
         ranked_lists = tuple(item for item in (lexical, semantic) if item)
         fused = rrf_fuse(ranked_lists, limit=self._recall_limit) if ranked_lists else []
-        safe_limit = max(1, limit)
         mode = "hybrid" if lexical and semantic else "semantic" if semantic else "lexical"
-        if not fused:
-            return HybridRetrievalResult(
-                retrieval_index_id=retrieval_index_id,
-                mode=mode,
-                embedding_model=self._embedding_model,
-                reranker_model=self._reranker_model,
-                degraded_reason=None,
-                hits=(),
-            )
-
-        try:
-            scores = self._reranker.rerank(
-                query=query,
-                documents=tuple(chunks_by_id[item.citation_id].text for item in fused),
-                top_n=len(fused),
-            )
-        except RerankerProviderError as error:
-            raise RetrievalPipelineUnavailable("reranker service is unavailable") from error
-        hits = tuple(
-            HybridRetrievalHit(
-                chunk=chunks_by_id[fused[item.index].citation_id],
-                fused_score=fused[item.index].score,
-                retrieval_sources=fused[item.index].sources,
-                rerank_score=item.score,
-            )
-            for item in scores
-            if item.score >= self._min_rerank_score
-        )[:safe_limit]
-        return HybridRetrievalResult(
+        result, _ = self._rerank_or_fuse(
+            query=query,
+            fused=fused,
+            chunks_by_id=chunks_by_id,
             retrieval_index_id=retrieval_index_id,
-            mode=f"{mode}_reranked",
-            embedding_model=self._embedding_model,
-            reranker_model=self._reranker_model,
-            degraded_reason=None,
-            hits=hits,
+            mode=mode,
+            degraded=degraded,
+            limit=limit,
         )
+        return result
 
     def search_with_trace(
         self,
@@ -306,15 +278,26 @@ class HybridRetriever:
             raise RetrievalPipelineUnavailable("retrieval index is unavailable") from error
         chunks_by_id = {chunk.chunk_id: chunk for chunk in chunks}
         lexical = self._lexical_candidates(query=query, chunks=chunks)
+        semantic: list[RetrievalCandidate] = []
+        degraded: list[str] = []
         try:
             query_vector = self._embedder.embed_query(query)
-            semantic_hits = self._index.search(
-                retrieval_index_id=manifest.retrieval_index_id,
-                knowledge_release_id=knowledge_release_id,
-                query_vector=query_vector,
-                document_kind=document_kind,
-                limit=self._recall_limit,
-            )
+            if _vector_norm(query_vector) == 0 or len(query_vector) != manifest.vector_dimension:
+                raise EmbeddingProviderError("invalid query vector")
+        except (EmbeddingProviderError, TypeError, ValueError) as error:
+            degraded.append("embedding_unavailable")
+            _log_degradation("embedding", error)
+        else:
+            try:
+                semantic_hits = self._index.search(
+                    retrieval_index_id=manifest.retrieval_index_id,
+                    knowledge_release_id=knowledge_release_id,
+                    query_vector=query_vector,
+                    document_kind=document_kind,
+                    limit=self._recall_limit,
+                )
+            except RetrievalIndexUnavailable as error:
+                raise RetrievalPipelineUnavailable("retrieval index is unavailable") from error
             semantic = [
                 RetrievalCandidate(
                     citation_id=hit.chunk.chunk_id,
@@ -323,14 +306,9 @@ class HybridRetriever:
                 )
                 for hit in semantic_hits
             ]
-        except EmbeddingProviderError as error:
-            raise RetrievalPipelineUnavailable("embedding service is unavailable") from error
-        except RetrievalIndexUnavailable as error:
-            raise RetrievalPipelineUnavailable("retrieval index is unavailable") from error
 
         ranked_lists = tuple(value for value in (lexical, semantic) if value)
         fused = rrf_fuse(ranked_lists, limit=self._recall_limit) if ranked_lists else []
-        safe_limit = max(1, limit)
         if lexical and semantic:
             mode = "hybrid"
         elif semantic:
@@ -338,39 +316,52 @@ class HybridRetriever:
         else:
             mode = "lexical"
 
-        if not fused:
-            result = HybridRetrievalResult(
-                retrieval_index_id=manifest.retrieval_index_id,
-                mode=mode,
-                embedding_model=self._embedding_model,
-                reranker_model=self._reranker_model,
-                degraded_reason=None,
-                hits=(),
-            )
-            return HybridRetrievalTrace(
-                lexical=_stage_hits(lexical),
-                semantic=_stage_hits(semantic),
-                fused=(),
-                reranked=(),
-                rerank_query=query,
-                result=result,
-            )
+        result, reranked = self._rerank_or_fuse(
+            query=query,
+            fused=fused,
+            chunks_by_id=chunks_by_id,
+            retrieval_index_id=manifest.retrieval_index_id,
+            mode=mode,
+            degraded=degraded,
+            limit=limit,
+        )
+        return HybridRetrievalTrace(
+            lexical=_stage_hits(lexical),
+            semantic=_stage_hits(semantic),
+            fused=_stage_hits(fused),
+            reranked=reranked,
+            rerank_query=query,
+            result=result,
+        )
 
-        rerank_query = query
-        try:
-            scores = self._reranker.rerank(
-                query=rerank_query,
-                documents=tuple(chunks_by_id[item.citation_id].text for item in fused),
-                top_n=len(fused),
-            )
-        except RerankerProviderError as error:
-            raise RetrievalPipelineUnavailable("reranker service is unavailable") from error
+    def _rerank_or_fuse(
+        self,
+        *,
+        query: str,
+        fused: list[RetrievalCandidate],
+        chunks_by_id: dict[str, RetrievalChunk],
+        retrieval_index_id: str,
+        mode: str,
+        degraded: list[str],
+        limit: int,
+    ) -> tuple[HybridRetrievalResult, tuple[RetrievalStageHit, ...]]:
+        scores = None
+        if fused:
+            try:
+                scores = self._reranker.rerank(
+                    query=query,
+                    documents=tuple(chunks_by_id[item.citation_id].text for item in fused),
+                    top_n=len(fused),
+                )
+            except RerankerProviderError as error:
+                degraded.append("reranker_unavailable")
+                _log_degradation("reranker", error)
         reranked = tuple(
             RetrievalStageHit(
                 chunk_id=fused[item.index].citation_id,
                 score=item.score,
             )
-            for item in scores
+            for item in scores or ()
         )
         hits = tuple(
             HybridRetrievalHit(
@@ -379,25 +370,30 @@ class HybridRetriever:
                 retrieval_sources=fused[item.index].sources,
                 rerank_score=item.score,
             )
-            for item in scores
+            for item in scores or ()
             if item.score >= self._min_rerank_score
-        )[:safe_limit]
+        )
+        if scores is None:
+            # RRF scores are ranks, not calibrated relevance probabilities. Never
+            # apply the reranker threshold or fabricate rerank scores on fallback.
+            hits = tuple(
+                HybridRetrievalHit(
+                    chunk=chunks_by_id[item.citation_id],
+                    fused_score=item.score,
+                    retrieval_sources=item.sources,
+                    rerank_score=None,
+                )
+                for item in fused
+            )
         result = HybridRetrievalResult(
-            retrieval_index_id=manifest.retrieval_index_id,
-            mode=f"{mode}_reranked",
+            retrieval_index_id=retrieval_index_id,
+            mode=f"{mode}_reranked" if scores is not None else mode,
             embedding_model=self._embedding_model,
-            reranker_model=self._reranker_model,
-            degraded_reason=None,
-            hits=hits,
+            reranker_model=self._reranker_model if scores is not None else None,
+            degraded_reason=",".join(degraded) or None,
+            hits=hits[: max(1, limit)],
         )
-        return HybridRetrievalTrace(
-            lexical=_stage_hits(lexical),
-            semantic=_stage_hits(semantic),
-            fused=_stage_hits(fused),
-            reranked=reranked,
-            rerank_query=rerank_query,
-            result=result,
-        )
+        return result, reranked
 
     def _lexical_candidates(
         self,
@@ -421,6 +417,13 @@ class HybridRetriever:
             (item for item in candidates if item.score >= self._min_lexical_score),
             key=lambda item: (-item.score, item.citation_id),
         )[: self._recall_limit]
+
+
+def _log_degradation(stage: str, error: Exception) -> None:
+    cause = error.__cause__
+    status = cause.code if isinstance(cause, HTTPError) else None
+    # Do not log the exception, URL, response body, query, documents or credentials.
+    _LOGGER.warning("retrieval_degraded stage=%s http_status=%s", stage, status)
 
 
 def _meaningful_lexical_text(value: str) -> str:

@@ -1,4 +1,5 @@
 # ruff: noqa: F811
+import logging
 from copy import deepcopy
 
 import httpx
@@ -133,3 +134,38 @@ def test_public_search_never_embeds_even_when_private_agent_is_configured(seeded
     response = TestClient(app).get("/api/frontier/search?q=医院")
     assert response.status_code == 200
     assert response.json()["search_mode"] == "lexical"
+
+
+@pytest.mark.parametrize("failure", [402, 503, "timeout", "invalid-vector"])
+def test_private_frontier_embedding_failure_keeps_lexical_results(
+    seeded, caplog, monkeypatch, failure
+):
+    from qunxue_api.modules.frontier_knowledge import FrontierService
+
+    monkeypatch.setattr(logging.getLogger("qunxue_api.retrieval"), "disabled", False)
+    caplog.set_level(logging.WARNING, logger="qunxue_api.retrieval")
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        if failure == "timeout":
+            raise httpx.ReadTimeout("private-response", request=request)
+        if failure == "invalid-vector":
+            return httpx.Response(200, json={"data": [{"index": 0, "embedding": []}]})
+        return httpx.Response(failure, text="private-response")
+
+    provider = FrontierEmbeddingProvider(
+        FrontierEmbeddingConfig("https://private.example/v1", "private-key", "test", True),
+        httpx.MockTransport(respond),
+    )
+    index = FrontierVectorIndex(seeded, provider)
+    lexical = FrontierService(seeded).search(q="医院")
+    result = FrontierService(seeded, vector_retriever=index).search(q="医院")
+    assert requests
+    assert result["items"]
+    assert {item["id"] for item in result["items"]} == {item["id"] for item in lexical["items"]}
+    assert result["search_mode"] == "lexical"
+    records = [r for r in caplog.records if r.name == "qunxue_api.retrieval"]
+    assert len(records) == 1
+    assert records[0].getMessage() == "retrieval_degraded stage=frontier_embedding"
+    assert records[0].exc_info is None

@@ -200,6 +200,7 @@ def test_knowledge_search_maps_hybrid_chunks_to_auditable_evidence() -> None:
             "excerpt": "社会资本理论解释持续关系如何支持社区互助。",
             "retrieval_index_id": "retrieval-index:reviewed-v1",
             "retrieval_mode": "hybrid_reranked",
+            "degraded_reason": None,
             "retrieval_sources": ["lexical", "semantic"],
             "rerank_score": 0.93,
             "embedding_model": "Pro/BAAI/bge-m3",

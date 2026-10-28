@@ -1,9 +1,14 @@
+import json
+import logging
 from pathlib import Path
+from urllib.error import HTTPError
 
 import pytest
 
-from qunxue_api.adapters.research_agent.embedding import EmbeddingProviderError
-from qunxue_api.adapters.research_agent.reranker import RerankerProviderError, RerankScore
+import qunxue_api.adapters.research_agent.embedding as embedding
+import qunxue_api.adapters.research_agent.reranker as reranker
+from qunxue_api.adapters.research_agent.embedding import OpenAICompatibleEmbeddingProvider
+from qunxue_api.adapters.research_agent.reranker import RerankScore, SiliconFlowRerankerProvider
 from qunxue_api.adapters.retrieval import RetrievalChunk, SqliteRetrievalIndex
 from qunxue_api.adapters.retrieval.hybrid import (
     HybridRetriever,
@@ -134,62 +139,112 @@ def test_hybrid_retrieval_exposes_auditable_same_condition_stage_rankings(
     assert [item.chunk.theory_id for item in trace.result.hits] == ["social-capital"]
 
 
-def test_embedding_failure_aborts_retrieval_instead_of_returning_lexical_evidence(
-    tmp_path: Path,
-) -> None:
-    index, _ = _ready_index(tmp_path)
+@pytest.mark.parametrize("transient", [False, True], ids=["release", "materials"])
+@pytest.mark.parametrize(
+    ("embedding_fails", "reranker_fails"),
+    [(True, False), (False, True), (True, True)],
+    ids=["embedding-unavailable", "reranker-unavailable", "both-unavailable"],
+)
+@pytest.mark.parametrize("failure", [402, 503, "timeout", "invalid-response"])
+def test_provider_outages_preserve_retrieval(
+    tmp_path, monkeypatch, caplog, transient, embedding_fails, reranker_fails, failure
+):
+    index, index_id = _ready_index(tmp_path)
+    monkeypatch.setattr(logging.getLogger("qunxue_api.retrieval"), "disabled", False)
+    caplog.set_level(logging.WARNING, logger="qunxue_api.retrieval")
+    calls = []
 
-    class UnavailableEmbedder:
-        def embed_query(self, _query):
-            raise EmbeddingProviderError("provider unavailable")
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
 
-    with pytest.raises(RetrievalPipelineUnavailable, match="embedding"):
-        HybridRetriever(
-            index=index,
-            embedder=UnavailableEmbedder(),
-            embedding_model="Pro/BAAI/bge-m3",
-            chunk_schema_version="retrieval-corpus-v1",
-            reranker=_PassingReranker(),
-            reranker_model="Pro/BAAI/bge-reranker-v2-m3",
-            min_rerank_score=0.3,
-        ).search(
-            query="社会资本理论",
-            knowledge_release_id="release-reviewed-v1",
-            release_content_hash="sha256:release-reviewed-v1",
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    def request(request, **_kwargs):
+        stage = "embedding" if request.full_url.endswith("/embeddings") else "reranker"
+        calls.append(stage)
+        failed = embedding_fails if stage == "embedding" else reranker_fails
+        if failed:
+            if isinstance(failure, int):
+                raise HTTPError(request.full_url, failure, "private-provider-body", {}, None)
+            if failure == "timeout":
+                raise TimeoutError("private-provider-body")
+            return Response({"unexpected": "private-provider-body"})
+        payload = json.loads(request.data)
+        if stage == "embedding":
+            return Response({"data": [{"embedding": [0.9, 0.1]} for _ in payload["input"]]})
+        return Response({"results": [
+            {"index": i, "relevance_score": 1.0} for i in range(len(payload["documents"]))
+        ]})
+
+    monkeypatch.setattr(embedding, "urlopen", request)
+    monkeypatch.setattr(reranker, "urlopen", request)
+    retriever = HybridRetriever(
+        index=index,
+        embedder=OpenAICompatibleEmbeddingProvider(
+            base_url="https://private-provider.example/v1", api_key="private-key",
+            model="Pro/BAAI/bge-m3", timeout_seconds=1,
+        ),
+        embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="retrieval-corpus-v1",
+        reranker=SiliconFlowRerankerProvider(
+            base_url="https://private-provider.example/v1", api_key="private-key",
+            model="reranker", timeout_seconds=1,
+        ),
+        reranker_model="reranker",
+        # Fused RRF scores are far below this; fallback must NOT apply it.
+        min_rerank_score=0.99,
+    )
+    kwargs = dict(
+        query="社区互助", knowledge_release_id="release-reviewed-v1",
+        release_content_hash="sha256:release-reviewed-v1", document_kind="theory_profile", limit=5,
+    )
+    trace = retriever.search_with_trace(**kwargs)
+    if transient:
+        chunks = index.list_chunks(
+            retrieval_index_id=index_id, knowledge_release_id=kwargs["knowledge_release_id"],
             document_kind="theory_profile",
-            limit=5,
         )
-
-
-def test_reranker_failure_aborts_retrieval_instead_of_returning_rrf_order(
-    tmp_path: Path,
-) -> None:
-    index, _ = _ready_index(tmp_path)
-
-    class Embedder:
-        def embed_query(self, _query):
-            return [0.9, 0.1]
-
-    class UnavailableReranker:
-        def rerank(self, **_kwargs):
-            raise RerankerProviderError("provider unavailable")
-
-    with pytest.raises(RetrievalPipelineUnavailable, match="reranker"):
-        HybridRetriever(
-            index=index,
-            embedder=Embedder(),
-            embedding_model="Pro/BAAI/bge-m3",
-            chunk_schema_version="retrieval-corpus-v1",
-            reranker=UnavailableReranker(),
-            reranker_model="Pro/BAAI/bge-reranker-v2-m3",
-            min_rerank_score=0.3,
-        ).search(
-            query="社区互助",
-            knowledge_release_id="release-reviewed-v1",
-            release_content_hash="sha256:release-reviewed-v1",
-            document_kind="theory_profile",
-            limit=5,
-        )
+        result = retriever.search_chunks(query=kwargs["query"], chunks=chunks, limit=5)
+    else:
+        result = trace.result
+    assert result.hits
+    assert result.hits[0].chunk.theory_id == "social-capital"
+    assert result.degraded_reason == ",".join(
+        name for failed, name in [
+            (embedding_fails, "embedding_unavailable"), (reranker_fails, "reranker_unavailable")
+        ] if failed
+    )
+    assert "embedding" in calls and "reranker" in calls
+    if embedding_fails:
+        assert trace.semantic == ()
+        assert all(hit.retrieval_sources == ("lexical",) for hit in result.hits)
+    if reranker_fails:
+        assert [hit.chunk.chunk_id for hit in result.hits] == [hit.chunk_id for hit in trace.fused]
+        assert all(hit.rerank_score is None for hit in result.hits)
+        assert trace.reranked == ()
+        assert result.reranker_model is None
+        assert not result.mode.endswith("_reranked")
+    else:
+        assert result.mode == "lexical_reranked"
+        assert all(hit.rerank_score == 1.0 for hit in result.hits)
+    assert "retrieval_degraded" in caplog.text
+    assert "private-provider" not in caplog.text and "private-key" not in caplog.text
+    assert kwargs["query"] not in caplog.text
+    if isinstance(failure, int):
+        assert f"http_status={failure}" in caplog.text
+    # A transient failure must not permanently switch off configured services.
+    embedding_fails = reranker_fails = False
+    restored = retriever.search(**kwargs)
+    assert restored.degraded_reason is None
+    assert restored.mode == "hybrid_reranked"
 
 
 def test_missing_release_index_aborts_retrieval_instead_of_searching_any_other_index(
