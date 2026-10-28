@@ -132,7 +132,7 @@ class HybridRetriever:
         """Require the exact index identity used by live retrieval."""
 
         try:
-            return self._index.find_ready_manifest(
+            manifest = self._index.find_ready_manifest(
                 knowledge_release_id=knowledge_release_id,
                 release_content_hash=release_content_hash,
                 embedding_model=self._embedding_model,
@@ -142,6 +142,9 @@ class HybridRetriever:
             raise RetrievalPipelineUnavailable(
                 "retrieval index is unavailable"
             ) from error
+        if type(manifest.vector_dimension) is not int or manifest.vector_dimension < 1:
+            raise RetrievalPipelineUnavailable("retrieval index dimension is invalid")
+        return manifest
 
     def search(
         self,

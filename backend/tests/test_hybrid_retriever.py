@@ -1,5 +1,6 @@
 import json
 import logging
+import sqlite3
 from pathlib import Path
 from urllib.error import HTTPError
 
@@ -337,3 +338,41 @@ def test_material_vectors_are_reused_across_questions(tmp_path):
         result = retriever.search_chunks(query=question, chunks=chunks, limit=5, vector_cache=cache)
         assert result.hits[0].chunk.text == "紫藤社区有37人参加夜间互助"
     assert document_calls == [("紫藤社区有37人参加夜间互助",)]
+
+
+@pytest.mark.parametrize("dimension", [0, -1, "invalid-dimension"])
+def test_corrupt_index_dimension_still_fails_closed(tmp_path, dimension):
+    index, _ = _ready_index(tmp_path)
+    with sqlite3.connect(tmp_path / "retrieval.db") as connection:
+        connection.execute("UPDATE retrieval_indexes SET vector_dimension = ?", (dimension,))
+    retriever = HybridRetriever(
+        index=index, embedder=SimpleEmbedder(), embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="retrieval-corpus-v1", reranker=_PassingReranker(),
+        reranker_model="reranker", min_rerank_score=0.3,
+    )
+    with pytest.raises(RetrievalPipelineUnavailable, match="index dimension"):
+        retriever.search(
+            query="社区互助", knowledge_release_id="release-reviewed-v1",
+            release_content_hash="sha256:release-reviewed-v1", document_kind=None, limit=5,
+        )
+
+
+@pytest.mark.parametrize("vector", [[1.0], [0.0, 0.0], [float("nan"), 0.0], []])
+def test_unusable_provider_vector_falls_back_without_relaxing_manifest(tmp_path, vector):
+    index, _ = _ready_index(tmp_path)
+
+    class Embedder:
+        def embed_query(self, query):
+            return vector
+
+    result = HybridRetriever(
+        index=index, embedder=Embedder(), embedding_model="Pro/BAAI/bge-m3",
+        chunk_schema_version="retrieval-corpus-v1", reranker=_PassingReranker(),
+        reranker_model="reranker", min_rerank_score=0.3,
+    ).search(
+        query="社区互助", knowledge_release_id="release-reviewed-v1",
+        release_content_hash="sha256:release-reviewed-v1", document_kind=None, limit=5,
+    )
+    assert result.hits
+    assert result.mode == "lexical_reranked"
+    assert result.degraded_reason == "embedding_unavailable"
