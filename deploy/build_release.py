@@ -11,7 +11,7 @@ import tarfile
 import tempfile
 
 from payload_rules import backend_changed, forbidden_payload
-from release_scope import classify
+from release_scope import frontend_fingerprint, live_scope
 
 SOURCE_ROOTS = ('backend/src/', 'backend/migrations/', 'backend/data/', 'knowledge/')
 SOURCE_FILES = {'backend/alembic.ini', 'deploy/migration-policy.json'}
@@ -35,9 +35,7 @@ def package(repo, wheelhouse, requirements, output, revision, baseline=None):
     scope = {'backend': True, 'frontend': True, 'dependencies': True}
     reused = {}
     if old:
-        subprocess.run(['git', 'merge-base', '--is-ancestor', old['revision'], revision], cwd=repo, check=True)
-        paths = subprocess.check_output(['git', 'diff', '--name-only', old['revision'], revision], cwd=repo, text=True).splitlines()
-        scope = classify(paths)
+        scope = live_scope(old['revision'], revision, old, repo)
     if scope['frontend']:
         frontend = repo / 'frontend/dist'
         if not (frontend / 'index.html').is_file():
@@ -61,6 +59,7 @@ def package(repo, wheelhouse, requirements, output, revision, baseline=None):
         'version': 2 if old else 1, 'app': 'qunxue', 'revision': revision,
         'python': '3.12', 'platform': 'linux-x86_64',
         'dependency_lock_sha256': lock,
+        'frontend_source_sha256': frontend_fingerprint(repo, revision),
         'files': {**reused, **{name: digest(path) for name, path in sorted(files.items())}},
         'migration_policy': policy,
     }

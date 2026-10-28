@@ -45,12 +45,14 @@ def connection(checksum=False):
                '-o', 'ServerAliveCountMax=60', env['DEPLOY_USER'] + '@' + env['DEPLOY_HOST']]
 
 
-def baseline(path):
+def baseline(path, expected_revision=None):
     with connection() as command:
         result = subprocess.run(command + RECEIVER + ['status'], check=True, capture_output=True, timeout=60)
     value = json.loads(result.stdout)
     if value.get('app') != 'qunxue' or not re.fullmatch('[0-9a-f]{40}', value.get('revision', '')):
         raise ValueError('Unverified production baseline')
+    if expected_revision is not None and value['revision'] != expected_revision:
+        raise ValueError('Production revision does not match the published Release')
     path.write_text(json.dumps(value) + '\n')
 
 
@@ -69,5 +71,8 @@ def send():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--status', type=Path)
+    parser.add_argument('--expect-revision')
     args = parser.parse_args()
-    baseline(args.status) if args.status else send()
+    if args.expect_revision and (not args.status or not re.fullmatch(r'[0-9a-f]{40}', args.expect_revision)):
+        parser.error('--expect-revision requires --status and a full commit SHA')
+    baseline(args.status, args.expect_revision) if args.status else send()
