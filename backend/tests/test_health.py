@@ -3,8 +3,7 @@ import json
 import sqlite3
 from dataclasses import FrozenInstanceError
 from pathlib import Path
-from threading import Event, Lock
-from time import monotonic
+from threading import Event
 
 import httpx
 import pytest
@@ -403,36 +402,16 @@ def test_cancelled_probe_does_not_fall_back_or_mark_a_successful_check() -> None
     ]
 
 
-def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
+@pytest.mark.parametrize("legacy_billing_config", [False, True])
+def test_lifespan_does_not_restart_removed_paid_model_probes(
     client: TestClient,
     tmp_path: Path,
+    legacy_billing_config: bool,
 ) -> None:
-    second_probe = Event()
-    probe_lock = Lock()
-    probe_count = 0
-
-    def handle(request: httpx.Request) -> httpx.Response:
-        nonlocal probe_count
-        with probe_lock:
-            probe_count += 1
-            current_count = probe_count
-            if probe_count >= 2:
-                second_probe.set()
-        if current_count == 1:
-            raise httpx.ConnectError("private transport failure", request=request)
-        completion = {
-            **_probe_completion(),
-            "model": "private-model-name",
-            "id": f"synthetic-probe-{current_count}",
-            "usage": {
-                "prompt_tokens": 1,
-                "completion_tokens": 1,
-                "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
-            },
-        }
-        return httpx.Response(200, json=completion, request=request)
-
-    transport = httpx.MockTransport(handle)
+    # #452 deliberately removed the periodic paid probe from bootstrap. Keep
+    # explicit provider probe/cancellation tests above, but never restart calls
+    # merely to satisfy an obsolete lifespan expectation.
+    transport = _BlockingProbeTransport()
     app = create_app(
         settings=Settings(
             _env_file=None,
@@ -446,52 +425,22 @@ def test_real_model_probe_starts_immediately_repeats_and_is_joined_on_shutdown(
         database=client.app.state.database,
         model_probe_transport=transport,
     )
-    app.state.billing_operations.runtime = synthetic_billing_runtime(
-        app.state.database.engine, aliases={"private-model-name": "gpt-6-luna"}
-    )
-    app.state.billing_operations.phase_policies["model_probe"] = "operator"
+    if legacy_billing_config:
+        app.state.billing_operations.runtime = synthetic_billing_runtime(
+            app.state.database.engine, aliases={"private-model-name": "gpt-6-luna"}
+        )
+        app.state.billing_operations.phase_policies["model_probe"] = "operator"
     _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
 
-    with TestClient(app):
-        assert second_probe.wait(timeout=1)
-        probe_task = app.state.model_probe_task
-        assert probe_task.done() is False
+    with TestClient(app) as health_client:
+        assert app.state.model_probe_task is None
+        health_client.get("/api/health")
+        assert not transport.started.is_set()
 
-    assert probe_task.done() is True
-
-
-def test_shutdown_cancels_an_in_flight_probe_without_orphan_work(
-    client: TestClient,
-    tmp_path: Path,
-) -> None:
-    transport = _BlockingProbeTransport()
-    app = create_app(
-        settings=Settings(
-            _env_file=None,
-            database_url=client.app.state.settings.database_url,
-            runtime_mode="base",
-            **_retrieval_settings(tmp_path),
-            model_base_url="https://primary.internal.test/v1",
-            model_name="private-model-name",
-        ),
-        database=client.app.state.database,
-        model_probe_transport=transport,
-    )
-    app.state.billing_operations.runtime = synthetic_billing_runtime(
-        app.state.database.engine, aliases={"private-model-name": "gpt-6-luna"}
-    )
-    app.state.billing_operations.phase_policies["model_probe"] = "operator"
-    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
-
-    with TestClient(app):
-        assert transport.started.wait(timeout=1)
-        probe_task = app.state.model_probe_task
-        shutdown_started = monotonic()
-
-    assert monotonic() - shutdown_started < 0.5
-    assert transport.cancelled.is_set()
-    assert transport.finished.is_set()
-    assert probe_task.done() is True
+    assert app.state.model_probe_task is None
+    assert not transport.started.is_set()
+    assert not transport.cancelled.is_set()
+    assert not transport.finished.is_set()
 
 
 @pytest.mark.parametrize("runtime_mode", ["mock", "base", "sft"])

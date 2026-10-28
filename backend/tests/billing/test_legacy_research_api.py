@@ -14,10 +14,15 @@ from qunxue_api.modules.billing import PriceBook
 
 
 @pytest.mark.parametrize("mode", ["success", "unconfigured", "persistence_failure"])
-def test_existing_extraction_route_meter_owner_persistence_and_replay(client, monkeypatch, mode):
-    register(client, "synthetic-research@example.com")
+def test_extraction_route_is_unbilled_and_preserves_owner_persistence_and_replay(
+    client, monkeypatch, mode
+):
+    identity = register(client, "synthetic-research@example.com")
+    user_id = identity["user"]["user_id"]
     assert client.get("/api/account/credits").status_code == 200
     database = client.app.state.database
+    with database.engine.connect() as c:
+        ledger_count = c.scalar(text("SELECT count(*) FROM credit_ledger"))
     if mode != "unconfigured":
         client.app.state.billing_operations.runtime = DurableBilling(
             database.engine,
@@ -32,7 +37,8 @@ def test_existing_extraction_route_meter_owner_persistence_and_replay(client, mo
         model="gpt-6-luna",
         timeout_seconds=1,
         capability_tier="base",
-        require_billing=True,
+        # #452 removed route billing scopes and configures real providers this way.
+        require_billing=False,
     )
     client.app.state.model_gateway = ModelGateway(
         provider=provider,
@@ -109,33 +115,33 @@ def test_existing_extraction_route_meter_owner_persistence_and_replay(client, mo
             client.post(url, **args)
     else:
         result = client.post(url, **args)
-        assert result.status_code == (503 if mode == "unconfigured" else 200), result.text
-        if mode == "success":
-            assert client.post(url, **args).json() == result.json()
-    assert len(calls) == (0 if mode == "unconfigured" else 1)
+        assert result.status_code == 200, result.text
+        assert result.json()["candidates"][0]["phenomenon"] == "Synthetic phenomenon"
+        assert client.post(url, **args).json() == result.json()
+    assert len(calls) == 1
 
     with database.engine.connect() as c:
-        assert c.scalar(text("SELECT balance FROM credit_accounts")) == (
-            2999 if mode == "success" else 3000
-        )
-        if calls:
-            row = c.execute(
-                text(
-                    "SELECT b.user_id, u.user_id, b.status, b.exempt "
-                    "FROM billing_operations b JOIN users u ON u.user_id=b.user_id"
-                )
-            ).one()
-            assert row[0] == row[1] and row[3] == 0
-            assert row[2] == ("success" if mode == "success" else "error")
-            assert c.scalar(text("SELECT reference_cost_pico FROM billing_attempts")) == 150000000
+        assert c.scalar(
+            text("SELECT balance FROM credit_accounts WHERE user_id=:user"), {"user": user_id}
+        ) == 3000
+        assert c.scalar(text("SELECT count(*) FROM credit_ledger")) == ledger_count
+        assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 0
+        assert c.scalar(text("SELECT count(*) FROM billing_attempts")) == 0
+        assert c.scalar(
+            text("SELECT count(*) FROM phenomenon_candidate_versions WHERE task_id=:task"),
+            {"task": task_id},
+        ) == (0 if mode == "persistence_failure" else 1)
+        assert c.scalar(
+            text("SELECT user_id FROM research_tasks WHERE task_id=:task"), {"task": task_id}
+        ) == user_id
     register(client, "synthetic-other-owner@example.com")
     other = client.post(url, **args)
     assert other.status_code in {403, 404}
-    assert len(calls) == (0 if mode == "unconfigured" else 1)
+    assert len(calls) == 1
 
 
 @pytest.mark.parametrize("mode", ["success", "unknown_usage"])
-def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
+def test_unbilled_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
     client, monkeypatch, mode
 ):
     from dataclasses import replace
@@ -149,6 +155,12 @@ def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
     navigation, phenomenon = _create_confirmed_task(client)
     assert client.get("/api/account/credits").status_code == 200
     database = client.app.state.database
+    with database.engine.connect() as c:
+        user_id = c.scalar(
+            text("SELECT user_id FROM research_tasks WHERE task_id=:task"),
+            {"task": navigation["task_id"]},
+        )
+        ledger_count = c.scalar(text("SELECT count(*) FROM credit_ledger"))
     client.app.state.billing_operations.runtime = DurableBilling(
         database.engine,
         price_book=PriceBook(credits_per_usd=10000, version="synthetic"),
@@ -162,7 +174,7 @@ def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
         model="gpt-6-luna",
         timeout_seconds=1,
         capability_tier="base",
-        require_billing=True,
+        require_billing=False,
     )
     client.app.state.model_gateway = ModelGateway(
         provider=provider,
@@ -231,10 +243,14 @@ def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
     result = client.post(url, headers=headers, json=payload)
     assert result.status_code == 200, result.text
     original = result.json()
+    assert original["status"] == "partial_failure"
+    assert original["completed_candidate_count"] == 2
     assert original["failed_candidate_count"] == 1 and len(calls) == 3
     assert client.post(url, headers=headers, json=payload).json() == original
     assert len(calls) == 3
     candidate = original["failed_candidates"][0]
+    assert candidate["failure_code"] == "model_invalid_output"
+    assert candidate["retryable"] is True
     retry_url = (
         f"/api/match-runs/{original['match_run_id']}/candidates/{candidate['candidate_id']}/retry"
     )
@@ -244,20 +260,27 @@ def test_real_matching_and_retry_routes_keep_sqlite_owner_and_error_contract(
     }
     retry_headers = {"Idempotency-Key": str(uuid4())}
     retry = client.post(retry_url, headers=retry_headers, json=retry_payload)
-    assert retry.status_code == (502 if mode == "unknown_usage" else 200), retry.text
+    # Missing usage is not a billing failure on the intentionally unbilled route.
+    assert retry.status_code == 200, retry.text
     assert len(calls) == 4
-    if mode == "success":
-        assert (
-            client.post(retry_url, headers=retry_headers, json=retry_payload).json() == retry.json()
-        )
-        assert len(calls) == 4
-    else:
-        assert retry.json()["error"]["code"] == "billing_provider_error"
+    assert retry.json()["status"] == "awaiting_decision"
+    assert retry.json()["failed_candidate_count"] == 0
+    assert retry.json()["completed_candidate_count"] == 3
+    assert (
+        client.post(retry_url, headers=retry_headers, json=retry_payload).json() == retry.json()
+    )
+    assert len(calls) == 4
+    assert client.get(f"/api/match-runs/{original['match_run_id']}").json() == retry.json()
     with database.engine.connect() as c:
-        assert c.scalar(text("SELECT balance FROM credit_accounts")) == (
-            2996 if mode == "success" else 2997
-        )
-        assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 2
+        assert c.scalar(
+            text("SELECT balance FROM credit_accounts WHERE user_id=:user"), {"user": user_id}
+        ) == 3000
+        assert c.scalar(text("SELECT count(*) FROM credit_ledger")) == ledger_count
+        assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 0
+        assert c.scalar(text("SELECT count(*) FROM billing_attempts")) == 0
+        assert c.scalar(text("SELECT count(*) FROM match_runs")) == 1
+        assert c.scalar(text("SELECT count(*) FROM theory_matching_requests")) == 1
+        assert c.scalar(text("SELECT user_id FROM theory_matching_requests")) == user_id
     register(client, "synthetic-matching-other@example.com")
     rejected = client.post(retry_url, headers=retry_headers, json=retry_payload)
     assert rejected.status_code == 404 and len(calls) == 4
