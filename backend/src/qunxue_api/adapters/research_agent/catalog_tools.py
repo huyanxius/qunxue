@@ -342,6 +342,7 @@ class KnowledgeToolRegistry:
                     "excerpt": chunk.text,
                     "retrieval_index_id": result.retrieval_index_id,
                     "retrieval_mode": result.mode,
+                    "degraded_reason": result.degraded_reason,
                     "retrieval_sources": list(hit.retrieval_sources),
                     "rerank_score": hit.rerank_score,
                     "embedding_model": result.embedding_model,

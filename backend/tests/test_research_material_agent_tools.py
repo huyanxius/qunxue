@@ -268,6 +268,7 @@ def test_search_research_materials_uses_shared_hybrid_retrieval_and_exact_locato
             "locator": {**materials.block.locator.as_dict(), "task_id": str(TASK_ID)},
             "retrieval_index_id": "materials:test",
             "retrieval_mode": "hybrid_reranked",
+            "degraded_reason": None,
             "retrieval_sources": ["lexical", "semantic"],
             "rerank_score": 0.91,
             "embedding_model": "shared-embedding",

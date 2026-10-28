@@ -46,7 +46,9 @@ make bootstrap
 
 模型运行默认是 `QUNXUE_RUNTIME_MODE=mock`，继续使用 deterministic Mock，不需要密钥。只要在 `backend/.env` 填入非空的 `QUNXUE_MODEL_API_KEY`，模型网关和独立知识 Agent 都会自动切换到 DeepSeek OpenAI-compatible Provider，默认使用 `https://api.deepseek.com` 与 `deepseek-v4-flash`，并关闭 thinking 以节省推理 token。使用其他兼容服务时，再额外设置 `QUNXUE_MODEL_BASE_URL`（包含服务要求的路径）和 `QUNXUE_MODEL_NAME`；`base` 与 `sft` 仍可显式选择对应运行模式。可选配置包括 `QUNXUE_MODEL_TIMEOUT_SECONDS`、JSON 对象形式的 `QUNXUE_MODEL_EXTRA_HEADERS`。`sft` 还可用 `QUNXUE_MODEL_SFT_RESOURCE_HEADER` 和 `QUNXUE_MODEL_SFT_RESOURCE_ID` 增加一个受控资源请求头。
 
-检索模型与聊天模型独立配置：`QUNXUE_EMBEDDING_BASE_URL`、`QUNXUE_EMBEDDING_API_KEY`、`QUNXUE_EMBEDDING_MODEL` 用于 OpenAI-compatible embedding 服务，`QUNXUE_RERANKER_BASE_URL`、`QUNXUE_RERANKER_API_KEY`、`QUNXUE_RERANKER_MODEL` 用于重排服务。向量不依赖独立服务，按 `QUNXUE_RETRIEVAL_INDEX_PATH` 写入版本化本地 SQLite 索引；用 `uv run python scripts/build_retrieval_index.py <knowledge_release_id>` 为明确的 final release 建索引。只提供模型 API key 时，系统使用当前 final MATCH 发布中的 release-bound 词法目录检索，不要求额外检索密钥；配置了任一检索变量后则必须补齐整套检索配置，索引、Embedding 或 Reranker 不可用时正式研究请求失败关闭。
+检索模型与聊天模型独立配置：`QUNXUE_EMBEDDING_BASE_URL`、`QUNXUE_EMBEDDING_API_KEY`、`QUNXUE_EMBEDDING_MODEL` 用于 OpenAI-compatible embedding 服务，`QUNXUE_RERANKER_BASE_URL`、`QUNXUE_RERANKER_API_KEY`、`QUNXUE_RERANKER_MODEL` 用于重排服务。向量不依赖独立服务，按 `QUNXUE_RETRIEVAL_INDEX_PATH` 写入版本化本地 SQLite 索引；用 `uv run python scripts/build_retrieval_index.py <knowledge_release_id>` 为明确的 final release 建索引。只提供模型 API key 时，系统使用当前 final MATCH 发布中的 release-bound 词法目录检索，不要求额外检索密钥；配置了任一检索变量后则必须补齐整套检索配置。运行时 Embedding 不可用（含 HTTP 402 余额不足、超时或无效响应）会跳过向量召回，继续关键词与模糊召回；Reranker 不可用时保留 RRF 融合顺序，不应用重排分数门槛，交由 Agent 阅读条目判断。两者同时不可用也保留词法结果。缺失、过期或不匹配的发布索引、权限与来源完整性错误仍然失败关闭；降级不会跨发布或绕过资料访问权限。
+
+检索降级通过 `qunxue_api.retrieval` logger 输出 WARNING，固定标记为 `retrieval_degraded`，附阶段（`embedding`、`reranker`、`frontier_embedding`）和可用的 HTTP 状态码。可在应用日志中检索该标记并配置日志告警；不记录密钥、端点、查询、资料正文或供应商响应。检索结果/Agent 工具记录中的 `degraded_reason` 可核对降级阶段；无重排时 `rerank_score` 为 `null`，不伪造质量分数。服务恢复后下一次查询自动重试正常路径。课程/个人资料、网页片段共享同一降级逻辑；独立前沿检索向量服务失败时同样保留词法检索。后台/离线向量建库失败仍记录失败状态，不伪造索引成功。
 
 OpenAI-compatible provider 的 HTTP 边界有本地测试覆盖；是否调用真实供应商由环境变量决定，密钥不写入仓库。
 

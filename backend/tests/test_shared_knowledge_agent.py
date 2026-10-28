@@ -1,5 +1,9 @@
 """Deterministic end-to-end authorization at the actual Agent model boundary."""
 
+import json
+import logging
+from io import BytesIO
+from urllib.error import HTTPError
 from uuid import UUID, uuid4
 
 import pytest
@@ -232,3 +236,125 @@ def test_reference_uses_existing_lexical_retriever_without_vector_cache_argument
             reference_knowledge_base_id=UUID(kb["id"]),
         )
     assert "QX-A17" in str(runner.inputs)
+
+
+@pytest.mark.parametrize("embedding_failure", ("query_402", "documents_402", "invalid_cache"))
+def test_shared_citations_survive_embedding_and_rerank_outages_with_failed_course_index(
+    client, monkeypatch, tmp_path, caplog, embedding_failure
+):
+    from qunxue_api.adapters.research_agent.embedding import OpenAICompatibleEmbeddingProvider
+    from qunxue_api.adapters.research_agent.reranker import SiliconFlowRerankerProvider
+    from qunxue_api.adapters.retrieval import HybridRetriever, SqliteRetrievalIndex
+    from qunxue_api.adapters.sqlite.shared_knowledge import SharedDocumentRow
+
+    identity = _authenticate(client)
+    kb = create_library(client)
+    doc = upload(client, kb["id"])
+    other = create_library(client)
+    other_doc = upload(client, other["id"], "课堂记录标记：绝不能跨库流入的私密 B 文本")
+    model = "BAAI/bge-m3"
+    with client.app.state.shared_knowledge_scope() as app:
+        row = app.repository.session.get(SharedDocumentRow, doc["id"])
+        row.index_status = "failed"
+        row.index_error = "语义索引失败，请重试。"
+        row.vectors = (
+            {
+                model: {
+                    f"material:{doc['id']}:{segment['segment_id']}": [1.0]
+                    for segment in row.segments
+                }
+            }
+            if embedding_failure == "invalid_cache"
+            else {}
+        )
+        previous_vectors = row.vectors
+        app.repository.commit()
+
+    calls = []
+
+    def provider_response(request, *, timeout):
+        assert timeout == 1
+        body = json.loads(request.data)
+        calls.append((request.full_url, body))
+        if request.full_url.endswith("/embeddings") and (
+            embedding_failure != "query_402" and body["input"] == ["课堂记录标记"]
+        ):
+            return BytesIO(json.dumps({"data": [{"embedding": [1.0, 0.0]}]}).encode())
+        raise HTTPError(request.full_url, 402, "private-provider-detail", {}, None)
+
+    monkeypatch.setattr(
+        "qunxue_api.adapters.research_agent.embedding.urlopen", provider_response
+    )
+    monkeypatch.setattr(
+        "qunxue_api.adapters.research_agent.reranker.urlopen", provider_response
+    )
+    # The database fixture's Alembic fileConfig disables pre-existing app loggers.
+    logger_name = "qunxue_api.retrieval"
+    monkeypatch.setattr(logging.getLogger(logger_name), "disabled", False)
+    caplog.set_level(logging.WARNING, logger=logger_name)
+    retriever = HybridRetriever(
+        index=SqliteRetrievalIndex(tmp_path / "unused-course-index.db"),
+        embedder=OpenAICompatibleEmbeddingProvider(
+            base_url="https://embedding.example.invalid/v1",
+            api_key="synthetic-course-provider-key",
+            model=model,
+            timeout_seconds=1,
+        ),
+        embedding_model=model,
+        chunk_schema_version="test-course-chunks",
+        reranker=SiliconFlowRerankerProvider(
+            base_url="https://reranker.example.invalid/v1",
+            api_key="synthetic-course-provider-key",
+            model="BAAI/bge-reranker-v2-m3",
+            timeout_seconds=1,
+        ),
+        reranker_model="BAAI/bge-reranker-v2-m3",
+        # A failed reranker must not compare small RRF scores against this threshold.
+        min_rerank_score=0.99,
+    )
+    runner = InspectingRunner()
+    with client.app.state.disciplinary_agent_scope() as app:
+        app._runner = runner
+        app._shared_references.retriever = retriever
+        result = app.run_turn(
+            user_id=UUID(identity["user"]["user_id"]),
+            conversation_id=None,
+            prompt="课堂记录标记",
+            idempotency_key=str(uuid4()),
+            reference_knowledge_base_id=UUID(kb["id"]),
+        )
+
+    context = runner.inputs[0][1]
+    assert context["retrieval_mode"] == "lexical"
+    assert context["degraded_reason"] == "embedding_unavailable,reranker_unavailable"
+    assert context["error"] is None
+    assert len(context["items"]) == 1
+    assert "QX-A17" in context["items"][0]["excerpt"]
+    assert "私密 B" not in str(runner.inputs)
+    assert "私密 B" not in str(calls)
+    assert [url.rsplit("/", 1)[-1] for url, _body in calls] == (
+        ["embeddings", "embeddings", "rerank"]
+        if embedding_failure == "documents_402"
+        else ["embeddings", "rerank"]
+    )
+    citations = result.turn.assistant_message.citations
+    assert {citation.material_id for citation in citations} == {doc["id"]}
+    assert all(citation.knowledge_base_id == kb["id"] for citation in citations)
+    conversation = client.get(
+        f"/api/agent/conversations/{result.conversation.conversation_id}"
+    ).json()
+    persisted = conversation["turns"][0]["assistant"]["citations"]
+    assert persisted[0]["source_kind"] == "shared_material"
+    assert persisted[0]["material_id"] == doc["id"]
+    assert other_doc["id"] not in str(persisted)
+    with client.app.state.shared_knowledge_scope() as app:
+        row = app.repository.session.get(SharedDocumentRow, doc["id"])
+        assert row.status == "ready"
+        assert row.index_status == "failed"
+        assert row.vectors == previous_vectors
+    assert "embedding" in caplog.text
+    assert "reranker" in caplog.text
+    assert "http_status=402" in caplog.text
+    assert "QX-A17" not in caplog.text
+    assert "private-provider-detail" not in caplog.text
+    assert "synthetic-course-provider-key" not in caplog.text

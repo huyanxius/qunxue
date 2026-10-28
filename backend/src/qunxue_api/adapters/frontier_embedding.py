@@ -1,5 +1,6 @@
 """Independent opt-in frontier vectors. Never inherits another model's credentials."""
 
+import logging
 import math
 from dataclasses import dataclass, field
 from time import monotonic
@@ -13,6 +14,8 @@ from qunxue_api.adapters.sqlite.frontier_models import (
     FrontierVectorRow,
 )
 from qunxue_api.modules.frontier_knowledge import SCHEMA_VERSION, content_hash
+
+_LOGGER = logging.getLogger("qunxue_api.retrieval")
 
 
 @dataclass(frozen=True)
@@ -222,7 +225,13 @@ class FrontierVectorIndex:
     def search(self, query: str, limit: int = 20) -> list[dict]:
         if self.status != "ready" or not query.strip():
             return []
-        vector = validate_vector(self.provider.embed([query])[0])
+        try:
+            vector = validate_vector(self.provider.embed([query])[0])
+        except (FrontierEmbeddingUnavailable, ValueError, TypeError, IndexError):
+            # Keep the service's lexical path available without exposing query,
+            # provider endpoint, credentials or response body in operator logs.
+            _LOGGER.warning("retrieval_degraded stage=frontier_embedding")
+            return []
         # Current eligibility is checked on every retrieval, so stale vectors cannot leak.
         allowed = {r["id"]: r for r in self.store.list_records() if r["eligibility"]["browse"]}
         with self.database.session() as session:
