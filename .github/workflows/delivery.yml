@@ -5,6 +5,8 @@ on:
     branches: [main]
   push:
     branches: [main]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -22,6 +24,7 @@ jobs:
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
       frontend: ${{ steps.scope.outputs.frontend }}
+      dependencies: ${{ steps.scope.outputs.dependencies }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -31,8 +34,14 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          python3 deploy/release_scope.py "$BASE" "$(git rev-parse HEAD)" > scope.json
-          for key in backend frontend; do echo "$key=$(python3 -c 'import json,sys; print(str(json.load(open("scope.json"))[sys.argv[1]]).lower())' "$key")" >> "$GITHUB_OUTPUT"; done
+          if [ "$GITHUB_EVENT_NAME" = release ]; then
+            python3 deploy/validate_release.py
+            # Check the exact published commit, without building unchanged assets.
+            printf '{"backend": true, "frontend": true, "dependencies": false}\n' > scope.json
+          else
+            python3 deploy/release_scope.py "$BASE" "$(git rev-parse HEAD)" > scope.json
+          fi
+          for key in backend frontend dependencies; do echo "$key=$(python3 -c 'import json,sys; print(str(json.load(open("scope.json"))[sys.argv[1]]).lower())' "$key")" >> "$GITHUB_OUTPUT"; done
 
   deployment_tests:
     runs-on: ubuntu-24.04
@@ -77,6 +86,24 @@ jobs:
         run: make check-contract
       - name: Backend checks (one worker)
         run: make check-backend
+      # Default-branch caches can be restored by all Release tags; tag caches
+      # cannot be restored by a different tag. This is a check, never a deploy.
+      - name: Cache checked offline dependency closure on main
+        if: github.event_name == 'push' && needs.changes.outputs.dependencies == 'true'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        id: wheel-cache
+        with:
+          path: release
+          key: qunxue-wheels-v2-cpython312-${{ runner.os }}-${{ hashFiles('backend/uv.lock', 'deploy/wheel-build-tools.lock', 'deploy/build_wheelhouse.py') }}
+      - name: Verify changed locked offline wheels for future Releases
+        if: github.event_name == 'push' && needs.changes.outputs.dependencies == 'true' && steps.wheel-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 -m pip install --require-hashes --no-deps -r deploy/wheel-build-tools.lock
+          mkdir -p release
+          cd backend
+          uv export --frozen --no-dev --no-emit-project --format requirements-txt --output-file ../release/source-requirements.lock
+          cd ..
+          python3 deploy/build_wheelhouse.py --source-requirements release/source-requirements.lock --wheelhouse release/wheelhouse --output release/requirements.lock --provenance release/wheel-build-provenance.json
 
   frontend:
     needs: changes
@@ -93,10 +120,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        if: github.event_name != 'release'
         id: frontend-cache
         with:
           path: frontend/dist
-          key: qunxue-web-${{ runner.os }}-${{ hashFiles('frontend/src/**', 'frontend/public/**', 'frontend/index.html', 'frontend/*.json', 'frontend/*.ts', 'frontend/*.js') }}
+          key: qunxue-web-v2-node22-${{ runner.os }}-${{ hashFiles('frontend/**', '!frontend/dist/**', '!frontend/node_modules/**', '!frontend/docs/**', '!frontend/README.md', '!frontend/AGENTS.md', '!frontend/VERCEL_PREVIEW.md', '!frontend/vercel.json') }}
       - run: npm ci --ignore-scripts
         working-directory: frontend
       - name: Frontend checks (one worker)
@@ -104,9 +132,10 @@ jobs:
         run: |
           npm run check:boundaries
           npm run lint
+          npm run typecheck
           npm run test -- --maxWorkers=1 --no-file-parallelism
       - run: npm run build
-        if: steps.frontend-cache.outputs.cache-hit != 'true'
+        if: github.event_name != 'release' && steps.frontend-cache.outputs.cache-hit != 'true'
         working-directory: frontend
 
   checks:
@@ -124,7 +153,7 @@ jobs:
   deploy:
     name: Deploy production
     needs: checks
-    if: always() && needs.checks.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always() && needs.checks.result == 'success' && github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production
@@ -145,29 +174,35 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Recheck the exact published tag before production access
+        run: python3 deploy/validate_release.py
       - name: Read verified live baseline before any business build
         run: |
           python3 deploy/send_release.py --status baseline.json
           base=$(python3 -c 'import json; print(json.load(open("baseline.json"))["revision"])')
-          python3 deploy/release_scope.py "$base" "$RELEASE_REVISION" > scope.json
+          python3 deploy/release_scope.py "$base" "$RELEASE_REVISION" --baseline baseline.json > scope.json
           for key in backend frontend dependencies; do echo "$key=$(python3 -c 'import json,sys; print(str(json.load(open("scope.json"))[sys.argv[1]]).lower())' "$key")" >> "$GITHUB_ENV"; done
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      - if: env.dependencies == 'true'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version-file: backend/.python-version
-      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+      - if: env.dependencies == 'true'
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - if: env.frontend == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        if: env.frontend == 'true'
         id: frontend-cache
         with:
           path: frontend/dist
-          key: qunxue-web-${{ runner.os }}-${{ hashFiles('frontend/src/**', 'frontend/public/**', 'frontend/index.html', 'frontend/*.json', 'frontend/*.ts', 'frontend/*.js') }}
+          key: qunxue-web-v2-node22-${{ runner.os }}-${{ hashFiles('frontend/**', '!frontend/dist/**', '!frontend/node_modules/**', '!frontend/docs/**', '!frontend/README.md', '!frontend/AGENTS.md', '!frontend/VERCEL_PREVIEW.md', '!frontend/vercel.json') }}
       - name: Build affected frontend only
         if: env.frontend == 'true' && steps.frontend-cache.outputs.cache-hit != 'true'
         working-directory: frontend
@@ -177,7 +212,7 @@ jobs:
         id: wheel-cache
         with:
           path: release
-          key: qunxue-wheels-v1-${{ runner.os }}-${{ hashFiles('backend/uv.lock', 'deploy/wheel-build-tools.lock', 'deploy/build_wheelhouse.py') }}
+          key: qunxue-wheels-v2-cpython312-${{ runner.os }}-${{ hashFiles('backend/uv.lock', 'deploy/wheel-build-tools.lock', 'deploy/build_wheelhouse.py') }}
       - name: Build changed locked offline wheels
         if: env.dependencies == 'true' && steps.wheel-cache.outputs.cache-hit != 'true'
         run: |
@@ -196,7 +231,7 @@ jobs:
       - name: Save immutable release
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: qunxue-${{ github.sha }}-${{ github.run_attempt }}
+          name: qunxue-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifact/
           if-no-files-found: error
           retention-days: 30
@@ -205,3 +240,9 @@ jobs:
         env:
           RELEASE_SHA256: ${{ steps.package.outputs.sha256 }}
         run: python3 deploy/send_release.py
+      - name: Confirm recorded production revision matches the published Release
+        run: python3 deploy/send_release.py --status deployed.json --expect-revision "$RELEASE_REVISION"
+      - name: Record verified release result
+        run: |
+          printf 'Verified production revision: `%s`\n\n' "$RELEASE_REVISION" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Delta package bytes: %s\n' "$(wc -c < artifact/qunxue-release.tar.gz)" >> "$GITHUB_STEP_SUMMARY"

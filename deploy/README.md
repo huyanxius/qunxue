@@ -17,13 +17,13 @@ version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线
 
 ## 正常路径
 
-`PR 无秘密检查 → main 同 commit 检查通过 → 不可变 artifact ID/文件 SHA256 → production 环境 → 固定接收器 → 按实际载荷切换受影响服务 → 私网/公网精确版本及资源校验`。
+`PR/main 无秘密检查 → 发布 GitHub Release（published）→ tag/event/checkout 精确 SHA 与 main 归属校验 → 同 commit 检查通过 → 实际线上基线及不可变差异包 → production 环境固定接收器 → 私网/公网精确版本及资源校验`。
 
 - `.github/workflows/delivery.yml` 取代旧 `ci.yml`。旧 workflow 曾被人工停用，不能把它说成代码失败；本变更不操作 Actions 开关、账号权限或 secrets。
 - PR 不引用 production、不读生产 secret。GitHub token 仅 `contents: read`，checkout 不保存凭据；第三方 actions 固定完整 commit SHA。
-- main 的部署依赖本次 `checks` 成功；生产 job 读取实际基线，只构建受影响前端或已变化的离线依赖。差异包直接从同一 job 的已检查提交生成，并保存不可变 artifact；发送前及服务器再次校验 SHA256 和 commit。没有 `pull_request_target` 或手动任意 ref/命令输入。
+- PR 和 main push 只检查，不部署。只有 `release: types: [published]` 可进入生产，依赖本次 `checks` 成功；生产 job 读取实际基线，只构建受影响前端或已变化的离线依赖。差异包直接从同一 job 的已检查提交生成，并保存不可变 artifact；发送前及服务器再次校验 SHA256 和 commit。没有 `pull_request_target` 或手动任意 ref/命令输入。
 - GitHub 和服务器分别串行化；生产任务不取消正在运行的任务。GitHub concurrency 可能合并等待中的旧提交，已运行的部署不被新提交中断。
-- 不要求新增 native branch protection，也不强制每次人工批准。遵循仓库 Issue→分支→PR→验证→作者自合并流程；production 环境限制仅 main，初次接通由拥有者安全批准。更严格分支/人工审批规则是可选策略。
+- 不要求新增 native branch protection，也不强制每次人工批准。遵循仓库 Issue→分支→PR→验证→作者自合并流程；production 环境必须允许实际 Release tag（例如约定的 `v*` tag），不能保留仅 main 的部署限制；初次接通及安全配置由拥有者批准。更严格分支/人工审批规则是可选策略。
 - 数据库、`.env`、node_modules、密钥不进入 artifact。构建下载锁文件中 hash 约束的 binary wheels，服务器仅离线安装。目标为 Linux x86_64 / CPython 3.12；主机不兼容的 wheel 或未安装 Python 会在停止服务之前失败。
 - 前端和元数据更新保留 API PID；只有实际后端文件或依赖锁指纹变化才停止单实例写入者，因此后端更新有维护间隙，不是零停机或蓝绿部署。没有注册账号、收费平台、模型调用或自动知识入库步骤。
 
@@ -32,12 +32,12 @@ version 2 差异包保留完整最终文件清单、每个 SHA256、实际基线
 现网使用 `legacy-root-pm2` 配置，通过同一个固定 `receiver.py` 入口调用 `legacy_receiver.py`。保留 `/root/qunxue-src`、`/var/www/qunxue` 两个发布指针、root PM2 `qunxue-api` 和现有 `backend/var`、私有 `.env`。无需新增账号、迁移数据目录或改 Nginx、DNS、Cloudflare。`/root/.qunxue-deploy` 仅保存私有发布元数据、锁和临时校验文件；应用代码仍在已有两处发布目录。
 
 1. 从经过检查的 main 安装 root-owned 的 `receiver.py`、`legacy_receiver.py`、`payload_rules.py` 到 `/usr/local/libexec/qunxue/`，目录 0755、文件 0644，不能由 artifact 更新。固定入口为 `/usr/bin/python3.12 -I /usr/local/libexec/qunxue/receiver.py`。按主机已核验的 Python、PM2、现有 `.env` 和三个数据库真实路径填写 `/etc/qunxue/deploy.json`（root-owned 0600）；模板默认 `configured: false`。adapter 明确保留已有 root 应用身份，不把新增账户或隔离目录当作接通前提。
-2. 固定协议 `status` 从实际两个指针及健康接口生成文件指纹，核验本地/公网 backend revision、运行模式和首页、JS/CSS 摘要后才保存基线。后续指针与元数据不一致会失败，不能把目标 commit 冒充已经部署的版本。状态不会输出私有配置、PM2 环境或数据库内容。
-3. GitHub `production` 保持仅 main。普通变量 `DEPLOY_HOST`、`DEPLOY_USER` 对应已授权连接；独立核验的公开主机记录存入 `DEPLOY_KNOWN_HOSTS`。拥有者安全录入缺少的 `DEPLOY_SSH_KEY`，不在聊天中发送，不由助手读取或上传现有通用私钥。只有接收器、可用 CI 连接和实际验证就绪后才设 `PRODUCTION_CONFIGURED=true`；此前部署明确失败。
+2. 固定协议 `status` 从实际两个指针及健康接口生成文件指纹，核验本地/公网 backend revision、运行模式和首页、JS/CSS 摘要后才保存基线。后续指针与元数据不一致会失败，不能把目标 commit 冒充已经部署的版本。已有 active.json 时仅复核指针并返回元数据，不重新请求 HTTP 健康；部署时仍独立校验健康。状态不会输出私有配置、PM2 环境或数据库内容。
+3. GitHub `production` 核验 Release tag 部署规则；PR 和 main 不读取此环境。普通变量 `DEPLOY_HOST`、`DEPLOY_USER` 对应已授权连接；独立核验的公开主机记录存入 `DEPLOY_KNOWN_HOSTS`。拥有者安全录入缺少的 `DEPLOY_SSH_KEY`，不在聊天中发送，不由助手读取或上传现有通用私钥。只有接收器、可用 CI 连接和实际验证就绪后才设 `PRODUCTION_CONFIGURED=true`；此前部署明确失败。
 
 SSH 凭据应限制到固定接收器协议并关闭 PTY、端口/agent/X11 forwarding 和 user rc。发送端使用既有 ubuntu 身份和固定 sudo 接收器路径，不新装 wrapper 或扩大该身份权限；接收器仅接受严格验证的 `status` 或 `deploy <完整SHA> <SHA256>` 到固定 root-owned 接收器，不能让 payload 更新控制器或注入任意命令。凭据限制由拥有者核验，不自动创建或扩大权限。
 
-安全录入后可以重跑最新 main 的失败 job，沿用同一 workflow 的检查、实际生产基线和不可变 artifact；无需第二条发版入口。
+安全录入后可以重跑同一 published Release 的失败 job，沿用精确 tag commit、实际生产基线和不可变 artifact；不能重跑历史 main-push 部署来绕过新的 Release 入口。
 
 ## 数据、迁移与回退
 
@@ -75,4 +75,36 @@ PyPI 的 bibtexparser 1.4.4 与 srt 3.5.3 只有 source distribution，`pip down
 
 `build_wheelhouse.py` 验证当前平台所需包名/版本、wheel metadata和标签，基于实际wheel bytes生成部署requirements.lock及来源证明。不能把sdist hash误当作新wheel hash。服务器仍只有wheel、`--no-index --require-hashes`，不联网编译。原始backend/uv.lock的SHA256记入release manifest，来源导出锁hash与每个wheel hash记入随artifact保存的wheel-build-provenance.json。构建工具是CI工具，不进入应用锁版本。
 
-PR/main 的发布安全测试使用合成离线包；生产 wheelhouse 按锁文件、构建工具锁与构建脚本摘要缓存，只有实际依赖锁变化且缓存未命中才重新构建。发布 artifact 和生产部署仅允许 main push。每次新 wheel 构建禁用 pip wheel 缓存，保证从 hash 核验后的源输入构建。可在临时虚拟环境用 `pip install --no-index --only-binary=:all: --require-hashes --find-links release/wheelhouse -r release/requirements.lock` 验证离线闭包。
+PR/main 的发布安全测试使用合成离线包；生产 wheelhouse 按锁文件、构建工具锁与构建脚本摘要缓存，只有实际依赖锁变化且缓存未命中才重新构建。发布 artifact 和生产部署仅允许 Release published。每次新 wheel 构建禁用 pip wheel 缓存，保证从 hash 核验后的源输入构建。可在临时虚拟环境用 `pip install --no-index --only-binary=:all: --require-hashes --find-links release/wheelhouse -r release/requirements.lock` 验证离线闭包。
+
+
+## 2026-10-28：按 Release 发布与回退（Issue #466）
+
+### 创建发布
+
+1. 先合并 Release-only workflow PR，再合并检索降级 PR；等待目标 main 的检查通过。两次 main push 都不应执行 production job。
+2. 获取并核对要发布的 **完整 main SHA**，用唯一新 tag 创建 GitHub Release；UI 选择这个已核验提交，或执行 `gh release create <新tag> --target <完整mainSHA> --title <标题> --notes-file <发布说明文件>`。不要移动/复用已发布 tag，也不要用 `target_commitish` 文本冒充实际 tag commit。
+3. 仅 **Publish release**（`published`）触发部署。草稿、编辑 Release、仅推 tag、PR 和 main push 均不是发布入口。GitHub 的 published 也包括预发布，因此不要把预发布当作隔离测试环境。
+4. 工作流在无秘密阶段验证 tag、event SHA、checkout HEAD 相同且属于 main；Release 上完整跑前后端检查和部署安全测试。前端检查仅 typecheck/lint/test，不重复构建 dist；真正构建发生在生产 job 读取已核验 status 之后，且只针对相对实际线上有变化的组件。
+5. 新 manifest 记录 `frontend_source_sha256`（排除说明文件的 Git 输入指纹）；只有指纹相同才复用前端。旧局部发布没有此证据，首轮从完整目标 main 构建前端校准，不能相信健康 SHA 代表全部前端源码。之后未变化前端不安装 Node 工具链、不恢复 dist；变化前端复用同源完整输入哈希的 dist 缓存。依赖是否变化以线上 manifest 中 `dependency_lock_sha256` 与目标 `uv.lock` 实际摘要为准，不能因 pyproject 描述改动重建依赖，也不能漏掉旧局部部署的锁偏差。生产 job 的 Python/uv/wheelhouse 仅在依赖确有变化时准备。main 依赖变更的检查会预热同一 wheel 缓存，供不同 Release tag 读取默认分支缓存；GitHub 不允许跨 tag 直接复用缓存，所以不能只在 Release tag 上写缓存。此离线闭包检查不上传应用、不访问生产、不发版。后端源码直接打差异包，不在服务器重新全量构建。
+6. 发送前/接收端校验包 SHA256；部署后再次执行固定 `status`，要求 revision 等于 Release SHA，接收器同时校验本地/公网版本与首页资产。成功摘要记录精确 SHA 和传输字节。正常检索还须按手册做一次真实验收并写入 PR；status/合成测试不能代替检索验收。
+
+### 首次专用钥匙接通
+
+保留已安装 root-owned 接收器，不通过应用 artifact 更新它。在已核验主机指纹、路径、权限并取得相应安全操作许可后，生成只用于此部署的钥匙；ubuntu `authorized_keys` 对该公钥使用 `restrict` 和固定接收器 command，禁止 shell/PTY/forwarding。固定 command 需要让接收器收到 `SSH_ORIGINAL_COMMAND`，跨 sudo 时仅按既有权限显式保留这一变量并验证，不能扩大为任意命令或任意环境透传。
+
+私钥仅安全写入 GitHub `production` 的 `DEPLOY_SSH_KEY`（`gh secret set` 从文件/stdin），不打印、不入聊天/仓库，不复用或上传已有通用运维私钥。先用该受限钥匙、固定 known_hosts 直接执行 receiver 的 `status` 协议，核验实际 revision，并独立确认首页/健康；**成功之后**才设 `PRODUCTION_CONFIGURED=true`。`send_release.py --status` 的运行期门控同样要求该变量为 true，不能为了首次连接测试提前开启生产门控。环境 tag 规则、DEPLOY_HOST/USER/KNOWN_HOSTS、服务器 configured 状态均需实际核验。
+
+### 首次线上对齐与迁移
+
+10-14 的局部补丁不能推定等于某个完整 main。发布前以已核验 status/发布指针和手册为依据，把实际 commit、前后端 revision、文件/锁差异及新增 migration 清单写入 PR。Git 比较必须从真实线上基线出发，不只比较上一个 main commit。若当前基线不属于 main 历史、存在无法解释的局部文件或迁移差异，停止自动路径，不能伪造 active manifest 或跳过祖先/摘要校验。
+
+现网 legacy 接收器遇到新增 migration 会在停机前拒绝；按已核实运维手册执行一次带备份、完整性核验和维护窗口的发版，之后重新确认真实 status 基线，再恢复 Release 增量。不要将空库迁移测试当作真实数据备份/迁移成功。
+
+### 出问题怎么回退
+
+- 部署切换失败：接收器尝试一次回切本次受影响指针及旧 PM2 定义，再检查旧版本。查看失败 job 与服务器 journal；若 rollback 失败或 journal 非终态，先按手册恢复，不能重跑绕过锁或伪造 healthy。
+- 已成功发布后发现业务回归：通常在最新 main 上 **revert 出问题的改动 → PR 检查/合并 → 创建新 tag 的 Release**。这是前向修复，仍使用实际线上基线的增量包；不要移动旧 tag、直接把老 SHA 当成新 release 来绕过祖先检查。
+- 紧急指针/PM2 回退或迁移相关问题：由已授权运维按实际主机手册执行。当前 `legacy-root-pm2` 固定协议仅接受 status/deploy，**没有手动 rollback 子命令**。不自动 downgrade 数据库，不把旧备份覆盖 live DB；数据库恢复必须单独审计并确认数据损失风险。
+
+接通状态以 PR 中的实际证据更新；本节描述新的代码/运维流程，不宣称生产专用钥匙、迁移或首个 Release 已验证。

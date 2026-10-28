@@ -283,6 +283,7 @@ class DeliveryTests(unittest.TestCase):
         (previous / 'release.json').write_text(json.dumps({'files': {}, 'revision': OLD}))
         policy = {'migration_policy': POLICY, 'files': {'backend/src/new.py': 'a' * 64}}
         with patch.object(receiver, 'active_release', return_value=(previous, OLD)), \
+             patch.object(receiver, 'capacity_preflight'), \
              patch.object(receiver, 'check_process'), patch.object(receiver, 'extract', return_value=policy), \
              patch.object(receiver, 'migration_changes'), patch.object(receiver, 'prepare_runtime'), \
              patch.object(receiver, 'health'), patch.object(receiver, 'pm2') as process, \
@@ -341,13 +342,18 @@ class DeliveryTests(unittest.TestCase):
                 receiver.deploy(config, archive, SHA, receiver.sha256(archive))
             process.assert_not_called()
 
-    def test_workflow_has_separate_privileged_main_only_gate(self):
+    def test_workflow_has_separate_privileged_published_release_only_gate(self):
         workflow = (ROOT / '.github/workflows/delivery.yml').read_text()
         self.assertNotIn('pull_request_target', workflow)
         checks, deployment = workflow.split('\n  deploy:\n')
         self.assertNotIn('secrets.', checks)
         self.assertIn('needs: checks', deployment)
-        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'", deployment)
+        self.assertIn('  release:\n    types: [published]', workflow)
+        self.assertIn("github.event_name == 'release' && github.event.action == 'published'", deployment)
+        self.assertNotIn("github.event_name == 'push'", deployment)
+        self.assertNotIn('workflow_dispatch:', workflow)
+        self.assertIn('python3 deploy/validate_release.py', checks)
+        self.assertIn('python3 deploy/validate_release.py', deployment)
         self.assertIn('environment: production', deployment)
         self.assertIn('cancel-in-progress: false', deployment)
         self.assertNotIn('contents: write', workflow)
@@ -358,13 +364,20 @@ class DeliveryTests(unittest.TestCase):
     def test_wheel_build_and_packaging_are_scoped_to_live_main_baseline(self):
         workflow = (ROOT / '.github/workflows/delivery.yml').read_text()
         checks, deployment = workflow.split('\n  deploy:\n')
-        self.assertNotIn('deploy/build_wheelhouse.py', checks)
+        self.assertIn('Verify changed locked offline wheels for future Releases', checks)
+        self.assertIn("github.event_name == 'push' && needs.changes.outputs.dependencies == 'true'", checks)
+        self.assertIn('deploy/build_wheelhouse.py', checks)
         self.assertIn('deploy/send_release.py --status baseline.json', deployment)
         self.assertIn('--baseline baseline.json', deployment)
         self.assertIn("env.dependencies == 'true'", deployment)
         self.assertIn('deploy/build_wheelhouse.py', deployment)
         self.assertIn('deploy/build_release.py', deployment)
-        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'", deployment)
+        self.assertIn("github.event_name == 'release' && github.event.action == 'published'", deployment)
+        self.assertIn('--baseline baseline.json > scope.json', deployment)
+        self.assertIn('--status deployed.json --expect-revision "$RELEASE_REVISION"', deployment)
+        self.assertIn("github.event_name != 'release' && steps.frontend-cache.outputs.cache-hit", checks)
+        self.assertIn('!frontend/node_modules/**', deployment)
+        self.assertIn('qunxue-wheels-v2-cpython312-', deployment)
         self.assertNotIn('qunxue-delivery-${{ github.ref }}', workflow)
 
     def test_builder_packages_only_clean_checked_commit_and_verifies_roundtrip(self):
