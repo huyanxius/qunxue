@@ -6,6 +6,7 @@ agent forwarding, X11 and user rc disabled. Application code runs as runtime_uid
 """
 import ast
 from contextlib import contextmanager
+from datetime import datetime
 import fcntl
 import hashlib
 from html.parser import HTMLParser
@@ -25,6 +26,7 @@ import tarfile
 import tempfile
 import time
 from urllib.parse import urlsplit
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 # The root-owned receiver is launched with Python -I; import only its audited sibling.
@@ -36,6 +38,7 @@ MAX_ARCHIVE = 1024 * 1024 * 1024
 MAX_EXPANDED = 3 * MAX_ARCHIVE
 SHA = re.compile(r'[0-9a-f]{40}')
 HASH = re.compile(r'[0-9a-f]{64}')
+MAX_HEALTH_RESPONSE = 64 * 1024
 
 
 @contextmanager
@@ -549,6 +552,57 @@ def fetch(url):
         return response.read(32 * 1024 * 1024 + 1)
 
 
+def fetch_health(url):
+    """Read only the bounded health contract; assets still require HTTP 200."""
+    request = Request(url, headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'User-Agent': 'qunxue-deploy/1'})
+    try:
+        response = urlopen(request, timeout=15)
+    except HTTPError as error:
+        if error.code != 503:
+            error.close()
+            raise
+        response = error
+    with response:
+        require(response.status in (200, 503), 'Unexpected API health HTTP status')
+        require(response.geturl() == url, 'Unexpected health redirect')
+        content = response.read(MAX_HEALTH_RESPONSE + 1)
+        require(len(content) <= MAX_HEALTH_RESPONSE, 'API health response too large')
+        def unique_fields(pairs):
+            result = {}
+            for key, value in pairs:
+                require(key not in result, 'Duplicate API health field')
+                result[key] = value
+            return result
+        data = json.loads(content, object_pairs_hook=unique_fields)
+        require(isinstance(data, dict) and 'error' not in data, 'API data/index readiness failed')
+        return response.status, data
+
+
+def model_only_degradation(data):
+    """Recognize the existing API's precise 503 after its DB/index checks passed.
+
+    Keep /api/health's external-model failure visible; this is deployment
+    readiness, not a claim that the model recovered. ErrorResponse is never ready.
+    """
+    fields = {'status', 'service', 'runtime_mode', 'provider', 'model_version',
+              'persistence', 'contract_version', 'capability', 'knowledge_release_id',
+              'model_status', 'model_checked_at', 'release_revision'}
+    checked_at = data.get('model_checked_at')
+    if checked_at is not None:
+        if not isinstance(checked_at, str):
+            return False
+        try:
+            datetime.fromisoformat(checked_at)
+        except ValueError:
+            return False
+    return (set(data) == fields and data['status'] == 'ok'
+            and data['model_status'] == 'unavailable' and data['persistence'] == 'sqlite'
+            and data['runtime_mode'] in ('base', 'sft')
+            and data['capability'] == data['runtime_mode']
+            and all(isinstance(data[key], str) and data[key]
+                    for key in ('service', 'provider', 'model_version', 'contract_version', 'knowledge_release_id')))
+
+
 def public_index_matches(content, digest):
     """Only remove one verified empty Cloudflare analytics insertion, then hash all bytes."""
     if hashlib.sha256(content).hexdigest() == digest:
@@ -594,11 +648,15 @@ def health(config, release, revision):
     # Validate the served index plus every built public JS/CSS asset against the artifact.
     selected = {name: digest for name, digest in frontend_files.items()
                 if name == 'index.html' or name.endswith(('.js', '.css'))}
+    degraded = False
     for origin in (config['local_origin'], config['public_origin']):
-        data = json.loads(fetch(origin.rstrip('/') + '/api/health?release=' + revision))
+        http_status, data = fetch_health(origin.rstrip('/') + '/api/health?release=' + revision)
         require(data.get('status') == 'ok' and data.get('release_revision') == manifest.get('backend_revision', revision)
                 and data.get('runtime_mode') == config['expected_runtime_mode'],
                 'API health/revision/runtime mismatch')
+        if http_status == 503:
+            require(model_only_degradation(data), 'API 503 is not isolated external-model degradation')
+            degraded = True
         for name, digest in selected.items():
             require(re.fullmatch(r'[A-Za-z0-9_./-]+', name) and '..' not in PurePosixPath(name).parts,
                     'Unsafe public asset path')
@@ -607,6 +665,10 @@ def health(config, release, revision):
             matches = (public_index_matches(content, digest) if name == 'index.html' and origin == config['public_origin']
                        else hashlib.sha256(content).hexdigest() == digest)
             require(matches, 'Public asset mismatch: ' + name)
+    if degraded:
+        print('READINESS DEGRADED: data/index readiness, revision and assets verified; external model remains unavailable',
+              file=sys.stderr)
+    return degraded
 
 
 def wait_healthy(config, release, revision):
