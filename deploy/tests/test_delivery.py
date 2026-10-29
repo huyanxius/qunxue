@@ -245,11 +245,12 @@ class DeliveryTests(unittest.TestCase):
                                                                   hashlib.sha256(good).hexdigest()}}))
         config = {'local_origin': 'http://127.0.0.1:8096', 'public_origin': 'https://qunxue.example',
                   'expected_runtime_mode': 'base'}
-        valid = json.dumps({'status': 'ok', 'release_revision': SHA, 'runtime_mode': 'base'}).encode()
-        with patch.object(receiver, 'fetch', side_effect=[valid, good, valid, b'wrong']):
+        valid = {'status': 'ok', 'release_revision': SHA, 'runtime_mode': 'base'}
+        with patch.object(receiver, 'fetch_health', return_value=(200, valid)), \
+             patch.object(receiver, 'fetch', side_effect=[good, b'wrong']):
             with self.assertRaisesRegex(RuntimeError, 'asset mismatch'):
                 receiver.health(config, release, SHA)
-        with patch.object(receiver, 'fetch', return_value=valid):
+        with patch.object(receiver, 'fetch_health', return_value=(200, valid)):
             with self.assertRaisesRegex(RuntimeError, 'revision/runtime'):
                 receiver.health(config, release, OLD)
 
