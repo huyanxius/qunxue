@@ -15,14 +15,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskService,
     ResearchTaskStatus,
 )
-from qunxue_api.modules.theory_matching import (
-    MatchRunSnapshot,
-    MatchRunStatus,
-    TheoryDecisionAction,
-    TheoryDecisionCommand,
-    TheoryRelationCommand,
-    TheoryUseAssignment,
-)
+from qunxue_api.modules.theory_matching import MatchRunSnapshot, MatchRunStatus
 
 
 class ConversationResearchBinding(Protocol):
@@ -34,7 +27,7 @@ class ConversationResearchBinding(Protocol):
 
 
 class AgentResearchWorkflow:
-    """Connects a persisted Agent conversation to the existing M4/M5 domain services."""
+    """Connects an Agent conversation to theory candidates and user-confirmed plans."""
 
     def __init__(
         self,
@@ -202,134 +195,6 @@ class AgentResearchWorkflow:
                 or self._allows_saved_model_result(user_id, match_run)
             ),
         )
-
-    def save_theory_plan(
-        self,
-        *,
-        user_id: UUID,
-        conversation_id: UUID,
-        decisions: list[dict[str, object]],
-        use_assignments: list[dict[str, object]],
-        relations: list[dict[str, object]],
-        user_confirmed: bool,
-    ) -> dict[str, object]:
-        if not user_confirmed:
-            return {"error": "user_confirmation_required"}
-        restored = self.restore(user_id=user_id, conversation_id=conversation_id)
-        task_id = restored["task_id"]
-        if task_id is None:
-            return {"error": "research_task_missing"}
-        task = self._tasks.get(task_id, user_id=user_id)
-        if task.current_theory_plan_id is not None:
-            return self.get_state(user_id=user_id, conversation_id=conversation_id)
-        if task.current_match_run_id is None:
-            return {"error": "match_run_missing"}
-        match_run = self._matching.get(task.current_match_run_id, user_id=user_id)
-        if match_run.status is MatchRunStatus.NO_RELIABLE_CANDIDATE:
-            return {
-                "error": "no_reliable_candidate",
-                "message": (
-                    "当前固定知识发布没有可正式采用的理论候选。请更新到已审校的知识发布，"
-                    "或收窄/调整研究现象后重新匹配；未生成理论方案，也不会生成正式 M5 文档。"
-                ),
-                "match_run_id": str(match_run.match_run_id),
-                "knowledge_release_id": match_run.knowledge_release.knowledge_release_id,
-                "next_action": "update_knowledge_release_or_refine_phenomenon",
-            }
-        if (
-            match_run.status is MatchRunStatus.PARTIAL_FAILURE
-            and not match_run.partial_completion_acknowledged
-        ):
-            return {
-                "error": "partial_match_acknowledgement_required",
-                "failed_candidate_ids": [str(item) for item in match_run.failed_candidate_ids],
-            }
-        if match_run.status not in {
-            MatchRunStatus.AWAITING_DECISION,
-            MatchRunStatus.PARTIAL_FAILURE,
-        }:
-            return {
-                "error": "match_run_not_ready",
-                "message": "理论匹配尚未进入可保存用户决定的状态。",
-                "match_run_id": str(match_run.match_run_id),
-                "status": match_run.status.value,
-            }
-        candidate_versions = {
-            str(item.candidate_id): item.candidate_version for item in match_run.candidates
-        }
-        decision_set = self._matching.record_decisions(
-            user_id=user_id,
-            match_run_id=match_run.match_run_id,
-            expected_version=match_run.version,
-            completion_basis=match_run.completion_basis,
-            decisions=tuple(
-                TheoryDecisionCommand(
-                    candidate_id=UUID(str(item["candidate_id"])),
-                    candidate_version=candidate_versions[str(item["candidate_id"])],
-                    action=TheoryDecisionAction(str(item["action"])),
-                    reason=str(item["reason"]),
-                    related_source_ids=tuple(
-                        str(value) for value in item.get("related_source_ids", [])
-                    ),
-                    revised_applicability=(
-                        str(item["revised_applicability"])
-                        if item.get("revised_applicability")
-                        else None
-                    ),
-                    related_candidate_ids=tuple(
-                        UUID(str(value)) for value in item.get("related_candidate_ids", [])
-                    ),
-                )
-                for item in decisions
-            ),
-            use_assignments=tuple(
-                TheoryUseAssignment(
-                    candidate_id=UUID(str(item["candidate_id"])),
-                    role_code=str(item["role_code"]),
-                    responsibility=str(item["responsibility"]),
-                )
-                for item in use_assignments
-            ),
-            relations=tuple(
-                TheoryRelationCommand(
-                    candidate_ids=tuple(UUID(str(value)) for value in item["candidate_ids"]),
-                    relation_kind=str(item["relation_kind"]),
-                    explanation=str(item["explanation"]),
-                    premise_compatibility=str(item["premise_compatibility"]),
-                    supporting_evidence=tuple(
-                        str(value) for value in item.get("supporting_evidence", [])
-                    ),
-                    excluding_evidence=tuple(
-                        str(value) for value in item.get("excluding_evidence", [])
-                    ),
-                    distinguishing_evidence=tuple(
-                        str(value) for value in item.get("distinguishing_evidence", [])
-                    ),
-                )
-                for item in relations
-            ),
-            idempotency_key=f"agent-decisions:{conversation_id}:{match_run.version}",
-        )
-        plan = self._matching.confirm_plan(
-            user_id=user_id,
-            decision_set_id=decision_set.decision_set_id,
-            expected_version=decision_set.version,
-            idempotency_key=f"agent-plan:{conversation_id}:{decision_set.version}",
-        )
-        return {
-            "task_id": str(plan.task_id),
-            "theory_plan_id": str(plan.theory_plan_id),
-            "status": "confirmed",
-            "knowledge_release_id": plan.knowledge_release.knowledge_release_id,
-            "selected_theories": [
-                {
-                    "candidate_id": str(item.candidate_id),
-                    "title": item.content.title,
-                    "source_ids": list(item.content.source_ids),
-                }
-                for item in plan.candidates
-            ],
-        }
 
 
 def _match_result(match_run, *, include_judgements: bool = True) -> dict[str, object]:
