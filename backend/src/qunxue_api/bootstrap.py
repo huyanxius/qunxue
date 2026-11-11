@@ -266,6 +266,11 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        async with research_material_ingestion_lifespan(), background_task_lifespan(app):
+            yield
+
+    @asynccontextmanager
+    async def background_task_lifespan(app: FastAPI):
         probe_task = None
         memory_task = None
         course_task = None
@@ -559,11 +564,6 @@ def create_app(
 
     app.state.research_material_application_scope = research_material_application_scope
 
-    ingestion_executor = ThreadPoolExecutor(
-        max_workers=2,
-        thread_name_prefix="qunxue-material-ingestion",
-    )
-
     def process_research_material_ingestion(job_id: UUID) -> None:
         while True:
             try:
@@ -593,21 +593,27 @@ def create_app(
             if delay:
                 sleep(delay)
 
-    def schedule_research_material_ingestion(job_id: UUID) -> None:
-        ingestion_executor.submit(process_research_material_ingestion, job_id)
+    @asynccontextmanager
+    async def research_material_ingestion_lifespan():
+        executor = ThreadPoolExecutor(
+            max_workers=2,
+            thread_name_prefix="qunxue-material-ingestion",
+        )
 
-    def recover_research_material_ingestions() -> None:
-        with research_material_application_scope() as application:
-            recoverable = application.recoverable_ingestion_ids()
-        for job_id in recoverable:
-            schedule_research_material_ingestion(job_id)
+        def schedule_research_material_ingestion(job_id: UUID) -> None:
+            executor.submit(process_research_material_ingestion, job_id)
 
-    def shutdown_research_material_ingestions() -> None:
-        ingestion_executor.shutdown(wait=True, cancel_futures=False)
-
-    app.state.schedule_research_material_ingestion = schedule_research_material_ingestion
-    app.router.add_event_handler("startup", recover_research_material_ingestions)
-    app.router.add_event_handler("shutdown", shutdown_research_material_ingestions)
+        app.state.schedule_research_material_ingestion = schedule_research_material_ingestion
+        try:
+            with research_material_application_scope() as application:
+                recoverable = application.recoverable_ingestion_ids()
+            for job_id in recoverable:
+                schedule_research_material_ingestion(job_id)
+            yield
+        finally:
+            del app.state.schedule_research_material_ingestion
+            # Drain accepted jobs on graceful shutdown. A killed worker leaves its lease in SQLite.
+            await asyncio.to_thread(executor.shutdown, wait=True, cancel_futures=False)
 
     @contextmanager
     def professional_materials_application_scope() -> Iterator[ProfessionalMaterialsApplication]:

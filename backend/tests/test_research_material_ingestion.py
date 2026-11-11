@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from unittest.mock import Mock
@@ -81,22 +82,46 @@ def test_deferred_upload_persists_job_and_can_resume_after_request(
     assert detail.json()["segments"][0]["text"] == "合成材料的第一段。"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="BE-02: ingestion hooks not run")
+@pytest.mark.parametrize("previous_attempts", [0, 1], ids=["queued", "expired-lease"])
 def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
+    previous_attempts: int,
 ) -> None:
     _authenticate(client)
     task_id = _task(client)
     client.app.state.schedule_research_material_ingestion = lambda _job_id: None
     material = _upload_queued_material(client, task_id)
     job_id = UUID(material["ingestion_job_id"])
-    restarted, executor = _app_with_fake_executor(client, monkeypatch)
+    if previous_attempts:
+        with client.app.state.research_material_application_scope() as application:
+            claimed = application.claim_ingestion(job_id, lease_duration=timedelta(seconds=-1))
+            assert claimed is not None
 
-    with TestClient(restarted):
-        scheduled = [call.args[1] for call in executor.submit.call_args_list]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        executor = Mock(spec=ThreadPoolExecutor, wraps=pool)
+        create_executor = Mock(return_value=executor)
+        monkeypatch.setattr("qunxue_api.bootstrap.ThreadPoolExecutor", create_executor)
+        restarted = create_app(
+            settings=client.app.state.settings,
+            database=client.app.state.database,
+            require_email_verification=False,
+        )
+        created_during_assembly = create_executor.called
+        with TestClient(restarted):
+            pass
 
-    assert (scheduled, executor.shutdown.call_count) == ([job_id], 1)
+        path = f"/api/research-tasks/{task_id}/materials/{material['material_id']}"
+        response = client.get(f"{path}/ingestion")
+        assert response.status_code == 200
+        result = response.json()
+        assert (result["ingestion_status"], result["attempt_count"]) == (
+            "ready",
+            previous_attempts + 1,
+        )
+        assert client.get(path).json()["segments"][0]["text"] == "合成材料的第一段。"
+        assert not created_during_assembly
+        executor.shutdown.assert_called_once_with(wait=True, cancel_futures=False)
 
 
 def test_stale_processing_job_is_recoverable(client: TestClient) -> None:
