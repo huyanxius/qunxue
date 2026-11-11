@@ -137,6 +137,10 @@ jobs:
       - run: npm run build
         if: github.event_name != 'release' && steps.frontend-cache.outputs.cache-hit != 'true'
         working-directory: frontend
+      - name: Initial JS/CSS gzip budget
+        if: github.event_name != 'release'
+        run: node scripts/check-initial-bundle.mjs
+        working-directory: frontend
 
   checks:
     name: Required checks
