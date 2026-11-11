@@ -1,12 +1,22 @@
+from contextlib import closing
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
+from qunxue_api.adapters.sqlite.professional_material_repository import (
+    SqliteProfessionalMaterialRepository,
+)
+from qunxue_api.adapters.sqlite.research_analysis_repository import (
+    SqliteResearchAnalysisRepository,
+)
 from qunxue_api.modules.research_analysis import (
     ComparisonFinding,
     ComparisonFindingKind,
     NextResearchStep,
 )
+from qunxue_api.modules.research_materials import MaterialArchiveProfile, ModelProcessingScope
 
 
 def _authenticate(client: TestClient, *, email: str | None = None) -> str:
@@ -88,6 +98,132 @@ def _annotation(
     )
     assert response.status_code == 201, response.text
     return response.json()
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-01: derived text is unfiltered")
+def test_manual_only_annotation_quote_stays_out_of_model_context(client: TestClient) -> None:
+    user_id = UUID(_authenticate(client))
+    task = _task(client)
+    material, segment = _material(client, task, text="合成访谈。姐姐承担了大部分照护。")
+    annotation = _annotation(client, task, material, segment)
+    owner = {"user_id": user_id, "task_id": UUID(task)}
+    with client.app.state.database.session() as session:
+        SqliteProfessionalMaterialRepository(session).save_profile(
+            MaterialArchiveProfile.create(
+                **owner,
+                material_id=UUID(material["material_id"]),
+                model_processing_scope=ModelProcessingScope.MANUAL_ONLY,
+                now=datetime.now(UTC),
+            )
+        )
+
+    with client.app.state.research_analysis_application_scope() as application:
+        manual = application.list_snapshot(**owner)
+        outbound = application.get_for_agent(**owner)
+
+    assert annotation["quote"] in {item.quote for item in manual["annotations"]}
+    assert annotation["quote"] not in {item.quote for item in outbound["annotations"]}
+
+
+def _pending_coding_plan(client: TestClient):
+    user_id = UUID(_authenticate(client))
+    task = _task(client)
+    material, segment = _material(client, task)
+    annotation = _annotation(client, task, material, segment)
+    owner = {"user_id": user_id, "task_id": UUID(task)}
+    scope = client.app.state.research_analysis_application_scope
+
+    with scope() as application:
+        code = application.create_user_code(
+            **owner,
+            idempotency_key="code-for-rollback",
+            label="照护分工",
+            definition="家庭照护的责任分配。",
+            annotation_ids=(UUID(annotation["annotation_id"]),),
+            rationale="研究者核对原文。",
+        )
+        plan = application.propose_coding_plan_from_agent(
+            **owner,
+            title="待确认的片段编码",
+            rationale="给相邻片段归类。",
+            items=({
+                "material_id": UUID(material["material_id"]),
+                "parse_id": UUID(segment["parse_id"]),
+                "segment_id": segment["segment_id"],
+                "quote_start": 19,
+                "quote_end": len(segment["text"]),
+                "code_id": code.code_id,
+                "confidence": 0.8,
+                "rationale": "片段描述家庭分工。",
+            },),
+            conversation_id=uuid4(),
+            agent_run_id=uuid4(),
+            agent_turn_id=uuid4(),
+            tool_call_id="coding-plan-for-rollback",
+        )
+    return owner, code, plan
+
+
+def test_anonymous_coding_plan_decision_leaves_formal_analysis_untouched(
+    client: TestClient,
+) -> None:
+    owner, code, plan = _pending_coding_plan(client)
+    path = f"/api/research-tasks/{owner['task_id']}/analysis/coding-plans/{plan.plan_id}/decision"
+    with closing(TestClient(client.app)) as anonymous:
+        response = anonymous.post(
+            path,
+            headers={"Idempotency-Key": "anonymous-decision"},
+            json={
+                "expected_version": plan.version,
+                "decisions": [{"item_id": str(plan.items[0].item_id), "decision": "confirmed"}],
+            },
+        )
+
+    assert response.status_code == 401
+    with client.app.state.database.session() as session:
+        repository = SqliteResearchAnalysisRepository(session)
+        saved_plan = repository.get_coding_plan(plan.plan_id, **owner)
+        assert saved_plan is not None
+        assert (saved_plan.status, saved_plan.version) == (plan.status, plan.version)
+        assert tuple(item.annotation_id for item in repository.list_annotations(**owner)) == (
+            code.annotation_ids
+        )
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="BE-01: partial decision commit")
+def test_coding_plan_decision_rolls_back_all_writes_after_code_write_failure(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner, code, plan = _pending_coding_plan(client)
+    scope = client.app.state.research_analysis_application_scope
+
+    def fail_code_write(_repository, _code):
+        raise RuntimeError("synthetic code write failure")
+
+    monkeypatch.setattr(SqliteResearchAnalysisRepository, "add_code", fail_code_write)
+    decision_key = "decision-for-rollback"
+    with pytest.raises(RuntimeError, match="synthetic code write failure"), scope() as application:
+        application.decide_coding_plan(
+            **owner,
+            idempotency_key=decision_key,
+            plan_id=plan.plan_id,
+            expected_version=plan.version,
+            decisions=((plan.items[0].item_id, "confirmed", "核对过原文"),),
+        )
+
+    with client.app.state.database.session() as session:
+        repository = SqliteResearchAnalysisRepository(session)
+        saved_plan = repository.get_coding_plan(plan.plan_id, **owner)
+        saved_code = repository.get_code(code.code_id, **owner)
+        assert saved_plan is not None and saved_code is not None
+        assert (
+            len(repository.list_annotations(**owner)),
+            saved_plan.status.value,
+            saved_plan.version,
+            saved_code.annotation_ids,
+            repository.get_write(**owner, namespace="api", idempotency_key=decision_key) is None,
+        ) == (1, "candidate", plan.version, code.annotation_ids, True)
 
 
 def test_analysis_api_marks_source_and_keeps_description_reflection_separate(

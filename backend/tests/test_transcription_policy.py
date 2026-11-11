@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import UTC, datetime
 from types import SimpleNamespace
+from unittest.mock import patch
 from uuid import UUID
 
 import pytest
@@ -141,7 +142,26 @@ def test_new_upload_can_be_transcribed_without_additional_review() -> None:
     assert archive.profile.deidentification_status is DeidentificationStatus.NOT_REQUIRED
 
 
-def test_explicit_external_transcription_keeps_manual_only_material_denied() -> None:
+@pytest.mark.parametrize(
+    ("consent_scope", "model_scope"),
+    [
+        pytest.param(ConsentScope.PROJECT_ONLY, ModelProcessingScope.MANUAL_ONLY, id="manual-mode"),
+        pytest.param(
+            ConsentScope.MANUAL_REVIEW_ONLY, ModelProcessingScope.EXTERNAL_ALLOWED,
+            id="manual-review-consent",
+            marks=pytest.mark.xfail(
+                strict=True, raises=AssertionError, reason="AS-01: manual review permits egress",
+            ),
+        ),
+        pytest.param(
+            ConsentScope.WITHDRAWN, ModelProcessingScope.EXTERNAL_ALLOWED, id="withdrawn-consent",
+        ),
+    ],
+)
+def test_material_without_external_permission_is_never_sent_or_transcribed(
+    consent_scope: ConsentScope,
+    model_scope: ModelProcessingScope,
+) -> None:
     material = ResearchMaterial.create(
         user_id=UUID(int=3),
         task_id=UUID(int=4),
@@ -157,28 +177,35 @@ def test_explicit_external_transcription_keeps_manual_only_material_denied() -> 
         material_id=material.material_id,
         user_id=material.user_id,
         task_id=material.task_id,
-        consent_scope=ConsentScope.PROJECT_ONLY,
+        consent_scope=consent_scope,
         deidentification_status=DeidentificationStatus.COMPLETE,
-        model_processing_scope=ModelProcessingScope.MANUAL_ONLY,
+        model_processing_scope=model_scope,
         now=NOW,
     )
+    provider = _ExternalProvider()
     application = TranscriptionApplication(
         materials=materials,  # type: ignore[arg-type]
         archive=_Archive(profile),  # type: ignore[arg-type]
         research_tasks=_Tasks(),  # type: ignore[arg-type]
-        provider=_ExternalProvider(),
+        provider=provider,
         importer=lambda **_kwargs: None,  # type: ignore[arg-type]
     )
 
-    with pytest.raises(TranscriptionPolicyDenied):
-        application.transcribe(
-            user_id=material.user_id,
-            task_id=material.task_id,
-            material_id=material.material_id,
-            idempotency_key="restricted-run",
-        )
+    denied = False
+    with patch.object(provider, "transcribe", wraps=provider.transcribe) as dispatch:
+        try:
+            application.transcribe(
+                user_id=material.user_id,
+                task_id=material.task_id,
+                material_id=material.material_id,
+                idempotency_key="restricted-run",
+            )
+        except TranscriptionPolicyDenied:
+            denied = True
 
-    assert materials.read_count == 0
+    assert (denied, dispatch.call_count, materials.read_count, materials.parse_versions) == (
+        True, 0, 0, [],
+    )
 
 
 def test_provider_failure_is_persisted_without_losing_the_media() -> None:

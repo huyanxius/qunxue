@@ -1,9 +1,13 @@
+import socket
 import sys
+from contextlib import suppress
 from types import SimpleNamespace
+from unittest.mock import Mock
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from qunxue_api.adapters.research_agent import web_research
 from qunxue_api.adapters.research_agent.catalog_tools import KnowledgeToolRegistry
 from qunxue_api.adapters.research_agent.web_research import (
     OpenWebResearchClient,
@@ -79,6 +83,23 @@ def test_web_page_reader_preserves_private_network_boundary() -> None:
 
     with pytest.raises(ValueError, match="不能读取本机或内网地址"):
         tools.read_web_page("http://127.0.0.1/private")
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-02: resolver policy missing")
+def test_web_reader_blocks_a_restricted_address_from_the_fake_resolver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    resolve = Mock(return_value=[
+        (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("127.0.0.1", 443)),
+    ])
+    transport = Mock(side_effect=OSError("test transport has no network"))
+    monkeypatch.setattr(socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(web_research, "_download_page", transport)
+
+    with suppress(ValueError, OSError):
+        OpenWebResearchClient().read("https://research.example.invalid/")
+
+    assert (resolve.called, transport.called) == (True, False)
 
 
 def test_web_search_does_not_retry_the_same_query_inside_one_tool_scope() -> None:
