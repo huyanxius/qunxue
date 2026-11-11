@@ -570,7 +570,7 @@ class SqliteResearchMaterialRepository:
                 ResearchMaterialIngestionJobRow.job_id == str(job_id)
             )
         )
-        if row is None or row.attempt_count >= row.max_attempts:
+        if row is None:
             return None
         status = MaterialIngestionStatus(row.ingestion_status)
         available = _utc(row.available_at) <= _utc(now)
@@ -585,6 +585,18 @@ class SqliteResearchMaterialRepository:
             (queued_or_failed and available)
             or (status is MaterialIngestionStatus.PROCESSING and stale)
         ):
+            return None
+        if row.attempt_count >= row.max_attempts:
+            if status is MaterialIngestionStatus.PROCESSING:
+                # A lost final attempt must become terminal without creating another parse.
+                self.fail_ingestion(
+                    job_id,
+                    expected_attempt_count=row.attempt_count,
+                    expected_parse_id=UUID(row.parse_id),
+                    error_code="ingestion_worker_error",
+                    retry_at=None,
+                    now=now,
+                )
             return None
         next_parse_id = str(uuid4()) if row.attempt_count else row.parse_id
         result = self._session.execute(
@@ -675,33 +687,35 @@ class SqliteResearchMaterialRepository:
             raise RuntimeError("failed ingestion job disappeared")
         return job
 
-    def recoverable_ingestion_ids(self, *, now: datetime) -> tuple[UUID, ...]:
-        rows = self._session.scalars(
-            select(ResearchMaterialIngestionJobRow)
+    def recoverable_ingestion_ids(
+        self, *, now: datetime, limit: int | None = None
+    ) -> tuple[UUID, ...]:
+        job = ResearchMaterialIngestionJobRow
+        job_ids = self._session.scalars(
+            select(job.job_id)
             .where(
-                ResearchMaterialIngestionJobRow.attempt_count
-                < ResearchMaterialIngestionJobRow.max_attempts,
                 or_(
                     and_(
-                        ResearchMaterialIngestionJobRow.ingestion_status
-                        == MaterialIngestionStatus.QUEUED.value,
-                        ResearchMaterialIngestionJobRow.available_at <= now,
+                        job.attempt_count < job.max_attempts,
+                        job.available_at <= now,
+                        or_(
+                            job.ingestion_status == MaterialIngestionStatus.QUEUED.value,
+                            and_(
+                                job.ingestion_status == MaterialIngestionStatus.FAILED.value,
+                                job.completed_at.is_(None),
+                            ),
+                        ),
                     ),
                     and_(
-                        ResearchMaterialIngestionJobRow.ingestion_status
-                        == MaterialIngestionStatus.FAILED.value,
-                        ResearchMaterialIngestionJobRow.completed_at.is_(None),
-                    ),
-                    and_(
-                        ResearchMaterialIngestionJobRow.ingestion_status
-                        == MaterialIngestionStatus.PROCESSING.value,
-                        ResearchMaterialIngestionJobRow.lease_expires_at <= now,
+                        job.ingestion_status == MaterialIngestionStatus.PROCESSING.value,
+                        job.lease_expires_at <= now,
                     ),
                 ),
             )
-            .order_by(ResearchMaterialIngestionJobRow.created_at)
+            .order_by(job.created_at)
+            .limit(limit)
         )
-        return tuple(UUID(row.job_id) for row in rows)
+        return tuple(UUID(job_id) for job_id in job_ids)
 
     def delete(
         self,

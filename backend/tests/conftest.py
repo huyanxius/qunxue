@@ -142,7 +142,7 @@ def knowledge_database_template(tmp_path_factory: pytest.TempPathFactory) -> Pat
 
 
 @pytest.fixture
-def client(
+def unstarted_client(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     knowledge_database_template: Path,
@@ -171,9 +171,14 @@ def client(
     app.state.knowledge_retriever = _TestReleaseRetriever(catalog)
 
     try:
-        with TestClient(app) as test_client:
-            yield test_client
+        yield TestClient(app)
     finally:
         database.engine.dispose()
         for suffix in ("", "-shm", "-wal"):
             Path(f"{database_path}{suffix}").unlink(missing_ok=True)
+
+
+@pytest.fixture
+def client(unstarted_client: TestClient) -> Iterator[TestClient]:
+    with unstarted_client:
+        yield unstarted_client
