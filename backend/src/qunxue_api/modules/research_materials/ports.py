@@ -152,7 +152,9 @@ class ResearchMaterialRepository(Protocol):
         now: datetime,
     ) -> MaterialIngestionJob | None: ...
 
-    def recoverable_ingestion_ids(self, *, now: datetime) -> tuple[UUID, ...]: ...
+    def recoverable_ingestion_ids(
+        self, *, now: datetime, limit: int | None = None
+    ) -> tuple[UUID, ...]: ...
 
 
 @runtime_checkable

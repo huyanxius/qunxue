@@ -113,9 +113,10 @@ class ResearchMaterialApplication:
                 parse_id=uuid4(),
                 now=now,
             )
-        self._commit()
         if defer_processing:
+            self._commit()
             return material
+        # Commit a synchronous upload together with its claim so polling cannot take it first.
         self.process_ingestion(job.job_id, map_unavailable_reason=False)
         return self.get(user_id=user_id, task_id=task_id, material_id=material.material_id)
 
@@ -179,8 +180,10 @@ class ResearchMaterialApplication:
         self._commit()
         return job
 
-    def recoverable_ingestion_ids(self, *, now: datetime | None = None) -> tuple[UUID, ...]:
-        return self._materials.recoverable_ingestion_ids(now=now or self._clock())
+    def recoverable_ingestion_ids(
+        self, *, now: datetime | None = None, limit: int | None = None
+    ) -> tuple[UUID, ...]:
+        return self._materials.recoverable_ingestion_ids(now=now or self._clock(), limit=limit)
 
     def get_ingestion_job(self, job_id: UUID) -> MaterialIngestionJob | None:
         return self._materials.get_ingestion(job_id)

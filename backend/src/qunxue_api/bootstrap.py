@@ -3,10 +3,9 @@ import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager, suppress
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from inspect import Parameter, signature
 from threading import Lock
-from time import sleep
 from uuid import UUID, uuid4
 
 import httpx
@@ -14,6 +13,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qunxue_api.account_extension import install_account_management
@@ -203,10 +203,7 @@ from qunxue_api.modules.research_intake import (
     ResearchTaskNotFound,
     ResearchTaskService,
 )
-from qunxue_api.modules.research_materials import (
-    MaterialIngestionStatus,
-    MaterialParseError,
-)
+from qunxue_api.modules.research_materials import MaterialParseError
 from qunxue_api.modules.research_method import MethodPlanService
 from qunxue_api.modules.shared_knowledge import (
     SharedKnowledgeForbidden,
@@ -568,52 +565,69 @@ def create_app(
     app.state.research_material_application_scope = research_material_application_scope
 
     def process_research_material_ingestion(job_id: UUID) -> None:
-        while True:
-            try:
-                with research_material_application_scope() as application:
-                    job = application.process_ingestion(job_id)
-            except MaterialParseError:
-                logger.info(
-                    "research material ingestion needs user action",
-                    extra={"job_id": str(job_id)},
-                )
-                return
-            except Exception:
-                logger.exception(
-                    "research material ingestion attempt failed",
-                    extra={"job_id": str(job_id)},
-                )
-                with research_material_application_scope() as application:
-                    job = application.get_ingestion_job(job_id)
-            if (
-                job is None
-                or job.ingestion_status is not MaterialIngestionStatus.FAILED
-                or job.completed_at is not None
-                or job.attempt_count >= job.max_attempts
-            ):
-                return
-            delay = max(0.0, (job.available_at - datetime.now(UTC)).total_seconds())
-            if delay:
-                sleep(delay)
+        try:
+            with research_material_application_scope() as application:
+                application.process_ingestion(job_id)
+        except MaterialParseError:
+            logger.info(
+                "research material ingestion needs user action",
+                extra={"job_id": str(job_id)},
+            )
+        except Exception:
+            logger.exception(
+                "research material ingestion attempt failed",
+                extra={"job_id": str(job_id)},
+            )
 
     @asynccontextmanager
     async def research_material_ingestion_lifespan():
+        max_workers = 2
         executor = ThreadPoolExecutor(
-            max_workers=2,
+            max_workers=max_workers,
             thread_name_prefix="qunxue-material-ingestion",
         )
+        loop = asyncio.get_running_loop()
+        in_flight: set[UUID] = set()
 
         def schedule_research_material_ingestion(job_id: UUID) -> None:
-            executor.submit(process_research_material_ingestion, job_id)
+            # SQLite holds work that cannot start in this lifespan yet.
+            if job_id in in_flight or len(in_flight) >= max_workers:
+                return
+            future = executor.submit(process_research_material_ingestion, job_id)
+            in_flight.add(job_id)
+            future.add_done_callback(
+                lambda _future: loop.call_soon_threadsafe(in_flight.discard, job_id)
+            )
+
+        def recoverable_ingestions() -> tuple[UUID, ...]:
+            with research_material_application_scope() as application:
+                return application.recoverable_ingestion_ids(limit=max_workers)
+
+        async def schedule_recoverable_ingestions() -> None:
+            if len(in_flight) >= max_workers:
+                return
+            for job_id in await asyncio.to_thread(recoverable_ingestions):
+                schedule_research_material_ingestion(job_id)
+
+        async def poll_ingestions() -> None:
+            while True:
+                await asyncio.sleep(1)
+                try:
+                    await schedule_recoverable_ingestions()
+                except SQLAlchemyError:
+                    logger.exception("research material ingestion scan failed")
 
         try:
-            with research_material_application_scope() as application:
-                recoverable = application.recoverable_ingestion_ids()
-            for job_id in recoverable:
-                schedule_research_material_ingestion(job_id)
-            yield schedule_research_material_ingestion
+            await schedule_recoverable_ingestions()
+            poll_task = asyncio.create_task(poll_ingestions(), name="qunxue-material-ingestion")
+            try:
+                yield schedule_research_material_ingestion
+            finally:
+                poll_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await poll_task
         finally:
-            # Drain accepted jobs on graceful shutdown. A killed worker leaves its lease in SQLite.
+            # Drain the attempts already submitted. SQLite retains retries for the next lifespan.
             await asyncio.to_thread(executor.shutdown, wait=True, cancel_futures=False)
 
     @contextmanager
