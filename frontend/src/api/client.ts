@@ -11,8 +11,8 @@ client.setConfig({
   fetch: (request) => globalThis.fetch(request),
 })
 
-client.interceptors.response.use((response) => {
-  if (response.status === 401) notifySessionRejected()
+client.interceptors.response.use((response, request) => {
+  if (response.status === 401 && !request.signal.aborted) notifySessionRejected()
   return response
 })
 

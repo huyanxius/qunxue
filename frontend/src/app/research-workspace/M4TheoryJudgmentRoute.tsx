@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router'
 import { readResearchTaskNavigationViaApi } from '../../api/researchWorkspace'
 import { M4TheoryJudgment, type M4TaskContract } from '../../modules/m4-theory-judgment'
 import { ResearchWorkspaceShell } from '../../modules/socio-match-workspace'
+import { usePrivateQueryKey } from '../../query/privateQueryKey'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ErrorState, LoadingState } from '../ui/States'
 
@@ -11,8 +12,8 @@ export function M4TheoryJudgmentRoute() {
   const { task_id: taskId } = useParams<{ task_id: string }>()
   const navigate = useNavigate()
   const navigation = useQuery({
-    queryKey: ['m4-theory-judgment-route', taskId],
-    queryFn: () => readResearchTaskNavigationViaApi(taskId!),
+    queryKey: usePrivateQueryKey('m4-theory-judgment-route', taskId),
+    queryFn: ({ signal }) => readResearchTaskNavigationViaApi(taskId!, signal),
     enabled: Boolean(taskId),
     retry: false,
   })

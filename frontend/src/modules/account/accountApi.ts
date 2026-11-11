@@ -34,8 +34,8 @@ function toAccountSession(response: SessionResponse): AccountSession {
   }
 }
 
-export async function getCurrentSessionViaApi(): Promise<AccountSession | null> {
-  const { data, response } = await getCurrentSession({ client: apiClient })
+export async function getCurrentSessionViaApi(signal?: AbortSignal): Promise<AccountSession | null> {
+  const { data, response } = await getCurrentSession({ client: apiClient, signal })
   if (data) return toAccountSession(data)
   if (response?.status === 401) return null
   throw new ApiRequestError('登录状态读取失败。', response?.status)
@@ -112,10 +112,11 @@ export async function logoutViaApi(): Promise<void> {
   if (!data) throw new ApiRequestError('退出失败，请稍后重试。', response?.status)
 }
 
-export async function listMyResearchViaApi(): Promise<MyResearchItem[]> {
+export async function listMyResearchViaApi(signal?: AbortSignal): Promise<MyResearchItem[]> {
   const { data, response } = await listResearchTasks({
     client: apiClient,
     query: { limit: 100 },
+    signal,
   })
   if (!data) throw new ApiRequestError('研究列表读取失败。', response?.status)
   return data.items.map((item) => {
