@@ -234,8 +234,6 @@ class DisciplinaryAgentApplication:
     ) -> AgentTurnExecution:
         if not prompt.strip():
             raise ValueError("message must not be empty")
-        if idempotency_key.startswith("teaching:") and not self._teaching:
-            raise ValueError("请从课堂工作区继续教学任务。")
         material_ids = tuple(dict.fromkeys(material_ids))
         if len(material_ids) > 20:
             raise ValueError("an Agent turn accepts at most 20 research materials")
@@ -256,6 +254,12 @@ class DisciplinaryAgentApplication:
         research_required = False
         conversation: Conversation | None = None
         if existing_run is not None:
+            if existing_run.is_teaching != self._teaching:
+                raise ValueError(
+                    "课堂任务请求与普通对话冲突。"
+                    if self._teaching
+                    else "请从课堂工作区继续教学任务。"
+                )
             if conversation_id is not None and conversation_id != existing_run.conversation_id:
                 raise ValueError("idempotency key belongs to another conversation")
             existing_conversation = self.get_conversation(
@@ -502,6 +506,7 @@ class DisciplinaryAgentApplication:
             "deep_research_run_id": str(deep_research_run_id) if deep_research_run_id else None,
             "deep_research_action": deep_research_action,
             "deep_research_selection": deep_research_selection,
+            "_teaching": self._teaching,
             "_execution_prompt": prompt,
             "_confirmed_research_plan": confirmed_plan,
             "_research_intent": "research" if research_required else None,

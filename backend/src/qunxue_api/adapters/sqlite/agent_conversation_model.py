@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from qunxue_api.adapters.sqlite.base import Base
+from qunxue_api.modules.agent_conversation import LEGACY_TEACHING_PROMPT_PREFIX
 
 
 class AgentConversationRow(Base):
@@ -116,10 +117,23 @@ class AgentRunRow(Base):
 def has_unattributed_source_runs():
     # Teaching stores assembled prompts as messages. A deleted project leaves
     # its old runs behind even though the conversation no longer has a task.
+    teaching = AgentRunRow.request_snapshot["_teaching"].as_boolean()
     return exists().where(
         AgentRunRow.conversation_id == AgentConversationRow.conversation_id,
         or_(
-            AgentRunRow.idempotency_key.startswith("teaching:"),
+            teaching.is_(True),
+            and_(
+                teaching.is_(None),
+                AgentRunRow.idempotency_key.startswith("teaching:"),
+                or_(
+                    AgentRunRow.request_snapshot["message"].as_string().startswith(
+                        LEGACY_TEACHING_PROMPT_PREFIX
+                    ),
+                    AgentRunRow.request_snapshot["_execution_prompt"].as_string().startswith(
+                        LEGACY_TEACHING_PROMPT_PREFIX
+                    ),
+                ),
+            ),
             and_(
                 AgentConversationRow.current_research_task_id.is_(None),
                 or_(
