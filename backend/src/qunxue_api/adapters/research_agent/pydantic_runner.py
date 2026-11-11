@@ -172,7 +172,6 @@ class DeterministicKnowledgeRunner:
         )
         return "research"
 
-    @model_material_access_scope()
     def run(
         self,
         *,
@@ -180,6 +179,19 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
+        result, _ = self._run_with_source_statuses(
+            prompt=prompt, conversation=conversation, tools=tools
+        )
+        return result
+
+    @model_material_access_scope()
+    def _run_with_source_statuses(
+        self,
+        *,
+        prompt: str,
+        conversation: Sequence[AgentTurn],
+        tools: AgentToolContext,
+    ) -> tuple[AgentRunResult, dict[str, object]]:
         conversation = _model_conversation_history(tools, conversation)
         if not _should_search_knowledge(
             prompt,
@@ -188,24 +200,30 @@ class DeterministicKnowledgeRunner:
             conversation=conversation,
         ):
             answer = _general_answer(prompt)
-            return AgentRunResult(
-                answer=answer,
-                citations=(),
-                release_id=tools.release.knowledge_release_id,
-                provider="deterministic-knowledge",
-                model="local",
+            return (
+                AgentRunResult(
+                    answer=answer,
+                    citations=(),
+                    release_id=tools.release.knowledge_release_id,
+                    provider="deterministic-knowledge",
+                    model="local",
+                ),
+                {},
             )
         retrieval_query = _evidence_retrieval_query(prompt, conversation=conversation)
         knowledge_results = tools.search_knowledge(retrieval_query)
         material_results = _search_material_results(tools, retrieval_query)
         results = _merge_retrieval_results(material_results, knowledge_results)
         if not results:
-            return AgentRunResult(
-                answer=_insufficient_evidence_answer(),
-                citations=(),
-                release_id=tools.release.knowledge_release_id,
-                provider="deterministic-knowledge",
-                model="local",
+            return (
+                AgentRunResult(
+                    answer=_insufficient_evidence_answer(),
+                    citations=(),
+                    release_id=tools.release.knowledge_release_id,
+                    provider="deterministic-knowledge",
+                    model="local",
+                ),
+                {},
             )
         first = results[0]
         citation = tools.evidence[str(first["citation_id"])]
@@ -226,13 +244,18 @@ class DeterministicKnowledgeRunner:
             for item in citation_results
             if str(item.get("citation_id")) in tools.evidence
         )
-        return AgentRunResult(
+        result = AgentRunResult(
             answer=answer,
             citations=citations or (citation,),
             release_id=tools.release.knowledge_release_id,
             provider="deterministic-knowledge",
             model="local",
         )
+        return result, {
+            str(item.get("citation_id")): item["evidence_status"]
+            for item in citation_results
+            if item.get("evidence_status") is not None
+        }
 
     def run_stream(
         self,
@@ -281,7 +304,9 @@ class DeterministicKnowledgeRunner:
                     )
                 )
         try:
-            result = self.run(prompt=prompt, conversation=conversation, tools=tools)
+            result, source_statuses = self._run_with_source_statuses(
+                prompt=prompt, conversation=conversation, tools=tools
+            )
         except Exception:
             if on_tool_event is not None:
                 on_tool_event(
@@ -312,7 +337,7 @@ class DeterministicKnowledgeRunner:
                 for citation in result.citations
                 if citation.source_kind != "personal_material"
             )
-            trace_items = _trace_items(public_citations)
+            trace_items = _trace_items(public_citations, source_statuses=source_statuses)
             on_tool_event(
                 AgentToolEvent(
                     tool="search_knowledge",
@@ -337,7 +362,9 @@ class DeterministicKnowledgeRunner:
                         input={"query": retrieval_query},
                         output={
                             "result_count": len(material_citations),
-                            "items": _trace_items(material_citations),
+                            "items": _trace_items(
+                                material_citations, source_statuses=source_statuses
+                            ),
                         },
                         detail=_material_trace_detail(
                             [
@@ -3048,17 +3075,23 @@ def _normalized_text(value: str) -> str:
     return " ".join(value.split())
 
 
-def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
+def _trace_items(
+    values,
+    *,
+    limit: int = 4,
+    source_statuses: Mapping[str, object] | None = None,
+) -> list[dict[str, object]]:
     """Return bounded, user-safe facts for the visible tool trace."""
 
     items: list[dict[str, object]] = []
     for value in values[:limit]:
         if isinstance(value, AgentEvidence):
-            item = {
+            item: dict[str, object] = {
                 "title": value.label,
                 "excerpt": _trace_excerpt(value.excerpt),
-                "evidence_status": "verified",
             }
+            if source_statuses is not None and value.citation_id in source_statuses:
+                item["evidence_status"] = source_statuses[value.citation_id]
             for key, field_value in (
                 ("knowledge_id", value.knowledge_id),
                 ("material_id", value.material_id),
@@ -3089,9 +3122,7 @@ def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
             ):
                 if key in value and value[key] is not None:
                     item[key] = (
-                        "verified"
-                        if key == "evidence_status"
-                        else _trace_excerpt(value[key])
+                        _trace_excerpt(value[key])
                         if key in {"excerpt", "content_excerpt"}
                         else value[key]
                     )
