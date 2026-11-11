@@ -83,7 +83,8 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
     const workspace = await screen.findByRole('region', { name: '研究材料' })
-    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+    const search = await within(workspace).findByRole('searchbox', { name: '检索全部材料' })
+    fireEvent.change(search, {
       target: { value: '照护安排' },
     })
 
@@ -124,7 +125,8 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
     const workspace = await screen.findByRole('region', { name: '研究材料' })
-    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+    const search = await within(workspace).findByRole('searchbox', { name: '检索全部材料' })
+    fireEvent.change(search, {
       target: { value: '目标照护' },
     })
     fireEvent.click(await within(workspace).findByRole('button', { name: /打开检索结果.*社区访谈/ }))
