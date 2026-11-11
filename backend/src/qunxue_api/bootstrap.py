@@ -266,8 +266,11 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        async with research_material_ingestion_lifespan(), background_task_lifespan(app):
-            yield
+        async with (
+            research_material_ingestion_lifespan() as schedule_ingestion,
+            background_task_lifespan(app),
+        ):
+            yield {"schedule_research_material_ingestion": schedule_ingestion}
 
     @asynccontextmanager
     async def background_task_lifespan(app: FastAPI):
@@ -603,15 +606,13 @@ def create_app(
         def schedule_research_material_ingestion(job_id: UUID) -> None:
             executor.submit(process_research_material_ingestion, job_id)
 
-        app.state.schedule_research_material_ingestion = schedule_research_material_ingestion
         try:
             with research_material_application_scope() as application:
                 recoverable = application.recoverable_ingestion_ids()
             for job_id in recoverable:
                 schedule_research_material_ingestion(job_id)
-            yield
+            yield schedule_research_material_ingestion
         finally:
-            del app.state.schedule_research_material_ingestion
             # Drain accepted jobs on graceful shutdown. A killed worker leaves its lease in SQLite.
             await asyncio.to_thread(executor.shutdown, wait=True, cancel_futures=False)
 

@@ -9,16 +9,17 @@ from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 
 from qunxue_api.bootstrap import create_app
-from qunxue_api.modules.research_materials import MaterialParseError
+from qunxue_api.modules.research_materials import MaterialKind, MaterialParseError
 
 
-def _authenticate(client: TestClient) -> None:
+def _authenticate(client: TestClient) -> UUID:
     response = client.post(
         "/api/session/register",
         headers={"Idempotency-Key": str(uuid4())},
         json={"email": f"{uuid4()}@example.com", "password": "research-passphrase"},
     )
     assert response.status_code == 201
+    return UUID(response.json()["user"]["user_id"])
 
 
 def _task(client: TestClient) -> str:
@@ -43,23 +44,22 @@ def _upload_queued_material(client: TestClient, task_id: str) -> dict:
     return response.json()
 
 
-def _app_with_fake_executor(client: TestClient, monkeypatch):
-    executor = Mock(spec=["submit", "shutdown"])
-    monkeypatch.setattr("qunxue_api.bootstrap.ThreadPoolExecutor", lambda **_options: executor)
+def test_deferred_upload_persists_job_and_can_resume_after_request(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executor = Mock(spec=ThreadPoolExecutor)
+    other_executor = Mock(spec=ThreadPoolExecutor)
+    create_executor = Mock(side_effect=[executor, other_executor])
+    monkeypatch.setattr("qunxue_api.bootstrap.ThreadPoolExecutor", create_executor)
     app = create_app(
         settings=client.app.state.settings,
         database=client.app.state.database,
         require_email_verification=False,
     )
-    return app, executor
-
-
-def test_deferred_upload_persists_job_and_can_resume_after_request(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    app, executor = _app_with_fake_executor(client, monkeypatch)
     with TestClient(app) as assembled:
+        with TestClient(app):
+            pass
         _authenticate(assembled)
         task_id = _task(assembled)
         material = _upload_queued_material(assembled, task_id)
@@ -88,14 +88,25 @@ def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
     monkeypatch: pytest.MonkeyPatch,
     previous_attempts: int,
 ) -> None:
-    _authenticate(client)
-    task_id = _task(client)
-    client.app.state.schedule_research_material_ingestion = lambda _job_id: None
-    material = _upload_queued_material(client, task_id)
-    job_id = UUID(material["ingestion_job_id"])
-    if previous_attempts:
-        with client.app.state.research_material_application_scope() as application:
-            claimed = application.claim_ingestion(job_id, lease_duration=timedelta(seconds=-1))
+    user_id = _authenticate(client)
+    task_id = UUID(_task(client))
+    with client.app.state.research_material_application_scope() as application:
+        material = application.upload(
+            user_id=user_id,
+            task_id=task_id,
+            idempotency_key=str(uuid4()),
+            filename="合成笔记.txt",
+            media_type="text/plain",
+            content="合成材料的第一段。".encode(),
+            material_kind=MaterialKind.FIELD_NOTE,
+            defer_processing=True,
+        )
+        if previous_attempts:
+            job = application.get_ingestion(
+                user_id=user_id, task_id=task_id, material_id=material.material_id
+            )
+            assert job is not None
+            claimed = application.claim_ingestion(job.job_id, lease_duration=timedelta(seconds=-1))
             assert claimed is not None
 
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -111,7 +122,7 @@ def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
         with TestClient(restarted):
             pass
 
-        path = f"/api/research-tasks/{task_id}/materials/{material['material_id']}"
+        path = f"/api/research-tasks/{task_id}/materials/{material.material_id}"
         response = client.get(f"{path}/ingestion")
         assert response.status_code == 200
         result = response.json()
@@ -127,7 +138,7 @@ def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
 def test_stale_processing_job_is_recoverable(client: TestClient) -> None:
     _authenticate(client)
     task_id = _task(client)
-    client.app.state.schedule_research_material_ingestion = lambda _job_id: None
+    client.app_state["schedule_research_material_ingestion"] = lambda _job_id: None
     uploaded = client.post(
         f"/api/research-tasks/{task_id}/materials",
         headers={"Idempotency-Key": str(uuid4())},
@@ -151,7 +162,7 @@ def test_deferred_upload_idempotency_reuses_one_material_and_job(client: TestCli
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
-    client.app.state.schedule_research_material_ingestion = scheduled.append
+    client.app_state["schedule_research_material_ingestion"] = scheduled.append
     request_key = str(uuid4())
     payload = {
         "headers": {"Idempotency-Key": request_key},
@@ -172,7 +183,7 @@ def test_scanned_pdf_records_ocr_required_instead_of_ready(client: TestClient) -
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
-    client.app.state.schedule_research_material_ingestion = scheduled.append
+    client.app_state["schedule_research_material_ingestion"] = scheduled.append
     output = BytesIO()
     writer = PdfWriter()
     writer.add_blank_page(width=100, height=100)
@@ -218,7 +229,7 @@ def test_retry_uses_a_new_parse_id_after_an_unexpected_worker_failure(
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
-    client.app.state.schedule_research_material_ingestion = scheduled.append
+    client.app_state["schedule_research_material_ingestion"] = scheduled.append
     client.post(
         f"/api/research-tasks/{task_id}/materials",
         headers={"Idempotency-Key": str(uuid4())},
@@ -253,7 +264,7 @@ def test_expired_worker_cannot_complete_a_newer_ingestion_attempt(client: TestCl
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
-    client.app.state.schedule_research_material_ingestion = scheduled.append
+    client.app_state["schedule_research_material_ingestion"] = scheduled.append
     client.post(
         f"/api/research-tasks/{task_id}/materials",
         headers={"Idempotency-Key": str(uuid4())},
