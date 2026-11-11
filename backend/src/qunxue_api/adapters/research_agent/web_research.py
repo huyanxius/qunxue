@@ -1,13 +1,17 @@
 import json
 import re
+import socket
+import ssl
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from hashlib import sha256
 from html import unescape
-from ipaddress import ip_address
+from ipaddress import IPv4Address, IPv6Address, ip_address
 from typing import Literal, Protocol
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import Request, build_opener
+
+import httpx
 
 from qunxue_api.adapters.retrieval.errors import RetrievalPipelineUnavailable
 from qunxue_api.adapters.retrieval.sqlite_index import RetrievalChunk
@@ -32,6 +36,10 @@ SearchTransport = Callable[[str, float], Mapping[str, object]]
 SearchProfile = Literal["generic", "sociology"]
 
 _USER_AGENT = "QunxueResearchAgent/2.0"
+_WEB_PORTS = {"http": 80, "https": 443}
+_MAX_PAGE_REDIRECTS = 10
+_MAX_PAGE_BYTES = 2_000_000
+_RESTRICTED_ADDRESS = "不能读取本机或内网地址"
 _TRACKING_PREFIXES = ("utm_", "gclid", "fbclid", "msclkid")
 _OFFICIAL_SUFFIXES = (".gov.cn", ".edu.cn", ".ac.cn", ".org.cn", ".gov", ".edu")
 _AUTHORITATIVE_DOMAINS = {
@@ -113,23 +121,58 @@ def plan_web_queries(query: str, *, profile: SearchProfile = "sociology") -> lis
     return [cleaned]
 
 
-def _fetch_page(url: str) -> str | None:
-    _ensure_public_url(url)
-    return _download_page(url)
+def _fetch_page(url: str) -> str:
+    target = _ensure_public_url(url)
+    for _ in range(_MAX_PAGE_REDIRECTS + 1):
+        result = _download_page(target, _resolve_public_addresses(target))
+        if isinstance(result, str):
+            return result
+        target = _ensure_public_url(result)
+    raise RuntimeError("网页重定向次数超过上限")
 
 
-def _download_page(url: str) -> str:
-    opener = build_opener(_PublicRedirectHandler())
-    request = Request(url, headers={"User-Agent": _USER_AGENT, "Accept-Language": "zh-CN,zh;q=0.9"})
-    with opener.open(request, timeout=15) as response:
-        payload = response.read(2_000_001)
-        if len(payload) > 2_000_000:
-            raise RuntimeError("网页正文超过读取上限")
-        charset = response.headers.get_content_charset() or _html_charset(payload) or "utf-8"
+def _download_page(url: httpx.URL, addresses: tuple[str, ...]) -> str | httpx.URL:
+    # The pool is scoped to a hop because HTTPX keys connections by numeric origin.
+    with httpx.Client(
+        timeout=15,
+        verify=ssl.create_default_context(),
+        trust_env=False,
+        follow_redirects=False,
+    ) as client:
+        for address in addresses[:-1]:
+            try:
+                return _request_page(client, url, address)
+            except (httpx.ConnectError, httpx.ConnectTimeout):
+                continue
+        return _request_page(client, url, addresses[-1])
+
+
+def _request_page(client: httpx.Client, url: httpx.URL, address: str) -> str | httpx.URL:
+    # Dial the approved address while retaining the HTTP authority and TLS identity.
+    with client.stream(
+        "GET",
+        url.copy_with(host=address),
+        headers={
+            "Host": url.netloc.decode("ascii"),
+            "User-Agent": _USER_AGENT,
+            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Accept-Encoding": "identity",
+        },
+        extensions={"sni_hostname": url.raw_host.decode("ascii")},
+    ) as response:
+        if response.has_redirect_location:
+            return url.join(response.headers["location"])
+        response.raise_for_status()
+        payload = bytearray()
+        for chunk in response.iter_raw():
+            if len(payload) + len(chunk) > _MAX_PAGE_BYTES:
+                raise RuntimeError("网页正文超过读取上限")
+            payload.extend(chunk)
+        charset = response.charset_encoding or _html_charset(payload) or "utf-8"
         return payload.decode(charset, errors="replace")
 
 
-def _html_charset(payload: bytes) -> str | None:
+def _html_charset(payload: bytearray) -> str | None:
     """Honor legacy Chinese pages that declare GBK in HTML rather than headers."""
 
     head = payload[:8192].decode("ascii", errors="ignore")
@@ -137,25 +180,56 @@ def _html_charset(payload: bytes) -> str | None:
     return match.group(1) if match else None
 
 
-class _PublicRedirectHandler(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        _ensure_public_url(newurl)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-def _ensure_public_url(url: str) -> None:
-    parsed = urlparse(url)
-    hostname = parsed.hostname
-    if parsed.scheme not in {"http", "https"} or not hostname:
-        raise ValueError("只支持公开的 HTTP 或 HTTPS 网页")
-    if hostname.lower() == "localhost":
-        raise ValueError("不能读取本机或内网地址")
+def _ip_literal(hostname: str) -> IPv4Address | IPv6Address | None:
     try:
-        literal = ip_address(hostname)
+        return ip_address(hostname)
     except ValueError:
-        literal = None
-    if literal is not None and not literal.is_global:
-        raise ValueError("不能读取本机或内网地址")
+        return None
+
+
+def _public_ip(address: IPv4Address | IPv6Address) -> str:
+    if isinstance(address, IPv6Address):
+        if (
+            address.scope_id is not None
+            or address.is_site_local
+            or address.sixtofour is not None
+            or address.teredo is not None
+        ):
+            raise ValueError(_RESTRICTED_ADDRESS)
+        address = address.ipv4_mapped or address
+    if not address.is_global or address.is_multicast or address.is_reserved:
+        raise ValueError(_RESTRICTED_ADDRESS)
+    return str(address)
+
+
+def _ensure_public_url(url: str | httpx.URL) -> httpx.URL:
+    try:
+        parsed = httpx.URL(url)
+    except httpx.InvalidURL as exc:
+        raise ValueError("只支持公开的 HTTP 或 HTTPS 网页") from exc
+    hostname = parsed.raw_host.decode("ascii").removesuffix(".")
+    if parsed.scheme not in _WEB_PORTS or not hostname or parsed.userinfo:
+        raise ValueError("只支持公开的 HTTP 或 HTTPS 网页")
+    if parsed.port is not None and not 0 < parsed.port <= 65535:
+        raise ValueError("网页端口无效")
+    if hostname == "localhost" or hostname.endswith(".localhost") or "%" in hostname:
+        raise ValueError(_RESTRICTED_ADDRESS)
+    literal = _ip_literal(hostname)
+    if literal is not None:
+        hostname = _public_ip(literal)
+    return parsed.copy_with(host=hostname, fragment=None)
+
+
+def _resolve_public_addresses(url: httpx.URL) -> tuple[str, ...]:
+    hostname = url.raw_host.decode("ascii")
+    if _ip_literal(hostname) is not None:
+        return (hostname,)
+    answers = socket.getaddrinfo(
+        hostname, url.port or _WEB_PORTS[url.scheme], type=socket.SOCK_STREAM
+    )
+    if not answers:
+        raise ValueError("网页域名没有可用地址")
+    return tuple(dict.fromkeys(_public_ip(ip_address(answer[4][0])) for answer in answers))
 
 
 def _canonical_url(url: str) -> str:
@@ -331,9 +405,9 @@ class OpenWebResearchClient:
                     continue
                 try:
                     _ensure_public_url(url)
+                    canonical_url = _canonical_url(url)
                 except ValueError:
                     continue
-                canonical_url = _canonical_url(url)
                 hostname = (urlparse(url).hostname or "").lower().removeprefix("www.")
                 if any(
                     hostname == domain or hostname.endswith("." + domain)

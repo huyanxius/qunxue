@@ -1,21 +1,23 @@
 from qunxue_api.bootstrap import create_app
 
 
-def test_bootstrap_passes_web_search_settings_to_the_search_adapter(
+def test_bootstrap_configures_web_research_and_the_page_read_switch(
     client,
     monkeypatch,
 ) -> None:
     captured_search_options = []
     captured_search_clients = []
+    captured_read_flags = []
 
     class CapturedWebResearchClient:
         def __init__(self, **options):
             captured_search_options.append(options)
 
     class CapturedToolRegistry:
-        def __init__(self, *, web_research, **kwargs):
+        def __init__(self, *, web_research, web_read_enabled, **kwargs):
             del kwargs
             captured_search_clients.append(web_research)
+            captured_read_flags.append(web_read_enabled)
 
     monkeypatch.setattr(
         "qunxue_api.bootstrap.OpenWebResearchClient",
@@ -30,6 +32,7 @@ def test_bootstrap_passes_web_search_settings_to_the_search_adapter(
             "web_search_provider": "tavily",
             "web_search_allowed_domains": (),
             "web_search_timeout_seconds": 4.5,
+            "web_read_enabled": False,
         }
     )
     app = create_app(
@@ -42,6 +45,7 @@ def test_bootstrap_passes_web_search_settings_to_the_search_adapter(
         application._tools_factory()
 
     assert len(captured_search_clients) == 1
+    assert captured_read_flags == [False]
     assert len(captured_search_options) == 1
     options = captured_search_options[0]
     assert options["search_provider"] == "tavily"

@@ -223,6 +223,7 @@ class Settings(BaseSettings):
     web_search_profile: Literal["generic", "sociology"] = "sociology"
     web_search_allowed_domains: tuple[str, ...] = ()
     web_search_timeout_seconds: float = Field(default=12, gt=0)
+    web_read_enabled: bool = True
     model_sft_resource_header: str = "X-LoRA-ID"
     model_sft_resource_id: SecretStr | None = None
     transcription_base_url: str | None = None
