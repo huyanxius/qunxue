@@ -308,7 +308,7 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
                 source_id="literature-entry-1",
                 source_version="version-3",
                 locator={"label": "page", "value": "42-44"},
-                state=framework.ResearchDocumentCitationState.NEEDS_VERIFICATION,
+                state=framework.ResearchDocumentCitationState.VERIFIED,
             ),
         ),
     )
@@ -338,7 +338,7 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
     assert "evidence-1" in exported.markdown
     assert "source-1" in exported.markdown
     assert "literature-entry-1" in exported.markdown
-    assert "needs_verification" in exported.markdown
+    assert "state `verified`" in exported.markdown
     assert f"document_id: {DOCUMENT_ID}" in exported.markdown
 
 
