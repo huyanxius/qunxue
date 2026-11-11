@@ -150,6 +150,24 @@ function LocationProbe() {
 }
 
 describe('ResearchAgentConversationPage', () => {
+  it('can start a conversation when history is unavailable', async () => {
+    const conversation = conversationFixture()
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const { pathname } = urlFor(input)
+      if (pathname === '/api/agent/conversations') return json({}, 503)
+      if (pathname === '/api/agent/turns') return streamResponse(conversation)
+      return json({}, 404)
+    }))
+    renderPage()
+
+    expect(await screen.findByText('对话记录暂时无法加载，但你仍然可以开始新对话。')).toBeVisible()
+    const composer = screen.getByRole('textbox', { name: '问社会学 Agent' })
+    fireEvent.change(composer, { target: { value: conversation.turns[0].user.content } })
+    fireEvent.submit(composer.closest('form') as HTMLFormElement)
+
+    expect(await screen.findByText(conversation.turns[0].assistant.content)).toBeVisible()
+  })
+
   it('opens standalone history from the mobile entry', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ items: [] })))
     renderPage()

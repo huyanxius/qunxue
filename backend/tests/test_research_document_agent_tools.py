@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import UUID
 
+import pytest
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from test_pre_reviewed_theory_release import _write_bundle
 
@@ -521,6 +522,37 @@ def test_plain_agent_exposes_only_the_research_start_handoff_tool() -> None:
     assert "read_research_document" not in visible_tools
     assert "propose_document_revision" not in visible_tools
     assert "update_research_map" not in visible_tools
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-03: formal write tool exposed")
+def test_model_turn_does_not_offer_formal_theory_confirmation(client) -> None:
+    visible_tools: set[str] = set()
+
+    async def model_stream(_messages, info):
+        visible_tools.update(tool.name for tool in info.function_tools)
+        yield "请在研究界面审阅理论建议。"
+
+    runner = PydanticAIKnowledgeRunner(
+        base_url="https://model.example.invalid/v1",
+        api_key="test-key",
+        model="test-model",
+        timeout_seconds=1,
+    )
+    with (
+        client.app.state.disciplinary_agent_scope() as application,
+        runner._agent.override(model=FunctionModel(stream_function=model_stream)),
+    ):
+        tools = application._tools_factory()
+        tools.enable_research_document_tools()
+        runner.run_stream(
+            prompt="请整理候选理论供我核对。",
+            conversation=(),
+            tools=tools,
+            on_delta=lambda _: None,
+        )
+
+    assert "get_research_workflow_state" in visible_tools
+    assert "save_confirmed_theory_plan" not in visible_tools
 
 
 def test_agent_bootstrap_uses_the_persisted_document_tool_registry(client) -> None:

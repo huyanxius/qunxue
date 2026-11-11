@@ -1,11 +1,13 @@
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 
+from qunxue_api.bootstrap import create_app
 from qunxue_api.modules.research_materials import MaterialParseError
 
 
@@ -28,37 +30,73 @@ def _task(client: TestClient) -> str:
     return response.json()["task_id"]
 
 
-def test_deferred_upload_persists_job_and_can_resume_after_request(client: TestClient) -> None:
-    _authenticate(client)
-    task_id = _task(client)
-    scheduled: list[UUID] = []
-    client.app.state.schedule_research_material_ingestion = scheduled.append
-
-    uploaded = client.post(
+def _upload_queued_material(client: TestClient, task_id: str) -> dict:
+    response = client.post(
         f"/api/research-tasks/{task_id}/materials",
         headers={"Idempotency-Key": str(uuid4())},
         data={"material_kind": "field_note", "defer_processing": "true"},
-        files={"file": ("田野笔记.txt", "照护安排发生变化。".encode(), "text/plain")},
+        files={"file": ("合成笔记.txt", "合成材料的第一段。".encode(), "text/plain")},
     )
+    assert response.status_code == 201, response.text
+    assert response.json()["ingestion_status"] == "queued"
+    return response.json()
 
-    assert uploaded.status_code == 201
-    body = uploaded.json()
-    assert body["ingestion_status"] == "queued"
-    assert body["ingestion_job_id"] == str(scheduled[0])
-    status = client.get(
-        f"/api/research-tasks/{task_id}/materials/{body['material_id']}/ingestion"
+
+def _app_with_fake_executor(client: TestClient, monkeypatch):
+    executor = Mock(spec=["submit", "shutdown"])
+    monkeypatch.setattr("qunxue_api.bootstrap.ThreadPoolExecutor", lambda **_options: executor)
+    app = create_app(
+        settings=client.app.state.settings,
+        database=client.app.state.database,
+        require_email_verification=False,
     )
-    assert status.status_code == 200
-    assert status.json()["attempt_count"] == 0
+    return app, executor
 
-    with client.app.state.research_material_application_scope() as application:
-        application.process_ingestion(scheduled[0])
 
-    completed = client.get(
-        f"/api/research-tasks/{task_id}/materials/{body['material_id']}/ingestion"
-    )
-    assert completed.json()["ingestion_status"] == "ready"
-    assert completed.json()["attempt_count"] == 1
+def test_deferred_upload_persists_job_and_can_resume_after_request(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, executor = _app_with_fake_executor(client, monkeypatch)
+    with TestClient(app) as assembled:
+        _authenticate(assembled)
+        task_id = _task(assembled)
+        material = _upload_queued_material(assembled, task_id)
+        process, job_id = executor.submit.call_args.args
+        assert job_id == UUID(material["ingestion_job_id"])
+        path = f"/api/research-tasks/{task_id}/materials/{material['material_id']}"
+        pending = assembled.get(f"{path}/ingestion")
+        assert pending.status_code == 200
+        assert pending.json()["attempt_count"] == 0
+
+        process(job_id)
+
+        completed = assembled.get(f"{path}/ingestion")
+        assert completed.status_code == 200
+        assert completed.json()["ingestion_status"] == "ready"
+        assert completed.json()["attempt_count"] == 1
+        detail = assembled.get(path)
+
+    assert detail.status_code == 200
+    assert detail.json()["segments"][0]["text"] == "合成材料的第一段。"
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="BE-02: ingestion hooks not run")
+def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _authenticate(client)
+    task_id = _task(client)
+    client.app.state.schedule_research_material_ingestion = lambda _job_id: None
+    material = _upload_queued_material(client, task_id)
+    job_id = UUID(material["ingestion_job_id"])
+    restarted, executor = _app_with_fake_executor(client, monkeypatch)
+
+    with TestClient(restarted):
+        scheduled = [call.args[1] for call in executor.submit.call_args_list]
+
+    assert (scheduled, executor.shutdown.call_count) == ([job_id], 1)
 
 
 def test_stale_processing_job_is_recoverable(client: TestClient) -> None:

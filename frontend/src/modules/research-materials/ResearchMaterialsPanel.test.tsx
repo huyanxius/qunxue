@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,6 +6,7 @@ import { ResearchMaterialsPanel } from './ResearchMaterialsPanel'
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -34,6 +35,31 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('keeps a queued material visible through a failed refresh and shows it when parsing completes', async () => {
+    vi.useFakeTimers()
+    const list = vi.fn()
+      .mockResolvedValueOnce(response({ task_id: 'task-1', items: [{
+        ...material, status: 'processing', ingestion_status: 'queued', segment_count: 0,
+      }] }))
+      .mockResolvedValueOnce(response({}, 503))
+      .mockResolvedValue(response({ task_id: 'task-1', items: [material] }))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(requestOf(input, init).url).pathname
+      if (path.endsWith('/materials')) return list()
+      return response({ annotations: [], codes: [], memos: [] })
+    }))
+
+    await act(async () => { render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />) })
+    expect(screen.getByText('等待解析')).toBeVisible()
+
+    await act(() => vi.advanceTimersByTimeAsync(750))
+    expect(screen.getByRole('button', { name: '查看材料：社区访谈.docx' })).toBeVisible()
+    expect(screen.getByText('等待解析')).toBeVisible()
+
+    await act(() => vi.advanceTimersByTimeAsync(750))
+    expect(screen.getByText('3 个可定位片段')).toBeVisible()
+  })
+
   it('searches across ready materials and opens the exact matching segment', async () => {
     const segment = {
       segment_id: 'segment-2', material_id: 'material-1', parse_id: 'parse-1', ordinal: 1,
@@ -57,7 +83,8 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
     const workspace = await screen.findByRole('region', { name: '研究材料' })
-    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+    const search = await within(workspace).findByRole('searchbox', { name: '检索全部材料' })
+    fireEvent.change(search, {
       target: { value: '照护安排' },
     })
 
@@ -98,7 +125,8 @@ describe('ResearchMaterialsPanel', () => {
 
     render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />)
     const workspace = await screen.findByRole('region', { name: '研究材料' })
-    fireEvent.change(within(workspace).getByRole('searchbox', { name: '检索全部材料' }), {
+    const search = await within(workspace).findByRole('searchbox', { name: '检索全部材料' })
+    fireEvent.change(search, {
       target: { value: '目标照护' },
     })
     fireEvent.click(await within(workspace).findByRole('button', { name: /打开检索结果.*社区访谈/ }))

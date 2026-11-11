@@ -540,6 +540,36 @@ def test_search_tool_trace_hides_legacy_review_state() -> None:
     assert "未审核" not in (finished.detail or "")
 
 
+@pytest.mark.parametrize("source_status", ["retrieved", "read"])
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-09: trace upgrades source status")
+def test_tool_trace_preserves_source_status_without_claiming_verification(source_status) -> None:
+    citation = AgentEvidence(
+        citation_id="fixture-source", label="合成来源", kind="preview", excerpt="合成摘要。",
+    )
+    tools = SimpleNamespace(
+        release=SimpleNamespace(knowledge_release_id="release-preview"),
+        evidence={citation.citation_id: citation},
+        search_knowledge=lambda _query: [{
+            "citation_id": citation.citation_id,
+            "title": citation.label,
+            "excerpt": citation.excerpt,
+            "evidence_status": source_status,
+        }],
+    )
+    events: list[AgentToolEvent] = []
+
+    DeterministicKnowledgeRunner().run_stream(
+        prompt="请检索知识库解释符号互动论",
+        conversation=(),
+        tools=tools,
+        on_delta=lambda _: None,
+        on_tool_event=events.append,
+    )
+
+    finished = next(event for event in events if event.phase == "finished")
+    assert finished.output["items"][0]["evidence_status"] == source_status
+
+
 def test_agent_stream_starts_as_thinking_and_exposes_real_tool_input(client) -> None:
     registered = client.post(
         "/api/session/register",
