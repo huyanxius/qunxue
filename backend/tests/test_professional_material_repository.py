@@ -143,12 +143,13 @@ def test_repository_round_trips_archive_relations_without_copying_materials() ->
     engine.dispose()
 
 
-def test_material_repository_allows_legacy_rows_but_enforces_explicit_model_scope() -> None:
+def test_model_processing_requires_a_permissive_material_profile() -> None:
     engine = create_engine("sqlite:///:memory:")
     _tables(engine)
     with Session(engine) as session:
         legacy = _material(session, "legacy", "历史材料.txt")
         restricted = _material(session, "restricted", "受限材料.txt")
+        allowed = _material(session, "allowed", "获准材料.txt")
         material_repository = SqliteResearchMaterialRepository(session)
         archive_repository = SqliteProfessionalMaterialRepository(session)
         archive_repository.save_profile(MaterialArchiveProfile.create(
@@ -158,12 +159,25 @@ def test_material_repository_allows_legacy_rows_but_enforces_explicit_model_scop
             model_processing_scope=ModelProcessingScope.MANUAL_ONLY,
             now=NOW,
         ))
+        archive_repository.save_profile(MaterialArchiveProfile.create(
+            material_id=allowed.material_id,
+            user_id=USER_ID,
+            task_id=TASK_ID,
+            model_processing_scope=ModelProcessingScope.EXTERNAL_ALLOWED,
+            now=NOW,
+        ))
         session.commit()
 
+        assert material_repository.get(
+            legacy.material_id, user_id=USER_ID, task_id=TASK_ID
+        ) is not None
         assert material_repository.is_external_model_processable(
             legacy.material_id, user_id=USER_ID, task_id=TASK_ID
-        ) is True
+        ) is False
         assert material_repository.is_external_model_processable(
             restricted.material_id, user_id=USER_ID, task_id=TASK_ID
         ) is False
+        assert material_repository.is_external_model_processable(
+            allowed.material_id, user_id=USER_ID, task_id=TASK_ID
+        ) is True
     engine.dispose()

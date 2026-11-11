@@ -845,7 +845,7 @@ class DisciplinaryAgentApplication:
                 elif mode == "deep_research":
                     if decision != "conversation" or research_required:
                         raise ValueError("研究意图或提案尚未确认，请重试；尚未开始研究。")
-                    prompt += (
+                    model_prompt += (
                         "\n\n本轮已判断为非研究交流。自然回应用户，并结合语境简短提醒"
                         "可以使用普通模式继续聊天；不要宣称已替用户切换模式，"
                         "不要启动检索或研究，不要使用固定套话。"
