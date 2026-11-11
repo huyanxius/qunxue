@@ -220,7 +220,7 @@ async def upload_research_material(
             material_id=material.material_id,
         )
         if job is not None:
-            request.app.state.schedule_research_material_ingestion(job.job_id)
+            request.state.schedule_research_material_ingestion(job.job_id)
     return _material_response(application, material)
 
 
