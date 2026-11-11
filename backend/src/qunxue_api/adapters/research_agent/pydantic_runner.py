@@ -805,9 +805,9 @@ class PydanticAIKnowledgeRunner:
                 "当研究现象已经足够明确时，只能调用 propose_start_research 提出待确认研究起点；"
                 "该工具不会创建任务。必须等用户在界面明确确认并由 REST API 完成事务后，"
                 "才能调用 start_theory_matching。未完成 M4 时不得调用文档创建工具。"
-                "当用户明确确认候选取舍时，立即调用 save_confirmed_theory_plan，"
-                "不能要求用户重复确认；"
-                "取得 theory_plan_id 后才能调用 propose_document_creation 生成待审批的 M5 草案。"
+                "理论匹配后可以建议候选取舍与用法。请用户在研究工作台保存理论决定并确认方案。"
+                "等待确认期间只提供建议；仅当本轮研究上下文已有 theory_plan_id，"
+                "才调用 propose_document_creation 生成待审批的 M5 草案。"
                 "创建草案必须一次提供且仅提供 12 个规范章节：research_question、"
                 "research_object_and_field、questions_or_hypotheses、core_concepts、theoretical_perspective、mechanisms、"
                 "methodology、sample_and_sources、analysis_steps、ethics、limitations、"
@@ -1735,28 +1735,9 @@ class PydanticAIKnowledgeRunner:
         def start_theory_matching(
             ctx: RunContext[KnowledgeToolRegistry],
         ) -> dict[str, object]:
-            """基于已确认现象和固定知识发布执行真实理论匹配，返回候选与证据。"""
+            """基于已确认现象和固定知识发布匹配理论，返回供用户审阅的候选与证据。"""
             return self._run_research_workflow_tool(
                 ctx, "start_theory_matching", {}, "正在执行理论匹配"
-            )
-
-        @self._agent.tool(prepare=_prepare_document_tool)
-        def save_confirmed_theory_plan(
-            ctx: RunContext[KnowledgeToolRegistry],
-            decisions: list[dict[str, object]],
-            use_assignments: list[dict[str, object]],
-            relations: list[dict[str, object]],
-            user_confirmed: bool,
-        ) -> dict[str, object]:
-            """在用户明确确认后保存所有候选决定并确认理论方案；这是正式写入工具。"""
-            payload = {
-                "decisions": decisions,
-                "use_assignments": use_assignments,
-                "relations": relations,
-                "user_confirmed": user_confirmed,
-            }
-            return self._run_research_workflow_tool(
-                ctx, "save_confirmed_theory_plan", payload, "正在保存理论决定"
             )
 
         @self._agent.tool(prepare=_prepare_document_tool)
@@ -3567,7 +3548,6 @@ _REPLAYABLE_WRITES = frozenset(
         "propose_document_revision",
         "propose_document_creation",
         "start_theory_matching",
-        "save_confirmed_theory_plan",
     }
 )
 
