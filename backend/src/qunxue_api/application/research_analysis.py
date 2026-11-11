@@ -106,6 +106,41 @@ class ResearchAnalysisApplication:
         case_label: str | None = None,
         observed_at: str | None = None,
     ) -> AnalysisAnnotation:
+        annotation = self._write_annotation(
+            user_id=user_id,
+            task_id=task_id,
+            idempotency_key=idempotency_key,
+            material_id=material_id,
+            parse_id=parse_id,
+            segment_id=segment_id,
+            quote_start=quote_start,
+            quote_end=quote_end,
+            annotation_kind=annotation_kind,
+            note=note,
+            reflection=reflection,
+            case_label=case_label,
+            observed_at=observed_at,
+        )
+        self._commit()
+        return annotation
+
+    def _write_annotation(
+        self,
+        *,
+        user_id: UUID,
+        task_id: UUID,
+        idempotency_key: str,
+        material_id: UUID,
+        parse_id: UUID,
+        segment_id: str,
+        quote_start: int,
+        quote_end: int,
+        annotation_kind: AnalysisAnnotationKind,
+        note: str,
+        reflection: str | None = None,
+        case_label: str | None = None,
+        observed_at: str | None = None,
+    ) -> AnalysisAnnotation:
         self._require_task(user_id=user_id, task_id=task_id)
         material = self._materials.get(material_id, user_id=user_id, task_id=task_id)
         if material is None or material.status is not MaterialStatus.READY:
@@ -165,16 +200,13 @@ class ResearchAnalysisApplication:
             annotation_id=write.result_id,
         )
         if existing is not None:
-            self._commit()
             return existing
         value = replace(
             candidate,
             annotation_id=write.result_id,
             created_at=write.created_at,
         )
-        result = self._analysis.add_annotation(value)
-        self._commit()
-        return result
+        return self._analysis.add_annotation(value)
 
     def propose_code_from_agent(
         self,
@@ -371,7 +403,7 @@ class ResearchAnalysisApplication:
         expected_version: int,
         decisions: tuple[tuple[UUID, str, str], ...],
     ) -> AnalysisCodingPlan:
-        """Apply/reject every submitted item only after an explicit user decision."""
+        """Apply all user decisions and their write claims in the caller's transaction."""
 
         self._require_task(user_id=user_id, task_id=task_id)
         plan = self._analysis.get_coding_plan(user_id=user_id, task_id=task_id, plan_id=plan_id)
@@ -458,7 +490,7 @@ class ResearchAnalysisApplication:
                     payload={"reason": reason},
                 )
                 continue
-            annotation = self.create_annotation(
+            annotation = self._write_annotation(
                 user_id=user_id,
                 task_id=task_id,
                 idempotency_key=f"coding-plan:{plan_id}:item:{item.item_id}",
@@ -528,7 +560,6 @@ class ResearchAnalysisApplication:
             provenance={},
             payload={"status": status.value},
         )
-        self._commit()
         return value
 
     def retrieve_coded_segments(

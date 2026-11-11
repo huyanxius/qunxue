@@ -45,9 +45,11 @@ class Database:
             cursor.close()
 
     @contextmanager
-    def session(self) -> Iterator[Session]:
+    def session(self, *, immediate: bool = False) -> Iterator[Session]:
         session = self._session_factory()
         try:
+            if immediate:
+                session.connection().exec_driver_sql("BEGIN IMMEDIATE")
             yield session
             session.commit()
         except Exception:
