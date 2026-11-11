@@ -388,6 +388,8 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     def allows_unattributed_model_context(self) -> bool:
         return not self._unattributed_history and (
             self._task_id is None or not self._has_material_history()
+        ) and (
+            self._confirmed_plan is None or self._plan_allowed(self._confirmed_plan)
         )
 
     def _has_material_history(self) -> bool:

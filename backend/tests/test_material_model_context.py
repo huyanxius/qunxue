@@ -306,6 +306,27 @@ def test_agent_does_not_replay_detached_material_context(plain_client, monkeypat
     assert DERIVED not in json.dumps(requests[0], ensure_ascii=False)
 
 
+def test_research_discussion_omits_unattributed_selected_passage(plain_client, monkeypatch):
+    owner = {"user_id": UUID(_authenticate(plain_client)), "task_id": UUID(_task(plain_client))}
+    material_id = _coded_material(plain_client, owner)
+    _restrict(plain_client, owner, material_id, "manual-mode")
+    question = "这段判断有依据吗？\n\n还需要哪些证据？"
+    prompt = f"围绕「{DERIVED}」继续讨论：\n> {QUOTE}\n> 第二段合成摘录\n\n{question}"
+    requests, runner = _capture_agent(monkeypatch)
+    monkeypatch.setattr(runner, "prepare_research", lambda **_: "conversation")
+
+    with plain_client.app.state.disciplinary_agent_scope() as agent:
+        agent._runner = runner
+        execution = agent.run_turn(
+            **owner, conversation_id=None, idempotency_key="discussion",
+            workspace="research", prompt=prompt,
+        )
+    assert execution.turn.user_message.content == prompt
+    messages = [item["content"] for item in requests[0]["messages"]]
+    assert any(question in message for message in messages)
+    assert all(QUOTE not in message and DERIVED not in message for message in messages)
+
+
 def test_agent_rechecks_tool_sources_before_the_next_model_request(plain_client, monkeypatch):
     owner = {"user_id": UUID(_authenticate(plain_client)), "task_id": UUID(_task(plain_client))}
     material_id = _coded_material(plain_client, owner)

@@ -26,6 +26,7 @@ from qunxue_api.modules.agent_conversation import (
     ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
     SubjectAgentRunner,
+    user_question_without_discussion_excerpt,
 )
 from qunxue_api.modules.billing import BillingOperations, CreditService
 
@@ -679,12 +680,16 @@ class DisciplinaryAgentApplication:
 
             model_prompt = prompt
             if (
-                existing_run is not None
-                and not self._teaching
+                not self._teaching
                 and not getattr(tools, "allows_unattributed_model_context", True)
             ):
-                # Execution prompts can embed a saved, model-generated research plan.
-                model_prompt = str(request_snapshot["message"])
+                if existing_run is not None:
+                    # A saved execution prompt can also contain a generated research plan.
+                    model_prompt = str(request_snapshot["message"])
+                model_prompt = (
+                    user_question_without_discussion_excerpt(model_prompt)
+                    or "请说明你想讨论的问题。"
+                )
             conversation_history = current.turns[-8:]
             if reference_knowledge_base_id is not None:
                 self._shared_references.prepare(

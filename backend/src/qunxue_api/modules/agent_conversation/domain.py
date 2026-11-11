@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -8,6 +9,15 @@ from qunxue_api.modules.agent_conversation.research_map import empty_research_ma
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def user_question_without_discussion_excerpt(prompt: str) -> str:
+    # Discussion messages combine a selected card or passage with the user's question.
+    # The title and quote can both contain material-derived text.
+    if prompt.startswith(("围绕「", "当前画布卡片 ID：")) and "」继续讨论：\n> " in prompt:
+        parts = re.split(r"\n> [^\n]*\n\n", prompt)
+        return parts[-1] if len(parts) > 1 else ""
+    return prompt
 
 
 @dataclass(frozen=True, slots=True)

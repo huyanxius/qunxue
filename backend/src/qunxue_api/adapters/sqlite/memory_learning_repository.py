@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import and_, exists, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
+from qunxue_api.modules.agent_conversation import user_question_without_discussion_excerpt
 from qunxue_api.modules.agent_memory import (
     MAX_MEMORIES,
     LearningBatch,
@@ -124,15 +125,16 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             ).all()
             sources, used, through = [], 0, job.processed_sequence
             for row in rows:
-                size = context_cost(row.content)
+                text = user_question_without_discussion_excerpt(row.content)
+                size = context_cost(text)
                 if size <= 10000 and used + size > 12000:
                     break
                 through = row.sequence
-                if size > 10000:
+                if not text.strip() or size > 10000:
                     continue
                 sources.append(
                     MemorySource(
-                        UUID(row.message_id), row.content, utc(row.created_at), row.sequence
+                        UUID(row.message_id), text, utc(row.created_at), row.sequence
                     )
                 )
                 used += size

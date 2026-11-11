@@ -9,6 +9,7 @@ from qunxue_api.modules.agent_conversation.domain import (
     Conversation,
     IdempotentTurn,
     UserConversation,
+    user_question_without_discussion_excerpt,
 )
 from qunxue_api.modules.agent_conversation.errors import (
     AgentConversationError,
@@ -70,5 +71,6 @@ __all__ = [
     "apply_research_map_patch",
     "empty_research_map",
     "normalize_research_map_patch",
+    "user_question_without_discussion_excerpt",
     "patches_from_tool_summary",
 ]
