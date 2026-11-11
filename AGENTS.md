@@ -9,11 +9,11 @@
 
 每次提交代码必须走以下流程，禁止跳步：
 
-1. 从最新 main 切新分支：`git switch main && git pull --ff-only && git switch -c <type>/<issue-number>-<short-name>`
+1. 从最新 `origin/main` 创建 `<type>/<issue-number>-<short-name>` 分支。
 2. 完成改动后自查：确认没有 `.env`、密钥、`node_modules`、大体积产物混入
-3. 提交并推送**分支**。团队规则禁止推 main；当前仓库没有 GitHub 原生分支保护，不能把平台拦截当作保障
+3. 提交并推送**工作分支**。
 4. 用 `gh pr create` 发 PR：标题一句话说清改动；正文写清改动、原因、验证结果和架构影响，关联对应 Issue（如 `Closes #12`）
-5. 完成与改动影响面匹配的验证后，编程助手必须自行合并自己提交的 PR；不等待、不要求也不提醒队友 Review。合并后把 PR 链接和结果交给用户，作者本人仍须能讲清这次改动
+5. 按 [`CONTRIBUTING.md` 的合并规则](CONTRIBUTING.md#合并规则) 处理 PR，交付 PR 链接与验证结果。作者须能说明改动。
 
 红线：永不 `git push --force`；永不提交任何密钥（API key、appid）；PR 小而聚焦，不夹带无关改动。
 
@@ -23,16 +23,12 @@
 
 ### 后端
 
-- `modules/research_intake/`：研究任务、入口输入与已确认现象。
-- `modules/knowledge_catalog/`：版本化知识发布、条目、关系与理论身份。
-- `modules/theory_matching/`：证据交接、候选判断与用户理论决定。
-- `modules/research_framework/`：框架草拟、审校、修订与确认。
 - `application/`：只通过模块公共入口编排主链，不承载模块内部规则。
 - `api/`：FastAPI DTO、路由和异常映射。
 - `adapters/`：SQLite 及后续外部服务实现。
 - `bootstrap.py`：唯一依赖装配点。
 
-业务模块不得依赖 FastAPI、Pydantic、SQLAlchemy 或具体模型 SDK。模块间只从包根导入，并传递稳定 ID、版本和不可变快照。完整依赖方向见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+业务模块不得依赖 FastAPI、Pydantic、SQLAlchemy 或具体模型 SDK。模块间只从包根导入，并传递稳定 ID、版本和不可变快照。模块职责和允许依赖见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#业务模块允许依赖)。
 
 ### 前端
 
@@ -57,10 +53,10 @@ make check
 
 Every code submission MUST follow this flow, no skipping:
 
-1. Branch off the latest main: `git switch main && git pull --ff-only && git switch -c <type>/<issue-number>-<short-name>`
+1. Create `<type>/<issue-number>-<short-name>` from the latest `origin/main`.
 2. Before committing, self-check: no `.env`, secrets, `node_modules`, or large artifacts included
-3. Commit and push the **branch**. Team rules prohibit pushes to main; the repository currently has no native GitHub branch protection, so do not rely on platform enforcement
+3. Commit and push the **working branch**.
 4. Open a PR via `gh pr create`: one-line title; body states the change, reason, verification, and architecture impact; link the Issue (e.g. `Closes #12`)
-5. After verification matched to the change impact, the coding agent MUST merge every PR it submits by itself. Do not wait for, require, or remind the user about teammate review. After merging, hand the PR link and result back to the user; the author must still be able to explain the change
+5. Follow the [merge policy in CONTRIBUTING.md](CONTRIBUTING.md#合并规则) and report the PR link and verification results. The author must be able to explain the change.
 
 Hard rules: never `git push --force`; never commit any secret (API key, appid); keep PRs small and focused.
