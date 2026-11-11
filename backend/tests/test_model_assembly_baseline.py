@@ -1,87 +1,219 @@
+import json
+from collections import Counter
 from contextlib import closing
+from functools import partial
 
 import httpx
 import pytest
-from billing_test_support import configure_synthetic_billing
 from fastapi.testclient import TestClient
 from openai import AsyncOpenAI
-from pydantic import SecretStr
-from test_agent_memory import register, save, seed_learning_source
+from sqlalchemy import text
+from test_agent_memory import project, register, save, seed_learning_source
 from test_memory_overview import overview
 from test_shared_knowledge_api import create_library, upload
 
+from qunxue_api.adapters.model.metering import current_operation
 from qunxue_api.adapters.research_agent import course_knowledge, memory_extractor, memory_overview
 from qunxue_api.bootstrap import create_app
+from qunxue_api.settings import Settings
 
-pytestmark = pytest.mark.xfail(
-    strict=True, raises=AssertionError, reason="AS-04: configured operation cannot reach transport",
-)
+PHASE_CAPS = {"memory_overview": 900, "memory_learning": 1500, "course_knowledge": 3000}
 
 
 @pytest.fixture
-def assembled_model_app(plain_client, monkeypatch):
-    requests: list[httpx.Request] = []
+def assembled_model_app(plain_client, monkeypatch, configuration):
+    # Reject every HTTP call except the adapter-specific MockTransports.
+    def reject_network(*args):
+        pytest.fail("Unexpected HTTP request outside the injected transport")
 
-    def record_request(request: httpx.Request) -> httpx.Response:
-        requests.append(request)
-        # The assertion concerns dispatch. No provider output needs to be persisted.
-        return httpx.Response(503, json={"error": {"message": "offline test response"}})
-
-    def model_client(**options) -> AsyncOpenAI:
-        return AsyncOpenAI(
-            **options,
-            http_client=httpx.AsyncClient(
-                transport=httpx.MockTransport(record_request), trust_env=False,
-            ),
-        )
-
-    for adapter in (course_knowledge, memory_extractor, memory_overview):
-        monkeypatch.setattr(adapter, "AsyncOpenAI", model_client)
-    settings = plain_client.app.state.settings.model_copy(update={
-        "runtime_mode": "base",
-        "model_base_url": "https://model.example.invalid/v1",
-        "model_api_key": SecretStr("test-key"),
-        "model_name": "test-model",
-        "model_fallbacks": [],
-        "memory_learning_enabled": True,
-    })
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", reject_network)
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", reject_network)
+    policies = (
+        {"memory_overview": "user", "course_knowledge": "operator"}
+        if configuration == "mixed-policy"
+        else dict.fromkeys(PHASE_CAPS, "operator")
+    )
+    database = plain_client.app.state.database
     app = create_app(
-        settings=settings,
-        database=plain_client.app.state.database,
+        settings=Settings(
+            _env_file=None,
+            database_url=plain_client.app.state.settings.database_url,
+            runtime_mode="base",
+            model_base_url="https://r11.invalid/v1",
+            model_api_key="synthetic",
+            model_name="test-model",
+            model_fallbacks=[],
+            billing_price_version="" if configuration == "invalid-price" else "r11-test",
+            billing_credits_per_usd=10_000,
+            billing_model_aliases={"test-model": "gpt-6-luna"},
+            billing_phase_policies=policies,
+            billing_max_attempt_usd_micro=100_000,
+            billing_max_operation_usd_micro=100_000,
+            billing_daily_budget_usd_micro=None if configuration == "missing-budget" else 1_000_000,
+        ),
+        database=database,
         require_email_verification=False,
     )
-    # Workers are ticked explicitly so the ASGI lifespan cannot race the assertion.
+    # Drive the real workers deterministically instead of waiting for the schedulers.
     with closing(TestClient(app)) as client:
-        yield client, requests
+        yield client
 
 
-def test_bootstrap_memory_overview_reaches_model_transport(assembled_model_app):
-    client, requests = assembled_model_app
-    configure_synthetic_billing(client.app, phase="memory_overview")
-    register(client)
-    assert save(client, content="合成偏好：先概括材料。").status_code == 201
-
-    result = overview(client)
-
-    assert len(requests) == 1, result.text
-
-
-def test_bootstrap_memory_learning_reaches_model_transport(assembled_model_app):
-    client, requests = assembled_model_app
-    configure_synthetic_billing(client.app, phase="memory_learning")
+@pytest.mark.parametrize(
+    "configuration", ["operator", "missing-budget", "invalid-price", "mixed-policy"]
+)
+def test_bootstrap_operator_funded_capabilities(assembled_model_app, monkeypatch, configuration):
+    client = assembled_model_app
+    app = client.app
+    database = app.state.database
     user_id = register(client)
-    seed_learning_source(client, user_id, content="合成偏好：先概括材料。")
-
-    assert client.app.state.memory_worker.run_once()
-    assert len(requests) == 1
-
-
-def test_bootstrap_course_knowledge_reaches_model_transport(assembled_model_app):
-    client, requests = assembled_model_app
-    configure_synthetic_billing(client.app, phase="course_knowledge")
-    register(client)
+    task_id = project(client)
+    assert save(client, task_id=task_id).status_code == 201
+    _, source_id = seed_learning_source(client, user_id)
     library = create_library(client)
-    upload(client, library["id"], text="合成课程资料：访谈题目以开放式问题为主。")
+    document = upload(client, library["id"])
+    assert document["knowledge_status"] == "queued"
 
-    assert client.app.state.course_organization_worker.run_once()
-    assert len(requests) == 1
+    with database.engine.begin() as connection:
+        connection.execute(
+            text("UPDATE credit_accounts SET balance=0 WHERE user_id=:user"), {"user": user_id}
+        )
+        ledger_count = connection.scalar(text("SELECT count(*) FROM credit_ledger"))
+
+    replies = {
+        "memory_overview": "你偏好用中文简洁回答。",
+        "memory_learning": {
+            "memories": [
+                {
+                    "scope": "user",
+                    "key": "learned_language",
+                    "content": "中文简洁回答",
+                    "source_message_id": str(source_id),
+                    "source_quote": "以后请用中文简洁回答",
+                }
+            ],
+        },
+        "course_knowledge": {
+            "summary": "课堂使用 QX-A17 标记。",
+            "topics": [
+                {
+                    "title": "课堂标记",
+                    "summary": "统一使用 QX-A17。",
+                    "segment_ids": ["0"],
+                }
+            ],
+            "relations": [],
+        },
+    }
+    calls = Counter()
+
+    def respond(request, *, phase):
+        calls[phase] += 1
+        assert request.method == "POST"
+        assert str(request.url) == "https://r11.invalid/v1/chat/completions"
+        body = json.loads(request.content)
+        assert body["model"] == "test-model"
+        assert body["max_completion_tokens"] == PHASE_CAPS[phase]
+        assert current_operation(required=True).exempt
+        output = replies[phase]
+        if isinstance(output, str):
+            message = {"role": "assistant", "content": output}
+        else:
+            message = {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": "output",
+                        "type": "function",
+                        "function": {
+                            "name": body["tools"][0]["function"]["name"],
+                            "arguments": json.dumps(output),
+                        },
+                    }
+                ],
+            }
+        return httpx.Response(
+            200,
+            json={
+                "id": phase,
+                "object": "chat.completion",
+                "created": 1,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop" if isinstance(output, str) else "tool_calls",
+                        "message": message,
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 80,
+                    "completion_tokens": 20,
+                    "total_tokens": 100,
+                    "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+                },
+            },
+        )
+
+    def model_client(*, transport, **kwargs):
+        return AsyncOpenAI(
+            **kwargs, http_client=httpx.AsyncClient(transport=transport, trust_env=False)
+        )
+
+    for module, phase in (
+        (memory_overview, "memory_overview"),
+        (memory_extractor, "memory_learning"),
+        (course_knowledge, "course_knowledge"),
+    ):
+        transport = httpx.MockTransport(partial(respond, phase=phase))
+        monkeypatch.setattr(
+            module,
+            "AsyncOpenAI",
+            partial(model_client, transport=transport),
+        )
+
+    result = overview(client, task_id)
+    learned = app.state.memory_worker.run_once()
+    assert app.state.course_organization_worker.run_once()
+    course = client.get(f"/api/shared-knowledge-bases/{library['id']}").json()["documents"][0]
+    enabled_phases = {
+        "operator": {"memory_overview", "memory_learning", "course_knowledge"},
+        "mixed-policy": {"course_knowledge"},
+    }.get(configuration, set())
+    assert {phase: calls[phase] for phase in PHASE_CAPS} == {
+        phase: int(phase in enabled_phases) for phase in PHASE_CAPS
+    }
+    if "memory_overview" in enabled_phases:
+        assert result.status_code == 200, result.text
+        assert result.json()["summary"] == replies["memory_overview"]
+    else:
+        assert result.status_code == 503
+    assert learned == ("memory_learning" in enabled_phases)
+    if learned:
+        items = client.get("/api/memories").json()["items"]
+        assert any(item["source_message_id"] == str(source_id) for item in items)
+    if "course_knowledge" in enabled_phases:
+        assert course["knowledge_status"] == "ready", course
+        assert course["knowledge"]["summary"] == replies["course_knowledge"]["summary"]
+    else:
+        assert course["knowledge_status"] == "failed"
+
+    with database.engine.connect() as connection:
+        assert (
+            connection.scalar(
+                text("SELECT balance FROM credit_accounts WHERE user_id=:user"), {"user": user_id}
+            )
+            == 0
+        )
+        assert connection.scalar(text("SELECT count(*) FROM credit_ledger")) == ledger_count
+        operations = connection.execute(
+            text(
+                "SELECT user_id, exempt, hold_points, charged_points, status "
+                "FROM billing_operations"
+            )
+        )
+        assert operations.all() == [(user_id, 1, 0, 0, "success")] * len(enabled_phases)
+        receipts = connection.execute(
+            text("SELECT provider_response_id, output_limit, usage_state FROM billing_attempts")
+        )
+        assert set(receipts) == {(phase, PHASE_CAPS[phase], "known") for phase in enabled_phases}

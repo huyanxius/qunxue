@@ -293,7 +293,7 @@ def create_app(
                     await asyncio.sleep(0.1 if worked else 3)
 
             course_task = asyncio.create_task(organize_courses(), name="qunxue-course-processing")
-        if resolved_settings.memory_learning_enabled and app.state.model_endpoints:
+        if memory_extractor is not None:
 
             async def learn_memories():
                 while True:
@@ -1146,16 +1146,41 @@ def create_app(
             yield MemoryService(repository, model_items=repository.list_for_model)
 
     app.state.memory_service_scope = memory_service_scope
-    app.state.memory_overview = MemoryOverview(billing=None)
-    if app.state.model_endpoints:
-        endpoint = app.state.model_endpoints[0]
-        app.state.memory_overview.generate = PydanticMemoryOverview(
+    # These capabilities may spend the operator's budget even at zero user balance.
+    operator_policies = {
+        phase: "operator"
+        for phase in ("memory_overview", "memory_learning", "course_knowledge")
+        if resolved_settings.billing_phase_policies.get(phase) == "operator"
+    }
+    operator_runtime = None
+    if model_endpoints and operator_policies:
+        try:
+            operator_runtime = _billing_runtime(resolved_settings, resolved_database)
+        except ValueError:
+            logger.warning(
+                "Invalid operator billing settings. Memory and course model calls are disabled."
+            )
+    operator_billing = (
+        SqliteBillingOperations(
+            resolved_database, operator_runtime, phase_policies=operator_policies
+        )
+        if operator_runtime is not None
+        else None
+    )
+
+    overview_generator = None
+    if operator_billing is not None and "memory_overview" in operator_policies:
+        endpoint = model_endpoints[0]
+        overview_generator = PydanticMemoryOverview(
             base_url=endpoint.base_url,
             api_key=endpoint.api_key,
             model=endpoint.model,
             extra_headers=endpoint.extra_headers,
             timeout_seconds=min(resolved_settings.model_timeout_seconds, 45),
         )
+    app.state.memory_overview = MemoryOverview(
+        overview_generator, billing=operator_billing if overview_generator is not None else None
+    )
 
     @contextmanager
     def memory_learning_scope():
@@ -1163,8 +1188,12 @@ def create_app(
             yield SqliteMemoryLearningRepository(memory_session)
 
     memory_extractor = None
-    if app.state.model_endpoints and resolved_settings.memory_learning_enabled:
-        memory_endpoint = app.state.model_endpoints[0]
+    if (
+        operator_billing is not None
+        and "memory_learning" in operator_policies
+        and resolved_settings.memory_learning_enabled
+    ):
+        memory_endpoint = model_endpoints[0]
         memory_extractor = PydanticMemoryExtractor(
             base_url=memory_endpoint.base_url,
             api_key=memory_endpoint.api_key,
@@ -1175,7 +1204,7 @@ def create_app(
     app.state.memory_worker = MemoryLearningWorker(
         memory_learning_scope,
         extractor=memory_extractor,
-        billing=None,
+        billing=operator_billing if memory_extractor is not None else None,
         idle_seconds=resolved_settings.memory_learning_idle_seconds,
         daily_calls=resolved_settings.memory_learning_daily_calls,
         daily_tokens=resolved_settings.memory_learning_daily_tokens,
@@ -1188,16 +1217,17 @@ def create_app(
             model=resolved_settings.embedding_model,
             timeout_seconds=resolved_settings.embedding_timeout_seconds,
         )
+    course_generator = (
+        CourseKnowledgeGenerator(model_endpoints, route_executor=app.state.model_router)
+        if operator_billing is not None and "course_knowledge" in operator_policies
+        else None
+    )
     app.state.course_organization_worker = CourseOrganizationWorker(
         resolved_database,
-        generate=CourseKnowledgeGenerator(
-            app.state.model_endpoints, route_executor=app.state.model_router
-        )
-        if app.state.model_endpoints
-        else None,
+        generate=course_generator,
         embedder=course_embedder,
         embedding_model=resolved_settings.embedding_model,
-        billing=None,
+        billing=operator_billing if course_generator is not None else None,
     )
     app.include_router(shared_knowledge_router)
     app.include_router(teaching_router)
