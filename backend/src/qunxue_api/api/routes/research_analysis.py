@@ -1,7 +1,7 @@
 from typing import Annotated, cast
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import JSONResponse
 
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
@@ -121,25 +121,30 @@ def get_research_analysis(
     response_model=AnalysisCodingPlanResponse,
 )
 def decide_research_coding_plan(
+    request: Request,
     task_id: UUID,
     plan_id: UUID,
     payload: DecideCodingPlanRequest,
     _task: OwnedResearchTaskDependency,
     current: CurrentSessionDependency,
-    application: ResearchAnalysisApplicationDependency,
     idempotency_key: IdempotencyKey,
 ) -> AnalysisCodingPlanResponse | JSONResponse:
     try:
-        value = application.decide_coding_plan(
-            user_id=current.user.user_id,
-            task_id=task_id,
-            idempotency_key=idempotency_key,
-            plan_id=plan_id,
-            expected_version=payload.expected_version,
-            decisions=tuple(
-                (item.item_id, item.decision, item.reason) for item in payload.decisions
-            ),
-        )
+        # Read the plan and claim under the same write lock so concurrent retries
+        # see the committed decision. Exit the scope before mapping errors to HTTP.
+        with request.app.state.research_analysis_application_scope(
+            serialize_writes=True,
+        ) as application:
+            value = application.decide_coding_plan(
+                user_id=current.user.user_id,
+                task_id=task_id,
+                idempotency_key=idempotency_key,
+                plan_id=plan_id,
+                expected_version=payload.expected_version,
+                decisions=tuple(
+                    (item.item_id, item.decision, item.reason) for item in payload.decisions
+                ),
+            )
     except LookupError:
         return _error(404, ErrorCode.NOT_FOUND, "编码计划不存在或无权访问。")
     except ValueError as error:

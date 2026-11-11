@@ -709,8 +709,11 @@ def create_app(
     app.state.transcription_application_scope = transcription_application_scope
 
     @contextmanager
-    def research_analysis_application_scope() -> Iterator[ResearchAnalysisApplication]:
-        with resolved_database.session() as session:
+    def research_analysis_application_scope(
+        *,
+        serialize_writes: bool = False,
+    ) -> Iterator[ResearchAnalysisApplication]:
+        with resolved_database.session(immediate=serialize_writes) as session:
             yield build_research_analysis_application(session)
 
     app.state.research_analysis_application_scope = research_analysis_application_scope
