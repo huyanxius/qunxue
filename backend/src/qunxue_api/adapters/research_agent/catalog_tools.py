@@ -49,6 +49,7 @@ class KnowledgeToolRegistry:
         *,
         retriever: KnowledgeRetriever | None = None,
         web_research: WebResearchClient | None = None,
+        web_read_enabled: bool = True,
         frontier=None,
     ) -> None:
         self._frontier = frontier
@@ -80,7 +81,7 @@ class KnowledgeToolRegistry:
         self.research_map_enabled = False
         self.deep_research_enabled = False
         self.web_search_enabled = False
-        self.web_read_enabled = web_research is not None
+        self.web_read_enabled = web_read_enabled and web_research is not None
         self._web_queries: set[str] = set()
         self.research_map: dict[str, object] = empty_research_map()
 
@@ -164,7 +165,7 @@ class KnowledgeToolRegistry:
         return results
 
     def read_web_page(self, url: str) -> dict[str, object]:
-        if self._web_research is None:
+        if not self.web_read_enabled or self._web_research is None:
             raise ValueError("网页读取服务不可用")
         from qunxue_api.adapters.research_agent.web_research import _ensure_public_url
 

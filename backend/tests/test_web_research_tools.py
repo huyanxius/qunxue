@@ -1,10 +1,12 @@
 import socket
+import ssl
 import sys
-from contextlib import suppress
+from collections import deque
 from types import SimpleNamespace
 from unittest.mock import Mock
 from urllib.parse import parse_qs, urlparse
 
+import httpcore
 import pytest
 
 from qunxue_api.adapters.research_agent import web_research
@@ -85,7 +87,6 @@ def test_web_page_reader_preserves_private_network_boundary() -> None:
         tools.read_web_page("http://127.0.0.1/private")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-02: resolver policy missing")
 def test_web_reader_blocks_a_restricted_address_from_the_fake_resolver(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -96,10 +97,135 @@ def test_web_reader_blocks_a_restricted_address_from_the_fake_resolver(
     monkeypatch.setattr(socket, "getaddrinfo", resolve)
     monkeypatch.setattr(web_research, "_download_page", transport)
 
-    with suppress(ValueError, OSError):
+    with pytest.raises(ValueError, match="不能读取本机或内网地址"):
         OpenWebResearchClient().read("https://research.example.invalid/")
 
-    assert (resolve.called, transport.called) == (True, False)
+    resolve.assert_called_once()
+    transport.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("family", "address"),
+    [
+        (socket.AF_INET, ("224.0.0.1", 443)),
+        (socket.AF_INET6, ("fd00::1", 443, 0, 0)),
+        (socket.AF_INET6, ("ff02::1", 443, 0, 0)),
+    ],
+)
+def test_web_reader_rejects_mixed_dns_results(monkeypatch, family, address) -> None:
+    resolve = Mock(return_value=[
+        (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("93.184.216.34", 443)),
+        (family, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", address),
+    ])
+    transport = Mock(side_effect=OSError("test transport has no network"))
+    monkeypatch.setattr(socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(web_research, "_download_page", transport)
+
+    with pytest.raises(ValueError, match="不能读取本机或内网地址"):
+        OpenWebResearchClient().read("https://research.example.invalid/")
+
+    resolve.assert_called_once()
+    transport.assert_not_called()
+
+
+@pytest.fixture
+def fake_page_transport(monkeypatch):
+    responses = deque()
+    dials = []
+    requests = []
+    tls_names = []
+
+    def connect_tcp(_backend, *, host, port, **_kwargs):
+        dials.append((host, port))
+        stream = Mock(spec=httpcore.NetworkStream)
+        stream.get_extra_info.return_value = None
+        stream.read.side_effect = [responses.popleft(), b""]
+        stream.write.side_effect = lambda buffer, **_kwargs: requests.append(buffer)
+
+        def start_tls(*, ssl_context, server_hostname, **_kwargs):
+            assert ssl_context.check_hostname
+            assert ssl_context.verify_mode == ssl.CERT_REQUIRED
+            tls_names.append(server_hostname)
+            return stream
+
+        stream.start_tls.side_effect = start_tls
+        return stream
+
+    monkeypatch.setattr(httpcore.SyncBackend, "connect_tcp", connect_tcp)
+    monkeypatch.setenv("https_proxy", "http://proxy.example.invalid:8080")
+    monkeypatch.setenv("no_proxy", "")
+    monkeypatch.setattr(
+        web_research, "build_opener", Mock(side_effect=OSError("test transport has no network"))
+    )
+    return SimpleNamespace(responses=responses, dials=dials, requests=requests, tls_names=tls_names)
+
+
+def test_web_reader_dials_approved_ips_and_rechecks_a_relative_redirect(
+    monkeypatch, fake_page_transport,
+) -> None:
+    resolve = Mock(side_effect=[
+        [(socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", (
+            "2606:4700::1111", 8443, 0, 0,
+        ))],
+        [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("93.184.216.34", 8443))],
+    ])
+    monkeypatch.setattr(socket, "getaddrinfo", resolve)
+    html = '<html><meta charset="gbk">政策正文</html>'
+    fake_page_transport.responses.extend([
+        b"HTTP/1.1 302 Found\r\nLocation: /article\r\nContent-Length: 0\r\n\r\n",
+        b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n"
+        + html.encode("gbk"),
+    ])
+    client = OpenWebResearchClient(extract=lambda text: text, extract_title=lambda _: "政策原文")
+    url = "https://Research.Example.Invalid.:8443/start"
+
+    assert client.read(url) == {"title": "政策原文", "url": url, "content": html}
+    assert [call.args[:2] for call in resolve.call_args_list] == [
+        ("research.example.invalid", 8443),
+        ("research.example.invalid", 8443),
+    ]
+    assert fake_page_transport.dials == [("2606:4700::1111", 8443), ("93.184.216.34", 8443)]
+    assert fake_page_transport.tls_names == ["research.example.invalid", "research.example.invalid"]
+    requests = [request for request in fake_page_transport.requests if request.startswith(b"GET ")]
+    assert [request.split(b" ")[1] for request in requests] == [b"/start", b"/article"]
+    assert all(b"\r\nhost: research.example.invalid:8443\r\n" in req.lower() for req in requests)
+
+
+def test_web_reader_rejects_a_restricted_redirect_before_connecting(
+    monkeypatch, fake_page_transport,
+) -> None:
+    resolve = Mock(side_effect=[
+        [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("93.184.216.34", 443))],
+        [(socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("fd00::1", 443, 0, 0))],
+    ])
+    monkeypatch.setattr(socket, "getaddrinfo", resolve)
+    fake_page_transport.responses.append(
+        b"HTTP/1.1 302 Found\r\nLocation: https://archive.example.invalid/article\r\n"
+        b"Content-Length: 0\r\n\r\n",
+    )
+
+    with pytest.raises(ValueError, match="不能读取本机或内网地址"):
+        OpenWebResearchClient().read("https://research.example.invalid/")
+
+    assert [call.args[:2] for call in resolve.call_args_list] == [
+        ("research.example.invalid", 443),
+        ("archive.example.invalid", 443),
+    ]
+    assert fake_page_transport.dials == [("93.184.216.34", 443)]
+
+
+def test_disabling_web_read_keeps_web_search_available() -> None:
+    client = _WebResearch()
+    tools = KnowledgeToolRegistry(_Catalog(), web_research=client, web_read_enabled=False)
+    tools.enable_web_search()
+
+    results = tools.search_web("青年就业 政策", limit=3)
+    assert isinstance(results, list)
+    assert results[0]["evidence_status"] == "retrieved"
+    assert not tools.web_read_enabled
+    with pytest.raises(ValueError, match="网页读取服务不可用"):
+        tools.read_web_page(results[0]["url"])
+    assert client.read_urls == []
 
 
 def test_web_search_does_not_retry_the_same_query_inside_one_tool_scope() -> None:

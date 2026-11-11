@@ -1068,6 +1068,7 @@ def create_app(
                         frontier=app.state.frontier_agent_service,
                         catalog=app.state.knowledge_catalog,
                         retriever=app.state.knowledge_retriever,
+                        web_read_enabled=resolved_settings.web_read_enabled,
                         web_research=OpenWebResearchClient(
                             search_provider=resolved_settings.web_search_provider,
                             search_api_key=(
