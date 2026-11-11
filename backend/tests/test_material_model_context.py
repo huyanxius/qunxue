@@ -310,8 +310,12 @@ def test_research_discussion_omits_unattributed_selected_passage(plain_client, m
     owner = {"user_id": UUID(_authenticate(plain_client)), "task_id": UUID(_task(plain_client))}
     material_id = _coded_material(plain_client, owner)
     _restrict(plain_client, owner, material_id, "manual-mode")
-    question = "这段判断有依据吗？\n\n还需要哪些证据？"
-    prompt = f"围绕「{DERIVED}」继续讨论：\n> {QUOTE}\n> 第二段合成摘录\n\n{question}"
+    question = "这段判断有依据吗？\n\n> 用户自己的引用\n\n还需要哪些证据？"
+    second_excerpt = "第二段合成摘录"
+    prompt = (
+        "当前画布卡片 ID：claim-1（修改此卡请复用该 ID；正式研究记录请使用对应工具）。\n"
+        f"围绕「{DERIVED}」继续讨论：\n> {QUOTE}\n> \n> {second_excerpt}\n\n{question}"
+    )
     requests, runner = _capture_agent(monkeypatch)
     monkeypatch.setattr(runner, "prepare_research", lambda **_: "conversation")
 
@@ -321,10 +325,17 @@ def test_research_discussion_omits_unattributed_selected_passage(plain_client, m
             **owner, conversation_id=None, idempotency_key="discussion",
             workspace="research", prompt=prompt,
         )
-    assert execution.turn.user_message.content == prompt
+    conversation = plain_client.get(
+        f"/api/agent/conversations/{execution.conversation.conversation_id}"
+    )
+    assert conversation.json()["turns"][0]["user"]["content"] == prompt
     messages = [item["content"] for item in requests[0]["messages"]]
     assert any(question in message for message in messages)
-    assert all(QUOTE not in message and DERIVED not in message for message in messages)
+    assert all(
+        restricted not in message
+        for message in messages
+        for restricted in (DERIVED, QUOTE, second_excerpt)
+    )
 
 
 def test_agent_rechecks_tool_sources_before_the_next_model_request(plain_client, monkeypatch):

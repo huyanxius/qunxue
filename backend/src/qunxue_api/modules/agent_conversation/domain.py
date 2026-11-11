@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -12,11 +11,12 @@ def _now() -> datetime:
 
 
 def user_question_without_discussion_excerpt(prompt: str) -> str:
-    # Discussion messages combine a selected card or passage with the user's question.
-    # The title and quote can both contain material-derived text.
-    if prompt.startswith(("围绕「", "当前画布卡片 ID：")) and "」继续讨论：\n> " in prompt:
-        parts = re.split(r"\n> [^\n]*\n\n", prompt)
-        return parts[-1] if len(parts) > 1 else ""
+    if prompt.startswith(("围绕「", "当前画布卡片 ID：")):
+        _, heading_end, excerpt_and_question = prompt.partition("」继续讨论：\n> ")
+        if heading_end:
+            # The composer prefixes even empty excerpt lines with "> ".
+            # The first blank line starts the question, which can contain quotes of its own.
+            return excerpt_and_question.partition("\n\n")[2]
     return prompt
 
 
