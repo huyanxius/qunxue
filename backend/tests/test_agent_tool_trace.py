@@ -541,7 +541,6 @@ def test_search_tool_trace_hides_legacy_review_state() -> None:
 
 
 @pytest.mark.parametrize("source_status", ["retrieved", "read"])
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-09: trace upgrades source status")
 def test_tool_trace_preserves_source_status_without_claiming_verification(source_status) -> None:
     citation = AgentEvidence(
         citation_id="fixture-source", label="合成来源", kind="preview", excerpt="合成摘要。",
