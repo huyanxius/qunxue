@@ -415,14 +415,26 @@ class ResearchDocumentService:
             and not section.evidence_refs
             and section.status is not ResearchDocumentSectionStatus.EVIDENCE_GAP
         )
-        citation_blockers = tuple(
-            f"请核实或移除章节“{section.title}”中待处理的结构化引用。"
-            for section in current.sections
-            if any(
-                citation.state is not ResearchDocumentCitationState.VERIFIED
-                for citation in section.citation_refs
+        citation_blockers: tuple[str, ...] = ()
+        citation_checks: tuple[ResearchDocumentCompletionCheck, ...] = ()
+        # 已确认的历史版本按既有条件导出，待核实状态留在引用审计中。
+        if current.status is ResearchDocumentStatus.DRAFT:
+            citation_blockers = tuple(
+                f"请核实或移除章节“{section.title}”中待处理的结构化引用。"
+                for section in current.sections
+                if any(
+                    citation.state is not ResearchDocumentCitationState.VERIFIED
+                    for citation in section.citation_refs
+                )
             )
-        )
+            citation_checks = (
+                ResearchDocumentCompletionCheck(
+                    code="citation_status",
+                    label="结构化引用状态",
+                    passed=not citation_blockers,
+                    detail=" ".join(citation_blockers) or "没有待处理的结构化引用。",
+                ),
+            )
         blockers = tuple(
             [f"缺少必需章节：{', '.join(missing)}。"] if missing else []
         ) + tuple(f"章节“{section.title}”仍待审阅。" for section in unresolved)
@@ -480,12 +492,7 @@ class ResearchDocumentService:
                     + "尚未保留引用或证据缺口标记。"
                 ),
             ),
-            ResearchDocumentCompletionCheck(
-                code="citation_status",
-                label="结构化引用状态",
-                passed=not citation_blockers,
-                detail=" ".join(citation_blockers) or "没有待处理的结构化引用。",
-            ),
+            *citation_checks,
             ResearchDocumentCompletionCheck(
                 code="evidence_gaps_disclosed",
                 label="证据缺口已披露",
