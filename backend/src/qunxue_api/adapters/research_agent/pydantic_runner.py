@@ -126,6 +126,11 @@ def visible_text(answer: str) -> str:
     return "".join(chunks)
 
 
+_deterministic_source_statuses: ContextVar[dict[str, object] | None] = ContextVar(
+    "deterministic_source_statuses", default=None
+)
+
+
 class DeterministicKnowledgeRunner:
     """Explicit local runner for tests and the repository's mock runtime only."""
 
@@ -226,6 +231,13 @@ class DeterministicKnowledgeRunner:
             for item in citation_results
             if str(item.get("citation_id")) in tools.evidence
         )
+        source_statuses = _deterministic_source_statuses.get()
+        if source_statuses is not None:
+            source_statuses.update(
+                (str(item.get("citation_id")), item["evidence_status"])
+                for item in citation_results
+                if item.get("evidence_status") is not None
+            )
         return AgentRunResult(
             answer=answer,
             citations=citations or (citation,),
@@ -280,6 +292,8 @@ class DeterministicKnowledgeRunner:
                         detail="正在检索个人研究材料",
                     )
                 )
+        source_statuses: dict[str, object] = {}
+        source_status_token = _deterministic_source_statuses.set(source_statuses)
         try:
             result = self.run(prompt=prompt, conversation=conversation, tools=tools)
         except Exception:
@@ -306,13 +320,15 @@ class DeterministicKnowledgeRunner:
                         )
                     )
             raise
+        finally:
+            _deterministic_source_statuses.reset(source_status_token)
         if on_tool_event is not None:
             public_citations = tuple(
                 citation
                 for citation in result.citations
                 if citation.source_kind != "personal_material"
             )
-            trace_items = _trace_items(public_citations)
+            trace_items = _trace_items(public_citations, source_statuses=source_statuses)
             on_tool_event(
                 AgentToolEvent(
                     tool="search_knowledge",
@@ -337,7 +353,9 @@ class DeterministicKnowledgeRunner:
                         input={"query": retrieval_query},
                         output={
                             "result_count": len(material_citations),
-                            "items": _trace_items(material_citations),
+                            "items": _trace_items(
+                                material_citations, source_statuses=source_statuses
+                            ),
                         },
                         detail=_material_trace_detail(
                             [
@@ -3048,17 +3066,23 @@ def _normalized_text(value: str) -> str:
     return " ".join(value.split())
 
 
-def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
+def _trace_items(
+    values,
+    *,
+    limit: int = 4,
+    source_statuses: Mapping[str, object] | None = None,
+) -> list[dict[str, object]]:
     """Return bounded, user-safe facts for the visible tool trace."""
 
     items: list[dict[str, object]] = []
     for value in values[:limit]:
         if isinstance(value, AgentEvidence):
-            item = {
+            item: dict[str, object] = {
                 "title": value.label,
                 "excerpt": _trace_excerpt(value.excerpt),
-                "evidence_status": "verified",
             }
+            if source_statuses is not None and value.citation_id in source_statuses:
+                item["evidence_status"] = source_statuses[value.citation_id]
             for key, field_value in (
                 ("knowledge_id", value.knowledge_id),
                 ("material_id", value.material_id),
@@ -3089,9 +3113,7 @@ def _trace_items(values, *, limit: int = 4) -> list[dict[str, object]]:
             ):
                 if key in value and value[key] is not None:
                     item[key] = (
-                        "verified"
-                        if key == "evidence_status"
-                        else _trace_excerpt(value[key])
+                        _trace_excerpt(value[key])
                         if key in {"excerpt", "content_excerpt"}
                         else value[key]
                     )
