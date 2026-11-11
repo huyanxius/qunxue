@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import UUID
 
+from fastapi.testclient import TestClient
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from test_pre_reviewed_theory_release import _write_bundle
 
@@ -673,6 +674,84 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
     assert proposal["status"] == "pending"
     assert restored.document_prompt_context["task_id"] == created["task_id"]
     assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
+
+    accepted = client.post(
+        f"/api/research-document-proposals/{proposal['proposal_id']}/accept",
+        headers={"Idempotency-Key": "accept-agent-workspace-document"},
+        json={},
+    )
+    assert accepted.status_code == 200, accepted.text
+    draft = accepted.json()["document"]
+    document_url = f"/api/research-documents/{draft['document_id']}"
+    sections = draft["sections"]
+    for section in sections:
+        section["status"] = "evidence_gap"
+    citation = {
+        "citation_id": "community-care-citation",
+        "kind": "scholarly",
+        "source_id": "synthetic-community-care-study",
+        "source_version": "v1",
+        "locator": {"page": 2},
+    }
+    sections[0].update(status="reviewed", citation_refs=[citation])
+
+    def save_review(version: int, key: str):
+        response = client.patch(
+            document_url,
+            headers={"Idempotency-Key": key},
+            json={
+                "expected_version": version,
+                "sections": sections,
+                "change_summary": "核对研究文档引用",
+                "source": "user_edit",
+            },
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    for state in ("needs_verification", "broken", "tombstoned"):
+        citation["state"] = state
+        draft = save_review(draft["version"], f"save-{state}-document-citation")
+        assert draft["status"] == "draft"
+        blocked = client.post(
+            f"{document_url}/confirm",
+            headers={"Idempotency-Key": f"confirm-{state}-document"},
+            json={"expected_version": draft["version"]},
+        )
+        assert blocked.status_code == 409, blocked.json().get("status", blocked.text)
+        gate = client.get(f"{document_url}/completion-gate").json()
+        assert gate["ready"] is False
+        citation_check = next(
+            check for check in gate["checks"] if check["code"] == "citation_status"
+        )
+        assert citation_check["passed"] is False
+        assert client.get(document_url).json() == draft
+        assert client.get(f"{document_url}/export").status_code == 409
+
+    citation["state"] = "verified"
+    draft = save_review(draft["version"], "save-verified-document-citation")
+    assert client.get(f"{document_url}/completion-gate").json()["ready"] is True
+    with TestClient(client.app) as other_user:
+        assert other_user.post(
+            "/api/session/register",
+            json={"email": "other-researcher@example.com", "password": "research-pass-456"},
+            headers={"Idempotency-Key": "register-other-researcher"},
+        ).status_code == 201
+        assert other_user.post(
+            f"{document_url}/confirm",
+            headers={"Idempotency-Key": "confirm-another-users-document"},
+            json={"expected_version": draft["version"]},
+        ).status_code == 404
+
+    confirmed_document = client.post(
+        f"{document_url}/confirm",
+        headers={"Idempotency-Key": "confirm-verified-document"},
+        json={"expected_version": draft["version"]},
+    )
+    assert confirmed_document.status_code == 200, confirmed_document.text
+    assert confirmed_document.json()["status"] == "confirmed"
+    assert confirmed_document.json()["version"] == draft["version"] + 1
+    assert client.get(document_url).json() == confirmed_document.json()
 
 
 def test_agent_research_turn_works_without_a_formal_release(plain_client) -> None:
