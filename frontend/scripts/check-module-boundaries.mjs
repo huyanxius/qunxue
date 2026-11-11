@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import baseline from './frontend-check-baseline.json' with { type: 'json' }
 
 const scriptPath = fileURLToPath(import.meta.url)
 const defaultSourceRoot = path.resolve(path.dirname(scriptPath), '../src')
@@ -75,7 +76,7 @@ export const defaultBoundaryPolicy = Object.freeze({
     'modules/research-projects/projectApi.ts',
     'modules/socio-match-workspace/researchTaskApi.ts',
   ]),
-  // Classroom entry points share the generated DTO facade with both role panels.
+  // The classroom adapter remains reachable through the module index.
   publicModuleAdapters: Object.freeze(['modules/teaching-assistant/teachingApi.ts']),
   appApiAdapters: Object.freeze([
     'api/m5ResearchDelivery.ts',
@@ -222,19 +223,31 @@ function compilerContext(files, sourceRoot) {
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     noEmit: true,
-    noLib: true,
     skipLibCheck: true,
     target: ts.ScriptTarget.ESNext,
+    types: [],
   }
   const host = ts.createCompilerHost(options, true)
   const program = ts.createProgram({ host, options, rootNames: files })
   const cache = ts.createModuleResolutionCache(
     sourceRoot, host.getCanonicalFileName, options,
   )
-  const resolve = (sourceFile, specifier) =>
-    ts.resolveModuleName(
+  const resolve = (sourceFile, specifier) => {
+    const css = specifier.split(/[?#]/, 1)[0]
+    if (css.endsWith('.css')) {
+      // Vite resolves styles as assets, including imports such as foo.css?inline.
+      let stylesheet
+      if (css.startsWith('/src/')) {
+        stylesheet = path.resolve(sourceRoot, css.slice('/src/'.length))
+      } else if (css.startsWith('./') || css.startsWith('../')) {
+        stylesheet = path.resolve(path.dirname(sourceFile.fileName), css)
+      }
+      if (stylesheet && host.fileExists(stylesheet)) return stylesheet
+    }
+    return ts.resolveModuleName(
       specifier, sourceFile.fileName, options, host, cache,
     ).resolvedModule?.resolvedFileName
+  }
   return { checker: program.getTypeChecker(), program, resolve }
 }
 
@@ -254,6 +267,19 @@ function expressionSymbol(checker, node) {
   if (ts.isElementAccessExpression(current))
     return checker.getSymbolAtLocation(current.argumentExpression)
   return undefined
+}
+
+function typeNodeOrigins(checker, typeNode, seen = new Set()) {
+  const origins = new Set()
+  const visit = (node) => {
+    if (ts.isIdentifier(node)) {
+      const symbol = checker.getSymbolAtLocation(node)
+      for (const origin of symbolOrigins(checker, symbol, seen)) origins.add(origin)
+    }
+    ts.forEachChild(node, visit)
+  }
+  if (typeNode) visit(typeNode)
+  return origins
 }
 
 /**
@@ -282,17 +308,9 @@ function symbolOrigins(checker, symbol, seen = new Set()) {
     if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
       next = expressionSymbol(checker, declaration.initializer)
     } else if (ts.isTypeAliasDeclaration(declaration)) {
-      const visit = (node) => {
-        if (ts.isIdentifier(node)) {
-          const candidate = checker.getSymbolAtLocation(node)
-          if (candidate && candidate !== symbol) {
-            for (const origin of symbolOrigins(checker, candidate, seen))
-              origins.add(origin)
-          }
-        }
-        ts.forEachChild(node, visit)
+      for (const origin of typeNodeOrigins(checker, declaration.type, seen)) {
+        origins.add(origin)
       }
-      visit(declaration.type)
     }
     for (const origin of symbolOrigins(checker, next, seen))
       origins.add(origin)
@@ -313,18 +331,63 @@ function exportKind(checker, symbol) {
   return target.flags & ts.SymbolFlags.Value ? 'value' : 'type'
 }
 
+function exposesGeneratedType(checker, annotation, type, { sourceRoot, generatedRoot }) {
+  const isGenerated = (file) => isWithin(generatedRoot, file)
+  if ([...typeNodeOrigins(checker, annotation)].some(isGenerated)) return true
+
+  // Inferred SDK responses often wrap the DTO in Promise, a union, or a data field.
+  const seen = new Set()
+  const visit = (current) => {
+    if (seen.has(current)) return false
+    seen.add(current)
+    const origins = [current.aliasSymbol, current.getSymbol()].flatMap((symbol) =>
+      (symbol?.declarations ?? []).map((node) => path.resolve(node.getSourceFile().fileName)),
+    )
+    if (origins.some(isGenerated)) return true
+    if (current.isUnionOrIntersection()) return current.types.some(visit)
+    if (current.aliasTypeArguments?.some(visit)) return true
+    if ((current.objectFlags & ts.ObjectFlags.Reference) && checker.getTypeArguments(current).some(visit)) {
+      return true
+    }
+    return origins.some((origin) => isWithin(sourceRoot, origin)) &&
+      checker.getPropertiesOfType(current).some((property) => visit(checker.getTypeOfSymbol(property)))
+  }
+  return visit(type)
+}
+
+function addSignatureLeaks(checker, symbol, relative, violations, roots) {
+  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol
+  const type = checker.getTypeOfSymbol(target)
+  const report = (position) =>
+    violations.add(`${relative} exposes raw generated API in ${symbol.name} ${position}`)
+  for (const signature of type.getCallSignatures()) {
+    for (const [index, parameter] of signature.getParameters().entries()) {
+      const declaration = parameter.valueDeclaration
+      if (exposesGeneratedType(checker, declaration?.type, checker.getTypeOfSymbol(parameter), roots)) {
+        const name = declaration && ts.isIdentifier(declaration.name) ? parameter.name : index + 1
+        report(`parameter ${name}`)
+      }
+    }
+    if (exposesGeneratedType(checker, signature.declaration?.type, signature.getReturnType(), roots)) {
+      report('return type')
+    }
+  }
+}
+
 function addExportLeaks(
-  checker, sourceFile, forbidden, describe, relative, violations, allowTypes = false,
+  checker, sourceFile, forbidden, describe, relative, violations, signatureRoots,
 ) {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile)
   const exported = moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : []
   for (const symbol of exported) {
-    if (allowTypes && exportKind(checker, symbol) === 'type') continue
+    const kind = exportKind(checker, symbol)
     const blocked = [...symbolOrigins(checker, symbol)].find(forbidden)
     if (blocked) {
       violations.add(
-        `${relative} ${describe(blocked)} ${exportKind(checker, symbol)} ${symbol.name}`,
+        `${relative} ${describe(blocked)} ${kind} ${symbol.name}`,
       )
+    } else if (signatureRoots && kind === 'value') {
+      addSignatureLeaks(checker, symbol, relative, violations, signatureRoots)
     }
   }
 }
@@ -332,11 +395,13 @@ function addExportLeaks(
 export async function findBoundaryViolations({
   sourceRoot = defaultSourceRoot,
   policy = defaultBoundaryPolicy,
+  allowed = sourceRoot === defaultSourceRoot ? baseline.moduleBoundaries : [],
 } = {}) {
   const appRoot = path.join(sourceRoot, 'app')
   const modulesRoot = path.join(sourceRoot, 'modules')
   const apiRoot = path.join(sourceRoot, 'api')
   const generatedRoot = path.join(apiRoot, 'generated')
+  const signatureRoots = { sourceRoot, generatedRoot }
   const files = await sourceFiles(sourceRoot)
   const discovered = await moduleDirectories(modulesRoot)
   const moduleNames = new Set(discovered)
@@ -465,8 +530,9 @@ export async function findBoundaryViolations({
         `${sourceModule} cannot depend on ${targetModule}`,
       )
       const publicEntry = path.join(modulesRoot, targetModule, 'index.ts')
+      const importDetail = target.endsWith('.css') ? ` with CSS import ${specifier}` : ''
       report(path.resolve(target) !== publicEntry,
-        `${relative} bypasses ${targetModule}/index.ts`)
+        `${relative} bypasses ${targetModule}/index.ts${importDetail}`)
     }
 
     if (moduleAdapters.has(sourcePath)) {
@@ -480,7 +546,7 @@ export async function findBoundaryViolations({
           }`,
         relative,
         violations,
-        publicModuleAdapters.has(sourcePath),
+        signatureRoots,
       )
     }
     if (appAdapters.has(sourcePath)) {
@@ -491,6 +557,7 @@ export async function findBoundaryViolations({
         () => 're-exports raw generated API',
         relative,
         violations,
+        signatureRoots,
       )
     }
     if (isPublicIndex) {
@@ -504,7 +571,8 @@ export async function findBoundaryViolations({
       )
     }
   }
-  return [...violations].sort()
+  const existing = new Set(allowed)
+  return [...violations].filter((violation) => !existing.has(violation)).sort()
 }
 
 export async function assertModuleBoundaries(options) {
