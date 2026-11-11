@@ -30,6 +30,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Architecture documentation
+        if: github.event_name != 'release'
+        run: python3 tools/check_architecture_docs.py
       - id: scope
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}

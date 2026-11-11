@@ -23,16 +23,12 @@
 
 ### 后端
 
-- `modules/research_intake/`：研究任务、入口输入与已确认现象。
-- `modules/knowledge_catalog/`：版本化知识发布、条目、关系与理论身份。
-- `modules/theory_matching/`：证据交接、候选判断与用户理论决定。
-- `modules/research_framework/`：框架草拟、审校、修订与确认。
 - `application/`：只通过模块公共入口编排主链，不承载模块内部规则。
 - `api/`：FastAPI DTO、路由和异常映射。
 - `adapters/`：SQLite 及后续外部服务实现。
 - `bootstrap.py`：唯一依赖装配点。
 
-业务模块不得依赖 FastAPI、Pydantic、SQLAlchemy 或具体模型 SDK。模块间只从包根导入，并传递稳定 ID、版本和不可变快照。完整依赖方向见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+业务模块不得依赖 FastAPI、Pydantic、SQLAlchemy 或具体模型 SDK。模块间只从包根导入，并传递稳定 ID、版本和不可变快照。模块职责和允许依赖见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#业务模块允许依赖)。
 
 ### 前端
 
