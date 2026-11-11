@@ -16,7 +16,12 @@ from qunxue_api.modules.agent_memory import (
     validate_content,
 )
 
-from .agent_conversation_model import AgentConversationRow, AgentMessageRow, AgentRunRow
+from .agent_conversation_model import (
+    AgentConversationRow,
+    AgentMessageRow,
+    AgentRunRow,
+    has_unattributed_source_runs,
+)
 from .agent_memory_model import MemoryJobRow, MemoryRow, MemoryUsageRow
 from .agent_memory_repository import SqliteMemoryRepository, memory_from_row, scope_key, utc
 from .research_material_repository import SqliteResearchMaterialRepository
@@ -71,10 +76,7 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                     AgentRunRow.user_id == AgentConversationRow.user_id,
                     AgentRunRow.status == "running",
                 ),
-                ~exists().where(
-                    AgentRunRow.conversation_id == AgentConversationRow.conversation_id,
-                    AgentRunRow.idempotency_key.startswith("teaching:"),
-                ),
+                ~has_unattributed_source_runs(),
             )
             .order_by(AgentConversationRow.updated_at)
             .limit(32)

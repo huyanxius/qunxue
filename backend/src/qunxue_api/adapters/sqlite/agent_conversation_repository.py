@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from qunxue_api.adapters.sqlite import AgentConversationRow, AgentMessageRow, AgentRunRow
+from qunxue_api.adapters.sqlite.agent_conversation_model import has_unattributed_source_runs
 from qunxue_api.adapters.sqlite.research_material_model import (
     ResearchMaterialBlockRow,
     ResearchMaterialRow,
@@ -46,15 +47,13 @@ class SqliteConversationRepository:
     def commit(self) -> None:
         self._session.commit()
 
-    def has_teaching_context(self, *, user_id: UUID, conversation_id: UUID) -> bool:
+    def has_unattributed_model_history(self, *, user_id: UUID, conversation_id: UUID) -> bool:
         return self._session.scalar(
-            select(AgentRunRow.run_id)
-            .where(
-                AgentRunRow.user_id == str(user_id),
-                AgentRunRow.conversation_id == str(conversation_id),
-                AgentRunRow.idempotency_key.startswith("teaching:"),
+            select(AgentConversationRow.conversation_id).where(
+                AgentConversationRow.user_id == str(user_id),
+                AgentConversationRow.conversation_id == str(conversation_id),
+                has_unattributed_source_runs(),
             )
-            .limit(1)
         ) is not None
 
     def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None:

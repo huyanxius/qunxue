@@ -269,7 +269,8 @@ def test_agent_does_not_replay_history_with_incomplete_material_sources(plain_cl
     )
 
 
-def test_teaching_material_prompt_is_not_replayed_in_agent_chat(plain_client, monkeypatch):
+@pytest.mark.parametrize("source", ["teaching", "deleted-task"])
+def test_agent_does_not_replay_detached_material_context(plain_client, monkeypatch, source):
     user_id = UUID(_authenticate(plain_client))
     conversation_id, _ = seed_learning_source(plain_client, str(user_id), content=QUOTE)
     old_turn = AgentTurn.create(
@@ -284,9 +285,12 @@ def test_teaching_material_prompt_is_not_replayed_in_agent_chat(plain_client, mo
                 run_id=uuid4(),
                 user_id=user_id,
                 conversation_id=conversation_id,
-                idempotency_key=f"teaching:{uuid4()}:synthetic",
+                idempotency_key=(
+                    f"teaching:{uuid4()}:synthetic" if source == "teaching" else "old-run"
+                ),
                 status="completed",
                 turn_id=old_turn.turn_id,
+                request_snapshot={"task_id": str(uuid4())} if source == "deleted-task" else {},
             )
         )
 

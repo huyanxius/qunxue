@@ -242,7 +242,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         allows_saved_model_result: (
             Callable[[UUID, ConfirmedTheoryPlanSnapshot], bool] | None
         ) = None,
-        has_teaching_context: Callable[..., bool] | None = None,
+        has_unattributed_model_history: Callable[..., bool] | None = None,
     ) -> None:
         super().__init__(
             catalog,
@@ -261,8 +261,8 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._material_vector_cache_factory = material_vector_cache_factory
         self._analysis = analysis
         self._allows_saved_model_result = allows_saved_model_result
-        self._has_teaching_context = has_teaching_context
-        self._teaching_context = False
+        self._has_unattributed_model_history = has_unattributed_model_history
+        self._unattributed_history = False
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
         self._agent_run_id: UUID | None = None
@@ -386,7 +386,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
 
     @property
     def allows_unattributed_model_context(self) -> bool:
-        return not self._teaching_context and (
+        return not self._unattributed_history and (
             self._task_id is None or not self._has_material_history()
         )
 
@@ -467,8 +467,8 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     ) -> None:
         self._user_id = user_id
         self._conversation_id = conversation_id
-        self._teaching_context = self._has_teaching_context is not None and (
-            self._has_teaching_context(user_id=user_id, conversation_id=conversation_id)
+        self._unattributed_history = self._has_unattributed_model_history is not None and (
+            self._has_unattributed_model_history(user_id=user_id, conversation_id=conversation_id)
         )
         self._agent_run_id = agent_run_id
         self._agent_turn_id = agent_turn_id

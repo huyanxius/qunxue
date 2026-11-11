@@ -1111,7 +1111,9 @@ def create_app(
                         ),
                         analysis=analysis_application,
                         allows_saved_model_result=model_context.allows_saved_result,
-                        has_teaching_context=conversation_repository.has_teaching_context,
+                        has_unattributed_model_history=(
+                            conversation_repository.has_unattributed_model_history
+                        ),
                     ),
                 )
             except Exception:

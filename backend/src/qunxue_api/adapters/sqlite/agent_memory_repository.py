@@ -4,7 +4,7 @@ from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, exists, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ from qunxue_api.modules.agent_memory import (
     validate_content,
 )
 
-from .agent_conversation_model import AgentConversationRow, AgentRunRow
+from .agent_conversation_model import AgentConversationRow, has_unattributed_source_runs
 from .agent_memory_model import MemoryRequestRow, MemoryRevisionRow, MemoryRow, MemoryScopeRow
 from .research_intake_model import ResearchTaskRow
 from .research_material_repository import SqliteResearchMaterialRepository
@@ -134,47 +134,33 @@ class SqliteMemoryRepository:
         items = self.list(user_id, task_id)
         if not any(item.origin != "manual" for item in items):
             return items
-        conversation_ids = {
-            str(item.source_conversation_id) for item in items if item.source_conversation_id
-        }
-        if conversation_ids:
-            teaching_sources = set(self.session.scalars(
-                select(AgentRunRow.conversation_id).where(
-                    AgentRunRow.user_id == str(user_id),
-                    AgentRunRow.conversation_id.in_(conversation_ids),
-                    AgentRunRow.idempotency_key.startswith("teaching:"),
-                ).distinct()
-            ))
-            items = tuple(
-                item for item in items if str(item.source_conversation_id) not in teaching_sources
-            )
-        if not SqliteResearchMaterialRepository(self.session).has_owned_materials(user_id=user_id):
-            return items
         # Agent-authored memories have no complete source list. Learning can
         # still use user messages from conversations outside a research task.
+        has_materials = SqliteResearchMaterialRepository(self.session).has_owned_materials(
+            user_id=user_id
+        )
         source_ids = {
             str(item.source_conversation_id)
             for item in items
-            if item.origin == "learned" and item.source_conversation_id is not None
+            if item.source_conversation_id is not None
+            and (not has_materials or item.origin == "learned")
         }
-        plain_sources = set()
-        if source_ids:
-            plain_sources = set(self.session.scalars(
-                select(AgentConversationRow.conversation_id).where(
-                    AgentConversationRow.user_id == str(user_id),
-                    AgentConversationRow.conversation_id.in_(source_ids),
-                    AgentConversationRow.current_research_task_id.is_(None),
-                    ~exists().where(
-                        AgentRunRow.conversation_id == AgentConversationRow.conversation_id,
-                        AgentRunRow.request_snapshot["task_id"].as_string().is_not(None),
-                    ),
-                )
-            ))
+        sources = select(AgentConversationRow.conversation_id).where(
+            AgentConversationRow.user_id == str(user_id),
+            AgentConversationRow.conversation_id.in_(source_ids),
+            ~has_unattributed_source_runs(),
+        )
+        if has_materials:
+            sources = sources.where(AgentConversationRow.current_research_task_id.is_(None))
+        allowed = set(self.session.scalars(sources)) if source_ids else set()
         return tuple(
             item
             for item in items
             if item.origin == "manual"
-            or (item.origin == "learned" and str(item.source_conversation_id) in plain_sources)
+            or (
+                (not has_materials or item.origin == "learned")
+                and str(item.source_conversation_id) in allowed
+            )
         )
 
     def get(self, user_id: UUID, memory_id: UUID) -> Memory:

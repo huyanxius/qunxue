@@ -10,6 +10,10 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    and_,
+    exists,
+    func,
+    or_,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -107,3 +111,21 @@ class AgentRunRow(Base):
         DateTime(timezone=True), nullable=True
     )
     lease_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+
+def has_unattributed_source_runs():
+    # Teaching stores assembled prompts as messages. A deleted project leaves
+    # its old runs behind even though the conversation no longer has a task.
+    return exists().where(
+        AgentRunRow.conversation_id == AgentConversationRow.conversation_id,
+        or_(
+            AgentRunRow.idempotency_key.startswith("teaching:"),
+            and_(
+                AgentConversationRow.current_research_task_id.is_(None),
+                or_(
+                    AgentRunRow.request_snapshot["task_id"].as_string().is_not(None),
+                    func.json_array_length(AgentRunRow.material_attachments) > 0,
+                ),
+            ),
+        ),
+    )
