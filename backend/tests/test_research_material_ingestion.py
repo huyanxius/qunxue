@@ -1,15 +1,26 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from unittest.mock import Mock
+from multiprocessing import get_context
+from multiprocessing.connection import Connection
+from signal import SIGKILL
+from threading import Event
+from time import monotonic, sleep
+from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 
+from qunxue_api.adapters.sqlite.research_material_repository import SqliteResearchMaterialRepository
 from qunxue_api.bootstrap import create_app
-from qunxue_api.modules.research_materials import MaterialKind, MaterialParseError
+from qunxue_api.modules.research_materials import (
+    MaterialIngestionJob,
+    MaterialKind,
+    MaterialParseError,
+)
+from qunxue_api.settings import Settings
 
 
 def _authenticate(client: TestClient) -> UUID:
@@ -45,7 +56,7 @@ def _upload_queued_material(client: TestClient, task_id: str) -> dict:
 
 
 def test_deferred_upload_persists_job_and_can_resume_after_request(
-    client: TestClient,
+    unstarted_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     executor = Mock(spec=ThreadPoolExecutor)
@@ -53,8 +64,8 @@ def test_deferred_upload_persists_job_and_can_resume_after_request(
     create_executor = Mock(side_effect=[executor, other_executor])
     monkeypatch.setattr("qunxue_api.bootstrap.ThreadPoolExecutor", create_executor)
     app = create_app(
-        settings=client.app.state.settings,
-        database=client.app.state.database,
+        settings=unstarted_client.app.state.settings,
+        database=unstarted_client.app.state.database,
         require_email_verification=False,
     )
     with TestClient(app) as assembled:
@@ -84,10 +95,11 @@ def test_deferred_upload_persists_job_and_can_resume_after_request(
 
 @pytest.mark.parametrize("previous_attempts", [0, 1], ids=["queued", "expired-lease"])
 def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
-    client: TestClient,
+    unstarted_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
     previous_attempts: int,
 ) -> None:
+    client = unstarted_client
     user_id = _authenticate(client)
     task_id = UUID(_task(client))
     with client.app.state.research_material_application_scope() as application:
@@ -135,7 +147,175 @@ def test_real_app_lifespan_recovers_queued_ingestions_and_shuts_down_worker(
         executor.shutdown.assert_called_once_with(wait=True, cancel_futures=False)
 
 
-def test_stale_processing_job_is_recoverable(client: TestClient) -> None:
+def _interrupted_ingestion_worker(database_url: str, now: datetime, parsing: Connection) -> None:
+    settings = Settings(
+        _env_file=None,
+        database_url=database_url,
+        runtime_mode="mock",
+        model_api_key=None,
+        initial_admin_password=None,
+        memory_learning_enabled=False,
+    )
+    release = Event()
+
+    def hold_parser(**_kwargs):
+        parsing.send("parsing")
+        release.wait()
+
+    with (
+        patch("qunxue_api.application.research_materials.datetime", Mock(now=lambda _tz: now)),
+        patch("qunxue_api.bootstrap.parse_material", hold_parser),
+        TestClient(create_app(settings=settings, require_email_verification=False)),
+    ):
+        release.wait()
+
+
+def _read_ingestion(client: TestClient, job_id: UUID) -> MaterialIngestionJob:
+    with client.app.state.research_material_application_scope() as application:
+        job = application.get_ingestion_job(job_id)
+    assert job is not None
+    return job
+
+
+def _wait_for_ingestion(
+    client: TestClient, job_id: UUID, *, status: str, attempts: int
+) -> MaterialIngestionJob:
+    expected = (status, attempts)
+    deadline = monotonic() + 8
+    while True:
+        job = _read_ingestion(client, job_id)
+        observed = (job.ingestion_status.value, job.attempt_count)
+        if observed == expected or monotonic() >= deadline:
+            assert observed == expected
+            return job
+        sleep(0.025)
+
+
+@pytest.mark.parametrize(
+    ("prior_attempts", "final_state", "final_attempts", "parse_count"),
+    [(0, "ready", 2, 1), (2, "failed", 3, 0)],
+    ids=["retryable", "exhausted"],
+)
+def test_real_lifespan_rescans_lease_that_expires_after_restart(
+    unstarted_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    prior_attempts: int,
+    final_state: str,
+    final_attempts: int,
+    parse_count: int,
+) -> None:
+    client = unstarted_client
+    user_id = _authenticate(client)
+    task_id = _task(client)
+    client.app_state["schedule_research_material_ingestion"] = lambda _job_id: None
+    uploaded = _upload_queued_material(client, task_id)
+    job_id = UUID(uploaded["ingestion_job_id"])
+    material_id = UUID(uploaded["material_id"])
+    claimed_at = datetime.now(UTC) + timedelta(seconds=1)
+    with client.app.state.research_material_application_scope() as application:
+        for _ in range(prior_attempts):
+            assert application.claim_ingestion(
+                job_id, now=claimed_at, lease_duration=timedelta(0)
+            ) is not None
+
+    context = get_context("spawn")
+    receive, send = context.Pipe(duplex=False)
+    child = context.Process(
+        target=_interrupted_ingestion_worker,
+        args=(client.app.state.settings.database_url, claimed_at, send),
+    )
+    child.start()
+    send.close()
+    with receive:
+        try:
+            assert receive.poll(20), "worker did not reach the parser"
+            assert receive.recv() == "parsing"
+        finally:
+            if child.is_alive():
+                child.kill()
+            child.join(timeout=20)
+    assert child.exitcode == -SIGKILL
+    interrupted = _read_ingestion(client, job_id)
+    expires_at = claimed_at + timedelta(minutes=10)
+    assert interrupted.lease_expires_at == expires_at
+
+    clock = Mock(now=Mock(return_value=claimed_at + timedelta(minutes=1)))
+    monkeypatch.setattr("qunxue_api.application.research_materials.datetime", clock)
+    path = f"/api/research-tasks/{task_id}/materials/{material_id}"
+    with client:
+        before_expiry = client.get(f"{path}/ingestion")
+        assert before_expiry.status_code == 200
+        state = before_expiry.json()
+        assert (state["ingestion_status"], state["attempt_count"]) == (
+            "processing",
+            prior_attempts + 1,
+        )
+        clock.now.return_value = expires_at
+        finished = _wait_for_ingestion(client, job_id, status=final_state, attempts=final_attempts)
+        assert finished.completed_at == expires_at
+        assert finished.lease_expires_at is None
+        if parse_count:
+            assert finished.parse_id != interrupted.parse_id
+            assert client.get(path).json()["segments"][0]["text"] == "合成材料的第一段。"
+
+    with client.app.state.database.session() as session:
+        parses = SqliteResearchMaterialRepository(session).list_parses(
+            material_id, user_id=user_id, task_id=UUID(task_id)
+        )
+    assert tuple(parse.parse_id for parse in parses) == (finished.parse_id,) * parse_count
+
+
+def test_real_lifespan_retries_only_when_due_and_stops_at_attempt_limit(
+    unstarted_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = unstarted_client
+    user_id = _authenticate(client)
+    task_id = UUID(_task(client))
+    failed_at = datetime.now(UTC)
+    clock = Mock(now=Mock(return_value=failed_at))
+    monkeypatch.setattr("qunxue_api.application.research_materials.datetime", clock)
+    monkeypatch.setattr(
+        "qunxue_api.bootstrap.parse_material", Mock(side_effect=RuntimeError("parser unavailable"))
+    )
+    with client:
+        with client.app.state.research_material_application_scope() as application:
+            with pytest.raises(RuntimeError, match="parser unavailable"):
+                application.upload(
+                    user_id=user_id,
+                    task_id=task_id,
+                    idempotency_key=str(uuid4()),
+                    filename="合成笔记.txt",
+                    media_type="text/plain",
+                    content=b"transient failure",
+                    material_kind=MaterialKind.FIELD_NOTE,
+                )
+            material, = application.list(user_id=user_id, task_id=task_id)
+            first = application.get_ingestion(
+                user_id=user_id, task_id=task_id, material_id=material.material_id
+            )
+        assert first is not None
+        assert (first.ingestion_status.value, first.attempt_count) == ("failed", 1)
+        assert first.available_at == failed_at + timedelta(seconds=2)
+        assert first.completed_at is None
+
+        clock.now.return_value = first.available_at
+        second = _wait_for_ingestion(client, first.job_id, status="failed", attempts=2)
+        assert second.available_at == first.available_at + timedelta(seconds=4)
+        assert second.completed_at is None
+        assert second.parse_id != first.parse_id
+
+        clock.now.return_value = second.available_at
+        third = _wait_for_ingestion(client, first.job_id, status="failed", attempts=3)
+        assert third.completed_at == second.available_at
+        assert third.parse_id != second.parse_id
+        with client.app.state.research_material_application_scope() as application:
+            assert third.job_id not in application.recoverable_ingestion_ids(
+                now=second.available_at + timedelta(minutes=10)
+            )
+
+
+def test_stale_processing_job_is_recoverable(unstarted_client: TestClient) -> None:
+    client = unstarted_client
     _authenticate(client)
     task_id = _task(client)
     client.app_state["schedule_research_material_ingestion"] = lambda _job_id: None
@@ -158,7 +338,10 @@ def test_stale_processing_job_is_recoverable(client: TestClient) -> None:
         assert job_id in application.recoverable_ingestion_ids(now=datetime.now(UTC))
 
 
-def test_deferred_upload_idempotency_reuses_one_material_and_job(client: TestClient) -> None:
+def test_deferred_upload_idempotency_reuses_one_material_and_job(
+    unstarted_client: TestClient,
+) -> None:
+    client = unstarted_client
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
@@ -179,7 +362,8 @@ def test_deferred_upload_idempotency_reuses_one_material_and_job(client: TestCli
     assert scheduled == [UUID(first.json()["ingestion_job_id"])] * 2
 
 
-def test_scanned_pdf_records_ocr_required_instead_of_ready(client: TestClient) -> None:
+def test_scanned_pdf_records_ocr_required_instead_of_ready(unstarted_client: TestClient) -> None:
+    client = unstarted_client
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
@@ -224,8 +408,9 @@ def test_untranscribed_media_reports_provider_boundary(client: TestClient) -> No
 
 
 def test_retry_uses_a_new_parse_id_after_an_unexpected_worker_failure(
-    client: TestClient,
+    unstarted_client: TestClient,
 ) -> None:
+    client = unstarted_client
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
@@ -249,6 +434,9 @@ def test_retry_uses_a_new_parse_id_after_an_unexpected_worker_failure(
         first_parse_id = failed.parse_id
         assert failed.ingestion_status.value == "failed"
         assert failed.completed_at is None
+        before_retry = failed.available_at - timedelta(microseconds=1)
+        assert scheduled[0] not in application.recoverable_ingestion_ids(now=before_retry)
+        assert scheduled[0] in application.recoverable_ingestion_ids(now=failed.available_at)
 
         application._clock = lambda: failed.available_at + timedelta(seconds=1)
         application._parser = original_parser
@@ -260,7 +448,10 @@ def test_retry_uses_a_new_parse_id_after_an_unexpected_worker_failure(
     assert completed.parse_id != first_parse_id
 
 
-def test_expired_worker_cannot_complete_a_newer_ingestion_attempt(client: TestClient) -> None:
+def test_expired_worker_cannot_write_to_a_newer_ingestion_attempt(
+    unstarted_client: TestClient,
+) -> None:
+    client = unstarted_client
     _authenticate(client)
     task_id = _task(client)
     scheduled: list[UUID] = []
@@ -297,7 +488,17 @@ def test_expired_worker_cannot_complete_a_newer_ingestion_attempt(client: TestCl
             now=first_at + timedelta(seconds=3),
         )
         assert stale_completion is None
+        stale_failure = application._materials.fail_ingestion(
+            job_id,
+            expected_attempt_count=first.attempt_count,
+            expected_parse_id=first.parse_id,
+            error_code="ingestion_worker_error",
+            retry_at=first_at + timedelta(seconds=4),
+            now=first_at + timedelta(seconds=3),
+        )
+        assert stale_failure is None
         active = application._materials.get_ingestion(job_id)
         assert active is not None
         assert active.ingestion_status.value == "processing"
         assert active.attempt_count == second.attempt_count
+        assert active.parse_id == second.parse_id
