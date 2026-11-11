@@ -1855,6 +1855,8 @@ def test_agent_can_search_and_read_web_pages_when_the_turn_opts_in() -> None:
                 "title": "高校毕业生就业政策",
                 "url": url,
                 "excerpt": "政策摘要",
+                "source_kind": "web",
+                "evidence_status": "retrieved",
             }]
 
         def read_web_page(self, requested_url: str):
@@ -1864,6 +1866,8 @@ def test_agent_can_search_and_read_web_pages_when_the_turn_opts_in() -> None:
                 "title": "高校毕业生就业政策",
                 "url": requested_url,
                 "content": "政策完整正文",
+                "source_kind": "web",
+                "evidence_status": "read",
             }
 
         def select_evidence(self, citation_ids):
@@ -1918,6 +1922,11 @@ def test_agent_can_search_and_read_web_pages_when_the_turn_opts_in() -> None:
         ("read_web_page", "started"),
         ("read_web_page", "finished"),
     ]
+    assert [
+        event.output["items"][0]["evidence_status"]
+        for event in tool_events
+        if event.phase == "finished"
+    ] == ["retrieved", "read"]
 
 
 def test_read_web_pages_accumulate_as_citations_within_one_turn() -> None:

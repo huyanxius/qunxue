@@ -308,7 +308,7 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
                 source_id="literature-entry-1",
                 source_version="version-3",
                 locator={"label": "page", "value": "42-44"},
-                state=framework.ResearchDocumentCitationState.NEEDS_VERIFICATION,
+                state=framework.ResearchDocumentCitationState.VERIFIED,
             ),
         ),
     )
@@ -338,8 +338,44 @@ def test_confirmed_export_is_rendered_from_the_same_formal_version() -> None:
     assert "evidence-1" in exported.markdown
     assert "source-1" in exported.markdown
     assert "literature-entry-1" in exported.markdown
-    assert "needs_verification" in exported.markdown
+    assert "state `verified`" in exported.markdown
     assert f"document_id: {DOCUMENT_ID}" in exported.markdown
+
+
+def test_preexisting_confirmed_document_can_export_its_pending_citation_audit() -> None:
+    repository = MemoryDocumentRepository()
+    workflow = service(repository)
+    first_section, *other_sections = required_sections()
+    pending_citation = framework.ResearchDocumentCitationRef(
+        citation_id="citation-1",
+        kind=framework.ResearchDocumentCitationKind.SCHOLARLY,
+        source_id="literature-entry-1",
+        source_version="version-3",
+        locator={"page": 42},
+        state=framework.ResearchDocumentCitationState.NEEDS_VERIFICATION,
+    )
+    draft = workflow.create(
+        task_id=UUID(int=1),
+        theory_plan_id=UUID(int=2),
+        knowledge_release_id="release-final-1",
+        title="社区互助研究框架",
+        sections=(replace(first_section, citation_refs=(pending_citation,)), *other_sections),
+    )
+    confirmed = repository.add(
+        replace(
+            draft,
+            revision_id=REVISION_IDS[1],
+            version=draft.version + 1,
+            status=framework.ResearchDocumentStatus.CONFIRMED,
+            confirmed_at=NOW,
+        )
+    )
+
+    assert workflow.completion_gate(document_id=confirmed.document_id).ready is True
+    exported = workflow.export_markdown(
+        document_id=confirmed.document_id, version=confirmed.version
+    )
+    assert "state `needs_verification`" in exported.markdown
 
 
 def test_confirmation_requires_every_framework_section_and_no_pending_user_decision() -> None:
