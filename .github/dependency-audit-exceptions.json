@@ -1,0 +1,137 @@
+[
+  {
+    "ecosystem": "npm",
+    "package": "@tiptap/core",
+    "version": "3.30.2",
+    "advisories": [
+      "GHSA-cp6q-959q-f8rh",
+      "GHSA-j95f-988m-3j2f"
+    ],
+    "reason": "R21 验证 Tiptap 升级后的编辑、粘贴、Markdown 和导出行为。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "npm",
+    "package": "prosemirror-view",
+    "version": "1.42.2",
+    "advisories": [
+      "GHSA-c8x8-7fp4-3x9w"
+    ],
+    "reason": "R21 验证 ProseMirror 修复版与当前 Tiptap 的编辑及粘贴兼容性。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "certifi",
+    "version": "2026.7.22",
+    "advisories": [
+      "GHSA-6q48-6c7w-9gw2"
+    ],
+    "reason": "R22b 验证证书包更新后的 TLS 配置与 SDK 连接。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "httpcore2",
+    "version": "2.9.1",
+    "advisories": [
+      "GHSA-7mj9-2mp8-4m2p"
+    ],
+    "reason": "R22b 验证 HTTP 传输补丁与 SDK 请求行为。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "httpx2",
+    "version": "2.9.1",
+    "advisories": [
+      "GHSA-7mj9-2mp8-4m2p",
+      "GHSA-8xx6-hgc6-gc2m",
+      "GHSA-f2fp-rgf2-35cp",
+      "GHSA-h4x7-gw46-3wm6",
+      "GHSA-pf96-p4fj-6566"
+    ],
+    "reason": "R22b 验证 HTTP 传输补丁与 SDK 请求行为。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "mako",
+    "version": "1.3.12",
+    "advisories": [
+      "GHSA-5639-2j2p-m4mx"
+    ],
+    "reason": "随 Alembic 锁定的迁移依赖暂缓更新，待验证迁移模板渲染与升级。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "opentelemetry-api",
+    "version": "1.44.0",
+    "advisories": [
+      "GHSA-xcq7-p3pf-p88h"
+    ],
+    "reason": "保留当前模型 SDK 的遥测依赖，待 R23a 复核 SDK 与遥测接口兼容性。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "pydantic-ai-slim",
+    "version": "1.107.5",
+    "advisories": [
+      "GHSA-4x9p-g9wm-8q7f",
+      "GHSA-fpf4-vwcp-v4hp",
+      "GHSA-v36g-jcw9-x7cw",
+      "GHSA-vmxc-h2x2-jmf3"
+    ],
+    "reason": "R23a 验证兼容补丁下的请求、流式输出、取消和用量契约。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "pypdf",
+    "version": "6.16.2",
+    "advisories": [
+      "GHSA-39mj-jf6j-2qj3",
+      "GHSA-42gh-23hr-vphw",
+      "GHSA-4vqv-7265-gm2w",
+      "GHSA-5849-834g-hvw5",
+      "GHSA-5hx5-vpf9-5wcv",
+      "GHSA-5jq2-8x83-x246",
+      "GHSA-62m5-6wh8-28x7",
+      "GHSA-6c7f-9265-g8fw",
+      "GHSA-6vvc-x485-93v7",
+      "GHSA-7mh2-4gg2-979f",
+      "GHSA-9mx8-4j7g-633p",
+      "GHSA-cgf9-327m-v77c",
+      "GHSA-cggf-277g-3q54",
+      "GHSA-f54x-cmq8-qg57",
+      "GHSA-fp3h-c4fm-7vvf",
+      "GHSA-g9cg-prrw-2r8q",
+      "GHSA-gmh7-3g9r-mjh5",
+      "GHSA-jr96-gvgh-j3r4",
+      "GHSA-jw7q-gvrg-4vj3",
+      "GHSA-mfr5-77xh-9j7h",
+      "GHSA-php9-fj8v-98fj",
+      "GHSA-qfv9-64jg-mh7p",
+      "GHSA-qv6h-rv94-w285",
+      "GHSA-v247-6f48-mgcj",
+      "GHSA-w23x-9jrw-r45c",
+      "GHSA-x3rh-gjgm-fmqc"
+    ],
+    "reason": "R22a 验证 PDF 解析和异常页树的拒绝行为。",
+    "expires": "2026-11-19"
+  },
+  {
+    "ecosystem": "pypi",
+    "package": "urllib3",
+    "version": "2.7.0",
+    "advisories": [
+      "GHSA-8988-9cw3-xx77",
+      "GHSA-gh4c-6fx4-qh6g",
+      "GHSA-vxq7-64xx-v4gw"
+    ],
+    "reason": "R22b 验证 HTTP 传输更新与 TLS 配置。",
+    "expires": "2026-11-19"
+  }
+]
