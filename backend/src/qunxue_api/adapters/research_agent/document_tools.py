@@ -124,8 +124,6 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def start_matching(self, **payload: object) -> dict[str, object]: ...
 
-    def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
-
 
 class ResearchAnalysisAgentFacade(Protocol):
     """Narrow approval-gated boundary exposed to the existing research Agent."""
@@ -1290,35 +1288,6 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         if self._workflow is None:
             return {"error": "research_workflow_unavailable"}
         return self._workflow.start_matching(user_id=user_id, conversation_id=conversation_id)
-
-    def save_confirmed_theory_plan(
-        self,
-        *,
-        decisions: list[dict[str, object]],
-        use_assignments: list[dict[str, object]],
-        relations: list[dict[str, object]],
-        user_confirmed: bool,
-    ) -> dict[str, object]:
-        user_id, conversation_id, _ = self._context()
-        if not user_confirmed:
-            return {
-                "error": "user_confirmation_required",
-                "message": "保存理论决定会正式写入，必须先获得用户明确确认。",
-            }
-        if self._workflow is None:
-            return {"error": "research_workflow_unavailable"}
-        result = self._workflow.save_theory_plan(
-            user_id=user_id,
-            conversation_id=conversation_id,
-            decisions=decisions,
-            use_assignments=use_assignments,
-            relations=relations,
-            user_confirmed=user_confirmed,
-        )
-        if result.get("theory_plan_id"):
-            self._theory_plan_id = UUID(str(result["theory_plan_id"]))
-            self._theory_plan_release_id = str(result["knowledge_release_id"])
-        return result
 
     def read_research_document(self, document_id: str) -> dict[str, object]:
         user_id, _, _ = self._context()

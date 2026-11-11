@@ -3,7 +3,6 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import UUID
 
-import pytest
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from test_pre_reviewed_theory_release import _write_bundle
 
@@ -351,9 +350,6 @@ def test_research_workflow_tools_restore_cross_turn_context_and_gate_writes() ->
     theory_plan_id = UUID(int=3)
 
     class Workflow:
-        def __init__(self) -> None:
-            self.confirmed = []
-
         def restore(self, *, user_id, conversation_id):
             assert user_id == UUID(int=1)
             assert conversation_id == UUID(int=4)
@@ -364,10 +360,6 @@ def test_research_workflow_tools_restore_cross_turn_context_and_gate_writes() ->
 
         def start_matching(self, **_payload):
             return {"match_run_id": str(UUID(int=6)), "candidates": []}
-
-        def save_theory_plan(self, **payload):
-            self.confirmed.append(payload)
-            return {"theory_plan_id": str(theory_plan_id), "status": "confirmed"}
 
     workflow = Workflow()
     documents = ResearchDocumentService(repository=MemoryDocuments())
@@ -524,7 +516,6 @@ def test_plain_agent_exposes_only_the_research_start_handoff_tool() -> None:
     assert "update_research_map" not in visible_tools
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-03: formal write tool exposed")
 def test_model_turn_does_not_offer_formal_theory_confirmation(client) -> None:
     visible_tools: set[str] = set()
 
@@ -552,6 +543,7 @@ def test_model_turn_does_not_offer_formal_theory_confirmation(client) -> None:
         )
 
     assert "get_research_workflow_state" in visible_tools
+    assert "start_theory_matching" in visible_tools
     assert "save_confirmed_theory_plan" not in visible_tools
 
 
@@ -619,32 +611,50 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
             agent_run_id=turn.run_id,
         )
         matched = tools.start_theory_matching()
-        decisions = [
-            {
-                "candidate_id": item["candidate_id"],
-                "action": "adopt" if index == 0 else "exclude",
-                "reason": "用户确认主理论" if index == 0 else "暂不采用",
-                "related_source_ids": item["source_ids"],
-            }
-            for index, item in enumerate(matched["candidates"])
-        ]
-        plan = tools.save_confirmed_theory_plan(
-            decisions=decisions,
-            use_assignments=[
+        assert tools.get_research_workflow_state()["theory_plan_id"] is None
+
+    assert created["current_stage"] == "theory_matching"
+    assert matched["status"] == "awaiting_decision"
+    candidates = matched["candidates"]
+    primary_candidate_id = candidates[0]["candidate_id"]
+    recorded = client.post(
+        f"/api/match-runs/{matched['match_run_id']}/decisions",
+        headers={"Idempotency-Key": "record-agent-workspace-decisions"},
+        json={
+            "expected_match_run_version": matched["version"],
+            "completion_basis": matched["completion_basis"],
+            "decisions": [
                 {
-                    "candidate_id": matched["candidates"][0]["candidate_id"],
+                    "candidate_id": item["candidate_id"],
+                    "candidate_version": item["candidate_version"],
+                    "action": "adopt" if index == 0 else "exclude",
+                    "reason": "采用主解释视角" if index == 0 else "暂不采用",
+                    "related_source_ids": item["source_ids"],
+                    "related_candidate_ids": [],
+                }
+                for index, item in enumerate(candidates)
+            ],
+            "use_assignments": [
+                {
+                    "candidate_id": primary_candidate_id,
                     "role_code": "primary",
                     "responsibility": "解释社区流动与互助变化的主要机制",
                 }
             ],
-            relations=[],
-            user_confirmed=True,
-        )
-        proposal = tools.propose_document_creation(
-            title="社区互助研究框架",
-            sections=framework_section_payloads(),
-            rationale="依据用户确认的理论方案生成",
-        )
+            "relations": [],
+        },
+    )
+    assert recorded.status_code == 200, recorded.text
+    decision_set = recorded.json()
+    confirmed = client.post(
+        f"/api/decision-sets/{decision_set['decision_set_id']}/confirm",
+        headers={"Idempotency-Key": "confirm-agent-workspace-theory-plan"},
+        json={"expected_decision_set_version": decision_set["version"]},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    plan = confirmed.json()
+    assert plan["adopted_candidate_ids"] == [primary_candidate_id]
+    assert client.get(f"/api/theory-plans/{plan['theory_plan_id']}").json() == plan
 
     with client.app.state.disciplinary_agent_scope() as application:
         restored = application._tools_factory()
@@ -652,12 +662,14 @@ def test_agent_research_task_binding_survives_a_new_scope(client) -> None:
         restored.bind_agent_context(
             user_id=user_id,
             conversation_id=turn.conversation.conversation_id,
-            agent_run_id=UUID(int=99),
+            agent_run_id=turn.run_id,
+        )
+        proposal = restored.propose_document_creation(
+            title="社区互助研究框架",
+            sections=framework_section_payloads(),
+            rationale="依据用户确认的理论方案生成",
         )
 
-    assert created["current_stage"] == "theory_matching"
-    assert matched["status"] == "awaiting_decision"
-    assert plan["status"] == "confirmed"
     assert proposal["status"] == "pending"
     assert restored.document_prompt_context["task_id"] == created["task_id"]
     assert restored.document_prompt_context["theory_plan_id"] == plan["theory_plan_id"]
