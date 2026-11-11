@@ -204,7 +204,10 @@ test('allows a generated-only module adapter without opening other API internals
     'modules/graph/index.ts': 'export {}',
     'modules/graph/knowledgeGraphAdapter.ts': `
       import type { KnowledgeDto } from '../../api/generated/index.js'
-      export const toId = (entry: KnowledgeDto) => entry.knowledge_id
+      export function toId(id: string) {
+        const entry: KnowledgeDto = { knowledge_id: id }
+        return entry.knowledge_id
+      }
     `,
   }
 
@@ -220,7 +223,10 @@ test('allows a generated-only module adapter without opening other API internals
       'modules/graph/knowledgeGraphAdapter.ts': `
         import type { KnowledgeDto } from '../../api/generated/index.js'
         import { apiClient } from '../../api/client.js'
-        export const toId = (entry: KnowledgeDto) => [entry.knowledge_id, apiClient]
+        export function toId(id: string) {
+          const entry: KnowledgeDto = { knowledge_id: id }
+          return [entry.knowledge_id, apiClient]
+        }
       `,
     },
     { graph: [] },
@@ -248,13 +254,16 @@ test('keeps the research materials adapter behind the generated API boundary', a
   )
 })
 
-test('allows explicit classroom DTO facades while rejecting raw generated functions', async () => {
+test('keeps the classroom adapter public and checks its raw generated exports', async () => {
   const violations = await check({
     'api/generated/index.ts': 'export interface Dto { id: string }; export const raw = () => null',
     'modules/alpha/index.ts': "export { load } from './researchTaskApi.js'; export type { Dto } from './researchTaskApi.js'",
     'modules/alpha/researchTaskApi.ts': "import { raw } from '../../api/generated/index.js'; export type { Dto } from '../../api/generated/index.js'; export { raw }; export const load = () => raw()",
   }, { alpha: [] }, { ...adapters, publicModuleAdapters: ['modules/alpha/researchTaskApi.ts'] })
-  assert.deepEqual(violations, ['modules/alpha/researchTaskApi.ts re-exports raw generated API value raw'])
+  assert.deepEqual(violations, [
+    'modules/alpha/researchTaskApi.ts re-exports raw generated API type Dto',
+    'modules/alpha/researchTaskApi.ts re-exports raw generated API value raw',
+  ])
 })
 
 
@@ -275,4 +284,53 @@ test('permits the reading insights adapter while keeping sibling views outside A
     'modules/frontier/View.tsx': 'import { getPriority } from "../../api/generated/sdk.gen"',
   }, { frontier: [] }, defaultBoundaryPolicy)
   assert(invalid.some(message => message.includes('View.tsx imports generated API')))
+})
+
+test('R03 checks private CSS imports from the app and from another product module', async () => {
+  const violations = await check({
+    'app/Course.tsx': "import '../modules/alpha/private.css'",
+    'modules/alpha/index.ts': "import './private.css'; export const view = 'alpha'",
+    'modules/alpha/private.css': '.alpha { display: grid }',
+    'modules/beta/index.ts': `
+      export { view } from '../alpha'
+      import '../alpha/private.css?inline'
+    `,
+  }, { alpha: [], beta: ['alpha'] })
+
+  assert.deepEqual(violations, [
+    'app/Course.tsx bypasses alpha/index.ts with CSS import ../modules/alpha/private.css',
+    'modules/beta/index.ts bypasses alpha/index.ts with CSS import ../alpha/private.css?inline',
+  ])
+})
+
+test('R03 catches explicit inputs and inferred outputs that expose generated DTOs', async () => {
+  const violations = await check({
+    'api/generated/index.ts': `
+      export type Dto = { task_id: string }
+      export async function raw(input: Dto): Promise<{ data: Dto }> {
+        return { data: input }
+      }
+    `,
+    'api/system.ts': `
+      import { raw } from './generated'
+      type Input = Parameters<typeof raw>[0]
+      type Task = { taskId: string }
+      export async function passthrough(input: Input) { return await raw(input) }
+      export const read = () => raw({ task_id: 'example' })
+      export async function mapped(task: Task): Promise<Task> {
+        const { data } = await raw({ task_id: task.taskId })
+        return { taskId: data.task_id }
+      }
+    `,
+    'modules/alpha/index.ts': 'export {}',
+  }, { alpha: [] }, {
+    ...adapters,
+    generatedApiAdapters: [...adapters.generatedApiAdapters, 'api/system.ts'],
+  })
+
+  assert.deepEqual(violations, [
+    'api/system.ts exposes raw generated API in passthrough parameter input',
+    'api/system.ts exposes raw generated API in passthrough return type',
+    'api/system.ts exposes raw generated API in read return type',
+  ])
 })

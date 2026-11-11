@@ -134,6 +134,7 @@ jobs:
         working-directory: frontend
         run: |
           npm run check:boundaries
+          npm run check:styles
           npm run lint
           npm run typecheck
           npm run test -- --maxWorkers=1 --no-file-parallelism
