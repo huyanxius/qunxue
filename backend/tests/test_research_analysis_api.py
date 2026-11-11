@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -190,40 +191,89 @@ def test_anonymous_coding_plan_decision_leaves_formal_analysis_untouched(
         )
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="BE-01: partial decision commit")
+@pytest.mark.parametrize(
+    ("write_method", "error_type", "status_code"),
+    [("add_code", RuntimeError, 500), ("add_coding_plan", ValueError, 422)],
+)
 def test_coding_plan_decision_rolls_back_all_writes_after_code_write_failure(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
+    write_method: str,
+    error_type: type[Exception],
+    status_code: int,
 ) -> None:
     owner, code, plan = _pending_coding_plan(client)
-    scope = client.app.state.research_analysis_application_scope
+    database = client.app.state.database
+    with database.session() as session:
+        audit_before = SqliteResearchAnalysisRepository(session).list_audit_events(**owner)
 
-    def fail_code_write(_repository, _code):
-        raise RuntimeError("synthetic code write failure")
-
-    monkeypatch.setattr(SqliteResearchAnalysisRepository, "add_code", fail_code_write)
     decision_key = "decision-for-rollback"
-    with pytest.raises(RuntimeError, match="synthetic code write failure"), scope() as application:
-        application.decide_coding_plan(
-            **owner,
-            idempotency_key=decision_key,
-            plan_id=plan.plan_id,
-            expected_version=plan.version,
-            decisions=((plan.items[0].item_id, "confirmed", "核对过原文"),),
-        )
+    item_key = f"coding-plan:{plan.plan_id}:item:{plan.items[0].item_id}"
+    path = f"/api/research-tasks/{owner['task_id']}/analysis/coding-plans/{plan.plan_id}/decision"
+    request = {
+        "headers": {"Idempotency-Key": decision_key},
+        "json": {
+            "expected_version": plan.version,
+            "decisions": [{
+                "item_id": str(plan.items[0].item_id),
+                "decision": "confirmed",
+                "reason": "核对过原文",
+            }],
+        },
+    }
+    save = getattr(SqliteResearchAnalysisRepository, write_method)
 
-    with client.app.state.database.session() as session:
+    def fail_write(repository, value):
+        if write_method == "add_coding_plan":
+            save(repository, value)
+        raise error_type("synthetic analysis write failure")
+
+    with monkeypatch.context() as patch, closing(
+        TestClient(client.app, cookies=client.cookies, raise_server_exceptions=False)
+    ) as failing_client:
+        patch.setattr(SqliteResearchAnalysisRepository, write_method, fail_write)
+        response = failing_client.post(path, **request)
+    assert response.status_code == status_code, response.text
+    if status_code == 422:
+        assert response.json()["error"]["message"] == "synthetic analysis write failure"
+
+    with database.session() as session:
         repository = SqliteResearchAnalysisRepository(session)
         saved_plan = repository.get_coding_plan(plan.plan_id, **owner)
         saved_code = repository.get_code(code.code_id, **owner)
         assert saved_plan is not None and saved_code is not None
         assert (
             len(repository.list_annotations(**owner)),
-            saved_plan.status.value,
-            saved_plan.version,
-            saved_code.annotation_ids,
+            saved_plan,
+            saved_code,
             repository.get_write(**owner, namespace="api", idempotency_key=decision_key) is None,
-        ) == (1, "candidate", plan.version, code.annotation_ids, True)
+            repository.get_write(**owner, namespace="api", idempotency_key=item_key) is None,
+            repository.list_audit_events(**owner),
+        ) == (1, plan, code, True, True, audit_before)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        confirmation = pool.submit(client.post, path, **request)
+        retry = pool.submit(client.post, path, **request)
+        confirmed, replay = confirmation.result(), retry.result()
+    assert confirmed.status_code == replay.status_code == 200
+    result = confirmed.json()
+    assert result == replay.json()
+    assert (result["status"], result["version"]) == ("applied", plan.version + 1)
+
+    with database.session() as session:
+        repository = SqliteResearchAnalysisRepository(session)
+        saved_code = repository.get_code(code.code_id, **owner)
+        assert saved_code is not None
+        assert saved_code.version == code.version + 1
+        assert saved_code.annotation_ids == (
+            *code.annotation_ids, UUID(result["items"][0]["annotation_id"])
+        )
+        assert len(repository.list_annotations(**owner)) == 2
+        assert repository.get_write(**owner, namespace="api", idempotency_key=decision_key)
+        assert repository.get_write(**owner, namespace="api", idempotency_key=item_key)
+        assert [event.action for event in repository.list_audit_events(**owner)] == [
+            "coding_plan.proposed", "coding_item.applied", "coding_plan.decided"
+        ]
 
 
 def test_analysis_api_marks_source_and_keeps_description_reflection_separate(
