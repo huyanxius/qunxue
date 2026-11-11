@@ -126,6 +126,11 @@ def visible_text(answer: str) -> str:
     return "".join(chunks)
 
 
+_deterministic_source_statuses: ContextVar[dict[str, object] | None] = ContextVar(
+    "deterministic_source_statuses", default=None
+)
+
+
 class DeterministicKnowledgeRunner:
     """Explicit local runner for tests and the repository's mock runtime only."""
 
@@ -172,6 +177,7 @@ class DeterministicKnowledgeRunner:
         )
         return "research"
 
+    @model_material_access_scope()
     def run(
         self,
         *,
@@ -179,19 +185,6 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
-        result, _ = self._run_with_source_statuses(
-            prompt=prompt, conversation=conversation, tools=tools
-        )
-        return result
-
-    @model_material_access_scope()
-    def _run_with_source_statuses(
-        self,
-        *,
-        prompt: str,
-        conversation: Sequence[AgentTurn],
-        tools: AgentToolContext,
-    ) -> tuple[AgentRunResult, dict[str, object]]:
         conversation = _model_conversation_history(tools, conversation)
         if not _should_search_knowledge(
             prompt,
@@ -200,30 +193,24 @@ class DeterministicKnowledgeRunner:
             conversation=conversation,
         ):
             answer = _general_answer(prompt)
-            return (
-                AgentRunResult(
-                    answer=answer,
-                    citations=(),
-                    release_id=tools.release.knowledge_release_id,
-                    provider="deterministic-knowledge",
-                    model="local",
-                ),
-                {},
+            return AgentRunResult(
+                answer=answer,
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="deterministic-knowledge",
+                model="local",
             )
         retrieval_query = _evidence_retrieval_query(prompt, conversation=conversation)
         knowledge_results = tools.search_knowledge(retrieval_query)
         material_results = _search_material_results(tools, retrieval_query)
         results = _merge_retrieval_results(material_results, knowledge_results)
         if not results:
-            return (
-                AgentRunResult(
-                    answer=_insufficient_evidence_answer(),
-                    citations=(),
-                    release_id=tools.release.knowledge_release_id,
-                    provider="deterministic-knowledge",
-                    model="local",
-                ),
-                {},
+            return AgentRunResult(
+                answer=_insufficient_evidence_answer(),
+                citations=(),
+                release_id=tools.release.knowledge_release_id,
+                provider="deterministic-knowledge",
+                model="local",
             )
         first = results[0]
         citation = tools.evidence[str(first["citation_id"])]
@@ -244,18 +231,20 @@ class DeterministicKnowledgeRunner:
             for item in citation_results
             if str(item.get("citation_id")) in tools.evidence
         )
-        result = AgentRunResult(
+        source_statuses = _deterministic_source_statuses.get()
+        if source_statuses is not None:
+            source_statuses.update(
+                (str(item.get("citation_id")), item["evidence_status"])
+                for item in citation_results
+                if item.get("evidence_status") is not None
+            )
+        return AgentRunResult(
             answer=answer,
             citations=citations or (citation,),
             release_id=tools.release.knowledge_release_id,
             provider="deterministic-knowledge",
             model="local",
         )
-        return result, {
-            str(item.get("citation_id")): item["evidence_status"]
-            for item in citation_results
-            if item.get("evidence_status") is not None
-        }
 
     def run_stream(
         self,
@@ -303,10 +292,10 @@ class DeterministicKnowledgeRunner:
                         detail="正在检索个人研究材料",
                     )
                 )
+        source_statuses: dict[str, object] = {}
+        source_status_token = _deterministic_source_statuses.set(source_statuses)
         try:
-            result, source_statuses = self._run_with_source_statuses(
-                prompt=prompt, conversation=conversation, tools=tools
-            )
+            result = self.run(prompt=prompt, conversation=conversation, tools=tools)
         except Exception:
             if on_tool_event is not None:
                 on_tool_event(
@@ -331,6 +320,8 @@ class DeterministicKnowledgeRunner:
                         )
                     )
             raise
+        finally:
+            _deterministic_source_statuses.reset(source_status_token)
         if on_tool_event is not None:
             public_citations = tuple(
                 citation
