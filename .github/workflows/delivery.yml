@@ -39,7 +39,7 @@ jobs:
             # Check the exact published commit, without building unchanged assets.
             printf '{"backend": true, "frontend": true, "dependencies": false}\n' > scope.json
           else
-            python3 deploy/release_scope.py "$BASE" "$(git rev-parse HEAD)" > scope.json
+            python3 deploy/release_scope.py "$BASE" "$(git rev-parse HEAD)" --ci > scope.json
           fi
           for key in backend frontend dependencies; do echo "$key=$(python3 -c 'import json,sys; print(str(json.load(open("scope.json"))[sys.argv[1]]).lower())' "$key")" >> "$GITHUB_OUTPUT"; done
 
