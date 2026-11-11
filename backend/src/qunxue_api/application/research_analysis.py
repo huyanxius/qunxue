@@ -51,6 +51,10 @@ from qunxue_api.modules.research_materials import MaterialBlock, MaterialStatus,
 
 
 class AnalysisMaterialReader(Protocol):
+    def is_external_model_processable(
+        self, material_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> bool: ...
+
     def get(
         self,
         material_id: UUID,
@@ -571,19 +575,25 @@ class ResearchAnalysisApplication:
         material_id: UUID | None = None,
         query: str | None = None,
         limit: int = 50,
+        for_model: bool = False,
     ) -> tuple[dict[str, object], ...]:
         self._require_task(user_id=user_id, task_id=task_id)
+        if for_model:
+            snapshot = self.get_for_agent(user_id=user_id, task_id=task_id)
+            code_items = cast(tuple[AnalysisCode, ...], snapshot["codes"])
+            annotation_items = cast(tuple[AnalysisAnnotation, ...], snapshot["annotations"])
+            plans = cast(tuple[AnalysisCodingPlan, ...], snapshot["coding_plans"])
+        else:
+            code_items = self._analysis.list_codes(user_id=user_id, task_id=task_id)
+            annotation_items = self._analysis.list_annotations(user_id=user_id, task_id=task_id)
+            plans = self._analysis.list_coding_plans(user_id=user_id, task_id=task_id)
         codes = {
             item.code_id: item
-            for item in self._analysis.list_codes(user_id=user_id, task_id=task_id)
+            for item in code_items
             if item.status is AnalysisCodeStatus.CONFIRMED
         }
         selected = set(code_ids) or set(codes)
-        annotations = {
-            item.annotation_id: item
-            for item in self._analysis.list_annotations(user_id=user_id, task_id=task_id)
-        }
-        plans = self._analysis.list_coding_plans(user_id=user_id, task_id=task_id)
+        annotations = {item.annotation_id: item for item in annotation_items}
         plan_by_annotation = {
             item.annotation_id: (plan.plan_id, item)
             for plan in plans
@@ -792,7 +802,61 @@ class ResearchAnalysisApplication:
         }
 
     def get_for_agent(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]:
-        return self.list_snapshot(user_id=user_id, task_id=task_id)
+        self._require_task(user_id=user_id, task_id=task_id)
+        snapshot = self._analysis.snapshot(user_id=user_id, task_id=task_id)
+        annotations = cast(tuple[AnalysisAnnotation, ...], snapshot["annotations"])
+        plans = cast(tuple[AnalysisCodingPlan, ...], snapshot["coding_plans"])
+        material_ids = {item.material_id for item in annotations} | {
+            item.material_id for plan in plans for item in plan.items
+        }
+        allowed_materials = {
+            material_id
+            for material_id in material_ids
+            if self._materials.is_external_model_processable(
+                material_id, user_id=user_id, task_id=task_id
+            )
+        }
+        allowed_annotations = tuple(
+            item
+            for item in annotations
+            if item.material_id in allowed_materials and self._annotation_is_readable(item)
+        )
+        annotation_ids = {item.annotation_id for item in allowed_annotations}
+        codes = tuple(
+            item
+            for item in cast(tuple[AnalysisCode, ...], snapshot["codes"])
+            if item.annotation_ids and annotation_ids.issuperset(item.annotation_ids)
+        )
+        code_ids = {item.code_id for item in codes}
+
+        # A comparison or memo can summarize any of its sources in a free-text field.
+        # If one dependency is unavailable, the whole record must stay out of the prompt.
+        return {
+            "schema_version": snapshot["schema_version"],
+            "annotations": allowed_annotations,
+            "codes": codes,
+            "memos": tuple(
+                item
+                for item in cast(tuple[AnalysisMemo, ...], snapshot["memos"])
+                if (item.annotation_ids or item.code_ids)
+                and annotation_ids.issuperset(item.annotation_ids)
+                and code_ids.issuperset(item.code_ids)
+            ),
+            "comparisons": tuple(
+                item
+                for item in cast(tuple[CaseComparison, ...], snapshot["comparisons"])
+                if (anchors := {key for finding in item.findings for key in finding.annotation_ids})
+                and annotation_ids.issuperset(anchors)
+            ),
+            "coding_plans": tuple(
+                plan
+                for plan in plans
+                if all(
+                    item.material_id in allowed_materials and item.code_id in code_ids
+                    for item in plan.items
+                )
+            ),
+        }
 
     def configure_codebook_entry(
         self,
@@ -1521,7 +1585,7 @@ class ResearchAnalysisApplication:
         )
         if normalized_times and len(normalized_times) < 2:
             raise ValueError("comparison context requires at least two time labels")
-        snapshot = self.list_snapshot(user_id=user_id, task_id=task_id)
+        snapshot = self.get_for_agent(user_id=user_id, task_id=task_id)
         annotations = tuple(
             item
             for item in cast(tuple[AnalysisAnnotation, ...], snapshot["annotations"])
@@ -1657,11 +1721,17 @@ class ResearchAnalysisApplication:
         user_id: UUID,
         task_id: UUID,
     ) -> tuple[CycleEvidence, ...]:
-        """Expose confirmed analysis to M4 through the immutable public handoff."""
+        """Project M4 evidence from currently authorized analysis records."""
 
-        return ResearchCycleService().analysis_evidence(
-            self.formal_handoff(user_id=user_id, task_id=task_id)
+        snapshot = self.get_for_agent(user_id=user_id, task_id=task_id)
+        handoff = ResearchAnalysisHandoff.create(
+            task_id=task_id,
+            annotations=cast(tuple[AnalysisAnnotation, ...], snapshot["annotations"]),
+            codes=cast(tuple[AnalysisCode, ...], snapshot["codes"]),
+            memos=cast(tuple[AnalysisMemo, ...], snapshot["memos"]),
+            comparisons=cast(tuple[CaseComparison, ...], snapshot["comparisons"]),
         )
+        return ResearchCycleService().analysis_evidence(handoff)
 
     def _annotation_is_readable(self, annotation: AnalysisAnnotation) -> bool:
         material = self._materials.get(

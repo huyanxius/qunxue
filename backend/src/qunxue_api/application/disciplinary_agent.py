@@ -26,6 +26,7 @@ from qunxue_api.modules.agent_conversation import (
     ResearchMaterialCitationUnavailable,
     RunAlreadyActive,
     SubjectAgentRunner,
+    user_question_without_discussion_excerpt,
 )
 from qunxue_api.modules.billing import BillingOperations, CreditService
 
@@ -58,6 +59,7 @@ class DisciplinaryAgentApplication:
         bind_research_draft: Callable[..., UUID] | None = None,
         memory_tools_factory: Callable[..., object] | None = None,
         shared_references=None,
+        teaching: bool = False,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
@@ -70,6 +72,7 @@ class DisciplinaryAgentApplication:
         self._bind_research_draft = bind_research_draft
         self._memory_tools_factory = memory_tools_factory
         self._shared_references = shared_references
+        self._teaching = teaching
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
@@ -251,6 +254,12 @@ class DisciplinaryAgentApplication:
         research_required = False
         conversation: Conversation | None = None
         if existing_run is not None:
+            if existing_run.is_teaching != self._teaching:
+                raise ValueError(
+                    "课堂任务请求与普通对话冲突。"
+                    if self._teaching
+                    else "请从课堂工作区继续教学任务。"
+                )
             if conversation_id is not None and conversation_id != existing_run.conversation_id:
                 raise ValueError("idempotency key belongs to another conversation")
             existing_conversation = self.get_conversation(
@@ -280,7 +289,8 @@ class DisciplinaryAgentApplication:
                 research_required = snapshot.get("_research_intent") == "research"
                 if snapshot.get("_unavailable_materials"):
                     raise ResearchMaterialCitationUnavailable("interrupted run source was deleted")
-                prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
+                if not self._teaching:
+                    prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
                 workspace = snapshot.get("workspace", "agent")
                 web_search = bool(snapshot.get("web_search", False))
                 mode = snapshot.get("mode", "standard")
@@ -496,6 +506,7 @@ class DisciplinaryAgentApplication:
             "deep_research_run_id": str(deep_research_run_id) if deep_research_run_id else None,
             "deep_research_action": deep_research_action,
             "deep_research_selection": deep_research_selection,
+            "_teaching": self._teaching,
             "_execution_prompt": prompt,
             "_confirmed_research_plan": confirmed_plan,
             "_research_intent": "research" if research_required else None,
@@ -672,10 +683,25 @@ class DisciplinaryAgentApplication:
             if cancelled():
                 raise AgentInterrupted("Agent run was interrupted by the client")
 
+            model_prompt = prompt
+            if (
+                not self._teaching
+                and not getattr(tools, "allows_unattributed_model_context", True)
+            ):
+                if existing_run is not None:
+                    # A saved execution prompt can also contain a generated research plan.
+                    model_prompt = str(request_snapshot["message"])
+                model_prompt = (
+                    user_question_without_discussion_excerpt(model_prompt)
+                    or "请说明你想讨论的问题。"
+                )
             conversation_history = current.turns[-8:]
             if reference_knowledge_base_id is not None:
                 self._shared_references.prepare(
-                    user_id=user_id, kb_id=reference_knowledge_base_id, query=prompt, tools=tools
+                    user_id=user_id,
+                    kb_id=reference_knowledge_base_id,
+                    query=model_prompt,
+                    tools=tools,
                 )
                 conversation_history = self._shared_references.filter_history(
                     user_id=user_id, kb_id=reference_knowledge_base_id, turns=conversation_history
@@ -686,7 +712,7 @@ class DisciplinaryAgentApplication:
                     user_id=user_id,
                     task_id=task_id,
                     conversation_id=current.conversation_id,
-                    prompt=prompt,
+                    prompt=model_prompt,
                     run_id=run.run_id,
                 )
             deep_research_started = mode == "deep_research" and confirmed_plan is not None
@@ -735,7 +761,7 @@ class DisciplinaryAgentApplication:
                 decision = None
                 if callable(prepare_research):
                     prepare_kwargs = {
-                        "prompt": prompt,
+                        "prompt": model_prompt,
                         "conversation": conversation_history,
                         "on_event": planning_events.append,
                     }
@@ -829,7 +855,7 @@ class DisciplinaryAgentApplication:
                 elif mode == "deep_research":
                     if decision != "conversation" or research_required:
                         raise ValueError("研究意图或提案尚未确认，请重试；尚未开始研究。")
-                    prompt += (
+                    model_prompt += (
                         "\n\n本轮已判断为非研究交流。自然回应用户，并结合语境简短提醒"
                         "可以使用普通模式继续聊天；不要宣称已替用户切换模式，"
                         "不要启动检索或研究，不要使用固定套话。"
@@ -856,7 +882,7 @@ class DisciplinaryAgentApplication:
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
                 runner_kwargs = {
-                    "prompt": prompt,
+                    "prompt": model_prompt,
                     "conversation": conversation_history,
                     "tools": tools,
                     "on_delta": record_delta,
@@ -874,7 +900,7 @@ class DisciplinaryAgentApplication:
                 )
             else:
                 result = self._runner.run(
-                    prompt=prompt,
+                    prompt=model_prompt,
                     conversation=conversation_history,
                     tools=tools,
                 )

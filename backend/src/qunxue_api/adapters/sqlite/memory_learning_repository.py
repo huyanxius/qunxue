@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import and_, exists, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
+from qunxue_api.modules.agent_conversation import user_question_without_discussion_excerpt
 from qunxue_api.modules.agent_memory import (
     MAX_MEMORIES,
     LearningBatch,
@@ -16,9 +17,15 @@ from qunxue_api.modules.agent_memory import (
     validate_content,
 )
 
-from .agent_conversation_model import AgentConversationRow, AgentMessageRow, AgentRunRow
+from .agent_conversation_model import (
+    AgentConversationRow,
+    AgentMessageRow,
+    AgentRunRow,
+    has_unattributed_source_runs,
+)
 from .agent_memory_model import MemoryJobRow, MemoryRow, MemoryUsageRow
 from .agent_memory_repository import SqliteMemoryRepository, memory_from_row, scope_key, utc
+from .research_material_repository import SqliteResearchMaterialRepository
 
 # Reserve before dispatch. The extractor bounds the complete request to 22,000
 # UTF-8 bytes and output to 1,500 tokens; failed/unknown usage retains the reserve.
@@ -70,6 +77,7 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                     AgentRunRow.user_id == AgentConversationRow.user_id,
                     AgentRunRow.status == "running",
                 ),
+                ~has_unattributed_source_runs(),
             )
             .order_by(AgentConversationRow.updated_at)
             .limit(32)
@@ -97,7 +105,12 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             job = self.session.get(
                 MemoryJobRow, conversation.conversation_id, populate_existing=True
             )
-            if not any(s.learn_memory for s in scopes):
+            if not any(s.learn_memory for s in scopes) or (
+                task_id is not None
+                and SqliteResearchMaterialRepository(self.session).has_owned_materials(
+                    user_id=user_id
+                )
+            ):
                 job.processed_sequence = sequence
                 continue
             rows = self.session.scalars(
@@ -112,15 +125,16 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             ).all()
             sources, used, through = [], 0, job.processed_sequence
             for row in rows:
-                size = context_cost(row.content)
+                text = user_question_without_discussion_excerpt(row.content)
+                size = context_cost(text)
                 if size <= 10000 and used + size > 12000:
                     break
                 through = row.sequence
-                if size > 10000:
+                if not text.strip() or size > 10000:
                     continue
                 sources.append(
                     MemorySource(
-                        UUID(row.message_id), row.content, utc(row.created_at), row.sequence
+                        UUID(row.message_id), text, utc(row.created_at), row.sequence
                     )
                 )
                 used += size
@@ -176,7 +190,7 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                 raise MemoryConflict("后台记忆任务已被领取")
             memories, used = [], 0
             for scope in scopes:
-                for item in self.list(user_id, scope.task_id):
+                for item in self.list_for_model(user_id, scope.task_id):
                     size = context_cost(item.content) + 160
                     if used + size <= 4000:
                         memories.append(item)

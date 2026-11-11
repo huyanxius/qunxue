@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import fields, is_dataclass, replace
 from datetime import datetime
 from enum import Enum
@@ -89,6 +89,8 @@ class ResearchMaterialReader(Protocol):
         user_id: UUID,
         task_id: UUID,
     ) -> bool: ...
+
+    def has_owned_materials(self, *, user_id: UUID) -> bool: ...
 
 
 class ResearchMaterialSearchReader(Protocol):
@@ -184,6 +186,7 @@ class ResearchAnalysisAgentFacade(Protocol):
         material_id: UUID | None = None,
         query: str | None = None,
         limit: int = 50,
+        for_model: bool = False,
     ) -> Sequence[Mapping[str, object]]: ...
 
     def get_comparison_context_for_agent(
@@ -234,6 +237,10 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         material_search: ResearchMaterialSearchReader | None = None,
         material_vector_cache_factory=None,
         analysis: ResearchAnalysisAgentFacade | None = None,
+        allows_saved_model_result: (
+            Callable[[UUID, ConfirmedTheoryPlanSnapshot], bool] | None
+        ) = None,
+        has_unattributed_model_history: Callable[..., bool] | None = None,
     ) -> None:
         super().__init__(
             catalog,
@@ -251,6 +258,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._material_retriever = retriever
         self._material_vector_cache_factory = material_vector_cache_factory
         self._analysis = analysis
+        self._allows_saved_model_result = allows_saved_model_result
+        self._has_unattributed_model_history = has_unattributed_model_history
+        self._unattributed_history = False
         self._user_id: UUID | None = None
         self._conversation_id: UUID | None = None
         self._agent_run_id: UUID | None = None
@@ -373,6 +383,21 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         return result
 
     @property
+    def allows_unattributed_model_context(self) -> bool:
+        return not self._unattributed_history and (
+            self._task_id is None or not self._has_material_history()
+        ) and (
+            self._confirmed_plan is None or self._plan_allowed(self._confirmed_plan)
+        )
+
+    def _has_material_history(self) -> bool:
+        return (
+            self._user_id is not None
+            and self._materials is not None
+            and self._materials.has_owned_materials(user_id=self._user_id)
+        )
+
+    @property
     def document_prompt_context(self) -> dict[str, object] | None:
         if not self.research_document_tools_enabled or self._task_id is None:
             return None
@@ -385,9 +410,14 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         }
         if self._project_context is not None:
             context["project"] = self._project_context
-        if self._confirmed_plan is not None:
+        if self._confirmed_plan is not None and self._plan_allowed(self._confirmed_plan):
             context["confirmed_plan"] = _confirmed_plan_payload(self._confirmed_plan)
         return context
+
+    def _plan_allowed(self, plan: ConfirmedTheoryPlanSnapshot) -> bool:
+        return self._allows_saved_model_result is None or (
+            self._user_id is not None and self._allows_saved_model_result(self._user_id, plan)
+        )
 
     def prepare_research_context(
         self,
@@ -437,6 +467,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
     ) -> None:
         self._user_id = user_id
         self._conversation_id = conversation_id
+        self._unattributed_history = self._has_unattributed_model_history is not None and (
+            self._has_unattributed_model_history(user_id=user_id, conversation_id=conversation_id)
+        )
         self._agent_run_id = agent_run_id
         self._agent_turn_id = agent_turn_id
         self._task_id = task_id
@@ -585,6 +618,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             material_id=parsed_material,
             query=query,
             limit=limit,
+            for_model=True,
         )
         payload = _json_safe(result)
         if not isinstance(payload, list):
@@ -1149,12 +1183,9 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         user_id: UUID,
         task_id: UUID,
     ) -> bool:
-        policy = getattr(materials, "is_external_model_processable", None)
-        if not callable(policy):
-            # Narrow test doubles and legacy adapters predate the professional
-            # profile. Production SQLite exposes the policy method.
-            return True
-        return bool(policy(material_id, user_id=user_id, task_id=task_id))
+        return materials.is_external_model_processable(
+            material_id, user_id=user_id, task_id=task_id
+        )
 
     def _search_material_chunks(
         self,
@@ -1304,6 +1335,17 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
             }
         if snapshot.knowledge_release_id != self.release.knowledge_release_id:
             return self._release_mismatch(snapshot.knowledge_release_id)
+        if self._has_material_history() or (
+            self._allows_saved_model_result is not None
+            and not self._plan_allowed(self._documents.get_theory_plan_for_agent(
+                user_id=user_id, theory_plan_id=snapshot.theory_plan_id
+            ))
+        ):
+            return {
+                "error": "research_document_unavailable",
+                "document_id": document_id,
+                "message": "请在工作区查看文档。已保存的文稿缺少可复核的模型来源。",
+            }
         return {
             "document_id": str(snapshot.document_id),
             "task_id": str(snapshot.task_id),

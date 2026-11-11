@@ -627,9 +627,11 @@ class OpenAICompatibleModelProvider:
         request_body: bytes,
         knowledge_release_id: str | None,
     ) -> bytes:
+        from qunxue_api.adapters.model.material_access import require_current_model_material_access
         from qunxue_api.adapters.model.metering import current_operation
         from qunxue_api.adapters.model.routing import current_model_route_scope
 
+        require_current_model_material_access()
         scope = current_operation(required=self._require_billing)
         attempt = (
             scope.before_attempt_payload(

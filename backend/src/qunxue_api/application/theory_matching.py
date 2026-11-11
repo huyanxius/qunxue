@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import replace
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -81,6 +81,7 @@ class TheoryMatchingApplication:
         billing: BillingOperations | None = None,
         commit: Callable[[], None] | None = None,
         invalidate_method_plan: Callable[[UUID, str], None] | None = None,
+        model_material_access_scope: Callable[[], AbstractContextManager[None]] = nullcontext,
         id_factory: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -92,6 +93,7 @@ class TheoryMatchingApplication:
         self._billing = billing
         self._commit = commit
         self._invalidate_method_plan = invalidate_method_plan
+        self._model_material_access_scope = model_material_access_scope
         self._id_factory = id_factory
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -246,7 +248,7 @@ class TheoryMatchingApplication:
                 "The research task is not pinned to a pre-reviewed final release."
             )
 
-        with self._paid_scope(
+        with self._model_material_access_scope(), self._paid_scope(
             user_id=user_id,
             operation="match_start",
             idempotency_key=idempotency_key,
@@ -317,6 +319,7 @@ class TheoryMatchingApplication:
         )
         kwargs = dict(
             match_run_id=match_run_id,
+            user_id=user_id,
             candidate_id=candidate_id,
             expected_version=expected_match_run_version,
             expected_candidate_version=expected_candidate_version,
@@ -326,7 +329,7 @@ class TheoryMatchingApplication:
         if any(r.idempotency_key == idempotency_key for r in snapshot.candidate_retry_records):
             # The module validates the original payload hash before returning the replay.
             return self._matching.retry_candidate(**kwargs)
-        with self._paid_scope(
+        with self._model_material_access_scope(), self._paid_scope(
             user_id=user_id,
             operation=f"match_retry:{match_run_id}",
             idempotency_key=idempotency_key,

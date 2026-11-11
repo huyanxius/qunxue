@@ -498,6 +498,7 @@ class TheoryMatching(Protocol):
         candidate_id: UUID,
         expected_version: int,
         expected_candidate_version: int,
+        user_id: UUID | None = None,
         idempotency_key: str | None = None,
         request_hash: str | None = None,
     ) -> MatchRunSnapshot: ...

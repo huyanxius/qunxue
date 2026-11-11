@@ -5,12 +5,15 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
-from test_agent_memory import register, save
+from test_agent_memory import register, save, seed_learning_source
 
 from qunxue_api.modules.agent_memory import Memory, render_context
 
 
-def memory_entry(content, *, key="method", origin="manual", updated_at=None, user_id=None):
+def memory_entry(
+    content, *, key="method", origin="manual", updated_at=None, user_id=None,
+    source_conversation_id=None,
+):
     now = updated_at or datetime.now(UTC)
     return Memory(
         memory_id=uuid4(),
@@ -22,6 +25,7 @@ def memory_entry(content, *, key="method", origin="manual", updated_at=None, use
         version=1,
         created_at=now,
         updated_at=now,
+        source_conversation_id=source_conversation_id,
     )
 
 
@@ -119,9 +123,13 @@ def test_context_without_omissions_does_not_request_additional_search():
 )
 def test_search_returns_maximum_legal_content_in_full(plain_client, content):
     user_id = UUID(register(plain_client))
+    conversation_id, _ = seed_learning_source(plain_client, str(user_id))
     with plain_client.app.state.memory_service_scope() as service:
         service.repository.lock_scope(service.repository.scope(user_id, None))
-        entry = memory_entry(content, key="full." + "x" * 59, origin="learned", user_id=user_id)
+        entry = memory_entry(
+            content, key="full." + "x" * 59, origin="learned", user_id=user_id,
+            source_conversation_id=conversation_id,
+        )
         service.repository.store(entry)
         results = service.search(user_id, None, "full")
         assert len(results) == 1
@@ -134,6 +142,7 @@ def test_search_returns_maximum_legal_content_in_full(plain_client, content):
 )
 def test_search_scans_past_unfitting_matches_and_counts_serialized_json(plain_client, content):
     user_id = UUID(register(plain_client))
+    conversation_id, _ = seed_learning_source(plain_client, str(user_id))
     now = datetime.now(UTC)
     with plain_client.app.state.memory_service_scope() as service:
         service.repository.lock_scope(service.repository.scope(user_id, None))
@@ -144,6 +153,7 @@ def test_search_scans_past_unfitting_matches_and_counts_serialized_json(plain_cl
                     key=f"match.{index}",
                     origin="learned",
                     user_id=user_id,
+                    source_conversation_id=conversation_id,
                     updated_at=now - timedelta(seconds=index),
                 )
             )
@@ -153,6 +163,7 @@ def test_search_scans_past_unfitting_matches_and_counts_serialized_json(plain_cl
                 key="match.short",
                 origin="learned",
                 user_id=user_id,
+                source_conversation_id=conversation_id,
                 updated_at=now - timedelta(seconds=6),
             )
         )
@@ -187,10 +198,14 @@ def test_search_returns_only_one_entry_when_json_escaping_exceeds_normal_budget(
 
 def test_search_stops_at_five_returned_entries(plain_client):
     user_id = UUID(register(plain_client))
+    conversation_id, _ = seed_learning_source(plain_client, str(user_id))
     with plain_client.app.state.memory_service_scope() as service:
         service.repository.lock_scope(service.repository.scope(user_id, None))
         for index in range(6):
             service.repository.store(
-                memory_entry("访谈", key=f"match.{index}", origin="learned", user_id=user_id)
+                memory_entry(
+                    "访谈", key=f"match.{index}", origin="learned", user_id=user_id,
+                    source_conversation_id=conversation_id,
+                )
             )
         assert len(service.search(user_id, None, "match")) == 5

@@ -46,6 +46,7 @@ from qunxue_api.adapters.model import (
     ModelRouteExecutor,
     ModelRoutesUnavailable,
 )
+from qunxue_api.adapters.model.material_access import model_material_access_scope
 from qunxue_api.adapters.model.metering import MeteredOpenAIChatModel
 from qunxue_api.adapters.research_agent.catalog_tools import (
     KnowledgeToolRegistry,
@@ -171,6 +172,7 @@ class DeterministicKnowledgeRunner:
         )
         return "research"
 
+    @model_material_access_scope()
     def run(
         self,
         *,
@@ -178,6 +180,7 @@ class DeterministicKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
+        conversation = _model_conversation_history(tools, conversation)
         if not _should_search_knowledge(
             prompt,
             research_workspace=bool(getattr(tools, "research_map_enabled", False)),
@@ -241,6 +244,7 @@ class DeterministicKnowledgeRunner:
         on_tool_event: Callable[[AgentToolEvent], None] | None = None,
     ) -> AgentRunResult:
         call_id = "deterministic:search_knowledge"
+        conversation = _model_conversation_history(tools, conversation)
         material_enabled = _material_tools_available(tools)
         if not _should_search_knowledge(
             prompt,
@@ -920,6 +924,8 @@ class PydanticAIKnowledgeRunner:
 
         @self._agent.instructions
         def interrupted_run_instructions(ctx: RunContext[KnowledgeToolRegistry]) -> str:
+            if not getattr(ctx.deps, "allows_unattributed_model_context", True):
+                return ""
             checkpoint = getattr(ctx.deps, "agent_run_checkpoint", {})
             if not checkpoint.get("partial_answer") and not checkpoint.get("tool_summary"):
                 return ""
@@ -946,6 +952,7 @@ class PydanticAIKnowledgeRunner:
         )
         self._register_tools()
 
+    @model_material_access_scope()
     def prepare_research(
         self,
         *,
@@ -962,6 +969,7 @@ class PydanticAIKnowledgeRunner:
         """Return explicit intent; a provider failure is never a casual decision."""
         if self._task_agent is not None:
             return "conversation"
+        conversation = _model_conversation_history(tools, conversation)
         route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
         policy_token = self._planning_policy.set((research_required, skip_clarification))
         try:
@@ -1867,7 +1875,9 @@ class PydanticAIKnowledgeRunner:
                     ),
                 )
             )
-            return result
+            # The before/after text is for human review. The model already has
+            # its proposed change and can use the policy-checked read tool.
+            return _model_write_receipt(result)
 
         @self._agent.tool(prepare=_prepare_document_tool)
         def propose_document_creation(
@@ -1918,7 +1928,7 @@ class PydanticAIKnowledgeRunner:
                     error="research_document_proposal_failed" if result.get("error") else None,
                 )
             )
-            return result
+            return _model_write_receipt(result)
 
         @self._agent.tool(prepare=_prepare_research_map_tool, retries=1)
         def ask_research_question(
@@ -2043,7 +2053,9 @@ class PydanticAIKnowledgeRunner:
                     ),
                 )
             )
-            return result
+            if getattr(ctx.deps, "allows_unattributed_model_context", True):
+                return result
+            return {"updated": True}
 
     def _run_research_workflow_tool(
         self,
@@ -2062,8 +2074,8 @@ class PydanticAIKnowledgeRunner:
                 detail=detail,
             )
         )
+        previous = _completed_write_result(ctx.deps, tool_name, payload)
         try:
-            previous = _completed_write_result(ctx.deps, tool_name, payload)
             result = previous if previous is not None else getattr(ctx.deps, tool_name)(**payload)
         except RetrievalPipelineUnavailable:
             self._emit_tool_event(
@@ -2090,7 +2102,7 @@ class PydanticAIKnowledgeRunner:
                 error=str(result["error"]) if result.get("error") else None,
             )
         )
-        return result
+        return _model_write_receipt(result) if previous is not None else result
 
     def _run_analysis_tool(
         self,
@@ -2100,7 +2112,7 @@ class PydanticAIKnowledgeRunner:
         detail: str,
         *,
         candidate: bool,
-    ) -> dict[str, object]:
+    ) -> dict[str, object] | list[dict[str, object]]:
         call_id = _tool_call_id(ctx, tool_name)
         self._emit_tool_event(
             AgentToolEvent(
@@ -2138,7 +2150,7 @@ class PydanticAIKnowledgeRunner:
                 )
             )
             return failure
-        failed = bool(result.get("error"))
+        failed = isinstance(result, dict) and bool(result.get("error"))
         self._emit_tool_event(
             AgentToolEvent(
                 tool=tool_name,
@@ -2156,7 +2168,7 @@ class PydanticAIKnowledgeRunner:
                 error=str(result["error"]) if failed else None,
             )
         )
-        return result
+        return _model_write_receipt(result) if candidate and isinstance(result, dict) else result
 
     def _emit_tool_event(self, event: AgentToolEvent) -> None:
         cancelled = self._active_cancelled.get()
@@ -2166,6 +2178,7 @@ class PydanticAIKnowledgeRunner:
         if callback is not None:
             callback(event)
 
+    @model_material_access_scope()
     def run(
         self,
         *,
@@ -2173,6 +2186,7 @@ class PydanticAIKnowledgeRunner:
         conversation: Sequence[AgentTurn],
         tools: AgentToolContext,
     ) -> AgentRunResult:
+        conversation = _model_conversation_history(tools, conversation)
         route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
         try:
             if self._task_agent is not None:
@@ -2193,9 +2207,7 @@ class PydanticAIKnowledgeRunner:
             operation = self._run_answer(
                 _compose_agent_prompt(
                     prompt=prompt,
-                    research_map=getattr(tools, "research_map", None)
-                    if getattr(tools, "research_map_enabled", False)
-                    else None,
+                    research_map=_model_research_map(tools),
                     document_context=getattr(tools, "document_prompt_context", None),
                     material_context=getattr(tools, "material_prompt_context", None),
                     retrieved_evidence=retrieved_evidence,
@@ -2215,6 +2227,7 @@ class PydanticAIKnowledgeRunner:
         finally:
             _agent_route_correlation.reset(route_token)
 
+    @model_material_access_scope()
     def run_stream(
         self,
         *,
@@ -2227,6 +2240,7 @@ class PydanticAIKnowledgeRunner:
         on_checkpoint: Callable[[], None] | None = None,
         can_cancel: Callable[[], bool] | None = None,
     ) -> AgentRunResult:
+        conversation = _model_conversation_history(tools, conversation)
         token = self._active_tool_event.set(on_tool_event)
         cancel_token = self._active_cancelled.set(is_cancelled)
         route_token = _agent_route_correlation.set(_agent_route_context_from_tools(tools))
@@ -2261,9 +2275,7 @@ class PydanticAIKnowledgeRunner:
                 result = self._agent.run_sync(
                     _compose_agent_prompt(
                         prompt=prompt,
-                        research_map=getattr(tools, "research_map", None)
-                        if getattr(tools, "research_map_enabled", False)
-                        else None,
+                        research_map=_model_research_map(tools),
                         document_context=getattr(tools, "document_prompt_context", None),
                         material_context=getattr(tools, "material_prompt_context", None),
                         retrieved_evidence=retrieved_evidence,
@@ -2279,9 +2291,7 @@ class PydanticAIKnowledgeRunner:
                     self._run_answer(
                         _compose_agent_prompt(
                             prompt=prompt,
-                            research_map=getattr(tools, "research_map", None)
-                            if getattr(tools, "research_map_enabled", False)
-                            else None,
+                            research_map=_model_research_map(tools),
                             document_context=getattr(tools, "document_prompt_context", None),
                             material_context=getattr(tools, "material_prompt_context", None),
                             retrieved_evidence=retrieved_evidence,
@@ -3246,6 +3256,30 @@ def _compose_agent_prompt(
     )
 
 
+def _model_conversation_history(
+    tools: AgentToolContext, conversation: Sequence[AgentTurn]
+) -> Sequence[AgentTurn]:
+    if not getattr(tools, "allows_unattributed_model_context", True):
+        # Selected citations and abbreviated traces do not record every source
+        # an earlier turn could use. Replaying the full text is unsafe.
+        return ()
+    if any(
+        item.kind in {"material", "research_material"} and item.source_kind != "shared_material"
+        for turn in conversation
+        for item in turn.assistant_message.citations
+    ):
+        return ()
+    return conversation
+
+
+def _model_research_map(tools: AgentToolContext) -> Mapping[str, object] | None:
+    if not getattr(tools, "research_map_enabled", False):
+        return None
+    if not getattr(tools, "allows_unattributed_model_context", True):
+        return {"schema_version": 1, "nodes": [], "relations": []}
+    return getattr(tools, "research_map", None)
+
+
 def _agent_message_history(
     conversation: Sequence[AgentTurn],
 ) -> list[ModelRequest | ModelResponse]:
@@ -3563,3 +3597,18 @@ def _completed_write_result(tools, tool_name: str, payload: dict[str, object]):
             and not output.get("error")):
             return dict(output)
     return None
+
+
+def _model_write_receipt(result: dict[str, object]) -> dict[str, object]:
+    if result.get("error"):
+        return result
+    return {
+        key: value for key, value in result.items()
+        if key in {
+            "proposal_id", "document_id", "base_document_version", "section_id",
+            "status", "requires_user_approval", "requires_user_confirmation",
+            "knowledge_release_id", "kind", "section_count", "code_id", "memo_id",
+            "plan_id", "comparison_id", "candidate_id", "match_run_id", "task_id", "theory_plan_id",
+            "version",
+        }
+    }

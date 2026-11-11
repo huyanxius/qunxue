@@ -4,6 +4,7 @@ import hashlib
 import json
 from contextvars import ContextVar
 
+from qunxue_api.adapters.model.material_access import require_current_model_material_access
 from qunxue_api.adapters.model.routing import current_model_route_scope
 from qunxue_api.adapters.model.token_usage import (
     UnknownTokenUsage,
@@ -309,6 +310,7 @@ class MeteredOpenAIChatModel(UsageSafeOpenAIChatModel):
             client.event_hooks["request"].append(_wire_hook)
 
     async def _completions_create(self, messages, stream, model_settings, model_request_parameters):
+        require_current_model_material_access()
         scope = _current_operation.get()
         if scope is None:
             if self.require_billing:

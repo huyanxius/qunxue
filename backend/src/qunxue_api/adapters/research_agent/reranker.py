@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from qunxue_api.adapters.model.material_access import require_current_model_material_access
+
 
 class RerankerProviderError(RuntimeError):
     """The configured reranker failed or returned an invalid ranking."""
@@ -59,6 +61,7 @@ class SiliconFlowRerankerProvider:
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         request = Request(self._endpoint, data=body, headers=headers, method="POST")
+        require_current_model_material_access()
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
                 payload = json.loads(response.read())

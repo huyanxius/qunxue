@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Protocol
 from uuid import UUID
 
@@ -7,13 +8,14 @@ from qunxue_api.application.theory_matching import (
     TheoryMatchingApplication,
 )
 from qunxue_api.modules.research_intake import (
+    ConfirmedPhenomenonSnapshot,
     PhenomenonService,
     ResearchStartProposal,
     ResearchTaskRepository,
     ResearchTaskService,
     ResearchTaskStatus,
 )
-from qunxue_api.modules.theory_matching import MatchRunStatus
+from qunxue_api.modules.theory_matching import MatchRunSnapshot, MatchRunStatus
 
 
 class ConversationResearchBinding(Protocol):
@@ -36,6 +38,8 @@ class AgentResearchWorkflow:
         phenomena: PhenomenonService,
         matching: TheoryMatchingApplication,
         research_start: ResearchStartApplication,
+        allows_model_phenomenon: Callable[[UUID, ConfirmedPhenomenonSnapshot], bool] | None = None,
+        allows_saved_model_result: Callable[[UUID, MatchRunSnapshot], bool] | None = None,
     ) -> None:
         self._bindings = bindings
         self._tasks = tasks
@@ -43,6 +47,8 @@ class AgentResearchWorkflow:
         self._phenomena = phenomena
         self._matching = matching
         self._research_start = research_start
+        self._allows_model_phenomenon = allows_model_phenomenon
+        self._allows_saved_model_result = allows_saved_model_result
 
     def restore(self, *, user_id: UUID, conversation_id: UUID) -> dict[str, object]:
         task_id = self._bindings.get_research_task_id(
@@ -112,6 +118,14 @@ class AgentResearchWorkflow:
     def get_project_state(self, *, user_id: UUID, task_id: UUID) -> dict[str, object]:
         task = self._tasks.get(task_id, user_id=user_id)
         progress = self._phenomena.progress(task.task_id)
+        phenomenon = progress.confirmed
+        withheld_phenomenon = (
+            phenomenon is not None
+            and self._allows_model_phenomenon is not None
+            and not self._allows_model_phenomenon(user_id, phenomenon)
+        )
+        if withheld_phenomenon:
+            phenomenon = None
         match_status = None
         workflow_status = task.status.value
         if task.current_match_run_id is not None:
@@ -122,13 +136,13 @@ class AgentResearchWorkflow:
         return {
             "task_id": str(task.task_id),
             "status": workflow_status,
-            "project_title": task.project_title,
+            "project_title": None if withheld_phenomenon else task.project_title,
             "project_stage": task.project_stage,
             "method_orientation": task.method_orientation,
-            "research_intent": progress.confirmed.research_intent if progress.confirmed else None,
-            "context": progress.confirmed.context if progress.confirmed else None,
+            "research_intent": phenomenon.research_intent if phenomenon else None,
+            "context": phenomenon.context if phenomenon else None,
             "task_version": task.version,
-            "phenomenon": progress.confirmed.phenomenon if progress.confirmed else None,
+            "phenomenon": phenomenon.phenomenon if phenomenon else None,
             "match_run_id": str(task.current_match_run_id) if task.current_match_run_id else None,
             "match_status": match_status,
             "theory_plan_id": (
@@ -174,10 +188,16 @@ class AgentResearchWorkflow:
                 }
         else:
             match_run = current_match
-        return _match_result(match_run)
+        return _match_result(
+            match_run,
+            include_judgements=(
+                self._allows_saved_model_result is None
+                or self._allows_saved_model_result(user_id, match_run)
+            ),
+        )
 
 
-def _match_result(match_run) -> dict[str, object]:
+def _match_result(match_run, *, include_judgements: bool = True) -> dict[str, object]:
     return {
         "match_run_id": str(match_run.match_run_id),
         "task_id": str(match_run.task_id),
@@ -208,6 +228,6 @@ def _match_result(match_run) -> dict[str, object]:
                 "formal_adoption_eligible": item.content.formal_adoption_eligible,
                 "adoption_blockers": list(item.content.adoption_blockers),
             }
-            for item in match_run.candidates
+            for item in (match_run.candidates if include_judgements else ())
         ],
     }

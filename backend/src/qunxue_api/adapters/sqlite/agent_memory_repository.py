@@ -17,8 +17,10 @@ from qunxue_api.modules.agent_memory import (
     validate_content,
 )
 
+from .agent_conversation_model import AgentConversationRow, has_unattributed_source_runs
 from .agent_memory_model import MemoryRequestRow, MemoryRevisionRow, MemoryRow, MemoryScopeRow
 from .research_intake_model import ResearchTaskRow
+from .research_material_repository import SqliteResearchMaterialRepository
 
 
 def utc(value: datetime | None) -> datetime | None:
@@ -127,6 +129,39 @@ class SqliteMemoryRepository:
             .limit(MAX_MEMORIES)
         )
         return tuple(memory_from_row(row) for row in rows)
+
+    def list_for_model(self, user_id: UUID, task_id: UUID | None) -> tuple[Memory, ...]:
+        items = self.list(user_id, task_id)
+        if not any(item.origin != "manual" for item in items):
+            return items
+        # Agent-authored memories have no complete source list. Learning can
+        # still use user messages from conversations outside a research task.
+        has_materials = SqliteResearchMaterialRepository(self.session).has_owned_materials(
+            user_id=user_id
+        )
+        source_ids = {
+            str(item.source_conversation_id)
+            for item in items
+            if item.source_conversation_id is not None
+            and (not has_materials or item.origin == "learned")
+        }
+        sources = select(AgentConversationRow.conversation_id).where(
+            AgentConversationRow.user_id == str(user_id),
+            AgentConversationRow.conversation_id.in_(source_ids),
+            ~has_unattributed_source_runs(),
+        )
+        if has_materials:
+            sources = sources.where(AgentConversationRow.current_research_task_id.is_(None))
+        allowed = set(self.session.scalars(sources)) if source_ids else set()
+        return tuple(
+            item
+            for item in items
+            if item.origin == "manual"
+            or (
+                (not has_materials or item.origin == "learned")
+                and str(item.source_conversation_id) in allowed
+            )
+        )
 
     def get(self, user_id: UUID, memory_id: UUID) -> Memory:
         row = self.session.scalar(
