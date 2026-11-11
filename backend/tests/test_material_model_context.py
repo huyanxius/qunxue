@@ -388,24 +388,31 @@ def test_saved_classroom_run_rebuilds_only_currently_authorized_sources(
             )
         )
 
-    answer = json.dumps({
-        "stage": "diagnostic",
-        "diagnostic_questions": [{"id": "q1", "prompt": "问题一"}, {"id": "q2", "prompt": "问题二"}],
-    })
+    answer = json.dumps(
+        {
+            "stage": "diagnostic",
+            "diagnostic_questions": [
+                {"id": "q1", "prompt": "问题一"},
+                {"id": "q2", "prompt": "问题二"},
+            ],
+        }
+    )
     requests, runner = _capture_agent(monkeypatch, answer=answer, direct_task=True)
     monkeypatch.setattr(
         pydantic_runner.DeterministicKnowledgeRunner,
         "run",
         lambda _self, **kwargs: runner.run(**kwargs),
     )
-    with plain_client.app.state.disciplinary_agent_scope() as agent:
-        with pytest.raises(ValueError, match="课堂工作区"):
-            agent.run_turn(
-                user_id=user_id,
-                conversation_id=conversation.conversation_id,
-                prompt="继续",
-                idempotency_key=run_key,
-            )
+    with (
+        plain_client.app.state.disciplinary_agent_scope() as agent,
+        pytest.raises(ValueError, match="课堂工作区"),
+    ):
+        agent.run_turn(
+            user_id=user_id,
+            conversation_id=conversation.conversation_id,
+            prompt="继续",
+            idempotency_key=run_key,
+        )
     assert not requests
 
     if permission == "withdrawn":
