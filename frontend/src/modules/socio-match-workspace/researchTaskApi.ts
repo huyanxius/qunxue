@@ -158,10 +158,11 @@ export async function createResearchTaskViaApi(
   return toResearchTask(data)
 }
 
-export async function getResearchTaskViaApi(taskId: string): Promise<ResearchTask> {
+export async function getResearchTaskViaApi(taskId: string, signal: AbortSignal): Promise<ResearchTask> {
   const { data, response } = await getResearchTaskRequest({
     client: apiClient,
     path: { task_id: taskId },
+    signal,
   })
   if (!data) throw new ApiRequestError('研究任务恢复失败。', response?.status)
   return toResearchTask(data)
@@ -252,10 +253,11 @@ export async function startMaterialViaApi(input: MaterialStartInput): Promise<{ 
   return { taskId: task.taskId }
 }
 
-export async function restorePhenomenonViaApi(taskId: string): Promise<RestoredPhenomenon> {
+export async function restorePhenomenonViaApi(taskId: string, signal: AbortSignal): Promise<RestoredPhenomenon> {
   const navigation = await getResearchTaskNavigation({
     client: apiClient,
     path: { task_id: taskId },
+    signal,
   })
   if (!navigation.data) throw new ApiRequestError('研究进度恢复失败。', navigation.response?.status)
 
@@ -264,6 +266,7 @@ export async function restorePhenomenonViaApi(taskId: string): Promise<RestoredP
     const run = await getMaterialIntakeRun({
       client: apiClient,
       path: { run_id: navigation.data.current_material_intake_run_id },
+      signal,
     })
     if (!run.data) throw new ApiRequestError('材料候选恢复失败。', run.response?.status)
     candidates = run.data.candidates.map(toCandidate)
@@ -273,6 +276,7 @@ export async function restorePhenomenonViaApi(taskId: string): Promise<RestoredP
     const result = await getPhenomenonCandidate({
       client: apiClient,
       path: { task_id: taskId, candidate_id: candidateId },
+      signal,
     })
     if (!result.data) throw new ApiRequestError('现象候选恢复失败。', result.response?.status)
     candidates = [toCandidate(result.data)]
@@ -280,6 +284,7 @@ export async function restorePhenomenonViaApi(taskId: string): Promise<RestoredP
   const snapshots = await listPhenomenonSnapshots({
     client: apiClient,
     path: { task_id: taskId },
+    signal,
   })
   if (!snapshots.data) throw new ApiRequestError('现象确认状态恢复失败。', snapshots.response?.status)
   const selectedId = navigation.data.current_phenomenon_candidate_id

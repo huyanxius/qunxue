@@ -1,16 +1,16 @@
 import { BrandLoading } from '../../ui/BrandLoading'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { DotsThreeIcon, TrashIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 
-import { deleteMyResearchViaApi, listMyResearchViaApi } from './accountApi'
+import { deleteMyResearchViaApi } from './accountApi'
 import { ResearchEmptyState } from './RecentResearchPanel'
 import type { MyResearchItem } from './types'
 import { useAppLocale } from '../../i18n/AppLocaleProvider'
 import { researchActionLabel, researchBlockerLabel, researchStageLabel } from './researchLabels'
+import { useMyResearchQuery } from './researchTasks'
 import './my-research.css'
 
-const researchQueryKey = ['account', 'research-tasks'] as const
 const dialogFocusableSelector = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 function formattedDate(value: string, locale: string, unknownTime: string) {
@@ -32,18 +32,13 @@ export function MyResearchPage() {
   const deleteDialogRef = useRef<HTMLElement | null>(null)
   const deleteCancelRef = useRef<HTMLButtonElement | null>(null)
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const research = useQuery({
-    queryKey: researchQueryKey,
-    queryFn: listMyResearchViaApi,
-    retry: false,
-    refetchOnMount: 'always',
-  })
+  const { queryKey: researchQueryKey, query: research } = useMyResearchQuery()
   const deletion = useMutation({
-    mutationFn: deleteMyResearchViaApi,
-    onSuccess: (_data, taskId) => {
+    mutationFn: ({ taskId }: { taskId: string; queryKey: typeof researchQueryKey }) => deleteMyResearchViaApi(taskId),
+    onSuccess: (_data, { taskId, queryKey }) => {
       queryClient.setQueryData<MyResearchItem[]>(
-        researchQueryKey,
-        (items = []) => items.filter((item) => item.taskId !== taskId),
+        queryKey,
+        (items) => items?.filter((item) => item.taskId !== taskId),
       )
       setPendingDeleteId(null)
       setOpenMenuId(null)
@@ -230,7 +225,7 @@ export function MyResearchPage() {
                 className="delete-dialog__confirm"
                 type="button"
                 disabled={deletion.isPending}
-                onClick={() => deletion.mutate(pendingDelete.taskId)}
+                onClick={() => deletion.mutate({ taskId: pendingDelete.taskId, queryKey: researchQueryKey })}
               >
                 {deletion.isPending ? text('正在删除…', 'Deleting…') : text('确认永久删除', 'Permanently delete')}
               </button>

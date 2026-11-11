@@ -25,6 +25,7 @@ import { ResearchArchivePanel } from '../../modules/research-exchange'
 import { ResearchAnalysisPanel, ResearchMaterialsPanel } from '../../modules/research-materials'
 import { MethodPlanWorkspace } from '../../modules/research-method'
 import { useResearchTask, type ResearchTask } from '../../modules/socio-match-workspace'
+import { usePrivateQueryKey } from '../../query/privateQueryKey'
 import { ResearchAgentConversationPage } from '../agent/ResearchAgentConversationPage'
 import { PageContent, PageShell } from '../ui/PageShell'
 import { ErrorState, LoadingState } from '../ui/States'
@@ -90,8 +91,8 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const requestedConversationId = searchParams.get('conversation_id')
   const task = useResearchTask(taskId)
   const navigation = useQuery({
-    queryKey: ['research-project-navigation', taskId],
-    queryFn: () => readResearchTaskNavigationViaApi(taskId),
+    queryKey: usePrivateQueryKey('research-project-navigation', taskId),
+    queryFn: ({ signal }) => readResearchTaskNavigationViaApi(taskId, signal),
     enabled: Boolean(taskId),
     refetchOnWindowFocus: false,
     retry: false,
@@ -99,7 +100,7 @@ export function ResearchProjectWorkspacePage({ userId = null }: ResearchProjectW
   const [startedConversation, setStartedConversation] = useState<{ conversation_id: string; task_id: string | null } | null>(null)
   const knownConversationId = startedConversation?.task_id === taskId ? startedConversation.conversation_id : null
   const conversationQuery = useQuery({
-    queryKey: ['research-project-conversation', taskId, requestedConversationId],
+    queryKey: usePrivateQueryKey('research-project-conversation', taskId, requestedConversationId),
     queryFn: ({ signal }) => getAgentConversation(requestedConversationId!, signal),
     enabled: Boolean(requestedConversationId && requestedConversationId !== knownConversationId),
     refetchOnWindowFocus: false,

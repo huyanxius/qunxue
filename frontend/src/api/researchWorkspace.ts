@@ -77,10 +77,12 @@ export async function getResearchTaskNavigation(
 
 export async function readResearchTaskNavigationViaApi(
   taskId: string,
+  signal?: AbortSignal,
 ) {
   const { data, response } = await getResearchTaskNavigationRequest({
     client: apiClient,
     path: { task_id: taskId },
+    signal,
   })
   if (!data) {
     throw new ApiRequestError('研究进度读取失败。', response?.status)

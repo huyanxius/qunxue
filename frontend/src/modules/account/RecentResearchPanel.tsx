@@ -1,14 +1,11 @@
 import { BrandLoading } from '../../ui/BrandLoading'
-import { useQuery } from '@tanstack/react-query'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 import { ArrowRightIcon, TrayIcon } from '@phosphor-icons/react'
 
-import { listMyResearchViaApi } from './accountApi'
 import { useAppLocale } from '../../i18n/AppLocaleProvider'
 import { researchActionLabel, researchBlockerLabel, researchStageLabel } from './researchLabels'
+import { useMyResearchQuery } from './researchTasks'
 import './recent-research.css'
-
-const researchQueryKey = ['account', 'research-tasks'] as const
 
 type LinkAdapterProps = PropsWithChildren<{
   className?: string
@@ -63,12 +60,7 @@ export function RecentResearchPanel({
   emptyIntro?: ReactNode
 }) {
   const { locale, text } = useAppLocale()
-  const research = useQuery({
-    queryKey: researchQueryKey,
-    queryFn: listMyResearchViaApi,
-    retry: false,
-    refetchOnMount: 'always',
-  })
+  const { query: research } = useMyResearchQuery()
 
   if (research.isPending) {
     return (

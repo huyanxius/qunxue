@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router'
 
 import { readResearchTaskNavigationViaApi } from '../api/researchWorkspace'
+import { usePrivateQueryKey } from '../query/privateQueryKey'
 import { PageContent, PageShell } from './ui/PageShell'
 import { ErrorState, LoadingState } from './ui/States'
 
@@ -34,8 +35,8 @@ export function ResearchTaskNavigationRoute({ children }: { children: ReactNode 
   const { task_id: taskId } = useParams<{ task_id: string }>()
   const location = useLocation()
   const navigation = useQuery({
-    queryKey: ['research-task-navigation-route', taskId, location.pathname],
-    queryFn: () => readResearchTaskNavigationViaApi(taskId!),
+    queryKey: usePrivateQueryKey('research-task-navigation-route', taskId, location.pathname),
+    queryFn: ({ signal }) => readResearchTaskNavigationViaApi(taskId!, signal),
     enabled: Boolean(taskId),
     refetchOnMount: 'always',
     refetchOnReconnect: false,

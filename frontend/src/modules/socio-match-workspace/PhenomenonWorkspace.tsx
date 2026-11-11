@@ -2,6 +2,7 @@ import { BrandLoading } from '../../ui/BrandLoading'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 
+import { usePrivateQueryKey } from '../../query/privateQueryKey'
 import {
   confirmEditedPhenomenonViaApi,
   listPhenomenonExamplesViaApi,
@@ -161,8 +162,8 @@ function originLabel(candidate: PhenomenonCandidate) {
 
 export function PhenomenonWorkspace({ taskId }: { readonly taskId: string }) {
   const restored = useQuery({
-    queryKey: ['phenomenon', taskId],
-    queryFn: () => restorePhenomenonViaApi(taskId),
+    queryKey: usePrivateQueryKey('phenomenon', taskId),
+    queryFn: ({ signal }) => restorePhenomenonViaApi(taskId, signal),
     retry: false,
   })
   const [selectedId, setSelectedId] = useState<string | null>(null)

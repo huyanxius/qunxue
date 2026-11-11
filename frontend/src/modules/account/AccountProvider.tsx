@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 
+import { privateQueryPrefix, PrivateQuerySessionContext } from '../../query/privateQueryKey'
 import {
   getCurrentSessionViaApi,
   loginViaApi,
@@ -39,12 +40,24 @@ const anonymousAccount: AccountContextValue = {
 const AccountContext = createContext<AccountContextValue>(anonymousAccount)
 const sessionQueryKey = ['account', 'session'] as const
 
+function clearPrivateQueries(queryClient: QueryClient) {
+  const filters = { queryKey: privateQueryPrefix }
+  void queryClient.cancelQueries(filters)
+  queryClient.removeQueries(filters)
+}
+
 export function AccountProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
   const [expired, setExpired] = useState(false)
   const sessionQuery = useQuery({
     queryKey: sessionQueryKey,
-    queryFn: getCurrentSessionViaApi,
+    queryFn: async ({ signal }) => {
+      const session = await getCurrentSessionViaApi(signal)
+      signal.throwIfAborted()
+      const previous = queryClient.getQueryData<AccountSession | null>(sessionQueryKey)
+      if (previous && previous.sessionId !== session?.sessionId) clearPrivateQueries(queryClient)
+      return session
+    },
     retry: false,
   })
   const loginMutation = useMutation({ mutationFn: ({ email, password }: { email: string; password: string }) => loginViaApi(email, password) })
@@ -52,13 +65,17 @@ export function AccountProvider({ children }: PropsWithChildren) {
   const registrationCodeMutation = useMutation({ mutationFn: sendRegistrationCodeViaApi })
   const logoutMutation = useMutation({ mutationFn: logoutViaApi })
 
+  const replaceSession = useCallback((session: AccountSession | null, expired: boolean) => {
+    void queryClient.cancelQueries({ queryKey: sessionQueryKey })
+    clearPrivateQueries(queryClient)
+    setExpired(expired)
+    queryClient.setQueryData(sessionQueryKey, session)
+  }, [queryClient])
+
   useEffect(() => watchSessionRejection(() => {
     const established = queryClient.getQueryData<AccountSession | null>(sessionQueryKey)
-    if (established) {
-      setExpired(true)
-      queryClient.setQueryData(sessionQueryKey, null)
-    }
-  }), [queryClient])
+    if (established) replaceSession(null, true)
+  }), [queryClient, replaceSession])
 
   const sessionState: AccountSessionState = expired
     ? { status: 'expired' }
@@ -74,36 +91,38 @@ export function AccountProvider({ children }: PropsWithChildren) {
     sessionState,
     async login(email, password) {
       const session = await loginMutation.mutateAsync({ email, password })
-      setExpired(false)
-      queryClient.setQueryData(sessionQueryKey, session)
+      replaceSession(session, false)
       return session
     },
     async register(email, password, verificationCode) {
       const session = await registerMutation.mutateAsync({ email, password, verificationCode })
-      setExpired(false)
-      queryClient.setQueryData(sessionQueryKey, session)
+      replaceSession(session, false)
       return session
     },
     sendRegistrationCode: (email) => registrationCodeMutation.mutateAsync(email),
     async logout(onSucceeded) {
       await logoutMutation.mutateAsync()
-      setExpired(false)
-      queryClient.setQueryData(sessionQueryKey, null)
+      replaceSession(null, false)
       onSucceeded?.()
     },
     retrySession: () => void sessionQuery.refetch(),
   }), [
     loginMutation,
     logoutMutation,
-    queryClient,
     registerMutation,
     registrationCodeMutation,
-    setExpired,
+    replaceSession,
     sessionQuery,
     sessionState,
   ])
 
-  return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>
+  return (
+    <AccountContext.Provider value={value}>
+      <PrivateQuerySessionContext.Provider value={sessionState.status === 'authenticated' ? sessionState.session : null}>
+        {children}
+      </PrivateQuerySessionContext.Provider>
+    </AccountContext.Provider>
+  )
 }
 
 export function useAccount() {
