@@ -14,7 +14,6 @@ from qunxue_api.modules.research_materials import (
     MaterialNotFound,
     MaterialParseVersion,
     MaterialStatus,
-    ModelProcessingScope,
     ProfessionalMaterialRepository,
     ResearchMaterial,
     ResearchMaterialRepository,
@@ -178,13 +177,15 @@ class TranscriptionApplication:
         if isinstance(prepared, TranscriptVersion):
             return prepared
         candidate_id, version_number = prepared
+        material = self._media(user_id=user_id, task_id=task_id, material_id=material_id)
         try:
+            self._require_provider_access(material)
             parsed = self._provider.transcribe(
                 filename=material.original_filename,
                 media_type=material.media_type,
                 content=content,
             )
-        except TranscriptionError:
+        except (TranscriptionError, TranscriptionPolicyDenied) as error:
             failed = MaterialParseVersion.failed(
                 parse_id=candidate_id,
                 material_id=material.material_id,
@@ -192,7 +193,11 @@ class TranscriptionApplication:
                 parser_name=self._provider.name,
                 parser_version="1.0",
                 schema_version=_TRANSCRIPT_SCHEMA,
-                error_code="transcription_provider_failed",
+                error_code=(
+                    "transcription_policy_denied"
+                    if isinstance(error, TranscriptionPolicyDenied)
+                    else "transcription_provider_failed"
+                ),
                 now=self._clock(),
             )
             self._materials.save_parse(failed)
@@ -417,15 +422,8 @@ class TranscriptionApplication:
 
     def _require_provider_access(self, material: ResearchMaterial) -> None:
         profile = self._profile(material)
-        if profile is None:
-            return
-        if self._provider.processing_location is ProcessingLocation.EXTERNAL:
-            if not profile.allows_external_model_processing:
-                raise TranscriptionPolicyDenied("external model processing is not allowed")
-            return
-        if (
-            not profile.allows_manual_reading
-            or profile.model_processing_scope
-            not in {ModelProcessingScope.LOCAL_ONLY, ModelProcessingScope.EXTERNAL_ALLOWED}
+        location = self._provider.processing_location
+        if profile is None or not profile.allows_model_processing(
+            external=location is ProcessingLocation.EXTERNAL,
         ):
-            raise TranscriptionPolicyDenied("local model processing is not allowed")
+            raise TranscriptionPolicyDenied(f"{location.value} model processing is not allowed")

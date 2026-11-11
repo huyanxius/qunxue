@@ -84,6 +84,9 @@ class _MaterialSet:
         }
         self.deleted: set = set()
 
+    def is_external_model_processable(self, material_id, *, user_id, task_id):
+        return self.get(material_id, user_id=user_id, task_id=task_id) is not None
+
     def get(self, material_id, *, user_id, task_id, include_deleted=False):
         material = self.materials.get(material_id)
         if (
@@ -919,9 +922,7 @@ def test_confirmed_memo_and_case_comparison_form_a_traceable_handoff(
     assert tombstone.unavailable_reason == "source_deleted"
 
     agent_snapshot = app.get_for_agent(user_id=user_id, task_id=task_id)
-    agent_tombstone = next(
-        item
-        for item in agent_snapshot["annotations"]
-        if item.annotation_id == annotation.annotation_id
+    assert tuple(item.annotation_id for item in agent_snapshot["annotations"]) == (
+        second_annotation.annotation_id,
     )
-    assert agent_tombstone.quote == ""
+    assert agent_snapshot["comparisons"] == ()

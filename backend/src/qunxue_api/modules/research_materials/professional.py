@@ -187,9 +187,15 @@ class MaterialArchiveProfile:
 
     @property
     def allows_external_model_processing(self) -> bool:
+        return self.allows_model_processing(external=True)
+
+    def allows_model_processing(self, *, external: bool) -> bool:
+        if self.consent_scope in {ConsentScope.WITHDRAWN, ConsentScope.MANUAL_REVIEW_ONLY}:
+            return False
+        if not external:
+            return self.model_processing_scope is not ModelProcessingScope.MANUAL_ONLY
         return (
-            self.allows_manual_reading
-            and self.model_processing_scope is ModelProcessingScope.EXTERNAL_ALLOWED
+            self.model_processing_scope is ModelProcessingScope.EXTERNAL_ALLOWED
             and self.deidentification_status is not DeidentificationStatus.PENDING
         )
 

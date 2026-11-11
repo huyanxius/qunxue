@@ -101,7 +101,6 @@ def _annotation(
     return response.json()
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="AS-01: derived text is unfiltered")
 def test_manual_only_annotation_quote_stays_out_of_model_context(client: TestClient) -> None:
     user_id = UUID(_authenticate(client))
     task = _task(client)

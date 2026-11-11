@@ -37,6 +37,7 @@ from qunxue_api.adapters.model import (
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
+from qunxue_api.adapters.model.material_access import model_material_access_scope
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
     OpenAICompatibleEmbeddingProvider,
@@ -114,6 +115,7 @@ from qunxue_api.adapters.sqlite.theory_matching import (
 from qunxue_api.adapters.theory_evidence import (
     CatalogTheoryEvidenceSource,
     CatalogTheoryLexicalRetriever,
+    TheoryModelContext,
 )
 from qunxue_api.adapters.transcription import (
     DashScopeTranscriptionProvider,
@@ -503,6 +505,10 @@ def create_app(
         with app.state.matching_start_lock, resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
             analysis_application = build_research_analysis_application(session)
+            model_context = TheoryModelContext(
+                has_owned_materials=SqliteResearchMaterialRepository(session).has_owned_materials,
+                get_analysis_evidence=analysis_application.confirmed_cycle_evidence,
+            )
             method_plan_service = MethodPlanService(SqliteMethodPlanRepository(session))
             matching = TheoryMatchingService(
                 evidence_source=build_catalog_evidence_source(
@@ -514,6 +520,8 @@ def create_app(
                 model_version=descriptor.model_version,
                 capability=descriptor.capability_tier,
                 contract_version=resolved_settings.contract_version,
+                allows_model_phenomenon=model_context.allows_phenomenon,
+                saved_model_evidence=model_context.saved_evidence,
             )
             yield TheoryMatchingApplication(
                 catalog=app.state.knowledge_catalog,
@@ -523,6 +531,7 @@ def create_app(
                 rollback=session.rollback,
                 billing=None,
                 commit=session.commit,
+                model_material_access_scope=model_material_access_scope,
                 invalidate_method_plan=(
                     lambda task_id, reason: method_plan_service.mark_stale_for_task(
                         task_id=task_id, reason=reason
@@ -933,6 +942,10 @@ def create_app(
                 session,
                 task_repository=task_repository,
             )
+            model_context = TheoryModelContext(
+                has_owned_materials=material_repository.has_owned_materials,
+                get_analysis_evidence=analysis_application.confirmed_cycle_evidence,
+            )
             descriptor = app.state.model_gateway.descriptor
             matching_service = TheoryMatchingService(
                 evidence_source=build_catalog_evidence_source(
@@ -944,6 +957,8 @@ def create_app(
                 model_version=descriptor.model_version,
                 capability=descriptor.capability_tier,
                 contract_version=resolved_settings.contract_version,
+                allows_model_phenomenon=model_context.allows_phenomenon,
+                saved_model_evidence=model_context.saved_evidence,
             )
             matching_application = TheoryMatchingApplication(
                 catalog=app.state.knowledge_catalog,
@@ -951,6 +966,7 @@ def create_app(
                 matching_requests=matching_requests,
                 research_tasks=task_repository,
                 rollback=session.rollback,
+                model_material_access_scope=model_material_access_scope,
                 invalidate_method_plan=(
                     lambda task_id, reason: method_plan_service.mark_stale_for_task(
                         task_id=task_id, reason=reason
@@ -970,6 +986,8 @@ def create_app(
                 phenomena=phenomenon_service,
                 matching=matching_application,
                 research_start=research_start_application,
+                allows_model_phenomenon=model_context.allows_phenomenon,
+                allows_saved_model_result=model_context.allows_saved_result,
             )
             document_application = ResearchDocumentApplication(
                 documents=document_service,
@@ -1050,6 +1068,7 @@ def create_app(
                     ),
                     conversations=conversations,
                     runner=runner,
+                    teaching=teaching,
                     billing=None,
                     rollback=session.rollback,
                     credits=None,
@@ -1094,6 +1113,10 @@ def create_app(
                             session, **scope
                         ),
                         analysis=analysis_application,
+                        allows_saved_model_result=model_context.allows_saved_result,
+                        has_unattributed_model_history=(
+                            conversation_repository.has_unattributed_model_history
+                        ),
                     ),
                 )
             except Exception:
@@ -1103,16 +1126,17 @@ def create_app(
                 raise
 
     app.state.disciplinary_agent_scope = disciplinary_agent_scope
-    app.state.execute_teaching = TeachingExecution(
+    app.state.execute_teaching = model_material_access_scope()(TeachingExecution(
         teaching_scope,
         lambda: disciplinary_agent_scope(teaching=True),
         lambda value: TeachingResult.model_validate(value).model_dump(mode="json"),
-    )
+    ))
 
     @contextmanager
     def memory_service_scope():
         with resolved_database.session() as memory_session:
-            yield MemoryService(SqliteMemoryRepository(memory_session))
+            repository = SqliteMemoryRepository(memory_session)
+            yield MemoryService(repository, model_items=repository.list_for_model)
 
     app.state.memory_service_scope = memory_service_scope
     app.state.memory_overview = MemoryOverview(billing=None)

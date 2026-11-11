@@ -1,6 +1,7 @@
 """Knowledge-first conversational Agent domain and application service."""
 
 from qunxue_api.modules.agent_conversation.domain import (
+    LEGACY_TEACHING_PROMPT_PREFIX,
     AgentCitation,
     AgentMaterialAttachment,
     AgentMessage,
@@ -9,6 +10,7 @@ from qunxue_api.modules.agent_conversation.domain import (
     Conversation,
     IdempotentTurn,
     UserConversation,
+    user_question_without_discussion_excerpt,
 )
 from qunxue_api.modules.agent_conversation.errors import (
     AgentConversationError,
@@ -40,6 +42,7 @@ from qunxue_api.modules.agent_conversation.service import ConversationService
 from .canvas_editing import CanvasEditConflict, apply_canvas_edits, prepare_canvas_edit
 
 __all__ = [
+    "LEGACY_TEACHING_PROMPT_PREFIX",
     "CanvasEditConflict",
     "apply_canvas_edits",
     "prepare_canvas_edit",
@@ -70,5 +73,6 @@ __all__ = [
     "apply_research_map_patch",
     "empty_research_map",
     "normalize_research_map_patch",
+    "user_question_without_discussion_excerpt",
     "patches_from_tool_summary",
 ]

@@ -77,11 +77,13 @@ class AgentMemoryTools:
                     None,
                 )
                 if existing and expected_version != existing.version:
-                    return {
+                    conflict = {
                         "error": "version_required",
                         "current_version": existing.version,
-                        "content": existing.content,
                     }
+                    if existing in memory.model_items(self._user_id, task_id):
+                        conflict["content"] = existing.content
+                    return conflict
                 if action == "forget":
                     if existing is None:
                         return {"error": "memory_not_found"}

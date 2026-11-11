@@ -29,8 +29,11 @@ from qunxue_api.modules.research_intake import (
     PhenomenonEvidenceVerificationStatus,
 )
 from qunxue_api.modules.theory_matching import (
+    CandidateOrigin,
+    ConfirmedTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
     EvidenceItemSnapshot,
+    MatchRunSnapshot,
     RetrievalProvenanceSnapshot,
 )
 
@@ -442,6 +445,96 @@ class CatalogTheoryEvidenceSource:
             reranker_model=result.reranker_model,
             degraded_reason=result.degraded_reason,
             retrieved_chunk_ids=chunk_ids,
+        )
+
+
+class TheoryModelContext:
+    """Authorize evidence again when saved M4/M5 records are used as model input."""
+
+    def __init__(
+        self,
+        *,
+        has_owned_materials: Callable[..., bool],
+        get_analysis_evidence: Callable[..., tuple[CycleEvidence, ...]],
+    ) -> None:
+        self._has_owned_materials = has_owned_materials
+        self._get_analysis_evidence = get_analysis_evidence
+
+    def allows_phenomenon(self, user_id: UUID, phenomenon: ConfirmedPhenomenonSnapshot) -> bool:
+        refs = phenomenon.evidence_refs
+        if refs and all(item.source_ref_id == "input:direct" for item in refs):
+            return True
+        # A material-intake ID belongs to the old intake store. An Agent proposal
+        # can also summarize attachments without recording them as its sources.
+        return (
+            bool(refs)
+            and all(item.source_ref_id.startswith("agent-proposal:") for item in refs)
+            and not self._has_owned_materials(user_id=user_id)
+        )
+
+    def saved_evidence(
+        self, user_id: UUID, match: MatchRunSnapshot | ConfirmedTheoryPlanSnapshot
+    ) -> tuple[EvidenceItemSnapshot, ...]:
+        bundle = match.evidence_bundle
+        if not self.allows_phenomenon(user_id, match.phenomenon):
+            return ()
+        direct_refs = {
+            (item.evidence_ref_id, item.source_ref_id, item.excerpt)
+            for item in match.phenomenon.evidence_refs
+        }
+        public_claims = {
+            (
+                f"evidence:{profile.theory_id}:v{profile.content_version}:claim-{index + 1}:"
+                f"{source_id}",
+                claim,
+                source_id,
+            )
+            for profile in bundle.theory_profiles
+            for index, claim in enumerate(profile.core_propositions or (profile.title,))
+            for source_id in profile.source_ids
+        }
+        analysis_items: list[EvidenceItemSnapshot] = []
+        if any(
+            item.source and item.source.source_type == "personal_research_material"
+            for item in bundle.evidence_items
+        ):
+            CatalogTheoryEvidenceSource._append_analysis_evidence(
+                evidence_items=analysis_items,
+                used_evidence_ids=set(),
+                analysis_evidence=self._get_analysis_evidence(
+                    user_id=user_id, task_id=match.task_id
+                ),
+            )
+        authorized_analysis = set(analysis_items)
+
+        def allowed(item: EvidenceItemSnapshot) -> bool:
+            source = item.source
+            if source is None:
+                return False
+            if source.source_type == "personal_research_material":
+                # Rebuild from all current anchors. An old claim may combine two
+                # materials even when this particular evidence item names only one.
+                return item in authorized_analysis
+            if source.source_type == "confirmed_phenomenon_evidence":
+                return (item.evidence_ref_id, source.source_id, item.excerpt) in direct_refs
+            return (
+                item.excerpt is None
+                and source.verification_status is SourceVerificationStatus.VERIFIED
+                and (item.evidence_ref_id, item.claim, source.source_id) in public_claims
+            )
+
+        return tuple(item for item in bundle.evidence_items if allowed(item))
+
+    def allows_saved_result(
+        self, user_id: UUID, match: MatchRunSnapshot | ConfirmedTheoryPlanSnapshot
+    ) -> bool:
+        return (
+            self.allows_phenomenon(user_id, match.phenomenon)
+            and all(
+                item.content.origin is CandidateOrigin.PRE_REVIEWED_KNOWLEDGE
+                for item in match.candidates
+            )
+            and self.saved_evidence(user_id, match) == match.evidence_bundle.evidence_items
         )
 
 
