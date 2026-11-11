@@ -183,7 +183,7 @@ def summarize_memory(
         scope = memory.repository.scope(user_id, payload.task_id)
         if scope.version != payload.expected_version:
             raise HTTPException(409, "记忆已更新，请刷新后重新整理概览。")
-        items = memory.repository.list(user_id, payload.task_id)
+        items = memory.model_items(user_id, payload.task_id)
     # Validate the final snapshot before the paid operation settles. Cache hits
     # have no paid operation and perform the same check after returning.
     latest, validation_done = scope, False
@@ -192,8 +192,8 @@ def summarize_memory(
         nonlocal latest, validation_done
         with service(request) as memory:
             latest = memory.repository.scope(user_id, payload.task_id)
-            if latest.version != scope.version and memory_overview_fingerprint(
-                memory.repository.list(user_id, payload.task_id)
+            if memory_overview_fingerprint(
+                memory.model_items(user_id, payload.task_id)
             ) != memory_overview_fingerprint(items):
                 request.app.state.memory_overview.invalidate(user_id, payload.task_id)
                 raise MemoryOverviewStale()

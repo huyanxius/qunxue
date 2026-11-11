@@ -10,6 +10,8 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from qunxue_api.adapters.model.material_access import track_material_access
+from qunxue_api.adapters.sqlite.research_intake_model import MaterialIntakeRunRow, ResearchTaskRow
 from qunxue_api.adapters.sqlite.research_material_model import (
     ResearchMaterialBlobRow,
     ResearchMaterialBlockRow,
@@ -183,22 +185,44 @@ class SqliteResearchMaterialRepository:
         user_id: UUID,
         task_id: UUID,
     ) -> bool:
-        """Gate external-model use without changing manual material reads.
+        """Read the current authorization for an owned, non-deleted source."""
 
-        A legacy row without a professional profile preserves its established
-        behavior. Once cataloged, the archive profile becomes authoritative.
-        """
+        def check() -> bool:
+            with Session(bind=self._session.get_bind()) as session:
+                return SqliteResearchMaterialRepository(session)._external_model_permission(
+                    material_id, user_id=user_id, task_id=task_id
+                )
 
+        if not self._external_model_permission(material_id, user_id=user_id, task_id=task_id):
+            return False
+        track_material_access(material_id, user_id=user_id, task_id=task_id, check=check)
+        return True
+
+    def _external_model_permission(
+        self, material_id: UUID, *, user_id: UUID, task_id: UUID
+    ) -> bool:
         from qunxue_api.adapters.sqlite.professional_material_repository import (
             SqliteProfessionalMaterialRepository,
         )
 
+        if self.get(material_id, user_id=user_id, task_id=task_id) is None:
+            return False
         profile = SqliteProfessionalMaterialRepository(self._session).get_profile(
             material_id,
             user_id=user_id,
             task_id=task_id,
         )
-        return profile is None or profile.allows_external_model_processing
+        return profile is not None and profile.allows_external_model_processing
+
+    def has_owned_materials(self, *, user_id: UUID) -> bool:
+        # A deleted source can still have derivatives in old turns and documents.
+        materials = select(ResearchMaterialRow.material_id).where(
+            ResearchMaterialRow.user_id == str(user_id)
+        )
+        legacy_intakes = select(MaterialIntakeRunRow.run_id).join(
+            ResearchTaskRow, ResearchTaskRow.task_id == MaterialIntakeRunRow.task_id
+        ).where(ResearchTaskRow.user_id == str(user_id))
+        return self._session.scalar(materials.union_all(legacy_intakes).limit(1)) is not None
 
     def list(
         self,

@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from uuid import UUID
 
 from .domain import (
@@ -13,8 +14,14 @@ from .ports import MemoryRepository
 
 
 class MemoryService:
-    def __init__(self, repository: MemoryRepository) -> None:
+    def __init__(
+        self,
+        repository: MemoryRepository,
+        *,
+        model_items: Callable[[UUID, UUID | None], tuple[Memory, ...]] | None = None,
+    ) -> None:
         self.repository = repository
+        self.model_items = model_items or repository.list
 
     def context(self, user_id: UUID, task_id: UUID | None) -> str:
         return render_context(self.available(user_id, task_id))
@@ -23,7 +30,7 @@ class MemoryService:
         result = ()
         for scope in (None, task_id) if task_id else (None,):
             if self.repository.scope(user_id, scope).use_memory:
-                result += self.repository.list(user_id, scope)
+                result += self.model_items(user_id, scope)
         return result
 
     def search(self, user_id: UUID, task_id: UUID | None, query: str) -> list[dict]:

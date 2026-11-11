@@ -80,7 +80,6 @@ class AgentMemoryTools:
                     return {
                         "error": "version_required",
                         "current_version": existing.version,
-                        "content": existing.content,
                     }
                 if action == "forget":
                     if existing is None:

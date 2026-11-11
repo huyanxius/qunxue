@@ -11,6 +11,7 @@ from qunxue_api.modules.theory_matching.public import (
     CandidateOrigin,
     ConfirmedTheoryPlanSnapshot,
     EvidenceBundleSnapshot,
+    EvidenceItemSnapshot,
     MatchCompletionBasis,
     MatchRunModelSnapshot,
     MatchRunRepository,
@@ -48,6 +49,10 @@ class TheoryMatchingService:
         capability: str,
         contract_version: str,
         id_factory: Callable[[], UUID] = uuid4,
+        allows_model_phenomenon: Callable[[UUID, ConfirmedPhenomenonSnapshot], bool] | None = None,
+        saved_model_evidence: (
+            Callable[[UUID, MatchRunSnapshot], tuple[EvidenceItemSnapshot, ...]] | None
+        ) = None,
     ) -> None:
         self._evidence_source = evidence_source
         self._judge = judge
@@ -57,6 +62,8 @@ class TheoryMatchingService:
         self._capability = capability
         self._contract_version = contract_version
         self._id_factory = id_factory
+        self._allows_model_phenomenon = allows_model_phenomenon
+        self._saved_model_evidence = saved_model_evidence
 
     def start(
         self,
@@ -65,6 +72,7 @@ class TheoryMatchingService:
         phenomenon: ConfirmedPhenomenonSnapshot,
         release: KnowledgeReleaseRef,
     ) -> MatchRunSnapshot:
+        self._require_model_phenomenon(user_id, phenomenon)
         evidence_bundle = self._evidence_source.retrieve(
             user_id=user_id,
             phenomenon=phenomenon,
@@ -269,6 +277,7 @@ class TheoryMatchingService:
         candidate_id: UUID,
         expected_version: int,
         expected_candidate_version: int,
+        user_id: UUID | None = None,
         idempotency_key: str | None = None,
         request_hash: str | None = None,
     ) -> MatchRunSnapshot:
@@ -301,13 +310,27 @@ class TheoryMatchingService:
         if not failure.retryable:
             raise ValueError("failed candidate is not retryable")
 
+        self._require_model_phenomenon(user_id, match_run.phenomenon)
         all_contents = tuple(
             [item.content for item in match_run.candidates]
             + [item.content for item in match_run.candidate_failures]
         )
+        saved_evidence = match_run.evidence_bundle.evidence_items
+        if self._saved_model_evidence is not None:
+            if (
+                user_id is None
+                or failure.content.origin is not CandidateOrigin.PRE_REVIEWED_KNOWLEDGE
+            ):
+                raise ValueError("当前候选缺少可复核的模型来源，请重新匹配。")
+            saved_evidence = self._saved_model_evidence(user_id, match_run)
+            all_contents = tuple(
+                item
+                for item in all_contents
+                if item.origin is CandidateOrigin.PRE_REVIEWED_KNOWLEDGE
+            )
         evidence = tuple(
             item
-            for item in match_run.evidence_bundle.evidence_items
+            for item in saved_evidence
             if _evidence_applies_to_candidate(item, failure.content.source_ids)
         )
         retry_version = failure.candidate_version + 1
@@ -462,6 +485,14 @@ class TheoryMatchingService:
             if persisted.request_hash != request_hash:
                 raise ValueError("idempotency key was already used with another payload")
         return saved
+
+    def _require_model_phenomenon(
+        self, user_id: UUID | None, phenomenon: ConfirmedPhenomenonSnapshot
+    ) -> None:
+        if self._allows_model_phenomenon is not None and (
+            user_id is None or not self._allows_model_phenomenon(user_id, phenomenon)
+        ):
+            raise ValueError("当前研究现象缺少可复核的模型处理许可，请直接描述研究现象后重新匹配。")
 
     def acknowledge_partial_completion(
         self,

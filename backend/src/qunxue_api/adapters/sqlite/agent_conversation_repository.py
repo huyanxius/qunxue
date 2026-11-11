@@ -46,6 +46,17 @@ class SqliteConversationRepository:
     def commit(self) -> None:
         self._session.commit()
 
+    def has_teaching_context(self, *, user_id: UUID, conversation_id: UUID) -> bool:
+        return self._session.scalar(
+            select(AgentRunRow.run_id)
+            .where(
+                AgentRunRow.user_id == str(user_id),
+                AgentRunRow.conversation_id == str(conversation_id),
+                AgentRunRow.idempotency_key.startswith("teaching:"),
+            )
+            .limit(1)
+        ) is not None
+
     def get_research_task_id(self, *, user_id: UUID, conversation_id: UUID) -> UUID | None:
         row = self._session.scalar(
             select(AgentConversationRow).where(

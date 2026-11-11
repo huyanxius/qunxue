@@ -149,10 +149,8 @@ def test_new_upload_can_be_transcribed_without_additional_review() -> None:
         pytest.param(
             ConsentScope.MANUAL_REVIEW_ONLY, ModelProcessingScope.EXTERNAL_ALLOWED,
             id="manual-review-consent",
-            marks=pytest.mark.xfail(
-                strict=True, raises=AssertionError, reason="AS-01: manual review permits egress",
-            ),
         ),
+        pytest.param(ConsentScope.PROJECT_ONLY, ModelProcessingScope.LOCAL_ONLY, id="local-mode"),
         pytest.param(
             ConsentScope.WITHDRAWN, ModelProcessingScope.EXTERNAL_ALLOWED, id="withdrawn-consent",
         ),

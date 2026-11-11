@@ -84,6 +84,7 @@ class SqliteProfessionalMaterialRepository:
                 MaterialArchiveProfileRow.user_id == str(user_id),
                 MaterialArchiveProfileRow.task_id == str(task_id),
             )
+            .execution_options(populate_existing=True)
         )
         return self._profile(row)
 

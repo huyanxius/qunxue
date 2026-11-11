@@ -19,6 +19,7 @@ from qunxue_api.modules.agent_memory import (
 from .agent_conversation_model import AgentConversationRow, AgentMessageRow, AgentRunRow
 from .agent_memory_model import MemoryJobRow, MemoryRow, MemoryUsageRow
 from .agent_memory_repository import SqliteMemoryRepository, memory_from_row, scope_key, utc
+from .research_material_repository import SqliteResearchMaterialRepository
 
 # Reserve before dispatch. The extractor bounds the complete request to 22,000
 # UTF-8 bytes and output to 1,500 tokens; failed/unknown usage retains the reserve.
@@ -70,6 +71,10 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                     AgentRunRow.user_id == AgentConversationRow.user_id,
                     AgentRunRow.status == "running",
                 ),
+                ~exists().where(
+                    AgentRunRow.conversation_id == AgentConversationRow.conversation_id,
+                    AgentRunRow.idempotency_key.startswith("teaching:"),
+                ),
             )
             .order_by(AgentConversationRow.updated_at)
             .limit(32)
@@ -97,7 +102,12 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
             job = self.session.get(
                 MemoryJobRow, conversation.conversation_id, populate_existing=True
             )
-            if not any(s.learn_memory for s in scopes):
+            if not any(s.learn_memory for s in scopes) or (
+                task_id is not None
+                and SqliteResearchMaterialRepository(self.session).has_owned_materials(
+                    user_id=user_id
+                )
+            ):
                 job.processed_sequence = sequence
                 continue
             rows = self.session.scalars(
@@ -176,7 +186,7 @@ class SqliteMemoryLearningRepository(SqliteMemoryRepository):
                 raise MemoryConflict("后台记忆任务已被领取")
             memories, used = [], 0
             for scope in scopes:
-                for item in self.list(user_id, scope.task_id):
+                for item in self.list_for_model(user_id, scope.task_id):
                     size = context_cost(item.content) + 160
                     if used + size <= 4000:
                         memories.append(item)

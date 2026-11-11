@@ -58,6 +58,7 @@ class DisciplinaryAgentApplication:
         bind_research_draft: Callable[..., UUID] | None = None,
         memory_tools_factory: Callable[..., object] | None = None,
         shared_references=None,
+        teaching: bool = False,
     ) -> None:
         self._conversations = conversations
         self._runner = runner
@@ -70,6 +71,7 @@ class DisciplinaryAgentApplication:
         self._bind_research_draft = bind_research_draft
         self._memory_tools_factory = memory_tools_factory
         self._shared_references = shared_references
+        self._teaching = teaching
 
     def list_conversations(self, *, user_id: UUID):
         return self._conversations.list_conversations(user_id=user_id)
@@ -231,6 +233,8 @@ class DisciplinaryAgentApplication:
     ) -> AgentTurnExecution:
         if not prompt.strip():
             raise ValueError("message must not be empty")
+        if idempotency_key.startswith("teaching:") and not self._teaching:
+            raise ValueError("请从课堂工作区继续教学任务。")
         material_ids = tuple(dict.fromkeys(material_ids))
         if len(material_ids) > 20:
             raise ValueError("an Agent turn accepts at most 20 research materials")
@@ -280,7 +284,8 @@ class DisciplinaryAgentApplication:
                 research_required = snapshot.get("_research_intent") == "research"
                 if snapshot.get("_unavailable_materials"):
                     raise ResearchMaterialCitationUnavailable("interrupted run source was deleted")
-                prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
+                if not self._teaching:
+                    prompt = str(snapshot.get("_execution_prompt") or snapshot["message"])
                 workspace = snapshot.get("workspace", "agent")
                 web_search = bool(snapshot.get("web_search", False))
                 mode = snapshot.get("mode", "standard")
@@ -672,10 +677,21 @@ class DisciplinaryAgentApplication:
             if cancelled():
                 raise AgentInterrupted("Agent run was interrupted by the client")
 
+            model_prompt = prompt
+            if (
+                existing_run is not None
+                and not self._teaching
+                and not getattr(tools, "allows_unattributed_model_context", True)
+            ):
+                # Execution prompts can embed a saved, model-generated research plan.
+                model_prompt = str(request_snapshot["message"])
             conversation_history = current.turns[-8:]
             if reference_knowledge_base_id is not None:
                 self._shared_references.prepare(
-                    user_id=user_id, kb_id=reference_knowledge_base_id, query=prompt, tools=tools
+                    user_id=user_id,
+                    kb_id=reference_knowledge_base_id,
+                    query=model_prompt,
+                    tools=tools,
                 )
                 conversation_history = self._shared_references.filter_history(
                     user_id=user_id, kb_id=reference_knowledge_base_id, turns=conversation_history
@@ -686,7 +702,7 @@ class DisciplinaryAgentApplication:
                     user_id=user_id,
                     task_id=task_id,
                     conversation_id=current.conversation_id,
-                    prompt=prompt,
+                    prompt=model_prompt,
                     run_id=run.run_id,
                 )
             deep_research_started = mode == "deep_research" and confirmed_plan is not None
@@ -735,7 +751,7 @@ class DisciplinaryAgentApplication:
                 decision = None
                 if callable(prepare_research):
                     prepare_kwargs = {
-                        "prompt": prompt,
+                        "prompt": model_prompt,
                         "conversation": conversation_history,
                         "on_event": planning_events.append,
                     }
@@ -856,7 +872,7 @@ class DisciplinaryAgentApplication:
             stream_runner = getattr(self._runner, "run_stream", None)
             if on_delta is not None and callable(stream_runner):
                 runner_kwargs = {
-                    "prompt": prompt,
+                    "prompt": model_prompt,
                     "conversation": conversation_history,
                     "tools": tools,
                     "on_delta": record_delta,
@@ -874,7 +890,7 @@ class DisciplinaryAgentApplication:
                 )
             else:
                 result = self._runner.run(
-                    prompt=prompt,
+                    prompt=model_prompt,
                     conversation=conversation_history,
                     tools=tools,
                 )
