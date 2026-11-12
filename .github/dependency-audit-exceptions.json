@@ -1,40 +1,6 @@
 [
   {
     "ecosystem": "pypi",
-    "package": "certifi",
-    "version": "2026.7.22",
-    "advisories": [
-      "GHSA-6q48-6c7w-9gw2"
-    ],
-    "reason": "R22b 验证证书包更新后的 TLS 配置与 SDK 连接。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
-    "package": "httpcore2",
-    "version": "2.9.1",
-    "advisories": [
-      "GHSA-7mj9-2mp8-4m2p"
-    ],
-    "reason": "R22b 验证 HTTP 传输补丁与 SDK 请求行为。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
-    "package": "httpx2",
-    "version": "2.9.1",
-    "advisories": [
-      "GHSA-7mj9-2mp8-4m2p",
-      "GHSA-8xx6-hgc6-gc2m",
-      "GHSA-f2fp-rgf2-35cp",
-      "GHSA-h4x7-gw46-3wm6",
-      "GHSA-pf96-p4fj-6566"
-    ],
-    "reason": "R22b 验证 HTTP 传输补丁与 SDK 请求行为。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
     "package": "mako",
     "version": "1.3.12",
     "advisories": [
@@ -64,18 +30,6 @@
       "GHSA-vmxc-h2x2-jmf3"
     ],
     "reason": "R23a 验证兼容补丁下的请求、流式输出、取消和用量契约。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
-    "package": "urllib3",
-    "version": "2.7.0",
-    "advisories": [
-      "GHSA-8988-9cw3-xx77",
-      "GHSA-gh4c-6fx4-qh6g",
-      "GHSA-vxq7-64xx-v4gw"
-    ],
-    "reason": "R22b 验证 HTTP 传输更新与 TLS 配置。",
     "expires": "2026-11-19"
   }
 ]
