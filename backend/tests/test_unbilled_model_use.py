@@ -197,7 +197,11 @@ def billing_rows(client):
 
 def test_main_agent_records_operator_cost_at_zero_balance_and_replays(make_agent, model_requests):
     requests = model_requests()
-    with TestClient(make_agent()) as client:
+    app = make_agent(
+        account_initial_admin_email="admin@example.com",
+        account_initial_admin_password="synthetic-admin-passphrase",
+    )
+    with TestClient(app) as client:
         register(client, "free@example.com")
         before = wallet(client)
         key = str(uuid4())
@@ -211,6 +215,13 @@ def test_main_agent_records_operator_cost_at_zero_balance_and_replays(make_agent
             [(1, 0, 0, "success")],
             [("success", "known", 18_000_000)] * 2,
         )
+        credits = client.get("/api/account/credits")
+        assert credits.status_code == 200
+        operation, = credits.json()["operations"]
+        assert operation["exempt"] and operation["points_charged"] == 0
+        for attempt in operation["attempts"]:
+            assert attempt["price_snapshot"]["version"] == "r12-test"
+            assert "agent_lease_token" not in attempt["price_snapshot"]
 
 
 @pytest.mark.parametrize(
