@@ -2,9 +2,9 @@
   "issue": 511,
   "admission_class": "B",
   "baseline_ref": "origin/main",
-  "baseline_commit": "81d586512e37f0a097f827c88d4c889e48b75842",
+  "baseline_commit": "64a4011b504f86cc309afff981f07cc3585beadb",
   "branch_dependency_commit": "edbde5bf071297937196d373f2e3a7a5a3c83ae8",
-  "measured_at": "2026-11-12T04:49:03.334219+00:00",
+  "measured_at": "2026-11-12T05:50:27.533160+00:00",
   "target": "Reduce production-lock advisory findings without changing scan scope or adding exceptions; all affected checks and CI pass.",
   "method": {
     "evaluator": "tools/dependency-audit/check.mjs:evaluate",
@@ -17,7 +17,7 @@
     "count_includes_active_exceptions": true,
     "npm": "npm audit --package-lock-only --omit=dev --audit-level=info --json; fixed public-registry bulk response and package metadata replayed by loopback HTTP server",
     "python": "uv export --locked --no-dev --no-emit-project --format requirements-txt; pip-audit 2.10.0 --vulnerability-service osv --no-deps --disable-pip --require-hashes --strict --format json --desc off --aliases on --progress-spinner off; fixed OSV query responses replayed through --osv-url",
-    "snapshot": "Public npm bulk advisories cover the union of unchanged main and candidate lock versions; OSV responses cover the same union. Snapshot captured and main remeasured before changing tracked files; replay has no network fallback.",
+    "snapshot": "Original public npm/OSV snapshot reused after verifying current main production locks and scanner are byte-identical to the initial baseline. Current main and branch were re-audited before compatibility edits; replay fails on missing data with no online fallback.",
     "snapshot_sha256": "cee3a23e85b83d9f5bd1c92db7c5d4c5a7663b6a625a723e9d444f038a27d720",
     "baseline_recorded_before_changes": true,
     "same_snapshot_for_both_locks": true,
@@ -50,7 +50,7 @@
       "pypdf": 26,
       "urllib3": 3
     },
-    "measurement_completed_at": "2026-11-12T04:42:14.690341+00:00"
+    "measurement_completed_at": "2026-11-12T05:46:45.080182+00:00"
   },
   "branch": {
     "lock_sha256": {
@@ -85,7 +85,7 @@
         }
       }
     ],
-    "measurement_completed_at": "2026-11-12T04:47:18.924053+00:00"
+    "measurement_completed_at": "2026-11-12T05:47:30.469881+00:00"
   },
   "reduction": {
     "npm": 3,
@@ -310,11 +310,11 @@
   "preserved": [
     "Dependabot configuration",
     "dependency_audit CI gate and scanner scope",
-    "parsing implementation and budgets",
+    "parsing budgets, early-stop assertions, error codes and output formats",
     "API DTOs, OpenAPI and SSE formats",
     "original Mako exception and expiration"
   ],
-  "evidence_directory": "../重构日志/R21+-evidence",
+  "evidence_directory": "../重构日志/R21+-rework1-evidence",
   "live_production_gate": {
     "exit_code": 0,
     "advisory_findings": 1,
@@ -326,5 +326,51 @@
     "tools/dependency-audit/check.mjs": "12a255f13aff40288bc442873a642c9fa74286d15c57f959cdb56d2123d517a3",
     ".github/workflows/delivery.yml": "6f89e839aaeb7fc1a47685e0cd7db8799238c95b222e0a1b6410bbc5cb1a267c",
     ".github/dependabot.yml": "09ab2de5b1c2eccd925d30f1249d82a88ec7792d96a28445d964dffea3b0df8e"
+  },
+  "initial_measurement": {
+    "baseline_commit": "81d586512e37f0a097f827c88d4c889e48b75842",
+    "measured_at": "2026-11-12T04:49:03.334219+00:00",
+    "baseline_completed_at": "2026-11-12T04:42:14.690341+00:00",
+    "branch_completed_at": "2026-11-12T04:47:18.924053+00:00",
+    "ci_run": 43157458291,
+    "ci_commit": "b701656822cd999d96f547d3144da0af254f7469"
+  },
+  "rework1": {
+    "failed_run": 43160046787,
+    "failed_job": 130988835475,
+    "failed_candidate": "578f46eb8fc0bd509de48bcd3b0c63567984230d",
+    "failed_candidate_main": "29831f241e7af1fef9d0310eb027760bafaf7df5",
+    "current_main_before_changes": "64a4011b504f86cc309afff981f07cc3585beadb",
+    "compatibility_commit": "775a1a780750894e8b19e0c0fe67e3dd334410e9",
+    "root_cause": "pypdf 6.21.4 builds flattened pages in a local list and assigns reader.flattened_pages only after traversal. The existing reader-list append hook therefore no longer stopped traversal at the first over-budget page.",
+    "failure_reproduced_locally": true,
+    "observed_page_extract_block_counts_before": [
+      4,
+      0,
+      0
+    ],
+    "unchanged_expected_page_extract_block_counts": [
+      2,
+      0,
+      0
+    ],
+    "fix": "Check the existing page budget at each pypdf leaf-page build; retain the older append hook for independent rollback of the pypdf dependency commit.",
+    "tests": {
+      "existing_pdf_budget_cases": 3,
+      "existing_normal_pdf_and_ocr_cases": 2,
+      "pypdf_6.21.4_passed": 5,
+      "pypdf_only_rollback_6.16.2_passed": 5,
+      "parser_scoped_ruff": "passed",
+      "test_assertions_changed": false,
+      "new_tests": 0,
+      "full_local_gates_run": false,
+      "new_frontend_builds": 0,
+      "paid_model_api_calls": 0
+    },
+    "initial_green_missing_new_budget_guard": true,
+    "budget_test_identical_on_failed_candidate_main_and_current_main": true,
+    "dependency_commits_preserved": true,
+    "gate_or_exception_changes_in_rework": false,
+    "schema_api_sse_or_production_config_changes": false
   }
 }
