@@ -828,8 +828,12 @@ class PydanticAIKnowledgeRunner:
                 "当研究现象已经足够明确时，只能调用 propose_start_research 提出待确认研究起点；"
                 "该工具不会创建任务。必须等用户在界面明确确认并由 REST API 完成事务后，"
                 "才能调用 start_theory_matching。未完成 M4 时不得调用文档创建工具。"
-                "理论匹配后可以建议候选取舍与用法。请用户在研究工作台保存理论决定并确认方案。"
-                "等待确认期间只提供建议；仅当本轮研究上下文已有 theory_plan_id，"
+                "理论匹配后用 propose_theory_plan 提出候选取舍、分工和关系；"
+                "系统会在回答末尾展示完整方案。新方案本轮不能正式保存。"
+                "用户在之后的聊天消息确认时，先用 get_research_workflow_state 读取"
+                "pending_theory_plan，再将该版 plan_id、content_hash 和原样内容传给"
+                "save_confirmed_theory_plan；不要把修改内容视为确认，先展示新版。"
+                "只有工具返回已保存的 theory_plan_id，"
                 "才调用 propose_document_creation 生成待审批的 M5 草案。"
                 "创建草案必须一次提供且仅提供 12 个规范章节：research_question、"
                 "research_object_and_field、questions_or_hypotheses、core_concepts、theoretical_perspective、mechanisms、"
@@ -1765,6 +1769,34 @@ class PydanticAIKnowledgeRunner:
             """基于已确认现象和固定知识发布匹配理论，返回供用户审阅的候选与证据。"""
             return self._run_research_workflow_tool(
                 ctx, "start_theory_matching", {}, "正在执行理论匹配"
+            )
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def propose_theory_plan(
+            ctx: RunContext[KnowledgeToolRegistry],
+            decisions: list[dict[str, object]], use_assignments: list[dict[str, object]],
+            relations: list[dict[str, object]],
+        ) -> dict[str, object]:
+            """提出待聊天确认的理论方案；系统生成 ID 和内容 hash，不正式保存。"""
+            return self._run_research_workflow_tool(
+                ctx, "propose_theory_plan", {
+                    "decisions": decisions, "use_assignments": use_assignments,
+                    "relations": relations,
+                }, "正在整理待确认的理论方案",
+            )
+
+        @self._agent.tool(prepare=_prepare_document_tool)
+        def save_confirmed_theory_plan(
+            ctx: RunContext[KnowledgeToolRegistry], plan_id: str, content_hash: str,
+            decisions: list[dict[str, object]], use_assignments: list[dict[str, object]],
+            relations: list[dict[str, object]],
+        ) -> dict[str, object]:
+            """用户在后续聊天确认后，保存所见同版方案；内容变化或无后续消息时仍为草稿。"""
+            return self._run_research_workflow_tool(
+                ctx, "save_confirmed_theory_plan", {
+                    "plan_id": plan_id, "content_hash": content_hash, "decisions": decisions,
+                    "use_assignments": use_assignments, "relations": relations,
+                }, "正在核对并保存理论方案",
             )
 
         @self._agent.tool(prepare=_prepare_document_tool)

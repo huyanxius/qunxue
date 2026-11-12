@@ -517,11 +517,13 @@ def test_plain_agent_exposes_only_the_research_start_handoff_tool() -> None:
     assert "update_research_map" not in visible_tools
 
 
-def test_model_turn_does_not_offer_formal_theory_confirmation(client) -> None:
-    visible_tools: set[str] = set()
+def test_model_theory_confirmation_uses_a_versioned_plan_not_a_claimed_confirmation(client) -> None:
+    visible_tools = {}
 
     async def model_stream(_messages, info):
-        visible_tools.update(tool.name for tool in info.function_tools)
+        visible_tools.update(
+            (tool.name, tool.parameters_json_schema) for tool in info.function_tools
+        )
         yield "请在研究界面审阅理论建议。"
 
     runner = PydanticAIKnowledgeRunner(
@@ -545,7 +547,10 @@ def test_model_turn_does_not_offer_formal_theory_confirmation(client) -> None:
 
     assert "get_research_workflow_state" in visible_tools
     assert "start_theory_matching" in visible_tools
-    assert "save_confirmed_theory_plan" not in visible_tools
+    assert "propose_theory_plan" in visible_tools
+    confirmation = visible_tools["save_confirmed_theory_plan"]
+    assert "user_confirmed" not in confirmation["properties"]
+    assert {"plan_id", "content_hash"} <= set(confirmation["required"])
 
 
 def test_agent_bootstrap_uses_the_persisted_document_tool_registry(client) -> None:

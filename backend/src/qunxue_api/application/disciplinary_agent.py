@@ -3,7 +3,7 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from inspect import Parameter, signature
 from typing import Literal
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -512,6 +512,11 @@ class DisciplinaryAgentApplication:
             "_execution_prompt": prompt,
             "_confirmed_research_plan": confirmed_plan,
             "_research_intent": "research" if research_required else None,
+            "_received_after_turn_id": (
+                existing_run.request_snapshot.get("_received_after_turn_id")
+                if existing_run is not None else
+                str(conversation.turns[-1].turn_id) if conversation.turns else None
+            ),
         }
         billing_resume = existing_run is not None and existing_run.status in {
             "awaiting_clarification", "awaiting_plan_confirmation", "failed", "interrupted",
@@ -910,6 +915,12 @@ class DisciplinaryAgentApplication:
                     conversation=conversation_history,
                     tools=tools,
                 )
+            plan_display = getattr(tools, "theory_plan_display", "")
+            if plan_display:
+                suffix = f"\n\n{plan_display}"
+                result = replace(result, answer=result.answer + suffix)
+                if on_delta is not None:
+                    record_delta(suffix)
             if deep_research_started and on_research_event is not None:
                 on_research_event(
                     AgentResearchEvent(
