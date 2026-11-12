@@ -181,6 +181,7 @@ class Settings(BaseSettings):
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     account_initial_admin_email: str = ""
     account_initial_admin_password: SecretStr | None = None
+    account_signing_key: SecretStr | None = None
     resend_api_key: SecretStr | None = None
     email_from: str = "群学致知 <noreply@qunxue.qiyuankaiwu.com>"
     password_reset_origin: str = "https://qunxue.xyz"
