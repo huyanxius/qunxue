@@ -63,6 +63,8 @@ class BillingOperations(Protocol):
         payload: object,
         before_network: object = None,
         phase: str = "agent_turn",
+        resume: bool = False,
+        lease_token: str | None = None,
     ): ...
 
-    def close(self, *, run_id: UUID, outcome: str) -> None: ...
+    def close(self, *, run_id: UUID, outcome: str, lease_token: str | None = None) -> None: ...

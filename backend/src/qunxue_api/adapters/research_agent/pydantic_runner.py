@@ -702,6 +702,7 @@ class PydanticAIKnowledgeRunner:
             return MeteredOpenAIChatModel(
                 endpoint_model,
                 provider=provider,
+                require_billing=require_billing,
                 settings=cast(
                     OpenAIChatModelSettings,
                     merge_model_settings(

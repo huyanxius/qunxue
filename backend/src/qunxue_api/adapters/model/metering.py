@@ -77,7 +77,8 @@ def _safe_usage_evidence(raw):
 
 class OperationScope:
     def __init__(self, runtime, *, user_id, run_id, fingerprint, exempt=False,
-                 before_network=None, resume=False, settlement_connection=None):
+                 before_network=None, resume=False, settlement_connection=None,
+                 agent_lease_token=None):
         self.runtime = runtime
         self.run_id = str(run_id)
         self.user_id = str(user_id)
@@ -86,6 +87,7 @@ class OperationScope:
         self.before_network = before_network
         self.finished = False
         self.resume = resume
+        self.agent_lease_token = agent_lease_token
         self.settlement_connection = settlement_connection
 
     def __enter__(self):
@@ -94,6 +96,7 @@ class OperationScope:
             run_id=self.run_id,
             fingerprint=self.fingerprint,
             exempt=self.exempt,
+            agent_lease_token=self.agent_lease_token,
             **({"resume": True} if self.resume else {}),
         )
         self.token = _current_operation.set(self)
@@ -104,7 +107,7 @@ class OperationScope:
         if connection is None and outcome in {"success", "paused"} and self.settlement_connection:
             connection = self.settlement_connection()
         settled = self.runtime.finish(
-            run_id=self.run_id, outcome=outcome,
+            run_id=self.run_id, outcome=outcome, agent_lease_token=self.agent_lease_token,
             **({"connection": connection} if connection is not None else {}),
         )
         self.finished = True
@@ -141,6 +144,7 @@ class OperationScope:
         input_limit = len(encoded) * 2 + 4096
         attempt = self.runtime.before_attempt(
             run_id=self.run_id,
+            agent_lease_token=self.agent_lease_token,
             endpoint_id=route.endpoint.endpoint_id if route else "direct",
             route_id=route.context.route_id if route else None,
             model=payload["model"],
@@ -296,9 +300,15 @@ async def _wire_hook(request):
     if state is None:
         return
     payload = json.loads(request.content)
-    state["attempt"] = state["scope"].before_attempt_payload(
-        payload, state["route"], request.url.host
-    )
+    try:
+        state["attempt"] = state["scope"].before_attempt_payload(
+            payload, state["route"], request.url.host
+        )
+    except Exception as error:
+        # The SDK wraps request-hook failures as connection errors. Preserve the
+        # admission result so the router does not retry a rejected reservation.
+        state["admission_error"] = error
+        raise
 
 
 class MeteredOpenAIChatModel(UsageSafeOpenAIChatModel):
@@ -338,6 +348,8 @@ class MeteredOpenAIChatModel(UsageSafeOpenAIChatModel):
                 messages, stream, model_settings, model_request_parameters
             )
         except BaseException as error:
+            if "admission_error" in state:
+                raise state["admission_error"] from None
             if state["attempt"] is not None:
                 scope.complete(
                     state["attempt"],
