@@ -6,7 +6,7 @@ from qunxue_api.main import app
 
 
 def export_schema() -> dict:
-    # Account installation requires an administrator secret at runtime. Contract
+    # Account installation requires runtime signing configuration. Contract
     # generation includes its static routes without provisioning an account.
     identities = {
         (route.path, method)

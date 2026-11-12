@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from qunxue_api.account_extension import install_account_management
+from qunxue_api.account_extension import install_account_management, provision_initial_administrator
 from qunxue_api.adapters.email import ResendEmailProvider
 from qunxue_api.adapters.frontier_embedding import (
     FrontierEmbeddingConfig,
@@ -1530,6 +1530,17 @@ def create_app(
         )
 
     if resolved_settings.account_initial_admin_password is not None:
+        provision_initial_administrator(
+            database=resolved_database,
+            password_hasher=password_hasher,
+            email=resolved_settings.account_initial_admin_email,
+            password=resolved_settings.account_initial_admin_password.get_secret_value(),
+        )
+
+    if (
+        resolved_settings.account_signing_key is not None
+        or resolved_settings.account_initial_admin_password is not None
+    ):
         install_account_management(
             app,
             database=resolved_database,

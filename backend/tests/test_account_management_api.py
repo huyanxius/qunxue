@@ -12,7 +12,6 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select, text
 
-from qunxue_api.account_extension import install_account_management
 from qunxue_api.adapters.security import Argon2PasswordHasher
 from qunxue_api.adapters.sqlite import (
     AccountAuditEventRow,
@@ -74,6 +73,8 @@ def client(
         model_name=None,
         model_extra_headers={},
         model_sft_resource_id=None,
+        account_initial_admin_email=TEST_ADMIN_EMAIL,
+        account_initial_admin_password=TEST_ADMIN_PASSWORD,
     )
     command.upgrade(alembic_config, "head")
     database = Database(database_url)
@@ -81,13 +82,6 @@ def client(
         settings=settings,
         database=database,
         require_email_verification=False,
-    )
-    install_account_management(
-        app,
-        database=database,
-        password_hasher=Argon2PasswordHasher(),
-        initial_admin_email=TEST_ADMIN_EMAIL,
-        initial_admin_password=TEST_ADMIN_PASSWORD,
     )
     with TestClient(app) as test_client:
         yield test_client
@@ -421,7 +415,7 @@ def test_concurrent_clean_registration_never_grants_administrator_role(
     assert [role for _status, role in results] == ["member", "member"]
 
 
-def test_install_provisions_the_fixed_admin_without_database_or_cli_work(
+def test_create_app_provisions_the_fixed_admin_without_database_or_cli_work(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     alembic_config: Config,
@@ -462,15 +456,10 @@ def test_install_provisions_the_fixed_admin_without_database_or_cli_work(
         model_name=None,
         model_extra_headers={},
         model_sft_resource_id=None,
+        account_initial_admin_email=TEST_ADMIN_EMAIL,
+        account_initial_admin_password=TEST_ADMIN_PASSWORD,
     )
     app = create_app(settings=settings, database=database)
-    install_account_management(
-        app,
-        database=database,
-        password_hasher=password_hasher,
-        initial_admin_email=TEST_ADMIN_EMAIL,
-        initial_admin_password=TEST_ADMIN_PASSWORD,
-    )
 
     try:
         with TestClient(app) as administrator:
