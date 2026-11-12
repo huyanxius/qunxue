@@ -475,6 +475,10 @@ class SqliteAccountRepository:
     def is_provisioned_admin(self, user_id: UUID) -> bool:
         return self._provisioned_admin_user_id() == str(user_id)
 
+    def get_provisioned_admin_user_id(self) -> UUID | None:
+        user_id = self._provisioned_admin_user_id()
+        return UUID(user_id) if user_id is not None else None
+
     def _provisioned_admin_user_id(self) -> str | None:
         state = self._db.get(AccountSystemStateRow, 1)
         if state is None or not state.initial_admin_provisioned:

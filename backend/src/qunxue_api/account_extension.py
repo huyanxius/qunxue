@@ -44,42 +44,28 @@ def install_account_management(
     *,
     database: Database,
     password_hasher: PasswordHasher,
-    initial_admin_email: str | None = None,
-    initial_admin_password: str | None = None,
 ) -> None:
-    """Install D's isolated router/service adapter at the composition boundary.
-
-    The shared application composition root calls this once. Keeping the
-    installer here lets account work ship without taking ownership of App/router.
-    """
+    """Install runtime routes and services without provisioning an administrator."""
 
     if getattr(app.state, "account_management_installed", False):
         return
 
-    configured_admin_email = (
-        initial_admin_email or app.state.settings.account_initial_admin_email
-    ).strip().casefold()
-    configured_admin_password = initial_admin_password
-    if configured_admin_password is None:
+    setting = app.state.settings.account_signing_key
+    if setting is None:
+        # Existing deployments keep the same signatures until their signing value
+        # is moved to the independent setting; no key rotation is performed here.
         setting = app.state.settings.account_initial_admin_password
-        if setting is not None:
-            configured_admin_password = setting.get_secret_value()
-    if not configured_admin_email or not configured_admin_password:
-        raise RuntimeError(
-            "QUNXUE_ACCOUNT_INITIAL_ADMIN_EMAIL and "
-            "QUNXUE_ACCOUNT_INITIAL_ADMIN_PASSWORD must be configured before "
-            "installing account management"
-        )
-    if len(configured_admin_password) < 12:
-        raise RuntimeError("the initial administrator password must have 12+ characters")
+    if setting is None or not setting.get_secret_value():
+        raise RuntimeError("QUNXUE_ACCOUNT_SIGNING_KEY must be configured")
+    configured_signing_key = setting.get_secret_value()
 
-    configured_admin_user_id = _provision_initial_administrator(
-        database=database,
-        password_hasher=password_hasher,
-        email=configured_admin_email,
-        password=configured_admin_password,
+    with database.session() as session:
+        configured_admin_user_id = SqliteAccountRepository(session).get_provisioned_admin_user_id()
+    credit_exempt_user_ids = (
+        frozenset({configured_admin_user_id})
+        if configured_admin_user_id is not None
+        else frozenset()
     )
-    credit_exempt_user_ids = frozenset({configured_admin_user_id})
 
     @contextmanager
     def service_scope() -> Iterator[AccountManagementService]:
@@ -87,7 +73,7 @@ def install_account_management(
             yield AccountManagementService(
                 SqliteAccountRepository(session),
                 password_hasher,
-                password_reset_signing_secret=configured_admin_password,
+                password_reset_signing_secret=configured_signing_key,
             )
 
     @contextmanager
@@ -96,7 +82,7 @@ def install_account_management(
             yield CreditService(
                 SqliteCreditRepository(session),
                 exempt_user_ids=credit_exempt_user_ids,
-                code_signing_secret=configured_admin_password,
+                code_signing_secret=configured_signing_key,
             )
 
     app.state.account_management_service_scope = service_scope
@@ -202,13 +188,21 @@ def install_account_management(
         )
 
 
-def _provision_initial_administrator(
+def provision_initial_administrator(
     *,
     database: Database,
     password_hasher: PasswordHasher,
     email: str,
     password: str,
 ) -> UUID:
+    email = email.strip().casefold()
+    if not email or not password:
+        raise RuntimeError(
+            "QUNXUE_ACCOUNT_INITIAL_ADMIN_EMAIL and "
+            "QUNXUE_ACCOUNT_INITIAL_ADMIN_PASSWORD must be configured for administrator bootstrap"
+        )
+    if len(password) < 12:
+        raise RuntimeError("the initial administrator password must have 12+ characters")
     now = datetime.now(UTC)
     with database.session() as session:
         accounts = SqliteAccountRepository(session)
@@ -257,4 +251,4 @@ def _provision_initial_administrator(
         return user.user_id
 
 
-__all__ = ["install_account_management"]
+__all__ = ["install_account_management", "provision_initial_administrator"]
