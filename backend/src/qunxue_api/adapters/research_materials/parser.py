@@ -10,14 +10,18 @@ from __future__ import annotations
 
 import hashlib
 import re
+from array import array
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from io import BytesIO
+from itertools import pairwise
 from typing import Any
 from uuid import UUID, uuid4
 from xml.etree import ElementTree
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from markdown_it import MarkdownIt
-from pypdf import PdfReader
+from pypdf import PageObject, PdfReader
 
 from qunxue_api.modules.research_materials import (
     MaterialBlock,
@@ -31,7 +35,54 @@ from qunxue_api.modules.research_materials import (
 _PARSER_NAME = "qunxue-deterministic-document-parser"
 _PARSER_VERSION = "1.0"
 _SCHEMA_VERSION = "1"
+_MAX_ZIP_MEMBERS = 10_000
 _MAX_ZIP_MEMBER_BYTES = 16 * 1024 * 1024
+_MAX_ZIP_EXPANDED_BYTES = 64 * 1024 * 1024
+_MAX_DOCUMENT_PAGES = 1_000
+_MAX_DOCUMENT_BLOCKS = 10_000
+_MAX_DOCUMENT_TEXT_CHARS = 8 * 1024 * 1024
+_LINE_BREAK = re.compile(r"\r\n|[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]")
+
+
+def _check_page_budget(page_count: int) -> None:
+    if page_count > _MAX_DOCUMENT_PAGES:
+        raise MaterialParseError("document_too_large", "文档页数超过可处理上限。")
+
+
+def _check_text_budget(char_count: int) -> None:
+    if char_count > _MAX_DOCUMENT_TEXT_CHARS:
+        raise MaterialParseError("document_too_large", "文档文本超过可处理长度。")
+
+
+@dataclass(slots=True)
+class _MaterialBlocks:
+    material_id: UUID
+    parse_id: UUID
+    items: list[MaterialBlock] = field(default_factory=list)
+    text_chars: int = 0
+
+    def add(self, *, kind: str, text: str, locator: MaterialLocator) -> None:
+        ordinal = len(self.items)
+        if ordinal >= _MAX_DOCUMENT_BLOCKS:
+            raise MaterialParseError("document_too_large", "文档片段数超过可处理上限。")
+        # full_text joins blocks with a blank line.
+        self.text_chars += len(text) + (2 if ordinal else 0)
+        _check_text_budget(self.text_chars)
+        self.items.append(
+            MaterialBlock.create(
+                material_id=self.material_id,
+                parse_id=self.parse_id,
+                ordinal=ordinal,
+                kind=kind,
+                text=text,
+                locator=locator,
+            )
+        )
+
+    def full_text(self) -> str:
+        return "\n\n".join(block.text for block in self.items)
+
+
 def parse_material(
     *,
     filename: str,
@@ -50,44 +101,25 @@ def parse_material(
     material_format = _format_for(filename=filename, media_type=media_type)
     if not content:
         raise MaterialParseError("empty_material", "材料为空，无法解析。")
-    resolved_material_id = material_id or UUID(int=0)
-    resolved_parse_id = parse_id or uuid4()
+    blocks = _MaterialBlocks(material_id or UUID(int=0), parse_id or uuid4())
     if material_format is MaterialFormat.TXT:
-        blocks, full_text, structure = _parse_text(
-            content,
-            material_id=resolved_material_id,
-            parse_id=resolved_parse_id,
-        )
+        full_text, structure = _parse_text(content, blocks)
     elif material_format is MaterialFormat.MARKDOWN:
-        blocks, full_text, structure = _parse_markdown(
-            content,
-            material_id=resolved_material_id,
-            parse_id=resolved_parse_id,
-        )
+        full_text, structure = _parse_markdown(content, blocks)
     elif material_format is MaterialFormat.DOCX:
-        blocks, full_text, structure = _parse_docx(
-            content,
-            material_id=resolved_material_id,
-            parse_id=resolved_parse_id,
-        )
+        full_text, structure = _parse_docx(content, blocks)
     elif material_format is MaterialFormat.PPTX:
-        blocks, full_text, structure = _parse_pptx(
-            content, material_id=resolved_material_id, parse_id=resolved_parse_id
-        )
+        full_text, structure = _parse_pptx(content, blocks)
     elif material_format is MaterialFormat.PDF:
-        blocks, full_text, structure = _parse_pdf(
-            content,
-            material_id=resolved_material_id,
-            parse_id=resolved_parse_id,
-        )
+        full_text, structure = _parse_pdf(content, blocks)
     else:  # pragma: no cover - exhaustive enum guard
         raise MaterialParseError("unsupported_format")
-    if not full_text.strip() or not blocks:
+    if not full_text.strip() or not blocks.items:
         raise MaterialParseError("no_extractable_text", "文件中没有可直接提取的文字。")
     return ParsedMaterial(
         full_text=full_text,
         structured_document=structure,
-        blocks=blocks,
+        blocks=tuple(blocks.items),
         content_hash=hashlib.sha256(content).hexdigest(),
         parser_name=_PARSER_NAME,
         parser_version=_PARSER_VERSION,
@@ -134,32 +166,24 @@ def _decode_utf8(content: bytes) -> str:
 
 def _parse_text(
     content: bytes,
-    *,
-    material_id: UUID,
-    parse_id: UUID,
-) -> tuple[tuple[MaterialBlock, ...], str, dict[str, Any]]:
+    blocks: _MaterialBlocks,
+) -> tuple[str, dict[str, Any]]:
     text = _decode_utf8(content).strip("\n")
-    blocks = _line_paragraph_blocks(
-        text,
-        material_id=material_id,
-        parse_id=parse_id,
-        section_path=(),
-    )
-    return blocks, text, {"format": "txt", "line_count": text.count("\n") + 1}
+    _check_text_budget(len(text))
+    _add_line_paragraphs(text, blocks)
+    return text, {"format": "txt", "line_count": text.count("\n") + 1}
 
 
 def _parse_markdown(
     content: bytes,
-    *,
-    material_id: UUID,
-    parse_id: UUID,
-) -> tuple[tuple[MaterialBlock, ...], str, dict[str, Any]]:
+    blocks: _MaterialBlocks,
+) -> tuple[str, dict[str, Any]]:
     text = _decode_utf8(content).strip("\n")
+    _check_text_budget(len(text))
     parser = MarkdownIt("commonmark", {"html": False})
     tokens = parser.parse(text)
-    blocks: list[MaterialBlock] = []
+    offsets = array("I", _line_offsets(text))
     headings: list[str] = []
-    ordinal = 0
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -183,22 +207,16 @@ def _parse_markdown(
             else:
                 kind = "paragraph"
                 path = tuple(headings)
-            ordinal += 1
-            blocks.append(
-                _block(
-                    material_id=material_id,
-                    parse_id=parse_id,
-                    ordinal=ordinal - 1,
-                    kind=kind,
-                    text=value,
-                    locator=MaterialLocator(
-                        section_path=path,
-                        line_start=start_line,
-                        line_end=end_line,
-                        char_start=_line_offset(text, start_line),
-                        char_end=_line_offset(text, end_line + 1),
-                    ),
-                )
+            blocks.add(
+                kind=kind,
+                text=value,
+                locator=MaterialLocator(
+                    section_path=path,
+                    line_start=start_line,
+                    line_end=end_line,
+                    char_start=offsets[start_line - 1],
+                    char_end=offsets[end_line],
+                ),
             )
             index += 2
             continue
@@ -206,64 +224,62 @@ def _parse_markdown(
         if value:
             line_map = token.map or [0, 1]
             start_line, end_line = int(line_map[0]) + 1, int(line_map[1])
-            ordinal += 1
-            blocks.append(
-                _block(
-                    material_id=material_id,
-                    parse_id=parse_id,
-                    ordinal=ordinal - 1,
-                    kind="code",
-                    text=value,
-                    locator=MaterialLocator(
-                        section_path=tuple(headings),
-                        line_start=start_line,
-                        line_end=end_line,
-                        char_start=_line_offset(text, start_line),
-                        char_end=_line_offset(text, end_line + 1),
-                    ),
-                )
+            blocks.add(
+                kind="code",
+                text=value,
+                locator=MaterialLocator(
+                    section_path=tuple(headings),
+                    line_start=start_line,
+                    line_end=end_line,
+                    char_start=offsets[start_line - 1],
+                    char_end=offsets[end_line],
+                ),
             )
         index += 1
-    if not blocks:
-        blocks = list(
-            _line_paragraph_blocks(
-                text,
-                material_id=material_id,
-                parse_id=parse_id,
-                section_path=(),
-            )
-        )
-    full_text = "\n\n".join(item.text for item in blocks)
-    return tuple(blocks), full_text, {"format": "markdown", "block_count": len(blocks)}
+    if not blocks.items:
+        _add_line_paragraphs(text, blocks)
+    return blocks.full_text(), {"format": "markdown", "block_count": len(blocks.items)}
 
 
-def _parse_docx(
-    content: bytes,
-    *,
-    material_id: UUID,
-    parse_id: UUID,
-) -> tuple[tuple[MaterialBlock, ...], str, dict[str, Any]]:
+def _check_zip_member_count(archive: ZipFile, message: str) -> None:
+    if len(archive.infolist()) > _MAX_ZIP_MEMBERS:
+        raise MaterialParseError("document_too_large", message)
+
+
+def _check_zip_expansion(members: list[ZipInfo], message: str) -> None:
+    if any(member.file_size > _MAX_ZIP_MEMBER_BYTES for member in members):
+        raise MaterialParseError("document_too_large", message)
+    if sum(member.file_size for member in members) > _MAX_ZIP_EXPANDED_BYTES:
+        raise MaterialParseError("document_too_large", message)
+
+
+def _read_zip_member(archive: ZipFile, info: ZipInfo) -> bytes:
+    with archive.open(info) as member:
+        return member.read(info.file_size + 1)
+
+
+def _parse_docx(content: bytes, blocks: _MaterialBlocks) -> tuple[str, dict[str, Any]]:
     namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    size_error = "文档正文超过可处理大小。"
     try:
         with ZipFile(BytesIO(content)) as archive:
+            _check_zip_member_count(archive, size_error)
             document_info = archive.getinfo("word/document.xml")
-            if document_info.file_size > _MAX_ZIP_MEMBER_BYTES:
-                raise MaterialParseError("document_too_large", "文档正文超过可处理大小。")
-            document_xml = archive.read(document_info)
-            styles_xml = (
-                archive.read("word/styles.xml")
+            styles_info = (
+                archive.getinfo("word/styles.xml")
                 if "word/styles.xml" in archive.namelist()
-                else b""
+                else None
             )
+            members = [document_info, styles_info] if styles_info is not None else [document_info]
+            _check_zip_expansion(members, size_error)
+            document_xml = _read_zip_member(archive, document_info)
+            styles_xml = _read_zip_member(archive, styles_info) if styles_info is not None else b""
         root = ElementTree.fromstring(document_xml)
         styles = ElementTree.fromstring(styles_xml) if styles_xml else None
-    except MaterialParseError:
-        raise
     except (BadZipFile, KeyError, ElementTree.ParseError) as error:
         raise MaterialParseError("invalid_docx", "DOCX 文件损坏或无法读取。") from error
 
     heading_styles = _docx_heading_styles(styles, namespace)
-    blocks: list[MaterialBlock] = []
     headings: list[str] = []
     paragraph_number = 0
     body = root.find(f"{namespace}body")
@@ -281,18 +297,13 @@ def _parse_docx(
                 kind = "heading"
             else:
                 kind = "paragraph"
-            blocks.append(
-                _block(
-                    material_id=material_id,
-                    parse_id=parse_id,
-                    ordinal=len(blocks),
-                    kind=kind,
-                    text=value,
-                    locator=MaterialLocator(
-                        section_path=tuple(headings),
-                        paragraph=paragraph_number,
-                    ),
-                )
+            blocks.add(
+                kind=kind,
+                text=value,
+                locator=MaterialLocator(
+                    section_path=tuple(headings),
+                    paragraph=paragraph_number,
+                ),
             )
             continue
         if child.tag == f"{namespace}tbl":
@@ -310,43 +321,50 @@ def _parse_docx(
                     rows.append(" | ".join(cells))
             value = "\n".join(rows).strip()
             if value:
-                blocks.append(
-                    _block(
-                        material_id=material_id,
-                        parse_id=parse_id,
-                        ordinal=len(blocks),
-                        kind="table",
-                        text=value,
-                        locator=MaterialLocator(
-                            section_path=tuple(headings),
-                            paragraph=paragraph_number or None,
-                        ),
-                    )
+                blocks.add(
+                    kind="table",
+                    text=value,
+                    locator=MaterialLocator(
+                        section_path=tuple(headings),
+                        paragraph=paragraph_number or None,
+                    ),
                 )
-    full_text = "\n\n".join(item.text for item in blocks)
     structure = {
         "format": "docx",
-        "block_count": len(blocks),
+        "block_count": len(blocks.items),
         "paragraph_count": paragraph_number,
     }
-    return tuple(blocks), full_text, structure
+    return blocks.full_text(), structure
 
 
-def _parse_pdf(
-    content: bytes,
-    *,
-    material_id: UUID,
-    parse_id: UUID,
-) -> tuple[tuple[MaterialBlock, ...], str, dict[str, Any]]:
+class _BoundedPdfPages(list[PageObject]):
+    def append(self, page: PageObject) -> None:
+        _check_page_budget(len(self) + 1)
+        super().append(page)
+
+
+class _BoundedPdfReader(PdfReader):
+    def _flatten(self, *args: Any, **kwargs: Any) -> None:
+        # pypdf 6 builds its page list while resolving inheritance. Bound that list
+        # during traversal, since len(reader.pages) flattens the tree first.
+        if type(self.flattened_pages) is list:
+            self.flattened_pages = _BoundedPdfPages(self.flattened_pages)
+        super()._flatten(*args, **kwargs)
+
+
+def _parse_pdf(content: bytes, blocks: _MaterialBlocks) -> tuple[str, dict[str, Any]]:
     try:
-        reader = PdfReader(BytesIO(content), strict=False)
+        reader = _BoundedPdfReader(BytesIO(content), strict=False)
         page_count = len(reader.pages)
+        _check_page_budget(page_count)
+    except MaterialParseError:
+        raise
     except Exception as error:  # pypdf exposes several parser-specific errors
         # A malformed or image-only PDF has no usable text for this phase.  We
         # deliberately use the same public code as the no-text outcome so the
         # caller never infers that an OCR fallback exists.
         raise MaterialParseError("no_extractable_text", "PDF 文件损坏或无法读取。") from error
-    blocks: list[MaterialBlock] = []
+    extracted_chars = 0
     pages: list[dict[str, Any]] = []
     for page_number, page in enumerate(reader.pages, start=1):
         try:
@@ -356,106 +374,71 @@ def _parse_pdf(
                 extracted = page.extract_text() or ""
         except Exception as error:
             raise MaterialParseError("pdf_text_extraction_failed", "PDF 正文提取失败。") from error
+        extracted_chars += len(extracted)
+        _check_text_budget(extracted_chars)
         normalized = extracted.replace("\r\n", "\n").replace("\r", "\n").strip()
         pages.append({"page": page_number, "text": normalized})
-        if not normalized:
-            continue
-        page_blocks = _line_paragraph_blocks(
-            normalized,
-            material_id=material_id,
-            parse_id=parse_id,
-            section_path=(),
-            page=page_number,
-            ordinal_offset=len(blocks),
-        )
-        blocks.extend(page_blocks)
-    full_text = "\n\n".join(item.text for item in blocks)
+        if normalized:
+            _add_line_paragraphs(normalized, blocks, page=page_number)
+    full_text = blocks.full_text()
     if not full_text.strip():
         raise MaterialParseError(
             "no_extractable_text",
             "PDF 中没有可直接提取的文字；图片或扫描件 OCR 暂不支持。",
         )
-    return tuple(blocks), full_text, {"format": "pdf", "page_count": page_count, "pages": pages}
+    return full_text, {"format": "pdf", "page_count": page_count, "pages": pages}
 
 
-def _line_paragraph_blocks(
+def _add_line_paragraphs(
     text: str,
+    blocks: _MaterialBlocks,
     *,
-    material_id: UUID,
-    parse_id: UUID,
-    section_path: tuple[str, ...],
     page: int | None = None,
-    ordinal_offset: int = 0,
-) -> tuple[MaterialBlock, ...]:
-    blocks: list[MaterialBlock] = []
-    lines = text.splitlines()
-    paragraph_start: int | None = None
+) -> None:
+    paragraph_number = 0
+    line_start = line_end = char_start = char_end = 0
     paragraph_lines: list[str] = []
 
-    def flush(end_line: int) -> None:
-        nonlocal paragraph_start, paragraph_lines
-        if paragraph_start is None or not paragraph_lines:
-            paragraph_start = None
-            paragraph_lines = []
+    def flush() -> None:
+        nonlocal paragraph_number
+        if not paragraph_lines:
             return
-        value = "\n".join(paragraph_lines).strip()
-        if value:
-            blocks.append(
-                _block(
-                    material_id=material_id,
-                    parse_id=parse_id,
-                    ordinal=ordinal_offset + len(blocks),
-                    kind="paragraph",
-                    text=value,
-                    locator=MaterialLocator(
-                        page=page,
-                        section_path=section_path,
-                        paragraph=len(blocks) + 1,
-                        line_start=paragraph_start,
-                        line_end=end_line,
-                        char_start=_line_offset(text, paragraph_start),
-                        char_end=_line_offset(text, end_line + 1),
-                    ),
-                )
-            )
-        paragraph_start = None
-        paragraph_lines = []
+        paragraph_number += 1
+        blocks.add(
+            kind="paragraph",
+            text="\n".join(paragraph_lines).strip(),
+            locator=MaterialLocator(
+                page=page,
+                paragraph=paragraph_number,
+                line_start=line_start,
+                line_end=line_end,
+                char_start=char_start,
+                char_end=char_end,
+            ),
+        )
+        paragraph_lines.clear()
 
-    for line_number, line in enumerate(lines, start=1):
-        if line.strip():
-            if paragraph_start is None:
-                paragraph_start = line_number
-            paragraph_lines.append(line.rstrip())
-        elif paragraph_start is not None:
-            flush(line_number - 1)
-    flush(len(lines))
-    return tuple(blocks)
+    for line_number, (start, end) in enumerate(pairwise(_line_offsets(text)), start=1):
+        line = text[start:end].rstrip()
+        if not line:
+            flush()
+            continue
+        if not paragraph_lines:
+            line_start, char_start = line_number, start
+        line_end, char_end = line_number, end
+        paragraph_lines.append(line)
+    flush()
 
 
-def _line_offset(text: str, one_based_line: int) -> int:
-    if one_based_line <= 1:
-        return 0
-    lines = text.splitlines(keepends=True)
-    return sum(len(line) for line in lines[: one_based_line - 1])
-
-
-def _block(
-    *,
-    material_id: UUID,
-    parse_id: UUID,
-    ordinal: int,
-    kind: str,
-    text: str,
-    locator: MaterialLocator,
-) -> MaterialBlock:
-    return MaterialBlock.create(
-        parse_id=parse_id,
-        material_id=material_id,
-        ordinal=ordinal,
-        kind=kind,
-        text=text,
-        locator=locator,
-    )
+def _line_offsets(text: str) -> Iterator[int]:
+    # Match splitlines() boundaries without splitting the whole text for every locator.
+    yield 0
+    end = 0
+    for match in _LINE_BREAK.finditer(text):
+        end = match.end()
+        yield end
+    if end < len(text):
+        yield len(text)
 
 
 def _docx_paragraph_text(paragraph: ElementTree.Element, namespace: str) -> str:
@@ -497,41 +480,49 @@ def _docx_heading_styles(styles: ElementTree.Element | None, namespace: str) -> 
     return result
 
 
-def _parse_pptx(content: bytes, *, material_id: UUID, parse_id: UUID):
+def _parse_pptx(content: bytes, blocks: _MaterialBlocks) -> tuple[str, dict[str, Any]]:
     """Only visible slide text and tables are shared; notes and hidden slides are excluded."""
     import posixpath
 
     p = "{http://schemas.openxmlformats.org/presentationml/2006/main}"
     a = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
     r = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
-    blocks, skipped = [], []
+    skipped: list[int] = []
+    size_error = "课件解压后的内容过大。"
     try:
         with ZipFile(BytesIO(content)) as archive:
-            total_bytes = 0
+            _check_zip_member_count(archive, size_error)
+            metadata = [
+                archive.getinfo("ppt/presentation.xml"),
+                archive.getinfo("ppt/_rels/presentation.xml.rels"),
+            ]
+            _check_zip_expansion(metadata, size_error)
 
-            def read_xml(name):
-                nonlocal total_bytes
-                info = archive.getinfo(name)
-                total_bytes += info.file_size
-                if info.file_size > _MAX_ZIP_MEMBER_BYTES or total_bytes > 64 * 1024 * 1024:
-                    raise MaterialParseError("document_too_large", "课件解压后的内容过大。")
-                raw = archive.read(name)
-                if b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper():
+            def read_xml(info: ZipInfo) -> ElementTree.Element:
+                raw = _read_zip_member(archive, info)
+                upper = raw.upper()
+                if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
                     raise MaterialParseError("invalid_pptx", "课件包含不支持的 XML 声明。")
                 return ElementTree.fromstring(raw)
 
-            presentation = read_xml("ppt/presentation.xml")
-            relationships = read_xml("ppt/_rels/presentation.xml.rels")
+            presentation, relationships = (read_xml(info) for info in metadata)
             targets = {item.get("Id"): item.get("Target", "") for item in relationships
                        if item.get("TargetMode") != "External"}
-            for page, slide_ref in enumerate(presentation.findall(f"{p}sldIdLst/{p}sldId"), 1):
+            slide_refs = presentation.findall(f"{p}sldIdLst/{p}sldId")
+            _check_page_budget(len(slide_refs))
+            slides: list[ZipInfo] = []
+            for slide_ref in slide_refs:
                 target = targets.get(slide_ref.get(f"{r}id"), "")
                 name = posixpath.normpath(
                     target.lstrip("/") if target.startswith("/") else "ppt/" + target
                 )
                 if not name.startswith("ppt/slides/") or not name.endswith(".xml"):
                     raise MaterialParseError("invalid_pptx", "课件幻灯片引用无效。")
-                slide = read_xml(name)
+                slides.append(archive.getinfo(name))
+            _check_zip_expansion([*metadata, *slides], size_error)
+
+            for page, info in enumerate(slides, start=1):
+                slide = read_xml(info)
                 if slide.get("show") in {"0", "false"}:
                     continue
                 # Remove hidden containers before extracting descendants, including grouped tables.
@@ -575,23 +566,18 @@ def _parse_pptx(content: bytes, *, material_id: UUID, parse_id: UUID):
                     continue
                 # Short slides stay intact; long pages split without losing slide identity.
                 for start in range(0, len(text), 4000):
-                    blocks.append(
-                        _block(
-                            material_id=material_id,
-                            parse_id=parse_id,
-                            ordinal=len(blocks),
-                            kind="paragraph",
-                            text=text[start : start + 4000],
-                            locator=MaterialLocator(
-                                page=page,
-                                section_path=(title or f"第 {page} 张幻灯片",),
-                                char_start=start,
-                                char_end=min(start + 4000, len(text)),
-                            ),
-                        )
+                    blocks.add(
+                        kind="paragraph",
+                        text=text[start : start + 4000],
+                        locator=MaterialLocator(
+                            page=page,
+                            section_path=(title or f"第 {page} 张幻灯片",),
+                            char_start=start,
+                            char_end=min(start + 4000, len(text)),
+                        ),
                     )
     except (BadZipFile, KeyError, ElementTree.ParseError, RuntimeError) as error:
         raise MaterialParseError("invalid_pptx", "课件损坏或已加密，无法提取文字。") from error
-    return tuple(blocks), "\n\n".join(block.text for block in blocks), {
+    return blocks.full_text(), {
         "format": "pptx", "unreadable_slides": skipped,
     }
