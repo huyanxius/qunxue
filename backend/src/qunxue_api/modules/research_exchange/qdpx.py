@@ -34,8 +34,11 @@ from qunxue_api.modules.research_exchange.model import (
 QDPX_NAMESPACE = "urn:QDA-XML:project:1.0"
 _VARIABLE_NAMESPACE = UUID("bb082df7-f7dc-5c20-b64b-5d1c8b13dc07")
 _MAX_ARCHIVE_MEMBERS = 10_000
-_MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
-_MAX_PROJECT_XML_BYTES = 100 * 1024 * 1024
+_MAX_ARCHIVE_BYTES = 128 * 1024 * 1024
+_MAX_PROJECT_XML_BYTES = 16 * 1024 * 1024
+# Export also packages previously stored projects. Keep its existing size envelope.
+_MAX_EXPORT_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
+_MAX_EXPORT_PROJECT_XML_BYTES = 100 * 1024 * 1024
 _ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 _REFI_TIMESTAMP = "1970-01-01T00:00:00Z"
 
@@ -46,6 +49,13 @@ ET.register_namespace("", QDPX_NAMESPACE)
 class QdpxValidation:
     valid: bool
     errors: tuple[str, ...]
+
+
+class QdpxValidationError(ValueError):
+    def __init__(self, errors: tuple[str, ...], *, schema_failure: bool = False) -> None:
+        self.errors = errors
+        detail = "; ".join(errors)
+        super().__init__(f"QDPX schema validation failed: {detail}" if schema_failure else detail)
 
 
 @dataclass(frozen=True, slots=True)
@@ -381,9 +391,10 @@ def export_qdpx(project: QdpxProject) -> QdpxExport:
             )
             archive.writestr(info, content)
     payload = output.getvalue()
-    validation = validate_qdpx(payload)
-    if not validation.valid:
-        raise ValueError(f"QDPX schema validation failed: {'; '.join(validation.errors)}")
+    try:
+        _read_validated_qdpx(payload, exporting=True)
+    except QdpxValidationError as error:
+        raise ValueError(f"QDPX schema validation failed: {'; '.join(error.errors)}") from error
     return QdpxExport(
         payload=payload,
         sha256=hashlib.sha256(payload).hexdigest(),
@@ -391,8 +402,8 @@ def export_qdpx(project: QdpxProject) -> QdpxExport:
     )
 
 
-def _safe_members(archive: ZipFile) -> tuple[ZipInfo, ...]:
-    members = tuple(archive.infolist())
+def _safe_members(archive: ZipFile, max_bytes: int) -> list[ZipInfo]:
+    members = archive.infolist()
     if len(members) > _MAX_ARCHIVE_MEMBERS:
         raise ValueError("QDPX archive contains too many members")
     seen: set[str] = set()
@@ -405,37 +416,48 @@ def _safe_members(archive: ZipFile) -> tuple[ZipInfo, ...]:
             raise ValueError(f"duplicate archive member: {member.filename}")
         seen.add(member.filename)
         total_size += member.file_size
-        if total_size > _MAX_ARCHIVE_BYTES:
+        if total_size > max_bytes:
             raise ValueError("QDPX archive exceeds the uncompressed size limit")
     return members
 
 
-def _read_qdpx(payload: bytes) -> tuple[bytes, dict[str, bytes]]:
+def _read_member(archive: ZipFile, info: ZipInfo) -> bytes:
+    with archive.open(info) as member:
+        return member.read(info.file_size + 1)
+
+
+def _read_validated_qdpx(
+    payload: bytes, *, exporting: bool = False
+) -> tuple[bytes, dict[str, bytes]]:
+    max_archive_bytes = _MAX_EXPORT_ARCHIVE_BYTES if exporting else _MAX_ARCHIVE_BYTES
+    max_xml_bytes = _MAX_EXPORT_PROJECT_XML_BYTES if exporting else _MAX_PROJECT_XML_BYTES
     try:
         with ZipFile(BytesIO(payload)) as archive:
-            _safe_members(archive)
+            members = _safe_members(archive, max_archive_bytes)
             try:
                 info = archive.getinfo("project.qde")
             except KeyError as error:
                 raise ValueError("QDPX archive is missing project.qde") from error
-            if info.file_size > _MAX_PROJECT_XML_BYTES:
+            if info.file_size > max_xml_bytes:
                 raise ValueError("project.qde exceeds the size limit")
-            xml = archive.read(info)
-            members = {
-                member.filename: archive.read(member)
-                for member in archive.infolist()
+            xml = _read_member(archive, info)
+            lowered = xml[:4096].lower()
+            if b"<!doctype" in lowered or b"<!entity" in lowered:
+                raise ValueError("QDPX XML declarations are not allowed")
+            errors = _schema_errors(xml)
+            if errors:
+                raise QdpxValidationError(errors, schema_failure=True)
+            return xml, {
+                member.filename: _read_member(archive, member)
+                for member in members
                 if member.filename != "project.qde" and not member.is_dir()
             }
+    except QdpxValidationError:
+        raise
     except BadZipFile as error:
-        raise ValueError("invalid QDPX ZIP archive") from error
-    lowered = xml[:4096].lower()
-    if b"<!doctype" in lowered or b"<!entity" in lowered:
-        raise ValueError("QDPX XML declarations are not allowed")
-    return xml, members
-
-
-def _read_project_xml(payload: bytes) -> bytes:
-    return _read_qdpx(payload)[0]
+        raise QdpxValidationError(("invalid QDPX ZIP archive",)) from error
+    except ValueError as error:
+        raise QdpxValidationError((str(error),)) from error
 
 
 @lru_cache(maxsize=1)
@@ -444,13 +466,19 @@ def _schema() -> xmlschema.XMLSchema:
     return xmlschema.XMLSchema(path)
 
 
+def _schema_errors(xml: bytes) -> tuple[str, ...]:
+    try:
+        return tuple(str(error.reason) for error in _schema().iter_errors(xml))
+    except (ValueError, xmlschema.XMLSchemaException, ET.ParseError) as error:
+        return (str(error),)
+
+
 def validate_qdpx(payload: bytes) -> QdpxValidation:
     try:
-        xml = _read_project_xml(payload)
-        errors = tuple(str(error.reason) for error in _schema().iter_errors(xml))
-    except (ValueError, xmlschema.XMLSchemaException, ET.ParseError) as error:
-        return QdpxValidation(valid=False, errors=(str(error),))
-    return QdpxValidation(valid=not errors, errors=errors)
+        _read_validated_qdpx(payload)
+    except QdpxValidationError as error:
+        return QdpxValidation(valid=False, errors=error.errors)
+    return QdpxValidation(valid=True, errors=())
 
 
 def _uuid(value: str | None, field: str) -> UUID:
@@ -736,8 +764,5 @@ def _parse_project(xml: bytes, members: dict[str, bytes]) -> QdpxProject:
 
 
 def import_qdpx(payload: bytes) -> QdpxImport:
-    xml, members = _read_qdpx(payload)
-    validation = validate_qdpx(payload)
-    if not validation.valid:
-        raise ValueError(f"QDPX schema validation failed: {'; '.join(validation.errors)}")
+    xml, members = _read_validated_qdpx(payload)
     return QdpxImport(project=_parse_project(xml, members), report=ExchangeReport())
