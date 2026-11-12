@@ -42,10 +42,14 @@ class SqliteBillingOperations:
         return self.session.connection()
 
     def open(self, *, user_id, run_id, payload, before_network=None, phase="agent_turn",
-             resume=False):
+             resume=False, lease_token=None):
         policy = (
-            "user" if phase in {"agent_turn", "user_research"} else self.phase_policies.get(phase)
+            "user" if phase == "user_research"
+            else self.phase_policies.get(phase, "user" if phase == "agent_turn" else None)
         )
+        operator_agent = phase == "agent_turn" and policy == "operator"
+        if operator_agent and not lease_token:
+            raise BillingContextMissing("operator-funded Agent calls require a run lease")
         if phase in {"model_probe", "graph_topic_naming"} and policy != "operator":
             raise BillingContextMissing("optional naming and probes must be operator-funded")
         if policy not in {"user", "operator"}:
@@ -79,9 +83,16 @@ class SqliteBillingOperations:
             },
             before_network=before_network,
             resume=resume,
+            agent_lease_token=lease_token if operator_agent else None,
             settlement_connection=self._settlement_connection if self.session is not None else None,
         )
 
-    def close(self, *, run_id, outcome):
+    def close(self, *, run_id, outcome, lease_token=None):
         if self.runtime:
-            self.runtime.finish(run_id=run_id, outcome=outcome)
+            self.runtime.finish(
+                run_id=run_id,
+                outcome=outcome,
+                agent_lease_token=(
+                    lease_token if self.phase_policies.get("agent_turn") == "operator" else None
+                ),
+            )

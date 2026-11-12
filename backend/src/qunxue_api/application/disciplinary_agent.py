@@ -28,7 +28,7 @@ from qunxue_api.modules.agent_conversation import (
     SubjectAgentRunner,
     user_question_without_discussion_excerpt,
 )
-from qunxue_api.modules.billing import BillingOperations, CreditService
+from qunxue_api.modules.billing import BillingFailure, BillingOperations, CreditService
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,7 +89,9 @@ class DisciplinaryAgentApplication:
             self._conversations.commit()
             if self._billing is not None:
                 for run in expired:
-                    self._billing.close(run_id=run.run_id, outcome="error")
+                    self._billing.close(
+                        run_id=run.run_id, outcome="error", lease_token=run.lease_token
+                    )
         return self._conversations.get_conversation(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -512,7 +514,7 @@ class DisciplinaryAgentApplication:
             "_research_intent": "research" if research_required else None,
         }
         billing_resume = existing_run is not None and existing_run.status in {
-            "awaiting_clarification", "awaiting_plan_confirmation"
+            "awaiting_clarification", "awaiting_plan_confirmation", "failed", "interrupted",
         }
         run = self._conversations.start_run(
             user_id=user_id,
@@ -604,20 +606,6 @@ class DisciplinaryAgentApplication:
 
         billing_context = None
         try:
-            if self._billing is not None:
-                self._conversations.commit()
-                billing_candidate = self._billing.open(
-                    user_id=user_id,
-                    run_id=run.run_id,
-                    payload=request_snapshot,
-                    before_network=lambda: checkpoint(force=True),
-                    **({"resume": True} if billing_resume else {}),
-                )
-                billing_candidate.__enter__()
-                billing_context = billing_candidate
-            elif self._credits is not None:
-                self._credits.reserve(user_id=user_id, run_id=run.run_id)
-                self._conversations.commit()
             current = self.get_conversation(
                 user_id=user_id,
                 conversation_id=conversation.conversation_id,
@@ -682,6 +670,22 @@ class DisciplinaryAgentApplication:
 
             if cancelled():
                 raise AgentInterrupted("Agent run was interrupted by the client")
+
+            if self._billing is not None:
+                self._conversations.commit()
+                billing_candidate = self._billing.open(
+                    user_id=user_id,
+                    run_id=run.run_id,
+                    payload=request_snapshot,
+                    before_network=lambda: checkpoint(force=True),
+                    resume=billing_resume,
+                    lease_token=run.lease_token,
+                )
+                billing_candidate.__enter__()
+                billing_context = billing_candidate
+            elif self._credits is not None:
+                self._credits.reserve(user_id=user_id, run_id=run.run_id)
+                self._conversations.commit()
 
             model_prompt = prompt
             if (
@@ -782,7 +786,7 @@ class DisciplinaryAgentApplication:
                         prepare_kwargs["on_title"] = save_initial_title
                     try:
                         decision = prepare_research(**prepare_kwargs)
-                    except AgentInterrupted:
+                    except (AgentInterrupted, BillingFailure):
                         raise
                     except Exception as error:
                         if mode == "deep_research":
@@ -800,8 +804,6 @@ class DisciplinaryAgentApplication:
                     ):
                         raise ValueError("研究提案尚未完整，请重试；尚未开始研究。")
                     if mode == "deep_research" or planning_event.kind == "ask":
-                        if on_research_event is not None:
-                            on_research_event(planning_event)
                         state = (
                             "awaiting_clarification"
                             if planning_event.kind == "ask"
@@ -818,12 +820,14 @@ class DisciplinaryAgentApplication:
                             pending["selected_intent"] = deep_research_selection
                         with self._atomic():
                             request_snapshot["_research_intent"] = "research"
-                            self._conversations.checkpoint_run(
+                            if not self._conversations.checkpoint_run(
                                 user_id=user_id,
                                 run_id=run.run_id,
                                 lease_token=run.lease_token,
                                 request_snapshot=request_snapshot,
-                            )
+                                require_not_cancelled=True,
+                            ):
+                                raise AgentInterrupted("Agent execution lease was replaced")
                             self._conversations.finish_run(
                                 run_id=run.run_id,
                                 lease_token=run.lease_token,
@@ -835,6 +839,8 @@ class DisciplinaryAgentApplication:
                             if billing_context is not None:
                                 billing_context.finish("paused")
                         self._conversations.commit()
+                        if on_research_event is not None:
+                            on_research_event(planning_event)
                         return AgentTurnExecution(
                             conversation=current,
                             run_id=run.run_id,

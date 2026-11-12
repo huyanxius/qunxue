@@ -764,11 +764,23 @@ class SqliteConversationRepository:
         ).all()
         recovered = []
         for row in rows:
-            changed = self._session.execute(update(AgentRunRow).where(
-                AgentRunRow.run_id == row.run_id, AgentRunRow.status == "running",
-                or_(AgentRunRow.lease_expires_at.is_(None), AgentRunRow.lease_expires_at <= now),
-            ).values(status="interrupted", cancel_requested=True, updated_at=now,
-                     lease_expires_at=None, completed_at=now)).rowcount
+            # SQLite's loaded timestamps are naive. Match expiry in SQL.
+            changed = self._session.execute(
+                update(AgentRunRow)
+                .where(
+                    AgentRunRow.run_id == row.run_id,
+                    AgentRunRow.status == "running",
+                    or_(
+                        AgentRunRow.lease_expires_at.is_(None),
+                        AgentRunRow.lease_expires_at <= now,
+                    ),
+                )
+                .values(
+                    status="interrupted", cancel_requested=True, updated_at=now,
+                    lease_expires_at=None, completed_at=now,
+                )
+                .execution_options(synchronize_session="fetch")
+            ).rowcount
             if changed:
                 recovered.append(_run_from_row(row))
         return tuple(recovered)

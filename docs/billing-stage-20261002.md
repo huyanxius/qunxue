@@ -70,9 +70,17 @@ Probes must be operator-funded. Everplain optional `graph_topic_naming` also req
 an explicit `operator` policy. Missing configuration skips this naming phase and
 keeps source-document labels and the rest of the graph; embedding/index behavior
 is preserved. Omitted policies block the other Chat phases before
-HTTP. The normal Agent turn is user-funded, respecting existing admin exemptions;
-admin requests still record all usage/cost and obey operator risk budgets.
+HTTP. Everplain's normal Agent turn is user-funded and honors admin exemptions.
+Admin requests still record usage and cost and obey operator risk budgets.
 Everplain's explicit zero-key development fallback remains a mock.
+
+Qunxue's main Agent requires `QUNXUE_BILLING_PHASE_POLICIES` to include
+`"agent_turn": "operator"`. Set both `QUNXUE_BILLING_AGENT_DAILY_BUDGET_USD_MICRO`
+and `QUNXUE_BILLING_AGENT_USER_DAILY_BUDGET_USD_MICRO` alongside the shared price
+and risk settings. These are UTC daily caps on reference cost plus outstanding
+reservations, across all main Agent turns and per user respectively. Agent calls
+are free to users. To stop new paid Agent calls,
+remove the `agent_turn` policy and restart the app. Completed turns can still replay.
 
 For priced cache subtypes the production receipt needs cache-read/write counters.
 An endpoint contract that omits these *only when they are zero* can be explicitly

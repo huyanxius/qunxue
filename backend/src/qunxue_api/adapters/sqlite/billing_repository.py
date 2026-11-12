@@ -458,7 +458,11 @@ class SqliteCreditRepository:
                     "attempts": [
                         {
                             **{key: value for key, value in a.items() if key != "price_json"},
-                            "price_snapshot": json.loads(a["price_json"]),
+                            "price_snapshot": {
+                                key: value
+                                for key, value in json.loads(a["price_json"]).items()
+                                if key != "agent_lease_token"
+                            },
                         }
                         for a in attempts
                     ],
