@@ -1038,6 +1038,14 @@ def create_app(
             # as the zero-config development default.
             agent_runtime_mode = _effective_model_runtime_mode(resolved_settings)
             use_real_agent = agent_runtime_mode != "mock"
+            meter_agent = use_real_agent and not teaching
+            billing = (
+                operator_billing.bound_to(session)
+                if meter_agent
+                and operator_billing is not None
+                and "agent_turn" in operator_policies
+                else None
+            )
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
             else:
@@ -1071,7 +1079,7 @@ def create_app(
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                     direct_task=teaching,
-                    require_billing=False,
+                    require_billing=meter_agent,
                 )
             from qunxue_api.adapters.research_agent.roadshow_runner import RoadshowRunner
 
@@ -1090,11 +1098,11 @@ def create_app(
                     conversations=conversations,
                     runner=runner,
                     teaching=teaching,
-                    billing=None,
+                    billing=billing,
                     rollback=session.rollback,
                     credits=None,
                     atomic=(
-                        app.state.billing_operations.bound_to(session).atomic
+                        (billing or app.state.billing_operations.bound_to(session)).atomic
                         if use_real_agent else session.begin_nested
                     ),
                     ensure_research_draft=(
@@ -1163,7 +1171,7 @@ def create_app(
     # These capabilities may spend the operator's budget even at zero user balance.
     operator_policies = {
         phase: "operator"
-        for phase in ("memory_overview", "memory_learning", "course_knowledge")
+        for phase in ("agent_turn", "memory_overview", "memory_learning", "course_knowledge")
         if resolved_settings.billing_phase_policies.get(phase) == "operator"
     }
     operator_runtime = None
@@ -1172,7 +1180,7 @@ def create_app(
             operator_runtime = _billing_runtime(resolved_settings, resolved_database)
         except ValueError:
             logger.warning(
-                "Invalid operator billing settings. Memory and course model calls are disabled."
+                "Invalid operator billing settings. Operator-funded model calls are disabled."
             )
     operator_billing = (
         SqliteBillingOperations(
@@ -1743,6 +1751,8 @@ def _billing_runtime(settings, database):
         conversion = dict(credits_per_usd=settings.billing_credits_per_usd)
     else:
         return None
+    agent_daily = settings.billing_agent_daily_budget_usd_micro
+    agent_user_daily = settings.billing_agent_user_daily_budget_usd_micro
     return DurableBilling(
         database.engine,
         price_book=PriceBook(
@@ -1756,5 +1766,9 @@ def _billing_runtime(settings, database):
         max_attempt_pico=settings.billing_max_attempt_usd_micro * 10**6,
         max_operation_pico=settings.billing_max_operation_usd_micro * 10**6,
         daily_budget_pico=settings.billing_daily_budget_usd_micro * 10**6,
+        agent_daily_budget_pico=agent_daily * 10**6 if agent_daily is not None else None,
+        agent_user_daily_budget_pico=(
+            agent_user_daily * 10**6 if agent_user_daily is not None else None
+        ),
         max_attempts=settings.billing_max_attempts,
     )

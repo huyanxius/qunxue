@@ -204,6 +204,8 @@ class Settings(BaseSettings):
     billing_max_attempt_usd_micro: int | None = Field(default=None, gt=0)
     billing_max_operation_usd_micro: int | None = Field(default=None, gt=0)
     billing_daily_budget_usd_micro: int | None = Field(default=None, gt=0)
+    billing_agent_daily_budget_usd_micro: int | None = Field(default=None, gt=0)
+    billing_agent_user_daily_budget_usd_micro: int | None = Field(default=None, gt=0)
     billing_deepseek_time_basis: Literal["server_dispatch_at"] | None = None
     billing_calendar_version: str | None = None
     billing_max_attempts: int = Field(default=64, gt=0, le=256)

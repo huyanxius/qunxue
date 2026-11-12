@@ -14,7 +14,13 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from sqlalchemy import text
 
-from qunxue_api.modules.billing import PICO_USD, PriceBook, Tariff, UnknownPrice
+from qunxue_api.modules.billing import (
+    PICO_USD,
+    BillingContextMissing,
+    PriceBook,
+    Tariff,
+    UnknownPrice,
+)
 from qunxue_api.modules.billing import (
     BillingBudgetExceeded as BillingBudgetExceeded,
 )
@@ -76,6 +82,8 @@ class DurableBilling:
         max_attempt_pico: int,
         max_operation_pico: int,
         daily_budget_pico: int,
+        agent_daily_budget_pico: int | None = None,
+        agent_user_daily_budget_pico: int | None = None,
         max_attempts: int = 64,
         clock=None,
     ):
@@ -87,6 +95,8 @@ class DurableBilling:
         self.max_attempt_pico = max_attempt_pico
         self.max_operation_pico = max_operation_pico
         self.daily_budget_pico = daily_budget_pico
+        self.agent_daily_budget_pico = agent_daily_budget_pico
+        self.agent_user_daily_budget_pico = agent_user_daily_budget_pico
         self.max_attempts = max_attempts
         self.clock = clock or (lambda: datetime.now(UTC))
 
@@ -109,7 +119,7 @@ class DurableBilling:
         return conn.execute(text(sql), args).mappings().first()
 
     @staticmethod
-    def _snapshot(book):
+    def _snapshot(book, *, agent_lease_token=None):
         return json.dumps(
             {
                 "credits_per_usd": book.credits_per_usd,
@@ -129,6 +139,7 @@ class DurableBilling:
                 "fx_source": book.fx_source,
                 "procurement_estimate_source": book.procurement_estimate_source,
                 "procurement_estimate_ratio": book.procurement_estimate_ratio,
+                **({"agent_lease_token": agent_lease_token} if agent_lease_token else {}),
             },
             sort_keys=True,
         )
@@ -172,18 +183,45 @@ class DurableBilling:
         with self.engine.connect() as conn:
             return self._available(conn, str(user_id))
 
-    def start(self, *, user_id, run_id, fingerprint, exempt=False, resume=False):
+    def start(
+        self, *, user_id, run_id, fingerprint, exempt=False, resume=False, agent_lease_token=None
+    ):
         run_id, user_id = str(run_id), str(user_id)
+        if agent_lease_token is not None and (
+            self.agent_daily_budget_pico is None or self.agent_user_daily_budget_pico is None
+        ):
+            raise BillingContextMissing("operator-funded Agent calls require both daily limits")
         with self._transaction() as conn:
+            if agent_lease_token is not None and not conn.scalar(
+                text(
+                    "SELECT 1 FROM agent_runs WHERE run_id=:run AND user_id=:user "
+                    "AND status='running' AND lease_token=:lease"
+                ),
+                {"run": run_id, "user": user_id, "lease": agent_lease_token},
+            ):
+                raise BillingReplayBlocked("Agent execution lease was replaced")
             previous = self._one(
                 conn, "SELECT * FROM billing_operations WHERE run_id=:run", run=run_id
             )
-            if previous and (
-                not resume or previous["status"] != "paused"
-                or previous["user_id"] != user_id or bool(previous["exempt"]) != exempt
-            ):
-                raise BillingReplayBlocked("operation already exists; use its persisted outcome")
-            if resume and previous is None:
+            if previous:
+                previous_lease = json.loads(previous["price_json"]).get("agent_lease_token")
+                if agent_lease_token is None:
+                    can_resume = previous_lease is None and previous["status"] == "paused"
+                else:
+                    # A recovered business run has a new lease, including when
+                    # its previous process died with the operation still active.
+                    can_resume = (
+                        previous_lease is not None and previous_lease != agent_lease_token
+                        and previous["status"] != "success"
+                    )
+                if (
+                    not resume or not can_resume
+                    or previous["user_id"] != user_id or bool(previous["exempt"]) != exempt
+                ):
+                    raise BillingReplayBlocked(
+                        "operation already exists; use its persisted outcome"
+                    )
+            if resume and previous is None and agent_lease_token is None:
                 raise BillingReplayBlocked("paused billing operation is missing")
             book = self._book(previous["price_json"]) if previous else self.book
             available = 0 if exempt else self._available(conn, user_id)
@@ -204,9 +242,14 @@ class DurableBilling:
             if previous:
                 conn.execute(
                     text("UPDATE billing_operations SET status='active', hold_points=:hold, "
-                         "fingerprint=:fingerprint, updated_at=:now WHERE run_id=:run "
-                         "AND status='paused'"),
-                    {"hold": hold, "fingerprint": fingerprint, "now": now, "run": run_id},
+                         "fingerprint=:fingerprint, updated_at=:now, price_json=CASE "
+                         "WHEN :lease IS NULL THEN price_json "
+                         "ELSE json_set(price_json,'$.agent_lease_token',:lease) END "
+                         "WHERE run_id=:run"),
+                    {
+                        "hold": hold, "fingerprint": fingerprint, "now": now, "run": run_id,
+                        "lease": agent_lease_token,
+                    },
                 )
                 return run_id
             conn.execute(
@@ -222,27 +265,45 @@ class DurableBilling:
                     "fingerprint": fingerprint,
                     "hold": hold,
                     "exempt": int(exempt),
-                    "price": self._snapshot(self.book),
+                    "price": self._snapshot(self.book, agent_lease_token=agent_lease_token),
                     "now": now,
                 },
             )
         return run_id
 
-    def _risk(self, conn):
+    def _risk(self, conn, *, agent_user_id=None):
         midnight = self.clock().astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        return conn.scalar(
-            text(
-                "SELECT coalesce(sum(CASE WHEN reference_cost_pico IS NULL "
-                "THEN reserved_cost_pico WHEN updated_at >= :day THEN "
-                "reference_cost_pico ELSE 0 END),0) "
-                "FROM billing_attempts"
-            ),
-            {"day": midnight.isoformat()},
+        # Unreconciled reservations still count after midnight. A receipt
+        # replaces that reservation with the day's reference cost.
+        cost = (
+            "CASE WHEN a.reference_cost_pico IS NULL THEN a.reserved_cost_pico "
+            "WHEN a.updated_at >= :day THEN a.reference_cost_pico ELSE 0 END"
         )
+        day = midnight.isoformat()
+        if agent_user_id is None:
+            total = conn.scalar(
+                text(f"SELECT coalesce(sum({cost}),0) FROM billing_attempts a"), {"day": day}
+            )
+            return total, 0, 0
+        return conn.execute(
+            text(f"""
+                SELECT coalesce(sum(cost),0),
+                       coalesce(sum(cost) FILTER (WHERE agent_turn),0),
+                       coalesce(sum(cost) FILTER (WHERE agent_turn AND user_id=:user),0)
+                FROM (
+                    SELECT {cost} AS cost, o.user_id,
+                           json_extract(o.price_json,'$.agent_lease_token') IS NOT NULL
+                               AS agent_turn
+                    FROM billing_attempts a
+                    LEFT JOIN billing_operations o ON o.run_id=a.run_id
+                )
+            """),
+            {"day": day, "user": agent_user_id},
+        ).one()
 
     def operator_risk_pico(self):
         with self.engine.connect() as conn:
-            return self._risk(conn)
+            return self._risk(conn)[0]
 
     def before_attempt(
         self,
@@ -258,6 +319,7 @@ class DurableBilling:
         api_type="chat_completions",
         requested_effort=None,
         requested_service_tier=None,
+        agent_lease_token=None,
     ):
         with self._transaction() as conn:
             run = self._one(
@@ -265,6 +327,8 @@ class DurableBilling:
             )
             if run is None or run["status"] != "active":
                 raise BillingReplayBlocked("operation is not active")
+            if json.loads(run["price_json"]).get("agent_lease_token") != agent_lease_token:
+                raise BillingReplayBlocked("Agent execution lease was replaced")
             if requested_service_tier not in {None, "default", "standard"}:
                 raise UnknownPrice("requested service tier has no configured tariff")
             book = self._book(run["price_json"]).lock_dispatch(model, self.clock())
@@ -286,9 +350,18 @@ class DurableBilling:
                 reserved > self.max_attempt_pico
                 or aggregate["n"] >= self.max_attempts
                 or operation_risk > self.max_operation_pico
-                or self._risk(conn) + reserved > self.daily_budget_pico
             ):
                 raise BillingBudgetExceeded("model request exceeds reserved budget")
+            total, capability, user = self._risk(
+                conn, agent_user_id=run["user_id"] if agent_lease_token is not None else None
+            )
+            if total + reserved > self.daily_budget_pico or (
+                agent_lease_token is not None and (
+                    capability + reserved > self.agent_daily_budget_pico
+                    or user + reserved > self.agent_user_daily_budget_pico
+                )
+            ):
+                raise BillingBudgetExceeded("model request exceeds daily budget")
             if not run["exempt"] and max_credit > run["hold_points"]:
                 raise BillingBudgetExceeded(
                     "request needs more available credits", reason="credits_depleted"
@@ -318,7 +391,7 @@ class DurableBilling:
                     "i": input_limit,
                     "o": output_limit,
                     "cost": reserved,
-                    "price": self._snapshot(book),
+                    "price": self._snapshot(book, agent_lease_token=agent_lease_token),
                     "provider": provider_host,
                     "api": api_type,
                     "effort": requested_effort,
@@ -427,9 +500,14 @@ class DurableBilling:
                 elif mismatch:
                     outcome = "model_mismatch"
             operation = self._one(
-                conn, "SELECT status FROM billing_operations WHERE run_id=:run", run=row["run_id"]
+                conn, "SELECT status,price_json FROM billing_operations WHERE run_id=:run",
+                run=row["run_id"],
             )
-            billable = int(outcome == "success" and operation["status"] == "active")
+            billable = int(
+                outcome == "success" and operation["status"] == "active"
+                and json.loads(row["price_json"]).get("agent_lease_token")
+                == json.loads(operation["price_json"]).get("agent_lease_token")
+            )
             conn.execute(
                 text(
                     "UPDATE billing_attempts SET "
@@ -523,7 +601,7 @@ class DurableBilling:
             },
         )
 
-    def finish(self, *, run_id, outcome, connection=None):
+    def finish(self, *, run_id, outcome, connection=None, agent_lease_token=None):
         if outcome not in {"success", "paused", "error", "cancelled"}:
             raise ValueError("invalid billing operation outcome")
         # A supplied connection belongs to the existing business transaction.
@@ -534,19 +612,30 @@ class DurableBilling:
             )
             if run is None or run["status"] in {"error", "cancelled", "refunded"}:
                 return run["status"] if run else None
+            if (
+                agent_lease_token is not None
+                and json.loads(run["price_json"]).get("agent_lease_token") != agent_lease_token
+            ):
+                return run["status"]
             if run["status"] == outcome and outcome in {"success", "paused"}:
                 return run["status"]
             attempts = conn.execute(
                 text("SELECT * FROM billing_attempts WHERE run_id=:run"), {"run": str(run_id)}
             ).mappings().all()
+            current_attempts = attempts
+            if agent_lease_token is not None:
+                current_attempts = [
+                    a for a in attempts
+                    if json.loads(a["price_json"]).get("agent_lease_token") == agent_lease_token
+                ]
             delivered = outcome in {"success", "paused"}
             if delivered and any(
                 a["outcome"] in {"in_flight", "overrun", "model_mismatch", "limited", "rejected"}
                 or (a["outcome"] == "success" and a["usage_state"] != "known")
-                for a in attempts
+                for a in current_attempts
             ):
                 outcome, delivered = "error", False
-            if delivered and attempts and not any(a["billable"] for a in attempts):
+            if delivered and current_attempts and not any(a["billable"] for a in current_attempts):
                 outcome, delivered = "error", False
             book = self._book(run["price_json"])
             numerator = book.credit_numerator(sum(
