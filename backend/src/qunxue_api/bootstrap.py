@@ -375,7 +375,6 @@ def create_app(
         if resolved_settings.has_resend_api_key
         else None
     )
-    app.state.matching_start_lock = Lock()
     app.state.research_start_lock = Lock()
     app.state.database = resolved_database
     app.state.frontier_store = SqliteFrontierStore(resolved_database)
@@ -505,9 +504,8 @@ def create_app(
 
     @contextmanager
     def theory_matching_application_scope() -> Iterator[TheoryMatchingApplication]:
-        # Hold the process lock until the transaction commits. Cross-process
-        # writers are rejected by the task repository's version CAS.
-        with app.state.matching_start_lock, resolved_database.session() as session:
+        # Task version CAS rejects competing writers without serializing model I/O or reads.
+        with resolved_database.session() as session:
             descriptor = app.state.model_gateway.descriptor
             analysis_application = build_research_analysis_application(session)
             model_context = TheoryModelContext(
