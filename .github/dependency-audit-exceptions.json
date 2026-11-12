@@ -8,28 +8,5 @@
     ],
     "reason": "随 Alembic 锁定的迁移依赖暂缓更新，待验证迁移模板渲染与升级。",
     "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
-    "package": "opentelemetry-api",
-    "version": "1.44.0",
-    "advisories": [
-      "GHSA-xcq7-p3pf-p88h"
-    ],
-    "reason": "保留当前模型 SDK 的遥测依赖，待 R23a 复核 SDK 与遥测接口兼容性。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "pypi",
-    "package": "pydantic-ai-slim",
-    "version": "1.107.5",
-    "advisories": [
-      "GHSA-4x9p-g9wm-8q7f",
-      "GHSA-fpf4-vwcp-v4hp",
-      "GHSA-v36g-jcw9-x7cw",
-      "GHSA-vmxc-h2x2-jmf3"
-    ],
-    "reason": "R23a 验证兼容补丁下的请求、流式输出、取消和用量契约。",
-    "expires": "2026-11-19"
   }
 ]
