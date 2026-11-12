@@ -1,0 +1,330 @@
+{
+  "issue": 511,
+  "admission_class": "B",
+  "baseline_ref": "origin/main",
+  "baseline_commit": "81d586512e37f0a097f827c88d4c889e48b75842",
+  "branch_dependency_commit": "edbde5bf071297937196d373f2e3a7a5a3c83ae8",
+  "measured_at": "2026-11-12T04:49:03.334219+00:00",
+  "target": "Reduce production-lock advisory findings without changing scan scope or adding exceptions; all affected checks and CI pass.",
+  "method": {
+    "evaluator": "tools/dependency-audit/check.mjs:evaluate",
+    "finding_key": [
+      "ecosystem",
+      "package",
+      "locked version",
+      "advisory ID"
+    ],
+    "count_includes_active_exceptions": true,
+    "npm": "npm audit --package-lock-only --omit=dev --audit-level=info --json; fixed public-registry bulk response and package metadata replayed by loopback HTTP server",
+    "python": "uv export --locked --no-dev --no-emit-project --format requirements-txt; pip-audit 2.10.0 --vulnerability-service osv --no-deps --disable-pip --require-hashes --strict --format json --desc off --aliases on --progress-spinner off; fixed OSV query responses replayed through --osv-url",
+    "snapshot": "Public npm bulk advisories cover the union of unchanged main and candidate lock versions; OSV responses cover the same union. Snapshot captured and main remeasured before changing tracked files; replay has no network fallback.",
+    "snapshot_sha256": "cee3a23e85b83d9f5bd1c92db7c5d4c5a7663b6a625a723e9d444f038a27d720",
+    "baseline_recorded_before_changes": true,
+    "same_snapshot_for_both_locks": true,
+    "node": "22.22.2",
+    "python_version": "3.12.13",
+    "uv": "0.11.29",
+    "npm_count_is_not_propagated_package_count": true
+  },
+  "baseline": {
+    "lock_sha256": {
+      "frontend/package-lock.json": "b2d2c592395bf294cb816ad6faf8e332beec2d35431e205a556526a168518d2f",
+      "backend/uv.lock": "999110d53a0894b42db8222c3227c63bf3030029dc9873266e0e35e316e18de6"
+    },
+    "findings": {
+      "npm": 3,
+      "python": 47,
+      "total": 50
+    },
+    "npm_affected_package_entries": 29,
+    "python_raw_findings": 65,
+    "findings_by_package": {
+      "@tiptap/core": 2,
+      "prosemirror-view": 1,
+      "certifi": 1,
+      "httpcore2": 1,
+      "httpx2": 6,
+      "mako": 1,
+      "opentelemetry-api": 1,
+      "pydantic-ai-slim": 8,
+      "pypdf": 26,
+      "urllib3": 3
+    },
+    "measurement_completed_at": "2026-11-12T04:42:14.690341+00:00"
+  },
+  "branch": {
+    "lock_sha256": {
+      "frontend/package-lock.json": "32ccbdbce18409b5c17ca6a4e8243cb00855a57f0b35ebdeefebfb4d0c65fc83",
+      "backend/uv.lock": "7460bc209b28fd40119eb041447d1fe22242c106f349ac9870aae0ed86e0b2da"
+    },
+    "findings": {
+      "npm": 0,
+      "python": 1,
+      "total": 1
+    },
+    "npm_affected_package_entries": 0,
+    "python_raw_findings": 2,
+    "remaining_findings": [
+      {
+        "ecosystem": "pypi",
+        "package": "mako",
+        "version": "1.3.12",
+        "id": "PYSEC-2026-4243",
+        "aliases": [
+          "CVE-2026-102991",
+          "GHSA-5639-2j2p-m4mx"
+        ],
+        "paths": [
+          "alembic"
+        ],
+        "state": "excepted",
+        "exception": {
+          "id": "GHSA-5639-2j2p-m4mx",
+          "expires": "2026-11-19",
+          "reason": "随 Alembic 锁定的迁移依赖暂缓更新，待验证迁移模板渲染与升级。"
+        }
+      }
+    ],
+    "measurement_completed_at": "2026-11-12T04:47:18.924053+00:00"
+  },
+  "reduction": {
+    "npm": 3,
+    "python": 46,
+    "total": 49
+  },
+  "versions": {
+    "npm": {
+      "node_modules/@tiptap/core": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-blockquote": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-bold": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-bubble-menu": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-bullet-list": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-code": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-code-block": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-document": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-dropcursor": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-floating-menu": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-gapcursor": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-hard-break": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-heading": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-horizontal-rule": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-italic": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-link": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-list": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-list-item": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-list-keymap": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-ordered-list": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-paragraph": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-strike": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-text": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extension-underline": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/extensions": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/markdown": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/pm": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/react": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/@tiptap/starter-kit": {
+        "before": "3.30.2",
+        "after": "3.33.1"
+      },
+      "node_modules/js-yaml": {
+        "before": "4.3.0",
+        "after": "4.3.2"
+      },
+      "node_modules/prosemirror-changeset": {
+        "before": "2.4.2",
+        "after": "2.4.6"
+      },
+      "node_modules/prosemirror-dropcursor": {
+        "before": "1.8.3",
+        "after": "1.8.4"
+      },
+      "node_modules/prosemirror-history": {
+        "before": "1.5.0",
+        "after": "1.5.1"
+      },
+      "node_modules/prosemirror-model": {
+        "before": "1.25.11",
+        "after": "1.25.13"
+      },
+      "node_modules/prosemirror-transform": {
+        "before": "1.12.0",
+        "after": "1.12.5"
+      },
+      "node_modules/prosemirror-view": {
+        "before": "1.42.2",
+        "after": "1.42.9"
+      }
+    },
+    "python": {
+      "certifi": {
+        "before": "2026.7.22",
+        "after": "2026.10.23"
+      },
+      "genai-prices": {
+        "before": "0.1.3",
+        "after": "0.0.73"
+      },
+      "httpcore2": {
+        "before": "2.9.1",
+        "after": "2.12.0"
+      },
+      "httpx2": {
+        "before": "2.9.1",
+        "after": "2.12.0"
+      },
+      "httpx2-jsfetch": {
+        "before": null,
+        "after": "1.0"
+      },
+      "opentelemetry-api": {
+        "before": "1.44.0",
+        "after": "1.45.2"
+      },
+      "pydantic-ai-slim": {
+        "before": "1.107.5",
+        "after": "1.107.10"
+      },
+      "pydantic-graph": {
+        "before": "1.107.5",
+        "after": "1.107.10"
+      },
+      "pypdf": {
+        "before": "6.16.2",
+        "after": "6.21.4"
+      },
+      "urllib3": {
+        "before": "2.7.0",
+        "after": "2.8.0"
+      }
+    }
+  },
+  "rollback_commits": [
+    "2ccef36d97256390f2606a5b63c25e1bfcbdda15 chore(editor): 更新 Tiptap 与 ProseMirror 修复版本",
+    "84b3c297ff4a82389e18b02b42de4a755ef27006 chore(pdf): 更新 pypdf 兼容修复版本",
+    "70b297df3144a1fb525c88e2b1902ebf0bfb502f chore(transport): 更新证书与 HTTP 传输兼容版本",
+    "60f9198a5ac7ea8027872a66449cd0a463b094d3 chore(model-sdk): 更新 Pydantic AI 兼容补丁",
+    "edbde5bf071297937196d373f2e3a7a5a3c83ae8 chore(yaml): 收窄 override 并更新兼容修复版本"
+  ],
+  "compatibility_notes": [
+    "Pydantic AI stays on 1.107.x and pypdf stays on 6.x; OpenAI SDK remains unchanged at 3.1.0.",
+    "Pydantic AI 1.107.10 requires genai-prices>=0.0.62,<0.1, so its lock changes from 0.1.3 to 0.0.73.",
+    "httpx2-jsfetch is added by httpx2 only under sys_platform == emscripten and is absent from the measured native production export.",
+    "js-yaml is dev-only in this lock; changing the override does not contribute to the production finding reduction."
+  ],
+  "verification": {
+    "existing_frontend_tests": 22,
+    "ordinary_editor_paste_smoke": 1,
+    "normal_pdf_tests": 1,
+    "fake_tls_and_probe_tests": 5,
+    "sdk_request_stream_cancellation_and_metering_tests": 36,
+    "normal_openapi_yaml_smoke": 1,
+    "frontend_builds": 1,
+    "xfail_or_it_fails_in_test_tree": 0,
+    "full_local_gates_run": false,
+    "paid_model_api_calls": 0
+  },
+  "preserved": [
+    "Dependabot configuration",
+    "dependency_audit CI gate and scanner scope",
+    "parsing implementation and budgets",
+    "API DTOs, OpenAPI and SSE formats",
+    "original Mako exception and expiration"
+  ],
+  "evidence_directory": "../重构日志/R21+-evidence",
+  "live_production_gate": {
+    "exit_code": 0,
+    "advisory_findings": 1,
+    "excepted": 1,
+    "blocked": 0,
+    "lock_hashes_unchanged": true
+  },
+  "unchanged_guard_sha256": {
+    "tools/dependency-audit/check.mjs": "12a255f13aff40288bc442873a642c9fa74286d15c57f959cdb56d2123d517a3",
+    ".github/workflows/delivery.yml": "6f89e839aaeb7fc1a47685e0cd7db8799238c95b222e0a1b6410bbc5cb1a267c",
+    ".github/dependabot.yml": "09ab2de5b1c2eccd925d30f1249d82a88ec7792d96a28445d964dffea3b0df8e"
+  }
+}
