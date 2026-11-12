@@ -35,6 +35,93 @@ const material = {
 }
 
 describe('ResearchMaterialsPanel', () => {
+  it('polling waits for its in-flight request before refreshing again', async () => {
+    vi.useFakeTimers()
+    const pending = { ...material, status: 'processing', ingestion_status: 'queued', segment_count: 0 }
+    const poll = deferred<Response>()
+    const requests: Request[] = []
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const request = requestOf(input, init)
+      if (!new URL(request.url).pathname.endsWith('/materials')) {
+        return Promise.resolve(response({ annotations: [], codes: [], memos: [] }))
+      }
+      requests.push(request)
+      if (requests.length === 2) return poll.promise
+      return Promise.resolve(response({ task_id: 'task-1', items: [requests.length === 1 ? pending : material] }))
+    }))
+
+    await act(async () => { render(<ResearchMaterialsPanel taskId="task-1" presentation="workspace" />) })
+    expect(screen.getByText('等待解析')).toBeVisible()
+    await act(() => vi.advanceTimersByTimeAsync(750))
+    expect(requests).toHaveLength(2)
+
+    await act(() => vi.advanceTimersByTimeAsync(2250))
+    expect(requests).toHaveLength(2)
+    expect(screen.getByText('等待解析')).toBeVisible()
+
+    await act(async () => { poll.resolve(response({ task_id: 'task-1', items: [pending] })) })
+    await act(() => vi.advanceTimersByTimeAsync(750))
+    expect(requests).toHaveLength(3)
+    expect(screen.getByText('3 个可定位片段')).toBeVisible()
+    await act(() => vi.advanceTimersByTimeAsync(2250))
+    expect(requests).toHaveLength(3)
+  })
+
+  it.each(['switching tasks', 'leaving the panel'])('polling cancels the old request when %s', async (action) => {
+    vi.useFakeTimers()
+    const poll = deferred<Response>()
+    const requests: Request[] = []
+    const nextMaterial = { ...material, task_id: 'task-2', material_id: 'material-2', filename: '另一研究.docx' }
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const request = requestOf(input, init)
+      const path = new URL(request.url).pathname
+      if (path === '/api/research-tasks/task-1/materials') {
+        requests.push(request)
+        if (requests.length > 1) return poll.promise
+        return Promise.resolve(response({ task_id: 'task-1', items: [{
+          ...material, status: 'processing', ingestion_status: 'queued', segment_count: 0,
+        }] }))
+      }
+      if (path === '/api/research-tasks/task-2/materials') {
+        return Promise.resolve(response({ task_id: 'task-2', items: [nextMaterial] }))
+      }
+      return Promise.resolve(response({ annotations: [], codes: [], memos: [] }))
+    }))
+    function Workspace() {
+      const [taskId, setTaskId] = useState<string | null>('task-1')
+      return <>
+        <button onClick={() => setTaskId(action === 'switching tasks' ? 'task-2' : null)}>切换或离开研究</button>
+        <button onClick={() => setTaskId('task-2')}>打开另一研究</button>
+        {taskId && <ResearchMaterialsPanel taskId={taskId} presentation="workspace" />}
+      </>
+    }
+
+    await act(async () => { render(<Workspace />) })
+    expect(screen.getByText('等待解析')).toBeVisible()
+    await act(() => vi.advanceTimersByTimeAsync(750))
+    expect(requests).toHaveLength(2)
+    const signal = requests[1].signal
+    expect(signal.aborted).toBe(false)
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '切换或离开研究' })) })
+    const cancelledOnLeave = signal.aborted
+    if (action === 'leaving the panel') {
+      expect(screen.queryByRole('region', { name: '研究材料' })).not.toBeInTheDocument()
+    }
+    await act(() => vi.advanceTimersByTimeAsync(2250))
+    expect(requests).toHaveLength(2)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '打开另一研究' })) })
+    expect(screen.getByRole('button', { name: '查看材料：另一研究.docx' })).toBeVisible()
+
+    // The transport deliberately completes after cancellation to exercise the stale-response guard.
+    await act(async () => { poll.resolve(response({ task_id: 'task-1', items: [material] })) })
+    await act(() => vi.advanceTimersByTimeAsync(2250))
+    expect(requests).toHaveLength(2)
+    expect(screen.getByRole('button', { name: '查看材料：另一研究.docx' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: '查看材料：社区访谈.docx' })).not.toBeInTheDocument()
+    expect(cancelledOnLeave).toBe(true)
+  })
+
   it('keeps a queued material visible through a failed refresh and shows it when parsing completes', async () => {
     vi.useFakeTimers()
     const list = vi.fn()

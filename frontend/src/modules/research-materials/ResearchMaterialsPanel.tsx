@@ -206,17 +206,23 @@ export function ResearchMaterialsPanel({
   useEffect(() => {
     if (!pendingMaterialIds) return undefined
     let active = true
+    let inFlight = false
+    const controller = new AbortController()
     const refresh = () => {
-      void listResearchMaterials(taskId)
+      if (inFlight) return
+      inFlight = true
+      void listResearchMaterials(taskId, controller.signal)
         .then((result) => {
           if (active) setMaterials(result.items.filter((item) => item.status !== 'deleted'))
         })
         .catch(() => undefined)
+        .finally(() => { inFlight = false })
     }
     const timer = window.setInterval(refresh, 750)
     return () => {
       active = false
       window.clearInterval(timer)
+      controller.abort()
     }
   }, [pendingMaterialIds, taskId])
 
