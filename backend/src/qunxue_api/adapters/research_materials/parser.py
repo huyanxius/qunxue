@@ -345,11 +345,20 @@ class _BoundedPdfPages(list[PageObject]):
 
 class _BoundedPdfReader(PdfReader):
     def _flatten(self, *args: Any, **kwargs: Any) -> None:
-        # pypdf 6 builds its page list while resolving inheritance. Bound that list
-        # during traversal, since len(reader.pages) flattens the tree first.
+        self._page_count = 0
+        # Keep the older pypdf 6 hook so the dependency commit can be rolled back
+        # independently without losing the traversal budget.
         if type(self.flattened_pages) is list:
             self.flattened_pages = _BoundedPdfPages(self.flattened_pages)
         super()._flatten(*args, **kwargs)
+
+    def _flatten_leaf_page(self, **kwargs: Any) -> PageObject:
+        # pypdf 6.21 keeps its page list local until traversal finishes. Bound each
+        # leaf as it is built, before the remaining pages can be materialized.
+        page = super()._flatten_leaf_page(**kwargs)
+        self._page_count += 1
+        _check_page_budget(self._page_count)
+        return page
 
 
 def _parse_pdf(content: bytes, blocks: _MaterialBlocks) -> tuple[str, dict[str, Any]]:

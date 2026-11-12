@@ -11,9 +11,9 @@ dependencies = [
     "fastapi>=0.140.7",
     "httpx>=0.28,<1",
     "markdown-it-py>=4.0.0",
-    "pydantic-ai-slim[openai]>=1.0,<2.0",
+    "pydantic-ai-slim[openai]>=1.107.10,<2.0",
     "pydantic-settings>=2.14.2",
-    "pypdf>=6.0,<7.0",
+    "pypdf>=6.21.4,<7.0",
     "python-multipart>=0.0.20,<1.0",
     "resend>=2.0",
     "rispy>=0.10.0,<1.0",
@@ -35,7 +35,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.9.1",
+    "httpx2>=2.12.0",
     "pytest>=9.1.1",
     "ruff>=0.16.0",
 ]
