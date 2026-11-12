@@ -570,23 +570,30 @@ class AccountManagementService:
         )
         return {**result, "reset_token": token}
 
+    def reserve_public_request(
+        self, *, email: str, client_key: str, scope: str = "",
+    ) -> bool:
+        normalized = email.strip().casefold()
+        prefix = scope + ":" if scope else ""
+        # Apply gates before account lookup, equally for registered and unknown addresses.
+        # Global/client gates also bound storage growth from random email addresses.
+        return self._repository.reserve_password_reset_requests(
+            scopes=(
+                (prefix + "global", 0, 120),
+                (prefix + "client:" + self._digest(client_key), 2, 20),
+                (prefix + "email:" + self._digest(normalized), 60, 5),
+            ),
+            now=self._clock(), window_seconds=3600,
+        )
+
     def request_password_reset(
         self, *, email: str, client_key: str,
     ) -> tuple[str, str] | None:
         """Prepare a private email delivery; public callers always receive the same ack."""
         normalized = email.strip().casefold()
-        now = self._clock()
-        # Apply gates before account lookup, equally for registered and unknown addresses.
-        # Global/client gates also bound storage growth from random email addresses.
-        if not self._repository.reserve_password_reset_requests(
-            scopes=(
-                ("global", 0, 120),
-                ("client:" + self._digest(client_key), 2, 20),
-                ("email:" + self._digest(normalized), 60, 5),
-            ),
-            now=now, window_seconds=3600,
-        ):
+        if not self.reserve_public_request(email=normalized, client_key=client_key):
             return None
+        now = self._clock()
         account = self._repository.get_user_by_email(normalized)
         if account is None or account["status"] != "active":
             return None

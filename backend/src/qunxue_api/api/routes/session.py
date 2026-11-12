@@ -20,8 +20,10 @@ from qunxue_api.api.dependencies import (
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.identity import (
     AuthenticatedSession,
+    InvalidCredentials,
     InvalidVerificationCode,
     SessionGrant,
+    VerificationCodeRateLimited,
 )
 
 router = APIRouter(
@@ -40,9 +42,15 @@ router = APIRouter(
 )
 def send_registration_code(
     payload: RegistrationCodeRequest,
+    request: Request,
     _idempotency_key: IdempotencyKey,
     service: IdentityServiceDependency,
 ) -> RegistrationCodeResponse:
+    if not request.app.state.reserve_session_request(
+        scope="registration", email=payload.email,
+        client_key=request.client.host if request.client else "unknown",
+    ):
+        raise VerificationCodeRateLimited(60)
     service.send_registration_code(email=payload.email)
     return RegistrationCodeResponse()
 
@@ -101,6 +109,11 @@ def login_session(
     request: Request,
     service: IdentityServiceDependency,
 ) -> SessionResponse:
+    if not request.app.state.reserve_session_request(
+        scope="login", email=payload.email,
+        client_key=request.client.host if request.client else "unknown",
+    ):
+        raise InvalidCredentials
     grant = service.login(
         email=payload.email,
         password=payload.password,

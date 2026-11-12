@@ -1,5 +1,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from uuid import uuid4
 
 import httpx
@@ -17,6 +19,7 @@ from test_account_management_api import (
 
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.bootstrap import create_app
+from qunxue_api.modules.account_management import service as account_service
 from qunxue_api.settings import Settings
 
 TEST_SIGNING_KEY = "synthetic-independent-signing-key"
@@ -64,8 +67,10 @@ def account_client(database_url: str, **configuration) -> Iterator[TestClient]:
     ids=["legacy-key-relocation", "independent-key", "legacy-token-consumption"],
 )
 def test_routes_and_credentials_survive_removing_bootstrap_configuration(
-    bootstrap_database_url, initial_key, runtime_key, preserve_signatures,
+    bootstrap_database_url, initial_key, runtime_key, preserve_signatures, monkeypatch,
 ) -> None:
+    now = [datetime(2026, 10, 1, tzinfo=UTC)]
+    monkeypatch.setattr(account_service, "datetime", SimpleNamespace(now=lambda _tz: now[0]))
     reset_key, batch_key = str(uuid4()), str(uuid4())
     with account_client(
         bootstrap_database_url,
@@ -107,6 +112,13 @@ def test_routes_and_credentials_survive_removing_bootstrap_configuration(
         assert restarted.get("/api/admin/users").status_code == 200
         assert restarted.get("/api/account/credits").json()["is_unlimited"] is True
         restarted.cookies.clear()
+        # Restarting must preserve the login gate; independent sign-ins wait out its cooldown.
+        assert restarted.post(
+            "/api/session/login",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"email": TEST_ADMIN_EMAIL, "password": CHANGED_ADMIN_PASSWORD},
+        ).status_code == 401
+        now[0] += timedelta(minutes=1)
         login(restarted, TEST_ADMIN_EMAIL, password=CHANGED_ADMIN_PASSWORD)
 
         if preserve_signatures:
@@ -127,6 +139,7 @@ def test_routes_and_credentials_survive_removing_bootstrap_configuration(
             json={"token": reset.json()["reset_token"], "new_password": "reset-member-passphrase"},
         )
         assert consumed.status_code == 200
+        now[0] += timedelta(seconds=2)
         login(restarted, "restart-member@example.com", password="reset-member-passphrase")
         redeemed = restarted.post(
             "/api/account/credit-redemptions",

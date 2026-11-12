@@ -1,7 +1,7 @@
 import json
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
 from uuid import UUID, uuid4
@@ -23,6 +23,7 @@ from qunxue_api.adapters.sqlite.billing_model import CreditAccountRow
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
 from qunxue_api.bootstrap import create_app
+from qunxue_api.modules.account_management import AccountManagementService
 from qunxue_api.settings import Settings
 
 TEST_ADMIN_EMAIL = "test-admin@example.com"
@@ -62,6 +63,18 @@ def client(
     monkeypatch: pytest.MonkeyPatch,
     alembic_config: Config,
 ) -> Iterator[TestClient]:
+    # Lifecycle tests model separate sign-ins outside the existing 60-second cooldown.
+    login_at = datetime(2026, 10, 1, tzinfo=UTC)
+    reserve = AccountManagementService.reserve_public_request
+
+    def reserve_for_lifecycle(service, *, scope="", **kwargs):
+        nonlocal login_at
+        if scope == "login":
+            login_at += timedelta(minutes=1)
+            service._clock = lambda: login_at
+        return reserve(service, scope=scope, **kwargs)
+
+    monkeypatch.setattr(AccountManagementService, "reserve_public_request", reserve_for_lifecycle)
     database_url = f"sqlite:///{tmp_path / 'account-test.db'}"
     monkeypatch.setenv("QUNXUE_DATABASE_URL", database_url)
     settings = Settings(

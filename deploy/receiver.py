@@ -422,6 +422,7 @@ def prepare_runtime(config, release, revision, previous=None):
     app_command(config, [str(python), '-m', 'pip', 'check'], cwd=backend)
     code = ('import qunxue_api.bootstrap; from pathlib import Path; from sqlalchemy.engine import make_url; '
             'from qunxue_api.settings import Settings; s=Settings(); '
+            'assert s.session_cookie_secure, "Production session cookies require Secure"; '
             'print(Path(make_url(s.database_url).database).resolve()); print(s.runtime_mode)')
     result = app_command(config, [str(python), '-c', code], cwd=backend, revision=revision,
                          extra_env={'PYTHONPATH': str(backend / 'src')})

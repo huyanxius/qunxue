@@ -1,4 +1,5 @@
 """Synthetic safety checks only: no production, secrets, SSH, models or concurrent workers."""
+from contextlib import redirect_stdout
 import hashlib
 import importlib.util
 import io
@@ -12,6 +13,7 @@ import stat
 import sys
 import tarfile
 import tempfile
+from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -47,6 +49,52 @@ class DeliveryTests(unittest.TestCase):
                 info.size = len(data)
                 tar.addfile(info, io.BytesIO(data))
         return path
+
+    def test_runtime_preflight_rejects_insecure_production_cookie_combinations(self):
+        # Run the receiver's actual settings command, without app imports or a service.
+        modules = {name: ModuleType(name) for name in (
+            'qunxue_api', 'qunxue_api.bootstrap', 'qunxue_api.settings',
+            'sqlalchemy', 'sqlalchemy.engine',
+        )}
+        database = self.root / 'synthetic.db'
+        modules['sqlalchemy.engine'].make_url = lambda _url: SimpleNamespace(database=database)
+        environment = self.root / 'synthetic.env'
+        environment.touch()
+        state = self.root / 'state'
+        state.mkdir()
+        config = {'python': sys.executable, 'runtime_uid': os.getuid(), 'runtime_gid': os.getgid(),
+                  'environment_file': str(environment), 'state_directory': str(state),
+                  'databases': [{'migrate': True, 'path': str(database)}],
+                  'expected_runtime_mode': 'base'}
+
+        def command(_config, argv, **_kwargs):
+            if argv[-1].startswith('import qunxue_api.bootstrap;'):
+                output = io.StringIO()
+                with patch.dict(sys.modules, modules), redirect_stdout(output):
+                    exec(argv[-1], {})
+                return SimpleNamespace(stdout=output.getvalue())
+            return SimpleNamespace(stdout='3.12\n')
+
+        accepted = []
+        for secure in (False, True):
+            for samesite in ('lax', 'strict', 'none'):
+                modules['qunxue_api.settings'].Settings = lambda: SimpleNamespace(
+                    database_url='sqlite:///synthetic.db', runtime_mode='base',
+                    session_cookie_secure=secure, session_cookie_samesite=samesite,
+                )
+                release = self.root / f'{secure}-{samesite}'
+                (release / 'backend').mkdir(parents=True)
+                (release / 'release.json').write_text(json.dumps({'dependency_lock_sha256': 'fake'}))
+                with patch.object(receiver, 'app_command', side_effect=command), \
+                     patch.object(receiver.os, 'chown'), patch.object(receiver.os, 'chmod'):
+                    try:
+                        receiver.prepare_runtime(config, release, SHA)
+                    except AssertionError as error:
+                        self.assertEqual(str(error), 'Production session cookies require Secure')
+                        accepted.append(False)
+                    else:
+                        accepted.append(True)
+        self.assertEqual(accepted, [False, False, False, True, True, True])
 
     def test_extract_good_artifact(self):
         manifest = receiver.extract(self.archive(), self.root / 'stage', SHA)
