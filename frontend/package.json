@@ -58,6 +58,8 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
-    "js-yaml": "4.3.0"
+    "@hey-api/json-schema-ref-parser": {
+      "js-yaml": "4.3.2"
+    }
   }
 }
