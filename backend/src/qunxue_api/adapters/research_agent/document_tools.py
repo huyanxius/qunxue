@@ -126,6 +126,10 @@ class ResearchWorkflowCoordinator(Protocol):
 
     def start_matching(self, **payload: object) -> dict[str, object]: ...
 
+    def propose_theory_plan(self, **payload: object) -> dict[str, object]: ...
+
+    def save_theory_plan(self, **payload: object) -> dict[str, object]: ...
+
 
 class ResearchAnalysisAgentFacade(Protocol):
     """Narrow approval-gated boundary exposed to the existing research Agent."""
@@ -273,6 +277,7 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         self._theory_plan_release_id: str | None = None
         self._confirmed_plan: ConfirmedTheoryPlanSnapshot | None = None
         self._pending_start_proposal: ResearchStartProposal | None = None
+        self._pending_theory_plan: dict[str, object] | None = None
         self._material_scope: dict[UUID, UUID] | None = None
         self._project_context: dict[str, object] | None = None
         self.research_handoff_tools_enabled = False
@@ -1319,6 +1324,44 @@ class ResearchDocumentToolRegistry(KnowledgeToolRegistry):
         if self._workflow is None:
             return {"error": "research_workflow_unavailable"}
         return self._workflow.start_matching(user_id=user_id, conversation_id=conversation_id)
+
+    @property
+    def theory_plan_display(self) -> str:
+        return self._pending_theory_plan["display_text"] if self._pending_theory_plan else ""
+
+    def propose_theory_plan(
+        self, *, decisions: list[dict[str, object]],
+        use_assignments: list[dict[str, object]], relations: list[dict[str, object]],
+    ) -> dict[str, object]:
+        user_id, conversation_id, _ = self._context()
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        result = self._workflow.propose_theory_plan(
+            user_id=user_id, conversation_id=conversation_id, decisions=decisions,
+            use_assignments=use_assignments, relations=relations,
+        )
+        if not result.get("error"):
+            self._pending_theory_plan = result
+        return result
+
+    def save_confirmed_theory_plan(
+        self, *, plan_id: str, content_hash: str, decisions: list[dict[str, object]],
+        use_assignments: list[dict[str, object]], relations: list[dict[str, object]],
+    ) -> dict[str, object]:
+        user_id, conversation_id, agent_run_id = self._context()
+        if self._workflow is None:
+            return {"error": "research_workflow_unavailable"}
+        if self._pending_theory_plan is not None:
+            return {"status": "draft", "message": "本轮新方案展示后，仍需用户在聊天里确认。"}
+        result = self._workflow.save_theory_plan(
+            user_id=user_id, conversation_id=conversation_id, agent_run_id=agent_run_id,
+            plan_id=plan_id, content_hash=content_hash, decisions=decisions,
+            use_assignments=use_assignments, relations=relations,
+        )
+        if result.get("status") == "confirmed":
+            self._theory_plan_id = UUID(str(result["theory_plan_id"]))
+            self._theory_plan_release_id = str(result["knowledge_release_id"])
+        return result
 
     def read_research_document(self, document_id: str) -> dict[str, object]:
         user_id, _, _ = self._context()
