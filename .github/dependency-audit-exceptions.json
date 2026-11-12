@@ -1,26 +1,5 @@
 [
   {
-    "ecosystem": "npm",
-    "package": "@tiptap/core",
-    "version": "3.30.2",
-    "advisories": [
-      "GHSA-cp6q-959q-f8rh",
-      "GHSA-j95f-988m-3j2f"
-    ],
-    "reason": "R21 验证 Tiptap 升级后的编辑、粘贴、Markdown 和导出行为。",
-    "expires": "2026-11-19"
-  },
-  {
-    "ecosystem": "npm",
-    "package": "prosemirror-view",
-    "version": "1.42.2",
-    "advisories": [
-      "GHSA-c8x8-7fp4-3x9w"
-    ],
-    "reason": "R21 验证 ProseMirror 修复版与当前 Tiptap 的编辑及粘贴兼容性。",
-    "expires": "2026-11-19"
-  },
-  {
     "ecosystem": "pypi",
     "package": "certifi",
     "version": "2026.7.22",
