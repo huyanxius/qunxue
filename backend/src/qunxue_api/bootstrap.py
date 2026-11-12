@@ -63,6 +63,7 @@ from qunxue_api.adapters.retrieval import (
     SqliteRetrievalIndex,
 )
 from qunxue_api.adapters.security import Argon2PasswordHasher
+from qunxue_api.adapters.sqlite.account_management_repository import SqliteAccountRepository
 from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConversationRepository
 from qunxue_api.adapters.sqlite.agent_memory_repository import SqliteMemoryRepository
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
@@ -175,6 +176,7 @@ from qunxue_api.application.memory_overview import MemoryOverview
 from qunxue_api.application.shared_knowledge import SharedKnowledgeApplication
 from qunxue_api.application.teaching_assistant import TeachingAssistantApplication
 from qunxue_api.application.teaching_execution import TeachingExecution
+from qunxue_api.modules.account_management import AccountManagementService
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
 from qunxue_api.modules.billing import SIGNUP_GRANT
@@ -451,6 +453,13 @@ def create_app(
     )
     password_hasher = Argon2PasswordHasher()
     invalid_password_hash = password_hasher.hash("invalid-account-password")
+
+    def reserve_session_request(*, scope: str, email: str, client_key: str) -> bool:
+        # Commit attempts separately: failed authentication must not roll back its gate.
+        with resolved_database.session() as session:
+            return AccountManagementService(
+                SqliteAccountRepository(session), password_hasher,
+            ).reserve_public_request(scope=scope, email=email, client_key=client_key)
 
     @contextmanager
     def identity_service_scope() -> Iterator[IdentityService]:
@@ -1255,6 +1264,7 @@ def create_app(
     app.include_router(teaching_router)
     app.include_router(memories_router)
     app.state.identity_service_scope = identity_service_scope
+    app.state.reserve_session_request = reserve_session_request
     app.include_router(health_router)
     app.include_router(frontier_router)
     app.include_router(session_router)
