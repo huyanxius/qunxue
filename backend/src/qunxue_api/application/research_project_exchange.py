@@ -23,6 +23,7 @@ from qunxue_api.modules.research_exchange import (
     AuditActorType,
     ExchangeReport,
     QdpxProject,
+    QdpxValidationError,
     ResearchAuditEvent,
     ResearchAuditEventType,
     ResearchExchangeDirection,
@@ -32,7 +33,6 @@ from qunxue_api.modules.research_exchange import (
     build_research_project_archive,
     export_qdpx,
     import_qdpx,
-    validate_qdpx,
 )
 from qunxue_api.modules.research_framework import (
     ResearchDocumentService,
@@ -315,14 +315,14 @@ class ResearchProjectExchangeApplication:
             now=now,
         )
         self._audit.save_exchange(exchange)
-        validation = validate_qdpx(payload)
-        if not validation.valid:
+        try:
+            imported = import_qdpx(payload)
+        except QdpxValidationError as error:
             self._audit.save_exchange(
                 exchange.fail(error_code="qdpx_validation_failed", now=self._clock())
             )
             self._commit()
-            raise ValueError("; ".join(validation.errors))
-        imported = import_qdpx(payload)
+            raise ValueError("; ".join(error.errors)) from error
         report = ExchangeReport(validation_scope="official-xsd")
         exchange = exchange.complete(
             artifact_sha256=hashlib.sha256(payload).hexdigest(),
