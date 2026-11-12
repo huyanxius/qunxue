@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import Barrier, Event
 from uuid import UUID, uuid4
 
 import pytest
@@ -43,16 +44,21 @@ def _install_pre_reviewed_release(client: TestClient) -> str:
         return catalog.install_pre_reviewed_bundle(bundle).release.knowledge_release_id
 
 
-def _create_confirmed_task(client: TestClient) -> tuple[dict[str, object], dict[str, object]]:
-    registered = client.post(
-        "/api/session/register",
-        headers=_idempotency_headers(),
-        json={
-            "email": f"{uuid4()}@example.com",
-            "password": "research-passphrase",
-        },
-    )
-    assert registered.status_code == 201
+def _create_confirmed_task(
+    client: TestClient,
+    *,
+    register: bool = True,
+) -> tuple[dict[str, object], dict[str, object]]:
+    if register:
+        registered = client.post(
+            "/api/session/register",
+            headers=_idempotency_headers(),
+            json={
+                "email": f"{uuid4()}@example.com",
+                "password": "research-passphrase",
+            },
+        )
+        assert registered.status_code == 201
     created = client.post(
         "/api/research-tasks",
         headers=_idempotency_headers(),
@@ -395,6 +401,88 @@ def test_matching_request_is_idempotent_and_rejects_changed_payload(
     assert replayed.status_code == 200
     assert replayed.json() == first.json()
     assert changed.status_code == 409
+    with client.app.state.database.session() as session:
+        assert len(list(session.scalars(select(MatchRunRow)))) == 1
+        assert len(list(session.scalars(select(TheoryMatchingRequestRow)))) == 1
+
+
+@pytest.mark.parametrize("other_request", ["poll", "another_task"])
+def test_slow_matching_does_not_block_other_requests(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    other_request: str,
+) -> None:
+    slow_navigation, slow_phenomenon = _create_confirmed_task(client)
+    other_navigation, other_phenomenon = _create_confirmed_task(client, register=False)
+    release_id = _install_pre_reviewed_release(client)
+    slow_url = f"/api/research-tasks/{slow_navigation['task_id']}/match-runs"
+    other_url = f"/api/research-tasks/{other_navigation['task_id']}/match-runs"
+    slow_payload = _start_payload(
+        slow_navigation, slow_phenomenon, knowledge_release_id=release_id,
+    )
+    other_payload = _start_payload(
+        other_navigation, other_phenomenon, knowledge_release_id=release_id,
+    )
+    if other_request == "poll":
+        started = client.post(other_url, headers=_idempotency_headers(), json=other_payload)
+        assert started.status_code == 200
+        other_url = f"/api/match-runs/{started.json()['match_run_id']}"
+
+    model_entered = Event()
+    release_model = Event()
+    judge_and_rerank = client.app.state.model_gateway.judge_and_rerank
+
+    def slow_judgement(*, input):
+        if str(input.items[0].judgement_input.phenomenon.task_id) == slow_navigation["task_id"]:
+            model_entered.set()
+            assert release_model.wait(timeout=30), "test did not release the fake model"
+        return judge_and_rerank(input=input)
+
+    monkeypatch.setattr(client.app.state.model_gateway, "judge_and_rerank", slow_judgement)
+
+    def request_other():
+        if other_request == "poll":
+            return client.get(other_url)
+        return client.post(other_url, headers=_idempotency_headers(), json=other_payload)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        slow = executor.submit(
+            client.post, slow_url, headers=_idempotency_headers(), json=slow_payload,
+        )
+        try:
+            assert model_entered.wait(timeout=10), "fake model was not reached"
+            other = executor.submit(request_other)
+            # Deadlock watchdog only; the contract is completion before model release,
+            # not a response-time budget tied to the machine running this test.
+            response = other.result(timeout=10)
+            assert response.status_code == 200, response.text
+            assert response.json()["task_id"] == other_navigation["task_id"]
+            assert not release_model.is_set()
+            assert not slow.done()
+        finally:
+            release_model.set()
+        assert slow.result(timeout=10).status_code == 200
+
+
+def test_concurrent_matching_starts_claim_the_task_version_only_once(client: TestClient) -> None:
+    navigation, phenomenon = _create_confirmed_task(client)
+    release_id = _install_pre_reviewed_release(client)
+    url = f"/api/research-tasks/{navigation['task_id']}/match-runs"
+    payload = _start_payload(navigation, phenomenon, knowledge_release_id=release_id)
+    start = Barrier(2)
+
+    def request_match(key: str):
+        start.wait(timeout=10)
+        return client.post(url, headers=_idempotency_headers(key), json=payload)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(request_match, ["claim-first", "claim-second"]))
+
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    winner = next(response.json() for response in responses if response.status_code == 200)
+    restored = client.get(f"/api/research-tasks/{navigation['task_id']}/navigation")
+    assert restored.json()["current_match_run_id"] == winner["match_run_id"]
+    assert restored.json()["version"] == int(navigation["version"]) + 1
     with client.app.state.database.session() as session:
         assert len(list(session.scalars(select(MatchRunRow)))) == 1
         assert len(list(session.scalars(select(TheoryMatchingRequestRow)))) == 1
