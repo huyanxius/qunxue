@@ -213,7 +213,12 @@ export async function startPhenomenonViaApi(
     body: { expected_task_version: task.version, requested_count: 1 },
   })
   const candidate = extracted.data?.candidates[0]
-  if (!candidate) throw new ApiRequestError('演示候选生成失败。', extracted.response?.status)
+  if (!candidate) {
+    const message = extracted.response?.status === 402
+      ? '额度不足，请前往账户设置查看积分。'
+      : '现象候选未生成。原始输入已保存。'
+    throw new ApiRequestError(message, extracted.response?.status)
+  }
   return { taskId: task.taskId, candidate: toCandidate(candidate) }
 }
 
