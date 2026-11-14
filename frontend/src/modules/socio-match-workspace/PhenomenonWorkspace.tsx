@@ -1,4 +1,5 @@
 import { BrandLoading } from '../../ui/BrandLoading'
+import { ApiRequestError } from '../../api/error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 
@@ -121,7 +122,13 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
           <button type="submit" disabled={directStart.isPending || !phenomenon.trim()}>
             {directStart.isPending ? '正在生成候选…' : '生成可编辑候选'}
           </button>
-          {directStart.isError ? <p role="alert">暂时无法生成候选，输入内容仍未丢失。</p> : null}
+          {directStart.isError ? (
+            <p role="alert">
+              {directStart.error instanceof ApiRequestError
+                ? directStart.error.message
+                : '暂时无法生成候选，输入内容已保留。'}
+            </p>
+          ) : null}
           <section className="example-list" aria-label="内置案例">
             <h2>也可以从内置案例开始</h2>
             {examples.isPending ? <BrandLoading compact message="正在加载案例…" /> : null}
