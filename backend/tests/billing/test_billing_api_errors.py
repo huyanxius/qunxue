@@ -26,9 +26,9 @@ from qunxue_api.settings import Settings
             402,
             "credits_depleted",
         ),
-        (BillingBudgetExceeded("synthetic-secret"), 429, "billing_budget_exceeded"),
-        (BillingContextMissing("synthetic-secret"), 503, "billing_not_configured"),
-        (BillingReplayBlocked("synthetic-secret"), 409, "billing_replay_blocked"),
+        (BillingBudgetExceeded("synthetic-secret"), 503, "capability_unavailable"),
+        (BillingContextMissing("synthetic-secret"), 503, "capability_unavailable"),
+        (BillingReplayBlocked("synthetic-secret"), 409, "conflict"),
     ],
 )
 def test_new_billing_failures_use_safe_json_error_contract(error, status, code):
@@ -50,9 +50,9 @@ def test_new_billing_failures_use_safe_json_error_contract(error, status, code):
     "error,code",
     [
         (BillingBudgetExceeded("synthetic-secret", reason="credits_depleted"), "credits_depleted"),
-        (BillingBudgetExceeded("synthetic-secret"), "billing_budget_exceeded"),
-        (BillingContextMissing("synthetic-secret"), "billing_not_configured"),
-        (BillingReplayBlocked("synthetic-secret"), "billing_replay_blocked"),
+        (BillingBudgetExceeded("synthetic-secret"), "capability_unavailable"),
+        (BillingContextMissing("synthetic-secret"), "capability_unavailable"),
+        (BillingReplayBlocked("synthetic-secret"), "conflict"),
     ],
 )
 def test_stream_terminal_billing_error_preserves_event_contract(error, code):
@@ -86,5 +86,6 @@ def test_stream_terminal_billing_error_preserves_event_contract(error, code):
     events = asyncio.run(exercise())
     assert "event: turn_failed" in events
     assert code in events
+    assert "synthetic-secret" not in events
     assert "event: turn_completed" not in events
     assert "synthetic-secret" not in events

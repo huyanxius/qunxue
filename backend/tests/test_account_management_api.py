@@ -168,23 +168,10 @@ def test_registration_grants_a_visible_credit_balance_and_ledger_entry(
     assert response.status_code == 200
     payload = response.json()
     assert payload["is_unlimited"] is False
-    assert payload["balance"] == 3000
-    assert payload["credit_limit"] == 3000
-    assert payload["grant_amount"] == 3000
-    assert payload["pricing"] == {
-        "input_tokens_per_credit": 100,
-        "output_tokens_per_credit": 25,
-        "mode": "unconfigured",
-        "credits_per_usd": None,
-        "price_version": None,
-        "reference_currency": "USD",
-        "points_per_cny": None,
-        "retail_rate_ppm": None,
-        "fx_cny_per_usd_micro": None,
-        "fx_snapshot_id": None,
-        "fx_as_of": None,
-        "fx_source": None,
-    }
+    assert payload["balance"] == 1000
+    assert payload["credit_limit"] == 1000
+    assert payload["grant_amount"] == 1000
+    assert "pricing" not in payload and "operations" not in payload
     assert payload["entries"] == []
     assert payload["total_entries"] == 0
 
@@ -235,7 +222,7 @@ def test_credit_reservation_fallback_uses_the_current_welcome_grant(
         summary = repository.get_summary(user_id=user_id, limit=10)
 
     assert summary is not None
-    assert summary.balance == 3000
+    assert summary.balance == 1000
 
 
 def test_new_credit_reservation_preempts_an_abandoned_agent_run(

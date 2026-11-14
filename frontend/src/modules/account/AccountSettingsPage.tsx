@@ -163,6 +163,7 @@ export function AccountConfirmationDialog({
 
 type AccountSettingsPageProps = {
   api?: AccountManagementApi
+  initialSection?: SettingsPartition
   adminHref?: string
   onLogout?(): void
   onProfileUpdated?(account: AccountProfile): void
@@ -220,6 +221,7 @@ function formattedDate(value: string | null, locale = 'zh-CN') {
 
 export function AccountSettingsPage({
   api = accountManagementApi,
+  initialSection = 'profile',
   adminHref = '/admin/users',
   onLogout,
   onProfileUpdated,
@@ -231,7 +233,7 @@ export function AccountSettingsPage({
   const mutationIntents = useRef(new MutationIntentLedger())
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
   const [activePartition, setActivePartition] =
-    useState<SettingsPartition>('profile')
+    useState<SettingsPartition>(initialSection)
   const [displayName, setDisplayName] = useState('')
   const [profileEditing, setProfileEditing] = useState(false)
   const { locale: appLocale, setLocale: setAppLocale } = useAppLocale()
@@ -803,11 +805,11 @@ export function AccountSettingsPage({
                     ? text('无限', 'Unlimited')
                     : credits.balance.toLocaleString(locale)}
                 </strong>
-                {!credits.isUnlimited && (
+                {!credits.isUnlimited && credits.creditLimit > 0 && (
                   <span>/ {credits.creditLimit.toLocaleString(locale)}</span>
                 )}
               </div>
-              {!credits.isUnlimited && (
+              {!credits.isUnlimited && credits.creditLimit > 0 && (
                 <>
                   <div
                     className="qs-meter"
@@ -882,7 +884,7 @@ export function AccountSettingsPage({
                   <div>
                     <h3>
                       {entry.kind === 'usage'
-                        ? text('Agent 对话', 'Agent conversation')
+                        ? text('模型用量', 'Model usage')
                         : entry.kind === 'redemption'
                           ? text('兑换码到账', 'Code redemption')
                           : text('新用户赠送', 'Welcome credits')}
@@ -955,8 +957,8 @@ export function AccountSettingsPage({
             )}
             <p className="qs-footnote">
               {text(
-                '按模型实际 token 用量结算，失败或中止的回答不扣积分。',
-                'Charged by actual token usage. Failed or interrupted responses are not charged.',
+                '按实际用量扣积分。未完成的回答不扣积分。',
+                'Credits are used as you go. Unfinished answers do not use credits.',
               )}
             </p>
           </>

@@ -150,6 +150,7 @@ class AgentRunRecoveryResponse(BaseModel):
     tool_summary: list[dict[str, object]] = Field(default_factory=list)
     updated_at: datetime
     cancel_requested: bool
+    credits_depleted: bool = False
 
 
 class AgentRunStopResponse(BaseModel):

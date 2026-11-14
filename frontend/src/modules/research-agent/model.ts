@@ -117,6 +117,7 @@ export type AgentRunRecovery = {
   tool_summary?: Record<string, unknown>[]
   updated_at: string
   cancel_requested: boolean
+  credits_depleted?: boolean
 }
 
 export type AgentRunStopResult = {

@@ -1,5 +1,6 @@
 """One safe JSON/SSE boundary for billing failures; never expose provider bodies."""
 
+import logging
 from uuid import uuid4
 
 from fastapi.responses import JSONResponse
@@ -7,39 +8,29 @@ from fastapi.responses import JSONResponse
 from qunxue_api.api.contracts.common import ErrorCode, ErrorDetail, ErrorResponse
 from qunxue_api.modules.billing import (
     BillingBudgetExceeded,
-    BillingContextMissing,
     BillingFailure,
     BillingReplayBlocked,
     CreditRunInProgress,
     CreditsDepleted,
-    UnknownPrice,
+    is_credit_shortage,
 )
+
+logger = logging.getLogger(__name__)
+
+AGENT_FAILURE_MESSAGE = "本轮未完成。你的问题还在，可以重新发送。"
 
 
 def billing_error(error):
-    if isinstance(error, CreditsDepleted) or (
-        isinstance(error, BillingBudgetExceeded) and error.reason == "credits_depleted"
-    ):
-        return 402, ErrorCode.CREDITS_DEPLETED, "积分不足，请前往账户设置查看用量。"
+    if is_credit_shortage(error):
+        return 402, ErrorCode.CREDITS_DEPLETED, "额度不足，请前往账户设置查看积分。"
     if isinstance(error, CreditRunInProgress) or (
         isinstance(error, BillingBudgetExceeded) and error.reason == "credits_frozen"
     ):
-        return 409, ErrorCode.CREDIT_RUN_IN_PROGRESS, "当前账户有积分正在冻结，请稍后重试。"
+        return 409, ErrorCode.CREDIT_RUN_IN_PROGRESS, "已有一轮在进行，完成后可继续发送。"
     if isinstance(error, BillingReplayBlocked):
-        return (
-            409,
-            ErrorCode.BILLING_REPLAY_BLOCKED,
-            "本轮请求已处理，请刷新查看结果；不会重复扣费。",
-        )
-    if isinstance(error, (BillingContextMissing, UnknownPrice)):
-        return 503, ErrorCode.BILLING_NOT_CONFIGURED, "计费配置暂未启用，本轮未扣费，请稍后重试。"
-    if isinstance(error, BillingBudgetExceeded):
-        return (
-            429,
-            ErrorCode.BILLING_BUDGET_EXCEEDED,
-            "本轮请求超过费用上限，已停止且未扣费，请稍后重试。",
-        )
-    return 502, ErrorCode.BILLING_PROVIDER_ERROR, "模型费用或输出尚未确认，本轮未扣费，请稍后重试。"
+        return 409, ErrorCode.CONFLICT, "这条请求已处理，请刷新查看结果。"
+    logger.warning("Billing operation stopped: %s (%s)", type(error).__name__, error.reason)
+    return 503, ErrorCode.CAPABILITY_UNAVAILABLE, AGENT_FAILURE_MESSAGE
 
 
 def install_billing_error_handlers(app):

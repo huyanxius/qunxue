@@ -6,6 +6,7 @@ import { usePrivateQueryKey } from '../../query/privateQueryKey'
 import {
   confirmEditedPhenomenonViaApi,
   listPhenomenonExamplesViaApi,
+  phenomenonStartFailureMessage,
   restorePhenomenonViaApi,
   startMaterialViaApi,
   startPhenomenonViaApi,
@@ -121,7 +122,9 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
           <button type="submit" disabled={directStart.isPending || !phenomenon.trim()}>
             {directStart.isPending ? '正在生成候选…' : '生成可编辑候选'}
           </button>
-          {directStart.isError ? <p role="alert">暂时无法生成候选，输入内容仍未丢失。</p> : null}
+          {directStart.isError ? (
+            <p role="alert">{phenomenonStartFailureMessage(directStart.error)}</p>
+          ) : null}
           <section className="example-list" aria-label="内置案例">
             <h2>也可以从内置案例开始</h2>
             {examples.isPending ? <BrandLoading compact message="正在加载案例…" /> : null}

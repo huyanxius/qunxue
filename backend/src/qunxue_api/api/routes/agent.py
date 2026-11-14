@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 
-from qunxue_api.api.billing_errors import billing_error
+from qunxue_api.api.billing_errors import AGENT_FAILURE_MESSAGE, billing_error
 from qunxue_api.api.contracts.agent import (
     AgentCanvasNodeEditRequest,
     AgentCitationResponse,
@@ -614,20 +614,7 @@ def stream_agent_turn(
                 "turn_failed",
                 {"code": "run_in_progress", "message": "这段对话正在生成回答，请稍候。"},
             )
-        except CreditRunInProgress:
-            yield _event(
-                "turn_failed",
-                {"code": "run_in_progress", "message": "当前账户已有一轮对话正在生成，请稍候。"},
-            )
-        except CreditsDepleted:
-            yield _event(
-                "turn_failed",
-                {
-                    "code": "credits_depleted",
-                    "message": "积分不足，请前往账户设置查看用量。",
-                },
-            )
-        except BillingFailure as error:
+        except (CreditRunInProgress, CreditsDepleted, BillingFailure) as error:
             _, code, message = billing_error(error)
             yield _event("turn_failed", {"code": code, "message": message})
         except AgentInterrupted:
@@ -648,7 +635,7 @@ def stream_agent_turn(
             logger.exception("Agent turn failed")
             yield _event(
                 "turn_failed",
-                {"code": "agent_unavailable", "message": "Agent 暂时无法完成回答，请稍后重试。"},
+                {"code": "agent_unavailable", "message": AGENT_FAILURE_MESSAGE},
             )
         finally:
             # Closing the stream is an implicit user stop (navigation, new
@@ -753,6 +740,7 @@ def _conversation(
                 tool_summary=list(run.tool_summary),
                 updated_at=run.updated_at,
                 cancel_requested=run.cancel_requested,
+                credits_depleted=run.credits_depleted,
             )
             for run in item.unfinished_runs
             if run.request_snapshot

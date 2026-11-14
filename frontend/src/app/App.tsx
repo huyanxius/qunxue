@@ -303,6 +303,8 @@ function AccountSettingsRoute() {
   return (
     <SettingsModal onClose={() => location.state?.settingsBackground ? navigate(-1) : navigate('/app', { replace: true })}>
         <AccountSettingsPage
+          initialSection={new URLSearchParams(location.search).get('section') === 'credits'
+            ? 'credits' : 'profile'}
           onLogout={leaveAccount}
           onProfileUpdated={() => account.retrySession()}
           onSessionExpired={() => account.retrySession()}

@@ -30,6 +30,7 @@ from qunxue_api.modules.agent_conversation import (
     patches_from_tool_summary,
     prepare_canvas_edit,
 )
+from qunxue_api.modules.billing import CreditsDepleted
 
 _MATERIAL_TOOL_NAMES = frozenset({"search_research_materials", "read_research_material_context"})
 _DELETED_MATERIAL_ANSWER = "该回答引用的个人研究材料已删除，原回答内容已隐藏。"
@@ -822,6 +823,7 @@ def _run_from_row(row: AgentRunRow) -> AgentRun:
         cancel_requested=bool(row.cancel_requested),
         lease_expires_at=_utc(row.lease_expires_at) if row.lease_expires_at else None,
         lease_token=row.lease_token or "",
+        credits_depleted=row.error == CreditsDepleted.code,
         material_attachments=tuple(
             AgentMaterialAttachment(
                 material_id=UUID(str(item["material_id"])),

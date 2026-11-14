@@ -1,6 +1,4 @@
-import json
 from datetime import UTC, datetime, timedelta
-from fractions import Fraction
 from uuid import UUID, uuid4
 
 from sqlalchemy import case, func, select, text, update
@@ -114,7 +112,7 @@ class SqliteCreditRepository:
             .offset(max(0, offset))
             .limit(page_limit)
         ).all()
-        frozen, operations = self._billing_details(user_id, page_limit, offset)
+        frozen = self._frozen_points(user_id)
         grants = self._session.scalars(
             select(CreditLedgerRow).where(
                 CreditLedgerRow.user_id == str(user_id), CreditLedgerRow.kind != "usage"
@@ -135,7 +133,6 @@ class SqliteCreditRepository:
             balance=account.balance,
             frozen_points=frozen,
             available_balance=max(0, account.balance - frozen),
-            operations=operations,
             total_granted_points=grants[0].points if welcome_only else None,
             active_usage_buckets=buckets,
             quota_status="known" if welcome_only else "unavailable",
@@ -215,7 +212,7 @@ class SqliteCreditRepository:
                 balance=self._current_balance(user_id),
             )
 
-        frozen, _ = self._billing_details(user_id, 1, 0)
+        frozen = self._frozen_points(user_id)
         if frozen:
             from qunxue_api.modules.billing import CreditRunInProgress
 
@@ -382,93 +379,14 @@ class SqliteCreditRepository:
             return self._entry(row)
         raise RuntimeError("credit balance changed concurrently")
 
-    def _billing_details(self, user_id, limit, offset):
-        exists = self._session.scalar(
-            text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='billing_operations'")
-        )
-        if not exists:
-            return 0, ()
-        frozen = self._session.scalar(
+    def _frozen_points(self, user_id: UUID) -> int:
+        return self._session.scalar(
             text(
                 "SELECT coalesce(sum(hold_points),0) "
                 "FROM billing_operations WHERE user_id=:user AND status='active'"
             ),
             {"user": str(user_id)},
         )
-        rows = (
-            self._session.execute(
-                text(
-                    "SELECT * FROM billing_operations WHERE user_id=:user "
-                    "ORDER BY created_at DESC,run_id DESC LIMIT :limit OFFSET :offset"
-                ),
-                {"user": str(user_id), "limit": limit, "offset": max(0, offset)},
-            )
-            .mappings()
-            .all()
-        )
-        operations = []
-        for row in rows:
-            prices = json.loads(row["price_json"])
-            attempts = (
-                self._session.execute(
-                    text(
-                        "SELECT attempt_id,endpoint_id,provider_host,api_type,"
-                        "requested_model,returned_model,requested_effort,requested_service_tier"
-                        ",billable,"
-                        "returned_service_tier,provider_response_id,outcome,usage_state,input_t"
-                        "okens,"
-                        "cache_read_tokens,cache_write_tokens,output_tokens,reasoning_tokens,fi"
-                        "nish_reason,"
-                        "reference_cost_pico,procurement_cost_pico,procurement_status,overrun_c"
-                        "ost_pico,"
-                        "failure_code,price_json,created_at,updated_at FROM billing_attempts WHERE "
-                        "run_id=:run "
-                        "ORDER BY created_at,attempt_id"
-                    ),
-                    {"run": row["run_id"]},
-                )
-                .mappings()
-                .all()
-            )
-            operations.append(
-                {
-                    "operation_id": row["run_id"],
-                    "outcome": row["status"],
-                    "frozen_points": row["hold_points"],
-                    "points_charged": row["charged_points"],
-                    "exact_credit_numerator": str(Fraction(row["credit_pico"]).numerator),
-                    "exact_credit_denominator": str(Fraction(row["credit_pico"]).denominator),
-                    "original_credit_numerator": str(
-                        Fraction(row["original_credit_pico"]).numerator
-                    ),
-                    "original_credit_denominator": str(
-                        Fraction(row["original_credit_pico"]).denominator
-                    ),
-                    "credit_scale": "1000000000000",
-                    "price_version": prices["version"],
-                    "credits_per_usd": prices["credits_per_usd"],
-                    "reference_currency": "USD",
-                    "retail_snapshot": {key: prices.get(key) for key in (
-                        "points_per_cny", "retail_rate_ppm", "fx_cny_per_usd_micro",
-                        "fx_snapshot_id", "fx_as_of", "fx_source",
-                        "procurement_estimate_source", "procurement_estimate_ratio",
-                    )},
-                    "exempt": bool(row["exempt"]),
-                    "created_at": row["created_at"],
-                    "attempts": [
-                        {
-                            **{key: value for key, value in a.items() if key != "price_json"},
-                            "price_snapshot": {
-                                key: value
-                                for key, value in json.loads(a["price_json"]).items()
-                                if key != "agent_lease_token"
-                            },
-                        }
-                        for a in attempts
-                    ],
-                }
-            )
-        return frozen, tuple(operations)
 
     def _current_balance(self, user_id: UUID) -> int:
         account = self._session.get(

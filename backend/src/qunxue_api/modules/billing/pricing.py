@@ -64,6 +64,8 @@ class PriceBook:
     def lock_dispatch(self, model: str, instant: datetime):
         if self.aliases.get(model, model) != "deepseek-flash":
             return self
+        if self.deepseek_time_basis is None and "deepseek-flash" in self.tariffs:
+            return self
         if (
             self.deepseek_time_basis != "server_dispatch_at"
             or self.calendar_version != "cn-public-holidays-2026-state-council-2025-7-v1"
@@ -137,6 +139,12 @@ class PriceBook:
                 or tariff.output % 2
             ):
                 raise ValueError("tariff must contain exact nonnegative USD integer rates")
+
+    def require_tariff(self, model: str, instant: datetime) -> None:
+        try:
+            self.lock_dispatch(model, instant).tariff(model)
+        except UnknownPrice as error:
+            raise UnknownPrice(f"No usable billing tariff for model {model!r}") from error
 
     def tariff(self, model: str) -> Tariff:
         canonical = self.aliases.get(model, model)

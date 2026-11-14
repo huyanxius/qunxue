@@ -34,6 +34,7 @@ class Runner(_UsageRunner):
         assert scope is not None
         attempt = scope.runtime.before_attempt(
             run_id=scope.run_id,
+            agent_lease_token=scope.agent_lease_token,
             endpoint_id="primary",
             model="gpt-6.1-sol",
             input_limit=1000,

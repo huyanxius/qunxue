@@ -50,21 +50,6 @@ class CreditLedgerEntryResponse(BaseModel):
     model: str | None = None
 
 
-class CreditPricingResponse(BaseModel):
-    mode: Literal["legacy_tokens", "model_rates", "unconfigured"] = "legacy_tokens"
-    credits_per_usd: int | None = None
-    price_version: str | None = None
-    reference_currency: str = "USD"
-    points_per_cny: int | None = None
-    retail_rate_ppm: int | None = None
-    fx_cny_per_usd_micro: int | None = None
-    fx_snapshot_id: str | None = None
-    fx_as_of: str | None = None
-    fx_source: str | None = None
-    input_tokens_per_credit: int = Field(ge=1)
-    output_tokens_per_credit: int = Field(ge=1)
-
-
 class CreditUsageBucketResponse(BaseModel):
     bucket_id: str
     kind: Literal["subscription", "top_up", "welcome"]
@@ -78,10 +63,8 @@ class CreditSummaryResponse(BaseModel):
     credit_limit: int = Field(ge=0)
     grant_amount: int = Field(ge=0)
     is_unlimited: bool
-    pricing: CreditPricingResponse
     frozen_points: int = Field(default=0, ge=0)
     available_balance: int | None = None
-    operations: list[dict] = Field(default_factory=list)
     total_granted_points: int | None = Field(default=None, ge=0)
     active_usage_buckets: list[CreditUsageBucketResponse] = Field(default_factory=list)
     quota_status: Literal["known", "unavailable"] = "unavailable"

@@ -94,6 +94,7 @@ def test_health_reports_unknown_before_a_real_model_has_been_checked(
             model_base_url="https://primary.internal.test/v1",
             model_api_key="health-secret-key",
             model_name="private-model-name",
+            billing_model_aliases={"private-model-name": "gpt-6-luna"},
         ),
         database=client.app.state.database,
     )
@@ -123,6 +124,7 @@ def test_health_reports_degraded_model_without_leaking_endpoint_details(
             model_base_url="https://primary.internal.test/v1",
             model_api_key="health-secret-key",
             model_name="private-model-name",
+            billing_model_aliases={"private-model-name": "gpt-6-luna"},
             model_extra_headers={"X-Private-Tenant": "tenant-secret"},
         ),
         database=client.app.state.database,
@@ -167,6 +169,7 @@ def test_health_returns_health_contract_when_all_real_endpoints_are_unavailable(
             **_retrieval_settings(tmp_path),
             model_base_url="https://primary.internal.test/v1",
             model_name="private-model-name",
+            billing_model_aliases={"private-model-name": "gpt-6-luna"},
         ),
         database=client.app.state.database,
         model_probe_transport=healthy_probe_transport,
@@ -420,6 +423,7 @@ def test_lifespan_does_not_restart_removed_paid_model_probes(
             **_retrieval_settings(tmp_path),
             model_base_url="https://primary.internal.test/v1",
             model_name="private-model-name",
+            billing_model_aliases={"private-model-name": "gpt-6-luna"},
             model_probe_interval_seconds=0.01,
         ),
         database=client.app.state.database,
@@ -456,6 +460,7 @@ def test_health_reports_each_configured_runtime_mode(
         else {
             "model_base_url": "http://127.0.0.1:9/v1",
             "model_name": f"local-{runtime_mode}-model",
+            "billing_model_aliases": {f"local-{runtime_mode}-model": "gpt-6-luna"},
         }
     )
     app = create_app(
@@ -496,6 +501,7 @@ def test_health_rejects_non_mock_runtime_without_a_ready_match_index(
             **_retrieval_settings(tmp_path),
             model_base_url="http://127.0.0.1:9/v1",
             model_name=f"local-{runtime_mode}-model",
+            billing_model_aliases={f"local-{runtime_mode}-model": "gpt-6-luna"},
         ),
         database=client.app.state.database,
         model_probe_transport=healthy_probe_transport,
@@ -532,6 +538,7 @@ def test_health_rejects_a_ready_index_with_stale_retrieval_identity(
             **_retrieval_settings(tmp_path),
             model_base_url="http://127.0.0.1:9/v1",
             model_name="local-base-model",
+            billing_model_aliases={"local-base-model": "gpt-6-luna"},
         ),
         database=client.app.state.database,
         model_probe_transport=healthy_probe_transport,
@@ -563,6 +570,7 @@ def test_health_rejects_a_ready_manifest_without_its_index_points(
             **_retrieval_settings(tmp_path),
             model_base_url="http://127.0.0.1:9/v1",
             model_name="local-base-model",
+            billing_model_aliases={"local-base-model": "gpt-6-luna"},
         ),
         database=client.app.state.database,
         model_probe_transport=healthy_probe_transport,
@@ -591,6 +599,7 @@ def test_health_maps_corrupt_index_storage_to_retrieval_unavailable(
             **_retrieval_settings(tmp_path),
             model_base_url="http://127.0.0.1:9/v1",
             model_name="local-base-model",
+            billing_model_aliases={"local-base-model": "gpt-6-luna"},
         ),
         database=client.app.state.database,
         model_probe_transport=healthy_probe_transport,
