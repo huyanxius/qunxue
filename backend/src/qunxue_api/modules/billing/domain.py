@@ -5,7 +5,9 @@ from typing import Literal
 from uuid import UUID
 
 WELCOME_GRANT = 10_000
-SIGNUP_GRANT = 3_000
+# 1,000 points buy one yuan of model use at the product reference tariff.
+POINTS_PER_CNY = 1_000
+SIGNUP_GRANT = POINTS_PER_CNY
 INPUT_TOKENS_PER_CREDIT = 100
 OUTPUT_TOKENS_PER_CREDIT = 25
 
@@ -51,6 +53,12 @@ class CreditsDepleted(Exception):
         super().__init__("积分不足，请在账户设置中查看用量。")
 
 
+def is_credit_shortage(error: BaseException) -> bool:
+    return isinstance(error, CreditsDepleted) or (
+        isinstance(error, BillingBudgetExceeded) and error.reason == CreditsDepleted.code
+    )
+
+
 class CreditRunInProgress(Exception):
     code = "credit_run_in_progress"
 
@@ -93,7 +101,6 @@ class CreditSummary:
     is_unlimited: bool = False
     frozen_points: int = 0
     available_balance: int | None = None
-    operations: tuple[dict, ...] = ()
     total_granted_points: int | None = None
     active_usage_buckets: tuple[dict, ...] = ()
     quota_status: Literal["known", "unavailable"] = "unavailable"

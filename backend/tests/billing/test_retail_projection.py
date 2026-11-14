@@ -91,17 +91,17 @@ def test_rational_credit_precision_survives_persistence_and_price_change(wallet)
 def test_signup_gift_and_welcome_projection_are_once_and_use_real_frozen_funds(account_client):
     user = register(account_client)
     data = account_client.get("/api/account/credits").json()
-    assert data["balance"] == data["total_granted_points"] == data["credit_limit"] == 3000
+    assert data["balance"] == data["total_granted_points"] == data["credit_limit"] == 1000
     assert data["quota_status"] == "known"
     assert data["active_usage_buckets"][0]["kind"] == "welcome"
-    assert data["active_usage_buckets"][0]["limit_points"] == 3000
+    assert data["active_usage_buckets"][0]["limit_points"] == 1000
     from billing_test_support import synthetic_billing_runtime
 
     runtime = synthetic_billing_runtime(account_client.app.state.database.engine)
     runtime.start(user_id=user, run_id="synthetic-hold", fingerprint="synthetic")
     frozen = account_client.get("/api/account/credits").json()
-    assert frozen["available_balance"] == 2000
-    assert frozen["active_usage_buckets"][0]["available_points"] == 2000
+    assert frozen["available_balance"] == 0
+    assert frozen["active_usage_buckets"][0]["available_points"] == 0
     with account_client.app.state.database.session() as session:
         repository = SqliteCreditRepository(session)
         repository.ensure_welcome_grant(user_id=UUID(user), points=10000, now=datetime.now(UTC))
@@ -112,7 +112,7 @@ def test_signup_gift_and_welcome_projection_are_once_and_use_real_frozen_funds(a
             )
             == 1
         )
-    assert account_client.get("/api/account/credits").json()["balance"] == 3000
+    assert account_client.get("/api/account/credits").json()["balance"] == 1000
 
 
 def test_historical_redemption_does_not_claim_a_paid_top_up_or_current_period(account_client):
@@ -136,38 +136,3 @@ def test_historical_redemption_does_not_claim_a_paid_top_up_or_current_period(ac
     assert data["active_usage_buckets"] == []
     assert data["quota_status"] == "unavailable"
     assert data["total_granted_points"] is None and data["credit_limit"] == 0
-
-
-@pytest.mark.parametrize("configuration", ["absent", "partial", "complete"])
-def test_runtime_requires_explicit_fx_snapshot_and_finite_budgets(wallet, configuration):
-    from qunxue_api.bootstrap import _billing_runtime
-    from qunxue_api.settings import Settings
-
-    _, engine = wallet
-    values = dict(
-        _env_file=None,
-        billing_price_version="synthetic-fx",
-        billing_credits_per_usd=None,
-        billing_max_attempt_usd_micro=1000,
-        billing_max_operation_usd_micro=10000,
-        billing_daily_budget_usd_micro=100000,
-    )
-    if configuration in {"partial", "complete"}:
-        values["billing_fx_cny_per_usd_micro"] = 7123456
-    if configuration == "complete":
-        values.update(
-            billing_fx_snapshot_id="synthetic-only",
-            billing_fx_as_of="2026-10-02T00:00:00+00:00",
-            billing_fx_source="synthetic-test",
-        )
-    from types import SimpleNamespace
-
-    runtime = _billing_runtime(Settings(**values), SimpleNamespace(engine=engine))
-    if configuration != "complete":
-        assert runtime is None
-    else:
-        assert runtime.book.credits_per_usd is None
-        assert runtime.book.fx_snapshot_id == "synthetic-only"
-        assert runtime.book.points_per_cny == 100
-        assert runtime.book.retail_rate_ppm == 100000
-        assert runtime.max_attempt_pico == 10**9

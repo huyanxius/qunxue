@@ -140,16 +140,16 @@ def test_redemption_and_new_hold_are_atomic(tmp_path):
     )
     with Session(engine) as session:
         repository = SqliteCreditRepository(session)
-        original = repository._billing_details
+        original = repository._frozen_points
 
-        def interleaving(user_id, limit, offset):
-            observed = original(user_id, limit, offset)
-            assert observed[0] == 0
+        def interleaving(user_id):
+            observed = original(user_id)
+            assert observed == 0
             # A separate SQLite writer commits after the frozen check, before redeem writes.
             runtime.start(user_id=user, run_id=str(uuid4()), fingerprint="concurrent-hold")
             return observed
 
-        repository._billing_details = interleaving
+        repository._frozen_points = interleaving
         try:
             repository.redeem_code(user_id=user, code_hash="test-hash", now=now)
             session.commit()
@@ -207,17 +207,17 @@ def test_redemption_writer_lock_allows_waiting_reservation_to_progress(tmp_path)
     with ThreadPoolExecutor(max_workers=1) as pool:
         with Session(engine) as s:
             repo = SqliteCreditRepository(s)
-            original = repo._billing_details
+            original = repo._frozen_points
 
-            def at_freeze_read(user_id, limit, offset):
+            def at_freeze_read(user_id):
                 nonlocal future
-                observed = original(user_id, limit, offset)
-                assert observed[0] == 0
+                observed = original(user_id)
+                assert observed == 0
                 future = pool.submit(reserve)
                 assert attempted.wait(2)
                 return observed
 
-            repo._billing_details = at_freeze_read
+            repo._frozen_points = at_freeze_read
             redemption = repo.redeem_code(user_id=user, code_hash="progress-hash", now=now)
             s.commit()
             assert redemption.balance == 10000
@@ -234,7 +234,7 @@ def test_redemption_writer_lock_allows_waiting_reservation_to_progress(tmp_path)
     engine.dispose()
 
 
-def test_bill_details_expose_actual_usage_locked_prices_and_pending_cash(wallet):
+def test_ledger_records_actual_usage_locked_prices_and_pending_cash(wallet):
     runtime, engine = wallet
     with OperationScope(
         runtime, user_id="user", run_id=str(uuid4()), fingerprint="synthetic"
@@ -258,12 +258,14 @@ def test_bill_details_expose_actual_usage_locked_prices_and_pending_cash(wallet)
             outcome="success",
         )
         scope.finish("success")
-    with Session(engine) as session:
-        frozen, operations = SqliteCreditRepository(session)._billing_details("user", 1, 0)
-    assert frozen == 0
-    operation = operations[0]
-    assert operation["points_charged"] == 1
-    receipt = operation["attempts"][0]
+    with engine.connect() as conn:
+        charge = conn.execute(
+            text("SELECT hold_points, charged_points FROM billing_operations")
+        ).one()
+        receipt = conn.execute(
+            text("SELECT * FROM billing_attempts WHERE attempt_id=:id"), {"id": attempt}
+        ).mappings().one()
+    assert charge == (0, 1)
     assert (receipt["requested_model"], receipt["returned_model"]) == ("gpt-6-luna", "gpt-6-luna")
     assert (
         receipt["input_tokens"],
@@ -274,5 +276,6 @@ def test_bill_details_expose_actual_usage_locked_prices_and_pending_cash(wallet)
     assert receipt["reference_cost_pico"] == 134500000
     assert receipt["procurement_cost_pico"] is None
     assert receipt["procurement_status"] == "pending"
-    assert receipt["price_snapshot"]["version"] == "synthetic"
-    assert receipt["price_snapshot"]["credits_per_usd"] == 10000
+    prices = json.loads(receipt["price_json"])
+    assert prices["version"] == "synthetic"
+    assert prices["credits_per_usd"] == 10000

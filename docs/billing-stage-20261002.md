@@ -1,5 +1,7 @@
 # Billing implementation stage, 2026-10-02
 
+> 历史实现记录。当前运行和发布口径见 [模型用量与用户积分](billing.md)。
+
 This patch changes backend billing only. No production configuration, deployment,
 credentials, frontend, historical balance or old ledger rows are changed.
 

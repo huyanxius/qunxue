@@ -170,6 +170,7 @@ class AgentRun:
         default_factory=lambda: _now() + timedelta(seconds=30)
     )
     lease_token: str = field(default_factory=lambda: str(uuid4()))
+    credits_depleted: bool = False
 
     @property
     def is_teaching(self) -> bool:

@@ -3,7 +3,7 @@ import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager, suppress
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from inspect import Parameter, signature
 from threading import Lock
 from uuid import UUID, uuid4
@@ -37,7 +37,9 @@ from qunxue_api.adapters.model import (
     SqliteModelInvocationRecorder,
     create_deterministic_mock_provider,
 )
+from qunxue_api.adapters.model.billing_operations import SqliteBillingOperations
 from qunxue_api.adapters.model.material_access import model_material_access_scope
+from qunxue_api.adapters.model.product_billing import product_billing
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
     OpenAICompatibleEmbeddingProvider,
@@ -226,6 +228,9 @@ from qunxue_api.settings import (
 )
 
 logger = logging.getLogger(__name__)
+# Longer than the Agent worker lease. On restart these holds belong to abandoned
+# runs and no surviving worker should settle them.
+BILLING_HOLD_RECOVERY_AGE = timedelta(minutes=30)
 
 
 def _build_transcription_provider(settings: Settings) -> TranscriptionProvider:
@@ -265,6 +270,15 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        if billing_runtime is not None:
+            now = datetime.now(UTC)
+            for endpoint in model_endpoints:
+                billing_runtime.book.require_tariff(endpoint.model, now)
+            billing_runtime.check_ledger()
+            await asyncio.to_thread(
+                billing_runtime.recover_stale,
+                before=now - BILLING_HOLD_RECOVERY_AGE,
+            )
         async with (
             research_material_ingestion_lifespan() as schedule_ingestion,
             background_task_lifespan(app),
@@ -433,13 +447,17 @@ def create_app(
     app.state.model_endpoints = model_endpoints
     app.state.model_router = model_router
     app.state.model_attempt_recorder = model_attempt_recorder
-    from qunxue_api.adapters.model.billing_operations import SqliteBillingOperations
-
+    billing_runtime = (
+        product_billing(resolved_settings, resolved_database, model_endpoints)
+        if model_endpoints else None
+    )
+    # Classroom activities are sponsored. Normal conversations always use the wallet.
+    phase_policies = {**resolved_settings.billing_phase_policies, "teaching": "operator"}
     app.state.billing_operations = SqliteBillingOperations(
         resolved_database,
-        None,
+        billing_runtime,
         exempt_user_ids=lambda: getattr(app.state, "credit_exempt_user_ids", ()),
-        phase_policies=resolved_settings.billing_phase_policies,
+        phase_policies=phase_policies,
     )
     app.state.model_provider = resolved_model_provider
     app.state.model_gateway = ModelGateway(
@@ -495,9 +513,23 @@ def create_app(
     @contextmanager
     def phenomenon_extraction_scope(*, user_id, run_id, payload):
         with resolved_database.session() as session:
-            yield PhenomenonService(
+            service = PhenomenonService(
                 SqlitePhenomenonRepository(session), SqliteResearchTaskRepository(session),
             )
+            if billing_runtime is None:
+                yield service
+                return
+            billing = app.state.billing_operations.bound_to(session)
+            with billing.open(
+                user_id=user_id, run_id=run_id, payload=payload, phase="user_research"
+            ) as operation:
+                try:
+                    yield service
+                    operation.finish("success")
+                    session.commit()
+                except BaseException:
+                    session.rollback()
+                    raise
 
     def build_research_analysis_application(
         session,
@@ -541,7 +573,7 @@ def create_app(
                 matching_requests=SqliteMatchingRequestRepository(session),
                 research_tasks=SqliteResearchTaskRepository(session),
                 rollback=session.rollback,
-                billing=None,
+                billing=app.state.billing_operations.bound_to(session) if billing_runtime else None,
                 commit=session.commit,
                 model_material_access_scope=model_material_access_scope,
                 invalidate_method_plan=(
@@ -1045,14 +1077,7 @@ def create_app(
             # as the zero-config development default.
             agent_runtime_mode = _effective_model_runtime_mode(resolved_settings)
             use_real_agent = agent_runtime_mode != "mock"
-            meter_agent = use_real_agent and not teaching
-            billing = (
-                operator_billing.bound_to(session)
-                if meter_agent
-                and operator_billing is not None
-                and "agent_turn" in operator_policies
-                else None
-            )
+            billing = app.state.billing_operations.bound_to(session) if use_real_agent else None
             if not use_real_agent:
                 runner = DeterministicKnowledgeRunner()
             else:
@@ -1086,7 +1111,7 @@ def create_app(
                     reasoning_effort=resolved_settings.model_reasoning_effort,
                     route_executor=app.state.model_router,
                     direct_task=teaching,
-                    require_billing=meter_agent,
+                    require_billing=use_real_agent,
                 )
             from qunxue_api.adapters.research_agent.roadshow_runner import RoadshowRunner
 
@@ -1108,10 +1133,7 @@ def create_app(
                     billing=billing,
                     rollback=session.rollback,
                     credits=None,
-                    atomic=(
-                        (billing or app.state.billing_operations.bound_to(session)).atomic
-                        if use_real_agent else session.begin_nested
-                    ),
+                    atomic=billing.atomic if billing is not None else session.begin_nested,
                     ensure_research_draft=(
                         lambda **payload: (
                             research_start_application.ensure_draft_project(**payload).task_id
@@ -1178,24 +1200,10 @@ def create_app(
     # These capabilities may spend the operator's budget even at zero user balance.
     operator_policies = {
         phase: "operator"
-        for phase in ("agent_turn", "memory_overview", "memory_learning", "course_knowledge")
-        if resolved_settings.billing_phase_policies.get(phase) == "operator"
+        for phase in ("memory_overview", "memory_learning", "course_knowledge")
+        if phase_policies.get(phase) == "operator"
     }
-    operator_runtime = None
-    if model_endpoints and operator_policies:
-        try:
-            operator_runtime = _billing_runtime(resolved_settings, resolved_database)
-        except ValueError:
-            logger.warning(
-                "Invalid operator billing settings. Operator-funded model calls are disabled."
-            )
-    operator_billing = (
-        SqliteBillingOperations(
-            resolved_database, operator_runtime, phase_policies=operator_policies
-        )
-        if operator_runtime is not None
-        else None
-    )
+    operator_billing = app.state.billing_operations if billing_runtime else None
 
     overview_generator = None
     if operator_billing is not None and "memory_overview" in operator_policies:
@@ -1621,7 +1629,7 @@ def _model_provider_from_settings(
 
     providers: tuple[ProbeableModelProvider, ...] = tuple(
         OpenAICompatibleModelProvider(
-            require_billing=False,
+            require_billing=True,
             base_url=endpoint.base_url,
             api_key=endpoint.api_key,
             model=endpoint.model,
@@ -1738,56 +1746,3 @@ def _create_frontier_vector_index(settings: Settings, store: SqliteFrontierStore
         )
     )
     return FrontierVectorIndex(store, provider)
-
-
-def _billing_runtime(settings, database):
-    from qunxue_api.adapters.sqlite.durable_billing import DurableBilling
-    from qunxue_api.modules.billing import PriceBook
-
-    fields = (
-        settings.billing_price_version,
-        settings.billing_max_attempt_usd_micro,
-        settings.billing_max_operation_usd_micro,
-        settings.billing_daily_budget_usd_micro,
-    )
-    if any(value is None for value in fields):
-        return None
-    fx_fields = (
-        settings.billing_fx_cny_per_usd_micro, settings.billing_fx_snapshot_id,
-        settings.billing_fx_as_of, settings.billing_fx_source,
-    )
-    if any(value is not None for value in fx_fields):
-        if any(value is None for value in fx_fields):
-            return None
-        conversion = dict(
-            credits_per_usd=None, points_per_cny=100, retail_rate_ppm=100000,
-            fx_cny_per_usd_micro=settings.billing_fx_cny_per_usd_micro,
-            fx_snapshot_id=settings.billing_fx_snapshot_id,
-            fx_as_of=settings.billing_fx_as_of, fx_source=settings.billing_fx_source,
-        )
-    elif settings.billing_credits_per_usd is not None:
-        # Compatibility for explicit legacy snapshots; no inferred conversion.
-        conversion = dict(credits_per_usd=settings.billing_credits_per_usd)
-    else:
-        return None
-    agent_daily = settings.billing_agent_daily_budget_usd_micro
-    agent_user_daily = settings.billing_agent_user_daily_budget_usd_micro
-    return DurableBilling(
-        database.engine,
-        price_book=PriceBook(
-            **conversion,
-            version=settings.billing_price_version,
-            aliases=settings.billing_model_aliases,
-            usage_policies=settings.billing_usage_policies,
-            deepseek_time_basis=settings.billing_deepseek_time_basis,
-            calendar_version=settings.billing_calendar_version,
-        ),
-        max_attempt_pico=settings.billing_max_attempt_usd_micro * 10**6,
-        max_operation_pico=settings.billing_max_operation_usd_micro * 10**6,
-        daily_budget_pico=settings.billing_daily_budget_usd_micro * 10**6,
-        agent_daily_budget_pico=agent_daily * 10**6 if agent_daily is not None else None,
-        agent_user_daily_budget_pico=(
-            agent_user_daily * 10**6 if agent_user_daily is not None else None
-        ),
-        max_attempts=settings.billing_max_attempts,
-    )

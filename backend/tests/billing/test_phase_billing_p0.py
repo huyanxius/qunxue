@@ -24,9 +24,10 @@ from qunxue_api.modules.agent_conversation import AgentResearchEvent, Conversati
 from qunxue_api.modules.billing import BillingBudgetExceeded, BillingReplayBlocked
 
 
-def record(runtime, run):
+def record(runtime, run, *, lease_token=None):
     attempt = runtime.before_attempt(
         run_id=run,
+        agent_lease_token=lease_token,
         endpoint_id="synthetic",
         model="gpt-6.1-sol",
         input_limit=1000,
@@ -136,7 +137,7 @@ def test_unknown_usage_cannot_be_presented_as_a_successful_pause(wallet):
 class Planner(Runner):
     def prepare_research(self, *, prompt, conversation, tools, on_event):
         scope = current_operation(required=True)
-        record(scope.runtime, scope.run_id)
+        record(scope.runtime, scope.run_id, lease_token=scope.agent_lease_token)
         on_event(
             AgentResearchEvent(
                 kind="plan", payload={"title": "synthetic", "steps": ["synthetic step"]}
@@ -179,7 +180,7 @@ def test_real_sqlite_planning_confirmation_research_and_replay(plain_client):
         paused_balance = session.scalar(
             text("SELECT balance FROM credit_accounts WHERE user_id=:u"), {"u": str(user)}
         )
-        assert paused_balance == 2970
+        assert paused_balance == 970
         confirmed = app.run_turn(
             **args, deep_research_run_id=planned.run_id, deep_research_action="confirm"
         )
@@ -192,10 +193,10 @@ def test_real_sqlite_planning_confirmation_research_and_replay(plain_client):
             session.scalar(
                 text("SELECT balance FROM credit_accounts WHERE user_id=:u"), {"u": str(user)}
             )
-            == 2878
+            == 878
         )
         assert session.scalar(text("SELECT count(*) FROM billing_attempts")) == 2
-        assert runtime.available_balance(user) == 2878
+        assert runtime.available_balance(user) == 878
 
 
 def crash_delivery(database_url, user_id, stage):
@@ -255,7 +256,7 @@ def test_process_exit_cannot_save_success_without_financial_settlement(plain_cli
         )
         financial = c.scalar(text("SELECT status FROM billing_operations"))
     assert (saved, charged, financial) == (
-        (1, 2908, "success") if stage == "after_commit" else (0, 3000, "active")
+        (1, 908, "success") if stage == "after_commit" else (0, 1000, "active")
     )
     runtime = synthetic_billing_runtime(database.engine)
     runtime.recover_stale(before=datetime.now(UTC) + timedelta(days=1))
@@ -294,5 +295,5 @@ def test_repeated_business_commit_failure_still_refunds_and_releases_hold(plain_
         assert session.scalar(text("SELECT count(*) FROM agent_runs WHERE status='completed'")) == 0
         assert session.scalar(text("SELECT status FROM billing_operations")) == "error"
         assert session.scalar(text("SELECT hold_points FROM billing_operations")) == 0
-        assert runtime.available_balance(user) == 3000
+        assert runtime.available_balance(user) == 1000
         assert runtime.operator_risk_pico() > 0

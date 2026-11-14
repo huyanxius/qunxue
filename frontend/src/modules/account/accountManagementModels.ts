@@ -48,8 +48,6 @@ export type CreditSummary = {
   creditLimit: number
   grantAmount: number
   isUnlimited: boolean
-  inputTokensPerCredit: number
-  outputTokensPerCredit: number
   entries: CreditLedgerEntry[]
   totalEntries: number
   nextCursor: string | null

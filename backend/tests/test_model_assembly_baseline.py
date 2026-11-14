@@ -43,13 +43,11 @@ def assembled_model_app(plain_client, monkeypatch, configuration):
             model_api_key="synthetic",
             model_name="test-model",
             model_fallbacks=[],
-            billing_price_version="" if configuration == "invalid-price" else "r11-test",
-            billing_credits_per_usd=10_000,
             billing_model_aliases={"test-model": "gpt-6-luna"},
             billing_phase_policies=policies,
             billing_max_attempt_usd_micro=100_000,
             billing_max_operation_usd_micro=100_000,
-            billing_daily_budget_usd_micro=None if configuration == "missing-budget" else 1_000_000,
+            billing_daily_budget_usd_micro=1 if configuration == "budget-exhausted" else None,
         ),
         database=database,
         require_email_verification=False,
@@ -60,7 +58,7 @@ def assembled_model_app(plain_client, monkeypatch, configuration):
 
 
 @pytest.mark.parametrize(
-    "configuration", ["operator", "missing-budget", "invalid-price", "mixed-policy"]
+    "configuration", ["operator", "budget-exhausted", "mixed-policy"]
 )
 def test_bootstrap_operator_funded_capabilities(assembled_model_app, monkeypatch, configuration):
     client = assembled_model_app
@@ -188,10 +186,11 @@ def test_bootstrap_operator_funded_capabilities(assembled_model_app, monkeypatch
         assert result.json()["summary"] == replies["memory_overview"]
     else:
         assert result.status_code == 503
-    assert learned == ("memory_learning" in enabled_phases)
-    if learned:
-        items = client.get("/api/memories").json()["items"]
-        assert any(item["source_message_id"] == str(source_id) for item in items)
+    assert learned == ("memory_learning" in enabled_phases or configuration == "budget-exhausted")
+    items = client.get("/api/memories").json()["items"]
+    assert any(item["source_message_id"] == str(source_id) for item in items) == (
+        "memory_learning" in enabled_phases
+    )
     if "course_knowledge" in enabled_phases:
         assert course["knowledge_status"] == "ready", course
         assert course["knowledge"]["summary"] == replies["course_knowledge"]["summary"]
@@ -212,7 +211,12 @@ def test_bootstrap_operator_funded_capabilities(assembled_model_app, monkeypatch
                 "FROM billing_operations"
             )
         )
-        assert operations.all() == [(user_id, 1, 0, 0, "success")] * len(enabled_phases)
+        expected = (
+            [(user_id, 1, 0, 0, "error")] * len(PHASE_CAPS)
+            if configuration == "budget-exhausted"
+            else [(user_id, 1, 0, 0, "success")] * len(enabled_phases)
+        )
+        assert operations.all() == expected
         receipts = connection.execute(
             text("SELECT provider_response_id, output_limit, usage_state FROM billing_attempts")
         )

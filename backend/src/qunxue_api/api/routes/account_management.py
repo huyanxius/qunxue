@@ -4,6 +4,7 @@ import os
 import subprocess
 import tempfile
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 from uuid import UUID
@@ -26,7 +27,6 @@ from qunxue_api.api.contracts.account_management import (
     CreditCodeBatchCreateRequest,
     CreditCodeBatchResponse,
     CreditLedgerEntryResponse,
-    CreditPricingResponse,
     CreditRedemptionRequest,
     CreditRedemptionResponse,
     CreditSummaryResponse,
@@ -51,13 +51,13 @@ from qunxue_api.api.dependencies import CurrentSessionDependency
 from qunxue_api.api.routes.stubs import IdempotencyKey
 from qunxue_api.modules.account_management import (
     AccountCapabilityUnavailable,
+    AccountConflict,
     AccountManagementService,
 )
 from qunxue_api.modules.billing import (
-    INPUT_TOKENS_PER_CREDIT,
-    OUTPUT_TOKENS_PER_CREDIT,
     SIGNUP_GRANT,
     CreditService,
+    UnknownPrice,
 )
 
 
@@ -146,7 +146,6 @@ def get_account(
     response_model=CreditSummaryResponse,
 )
 def get_account_credits(
-    request: Request,
     current: CurrentSessionDependency,
     service: CreditServiceDependency,
     cursor: int = Query(default=0, ge=0),
@@ -164,29 +163,9 @@ def get_account_credits(
         is_unlimited=summary.is_unlimited,
         frozen_points=summary.frozen_points,
         available_balance=summary.available_balance,
-        operations=list(summary.operations),
         total_granted_points=summary.total_granted_points,
         active_usage_buckets=list(summary.active_usage_buckets),
         quota_status=summary.quota_status,
-        pricing=CreditPricingResponse(
-            mode="model_rates" if request.app.state.billing_operations.runtime else "unconfigured",
-            credits_per_usd=(
-                request.app.state.billing_operations.runtime.book.credits_per_usd
-                if request.app.state.billing_operations.runtime
-                else None
-            ),
-            price_version=(
-                request.app.state.billing_operations.runtime.book.version
-                if request.app.state.billing_operations.runtime
-                else None
-            ),
-            **{name: getattr(request.app.state.billing_operations.runtime.book, name)
-               if request.app.state.billing_operations.runtime else None
-               for name in ("points_per_cny", "retail_rate_ppm", "fx_cny_per_usd_micro",
-                            "fx_snapshot_id", "fx_as_of", "fx_source")},
-            input_tokens_per_credit=INPUT_TOKENS_PER_CREDIT,
-            output_tokens_per_credit=OUTPUT_TOKENS_PER_CREDIT,
-        ),
         entries=[CreditLedgerEntryResponse.model_validate(entry) for entry in summary.entries],
         total_entries=summary.total_entries,
         next_cursor=summary.next_cursor,
@@ -537,11 +516,18 @@ def update_admin_runtime_settings(
     request: Request,
 ) -> AdminRuntimeSettingsResponse:
     service.require_admin_access(current.user.user_id)
+    model = payload.model.strip()
+    runtime = request.app.state.billing_operations.runtime
+    if runtime is not None:
+        try:
+            runtime.book.require_tariff(model, datetime.now(UTC))
+        except UnknownPrice:
+            raise AccountConflict("先登记该模型的计费费率，再切换模型。") from None
     path = _runtime_config_path(request)
     _replace_env_values(
         path,
         {
-            "QUNXUE_MODEL_NAME": payload.model.strip(),
+            "QUNXUE_MODEL_NAME": model,
             "QUNXUE_MODEL_REASONING_EFFORT": payload.reasoning_effort,
         },
     )
@@ -551,7 +537,7 @@ def update_admin_runtime_settings(
         stderr=subprocess.DEVNULL,
     )
     return AdminRuntimeSettingsResponse(
-        model=payload.model.strip(),
+        model=model,
         reasoning_effort=payload.reasoning_effort,
         provider_base_url=request.app.state.settings.model_base_url or "",
         restart_required=True,

@@ -27,6 +27,9 @@ _wire_request = ContextVar("billing_wire_request", default=None)
 
 _current_operation = ContextVar("billing_operation", default=None)
 
+# Tool schemas and roles add tokens beyond the serialized message text.
+INPUT_TOKEN_OVERHEAD = 4096
+
 
 def current_operation(*, required=False):
     scope = _current_operation.get()
@@ -141,7 +144,7 @@ class OperationScope:
         encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode()
         # Estimate from the final wire body, including schemas, full history and
         # returned tool content. This is not a mathematical token/cash guarantee.
-        input_limit = len(encoded) * 2 + 4096
+        input_limit = len(encoded) + INPUT_TOKEN_OVERHEAD
         attempt = self.runtime.before_attempt(
             run_id=self.run_id,
             agent_lease_token=self.agent_lease_token,

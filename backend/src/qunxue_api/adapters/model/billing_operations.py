@@ -44,12 +44,8 @@ class SqliteBillingOperations:
     def open(self, *, user_id, run_id, payload, before_network=None, phase="agent_turn",
              resume=False, lease_token=None):
         policy = (
-            "user" if phase == "user_research"
-            else self.phase_policies.get(phase, "user" if phase == "agent_turn" else None)
+            "user" if phase in {"agent_turn", "user_research"} else self.phase_policies.get(phase)
         )
-        operator_agent = phase == "agent_turn" and policy == "operator"
-        if operator_agent and not lease_token:
-            raise BillingContextMissing("operator-funded Agent calls require a run lease")
         if phase in {"model_probe", "graph_topic_naming"} and policy != "operator":
             raise BillingContextMissing("optional naming and probes must be operator-funded")
         if policy not in {"user", "operator"}:
@@ -60,7 +56,11 @@ class SqliteBillingOperations:
             raise BillingContextMissing(
                 "billing conversion, price version and risk budgets are required"
             )
-        if policy == "user":
+        exempt_users = (
+            self.exempt_user_ids() if callable(self.exempt_user_ids) else self.exempt_user_ids
+        )
+        exempt = policy == "operator" or user_id in exempt_users
+        if not exempt:
             with self.database.session() as session:
                 CreditService(SqliteCreditRepository(session)).summary(user_id=user_id, limit=1)
         fingerprint = hashlib.sha256(
@@ -71,19 +71,10 @@ class SqliteBillingOperations:
             user_id=user_id,
             run_id=run_id,
             fingerprint=fingerprint,
-            exempt=policy == "operator"
-            or str(user_id)
-            in {
-                str(u)
-                for u in (
-                    self.exempt_user_ids()
-                    if callable(self.exempt_user_ids)
-                    else self.exempt_user_ids
-                )
-            },
+            exempt=exempt,
             before_network=before_network,
             resume=resume,
-            agent_lease_token=lease_token if operator_agent else None,
+            agent_lease_token=lease_token,
             settlement_connection=self._settlement_connection if self.session is not None else None,
         )
 
@@ -92,7 +83,5 @@ class SqliteBillingOperations:
             self.runtime.finish(
                 run_id=run_id,
                 outcome=outcome,
-                agent_lease_token=(
-                    lease_token if self.phase_policies.get("agent_turn") == "operator" else None
-                ),
+                agent_lease_token=lease_token,
             )

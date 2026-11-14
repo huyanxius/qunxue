@@ -458,9 +458,8 @@ function localizedToolDetail(detail: string, locale: AppLocale) {
 function localizedTurnFailure(code: string, message: string, locale: AppLocale) {
   if (locale !== 'en-US') return message
   if (code === 'not_found') return 'This conversation does not exist or you do not have access.'
-  if (code === 'run_in_progress') return 'A response is already being generated. Please wait.'
-  if (code === 'credits_depleted') return 'You do not have enough credits. Review your usage in Account settings.'
-  return 'The Agent cannot complete this answer right now. Please try again later.'
+  if (code === 'run_in_progress' || code === 'credit_run_in_progress') return 'A response is already being generated. Please wait.'
+  return 'This response did not finish. Your message is still here and can be sent again.'
 }
 
 type AgentPageStatus = 'idle' | 'loading' | 'thinking' | 'retrieving' | 'answering' | 'pausing' | 'pause-failed' | 'error'
@@ -477,6 +476,7 @@ type StreamingTurn = {
   startedAt: number
   interrupted?: boolean
   failure?: string
+  creditsDepleted?: boolean
 }
 type PendingTurnAttempt = {
   question: string
@@ -712,6 +712,7 @@ function readInterruptedTurn(userId: string | null): StreamingTurn | null {
       startedAt: typeof value.startedAt === 'number' && Number.isFinite(value.startedAt) ? value.startedAt : Date.now(),
       interrupted: true,
       failure: typeof value.failure === 'string' && value.failure ? value.failure : undefined,
+      creditsDepleted: value.creditsDepleted === true,
     }
   } catch {
     return null
@@ -1596,6 +1597,7 @@ function AssistantTurn({
   conversationId,
   interrupted,
   failure,
+  creditsDepleted,
   streaming,
   streamingStatus,
   progressEnd = 0,
@@ -1615,6 +1617,7 @@ function AssistantTurn({
   conversationId: string | null
   interrupted?: boolean
   failure?: string
+  creditsDepleted?: boolean
   streaming?: boolean
   streamingStatus?: AgentPageStatus
   progressEnd?: number
@@ -1628,6 +1631,7 @@ function AssistantTurn({
   researchEntryBusy?: boolean
 }) {
   const { text } = useAppLocale()
+  const location = useLocation()
   const researchHandoff = researchStartHandoffFromSteps(toolSteps)
   const knowledgeHandoffCitation = showResearchHandoff && conversationId && knowledgeReleaseId
     && hasCompletedKnowledgeActivity(toolSteps)
@@ -1647,8 +1651,8 @@ function AssistantTurn({
           {progressEnd > 0 ? <ReactMarkdown remarkPlugins={[remarkGfm, remarkProgressParagraphs]}>{displayAgentText(answer.slice(0, progressEnd))}</ReactMarkdown> : null}
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAgentText(answer.slice(progressEnd))}</ReactMarkdown>
         </div> : null}
-        {!streaming && !answer && !interrupted && !failure ? <BrandLoading compact message={text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')} /> : null}
-        {interrupted ? (
+        {!streaming && !answer && !interrupted && !failure && !creditsDepleted ? <BrandLoading compact message={text('Agent 正在组织问题与证据…', 'Agent is organizing the question and evidence…')} /> : null}
+        {interrupted && !failure && !creditsDepleted ? (
           <p className="qx-notice-surface new-research__turn-note is-interrupted">
             <WarningCircleIcon size={14} />
             {answer.trim() || embedded
@@ -1656,8 +1660,20 @@ function AssistantTurn({
               : text('本轮已停止，未保存未完成的回答。', 'This turn was stopped before an unfinished answer was saved.')}
           </p>
         ) : null}
-        {failure ? <p className="qx-notice-surface new-research__turn-note is-failed"><XCircleIcon size={14} />{failure}</p> : null}
-        {(failure || interrupted) && onRegenerate ? (
+        {creditsDepleted ? (
+          <div className="qx-notice-surface new-research__turn-note is-failed" role="alert">
+            <XCircleIcon size={14} />
+            <span>{text('额度不足。', 'Not enough credits.')}</span>
+            <Link
+              className="underline"
+              to="/settings?section=credits"
+              state={{ settingsBackground: location }}
+            >
+              {text('查看积分', 'View credits')}
+            </Link>
+          </div>
+        ) : failure ? <p className="qx-notice-surface new-research__turn-note is-failed" role="alert"><XCircleIcon size={14} />{failure}</p> : null}
+        {!creditsDepleted && (failure || interrupted) && onRegenerate ? (
           <div className="new-research__assistant-actions">
             <button
               type="button"
@@ -2156,7 +2172,7 @@ export function ResearchAgentConversationPage({
     const saved: AgentRunRecovery = {
       run_id: attempt.runId,
       idempotency_key: attempt.idempotencyKey,
-      status: turn.failure ? 'failed' : 'interrupted',
+      status: turn.failure || turn.creditsDepleted ? 'failed' : 'interrupted',
       request: attempt.request,
       partial_answer: turn.answer,
       tool_summary: turn.toolSteps.map((step) => ({
@@ -2169,6 +2185,7 @@ export function ResearchAgentConversationPage({
       })),
       updated_at: new Date().toISOString(),
       cancel_requested: true,
+      credits_depleted: turn.creditsDepleted,
     }
     setActiveConversation((current) => {
       const conversation = current ?? {
@@ -2203,7 +2220,8 @@ export function ResearchAgentConversationPage({
       canvasPatches: [],
       startedAt: Date.parse(run.updated_at) || Date.now(),
       interrupted: run.status !== 'running' && !run.status.startsWith('awaiting_'),
-      failure: run.status === 'failed' ? text('这轮回答未完成，可以从保存的位置重试。', 'This answer did not finish. Retry from the saved state.') : undefined,
+      creditsDepleted: run.credits_depleted,
+      failure: run.status === 'failed' && !run.credits_depleted ? text('这轮回答未完成，可以从保存的位置重试。', 'This answer did not finish. Retry from the saved state.') : undefined,
     }
   }
 
@@ -2823,14 +2841,16 @@ export function ResearchAgentConversationPage({
             activeTurnAttempt.current = null
             persistPendingTurnAttempt(storageScope.current, failedAttempt)
             updateDraft(question)
-            const failureMessage = localizedTurnFailure(event.code, event.message, locale)
+            const creditsDepleted = event.code === 'credits_depleted'
+            const failure = creditsDepleted
+              ? undefined
+              : localizedTurnFailure(event.code, event.message, locale)
             setStreamingTurn((current) => {
               if (!current) return current
-              const failedTurn = { ...current, interrupted: true, failure: failureMessage }
+              const failedTurn = { ...current, interrupted: true, failure, creditsDepleted }
               persistInterruptedTurn(storageScope.current, failedTurn)
               return failedTurn
             })
-            setError(failureMessage)
             setStatus('error')
           }
         },
@@ -3342,6 +3362,7 @@ export function ResearchAgentConversationPage({
                     knowledgeReleaseId={null}
                     interrupted={saved.interrupted}
                     failure={saved.failure}
+                    creditsDepleted={saved.creditsDepleted}
                     embedded={embedded}
                     onOpenActivity={() => { setContextTab('activity'); setContextOpen(true) }}
                     onSelectCitation={openCitation}
@@ -3379,6 +3400,7 @@ export function ResearchAgentConversationPage({
                     knowledgeReleaseId={null}
                     interrupted={streamingTurn.interrupted}
                     failure={streamingTurn.failure}
+                    creditsDepleted={streamingTurn.creditsDepleted}
                     streaming={canStopGeneration && !streamingTurn.interrupted && !streamingTurn.failure}
                     streamingStatus={status}
                     progressEnd={streamingTurn.progressEnd}

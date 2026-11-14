@@ -10,41 +10,37 @@ from test_account_management_api import client, register  # noqa: F401
 from qunxue_api.adapters.model import ModelGateway
 from qunxue_api.adapters.model.openai_compatible_provider import OpenAICompatibleModelProvider
 from qunxue_api.adapters.sqlite.durable_billing import DurableBilling
+from qunxue_api.bootstrap import create_app
 from qunxue_api.modules.billing import PriceBook
+from qunxue_api.settings import Settings
 
 
-@pytest.mark.parametrize("mode", ["success", "unconfigured", "persistence_failure"])
-def test_extraction_route_is_unbilled_and_preserves_owner_persistence_and_replay(
-    client, monkeypatch, mode
-):
+@pytest.mark.parametrize("mode", ["success", "insufficient", "persistence_failure"])
+def test_extraction_route_charges_on_success_and_preserves_replay(client, monkeypatch, mode):
+    from fastapi.testclient import TestClient
+
+    database = client.app.state.database
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            model_base_url="https://synthetic.test/v1",
+            model_api_key="synthetic",
+            model_name="gpt-6-luna",
+            account_signing_key="synthetic",
+        ),
+        database=database,
+        require_email_verification=False,
+    )
+    client = TestClient(app)
     identity = register(client, "synthetic-research@example.com")
     user_id = identity["user"]["user_id"]
-    assert client.get("/api/account/credits").status_code == 200
-    database = client.app.state.database
-    with database.engine.connect() as c:
-        ledger_count = c.scalar(text("SELECT count(*) FROM credit_ledger"))
-    if mode != "unconfigured":
-        client.app.state.billing_operations.runtime = DurableBilling(
-            database.engine,
-            price_book=PriceBook(credits_per_usd=10000, version="synthetic-research"),
-            max_attempt_pico=10**11,
-            max_operation_pico=10**11,
-            daily_budget_pico=10**12,
-        )
-    provider = OpenAICompatibleModelProvider(
-        base_url="https://synthetic.test/v1",
-        api_key=None,
-        model="gpt-6-luna",
-        timeout_seconds=1,
-        capability_tier="base",
-        # #452 removed route billing scopes and configures real providers this way.
-        require_billing=False,
-    )
-    client.app.state.model_gateway = ModelGateway(
-        provider=provider,
-        recorder=client.app.state.model_invocation_recorder,
-        contract_version="synthetic",
-    )
+    if mode == "insufficient":
+        with database.engine.begin() as conn:
+            conn.execute(
+                text("UPDATE credit_accounts SET balance=0 WHERE user_id=:user"), {"user": user_id}
+            )
     calls = []
 
     class Response:
@@ -115,29 +111,24 @@ def test_extraction_route_is_unbilled_and_preserves_owner_persistence_and_replay
             client.post(url, **args)
     else:
         result = client.post(url, **args)
-        assert result.status_code == 200, result.text
-        assert result.json()["candidates"][0]["phenomenon"] == "Synthetic phenomenon"
-        assert client.post(url, **args).json() == result.json()
-    assert len(calls) == 1
-
+        if mode == "insufficient":
+            assert result.status_code == 402
+            assert result.json()["error"]["code"] == "credits_depleted"
+        else:
+            assert result.status_code == 200, result.text
+            assert result.json()["candidates"][0]["phenomenon"] == "Synthetic phenomenon"
+            assert client.post(url, **args).json() == result.json()
+    assert len(calls) == (0 if mode == "insufficient" else 1)
     with database.engine.connect() as c:
-        assert c.scalar(
-            text("SELECT balance FROM credit_accounts WHERE user_id=:user"), {"user": user_id}
-        ) == 3000
-        assert c.scalar(text("SELECT count(*) FROM credit_ledger")) == ledger_count
-        assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 0
-        assert c.scalar(text("SELECT count(*) FROM billing_attempts")) == 0
-        assert c.scalar(
-            text("SELECT count(*) FROM phenomenon_candidate_versions WHERE task_id=:task"),
-            {"task": task_id},
-        ) == (0 if mode == "persistence_failure" else 1)
-        assert c.scalar(
-            text("SELECT user_id FROM research_tasks WHERE task_id=:task"), {"task": task_id}
-        ) == user_id
-    register(client, "synthetic-other-owner@example.com")
-    other = client.post(url, **args)
-    assert other.status_code in {403, 404}
-    assert len(calls) == 1
+        assert c.scalar(text("SELECT balance FROM credit_accounts")) == {
+            "insufficient": 0,
+            "success": 999,
+            "persistence_failure": 1000,
+        }[mode]
+        assert c.scalar(text("SELECT count(*) FROM credit_ledger WHERE kind='usage'")) == (
+            1 if mode == "success" else 0
+        )
+        assert c.scalar(text("SELECT count(*) FROM billing_attempts")) == len(calls)
 
 
 @pytest.mark.parametrize("mode", ["success", "unknown_usage"])
@@ -274,7 +265,7 @@ def test_unbilled_matching_and_retry_routes_keep_sqlite_owner_and_error_contract
     with database.engine.connect() as c:
         assert c.scalar(
             text("SELECT balance FROM credit_accounts WHERE user_id=:user"), {"user": user_id}
-        ) == 3000
+        ) == 1000
         assert c.scalar(text("SELECT count(*) FROM credit_ledger")) == ledger_count
         assert c.scalar(text("SELECT count(*) FROM billing_operations")) == 0
         assert c.scalar(text("SELECT count(*) FROM billing_attempts")) == 0

@@ -59,10 +59,6 @@ type RawCreditSummary = {
   credit_limit: number
   grant_amount: number
   is_unlimited: boolean
-  pricing: {
-    input_tokens_per_credit: number
-    output_tokens_per_credit: number
-  }
   entries: Array<{
     entry_id: string
     kind: 'signup_grant' | 'usage' | 'redemption'
@@ -166,8 +162,6 @@ function toCreditSummary(value: RawCreditSummary): CreditSummary {
     creditLimit: value.credit_limit,
     grantAmount: value.grant_amount,
     isUnlimited: value.is_unlimited,
-    inputTokensPerCredit: value.pricing.input_tokens_per_credit,
-    outputTokensPerCredit: value.pricing.output_tokens_per_credit,
     entries: value.entries.map((entry) => ({
       entryId: entry.entry_id,
       kind: entry.kind,

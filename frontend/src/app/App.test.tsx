@@ -1378,7 +1378,6 @@ describe('App routes', () => {
       if (request.method === 'GET' && new URL(request.url).pathname === '/api/account/credits') {
         return json({
           balance: 0, credit_limit: 0, grant_amount: 0, is_unlimited: false,
-          pricing: { input_tokens_per_credit: 100, output_tokens_per_credit: 25 },
           entries: [], total_entries: 0, next_cursor: null,
         })
       }

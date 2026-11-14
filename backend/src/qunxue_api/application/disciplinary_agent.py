@@ -28,7 +28,13 @@ from qunxue_api.modules.agent_conversation import (
     SubjectAgentRunner,
     user_question_without_discussion_excerpt,
 )
-from qunxue_api.modules.billing import BillingFailure, BillingOperations, CreditService
+from qunxue_api.modules.billing import (
+    BillingFailure,
+    BillingOperations,
+    CreditsDepleted,
+    CreditService,
+    is_credit_shortage,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -683,6 +689,7 @@ class DisciplinaryAgentApplication:
                     run_id=run.run_id,
                     payload=request_snapshot,
                     before_network=lambda: checkpoint(force=True),
+                    phase="teaching" if self._teaching else "agent_turn",
                     resume=billing_resume,
                     lease_token=run.lease_token,
                 )
@@ -1006,6 +1013,9 @@ class DisciplinaryAgentApplication:
                         checkpoint(force=True)
                     if self._credits is not None:
                         self._credits.release(user_id=user_id, run_id=run.run_id)
+                    error_code = (
+                        CreditsDepleted.code if is_credit_shortage(error) else type(error).__name__
+                    )
                     self._conversations.finish_run(
                         run_id=run.run_id,
                         lease_token=run.lease_token,
@@ -1014,7 +1024,7 @@ class DisciplinaryAgentApplication:
                             if isinstance(error, AgentInterrupted) and failure_status == "running"
                             else "failed"
                         ),
-                        error=None if isinstance(error, AgentInterrupted) else str(error),
+                        error=None if isinstance(error, AgentInterrupted) else error_code,
                         tool_summary=saved_summary(),
                         expected_status=failure_status,
                     )

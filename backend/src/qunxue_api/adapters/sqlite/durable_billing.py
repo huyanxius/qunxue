@@ -1,7 +1,7 @@
 """Short SQLite transactions for reservations, paid attempts, exact credits and refunds.
 
 No transaction remains open while calling a provider. Unknown provider cost stays
-reserved across process restarts until an explicit receipt reconciles it.
+recorded across process restarts until an explicit receipt reconciles it.
 """
 
 import json
@@ -16,7 +16,6 @@ from sqlalchemy import text
 
 from qunxue_api.modules.billing import (
     PICO_USD,
-    BillingContextMissing,
     PriceBook,
     Tariff,
     UnknownPrice,
@@ -111,6 +110,15 @@ class DurableBilling:
                 conn.rollback()
                 raise
 
+    def check_ledger(self) -> None:
+        # Prepare the same tables used by admission and settlement without
+        # reserving credits or sending a model request.
+        with self.engine.connect() as conn:
+            conn.execute(text(
+                "SELECT 1 FROM credit_accounts, credit_ledger, "
+                "billing_operations, billing_attempts, billing_precision LIMIT 0"
+            ))
+
     def _now(self):
         return self.clock().isoformat()
 
@@ -187,10 +195,6 @@ class DurableBilling:
         self, *, user_id, run_id, fingerprint, exempt=False, resume=False, agent_lease_token=None
     ):
         run_id, user_id = str(run_id), str(user_id)
-        if agent_lease_token is not None and (
-            self.agent_daily_budget_pico is None or self.agent_user_daily_budget_pico is None
-        ):
-            raise BillingContextMissing("operator-funded Agent calls require both daily limits")
         with self._transaction() as conn:
             if agent_lease_token is not None and not conn.scalar(
                 text(
@@ -240,6 +244,14 @@ class DurableBilling:
                 )
             now = self._now()
             if previous:
+                if previous["status"] == "active" and previous_lease is not None:
+                    conn.execute(
+                        text(
+                            "UPDATE billing_attempts SET billable=0 WHERE run_id=:run "
+                            "AND json_extract(price_json,'$.agent_lease_token')=:lease"
+                        ),
+                        {"run": run_id, "lease": previous_lease},
+                    )
                 conn.execute(
                     text("UPDATE billing_operations SET status='active', hold_points=:hold, "
                          "fingerprint=:fingerprint, updated_at=:now, price_json=CASE "
@@ -273,11 +285,11 @@ class DurableBilling:
 
     def _risk(self, conn, *, agent_user_id=None):
         midnight = self.clock().astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        # Unreconciled reservations still count after midnight. A receipt
-        # replaces that reservation with the day's reference cost.
+        # Count spend and uncertain receipts on dispatch day. Keep unresolved
+        # reservations in the ledger for reconciliation without consuming tomorrow's cap.
         cost = (
-            "CASE WHEN a.reference_cost_pico IS NULL THEN a.reserved_cost_pico "
-            "WHEN a.updated_at >= :day THEN a.reference_cost_pico ELSE 0 END"
+            "CASE WHEN a.created_at >= :day "
+            "THEN coalesce(a.reference_cost_pico,a.reserved_cost_pico) ELSE 0 END"
         )
         day = midnight.isoformat()
         if agent_user_id is None:
@@ -352,15 +364,20 @@ class DurableBilling:
                 or operation_risk > self.max_operation_pico
             ):
                 raise BillingBudgetExceeded("model request exceeds reserved budget")
-            total, capability, user = self._risk(
-                conn, agent_user_id=run["user_id"] if agent_lease_token is not None else None
+            has_agent_limit = (
+                agent_lease_token is not None
+                and (self.agent_daily_budget_pico is not None
+                     or self.agent_user_daily_budget_pico is not None)
             )
-            if total + reserved > self.daily_budget_pico or (
-                agent_lease_token is not None and (
-                    capability + reserved > self.agent_daily_budget_pico
-                    or user + reserved > self.agent_user_daily_budget_pico
-                )
-            ):
+            total, capability, user = self._risk(
+                conn, agent_user_id=run["user_id"] if has_agent_limit else None
+            )
+            daily_limits = (
+                (total, self.daily_budget_pico),
+                (capability, self.agent_daily_budget_pico if has_agent_limit else None),
+                (user, self.agent_user_daily_budget_pico if has_agent_limit else None),
+            )
+            if any(limit is not None and spend + reserved > limit for spend, limit in daily_limits):
                 raise BillingBudgetExceeded("model request exceeds daily budget")
             if not run["exempt"] and max_credit > run["hold_points"]:
                 raise BillingBudgetExceeded(
@@ -685,6 +702,11 @@ class DurableBilling:
                     self._ledger(conn, run, -points, refund=not delivered,
                                  credit_numerator=numerator)
                 charged = charged + points if delivered else 0
+            if not delivered:
+                conn.execute(
+                    text("UPDATE billing_attempts SET billable=0 WHERE run_id=:run"),
+                    {"run": str(run_id)},
+                )
             status = "refunded" if not delivered and old_exact else outcome
             conn.execute(
                 text("UPDATE billing_operations SET status=:status,hold_points=0,"

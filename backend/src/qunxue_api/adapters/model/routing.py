@@ -13,6 +13,8 @@ from time import monotonic
 from typing import Protocol, TypeVar
 from uuid import UUID, uuid4
 
+from qunxue_api.modules.billing import BillingBudgetExceeded
+
 ResultT = TypeVar("ResultT")
 
 
@@ -204,6 +206,7 @@ class ModelRouteExecutor:
     ) -> ModelRouteResult[ResultT]:
         context = self._resolve_context(context)
         last_failure: ModelAttemptFailure | None = None
+        last_budget_error: BillingBudgetExceeded | None = None
         attempt_number = 0
         for endpoint in self._endpoints:
             if not self._admit_endpoint(endpoint):
@@ -219,6 +222,11 @@ class ModelRouteExecutor:
                     )
                 ):
                     result = invoke(endpoint)
+            except BillingBudgetExceeded as error:
+                self._release_after_failed_exit(endpoint.endpoint_id)
+                if last_budget_error is None or error.reason != "credits_depleted":
+                    last_budget_error = error
+                continue
             except ModelAttemptFailure as failure:
                 self.note_failure(
                     endpoint_id=endpoint.endpoint_id,
@@ -263,6 +271,8 @@ class ModelRouteExecutor:
 
         if last_failure is not None:
             raise last_failure
+        if last_budget_error is not None:
+            raise last_budget_error
         raise ModelRoutesUnavailable("no model endpoints are currently available")
 
     async def execute_async(
@@ -273,6 +283,7 @@ class ModelRouteExecutor:
     ) -> ModelRouteResult[ResultT]:
         context = self._resolve_context(context)
         last_failure: ModelAttemptFailure | None = None
+        last_budget_error: BillingBudgetExceeded | None = None
         attempt_number = 0
         for endpoint in self._endpoints:
             if not self._admit_endpoint(endpoint):
@@ -297,6 +308,11 @@ class ModelRouteExecutor:
                     started_at=started_at,
                 )
                 raise
+            except BillingBudgetExceeded as error:
+                self._release_after_failed_exit(endpoint.endpoint_id)
+                if last_budget_error is None or error.reason != "credits_depleted":
+                    last_budget_error = error
+                continue
             except ModelAttemptFailure as failure:
                 self.note_failure(
                     endpoint_id=endpoint.endpoint_id,
@@ -341,6 +357,8 @@ class ModelRouteExecutor:
 
         if last_failure is not None:
             raise last_failure
+        if last_budget_error is not None:
+            raise last_budget_error
         raise ModelRoutesUnavailable("no model endpoints are currently available")
 
     def note_failure(self, *, endpoint_id: str, retryable: bool) -> None:
