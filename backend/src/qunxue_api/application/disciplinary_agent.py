@@ -1013,8 +1013,8 @@ class DisciplinaryAgentApplication:
                         checkpoint(force=True)
                     if self._credits is not None:
                         self._credits.release(user_id=user_id, run_id=run.run_id)
-                    error_code = (
-                        CreditsDepleted.code if is_credit_shortage(error) else type(error).__name__
+                    error_message = (
+                        CreditsDepleted.code if is_credit_shortage(error) else str(error)
                     )
                     self._conversations.finish_run(
                         run_id=run.run_id,
@@ -1024,7 +1024,7 @@ class DisciplinaryAgentApplication:
                             if isinstance(error, AgentInterrupted) and failure_status == "running"
                             else "failed"
                         ),
-                        error=None if isinstance(error, AgentInterrupted) else error_code,
+                        error=None if isinstance(error, AgentInterrupted) else error_message,
                         tool_summary=saved_summary(),
                         expected_status=failure_status,
                     )

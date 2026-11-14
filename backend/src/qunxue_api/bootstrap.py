@@ -39,7 +39,13 @@ from qunxue_api.adapters.model import (
 )
 from qunxue_api.adapters.model.billing_operations import SqliteBillingOperations
 from qunxue_api.adapters.model.material_access import model_material_access_scope
-from qunxue_api.adapters.model.product_billing import product_billing
+from qunxue_api.adapters.model.product_billing import (
+    ATTEMPT_USD_MICRO,
+    DAILY_USD_MICRO,
+    OPERATION_USD_MICRO,
+    PICO_PER_MICRO,
+    product_price_book,
+)
 from qunxue_api.adapters.research_agent import (
     DeterministicKnowledgeRunner,
     OpenAICompatibleEmbeddingProvider,
@@ -70,6 +76,7 @@ from qunxue_api.adapters.sqlite.agent_conversation_repository import SqliteConve
 from qunxue_api.adapters.sqlite.agent_memory_repository import SqliteMemoryRepository
 from qunxue_api.adapters.sqlite.billing_repository import SqliteCreditRepository
 from qunxue_api.adapters.sqlite.database import Database
+from qunxue_api.adapters.sqlite.durable_billing import DurableBilling
 from qunxue_api.adapters.sqlite.frontier_repository import SqliteFrontierStore
 from qunxue_api.adapters.sqlite.identity_repository import SqliteIdentityRepository
 from qunxue_api.adapters.sqlite.knowledge_catalog import SqliteKnowledgeCatalog
@@ -448,7 +455,7 @@ def create_app(
     app.state.model_router = model_router
     app.state.model_attempt_recorder = model_attempt_recorder
     billing_runtime = (
-        product_billing(resolved_settings, resolved_database, model_endpoints)
+        _billing_runtime(resolved_settings, resolved_database, model_endpoints)
         if model_endpoints else None
     )
     # Classroom activities are sponsored. Normal conversations always use the wallet.
@@ -486,7 +493,7 @@ def create_app(
                     session,
                     on_user_created=lambda user: (
                         SqliteCreditRepository(session).ensure_welcome_grant(
-                        user_id=user.user_id, points=SIGNUP_GRANT, now=user.created_at,
+                            user_id=user.user_id, points=SIGNUP_GRANT, now=user.created_at,
                         )
                     ),
                 ),
@@ -1671,6 +1678,32 @@ def _model_endpoints_from_settings(settings: Settings) -> tuple[ModelEndpoint, .
         )
         for endpoint in settings.resolved_model_endpoints()
     )
+
+
+def _billing_runtime(
+    settings: Settings, database: Database, endpoints: tuple[ModelEndpoint, ...]
+) -> DurableBilling:
+    return DurableBilling(
+        database.engine,
+        price_book=product_price_book(
+            endpoints,
+            model_aliases=settings.billing_model_aliases,
+            usage_policy_overrides=settings.billing_usage_policies,
+        ),
+        max_attempt_pico=(settings.billing_max_attempt_usd_micro or ATTEMPT_USD_MICRO)
+        * PICO_PER_MICRO,
+        max_operation_pico=(settings.billing_max_operation_usd_micro or OPERATION_USD_MICRO)
+        * PICO_PER_MICRO,
+        daily_budget_pico=(settings.billing_daily_budget_usd_micro or DAILY_USD_MICRO)
+        * PICO_PER_MICRO,
+        agent_daily_budget_pico=_pico_limit(settings.billing_agent_daily_budget_usd_micro),
+        agent_user_daily_budget_pico=_pico_limit(settings.billing_agent_user_daily_budget_usd_micro),
+        max_attempts=settings.billing_max_attempts,
+    )
+
+
+def _pico_limit(usd_micro: int | None) -> int | None:
+    return usd_micro * PICO_PER_MICRO if usd_micro is not None else None
 
 
 def _effective_model_runtime_mode(settings: Settings) -> str:

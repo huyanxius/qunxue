@@ -1,12 +1,10 @@
 """Qunxue's product tariff and model spending limits."""
 
+from collections.abc import Mapping
 from urllib.parse import urlsplit
 
 from qunxue_api.adapters.model.routing import ModelEndpoint
-from qunxue_api.adapters.sqlite.database import Database
-from qunxue_api.adapters.sqlite.durable_billing import DurableBilling
 from qunxue_api.modules.billing import POINTS_PER_CNY, STANDARD_TARIFFS, PriceBook, Tariff
-from qunxue_api.settings import Settings
 
 PRICE_VERSION = "qunxue-2026-11"
 # Fixed conversion for product credits. Supplier reconciliation uses its own invoices.
@@ -34,12 +32,13 @@ PRODUCT_TARIFFS = {
 }
 
 
-def product_billing(
-    settings: Settings,
-    database: Database,
+def product_price_book(
     endpoints: tuple[ModelEndpoint, ...],
-) -> DurableBilling:
-    aliases = MODEL_ALIASES | settings.billing_model_aliases
+    *,
+    model_aliases: Mapping[str, str],
+    usage_policy_overrides: Mapping[str, str],
+) -> PriceBook:
+    aliases = {**MODEL_ALIASES, **model_aliases}
     # For standard Chat Completions, input without a reported cache breakdown
     # is treated as ordinary input for the product charge.
     usage_policies = {
@@ -47,27 +46,10 @@ def product_billing(
         for endpoint in endpoints
         if aliases.get(endpoint.model, endpoint.model) != "deepseek-flash"
     }
-    book = PriceBook(
+    return PriceBook(
         version=PRICE_VERSION,
         credits_per_usd=POINTS_PER_CNY * REFERENCE_CNY_PER_USD,
         tariffs=PRODUCT_TARIFFS,
         aliases=aliases,
-        usage_policies=usage_policies | settings.billing_usage_policies,
+        usage_policies={**usage_policies, **usage_policy_overrides},
     )
-    return DurableBilling(
-        database.engine,
-        price_book=book,
-        max_attempt_pico=(settings.billing_max_attempt_usd_micro or ATTEMPT_USD_MICRO)
-        * PICO_PER_MICRO,
-        max_operation_pico=(settings.billing_max_operation_usd_micro or OPERATION_USD_MICRO)
-        * PICO_PER_MICRO,
-        daily_budget_pico=(settings.billing_daily_budget_usd_micro or DAILY_USD_MICRO)
-        * PICO_PER_MICRO,
-        agent_daily_budget_pico=_optional_limit(settings.billing_agent_daily_budget_usd_micro),
-        agent_user_daily_budget_pico=_optional_limit(settings.billing_agent_user_daily_budget_usd_micro),
-        max_attempts=settings.billing_max_attempts,
-    )
-
-
-def _optional_limit(usd_micro: int | None) -> int | None:
-    return usd_micro * PICO_PER_MICRO if usd_micro is not None else None

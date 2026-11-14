@@ -222,6 +222,12 @@ export async function startPhenomenonViaApi(
   return { taskId: task.taskId, candidate: toCandidate(candidate) }
 }
 
+export function phenomenonStartFailureMessage(failure: unknown): string {
+  return failure instanceof ApiRequestError
+    ? failure.message
+    : '暂时无法生成候选，输入内容已保留。'
+}
+
 async function fileContent(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   let binary = ''

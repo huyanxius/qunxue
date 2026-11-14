@@ -1,5 +1,4 @@
 import { BrandLoading } from '../../ui/BrandLoading'
-import { ApiRequestError } from '../../api/error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 
@@ -7,6 +6,7 @@ import { usePrivateQueryKey } from '../../query/privateQueryKey'
 import {
   confirmEditedPhenomenonViaApi,
   listPhenomenonExamplesViaApi,
+  phenomenonStartFailureMessage,
   restorePhenomenonViaApi,
   startMaterialViaApi,
   startPhenomenonViaApi,
@@ -123,11 +123,7 @@ export function NewResearchPage({ onStarted, seedTheory = null }: NewResearchPag
             {directStart.isPending ? '正在生成候选…' : '生成可编辑候选'}
           </button>
           {directStart.isError ? (
-            <p role="alert">
-              {directStart.error instanceof ApiRequestError
-                ? directStart.error.message
-                : '暂时无法生成候选，输入内容已保留。'}
-            </p>
+            <p role="alert">{phenomenonStartFailureMessage(directStart.error)}</p>
           ) : null}
           <section className="example-list" aria-label="内置案例">
             <h2>也可以从内置案例开始</h2>
