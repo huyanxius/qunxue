@@ -188,7 +188,7 @@ from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.account_management import AccountManagementService
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
-from qunxue_api.modules.billing import SIGNUP_GRANT
+from qunxue_api.modules.billing import SIGNUP_GRANT, Tariff
 from qunxue_api.modules.frontier_knowledge import FrontierService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -1689,6 +1689,11 @@ def _billing_runtime(
             endpoints,
             model_aliases=settings.billing_model_aliases,
             usage_policy_overrides=settings.billing_usage_policies,
+            configured_tariffs={
+                model: Tariff(**rates.model_dump(), long_threshold=None)
+                for model, rates in settings.billing_model_tariffs.items()
+            },
+            price_version=settings.billing_price_version,
         ),
         max_attempt_pico=(settings.billing_max_attempt_usd_micro or ATTEMPT_USD_MICRO)
         * PICO_PER_MICRO,

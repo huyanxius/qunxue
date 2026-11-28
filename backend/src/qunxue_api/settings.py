@@ -92,6 +92,15 @@ class ModelFallbackSettings(BaseModel):
         return _normalize_model_name(value)
 
 
+class ModelTariffSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    input: int
+    cache_read: int
+    cache_write: int
+    output: int
+
+
 def is_sqlite_memory_url(database_url: str) -> bool:
     url = make_url(database_url)
     if url.get_backend_name() != "sqlite":
@@ -192,6 +201,8 @@ class Settings(BaseSettings):
         "http://localhost:5178",
     )
     billing_model_aliases: dict[str, str] = Field(default_factory=dict)
+    billing_model_tariffs: dict[str, ModelTariffSettings] = Field(default_factory=dict)
+    billing_price_version: str | None = Field(default=None, min_length=1)
     billing_usage_policies: dict[str, Literal["omitted_cache_subsets_are_zero"]] = Field(
         default_factory=dict
     )

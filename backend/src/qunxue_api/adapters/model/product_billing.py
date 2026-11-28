@@ -37,6 +37,8 @@ def product_price_book(
     *,
     model_aliases: Mapping[str, str],
     usage_policy_overrides: Mapping[str, str],
+    configured_tariffs: Mapping[str, Tariff],
+    price_version: str | None,
 ) -> PriceBook:
     aliases = {**MODEL_ALIASES, **model_aliases}
     # For standard Chat Completions, input without a reported cache breakdown
@@ -47,9 +49,9 @@ def product_price_book(
         if aliases.get(endpoint.model, endpoint.model) != "deepseek-flash"
     }
     return PriceBook(
-        version=PRICE_VERSION,
+        version=price_version or PRICE_VERSION,
         credits_per_usd=POINTS_PER_CNY * REFERENCE_CNY_PER_USD,
-        tariffs=PRODUCT_TARIFFS,
+        tariffs={**PRODUCT_TARIFFS, **configured_tariffs},
         aliases=aliases,
         usage_policies={**usage_policies, **usage_policy_overrides},
     )
