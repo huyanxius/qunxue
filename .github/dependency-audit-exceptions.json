@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "ecosystem": "pypi",
+    "package": "mako",
+    "version": "1.3.12",
+    "advisories": [
+      "GHSA-5639-2j2p-m4mx"
+    ],
+    "reason": "随 Alembic 锁定的迁移依赖暂缓更新，待验证迁移模板渲染与升级。",
+    "expires": "2026-11-19"
+  }
+]

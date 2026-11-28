@@ -132,7 +132,6 @@ class ResearchDocumentProposalService:
         clock: Callable[[], datetime] | None = None,
         atomic: Callable[[], AbstractContextManager[None]] | None = None,
         validate_proposal: Callable[..., dict[str, object] | None] | None = None,
-        model_public_label: str | None = None,
     ) -> None:
         self._repository = repository
         self._documents = documents
@@ -140,7 +139,6 @@ class ResearchDocumentProposalService:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._atomic = atomic
         self._validate_proposal = validate_proposal
-        self._model_public_label = model_public_label
 
     def propose_revision(
         self,
@@ -522,8 +520,7 @@ class ResearchDocumentProposalService:
         model = self._repository.agent_run_model(agent_run_id)
         if model is None or not all(value.strip() for value in model):
             raise ValueError("proposal Agent model provenance is missing")
-        provider, model_name = model
-        return provider, self._model_public_label or model_name
+        return model
 
     @staticmethod
     def _validate_proposed_sections(

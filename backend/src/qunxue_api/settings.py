@@ -217,7 +217,6 @@ class Settings(BaseSettings):
     model_api_key: SecretStr | None = None
     model_fallbacks: list[ModelFallbackSettings] = Field(default_factory=list)
     model_name: str | None = None
-    model_public_label: str | None = Field(default=None, min_length=1, max_length=128)
     model_reasoning_effort: (
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
     ) = None

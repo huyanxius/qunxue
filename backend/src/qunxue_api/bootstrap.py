@@ -970,7 +970,6 @@ def create_app(
                     documents=documents,
                     atomic=session.begin_nested,
                     validate_proposal=document_application.validate_proposal,
-                    model_public_label=resolved_settings.model_public_label,
                 ),
                 research_tasks=SqliteResearchTaskRepository(session),
                 mutations=SqliteResearchDocumentMutationRepository(session),
@@ -1079,7 +1078,6 @@ def create_app(
                 documents=document_service,
                 atomic=session.begin_nested,
                 validate_proposal=document_application.validate_proposal,
-                model_public_label=resolved_settings.model_public_label,
             )
             # A key in the local .env opts the independent Agent into a real
             # OpenAI-compatible runtime while keeping the deterministic runner
@@ -1647,7 +1645,6 @@ def _model_provider_from_settings(
             extra_headers=dict(endpoint.extra_headers),
             store=endpoint.store,
             probe_transport=probe_transport,
-            model_public_label=settings.model_public_label,
         )
         for endpoint in endpoints
     )

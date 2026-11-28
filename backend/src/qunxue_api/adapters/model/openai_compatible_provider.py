@@ -184,7 +184,6 @@ class OpenAICompatibleModelProvider:
         store: bool | None = None,
         probe_transport: httpx.AsyncBaseTransport | None = None,
         require_billing: bool = False,
-        model_public_label: str | None = None,
     ) -> None:
         self._require_billing = require_billing
         parsed_url = urlsplit(base_url)
@@ -221,7 +220,7 @@ class OpenAICompatibleModelProvider:
         self._probe_transport = probe_transport
         self._descriptor = ModelProviderDescriptor(
             provider="openai-compatible",
-            model_version=model_public_label or self._model,
+            model_version=self._model,
             capability_tier=capability_tier,
             demonstration=False,
         )

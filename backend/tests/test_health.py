@@ -110,7 +110,7 @@ def test_health_reports_unknown_before_a_real_model_has_been_checked(
     assert response.json()["model_checked_at"] is None
 
 
-def test_configured_gateway_uses_its_tariff_and_public_model_label(
+def test_configured_gateway_uses_its_tariff(
     client: TestClient,
     tmp_path: Path,
 ) -> None:
@@ -123,7 +123,6 @@ def test_configured_gateway_uses_its_tariff_and_public_model_label(
             model_base_url="https://primary.internal.test/v1",
             model_api_key="health-secret-key",
             model_name="private-model-name",
-            model_public_label="research-model",
             billing_price_version="gateway-test-1",
             billing_model_tariffs={
                 "private-model-name": {
@@ -142,8 +141,6 @@ def test_configured_gateway_uses_its_tariff_and_public_model_label(
         response = health_client.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json()["model_version"] == "research-model"
-    assert "private-model-name" not in response.text
     book = app.state.billing_operations.runtime.book
     assert book.version == "gateway-test-1"
     assert book.cost_pico_usd("private-model-name", 120, 5, cache_read_tokens=20) == 252_000_000

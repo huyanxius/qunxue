@@ -8,7 +8,7 @@
 
 - [产品费率表](../backend/src/qunxue_api/adapters/model/product_billing.py) 随版本发布。费率基于公开参考价，美元参考用量按产品固定折算价兑换积分。DeepSeek 使用高峰参考价，用户积分不随时段或节假日变动。参考额也用于运营调用限额，供应商实际采购金额以账单为准。[OpenAI 费率](https://developers.openai.com/api/docs/models/gpt-5.6-sol) · [DeepSeek 费率](https://api-docs.deepseek.com/quick_start/pricing/)
 - 调价时改费率表和版本号。已经开始的请求沿用开始时的快照。旧账本里的汇率和峰谷价仅由历史快照读取。当前发布不要求线上补填计价或节假日环境变量。
-- 启动时核对实际路由中的模型和账本表。模型别名可映射到已定价的模型；网关也可在服务端用 `QUNXUE_BILLING_MODEL_TARIFFS` 配置独立费率（每百万 token，以微美元为单位），并用 `QUNXUE_BILLING_PRICE_VERSION` 标记版本。`QUNXUE_MODEL_PUBLIC_LABEL` 只影响对外名称，不变更上游请求和用量归属。
+- 启动时核对实际路由中的模型和账本表。模型别名可映射到已定价的模型；网关也可在服务端用 `QUNXUE_BILLING_MODEL_TARIFFS` 配置独立费率（每百万 token，以微美元为单位），并用 `QUNXUE_BILLING_PRICE_VERSION` 标记版本。
 - 默认单次模型调用、整轮和全站每日的参考成本上限分别是 0.5、1 和 10 美元。整轮包含规划、回答和工具触发的模型调用。生效值可以通过已有 `QUNXUE_BILLING_MAX_ATTEMPT_USD_MICRO`、`QUNXUE_BILLING_MAX_OPERATION_USD_MICRO`、`QUNXUE_BILLING_DAILY_BUDGET_USD_MICRO` 调整。核对预算时看后台用量和供应商账单；仅靠参考价不能限制供应商实际现金支出。
 
 发布后用普通账户验收。确认一轮简短对话交付并出现一条扣款记录，同一请求重放后余额保持一致。十轮普通对话是体验目标，长上下文、模型输出和工具用量会影响能完成的轮数。
