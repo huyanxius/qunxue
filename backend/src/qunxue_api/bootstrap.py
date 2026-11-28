@@ -188,7 +188,7 @@ from qunxue_api.application.teaching_execution import TeachingExecution
 from qunxue_api.modules.account_management import AccountManagementService
 from qunxue_api.modules.agent_conversation import ConversationNotFound, ConversationService
 from qunxue_api.modules.agent_memory import MemoryService
-from qunxue_api.modules.billing import SIGNUP_GRANT
+from qunxue_api.modules.billing import SIGNUP_GRANT, Tariff
 from qunxue_api.modules.frontier_knowledge import FrontierService
 from qunxue_api.modules.identity import (
     EmailAlreadyRegistered,
@@ -970,6 +970,7 @@ def create_app(
                     documents=documents,
                     atomic=session.begin_nested,
                     validate_proposal=document_application.validate_proposal,
+                    model_public_label=resolved_settings.model_public_label,
                 ),
                 research_tasks=SqliteResearchTaskRepository(session),
                 mutations=SqliteResearchDocumentMutationRepository(session),
@@ -1078,6 +1079,7 @@ def create_app(
                 documents=document_service,
                 atomic=session.begin_nested,
                 validate_proposal=document_application.validate_proposal,
+                model_public_label=resolved_settings.model_public_label,
             )
             # A key in the local .env opts the independent Agent into a real
             # OpenAI-compatible runtime while keeping the deterministic runner
@@ -1645,6 +1647,7 @@ def _model_provider_from_settings(
             extra_headers=dict(endpoint.extra_headers),
             store=endpoint.store,
             probe_transport=probe_transport,
+            model_public_label=settings.model_public_label,
         )
         for endpoint in endpoints
     )
@@ -1689,6 +1692,11 @@ def _billing_runtime(
             endpoints,
             model_aliases=settings.billing_model_aliases,
             usage_policy_overrides=settings.billing_usage_policies,
+            configured_tariffs={
+                model: Tariff(**rates.model_dump(), long_threshold=None)
+                for model, rates in settings.billing_model_tariffs.items()
+            },
+            price_version=settings.billing_price_version,
         ),
         max_attempt_pico=(settings.billing_max_attempt_usd_micro or ATTEMPT_USD_MICRO)
         * PICO_PER_MICRO,

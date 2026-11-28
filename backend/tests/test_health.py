@@ -110,6 +110,45 @@ def test_health_reports_unknown_before_a_real_model_has_been_checked(
     assert response.json()["model_checked_at"] is None
 
 
+def test_configured_gateway_uses_its_tariff_and_public_model_label(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_url=client.app.state.settings.database_url,
+            runtime_mode="base",
+            **_retrieval_settings(tmp_path),
+            model_base_url="https://primary.internal.test/v1",
+            model_api_key="health-secret-key",
+            model_name="private-model-name",
+            model_public_label="research-model",
+            billing_price_version="gateway-test-1",
+            billing_model_tariffs={
+                "private-model-name": {
+                    "input": 2_000_000,
+                    "cache_read": 100_000,
+                    "cache_write": 0,
+                    "output": 10_000_000,
+                },
+            },
+        ),
+        database=client.app.state.database,
+    )
+    _seed_ready_retrieval_index(app, index_path=tmp_path / "retrieval.db")
+
+    with TestClient(app) as health_client:
+        response = health_client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json()["model_version"] == "research-model"
+    assert "private-model-name" not in response.text
+    book = app.state.billing_operations.runtime.book
+    assert book.version == "gateway-test-1"
+    assert book.cost_pico_usd("private-model-name", 120, 5, cache_read_tokens=20) == 252_000_000
+
+
 def test_health_reports_degraded_model_without_leaking_endpoint_details(
     client: TestClient,
     tmp_path: Path,
